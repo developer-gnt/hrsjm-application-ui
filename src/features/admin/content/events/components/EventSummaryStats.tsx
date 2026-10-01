@@ -82,6 +82,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
+    minHeight: 94,
     borderRadius: BorderRadius.lg,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xs,
@@ -102,10 +103,14 @@ const styles = StyleSheet.create({
   },
   value: {
     ...Typography.metric,
+    fontSize: 19,
+    lineHeight: 24,
     color: AdminColors.textPrimary,
   },
   label: {
     ...Typography.caption,
+    fontSize: 9,
+    lineHeight: 12,
     color: AdminColors.textSecondary,
     textAlign: 'center',
     marginTop: 2,

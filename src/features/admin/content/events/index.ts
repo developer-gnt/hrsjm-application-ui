@@ -6,6 +6,7 @@
  * TEMPORARY visual-review shells and are deliberately NOT exported here.
  */
 export { EventsScreen } from './screens/EventsScreen';
+export { EventDetailsScreen } from './screens/EventDetailsScreen';
 export { EventCard, EventListHeader } from './components/EventCard';
 export { EventStatusBadge } from './components/EventStatusBadge';
 export { EventSummaryStats } from './components/EventSummaryStats';

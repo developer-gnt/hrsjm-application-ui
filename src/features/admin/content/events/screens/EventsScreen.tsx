@@ -85,7 +85,16 @@ const EmptyStateView: React.FC<{
   </View>
 );
 
-export const EventsScreen: React.FC = () => {
+interface EventsScreenProps {
+  /**
+   * TEMPORARY (UI-only phase): called when the user taps View on an event row.
+   * When not provided, a placeholder alert is shown instead. Real navigation
+   * will replace this with the shared admin navigation architecture.
+   */
+  onViewEvent?: (event: EventListItem) => void;
+}
+
+export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent }) => {
   const [uiState, setUiState] = useState<EventsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -170,6 +179,10 @@ export const EventsScreen: React.FC = () => {
   };
 
   const handleEventPress = (event: EventListItem) => {
+    if (onViewEvent) {
+      onViewEvent(event);
+      return;
+    }
     Alert.alert(
       event.title,
       'The Event Details screen will be implemented in the next phase of the Events module.',
@@ -238,6 +251,7 @@ export const EventsScreen: React.FC = () => {
             size="sm"
             onPress={handleAddEvent}
             icon={<Text style={styles.addIcon}>+</Text>}
+            textStyle={styles.addButtonText}
             style={styles.addButton}
           />
         </View>
@@ -349,10 +363,14 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     ...Typography.screenTitle,
+    fontSize: 20,
+    lineHeight: 25,
     color: AdminColors.primaryDark,
   },
   pageSubtitle: {
     ...Typography.secondary,
+    fontSize: 11,
+    lineHeight: 15,
     color: AdminColors.textSecondary,
     marginTop: 2,
   },
@@ -367,6 +385,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginTop: -1,
+  },
+  addButtonText: {
+    ...Typography.secondaryMedium,
+    fontWeight: '600',
   },
   statsSection: {
     marginTop: Spacing.md,

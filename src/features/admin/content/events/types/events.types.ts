@@ -35,6 +35,8 @@ export interface EventListItem {
   startAt: string;
   endAt?: string;
   organizer?: string;
+  /** Long description (PRD section 10 "potential fields"). Optional until the DTO is confirmed. */
+  description?: string;
   registrations: number;
   capacity?: number;
   status: EventUiStatus;

@@ -15,7 +15,7 @@ import type { EventListItem } from '../types/events.types';
 const demoCoverImage = (seed: string): string =>
   `https://picsum.photos/seed/${seed}/400/300`;
 
-export const SAMPLE_EVENTS: EventListItem[] = [
+const SAMPLE_EVENT_BASE: EventListItem[] = [
   // --- Upcoming (6) ---
   {
     id: 'e-01',
@@ -334,6 +334,38 @@ export const SAMPLE_EVENTS: EventListItem[] = [
     status: 'CANCELLED',
   },
 ];
+
+/**
+ * TEMPORARY demo description copy per category, applied to the base sample
+ * records below. Replace with real backend content once the Events contract
+ * is confirmed (spec Phase 0). The `description` field itself is already part
+ * of the Event type (spec section 10 "potential fields").
+ */
+const SAMPLE_EVENT_DESCRIPTIONS: Record<string, string> = {
+  Seminar:
+    'This seminar aims to spread awareness about human rights, legal support and social justice in our community. Experts, social workers and legal professionals will share their insights and guide participants on rights, remedies and available government support.',
+  'Relief Activity':
+    'Volunteers will distribute essential relief supplies to families in need. Participants will assist in packing, organising and handing out kits while following the coordination plan shared by the HRSJM relief team.',
+  'Awareness Camp':
+    'An interactive community camp explaining everyday rights, available government schemes and how to seek help. Materials and guidance will be provided by HRSJM volunteers and invited resource persons.',
+  'Health Camp':
+    'Free basic health check-ups and consultations for the community, conducted with volunteer medical professionals. Registration counters open at the start of the camp and services are offered on a first-come basis.',
+  'Community Service':
+    'A community service activity where volunteers support local residents through practical, hands-on help. All necessary materials will be provided at the venue by the organising team.',
+  Workshop:
+    'A guided workshop with practical sessions and group activities. Facilitators will walk participants through each topic step by step, and printed reference material will be shared at the venue.',
+  'Training Program':
+    'A structured training programme for volunteers and community members. Sessions cover core concepts, hands-on practice and a short feedback round at the end of the day.',
+  Fundraising:
+    'An evening in support of HRSJM programmes, with updates on ongoing initiatives and how contributions are used. Donors and well-wishers are encouraged to register in advance.',
+};
+
+export const SAMPLE_EVENTS: EventListItem[] = SAMPLE_EVENT_BASE.map(event => ({
+  ...event,
+  description:
+    event.description ??
+    (event.category ? SAMPLE_EVENT_DESCRIPTIONS[event.category] : undefined),
+}));
 
 /** Distinct categories present in the sample dataset (used by the local filter panel). */
 export const SAMPLE_EVENT_CATEGORIES: string[] = Array.from(
