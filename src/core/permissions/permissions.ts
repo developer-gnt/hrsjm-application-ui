@@ -1,35 +1,31 @@
-import type { AppUser, UserRole } from '../api/types';
+import type { AppUser, UserRoleName } from '../api/types';
 
-// Permission identifiers documented by the development phase plan:
-//   assistance.read / assistance.approve / assistance.reject / assistance.manage_status
-// The implemented backend currently authorizes with roles only (no permission
-// catalog yet), so this map is the single alignment point. When the backend
-// ships a permission catalog, replace ROLE_PERMISSIONS with the real claims.
-export type Permission =
-  | 'assistance.read'
-  | 'assistance.approve'
-  | 'assistance.reject'
-  | 'assistance.manage_status';
+// Permission catalog confirmed against the implemented backend
+// (migrations CreateArshadModulesSchema seed): assistance.review, support.manage.
+// Both are granted to the baseline ADMIN role. The backend authorizes each
+// endpoint with @RequirePermissions - this helper mirrors that catalog for UI
+// gating only; backend authorization stays authoritative.
+export type Permission = 'assistance.review' | 'support.manage';
 
-const ASSISTANCE_REVIEW_PERMISSIONS: Permission[] = [
-  'assistance.read',
-  'assistance.approve',
-  'assistance.reject',
-  'assistance.manage_status',
-];
-
-const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
-  ADMIN: [...ASSISTANCE_REVIEW_PERMISSIONS],
+// Role -> permissions map, kept as the single alignment point when the backend
+// grants permissions to additional roles.
+const ROLE_PERMISSIONS: Record<UserRoleName, Permission[]> = {
+  ADMIN: ['assistance.review', 'support.manage'],
   MEMBER: [],
   DONOR: [],
   DONATION_SEEKER: [],
 };
 
+function roleNames(user: AppUser | null | undefined): string[] {
+  return (user?.roles ?? [])
+    .map(role => role?.name)
+    .filter((name): name is string => typeof name === 'string');
+}
+
 export function can(user: AppUser | null | undefined, permission: Permission): boolean {
-  if (!user) {
-    return false;
-  }
-  return ROLE_PERMISSIONS[user.role]?.includes(permission) ?? false;
+  return roleNames(user).some(
+    name => ROLE_PERMISSIONS[name as UserRoleName]?.includes(permission) ?? false,
+  );
 }
 
 export function canAny(

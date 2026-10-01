@@ -13,7 +13,7 @@ export function useAssistanceActions() {
     async (
       kind: AssistanceActionKind,
       id: string,
-      body: { status: 'APPROVED' | 'REJECTED'; adminRemark?: string },
+      body: { status: 'APPROVED' | 'REJECTED'; admin_remark?: string },
     ): Promise<AssistanceRequest | null> => {
       setActing(kind);
       setError(null);
@@ -31,13 +31,13 @@ export function useAssistanceActions() {
 
   const approve = useCallback(
     (id: string, note?: string) =>
-      run('APPROVE', id, { status: 'APPROVED', adminRemark: note?.trim() || undefined }),
+      run('APPROVE', id, { status: 'APPROVED', admin_remark: note?.trim() || undefined }),
     [run],
   );
 
   const reject = useCallback(
     (id: string, reason: string) =>
-      run('REJECT', id, { status: 'REJECTED', adminRemark: reason.trim() }),
+      run('REJECT', id, { status: 'REJECTED', admin_remark: reason.trim() }),
     [run],
   );
 

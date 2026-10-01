@@ -20,7 +20,7 @@ export function useAssistanceDocuments(requestId: string) {
       }
       try {
         const data = await assistanceService.listDocuments(requestId);
-        setDocuments(data.items.filter(doc => !doc.isArchived));
+        setDocuments(data.items.filter(doc => !doc.is_archived));
         setError(null);
       } catch (err) {
         setError(getApiErrorMessage(err, 'Unable to load documents.'));

@@ -57,7 +57,7 @@ describe('status transitions', () => {
 });
 
 describe('interim client-side search', () => {
-  const request = { id: '9f1c2b3a-4d5e-4f60-a1b2-c3d4e5f60718', fullName: 'Ahmed Khan' };
+  const request = { id: '9f1c2b3a-4d5e-4f60-a1b2-c3d4e5f60718', full_name: 'Ahmed Khan' };
 
   it('matches by name, case-insensitively', () => {
     expect(matchesSearch(request, 'ahmed')).toBe(true);

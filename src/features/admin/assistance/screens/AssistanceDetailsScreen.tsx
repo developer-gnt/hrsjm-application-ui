@@ -84,16 +84,16 @@ export function AssistanceDetailsScreen({ route, navigation }: ScreenProps) {
     }
 
     const reviewable = canReview(request.status);
-    const canApprove = can(user, 'assistance.approve') && reviewable;
-    const canReject = can(user, 'assistance.reject') && reviewable;
+    const canApprove = can(user, 'assistance.review') && reviewable;
+    const canReject = can(user, 'assistance.review') && reviewable;
 
     return (
       <View>
         <AppCard style={styles.headerCard}>
           <View style={styles.headerRow}>
-            <AppAvatar name={request.fullName} size={52} />
+            <AppAvatar name={request.full_name} size={52} />
             <View style={styles.headerInfo}>
-              <Text style={styles.seekerName}>{request.fullName}</Text>
+              <Text style={styles.seekerName}>{request.full_name}</Text>
               <Text style={styles.requestId}>Request {shortRequestId(request.id)}</Text>
             </View>
             <AssistanceStatusBadge status={request.status} />
@@ -101,21 +101,21 @@ export function AssistanceDetailsScreen({ route, navigation }: ScreenProps) {
         </AppCard>
 
         <Section title="Seeker Information">
-          <InfoRow label="Full Name" value={request.fullName} />
+          <InfoRow label="Full Name" value={request.full_name} />
           <InfoRow label="Mobile" value={request.mobile} />
           <InfoRow label="Email" value={request.email ?? '—'} />
           <InfoRow
             label="Linked Account"
-            value={request.owner ? `${request.owner.fullName} (${request.owner.email})` : 'No linked account'}
+            value={request.user ? `${request.user.full_name} (${request.user.email})` : 'No linked account'}
           />
         </Section>
 
         <Section title="Request Information">
-          <InfoRow label="Submitted" value={formatDateTime(request.createdAt)} />
-          <InfoRow label="Last Updated" value={formatDateTime(request.updatedAt)} />
-          <InfoRow label="Requested Amount" value={formatCurrency(request.requestedAmount)} />
-          {request.reviewedAt ? (
-            <InfoRow label="Reviewed" value={formatDateTime(request.reviewedAt)} />
+          <InfoRow label="Submitted" value={formatDateTime(request.created_at)} />
+          <InfoRow label="Last Updated" value={formatDateTime(request.updated_at)} />
+          <InfoRow label="Requested Amount" value={formatCurrency(request.requested_amount)} />
+          {request.reviewed_at ? (
+            <InfoRow label="Reviewed" value={formatDateTime(request.reviewed_at)} />
           ) : null}
         </Section>
 
@@ -135,7 +135,7 @@ export function AssistanceDetailsScreen({ route, navigation }: ScreenProps) {
             onPress={() =>
               navigation.navigate('AssistanceDocuments', {
                 requestId: request.id,
-                seekerName: request.fullName,
+                seekerName: request.full_name,
               })
             }
           />
@@ -146,17 +146,17 @@ export function AssistanceDetailsScreen({ route, navigation }: ScreenProps) {
             <View style={[styles.timelineDot, styles.timelineDotPrimary]} />
             <View style={styles.timelineContent}>
               <Text style={styles.timelineTitle}>Request submitted</Text>
-              <Text style={styles.timelineDate}>{formatDateTime(request.createdAt)}</Text>
+              <Text style={styles.timelineDate}>{formatDateTime(request.created_at)}</Text>
             </View>
           </View>
-          {request.reviewedAt ? (
+          {request.reviewed_at ? (
             <View style={styles.timelineRow}>
               <View style={[styles.timelineDot, styles.timelineDotDone]} />
               <View style={styles.timelineContent}>
                 <Text style={styles.timelineTitle}>Review recorded — {statusMeta(request.status).label}</Text>
-                <Text style={styles.timelineDate}>{formatDateTime(request.reviewedAt)}</Text>
-                {request.adminRemark ? (
-                  <Text style={styles.timelineNote}>{request.adminRemark}</Text>
+                <Text style={styles.timelineDate}>{formatDateTime(request.reviewed_at)}</Text>
+                {request.admin_remark ? (
+                  <Text style={styles.timelineNote}>{request.admin_remark}</Text>
                 ) : null}
               </View>
             </View>
@@ -232,7 +232,7 @@ export function AssistanceDetailsScreen({ route, navigation }: ScreenProps) {
         <>
           <ApproveAssistanceModal
             visible={approveVisible}
-            requesterName={request.fullName}
+            requesterName={request.full_name}
             loading={acting === 'APPROVE'}
             error={actionError}
             onClose={() => setApproveVisible(false)}
@@ -240,7 +240,7 @@ export function AssistanceDetailsScreen({ route, navigation }: ScreenProps) {
           />
           <RejectAssistanceModal
             visible={rejectVisible}
-            requesterName={request.fullName}
+            requesterName={request.full_name}
             loading={acting === 'REJECT'}
             error={actionError}
             onClose={() => setRejectVisible(false)}

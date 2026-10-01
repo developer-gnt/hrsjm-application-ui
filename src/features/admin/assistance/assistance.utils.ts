@@ -38,7 +38,7 @@ export function tabToStatus(tab: AssistanceTabKey): AssistanceStatus | undefined
 // parameter (confirmed contract gap), so name/request-ID matching runs over
 // the currently loaded page. Reported for backend follow-up.
 export function matchesSearch(
-  request: { id: string; fullName: string },
+  request: { id: string; full_name: string },
   query: string,
 ): boolean {
   const trimmed = query.trim().toLowerCase();
@@ -46,7 +46,7 @@ export function matchesSearch(
     return true;
   }
   return (
-    request.fullName.toLowerCase().includes(trimmed) ||
+    request.full_name.toLowerCase().includes(trimmed) ||
     request.id.toLowerCase().includes(trimmed)
   );
 }

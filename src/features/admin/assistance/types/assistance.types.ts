@@ -1,6 +1,7 @@
-// Types mirror the implemented backend contract exactly (see phase report):
-// enum AssistanceRequestStatus, toSafeRequest() payload, envelope + { items, meta }.
-import type { PaginationMeta } from '../../../../core/api/types';
+// Types mirror the implemented backend contract exactly (HRSJM-back-api,
+// assistance module): snake_case wire format, enum AssistanceRequestStatus,
+// PATCH :id/status { status, admin_remark? }, envelope + { items, meta }.
+import type { PaginationMeta, RelatedUser } from '../../../../core/api/types';
 
 export type AssistanceStatus =
   | 'PENDING'
@@ -9,26 +10,22 @@ export type AssistanceStatus =
   | 'REJECTED'
   | 'CLOSED';
 
-export interface AssistanceOwner {
-  id: string;
-  fullName: string;
-  email: string;
-}
-
 export interface AssistanceRequest {
   id: string;
-  fullName: string;
+  user_id: string;
+  full_name: string;
   mobile: string;
   email: string | null;
-  requestedAmount: string; // numeric(12,2) arrives as string
+  // numeric(12,2) - the backend entity transformer parses it to a number
+  requested_amount: number;
   reason: string;
   description: string | null;
   status: AssistanceStatus;
-  adminRemark: string | null;
-  reviewedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  owner?: AssistanceOwner;
+  admin_remark: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  user?: RelatedUser;
 }
 
 export interface AssistanceListData {
@@ -44,20 +41,20 @@ export interface AssistanceQuery {
 
 export interface UpdateAssistanceStatusBody {
   status: AssistanceStatus;
-  adminRemark?: string;
+  admin_remark?: string;
 }
 
 export interface AssistanceDocumentItem {
   id: string;
-  documentName: string;
-  documentType: string;
-  originalFileName: string;
-  mimeType: string;
-  fileSize: number;
+  document_name: string;
+  document_type: string;
+  original_file_name: string;
+  mime_type: string;
+  file_size: number;
   description: string | null;
-  isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AssistanceDocumentsListData {

@@ -23,20 +23,21 @@ const listPayload: AssistanceListData = {
   items: [
     {
       id: '9f1c2b3a-4d5e-4f60-a1b2-c3d4e5f60718',
-      fullName: 'Ahmed Khan',
+      user_id: 'owner-1',
+      full_name: 'Ahmed Khan',
       mobile: '9876543210',
       email: 'ahmed@example.com',
-      requestedAmount: '50000.00',
+      requested_amount: 50000,
       reason: 'Medical treatment',
       description: null,
       status: 'PENDING',
-      adminRemark: null,
-      reviewedAt: null,
-      createdAt: '2026-09-28T10:00:00.000Z',
-      updatedAt: '2026-09-28T10:00:00.000Z',
-      owner: {
+      admin_remark: null,
+      reviewed_at: null,
+      created_at: '2026-09-28T10:00:00.000Z',
+      updated_at: '2026-09-28T10:00:00.000Z',
+      user: {
         id: 'owner-1',
-        fullName: 'Ahmed Khan',
+        full_name: 'Ahmed Khan',
         email: 'ahmed@example.com',
       },
     },
@@ -102,12 +103,12 @@ describe('assistanceService.updateStatus', () => {
 
     const result = await assistanceService.updateStatus(request.id, {
       status: 'APPROVED',
-      adminRemark: 'Verified documents',
+      admin_remark: 'Verified documents',
     });
 
     expect(mockedApi.patch).toHaveBeenCalledWith(`/assistance-requests/${request.id}/status`, {
       status: 'APPROVED',
-      adminRemark: 'Verified documents',
+      admin_remark: 'Verified documents',
     });
     expect(result.status).toBe('APPROVED');
   });
@@ -123,8 +124,8 @@ describe('assistanceService.listDocuments', () => {
 
     expect(mockedApi.get).toHaveBeenCalledWith('/documents', {
       params: {
-        relatedEntityType: 'ASSISTANCE_REQUEST',
-        relatedEntityId: '9f1c2b3a-4d5e-4f60-a1b2-c3d4e5f60718',
+        related_entity_type: 'ASSISTANCE_REQUEST',
+        related_entity_id: '9f1c2b3a-4d5e-4f60-a1b2-c3d4e5f60718',
         page: 1,
         limit: 50,
       },
@@ -133,24 +134,66 @@ describe('assistanceService.listDocuments', () => {
 });
 
 describe('authService', () => {
-  it('logs in with a trimmed, lowercased email and returns the session payload', async () => {
+  it('logs in with a trimmed identifier and returns the backend token pair', async () => {
     const session = {
-      user: { id: 'u-1', fullName: 'Admin', email: 'admin@example.com', role: 'ADMIN', status: 'ACTIVE', createdAt: '', updatedAt: '' },
-      accessToken: 'token-123',
+      user: {
+        id: 'u-1',
+        full_name: 'Admin',
+        mobile_number: '9888880001',
+        email: 'admin@example.com',
+        status: 'ACTIVE',
+        roles: [{ id: 'r-1', name: 'ADMIN' }],
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+      },
+      access_token: 'token-123',
+      refresh_token: 'refresh-123',
     };
     mockedApi.post.mockResolvedValueOnce({ data: { success: true, message: 'ok', data: session } });
 
     const result = await authService.login('  Admin@Example.COM ', 'secret');
 
     expect(mockedApi.post).toHaveBeenCalledWith('/auth/login', {
-      email: 'admin@example.com',
+      identifier: 'Admin@Example.COM',
       password: 'secret',
     });
     expect(result).toEqual(session);
   });
 
+  it('exchanges a refresh token via POST /auth/refresh', async () => {
+    const pair = {
+      user: {
+        id: 'u-1',
+        full_name: 'Admin',
+        mobile_number: '9888880001',
+        email: 'admin@example.com',
+        status: 'ACTIVE',
+        roles: [{ id: 'r-1', name: 'ADMIN' }],
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+      },
+      access_token: 'token-2',
+      refresh_token: 'refresh-2',
+    };
+    mockedApi.post.mockResolvedValueOnce({ data: { success: true, message: 'ok', data: pair } });
+
+    const result = await authService.refresh('refresh-1');
+
+    expect(mockedApi.post).toHaveBeenCalledWith('/auth/refresh', { refresh_token: 'refresh-1' });
+    expect(result.access_token).toBe('token-2');
+  });
+
   it('fetches the current user from /auth/me', async () => {
-    const user = { id: 'u-1', fullName: 'Admin', email: 'admin@example.com', role: 'ADMIN', status: 'ACTIVE', createdAt: '', updatedAt: '' };
+    const user = {
+      id: 'u-1',
+      full_name: 'Admin',
+      mobile_number: '9888880001',
+      email: 'admin@example.com',
+      status: 'ACTIVE',
+      roles: [{ id: 'r-1', name: 'ADMIN' }],
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    };
     mockedApi.get.mockResolvedValueOnce({ data: { success: true, message: 'ok', data: user } });
 
     const result = await authService.me();

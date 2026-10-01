@@ -1,53 +1,56 @@
 import { can, canAny } from '../src/core/permissions/permissions';
 import type { AppUser } from '../src/core/api/types';
 
-function userWithRole(role: AppUser['role']): AppUser {
+function userWithRoles(roleNames: string[]): AppUser {
   return {
     id: 'u-1',
-    fullName: 'Test Admin',
+    full_name: 'Test Admin',
+    mobile_number: '9888880001',
     email: 'admin@example.com',
-    role,
     status: 'ACTIVE',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
+    roles: roleNames.map((name, index) => ({ id: `r-${index}`, name })),
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
   };
 }
 
 describe('permission helper', () => {
-  it('grants ADMIN the documented assistance permissions', () => {
-    const admin = userWithRole('ADMIN');
-    expect(can(admin, 'assistance.read')).toBe(true);
-    expect(can(admin, 'assistance.approve')).toBe(true);
-    expect(can(admin, 'assistance.reject')).toBe(true);
-    expect(can(admin, 'assistance.manage_status')).toBe(true);
+  it('grants ADMIN the confirmed catalog permissions', () => {
+    const admin = userWithRoles(['ADMIN']);
+    expect(can(admin, 'assistance.review')).toBe(true);
+    expect(can(admin, 'support.manage')).toBe(true);
   });
 
-  it('denies non-admin roles the assistance permissions', () => {
-    for (const role of ['MEMBER', 'DONOR', 'DONATION_SEEKER'] as const) {
-      const user = userWithRole(role);
-      expect(can(user, 'assistance.read')).toBe(false);
-      expect(can(user, 'assistance.approve')).toBe(false);
-      expect(can(user, 'assistance.reject')).toBe(false);
+  it('denies non-admin roles the catalog permissions', () => {
+    for (const roles of [['MEMBER'], ['DONOR'], ['DONATION_SEEKER']] as const) {
+      const user = userWithRoles([...roles]);
+      expect(can(user, 'assistance.review')).toBe(false);
+      expect(can(user, 'support.manage')).toBe(false);
     }
   });
 
   it('denies everything for missing users and sessions', () => {
-    expect(can(null, 'assistance.read')).toBe(false);
-    expect(can(undefined, 'assistance.approve')).toBe(false);
+    expect(can(null, 'assistance.review')).toBe(false);
+    expect(can(undefined, 'support.manage')).toBe(false);
+  });
+
+  it('handles users with multiple roles', () => {
+    const mixed = userWithRoles(['DONOR', 'ADMIN']);
+    expect(can(mixed, 'support.manage')).toBe(true);
   });
 
   it('canAny requires at least one matching permission', () => {
-    const admin = userWithRole('ADMIN');
-    const member = userWithRole('MEMBER');
-    expect(canAny(admin, ['assistance.approve', 'assistance.reject'])).toBe(true);
-    expect(canAny(member, ['assistance.approve', 'assistance.reject'])).toBe(false);
-    expect(canAny(null, ['assistance.read'])).toBe(false);
+    const admin = userWithRoles(['ADMIN']);
+    const member = userWithRoles(['MEMBER']);
+    expect(canAny(admin, ['assistance.review', 'support.manage'])).toBe(true);
+    expect(canAny(member, ['assistance.review', 'support.manage'])).toBe(false);
+    expect(canAny(null, ['assistance.review'])).toBe(false);
   });
 
   it('never grants permissions by role string alone outside the catalog', () => {
     // Guarding the documented rule: role === 'ADMIN' must not be used as an
     // ad-hoc check; everything flows through the permission catalog.
-    const admin = userWithRole('ADMIN');
+    const admin = userWithRoles(['ADMIN']);
     expect(can(admin, 'support.resolve' as never)).toBe(false);
   });
 });

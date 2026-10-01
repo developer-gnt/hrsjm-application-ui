@@ -46,7 +46,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const fresh = await authService.me();
         if (mounted.current) {
           setUser(fresh);
-          await saveSession({ accessToken: session.accessToken, user: fresh });
+          await saveSession({
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+            user: fresh,
+          });
         }
       } catch {
         // 401 is handled globally (session cleared + sign-out event); other
@@ -66,9 +70,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { user: loggedInUser, accessToken } = await authService.login(email, password);
-    await saveSession({ accessToken, user: loggedInUser });
+  const signIn = useCallback(async (identifier: string, password: string) => {
+    const { user: loggedInUser, access_token, refresh_token } = await authService.login(
+      identifier,
+      password,
+    );
+    await saveSession({
+      accessToken: access_token,
+      refreshToken: refresh_token,
+      user: loggedInUser,
+    });
     setUser(loggedInUser);
     setStatus('authenticated');
   }, []);

@@ -47,7 +47,7 @@ export function AssistanceRequestsScreen({ navigation }: ScreenProps) {
   } = useAssistance();
   const [filtersVisible, setFiltersVisible] = useState(false);
 
-  if (!can(user, 'assistance.read')) {
+  if (!can(user, 'assistance.review')) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <AppHeader title="Donation Seekers" />

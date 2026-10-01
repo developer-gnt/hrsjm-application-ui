@@ -48,17 +48,17 @@ function DocumentPreviewModal({
   }, []);
 
   return (
-    <Modal visible animationType="fade" onRequestClose={onClose} accessibilityLabel={`Document preview: ${doc.documentName}`}>
+    <Modal visible animationType="fade" onRequestClose={onClose} accessibilityLabel={`Document preview: ${doc.document_name}`}>
       <View style={styles.previewContainer}>
         <View style={styles.previewHeader}>
           <Text style={styles.previewTitle} numberOfLines={1}>
-            {doc.documentName}
+            {doc.document_name}
           </Text>
           <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Close preview">
             <Text style={styles.previewClose}>✕</Text>
           </TouchableOpacity>
         </View>
-        {isImage(doc.mimeType) && token ? (
+        {isImage(doc.mime_type) && token ? (
           <Image
             source={{
               uri: `${API_BASE_URL}/documents/${doc.id}/download`,
@@ -66,11 +66,11 @@ function DocumentPreviewModal({
             }}
             style={styles.previewImage}
             resizeMode="contain"
-            accessibilityLabel={`Preview of ${doc.documentName}`}
+            accessibilityLabel={`Preview of ${doc.document_name}`}
           />
         ) : (
           <View style={styles.previewFallback}>
-            <Text style={styles.previewFallbackTitle}>{doc.originalFileName}</Text>
+            <Text style={styles.previewFallbackTitle}>{doc.original_file_name}</Text>
             <Text style={styles.previewFallbackText}>
               Inline preview is available for image files. PDF and DOC viewing requires the
               shared document viewer integration.
@@ -78,7 +78,7 @@ function DocumentPreviewModal({
           </View>
         )}
         <Text style={styles.previewMeta}>
-          {doc.originalFileName} · {formatFileSize(doc.fileSize)} · {formatDate(doc.createdAt)}
+          {doc.original_file_name} · {formatFileSize(doc.file_size)} · {formatDate(doc.created_at)}
         </Text>
       </View>
     </Modal>
@@ -119,14 +119,14 @@ export function AssistanceDocuments({ requestId }: { requestId: string }) {
         <AppCard key={doc.id} style={styles.docCard}>
           <View style={styles.docRow}>
             <Text style={styles.docIcon}>
-              {isImage(doc.mimeType) ? '🖼️' : '📄'}
+              {isImage(doc.mime_type) ? '🖼️' : '📄'}
             </Text>
             <View style={styles.docInfo}>
               <Text style={styles.docName} numberOfLines={1}>
-                {doc.documentName}
+                {doc.document_name}
               </Text>
               <Text style={styles.docMeta} numberOfLines={1}>
-                {doc.originalFileName} · {formatFileSize(doc.fileSize)} · {formatDate(doc.createdAt)}
+                {doc.original_file_name} · {formatFileSize(doc.file_size)} · {formatDate(doc.created_at)}
               </Text>
             </View>
             <AppBadge label="Uploaded" bg="#DBEAFE" fg="#1D4ED8" />
@@ -135,7 +135,7 @@ export function AssistanceDocuments({ requestId }: { requestId: string }) {
             title="View"
             onPress={() => setPreviewDoc(doc)}
             variant="secondary"
-            accessibilityLabel={`View ${doc.documentName}`}
+            accessibilityLabel={`View ${doc.document_name}`}
           />
         </AppCard>
       ))}

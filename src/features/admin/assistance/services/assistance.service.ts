@@ -9,10 +9,10 @@ import type {
 } from '../types/assistance.types';
 
 // Routes confirmed against the implemented backend (HRSJM-back-api):
-//   GET   /assistance-requests?status&page&limit   (admin)
-//   GET   /assistance-requests/:id                 (admin or owner)
-//   PATCH /assistance-requests/:id/status { status, adminRemark? }
-//   GET   /documents?relatedEntityType=ASSISTANCE_REQUEST&relatedEntityId=...
+//   GET   /assistance-requests?status&page&limit          (admin)
+//   GET   /assistance-requests/:id                        (admin or owner)
+//   PATCH /assistance-requests/:id/status { status, admin_remark? }
+//   GET   /documents?related_entity_type=ASSISTANCE_REQUEST&related_entity_id=...
 // No other query parameters exist yet - do not send unsupported params,
 // the backend rejects unknown fields (strict whitelist validation).
 export const assistanceService = {
@@ -44,8 +44,8 @@ export const assistanceService = {
   async listDocuments(requestId: string, page = 1, limit = 50): Promise<AssistanceDocumentsListData> {
     const res = await api.get<ApiEnvelope<AssistanceDocumentsListData>>('/documents', {
       params: {
-        relatedEntityType: 'ASSISTANCE_REQUEST',
-        relatedEntityId: requestId,
+        related_entity_type: 'ASSISTANCE_REQUEST',
+        related_entity_id: requestId,
         page,
         limit,
       },

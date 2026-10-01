@@ -5,6 +5,9 @@ const SESSION_KEY = 'hrsjm.session.v1';
 
 export interface StoredSession {
   accessToken: string;
+  // The backend issues rotating refresh tokens (POST /auth/refresh). Optional
+  // so sessions persisted before this field existed keep loading.
+  refreshToken?: string | null;
   user: AppUser;
 }
 

@@ -18,9 +18,9 @@ function AssistanceCardBase({ request, onPress }: AssistanceCardProps) {
   return (
     <AppCard style={styles.card}>
       <View style={styles.topRow}>
-        <AppAvatar name={request.fullName} />
+        <AppAvatar name={request.full_name} />
         <View style={styles.nameColumn}>
-          <Text style={styles.name}>{request.fullName}</Text>
+          <Text style={styles.name}>{request.full_name}</Text>
           <Text style={styles.reason} numberOfLines={1}>
             {request.reason}
           </Text>
@@ -33,9 +33,9 @@ function AssistanceCardBase({ request, onPress }: AssistanceCardProps) {
           Request <Text style={styles.metaStrong}>{shortRequestId(request.id)}</Text>
         </Text>
         <Text style={styles.metaLine}>
-          Requested: <Text style={styles.metaStrong}>{formatCurrency(request.requestedAmount)}</Text>
+          Requested: <Text style={styles.metaStrong}>{formatCurrency(request.requested_amount)}</Text>
         </Text>
-        <Text style={styles.metaLine}>Submitted: {formatDate(request.createdAt)}</Text>
+        <Text style={styles.metaLine}>Submitted: {formatDate(request.created_at)}</Text>
       </View>
 
       <AppButton title="View Details" onPress={onPress} variant="secondary" fullWidth />

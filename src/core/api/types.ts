@@ -34,16 +34,36 @@ export interface PageQuery {
 }
 
 // Shared backend enums (confirmed against implemented backend contract)
-export type UserRole = 'ADMIN' | 'MEMBER' | 'DONOR' | 'DONATION_SEEKER';
+export type UserRoleName = 'ADMIN' | 'MEMBER' | 'DONOR' | 'DONATION_SEEKER';
 
-export type UserStatus = 'ACTIVE' | 'SUSPENDED';
+// CommonStatus enum (backend common/enums/common-status.enum.ts)
+export type CommonStatus = 'ACTIVE' | 'INACTIVE';
 
+// Role entry inside the backend UserProfile.roles array
+export interface UserRoleInfo {
+  id: string;
+  name: string;
+}
+
+// Backend UserProfile (users.service.ts) - snake_case wire format
 export interface AppUser {
   id: string;
-  fullName: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-  createdAt: string;
-  updatedAt: string;
+  full_name: string;
+  mobile_number: string;
+  email: string | null;
+  status: CommonStatus;
+  roles: UserRoleInfo[];
+  created_at: string;
+  updated_at: string;
+}
+
+// Shape of a related user object embedded in entity payloads
+// (ticket.user, message.author, ...) - the full UserEntity minus
+// password_hash; the UI only relies on the identity fields below.
+export interface RelatedUser {
+  id: string;
+  full_name: string;
+  email: string | null;
+  mobile_number?: string;
+  status?: CommonStatus;
 }
