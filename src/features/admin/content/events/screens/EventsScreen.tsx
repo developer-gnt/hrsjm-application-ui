@@ -19,14 +19,15 @@ import {
   AppButton,
   AppEmptyState,
   AppErrorState,
-  AppHeader,
   AppSearchBar,
   SkeletonCard,
 } from '../../../../../core/components';
 import { formatDate } from '../../../../../core/utils';
-import { EventCard } from '../components/EventCard';
+import { EventCard, EventListHeader } from '../components/EventCard';
 import { EventFilters } from '../components/EventFilters';
 import { EventSummaryStats } from '../components/EventSummaryStats';
+import { AdminShellHeader } from '../preview/AdminShellHeader';
+import { AdminShellTabBar } from '../preview/AdminShellTabBar';
 import { SAMPLE_EVENTS, SAMPLE_EVENT_CATEGORIES } from '../data/sample-events';
 import type {
   EventListItem,
@@ -38,10 +39,22 @@ import type {
 /** TEMPORARY: local UI demo dataset. Replace with the real useEvents hook data. */
 const SAMPLE_DATA_LOAD_DELAY_MS = 800;
 
+/** Skeleton placeholder matching the compact event-row shape (UI-only phase). */
+const EventRowSkeleton: React.FC = () => (
+  <View style={styles.skeletonRow}>
+    <SkeletonCard height={34} borderRadius={8} style={styles.skeletonThumb} />
+    <View style={styles.skeletonLines}>
+      <SkeletonCard height={10} />
+      <SkeletonCard height={10} />
+      <SkeletonCard height={8} />
+    </View>
+  </View>
+);
+
 const LoadingListView: React.FC = () => (
   <View style={styles.skeletonList}>
-    {[0, 1, 2, 3, 4].map(index => (
-      <SkeletonCard key={index} height={150} style={styles.skeletonItem} />
+    {[0, 1, 2, 3, 4, 5].map(index => (
+      <EventRowSkeleton key={index} />
     ))}
   </View>
 );
@@ -202,105 +215,161 @@ export const EventsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <AppHeader
-        variant="white"
-        title="Events"
-        subtitle="Manage and view all events and activities."
-        rightAction={
+    <View style={styles.root}>
+      {/* TEMPORARY preview shell: real global header is owned by the app-level architecture. */}
+      <AdminShellHeader />
+
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+        {/* Page header: title/subtitle + Add Event */}
+        <View style={styles.pageHeader}>
+          <View style={styles.pageHeaderText}>
+            <Text style={styles.pageTitle}>Events</Text>
+            <Text
+              style={styles.pageSubtitle}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              numberOfLines={1}
+            >
+              Manage and view all events and activities.
+            </Text>
+          </View>
           <AppButton
             title="Add Event"
             size="sm"
             onPress={handleAddEvent}
             icon={<Text style={styles.addIcon}>+</Text>}
+            style={styles.addButton}
           />
-        }
-      />
+        </View>
 
-      <EventSummaryStats stats={stats} style={styles.statsSection} />
+        <View style={styles.statsSection}>
+          <EventSummaryStats stats={stats} />
+        </View>
 
-      <View style={styles.searchRow}>
-        <AppSearchBar
-          placeholder="Search by event name, location or date..."
-          value={searchQuery}
-          onSearch={handleSearch}
-          containerStyle={styles.searchBar}
-        />
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            (filtersExpanded || activeCategory !== null) && styles.filterButtonActive,
-          ]}
-          onPress={() => setFiltersExpanded(previous => !previous)}
-          accessibilityRole="button"
-          accessibilityLabel="Filters"
-          accessibilityState={{ expanded: filtersExpanded }}
-        >
-          <Text style={styles.filterIcon}>{filtersExpanded ? '▴' : '▾'}</Text>
-          <Text style={styles.filterText}>Filters</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.searchRow}>
+          <AppSearchBar
+            placeholder="Search by event name, location or date..."
+            value={searchQuery}
+            onSearch={handleSearch}
+            containerStyle={styles.searchBar}
+          />
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              (filtersExpanded || activeCategory !== null) && styles.filterButtonActive,
+            ]}
+            onPress={() => setFiltersExpanded(previous => !previous)}
+            accessibilityRole="button"
+            accessibilityLabel="Filters"
+            accessibilityState={{ expanded: filtersExpanded }}
+          >
+            <Text style={styles.filterIcon}>{filtersExpanded ? '▴' : '▾'}</Text>
+            <Text style={styles.filterText}>Filters</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.filtersSection}>
-        <EventFilters
-          tabs={statusTabs}
-          activeTab={activeStatus}
-          onTabChange={handleStatusChange}
-          expanded={filtersExpanded}
-          categories={SAMPLE_EVENT_CATEGORIES}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-        />
-      </View>
+        <View style={styles.filtersSection}>
+          <EventFilters
+            tabs={statusTabs}
+            activeTab={activeStatus}
+            onTabChange={handleStatusChange}
+            expanded={filtersExpanded}
+            categories={SAMPLE_EVENT_CATEGORIES}
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+            onApply={() => setFiltersExpanded(false)}
+          />
+        </View>
 
-      {uiState === 'loading' ? (
-        <LoadingListView />
-      ) : uiState === 'error' ? (
-        <AppErrorState
-          title="Unable to load events."
-          message="Something went wrong while loading events. Please try again."
-          onRetry={handleRetry}
-          style={styles.errorState}
-        />
-      ) : (
-        <FlatList
-          data={filteredEvents}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <EventCard event={item} onPress={handleEventPress} onMorePress={handleEventMenu} />
-          )}
-          ListEmptyComponent={
-            <EmptyStateView
-              hasActiveFilters={hasActiveFilters}
-              onClearFilters={clearFilters}
-              onAddEvent={handleAddEvent}
-            />
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={AdminColors.primary}
-              colors={[AdminColors.primary]}
-            />
-          }
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
-    </SafeAreaView>
+        {uiState === 'loading' ? (
+          <LoadingListView />
+        ) : uiState === 'error' ? (
+          <AppErrorState
+            title="Unable to load events."
+            message="Something went wrong while loading events. Please try again."
+            onRetry={handleRetry}
+            style={styles.errorState}
+          />
+        ) : (
+          <FlatList
+            data={filteredEvents}
+            keyExtractor={item => item.id}
+            ListHeaderComponent={EventListHeader}
+            renderItem={({ item }) => (
+              <EventCard event={item} onPress={handleEventPress} onMorePress={handleEventMenu} />
+            )}
+            ListEmptyComponent={
+              <EmptyStateView
+                hasActiveFilters={hasActiveFilters}
+                onClearFilters={clearFilters}
+                onAddEvent={handleAddEvent}
+              />
+            }
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={AdminColors.primary}
+                colors={[AdminColors.primary]}
+              />
+            }
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+          />
+        )}
+      </SafeAreaView>
+
+      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
+      <AdminShellTabBar />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: AdminColors.cardSurface,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: AdminColors.background,
   },
+  pageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.sm,
+    gap: Spacing.md,
+  },
+  pageHeaderText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  pageTitle: {
+    ...Typography.screenTitle,
+    color: AdminColors.primaryDark,
+  },
+  pageSubtitle: {
+    ...Typography.secondary,
+    color: AdminColors.textSecondary,
+    marginTop: 2,
+  },
+  addButton: {
+    minHeight: 34,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  addIcon: {
+    color: AdminColors.textOnDark,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: -1,
+  },
   statsSection: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.md,
     paddingHorizontal: Spacing.base,
   },
   searchRow: {
@@ -338,32 +407,36 @@ const styles = StyleSheet.create({
     color: AdminColors.textPrimary,
   },
   filtersSection: {
-    marginTop: Spacing.xs,
+    marginTop: Spacing.sm,
   },
   skeletonList: {
     paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.sm,
+    paddingTop: Spacing.base,
     gap: Spacing.md,
   },
-  skeletonItem: {
-    width: '100%',
+  skeletonRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.base + Spacing.sm,
+  },
+  skeletonThumb: {
+    width: 34,
+  },
+  skeletonLines: {
+    flex: 1,
+    gap: Spacing.xs,
   },
   errorState: {
     flexGrow: 1,
     justifyContent: 'center',
   },
   listContent: {
-    paddingHorizontal: Spacing.base,
-    paddingBottom: Spacing.xxl,
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.xl,
     flexGrow: 1,
   },
   emptyContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-  },
-  addIcon: {
-    color: AdminColors.textOnDark,
-    fontSize: 18,
-    fontWeight: '700',
   },
 });

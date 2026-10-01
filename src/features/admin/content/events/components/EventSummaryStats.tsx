@@ -61,9 +61,13 @@ export const EventSummaryStats: React.FC<EventSummaryStatsProps> = ({ stats, sty
             accessibilityLabel={`${card.label}: ${value}`}
             accessibilityRole="text"
           >
-            <Text style={styles.icon}>{card.icon}</Text>
+            <View style={styles.iconChip}>
+              <Text style={styles.icon}>{card.icon}</Text>
+            </View>
             <Text style={styles.value}>{value}</Text>
-            <Text style={styles.label}>{card.label}</Text>
+            <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit>
+              {card.label}
+            </Text>
           </View>
         );
       })}
@@ -84,9 +88,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  icon: {
-    fontSize: 20,
+  iconChip: {
+    width: 22,
+    height: 22,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: AdminColors.cardSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: Spacing.xs,
+  },
+  icon: {
+    fontSize: 12,
   },
   value: {
     ...Typography.metric,
@@ -96,6 +108,6 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: AdminColors.textSecondary,
     textAlign: 'center',
-    marginTop: Spacing.xs,
+    marginTop: 2,
   },
 });

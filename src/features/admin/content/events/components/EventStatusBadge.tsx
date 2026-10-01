@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, ViewStyle } from 'react-native';
+import { StyleSheet, TextStyle, ViewStyle } from 'react-native';
 import { AdminColors } from '../../../../../core/theme';
 import { AppBadge } from '../../../../../core/components';
 import type { EventUiStatus } from '../types/events.types';
@@ -35,9 +35,10 @@ const STATUS_META: Record<EventUiStatus, { label: string; bg: string; text: stri
 interface EventStatusBadgeProps {
   status: EventUiStatus;
   style?: ViewStyle;
+  textStyle?: TextStyle;
 }
 
-export const EventStatusBadge: React.FC<EventStatusBadgeProps> = ({ status, style }) => {
+export const EventStatusBadge: React.FC<EventStatusBadgeProps> = ({ status, style, textStyle: labelStyle }) => {
   const meta = STATUS_META[status];
 
   return (
@@ -46,7 +47,7 @@ export const EventStatusBadge: React.FC<EventStatusBadgeProps> = ({ status, styl
       customBg={meta.bg}
       customTextColor={meta.text}
       style={style}
-      textStyle={styles.label}
+      textStyle={labelStyle ? { ...styles.label, ...labelStyle } : styles.label}
     />
   );
 };

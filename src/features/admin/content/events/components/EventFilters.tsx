@@ -22,6 +22,8 @@ interface EventFiltersProps {
   categories?: string[];
   activeCategory?: string | null;
   onCategoryChange?: (category: string | null) => void;
+  /** Collapses the panel ("Apply"/close interaction). Filters apply immediately as they change. */
+  onApply?: () => void;
 }
 
 const FilterChip: React.FC<{
@@ -50,6 +52,7 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
   categories,
   activeCategory = null,
   onCategoryChange,
+  onApply,
 }) => {
   return (
     <View>
@@ -83,7 +86,19 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
 
       {expanded && categories && categories.length > 0 ? (
         <View style={styles.categoryPanel}>
-          <Text style={styles.categoryPanelTitle}>Category</Text>
+          <View style={styles.categoryPanelHeader}>
+            <Text style={styles.categoryPanelTitle}>Category</Text>
+            {onApply ? (
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={onApply}
+                accessibilityRole="button"
+                accessibilityLabel="Apply filters and close panel"
+              >
+                <Text style={styles.applyButtonText}>Apply</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
           <View style={styles.chipWrap}>
             <FilterChip
               label="All Categories"
@@ -116,13 +131,16 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.md,
     borderRadius: BorderRadius.full,
-    backgroundColor: AdminColors.divider,
+    backgroundColor: AdminColors.cardSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: AdminColors.border,
   },
   tabActive: {
     backgroundColor: AdminColors.primary,
+    borderColor: AdminColors.primary,
   },
   tabText: {
-    ...Typography.secondaryMedium,
+    ...Typography.badge,
     color: AdminColors.textSecondary,
   },
   tabTextActive: {
@@ -137,10 +155,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: AdminColors.border,
   },
+  categoryPanelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
+  },
   categoryPanelTitle: {
     ...Typography.secondaryMedium,
     color: AdminColors.textSecondary,
-    marginBottom: Spacing.sm,
+  },
+  applyButton: {
+    backgroundColor: AdminColors.primary,
+    borderRadius: BorderRadius.full,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+  },
+  applyButtonText: {
+    ...Typography.badge,
+    color: AdminColors.textOnDark,
   },
   chipWrap: {
     flexDirection: 'row',
