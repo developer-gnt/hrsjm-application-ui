@@ -8,6 +8,9 @@ export type AdminStackParamList = {
   AssistanceRequests: undefined;
   AssistanceDetails: { requestId: string };
   AssistanceDocuments: { requestId: string; seekerName: string };
+  SupportTickets: undefined;
+  TicketDetails: { ticketId: string };
+  TicketChat: { ticketId: string; subject: string };
 };
 
 export type RootStackParamList = {

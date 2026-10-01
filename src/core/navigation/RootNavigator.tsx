@@ -7,6 +7,9 @@ import { LoginScreen } from '../auth/LoginScreen';
 import AssistanceRequestsScreen from '../../features/admin/assistance/screens/AssistanceRequestsScreen';
 import AssistanceDetailsScreen from '../../features/admin/assistance/screens/AssistanceDetailsScreen';
 import AssistanceDocumentsScreen from '../../features/admin/assistance/screens/AssistanceDocumentsScreen';
+import SupportTicketsScreen from '../../features/admin/support/screens/SupportTicketsScreen';
+import TicketDetailsScreen from '../../features/admin/support/screens/TicketDetailsScreen';
+import TicketChatScreen from '../../features/admin/support/screens/TicketChatScreen';
 import type {
   AdminStackParamList,
   AuthStackParamList,
@@ -28,6 +31,9 @@ function AdminNavigator() {
       <AdminStack.Screen name="AssistanceRequests" component={AssistanceRequestsScreen} />
       <AdminStack.Screen name="AssistanceDetails" component={AssistanceDetailsScreen} />
       <AdminStack.Screen name="AssistanceDocuments" component={AssistanceDocumentsScreen} />
+      <AdminStack.Screen name="SupportTickets" component={SupportTicketsScreen} />
+      <AdminStack.Screen name="TicketDetails" component={TicketDetailsScreen} />
+      <AdminStack.Screen name="TicketChat" component={TicketChatScreen} />
     </AdminStack.Navigator>
   );
 }

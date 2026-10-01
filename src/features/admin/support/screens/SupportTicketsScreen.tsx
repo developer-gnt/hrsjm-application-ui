@@ -19,15 +19,15 @@ import { useAuth } from '../../../../core/auth/AuthContext';
 import { can } from '../../../../core/permissions/permissions';
 import { colors, spacing, typography } from '../../../../core/theme/theme';
 import type { AdminStackParamList } from '../../../../core/navigation/types';
-import { AssistanceCard } from '../components/AssistanceCard';
-import { AssistanceFilters } from '../components/AssistanceFilters';
-import { AssistanceStatsRow } from '../components/AssistanceStats';
-import { ASSISTANCE_TABS } from '../assistance.utils';
-import { useAssistance } from '../hooks/useAssistance';
+import { TicketCard } from '../components/TicketCard';
+import { TicketFilters } from '../components/TicketFilters';
+import { TicketStatsRow } from '../components/TicketStats';
+import { TICKET_TABS } from '../support.utils';
+import { useSupportTickets } from '../hooks/useSupportTickets';
 
-type ScreenProps = NativeStackScreenProps<AdminStackParamList, 'AssistanceRequests'>;
+type ScreenProps = NativeStackScreenProps<AdminStackParamList, 'SupportTickets'>;
 
-export function AssistanceRequestsScreen({ navigation }: ScreenProps) {
+export function SupportTicketsScreen({ navigation }: ScreenProps) {
   const { user } = useAuth();
   const {
     filteredItems,
@@ -44,46 +44,46 @@ export function AssistanceRequestsScreen({ navigation }: ScreenProps) {
     refresh,
     loadMore,
     clearFilters,
-  } = useAssistance();
+  } = useSupportTickets();
   const [filtersVisible, setFiltersVisible] = useState(false);
 
-  if (!can(user, 'assistance.review')) {
+  if (!can(user, 'support.manage')) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <AppHeader title="Donation Seekers" />
+        <AppHeader title="Support" />
         <View style={styles.center}>
           <AppEmptyState
             title="Access Restricted"
-            message="You do not have permission to view assistance requests."
+            message="You do not have permission to view support tickets."
           />
         </View>
       </SafeAreaView>
     );
   }
 
-  const tabs = ASSISTANCE_TABS.map(tab => ({
+  const tabs = TICKET_TABS.map(tab => ({
     ...tab,
     count:
       tab.key === 'ALL'
         ? stats.total
-        : tab.key === 'UNDER_REVIEW'
-          ? stats.underReview
-          : tab.key === 'APPROVED'
-            ? stats.approved
-            : stats.rejected,
+        : tab.key === 'SUBMITTED'
+          ? stats.open
+          : tab.key === 'UNDER_REVIEW'
+            ? stats.inProgress
+            : stats.resolved,
   }));
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <AppHeader
-        title="Donation Seekers"
+        title="Support"
         right={
           <TouchableOpacity
-            onPress={() => navigation.navigate('SupportTickets')}
+            onPress={() => navigation.navigate('AssistanceRequests')}
             accessibilityRole="button"
-            accessibilityLabel="Switch to Support"
+            accessibilityLabel="Switch to Donation Seekers"
             style={styles.switchButton}>
-            <Text style={styles.switchText}>Support</Text>
+            <Text style={styles.switchText}>Seekers</Text>
           </TouchableOpacity>
         }
       />
@@ -91,9 +91,9 @@ export function AssistanceRequestsScreen({ navigation }: ScreenProps) {
         data={filteredItems}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <AssistanceCard
-            request={item}
-            onPress={() => navigation.navigate('AssistanceDetails', { requestId: item.id })}
+          <TicketCard
+            ticket={item}
+            onPress={() => navigation.navigate('TicketDetails', { ticketId: item.id })}
           />
         )}
         refreshControl={
@@ -108,13 +108,13 @@ export function AssistanceRequestsScreen({ navigation }: ScreenProps) {
         onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <View>
-            <Text style={styles.subtitle}>Review welfare assistance requests</Text>
-            <AssistanceStatsRow stats={stats} loading={statsLoading} />
+            <Text style={styles.subtitle}>Review complaints and support requests</Text>
+            <TicketStatsRow stats={stats} loading={statsLoading} />
             <View style={styles.searchRow}>
               <AppSearchBar
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholder="Search by name / request ID"
+                placeholder="Search by ticket ID / subject / user"
               />
               <TouchableOpacity
                 onPress={() => setFiltersVisible(true)}
@@ -134,14 +134,14 @@ export function AssistanceRequestsScreen({ navigation }: ScreenProps) {
             <SkeletonList count={4} />
           ) : error ? (
             <AppErrorState
-              title="Unable to load assistance requests"
+              title="Unable to load support tickets"
               message={error}
               onRetry={refresh}
             />
           ) : (
             <AppEmptyState
-              title="No Assistance Requests"
-              message="There are no requests matching your current filters."
+              title="No Support Tickets"
+              message="There are no tickets matching your current filters."
               actionLabel="Clear Filters"
               onAction={clearFilters}
             />
@@ -155,7 +155,7 @@ export function AssistanceRequestsScreen({ navigation }: ScreenProps) {
           filteredItems.length === 0 && styles.emptyList,
         ]}
       />
-      <AssistanceFilters
+      <TicketFilters
         visible={filtersVisible}
         currentTab={activeTab}
         onClose={() => setFiltersVisible(false)}
@@ -232,4 +232,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AssistanceRequestsScreen;
+export default SupportTicketsScreen;
