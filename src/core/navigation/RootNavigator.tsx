@@ -10,6 +10,7 @@ import AssistanceDocumentsScreen from '../../features/admin/assistance/screens/A
 import SupportTicketsScreen from '../../features/admin/support/screens/SupportTicketsScreen';
 import TicketDetailsScreen from '../../features/admin/support/screens/TicketDetailsScreen';
 import TicketChatScreen from '../../features/admin/support/screens/TicketChatScreen';
+import NotificationsScreen from '../../features/admin/notifications/screens/NotificationsScreen';
 import type {
   AdminStackParamList,
   AuthStackParamList,
@@ -34,6 +35,7 @@ function AdminNavigator() {
       <AdminStack.Screen name="SupportTickets" component={SupportTicketsScreen} />
       <AdminStack.Screen name="TicketDetails" component={TicketDetailsScreen} />
       <AdminStack.Screen name="TicketChat" component={TicketChatScreen} />
+      <AdminStack.Screen name="Notifications" component={NotificationsScreen} />
     </AdminStack.Navigator>
   );
 }

@@ -78,13 +78,22 @@ export function AssistanceRequestsScreen({ navigation }: ScreenProps) {
       <AppHeader
         title="Donation Seekers"
         right={
-          <TouchableOpacity
-            onPress={() => navigation.navigate('SupportTickets')}
-            accessibilityRole="button"
-            accessibilityLabel="Switch to Support"
-            style={styles.switchButton}>
-            <Text style={styles.switchText}>Support</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('SupportTickets')}
+              accessibilityRole="button"
+              accessibilityLabel="Switch to Support"
+              style={styles.switchButton}>
+              <Text style={styles.switchText}>Support</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Notifications')}
+              accessibilityRole="button"
+              accessibilityLabel="Open notifications"
+              style={styles.bellButton}>
+              <Text style={styles.bellText}>🔔</Text>
+            </TouchableOpacity>
+          </View>
         }
       />
       <FlatList
@@ -229,6 +238,22 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 12,
     fontWeight: '600',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  bellButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primaryLight,
+  },
+  bellText: {
+    fontSize: 14,
   },
 });
 

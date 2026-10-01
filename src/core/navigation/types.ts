@@ -11,6 +11,7 @@ export type AdminStackParamList = {
   SupportTickets: undefined;
   TicketDetails: { ticketId: string };
   TicketChat: { ticketId: string; subject: string };
+  Notifications: undefined;
 };
 
 export type RootStackParamList = {
