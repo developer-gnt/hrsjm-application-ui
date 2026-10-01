@@ -19,6 +19,9 @@ interface AuthContextValue {
   user: AppUser | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  // Re-validates the profile against /auth/me and updates the stored session
+  // (used by the settings module after a profile edit).
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -90,9 +93,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStatus('unauthenticated');
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    const fresh = await authService.me();
+    if (mounted.current) {
+      setUser(fresh);
+    }
+    const session = await getSession();
+    if (session) {
+      await saveSession({ ...session, user: fresh });
+    }
+  }, []);
+
   const value = useMemo(
-    () => ({ status, user, signIn, signOut }),
-    [status, user, signIn, signOut],
+    () => ({ status, user, signIn, signOut, refreshUser }),
+    [status, user, signIn, signOut, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

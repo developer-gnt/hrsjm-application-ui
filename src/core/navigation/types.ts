@@ -12,6 +12,7 @@ export type AdminStackParamList = {
   TicketDetails: { ticketId: string };
   TicketChat: { ticketId: string; subject: string };
   Notifications: undefined;
+  Settings: undefined;
 };
 
 export type RootStackParamList = {

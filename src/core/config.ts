@@ -10,3 +10,8 @@ export const API_BASE_URL = Platform.select({
 export const API_TIMEOUT_MS = 15000;
 
 export const APP_VERSION = '0.1.0';
+
+// Legal document URLs (configuration point - swap for the production URLs
+// when the legal content is hosted).
+export const PRIVACY_POLICY_URL = 'https://hrsjm.org/privacy-policy';
+export const TERMS_CONDITIONS_URL = 'https://hrsjm.org/terms-and-conditions';

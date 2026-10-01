@@ -93,6 +93,13 @@ export function AssistanceRequestsScreen({ navigation }: ScreenProps) {
               style={styles.bellButton}>
               <Text style={styles.bellText}>🔔</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Settings')}
+              accessibilityRole="button"
+              accessibilityLabel="Open profile and settings"
+              style={styles.bellButton}>
+              <Text style={styles.bellText}>⚙️</Text>
+            </TouchableOpacity>
           </View>
         }
       />
