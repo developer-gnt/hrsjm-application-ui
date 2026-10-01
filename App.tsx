@@ -1,44 +1,45 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider, useAuth } from './src/core/auth/AuthContext';
+import { RootNavigator } from './src/core/navigation/RootNavigator';
+import { AppLoader } from './src/core/components/common/AppLoader';
+import { colors } from './src/core/theme/theme';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+function AppContent() {
+  const { status } = useAuth();
+
+  if (status === 'restoring') {
+    return (
+      <View style={styles.restore}>
+        <AppLoader label="Restoring session" />
+      </View>
+    );
+  }
+
+  return <RootNavigator />;
+}
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
-
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
+      <AuthProvider>
+        <View style={styles.root}>
+          <AppContent />
+        </View>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
 
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
+    backgroundColor: colors.background,
+  },
+  restore: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
 });
 
