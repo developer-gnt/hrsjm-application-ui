@@ -92,9 +92,14 @@ interface EventsScreenProps {
    * will replace this with the shared admin navigation architecture.
    */
   onViewEvent?: (event: EventListItem) => void;
+  /**
+   * TEMPORARY (UI-only phase): called when the user taps "+ Add Event".
+   * When not provided, a placeholder alert is shown instead.
+   */
+  onAddEvent?: () => void;
 }
 
-export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent }) => {
+export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEvent }) => {
   const [uiState, setUiState] = useState<EventsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,6 +177,10 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent }) => {
   // Placeholder handlers — the Create/Details/Edit/Delete screens arrive in the
   // next phase of the Events module.
   const handleAddEvent = () => {
+    if (onAddEvent) {
+      onAddEvent();
+      return;
+    }
     Alert.alert(
       'Add Event',
       'The Create Event screen will be implemented in the next phase of the Events module.',

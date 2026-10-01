@@ -63,3 +63,44 @@ export interface EventFilterTab {
  * without structural changes.
  */
 export type EventsUiState = 'loading' | 'success' | 'error';
+
+/**
+ * Create Event screen — local FORM STATE field names only.
+ *
+ * NOT the backend DTO: the final API payload must be created only after the
+ * Events backend contract is confirmed (spec sections 32/60). Field names
+ * deliberately match the PRD Create Event field list so they can be mapped to
+ * the real DTO later without restructuring the form.
+ *
+ * `status` here is the Draft/Publish INTENT selection on the form — a UI
+ * state only, distinct from the backend lifecycle enums (spec section 12).
+ */
+export interface CreateEventFormState {
+  title: string;
+  description: string;
+  /** Local image URI chosen in the picker UI; no upload happens in this phase. */
+  coverImageUri: string | null;
+  category: string | null;
+  eventType: string | null;
+  /** ISO date (YYYY-MM-DD), local-calendar construction. */
+  eventDate: string | null;
+  /** 24h HH:mm string. */
+  startTime: string | null;
+  endDate: string | null;
+  endTime: string | null;
+  allDay: boolean;
+  location: string;
+  address: string;
+  registrationRequired: boolean;
+  totalSeats: string;
+  perPersonLimit: string | null;
+  organizedBy: string;
+  targetAudience: string | null;
+  language: string | null;
+  shortInformation: string;
+  tags: string[];
+  status: 'DRAFT' | 'PUBLISH';
+}
+
+/** Validation errors keyed by CreateEventFormState field name. */
+export type CreateEventFieldErrors = Partial<Record<keyof CreateEventFormState, string>>;

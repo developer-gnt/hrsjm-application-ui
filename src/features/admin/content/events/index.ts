@@ -7,6 +7,7 @@
  */
 export { EventsScreen } from './screens/EventsScreen';
 export { EventDetailsScreen } from './screens/EventDetailsScreen';
+export { CreateEventScreen } from './screens/CreateEventScreen';
 export { EventCard, EventListHeader } from './components/EventCard';
 export { EventStatusBadge } from './components/EventStatusBadge';
 export { EventSummaryStats } from './components/EventSummaryStats';

@@ -375,3 +375,33 @@ export const SAMPLE_EVENT_CATEGORIES: string[] = Array.from(
     ),
   ),
 ).sort();
+
+/**
+ * DEMO dropdown options for the Create Event form — UI demonstration values
+ * only, NOT backend enums. Replace with the real category/type/audience
+ * reference lists once the backend contract is confirmed (spec Phase 0).
+ */
+export const SAMPLE_EVENT_TYPE_OPTIONS = ['In-Person', 'Online', 'Hybrid'];
+
+export const SAMPLE_TARGET_AUDIENCE_OPTIONS = [
+  'General Public',
+  'Members',
+  'Volunteers',
+  'Donors',
+];
+
+export const SAMPLE_LANGUAGE_OPTIONS = ['English', 'Hindi', 'Marathi', 'English, Hindi'];
+
+export const SAMPLE_PER_PERSON_LIMIT_OPTIONS = ['1', '2', '3', '5'];
+
+/**
+ * Demo images for the local cover-image selection UI. Real gallery capture and
+ * upload need the shared AppImagePicker (Aman) + backend upload flow (spec
+ * section 26); this chooser keeps the picker UI testable until then.
+ */
+export const SAMPLE_COVER_IMAGE_OPTIONS = [
+  'https://picsum.photos/seed/hrsjm-event-01/400/300',
+  'https://picsum.photos/seed/hrsjm-event-07/400/300',
+  'https://picsum.photos/seed/hrsjm-event-13/400/300',
+  'https://picsum.photos/seed/hrsjm-event-21/400/300',
+];
