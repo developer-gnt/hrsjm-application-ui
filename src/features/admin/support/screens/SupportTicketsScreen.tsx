@@ -8,26 +8,34 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppEmptyState } from '../../../../core/components/common/AppEmptyState';
 import { AppErrorState } from '../../../../core/components/common/AppErrorState';
-import { AppHeader } from '../../../../core/components/common/AppHeader';
+import AdminTopBar from '../../../../core/components/admin/AdminTopBar';
 import { AppSearchBar } from '../../../../core/components/common/AppSearchBar';
 import { SkeletonList } from '../../../../core/components/common/AppSkeleton';
 import { AdminFilterTabs } from '../../../../core/components/admin/AdminFilterTabs';
 import { useAuth } from '../../../../core/auth/AuthContext';
 import { can } from '../../../../core/permissions/permissions';
-import { colors, spacing, typography } from '../../../../core/theme/theme';
-import type { AdminStackParamList } from '../../../../core/navigation/types';
+import { colors, serif, spacing, typography } from '../../../../core/theme/theme';
+import type { AppStackParamList, TabsParamList } from '../../../../core/navigation/types';
 import { TicketCard } from '../components/TicketCard';
 import { TicketFilters } from '../components/TicketFilters';
 import { TicketStatsRow } from '../components/TicketStats';
 import { TICKET_TABS } from '../support.utils';
 import { useSupportTickets } from '../hooks/useSupportTickets';
 
-type ScreenProps = NativeStackScreenProps<AdminStackParamList, 'SupportTickets'>;
+type TabProps = BottomTabScreenProps<TabsParamList, 'ComplaintsTab'>;
+type NavProp = CompositeNavigationProp<
+  TabProps['navigation'],
+  NativeStackNavigationProp<AppStackParamList>
+>;
 
-export function SupportTicketsScreen({ navigation }: ScreenProps) {
+export function SupportTicketsScreen() {
+  const navigation = useNavigation<NavProp>();
   const { user } = useAuth();
   const {
     filteredItems,
@@ -50,7 +58,7 @@ export function SupportTicketsScreen({ navigation }: ScreenProps) {
   if (!can(user, 'support.manage')) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <AppHeader title="Support" />
+        <AdminTopBar />
         <View style={styles.center}>
           <AppEmptyState
             title="Access Restricted"
@@ -75,34 +83,7 @@ export function SupportTicketsScreen({ navigation }: ScreenProps) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <AppHeader
-        title="Support"
-        right={
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('AssistanceRequests')}
-              accessibilityRole="button"
-              accessibilityLabel="Switch to Donation Seekers"
-              style={styles.switchButton}>
-              <Text style={styles.switchText}>Seekers</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Notifications')}
-              accessibilityRole="button"
-              accessibilityLabel="Open notifications"
-              style={styles.bellButton}>
-              <Text style={styles.bellText}>🔔</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Settings')}
-              accessibilityRole="button"
-              accessibilityLabel="Open profile and settings"
-              style={styles.bellButton}>
-              <Text style={styles.bellText}>⚙️</Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
+      <AdminTopBar />
       <FlatList
         data={filteredItems}
         keyExtractor={item => item.id}
@@ -124,7 +105,12 @@ export function SupportTicketsScreen({ navigation }: ScreenProps) {
         onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <View>
-            <Text style={styles.subtitle}>Review complaints and support requests</Text>
+            <View style={styles.headerArea}>
+              <Text style={styles.pageTitle}>Complaints</Text>
+              <Text style={styles.subtitle}>
+                Review, track and resolve support tickets.
+              </Text>
+            </View>
             <TicketStatsRow stats={stats} loading={statsLoading} />
             <View style={styles.searchRow}>
               <AppSearchBar
@@ -193,10 +179,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  headerArea: {
+    padding: spacing.lg,
+    paddingBottom: 0,
+  },
+  pageTitle: {
+    ...serif,
+    fontSize: 30,
+    fontWeight: '700',
+    color: colors.primary,
+  },
   subtitle: {
     ...typography.body,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
+    color: colors.periwinkle,
+    marginTop: 2,
     marginBottom: spacing.lg,
   },
   searchRow: {
@@ -234,33 +230,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textMuted,
     paddingVertical: spacing.md,
-  },
-  switchButton: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: 999,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  switchText: {
-    color: colors.primary,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  bellButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primaryLight,
-  },
-  bellText: {
-    fontSize: 14,
   },
 });
 

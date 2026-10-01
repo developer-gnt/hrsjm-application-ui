@@ -12,9 +12,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppAvatar } from '../../../../core/components/common/AppAvatar';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppCard } from '../../../../core/components/common/AppCard';
-import { AppHeader } from '../../../../core/components/common/AppHeader';
+import AdminTopBar from '../../../../core/components/admin/AdminTopBar';
 import { AppInput } from '../../../../core/components/common/AppInput';
-import { colors, spacing, typography } from '../../../../core/theme/theme';
+import { colors, serif, spacing, typography } from '../../../../core/theme/theme';
 import {
   APP_VERSION,
   PRIVACY_POLICY_URL,
@@ -80,8 +80,10 @@ export function ProfileSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <AppHeader title="Profile & Settings" showBack />
+      <AdminTopBar />
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.pageTitle}>Profile &amp; Settings</Text>
+        <View style={styles.profileSpacing} />
         <AppCard style={styles.profileCard}>
           <View style={styles.profileRow}>
             <AppAvatar name={user?.full_name ?? '—'} size={64} />
@@ -212,6 +214,16 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2,
+  },
+  pageTitle: {
+    ...serif,
+    fontSize: 30,
+    fontWeight: '700',
+    color: colors.primary,
+    marginBottom: spacing.lg,
+  },
+  profileSpacing: {
+    height: 0,
   },
   profileCard: {
     marginBottom: spacing.md,

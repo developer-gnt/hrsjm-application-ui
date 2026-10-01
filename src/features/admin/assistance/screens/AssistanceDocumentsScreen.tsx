@@ -4,10 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppHeader } from '../../../../core/components/common/AppHeader';
 import { colors, spacing, typography } from '../../../../core/theme/theme';
-import type { AdminStackParamList } from '../../../../core/navigation/types';
+import type { AppStackParamList } from '../../../../core/navigation/types';
 import { AssistanceDocuments } from '../components/AssistanceDocuments';
 
-type ScreenProps = NativeStackScreenProps<AdminStackParamList, 'AssistanceDocuments'>;
+type ScreenProps = NativeStackScreenProps<AppStackParamList, 'AssistanceDocuments'>;
 
 export function AssistanceDocumentsScreen({ route }: ScreenProps) {
   const { requestId, seekerName } = route.params;

@@ -20,13 +20,13 @@ import { useAuth } from '../../../../core/auth/AuthContext';
 import { can } from '../../../../core/permissions/permissions';
 import { colors, radius, spacing, typography } from '../../../../core/theme/theme';
 import { formatDateTime } from '../../../../core/utils/format';
-import type { AdminStackParamList } from '../../../../core/navigation/types';
+import type { AppStackParamList } from '../../../../core/navigation/types';
 import { useTicketDetails } from '../hooks/useTicketDetails';
 import { useTicketMessages } from '../hooks/useTicketMessages';
 import { useTicketReply } from '../hooks/useTicketReply';
 import type { SupportTicketMessage } from '../types/support.types';
 
-type ScreenProps = NativeStackScreenProps<AdminStackParamList, 'TicketChat'>;
+type ScreenProps = NativeStackScreenProps<AppStackParamList, 'TicketChat'>;
 
 interface BubbleMeta {
   mine: boolean;

@@ -18,7 +18,7 @@ import { useAuth } from '../../../../core/auth/AuthContext';
 import { can } from '../../../../core/permissions/permissions';
 import { colors, spacing, typography } from '../../../../core/theme/theme';
 import { formatCurrency, formatDateTime } from '../../../../core/utils/format';
-import type { AdminStackParamList } from '../../../../core/navigation/types';
+import type { AppStackParamList } from '../../../../core/navigation/types';
 import { AssistanceStatusBadge } from '../components/AssistanceStatusBadge';
 import ApproveAssistanceModal from '../components/ApproveAssistanceModal';
 import RejectAssistanceModal from '../components/RejectAssistanceModal';
@@ -27,7 +27,7 @@ import { shortRequestId } from '../types/assistance.types';
 import { useAssistanceActions } from '../hooks/useAssistanceActions';
 import { useAssistanceDetails } from '../hooks/useAssistanceDetails';
 
-type ScreenProps = NativeStackScreenProps<AdminStackParamList, 'AssistanceDetails'>;
+type ScreenProps = NativeStackScreenProps<AppStackParamList, 'AssistanceDetails'>;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

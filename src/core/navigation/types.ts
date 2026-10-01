@@ -4,20 +4,29 @@ export type AuthStackParamList = {
   Login: undefined;
 };
 
-export type AdminStackParamList = {
-  AssistanceRequests: undefined;
+// Bottom tabs per the approved design: Dashboard, Members, Applications,
+// Donation Seekers, Complaints, More.
+export type TabsParamList = {
+  DashboardTab: undefined;
+  MembersTab: undefined;
+  ApplicationsTab: undefined;
+  DonationSeekersTab: undefined;
+  ComplaintsTab: undefined;
+  MoreTab: undefined;
+};
+
+export type AppStackParamList = {
+  Tabs: NavigatorScreenParams<TabsParamList>;
   AssistanceDetails: { requestId: string };
   AssistanceDocuments: { requestId: string; seekerName: string };
-  SupportTickets: undefined;
   TicketDetails: { ticketId: string };
   TicketChat: { ticketId: string; subject: string };
   Notifications: undefined;
-  Settings: undefined;
 };
 
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
-  Admin: NavigatorScreenParams<AdminStackParamList>;
+  App: NavigatorScreenParams<AppStackParamList>;
 };
 
 declare global {

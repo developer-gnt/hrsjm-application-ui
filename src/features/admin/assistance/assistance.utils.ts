@@ -34,11 +34,17 @@ export function tabToStatus(tab: AssistanceTabKey): AssistanceStatus | undefined
   return tab === 'ALL' ? undefined : (tab as AssistanceStatus);
 }
 
-// Interim search: the backend list endpoint does not yet support a search
-// parameter (confirmed contract gap), so name/request-ID matching runs over
-// the currently loaded page. Reported for backend follow-up.
+// Interim client-side search supplement. The backend list endpoint supports
+// no search parameter (confirmed contract gap), so matching runs over the
+// currently loaded page: name, request ID and cause/description (the fields
+// the approved design's search box references). Reported for backend follow-up.
 export function matchesSearch(
-  request: { id: string; full_name: string },
+  request: {
+    id: string;
+    full_name: string;
+    reason?: string;
+    description?: string | null;
+  },
   query: string,
 ): boolean {
   const trimmed = query.trim().toLowerCase();
@@ -47,7 +53,9 @@ export function matchesSearch(
   }
   return (
     request.full_name.toLowerCase().includes(trimmed) ||
-    request.id.toLowerCase().includes(trimmed)
+    request.id.toLowerCase().includes(trimmed) ||
+    (request.reason ?? '').toLowerCase().includes(trimmed) ||
+    (request.description ?? '').toLowerCase().includes(trimmed)
   );
 }
 

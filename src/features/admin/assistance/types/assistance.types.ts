@@ -26,6 +26,13 @@ export interface AssistanceRequest {
   created_at: string;
   updated_at: string;
   user?: RelatedUser;
+  // Design-forward optional display fields from the approved mockup (age,
+  // location, funds raised) that the current backend contract does NOT send
+  // (reported gaps). The UI renders them only when present; the backend
+  // rejects unknown fields, so nothing here is ever sent upstream.
+  age?: number;
+  city?: string;
+  raised_amount?: number;
 }
 
 export interface AssistanceListData {

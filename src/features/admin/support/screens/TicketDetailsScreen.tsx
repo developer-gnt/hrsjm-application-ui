@@ -18,7 +18,7 @@ import { useAuth } from '../../../../core/auth/AuthContext';
 import { can } from '../../../../core/permissions/permissions';
 import { colors, spacing, typography } from '../../../../core/theme/theme';
 import { formatDateTime } from '../../../../core/utils/format';
-import type { AdminStackParamList } from '../../../../core/navigation/types';
+import type { AppStackParamList } from '../../../../core/navigation/types';
 import { TicketStatusBadge } from '../components/TicketStatusBadge';
 import TicketStatusModal from '../components/TicketStatusModal';
 import TicketAttachments from '../components/TicketAttachments';
@@ -27,7 +27,7 @@ import { canTransition, shortTicketId } from '../types/support.types';
 import { useTicketActions } from '../hooks/useTicketActions';
 import { useTicketDetails } from '../hooks/useTicketDetails';
 
-type ScreenProps = NativeStackScreenProps<AdminStackParamList, 'TicketDetails'>;
+type ScreenProps = NativeStackScreenProps<AppStackParamList, 'TicketDetails'>;
 type ModalAction = 'START_REVIEW' | 'RESOLVE' | 'CLOSE';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
