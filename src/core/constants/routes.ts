@@ -19,6 +19,7 @@ export const AppRoutes = {
   ADMIN_MORE_TAB: 'AdminMoreTab',
 
   // Admin More / Financial Sub-routes
+  MORE_MENU: 'MoreMenu',
   PAYMENT_VERIFICATION: 'PaymentVerification',
   PAYMENT_DETAILS: 'PaymentDetails',
   EXPENSE_VOUCHERS: 'ExpenseVouchers',
@@ -27,11 +28,15 @@ export const AppRoutes = {
   RECEIPT_VOUCHERS: 'ReceiptVouchers',
   CREATE_RECEIPT_VOUCHER: 'CreateReceiptVoucher',
   RECEIPT_DETAILS: 'ReceiptDetails',
+  ACCOUNTING: 'Accounting',
   CHART_OF_ACCOUNTS: 'ChartOfAccounts',
   GENERAL_LEDGER: 'GeneralLedger',
   JOURNAL_ENTRIES: 'JournalEntries',
+  REPORTS: 'Reports',
   TRIAL_BALANCE: 'TrialBalance',
   PROFIT_LOSS: 'ProfitLoss',
   BALANCE_SHEET: 'BalanceSheet',
+  DONATIONS: 'Donations',
   ROLES_PERMISSIONS: 'RolesPermissions',
+  SETTINGS: 'Settings',
 } as const;

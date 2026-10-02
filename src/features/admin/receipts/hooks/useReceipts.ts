@@ -1,0 +1,80 @@
+import { useCallback } from 'react';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  receiptEntriesService,
+  ListReceiptsParams,
+} from '../services/receipt-entries.service';
+import type { CreateReceiptPayload } from '../types/receipts.types';
+
+export const RECEIPTS_QUERY_KEYS = {
+  list: (status: string | undefined, search: string | undefined) =>
+    ['receipt-entries', 'list', status ?? 'ALL', search ?? ''] as const,
+  detail: (id: string) => ['receipt-entries', 'detail', id] as const,
+  stats: ['receipt-entries', 'stats'] as const,
+};
+
+export const useReceipts = (params: Omit<ListReceiptsParams, 'page' | 'limit'>) =>
+  useInfiniteQuery({
+    queryKey: RECEIPTS_QUERY_KEYS.list(params.status, params.search),
+    queryFn: ({ pageParam }) =>
+      receiptEntriesService.list({ ...params, page: pageParam, limit: 15 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      const next = allPages.length + 1;
+      return next <= lastPage.meta.totalPages ? next : undefined;
+    },
+  });
+
+export const useReceiptStats = () =>
+  useQuery({
+    queryKey: RECEIPTS_QUERY_KEYS.stats,
+    queryFn: async () => {
+      const [all, posted, cancelled] = await Promise.all([
+        receiptEntriesService.list({ page: 1, limit: 1 }),
+        receiptEntriesService.list({ page: 1, limit: 1, status: 'POSTED' }),
+        receiptEntriesService.list({ page: 1, limit: 1, status: 'CANCELLED' }),
+      ]);
+      return {
+        all: all.meta.total,
+        posted: posted.meta.total,
+        cancelled: cancelled.meta.total,
+      };
+    },
+    staleTime: 15_000,
+  });
+
+export const useReceiptDetail = (id: string) =>
+  useQuery({
+    queryKey: RECEIPTS_QUERY_KEYS.detail(id),
+    queryFn: () => receiptEntriesService.get(id),
+    enabled: Boolean(id),
+  });
+
+export const useCreateReceipt = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateReceiptPayload) =>
+      receiptEntriesService.create(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['receipt-entries'] });
+    },
+  });
+};
+
+export const useCancelReceipt = (id: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (cancellationReason?: string) =>
+      receiptEntriesService.cancel(id, cancellationReason),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['receipt-entries'] });
+    },
+  });
+};
+
+export const useInvalidateReceipts = () => {
+  const queryClient = useQueryClient();
+  return useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['receipt-entries'] });
+  }, [queryClient]);
+};

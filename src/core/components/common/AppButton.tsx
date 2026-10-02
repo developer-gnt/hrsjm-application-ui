@@ -4,6 +4,7 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
+  StyleProp,
   ViewStyle,
   TextStyle,
 } from 'react-native';
@@ -23,8 +24,10 @@ interface AppButtonProps {
   disabled?: boolean;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  /** Optional border color override (used by variant 'outline'). */
+  borderColor?: string;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 }
 
 export const AppButton: React.FC<AppButtonProps> = ({
@@ -36,6 +39,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
   disabled = false,
   icon,
   iconPosition = 'left',
+  borderColor,
   style,
   textStyle,
 }) => {
@@ -140,6 +144,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
         styles.baseButton,
         getVariantContainerStyle(),
         getSizeContainerStyle(),
+        variant === 'outline' && borderColor ? { borderColor } : null,
         isDisabled && styles.disabledButton,
         style,
       ]}

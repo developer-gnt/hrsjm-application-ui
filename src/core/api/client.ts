@@ -3,14 +3,26 @@ import { authRequestInterceptor } from './interceptors/auth.interceptor';
 import { setupRefreshInterceptor } from './interceptors/refresh.interceptor';
 import { errorResponseInterceptor } from './interceptors/error.interceptor';
 import { ApiResponse } from './api.types';
+import { APP_CONFIG } from '../../app/config/app.config';
 
-// Default configuration for development / production
-export const API_BASE_URL = 'http://10.0.2.2:5000/api/v1'; // Android emulator localhost default
+// Single source of truth for the environment base URL (see app.config.ts).
+export const API_BASE_URL = APP_CONFIG.apiBaseUrl;
+
+/**
+ * Invoked when the refresh interceptor exhausts the refresh token (expired /
+ * revoked) and the session cannot be recovered. The app layer registers the
+ * handler at startup (see AppProviders) to route the user back to login.
+ */
+let sessionExpiredHandler: (() => void) | null = null;
+
+export const setSessionExpiredHandler = (handler: (() => void) | null): void => {
+  sessionExpiredHandler = handler;
+};
 
 const createApiClient = (baseURL: string = API_BASE_URL): AxiosInstance => {
   const instance = axios.create({
     baseURL,
-    timeout: 15000,
+    timeout: APP_CONFIG.requestTimeoutMs,
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -21,7 +33,7 @@ const createApiClient = (baseURL: string = API_BASE_URL): AxiosInstance => {
   instance.interceptors.request.use(authRequestInterceptor, error => Promise.reject(error));
 
   // 2. Token Refresh Interceptor (registered before error normalizer)
-  setupRefreshInterceptor(instance, baseURL);
+  setupRefreshInterceptor(instance, baseURL, () => sessionExpiredHandler?.());
 
   // 3. Error Normalization Interceptor
   instance.interceptors.response.use(

@@ -1,0 +1,186 @@
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { AppRoutes } from '../../core/constants/routes';
+import { MoreMenuScreen } from './MoreMenuScreen';
+import { ModulePlaceholderScreen } from './ModulePlaceholderScreen';
+import { PaymentVerificationScreen } from '../../features/admin/payments';
+import { PaymentDetailsScreen } from '../../features/admin/payments';
+import { ExpenseVouchersScreen } from '../../features/admin/expenses';
+import { CreateExpenseVoucherScreen } from '../../features/admin/expenses';
+import { ExpenseDetailsScreen } from '../../features/admin/expenses';
+import { ReceiptVouchersScreen } from '../../features/admin/receipts';
+import { CreateReceiptVoucherScreen } from '../../features/admin/receipts';
+import { ReceiptVoucherDetailsScreen } from '../../features/admin/receipts';
+import { MoreStackParamList } from './NavigationTypes';
+
+const Stack = createNativeStackNavigator<MoreStackParamList>();
+
+/**
+ * Stack behind the More tab. Mubasshir owns all route definitions here
+ * (spec §46); placeholder screens stand in for modules implemented in
+ * Phases 4-8 and for other developers' modules (Donations).
+ */
+export const MoreNavigator: React.FC = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="MoreMenu" component={MoreMenuScreen} />
+
+    {/* Payments — Phase 5 (real) */}
+    <Stack.Screen
+      name={AppRoutes.PAYMENT_VERIFICATION}
+      component={PaymentVerificationScreen}
+    />
+    <Stack.Screen
+      name={AppRoutes.PAYMENT_DETAILS}
+      component={PaymentDetailsScreen}
+    />
+
+    {/* Expense vouchers — Phase 5 (real) */}
+    <Stack.Screen
+      name={AppRoutes.EXPENSE_VOUCHERS}
+      component={ExpenseVouchersScreen}
+    />
+    <Stack.Screen
+      name={AppRoutes.CREATE_EXPENSE_VOUCHER}
+      component={CreateExpenseVoucherScreen}
+    />
+    <Stack.Screen
+      name={AppRoutes.EXPENSE_DETAILS}
+      component={ExpenseDetailsScreen}
+    />
+
+    {/* Receipt vouchers — Phase 5 (real) */}
+    <Stack.Screen
+      name={AppRoutes.RECEIPT_VOUCHERS}
+      component={ReceiptVouchersScreen}
+    />
+    <Stack.Screen
+      name={AppRoutes.CREATE_RECEIPT_VOUCHER}
+      component={CreateReceiptVoucherScreen}
+    />
+    <Stack.Screen
+      name={AppRoutes.RECEIPT_DETAILS}
+      component={ReceiptVoucherDetailsScreen}
+    />
+
+    {/* Accounting — Phase 6 */}
+    <Stack.Screen name={AppRoutes.ACCOUNTING}>
+      {({ navigation }) => (
+        <ModulePlaceholderScreen
+          title="Accounting"
+          icon="📚"
+          phase="Phase 6"
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+    <Stack.Screen name={AppRoutes.CHART_OF_ACCOUNTS}>
+      {({ navigation }) => (
+        <ModulePlaceholderScreen
+          title="Chart of Accounts"
+          icon="📚"
+          phase="Phase 6"
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+    <Stack.Screen name={AppRoutes.GENERAL_LEDGER}>
+      {({ navigation }) => (
+        <ModulePlaceholderScreen
+          title="General Ledger"
+          icon="📚"
+          phase="Phase 6"
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+    <Stack.Screen name={AppRoutes.JOURNAL_ENTRIES}>
+      {({ navigation }) => (
+        <ModulePlaceholderScreen
+          title="Journal Entries"
+          icon="📚"
+          phase="Phase 6"
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+
+    {/* Financial reports — Phase 7 */}
+    <Stack.Screen name={AppRoutes.REPORTS}>
+      {({ navigation }) => (
+        <ModulePlaceholderScreen
+          title="Financial Reports"
+          icon="📈"
+          phase="Phase 7"
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+    <Stack.Screen name={AppRoutes.TRIAL_BALANCE}>
+      {({ navigation }) => (
+        <ModulePlaceholderScreen
+          title="Trial Balance"
+          icon="📈"
+          phase="Phase 7"
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+    <Stack.Screen name={AppRoutes.PROFIT_LOSS}>
+      {({ navigation }) => (
+        <ModulePlaceholderScreen
+          title="Profit & Loss"
+          icon="📈"
+          phase="Phase 7"
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+    <Stack.Screen name={AppRoutes.BALANCE_SHEET}>
+      {({ navigation }) => (
+        <ModulePlaceholderScreen
+          title="Balance Sheet"
+          icon="📈"
+          phase="Phase 7"
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+
+    {/* Donations management — Sahil's module */}
+    <Stack.Screen name={AppRoutes.DONATIONS}>
+      {({ navigation }) => (
+        <ModulePlaceholderScreen
+          title="Donations Management"
+          icon="🎁"
+          owner="Sahil"
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+
+    {/* RBAC management — Phase 8 */}
+    <Stack.Screen name={AppRoutes.ROLES_PERMISSIONS}>
+      {({ navigation }) => (
+        <ModulePlaceholderScreen
+          title="Roles & Permissions"
+          icon="🛡️"
+          phase="Phase 8"
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+
+    {/* Settings — shared */}
+    <Stack.Screen name={AppRoutes.SETTINGS}>
+      {({ navigation }) => (
+        <ModulePlaceholderScreen
+          title="Settings"
+          icon="⚙️"
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+  </Stack.Navigator>
+);
+
+export default MoreNavigator;
