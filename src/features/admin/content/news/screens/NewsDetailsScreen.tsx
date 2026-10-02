@@ -48,6 +48,11 @@ interface NewsDetailsScreenProps {
    */
   onTabPress?: (tab: string) => void;
   /**
+   * TEMPORARY (UI-only phase): called when the user taps Edit (action button
+   * or menu). When not provided, a placeholder alert is shown instead.
+   */
+  onEdit?: (news: NewsListItem) => void;
+  /**
    * Prepared for the backend phase: renders AppLoader when true. The UI-only
    * phase never sets it (no fake network delays).
    */
@@ -70,6 +75,7 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
   news,
   onBack,
   onTabPress,
+  onEdit,
   loading = false,
 }) => {
   const [coverFailed, setCoverFailed] = useState(false);
@@ -115,6 +121,10 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
       return;
     }
     if (action === 'edit') {
+      if (onEdit && news) {
+        onEdit(news);
+        return;
+      }
       Alert.alert('Edit News', PLACEHOLDER_MESSAGE);
       return;
     }
@@ -392,7 +402,13 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
             title="Edit News"
             variant="primary"
             size="md"
-            onPress={() => Alert.alert('Edit News', PLACEHOLDER_MESSAGE)}
+            onPress={() => {
+              if (onEdit && news) {
+                onEdit(news);
+                return;
+              }
+              Alert.alert('Edit News', PLACEHOLDER_MESSAGE);
+            }}
             icon={<Text style={styles.editIcon}>✏️</Text>}
             style={styles.editButton}
           />
