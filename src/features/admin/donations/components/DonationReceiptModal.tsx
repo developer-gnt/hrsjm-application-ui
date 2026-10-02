@@ -137,7 +137,7 @@ export const DonationReceiptModal: React.FC<DonationReceiptModalProps> = ({
             <View style={styles.amountBox}>
               <Text style={styles.amountLabel}>AMOUNT RECEIVED</Text>
               <Text style={styles.amountValue}>
-                ₹ {row.amount.toLocaleString('en-IN')}
+                {`₹ ${row.amount.toLocaleString('en-IN')}`}
               </Text>
             </View>
 

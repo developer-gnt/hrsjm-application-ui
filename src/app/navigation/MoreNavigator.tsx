@@ -16,6 +16,7 @@ import {
   EventDetailsScreen,
   CreateEventScreen,
 } from '../../features/admin/content/events';
+import { DonationsScreen } from '../../features/admin/donations';
 import { MoreStackParamList } from './NavigationTypes';
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();
@@ -154,11 +155,15 @@ export const MoreNavigator: React.FC = () => (
     {/* Donations management — Sahil's module */}
     <Stack.Screen name={AppRoutes.DONATIONS}>
       {({ navigation }) => (
-        <ModulePlaceholderScreen
-          title="Donations Management"
-          icon="🎁"
-          owner="Sahil"
+        <DonationsScreen
           onBack={navigation.goBack}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
         />
       )}
     </Stack.Screen>

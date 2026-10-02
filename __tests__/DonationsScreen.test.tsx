@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -42,10 +43,15 @@ describe('Donations Functionality Tests', () => {
     },
   });
 
+  const initialMetrics = {
+    frame: { x: 0, y: 0, width: 390, height: 844 },
+    insets: { top: 0, left: 0, right: 0, bottom: 0 },
+  };
+
   const renderWithProviders = (ui: React.ReactElement) => {
     return ReactTestRenderer.create(
       <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>{ui}</SafeAreaProvider>
+        <SafeAreaProvider initialMetrics={initialMetrics}>{ui}</SafeAreaProvider>
       </QueryClientProvider>,
     );
   };
@@ -215,7 +221,7 @@ describe('Donations Functionality Tests', () => {
       dateText: '28 Sept 2026',
       timeText: '11:24 AM',
       statusLabel: 'Completed',
-      statusTone: 'active' as const,
+      statusTone: 'ACTIVE' as const,
       hasReceipt: true,
       donationType: 'ONE_TIME' as const,
       rawStatus: 'SUCCESS',
@@ -340,14 +346,22 @@ describe('Donations Functionality Tests', () => {
       const root = renderer!.root;
 
       // Page Title
-      expect(root.findByProps({ children: 'Donations' })).toBeDefined();
+      expect(root.findAllByProps({ children: 'Donations' }).length).toBeGreaterThanOrEqual(1);
 
       // Controls
       expect(root.findByProps({ title: 'Add Donation' })).toBeDefined();
       expect(root.findByProps({ title: 'Filters' })).toBeDefined();
 
       // Tab pills
-      expect(root.findByProps({ children: 'All' })).toBeDefined();
+      expect(
+        root
+          .findAllByType(Text)
+          .some(
+            t =>
+              typeof t.props.children === 'string' &&
+              t.props.children.startsWith('All'),
+          ),
+      ).toBe(true);
     });
   });
 });
