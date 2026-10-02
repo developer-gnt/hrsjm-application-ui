@@ -179,6 +179,13 @@ export const SAMPLE_NEWS_CATEGORIES: string[] = Array.from(
 );
 
 /**
+ * DEMO author dropdown options for the Create News form — local sample values
+ * only, NOT backend users. Replace with the real author reference list once
+ * the backend contract is confirmed.
+ */
+export const SAMPLE_NEWS_AUTHORS: string[] = ['HRSJM Team', 'Admin'];
+
+/**
  * DEMO summary/tab counts — display-only values matching the reference design
  * (42/30/8/4), NOT derived from the 8-row sample list above. The local tabs
  * still filter the 8 sample rows; replace these with real backend counts when

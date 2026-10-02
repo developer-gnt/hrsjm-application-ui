@@ -71,3 +71,33 @@ export interface NewsFilterState {
   status: NewsStatusFilter;
   category: string | null;
 }
+
+/**
+ * Create News screen — local FORM STATE field names only.
+ *
+ * NOT the backend DTO: the final API payload must be created only after the
+ * News backend contract is confirmed. Field names deliberately match the
+ * reference Create News form so they can be mapped to the real DTO later
+ * without restructuring the form.
+ */
+export interface CreateNewsFormState {
+  headline: string;
+  slug: string;
+  summary: string;
+  content: string;
+  /** Local image URI chosen in the picker UI; no upload happens in this phase. */
+  featuredImageUri: string | null;
+  author: string | null;
+  category: string | null;
+  tags: string[];
+  /** ISO date (YYYY-MM-DD), local-calendar construction. */
+  publishDate: string | null;
+  /** 24h HH:mm string. */
+  publishTime: string | null;
+  status: 'DRAFT' | 'PUBLISHED';
+  /** UI-only preference; no backend field exists yet. */
+  allowComments: boolean;
+}
+
+/** Validation errors keyed by CreateNewsFormState field name. */
+export type CreateNewsFieldErrors = Partial<Record<keyof CreateNewsFormState, string>>;

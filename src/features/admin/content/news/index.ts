@@ -6,6 +6,7 @@
  */
 export { NewsListScreen } from './screens/NewsListScreen';
 export { NewsDetailsScreen } from './screens/NewsDetailsScreen';
+export { CreateNewsScreen } from './screens/CreateNewsScreen';
 export type {
   NewsListItem,
   NewsStatus,
