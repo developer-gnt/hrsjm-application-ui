@@ -22,27 +22,33 @@ import {
   AppSearchBar,
   SkeletonCard,
 } from '../../../../../core/components';
-import { formatDate } from '../../../../../core/utils';
-import { EventCard, EventListHeader } from '../components/EventCard';
-import { EventFilters } from '../components/EventFilters';
-import { EventSummaryStats } from '../components/EventSummaryStats';
-import { AdminShellHeader } from '../preview/AdminShellHeader';
-import { AdminShellTabBar } from '../preview/AdminShellTabBar';
-import { SAMPLE_EVENTS, SAMPLE_EVENT_CATEGORIES } from '../data/sample-events';
+import { NewsCard, NewsListHeader } from '../components/NewsCard';
+import { NewsFilterSheet } from '../components/NewsFilterSheet';
+import { NewsStatusTabs } from '../components/NewsStatusTabs';
+import { NewsSummaryStats } from '../components/NewsSummaryCard';
+import { showNewsActionMenu } from '../components/NewsActionMenu';
+import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
+import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
+import {
+  DEMO_NEWS_STATS,
+  NEWS_STATUS_TABS,
+  SAMPLE_NEWS,
+  SAMPLE_NEWS_CATEGORIES,
+} from '../data/sample-news';
 import type {
-  EventListItem,
-  EventStatusFilter,
-  EventStatsSummary,
-  EventsUiState,
-} from '../types/events.types';
+  NewsFilterState,
+  NewsListItem,
+  NewsStatusFilter,
+  NewsUiState,
+} from '../types/news.types';
 
-/** TEMPORARY: local UI demo dataset. Replace with the real useEvents hook data. */
+/** TEMPORARY: local UI demo dataset. Replace with the real useNews hook data. */
 const SAMPLE_DATA_LOAD_DELAY_MS = 800;
 
-/** Skeleton placeholder matching the compact event-row shape (UI-only phase). */
-const EventRowSkeleton: React.FC = () => (
+/** Skeleton placeholder matching the compact news-row shape (UI-only phase). */
+const NewsRowSkeleton: React.FC = () => (
   <View style={styles.skeletonRow}>
-    <SkeletonCard height={34} borderRadius={8} style={styles.skeletonThumb} />
+    <SkeletonCard height={48} borderRadius={8} style={styles.skeletonThumb} />
     <View style={styles.skeletonLines}>
       <SkeletonCard height={10} />
       <SkeletonCard height={10} />
@@ -54,125 +60,87 @@ const EventRowSkeleton: React.FC = () => (
 const LoadingListView: React.FC = () => (
   <View style={styles.skeletonList}>
     {[0, 1, 2, 3, 4, 5].map(index => (
-      <EventRowSkeleton key={index} />
+      <NewsRowSkeleton key={index} />
     ))}
   </View>
 );
 
-const EmptyStateView: React.FC<{
-  hasActiveFilters: boolean;
-  onClearFilters: () => void;
-  onAddEvent: () => void;
-}> = ({ hasActiveFilters, onClearFilters, onAddEvent }) => (
-  <View style={styles.emptyContainer}>
-    {hasActiveFilters ? (
-      <AppEmptyState
-        icon="🔍"
-        title="No Events Found"
-        description="No results match your filters."
-        actionTitle="Clear Filters"
-        onAction={onClearFilters}
-      />
-    ) : (
-      <AppEmptyState
-        icon="📅"
-        title="No Events Found"
-        description="There are no events to display yet."
-        actionTitle="Add Event"
-        onAction={onAddEvent}
-      />
-    )}
-  </View>
-);
-
-interface EventsScreenProps {
+interface NewsListScreenProps {
   /**
-   * TEMPORARY (UI-only phase): called when the user taps View on an event row.
-   * When not provided, a placeholder alert is shown instead. Real navigation
-   * will replace this with the shared admin navigation architecture.
+   * TEMPORARY (UI-only phase): called when the user taps "+ Add News".
+   * When not provided, a placeholder alert is shown instead. The Create News
+   * screen does not exist yet and is intentionally NOT built in this phase.
    */
-  onViewEvent?: (event: EventListItem) => void;
-  /**
-   * TEMPORARY (UI-only phase): called when the user taps "+ Add Event".
-   * When not provided, a placeholder alert is shown instead.
-   */
-  onAddEvent?: () => void;
+  onAddNews?: () => void;
   /**
    * TEMPORARY (UI-only phase): called when a bottom tab is pressed on the
-   * preview shell (e.g. jumping to News). When not provided, the shell shows
-   * its preview notice (original behavior). Real navigation replaces this.
+   * preview shell (e.g. jumping back to Events). Tabs this screen does not
+   * handle fall back to the shell's preview notice.
    */
   onTabPress?: (tab: string) => void;
 }
 
-export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEvent, onTabPress }) => {
-  const [uiState, setUiState] = useState<EventsUiState>('loading');
+/**
+ * News List screen (UI-only phase).
+ *
+ * Local sample data + local filtering only — NO backend calls. The list is
+ * structured (FlatList + data/view-model split) so backend pagination and the
+ * real news hook can replace the sample source without UI changes.
+ */
+export const NewsListScreen: React.FC<NewsListScreenProps> = ({ onAddNews, onTabPress }) => {
+  const [uiState, setUiState] = useState<NewsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeStatus, setActiveStatus] = useState<EventStatusFilter>('ALL');
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [activeStatus, setActiveStatus] = useState<NewsStatusFilter>('ALL');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [filterSheetVisible, setFilterSheetVisible] = useState(false);
 
-  /** TEMPORARY: replace `events` with the data returned by the real useEvents hook. */
-  const events = SAMPLE_EVENTS;
+  /** TEMPORARY: replace `newsItems` with the data returned by the real useNews hook. */
+  const newsItems = SAMPLE_NEWS;
 
   // TEMPORARY (UI-only phase): simulated latency so the loading state is
-  // demonstrable during review. Remove when the real events hook drives this screen.
+  // demonstrable during review. Remove when the real news hook drives this screen.
   useEffect(() => {
     const timer = setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
     return () => clearTimeout(timer);
   }, []);
 
-  const stats = useMemo<EventStatsSummary>(
-    () => ({
-      total: events.length,
-      upcoming: events.filter(event => event.status === 'UPCOMING').length,
-      completed: events.filter(event => event.status === 'COMPLETED').length,
-      cancelled: events.filter(event => event.status === 'CANCELLED').length,
-    }),
-    [events],
+  // Display-only reference numbers (42/30/8/4) — NOT computed from the 8
+  // sample rows; replaced by real backend counts when the contract lands.
+  const stats = DEMO_NEWS_STATS;
+
+  const appliedFilters = useMemo<NewsFilterState>(
+    () => ({ status: activeStatus, category: activeCategory }),
+    [activeStatus, activeCategory],
   );
 
-  const statusTabs = useMemo(
-    () => [
-      { key: 'ALL' as EventStatusFilter, label: 'All', count: stats.total },
-      { key: 'UPCOMING' as EventStatusFilter, label: 'Upcoming', count: stats.upcoming },
-      { key: 'COMPLETED' as EventStatusFilter, label: 'Completed', count: stats.completed },
-      { key: 'CANCELLED' as EventStatusFilter, label: 'Cancelled', count: stats.cancelled },
-    ],
-    [stats],
-  );
-
-  const filteredEvents = useMemo(() => {
+  const filteredNews = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return events.filter(event => {
-      if (activeStatus !== 'ALL' && event.status !== activeStatus) {
+    return newsItems.filter(news => {
+      if (activeStatus !== 'ALL' && news.status !== activeStatus) {
         return false;
       }
-      if (activeCategory && event.category !== activeCategory) {
+      if (activeCategory && news.category !== activeCategory) {
         return false;
       }
       if (!query) {
         return true;
       }
-      const haystack = [
-        event.title,
-        event.location,
-        event.category,
-        formatDate(event.startAt),
-      ]
-        .filter(Boolean)
+      const haystack = [news.title, news.summary, news.category]
         .join(' ')
         .toLowerCase();
       return haystack.includes(query);
     });
-  }, [events, searchQuery, activeStatus, activeCategory]);
+  }, [newsItems, searchQuery, activeStatus, activeCategory]);
 
   const hasActiveFilters =
     searchQuery.trim() !== '' || activeStatus !== 'ALL' || activeCategory !== null;
 
-  const handleSearch = (text: string) => setSearchQuery(text);
+  const handleApplyFilters = (filters: NewsFilterState) => {
+    setActiveStatus(filters.status);
+    setActiveCategory(filters.category);
+  };
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -180,55 +148,43 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
     setActiveCategory(null);
   };
 
-  // Placeholder handlers — the Create/Details/Edit/Delete screens arrive in the
-  // next phase of the Events module.
-  const handleAddEvent = () => {
-    if (onAddEvent) {
-      onAddEvent();
+  const handleAddNews = () => {
+    if (onAddNews) {
+      onAddNews();
       return;
     }
     Alert.alert(
-      'Add Event',
-      'The Create Event screen will be implemented in the next phase of the Events module.',
+      'Add News',
+      'The Create News screen is not part of this phase. It will be implemented after the backend contract is confirmed.',
     );
   };
 
-  const handleEventPress = (event: EventListItem) => {
-    if (onViewEvent) {
-      onViewEvent(event);
+  const handleNewsPress = (news: NewsListItem) => {
+    // UI placeholder only: News Details is a later phase (no backend yet).
+    Alert.alert(
+      news.title,
+      'The News Details screen will be implemented in a later phase after backend integration.',
+    );
+  };
+
+  const handleNewsMenu = (news: NewsListItem) => showNewsActionMenu(news);
+
+  const handleStatusChange = (status: NewsStatusFilter) => setActiveStatus(status);
+
+  // Preview-shell tabs: hand off to the host for tabs it can navigate to;
+  // everything else falls back to the shell's temporary preview notice.
+  const handleShellTabPress = (tab: string) => {
+    if (tab === 'events' && onTabPress) {
+      onTabPress(tab);
       return;
     }
-    Alert.alert(
-      event.title,
-      'The Event Details screen will be implemented in the next phase of the Events module.',
-    );
+    if (tab !== 'news') {
+      Alert.alert(
+        'Preview shell',
+        'Global navigation is owned by the app-level architecture. This bar is a temporary visual preview only.',
+      );
+    }
   };
-
-  const handleEventMenu = (event: EventListItem) => {
-    Alert.alert(event.title, undefined, [
-      { text: 'View Details', onPress: () => handleEventPress(event) },
-      {
-        text: 'Edit Event',
-        onPress: () =>
-          Alert.alert(
-            'Edit Event',
-            'The Edit Event screen will be implemented in the next phase of the Events module.',
-          ),
-      },
-      {
-        text: 'Delete Event',
-        style: 'destructive',
-        onPress: () =>
-          Alert.alert(
-            'Delete Event',
-            'Deleting events will be connected to the backend in a later phase.',
-          ),
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
-  };
-
-  const handleStatusChange = (status: EventStatusFilter) => setActiveStatus(status);
 
   const handleRetry = () => {
     setUiState('loading');
@@ -248,23 +204,23 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
       <AdminShellHeader />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        {/* Page header: title/subtitle + Add Event */}
+        {/* Page header: title/subtitle + Add News */}
         <View style={styles.pageHeader}>
           <View style={styles.pageHeaderText}>
-            <Text style={styles.pageTitle}>Events</Text>
+            <Text style={styles.pageTitle}>News</Text>
             <Text
               style={styles.pageSubtitle}
               adjustsFontSizeToFit
               minimumFontScale={0.8}
               numberOfLines={1}
             >
-              Manage and view all events and activities.
+              Manage and publish news, updates and announcements.
             </Text>
           </View>
           <AppButton
-            title="Add Event"
+            title="Add News"
             size="sm"
-            onPress={handleAddEvent}
+            onPress={handleAddNews}
             icon={<Text style={styles.addIcon}>+</Text>}
             textStyle={styles.addButtonText}
             style={styles.addButton}
@@ -272,41 +228,37 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
         </View>
 
         <View style={styles.statsSection}>
-          <EventSummaryStats stats={stats} />
+          <NewsSummaryStats stats={stats} />
         </View>
 
         <View style={styles.searchRow}>
           <AppSearchBar
-            placeholder="Search by event name, location or date..."
+            placeholder="Search by title, category or keyword..."
             value={searchQuery}
-            onSearch={handleSearch}
+            onSearch={setSearchQuery}
             containerStyle={styles.searchBar}
           />
           <TouchableOpacity
             style={[
               styles.filterButton,
-              (filtersExpanded || activeCategory !== null) && styles.filterButtonActive,
+              (filterSheetVisible || activeCategory !== null || activeStatus !== 'ALL') &&
+                styles.filterButtonActive,
             ]}
-            onPress={() => setFiltersExpanded(previous => !previous)}
+            onPress={() => setFilterSheetVisible(true)}
             accessibilityRole="button"
             accessibilityLabel="Filters"
-            accessibilityState={{ expanded: filtersExpanded }}
+            accessibilityState={{ expanded: filterSheetVisible }}
           >
-            <Text style={styles.filterIcon}>{filtersExpanded ? '▴' : '▾'}</Text>
+            <Text style={styles.filterIcon}>▾</Text>
             <Text style={styles.filterText}>Filters</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.filtersSection}>
-          <EventFilters
-            tabs={statusTabs}
+        <View style={styles.tabsSection}>
+          <NewsStatusTabs
+            tabs={NEWS_STATUS_TABS}
             activeTab={activeStatus}
             onTabChange={handleStatusChange}
-            expanded={filtersExpanded}
-            categories={SAMPLE_EVENT_CATEGORIES}
-            activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-            onApply={() => setFiltersExpanded(false)}
           />
         </View>
 
@@ -314,25 +266,29 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
           <LoadingListView />
         ) : uiState === 'error' ? (
           <AppErrorState
-            title="Unable to load events."
-            message="Something went wrong while loading events. Please try again."
+            title="Unable to load news."
+            message="Something went wrong while loading news. Please try again."
             onRetry={handleRetry}
             style={styles.errorState}
           />
         ) : (
           <FlatList
-            data={filteredEvents}
+            data={filteredNews}
             keyExtractor={item => item.id}
-            ListHeaderComponent={EventListHeader}
+            ListHeaderComponent={NewsListHeader}
             renderItem={({ item }) => (
-              <EventCard event={item} onPress={handleEventPress} onMorePress={handleEventMenu} />
+              <NewsCard news={item} onPress={handleNewsPress} onMorePress={handleNewsMenu} />
             )}
             ListEmptyComponent={
-              <EmptyStateView
-                hasActiveFilters={hasActiveFilters}
-                onClearFilters={clearFilters}
-                onAddEvent={handleAddEvent}
-              />
+              <View style={styles.emptyContainer}>
+                <AppEmptyState
+                  icon="🔍"
+                  title="No news found"
+                  description="Try changing your search or filters."
+                  actionTitle={hasActiveFilters ? 'Clear Filters' : undefined}
+                  onAction={hasActiveFilters ? clearFilters : undefined}
+                />
+              </View>
             }
             refreshControl={
               <RefreshControl
@@ -351,7 +307,15 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
       </SafeAreaView>
 
       {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar onTabPress={onTabPress} />
+      <AdminShellTabBar activeTab="news" onTabPress={handleShellTabPress} />
+
+      <NewsFilterSheet
+        visible={filterSheetVisible}
+        categories={SAMPLE_NEWS_CATEGORIES}
+        applied={appliedFilters}
+        onApply={handleApplyFilters}
+        onClose={() => setFilterSheetVisible(false)}
+      />
     </View>
   );
 };
@@ -443,7 +407,7 @@ const styles = StyleSheet.create({
     ...Typography.secondaryMedium,
     color: AdminColors.textPrimary,
   },
-  filtersSection: {
+  tabsSection: {
     marginTop: Spacing.sm,
   },
   skeletonList: {
@@ -457,7 +421,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base + Spacing.sm,
   },
   skeletonThumb: {
-    width: 34,
+    width: 48,
   },
   skeletonLines: {
     flex: 1,

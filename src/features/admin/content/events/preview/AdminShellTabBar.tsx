@@ -7,18 +7,30 @@ import { AdminColors, BorderRadius, Spacing } from '../../../../../core/theme';
  * TEMPORARY PREVIEW COMPONENT — NOT THE REAL GLOBAL NAVIGATION.
  *
  * Reproduces the HRSJM Admin bottom navigation from the reference design so
- * the Events screen can be reviewed in context, with "Events" as the active
- * item. The real bottom navigation is owned by the app-level navigation
- * architecture (Mubasshir) and will replace this file.
+ * content screens can be reviewed in context. The real bottom navigation is
+ * owned by the app-level navigation architecture (Mubasshir) and will replace
+ * this file.
  *
  * DELETE THIS FILE when the real Admin navigation is integrated.
  */
 
+export type AdminShellTabKey =
+  | 'dashboard'
+  | 'members'
+  | 'applications'
+  | 'donationSeekers'
+  | 'donations'
+  | 'complaints'
+  | 'events'
+  | 'news'
+  | 'blogs'
+  | 'rights'
+  | 'more';
+
 interface ShellTab {
-  key: string;
+  key: AdminShellTabKey;
   label: string;
   icon: string;
-  active?: boolean;
 }
 
 const SHELL_TABS: ShellTab[] = [
@@ -28,21 +40,35 @@ const SHELL_TABS: ShellTab[] = [
   { key: 'donationSeekers', label: 'Donation Seekers', icon: '🤝' },
   { key: 'donations', label: 'Donations', icon: '💌' },
   { key: 'complaints', label: 'Complaints', icon: '💬' },
-  { key: 'events', label: 'Events', icon: '📅', active: true },
+  { key: 'events', label: 'Events', icon: '📅' },
   { key: 'news', label: 'News', icon: '📰' },
   { key: 'blogs', label: 'Blogs', icon: '📝' },
   { key: 'rights', label: 'Rights', icon: '⚖️' },
   { key: 'more', label: 'More', icon: '⊞' },
 ];
 
-const showPreviewNotice = () => {
+/** Temporary notice shown for tabs the hosting screen does not handle. */
+export const showAdminShellPreviewNotice = (): void => {
   Alert.alert(
     'Preview shell',
     'Global navigation is owned by the app-level architecture. This bar is a temporary visual preview only.',
   );
 };
 
-export const AdminShellTabBar: React.FC = () => {
+interface AdminShellTabBarProps {
+  /** Active tab key. Defaults to 'events' (the original shell behavior). */
+  activeTab?: AdminShellTabKey;
+  /**
+   * Called instead of the preview notice when a tab is pressed. When omitted,
+   * every tab press shows the preview notice (original behavior).
+   */
+  onTabPress?: (tab: AdminShellTabKey) => void;
+}
+
+export const AdminShellTabBar: React.FC<AdminShellTabBarProps> = ({
+  activeTab = 'events',
+  onTabPress,
+}) => {
   const insets = useSafeAreaInsets();
 
   return (
@@ -51,13 +77,13 @@ export const AdminShellTabBar: React.FC = () => {
       accessibilityRole="tablist"
     >
       {SHELL_TABS.map(tab => {
-        const isActive = Boolean(tab.active);
+        const isActive = tab.key === activeTab;
 
         return (
           <TouchableOpacity
             key={tab.key}
             style={[styles.tab, isActive && styles.tabActive]}
-            onPress={showPreviewNotice}
+            onPress={() => (onTabPress ? onTabPress(tab.key) : showAdminShellPreviewNotice())}
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
             accessibilityLabel={`${tab.label} tab`}
