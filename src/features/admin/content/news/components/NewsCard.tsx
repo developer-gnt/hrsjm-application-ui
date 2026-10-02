@@ -46,13 +46,13 @@ const categoryChipTone = (category: string): { bg: string; text: string } =>
   CATEGORY_CHIP_TONES[category] ?? { bg: AdminColors.primaryLight, text: AdminColors.primary };
 
 /** Status badge tones per the reference: Published green, Draft amber, Archived red. */
-const STATUS_BADGE_TONES: Record<NewsStatus, { bg: string; text: string }> = {
+export const STATUS_BADGE_TONES: Record<NewsStatus, { bg: string; text: string }> = {
   PUBLISHED: { bg: AdminColors.statusActiveLight, text: AdminColors.statusActive },
   DRAFT: { bg: AdminColors.warningLight, text: AdminColors.warning },
   ARCHIVED: { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
 };
 
-const STATUS_LABELS: Record<NewsStatus, string> = {
+export const STATUS_LABELS: Record<NewsStatus, string> = {
   PUBLISHED: 'Published',
   DRAFT: 'Draft',
   ARCHIVED: 'Archived',
@@ -63,7 +63,7 @@ const actionLabelFor = (status: NewsStatus): string =>
   status === 'ARCHIVED' ? 'Restore' : 'Edit';
 
 /** Raw count -> compact display (1200 -> "1.2K", 980 -> "980"). */
-const formatViews = (views: number): string => {
+export const formatViews = (views: number): string => {
   if (views < 1000) {
     return String(views);
   }
@@ -78,7 +78,7 @@ const formatViews = (views: number): string => {
  * no single-line support. Tones per the reference (subtle pastel per
  * category); replace with backend category metadata when confirmed.
  */
-const CategoryChip: React.FC<{ category: string }> = ({ category }) => {
+export const CategoryChip: React.FC<{ category: string }> = ({ category }) => {
   const tone = categoryChipTone(category);
 
   return (

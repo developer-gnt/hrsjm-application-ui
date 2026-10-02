@@ -5,6 +5,7 @@
  * UI-only phase: sample data + local filtering. No API/services yet.
  */
 export { NewsListScreen } from './screens/NewsListScreen';
+export { NewsDetailsScreen } from './screens/NewsDetailsScreen';
 export type {
   NewsListItem,
   NewsStatus,

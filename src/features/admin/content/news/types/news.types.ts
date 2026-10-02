@@ -20,7 +20,7 @@ export type NewsStatusFilter = 'ALL' | NewsStatus;
 export interface NewsListItem {
   id: string;
   title: string;
-  /** Short summary shown under the headline. */
+  /** Short summary shown under the headline and on the details summary card. */
   summary: string;
   category: string;
   /** Demo display date (e.g. "28 Sep 2026") until the backend format is known. */
@@ -28,10 +28,20 @@ export interface NewsListItem {
   /** Demo display time (e.g. "04:30 PM"). */
   time: string;
   status: NewsStatus;
-  /** Raw view count; the row formats it (e.g. 1200 -> "1.2K"). */
+  /** Raw view count; rows format it (e.g. 1200 -> "1.2K"). */
   views: number;
   /** Demo remote URL for now; replaced by the backend asset flow later. */
   thumbnailUrl?: string | null;
+  /** Details-screen fields below are optional until the backend DTO lands. */
+  author?: string;
+  /** Longer summary for the details summary card (falls back to `summary`). */
+  summaryDetailed?: string;
+  /** Article body paragraphs (details screen only). */
+  content?: string[];
+  highlights?: string[];
+  /** Demo gallery image URLs; the featured image is `thumbnailUrl`. */
+  gallery?: string[];
+  tags?: string[];
 }
 
 /** Aggregated counts shown in the summary/stat cards (UI demonstration values). */

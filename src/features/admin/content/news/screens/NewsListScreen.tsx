@@ -73,6 +73,11 @@ interface NewsListScreenProps {
    */
   onAddNews?: () => void;
   /**
+   * TEMPORARY (UI-only phase): called when the user taps a news row (or its
+   * Edit/Restore action). When not provided, a placeholder alert is shown.
+   */
+  onViewNews?: (news: NewsListItem) => void;
+  /**
    * TEMPORARY (UI-only phase): called when a bottom tab is pressed on the
    * preview shell (e.g. jumping back to Events). Tabs this screen does not
    * handle fall back to the shell's preview notice.
@@ -87,7 +92,11 @@ interface NewsListScreenProps {
  * structured (FlatList + data/view-model split) so backend pagination and the
  * real news hook can replace the sample source without UI changes.
  */
-export const NewsListScreen: React.FC<NewsListScreenProps> = ({ onAddNews, onTabPress }) => {
+export const NewsListScreen: React.FC<NewsListScreenProps> = ({
+  onAddNews,
+  onViewNews,
+  onTabPress,
+}) => {
   const [uiState, setUiState] = useState<NewsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -160,7 +169,11 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({ onAddNews, onTab
   };
 
   const handleNewsPress = (news: NewsListItem) => {
-    // UI placeholder only: News Details is a later phase (no backend yet).
+    if (onViewNews) {
+      onViewNews(news);
+      return;
+    }
+    // UI placeholder only: News Details is connected by the host when ready.
     Alert.alert(
       news.title,
       'The News Details screen will be implemented in a later phase after backend integration.',

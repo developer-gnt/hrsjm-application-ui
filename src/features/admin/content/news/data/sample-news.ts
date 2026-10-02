@@ -34,6 +34,28 @@ export const SAMPLE_NEWS: NewsListItem[] = [
     status: 'PUBLISHED',
     views: 1200,
     thumbnailUrl: demoThumbnail('hrsjm-news-01'),
+    author: 'HRSJM Team',
+    summaryDetailed:
+      'HRSJM organized a legal aid camp in Kurla to provide free legal consultation and support to community members. The initiative aimed to create awareness about legal rights and assist individuals in getting proper guidance.',
+    content: [
+      'The Human Rights & Social Justice Mission (HRSJM) organized a legal aid camp in Kurla, Mumbai, to provide free legal consultation and support to community members.',
+      'The camp witnessed a large turnout, with people from different sections of society seeking guidance on issues related to property disputes, labour rights, domestic violence, and other legal matters.',
+      'HRSJM volunteers and legal professionals provided information about available legal remedies, government schemes, and fundamental rights.',
+      'The initiative focused on improving legal awareness and helping community members understand the appropriate channels for seeking assistance.',
+    ],
+    highlights: [
+      'Free legal consultation by experienced lawyers',
+      'Awareness on fundamental rights',
+      'Support for women, workers and marginalized communities',
+      'Guidance on government schemes and legal processes',
+    ],
+    gallery: [
+      demoThumbnail('hrsjm-news-01-g1'),
+      demoThumbnail('hrsjm-news-01-g2'),
+      demoThumbnail('hrsjm-news-01-g3'),
+      demoThumbnail('hrsjm-news-01-g4'),
+    ],
+    tags: ['Legal Aid', 'Community Support', 'Kurla', 'Human Rights'],
   },
   {
     id: 'n-02',
@@ -45,6 +67,7 @@ export const SAMPLE_NEWS: NewsListItem[] = [
     status: 'PUBLISHED',
     views: 980,
     thumbnailUrl: demoThumbnail('hrsjm-news-02'),
+    author: 'HRSJM Team',
   },
   {
     id: 'n-03',
@@ -56,6 +79,7 @@ export const SAMPLE_NEWS: NewsListItem[] = [
     status: 'PUBLISHED',
     views: 1500,
     thumbnailUrl: demoThumbnail('hrsjm-news-03'),
+    author: 'HRSJM Team',
   },
   {
     id: 'n-04',
@@ -67,6 +91,7 @@ export const SAMPLE_NEWS: NewsListItem[] = [
     status: 'PUBLISHED',
     views: 2100,
     thumbnailUrl: demoThumbnail('hrsjm-news-04'),
+    author: 'HRSJM Team',
   },
   {
     id: 'n-05',
@@ -78,6 +103,20 @@ export const SAMPLE_NEWS: NewsListItem[] = [
     status: 'DRAFT',
     views: 0,
     thumbnailUrl: demoThumbnail('hrsjm-news-05'),
+    author: 'Admin',
+    summaryDetailed:
+      'An interactive awareness session on child rights and safety conducted for students and teachers at a local school. The session is being prepared for publication after review.',
+    content: [
+      'HRSJM volunteers conducted an interactive awareness session at a local school covering child rights, personal safety and available support systems.',
+      'The draft is being reviewed by the communications team before publication. Content, highlights and images will be finalized after approval.',
+    ],
+    highlights: [
+      'Interactive session with students and teachers',
+      'Child rights and personal safety awareness',
+      'Guidance on reporting and support systems',
+    ],
+    gallery: [demoThumbnail('hrsjm-news-05-g1'), demoThumbnail('hrsjm-news-05-g2')],
+    tags: ['Awareness', 'Child Rights', 'School', 'Safety'],
   },
   {
     id: 'n-06',
@@ -89,6 +128,7 @@ export const SAMPLE_NEWS: NewsListItem[] = [
     status: 'PUBLISHED',
     views: 890,
     thumbnailUrl: demoThumbnail('hrsjm-news-06'),
+    author: 'HRSJM Team',
   },
   {
     id: 'n-07',
@@ -100,6 +140,24 @@ export const SAMPLE_NEWS: NewsListItem[] = [
     status: 'ARCHIVED',
     views: 720,
     thumbnailUrl: demoThumbnail('hrsjm-news-07'),
+    author: 'Admin',
+    summaryDetailed:
+      'More than 150 people donated blood at the HRSJM blood donation camp. The drive was conducted with volunteer medical professionals and community volunteers.',
+    content: [
+      'The HRSJM blood donation drive saw an overwhelming response, with more than 150 community members donating blood at the camp.',
+      'The drive was conducted with volunteer medical professionals. The news is archived now and can be restored to the published list when needed.',
+    ],
+    highlights: [
+      'More than 150 donors participated',
+      'Conducted with volunteer medical professionals',
+      'Free health check-up for every donor',
+    ],
+    gallery: [
+      demoThumbnail('hrsjm-news-07-g1'),
+      demoThumbnail('hrsjm-news-07-g2'),
+      demoThumbnail('hrsjm-news-07-g3'),
+    ],
+    tags: ['Blood Donation', 'Health Camp', 'Volunteers'],
   },
   {
     id: 'n-08',
@@ -111,6 +169,7 @@ export const SAMPLE_NEWS: NewsListItem[] = [
     status: 'PUBLISHED',
     views: 1100,
     thumbnailUrl: demoThumbnail('hrsjm-news-08'),
+    author: 'HRSJM Team',
   },
 ];
 

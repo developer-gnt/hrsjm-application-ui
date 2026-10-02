@@ -21,18 +21,23 @@ const showPreviewNotice = () => {
   );
 };
 
-export const AdminShellHeader: React.FC = () => {
+export const AdminShellHeader: React.FC<{
+  /** Leading control. Defaults to 'menu' (the original shell behavior). */
+  leading?: 'menu' | 'back';
+  /** Called by the back-arrow leading control (leading="back"). */
+  onBack?: () => void;
+}> = ({ leading = 'menu', onBack }) => {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.header, { paddingTop: Math.max(insets.top, Spacing.sm) }]}>
       <TouchableOpacity
         style={styles.menuButton}
-        onPress={showPreviewNotice}
+        onPress={leading === 'back' ? onBack : showPreviewNotice}
         accessibilityRole="button"
-        accessibilityLabel="Open navigation menu"
+        accessibilityLabel={leading === 'back' ? 'Go back' : 'Open navigation menu'}
       >
-        <Text style={styles.menuIcon}>☰</Text>
+        <Text style={styles.menuIcon}>{leading === 'back' ? '←' : '☰'}</Text>
       </TouchableOpacity>
 
       <View style={styles.logoPlaceholder} accessible accessibilityLabel="HRSJM logo">

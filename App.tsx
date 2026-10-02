@@ -16,8 +16,9 @@ import {
   CreateEventScreen,
   EditEventScreen,
 } from './src/features/admin/content/events';
-import { NewsListScreen } from './src/features/admin/content/news';
+import { NewsListScreen, NewsDetailsScreen } from './src/features/admin/content/news';
 import type { EventListItem } from './src/features/admin/content/events';
+import type { NewsListItem } from './src/features/admin/content/news';
 import { showAdminShellPreviewNotice } from './src/features/admin/content/events/preview/AdminShellTabBar';
 
 type AppRoute =
@@ -25,7 +26,8 @@ type AppRoute =
   | { name: 'details'; event: EventListItem }
   | { name: 'create' }
   | { name: 'edit'; event: EventListItem }
-  | { name: 'news' };
+  | { name: 'news' }
+  | { name: 'news-details'; news: NewsListItem };
 
 function App() {
   const [route, setRoute] = useState<AppRoute>({ name: 'list' });
@@ -46,8 +48,21 @@ function App() {
         />
       ) : route.name === 'create' ? (
         <CreateEventScreen onCancel={() => setRoute({ name: 'list' })} />
+      ) : route.name === 'news-details' ? (
+        <NewsDetailsScreen
+          news={route.news}
+          onBack={() => setRoute({ name: 'news' })}
+          onTabPress={tab => {
+            if (tab === 'events') {
+              setRoute({ name: 'list' });
+              return;
+            }
+            showAdminShellPreviewNotice();
+          }}
+        />
       ) : route.name === 'news' ? (
         <NewsListScreen
+          onViewNews={news => setRoute({ name: 'news-details', news })}
           onTabPress={tab => {
             if (tab === 'events') {
               setRoute({ name: 'list' });
