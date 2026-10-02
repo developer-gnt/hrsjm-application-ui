@@ -104,7 +104,7 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
     if (tab === 'news') {
       return;
     }
-    if (tab === 'events' && onTabPress) {
+    if ((tab === 'events' || tab === 'blogs') && onTabPress) {
       onTabPress(tab);
       return;
     }
