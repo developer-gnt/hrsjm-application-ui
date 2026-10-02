@@ -61,6 +61,49 @@ export interface SettingSection {
 
 export const SETTING_SECTIONS: SettingSection[] = [
   {
+    id: 'operations',
+    title: 'Operations & Modules',
+    description: 'Direct access to core admin modules and campaign trackers.',
+    icon: '🎁',
+    badgeBg: '#FEF3C7',
+    iconColor: '#D97706',
+    items: [
+      {
+        icon: '🎁',
+        title: 'Donations Management',
+        description:
+          'Manage donation records, campaigns, donor details, and receipts.',
+        route: AppRoutes.DONATIONS,
+      },
+      {
+        icon: '📅',
+        title: 'Events Management',
+        description:
+          'Create and manage NGO events, workshops, and registrations.',
+        route: AppRoutes.EVENTS,
+      },
+      {
+        icon: '💰',
+        title: 'Payment Verification',
+        description:
+          'Verify offline and online membership fee payments.',
+        route: AppRoutes.PAYMENT_VERIFICATION,
+      },
+      {
+        icon: '🧾',
+        title: 'Expense Vouchers',
+        description: 'Record and track organizational expense vouchers.',
+        route: AppRoutes.EXPENSE_VOUCHERS,
+      },
+      {
+        icon: '📥',
+        title: 'Receipt Vouchers',
+        description: 'Manual receipt entries against income accounts.',
+        route: AppRoutes.RECEIPT_VOUCHERS,
+      },
+    ],
+  },
+  {
     id: 'general',
     title: 'General Settings',
     description: 'Manage basic platform information and preferences.',

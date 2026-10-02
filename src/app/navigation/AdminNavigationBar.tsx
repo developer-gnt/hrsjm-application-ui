@@ -37,11 +37,38 @@ import { AdminTabParamList } from './NavigationTypes';
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
 
+const MembersPlaceholderScreen: React.FC = () => (
+  <ModulePlaceholderScreen
+    title="Members"
+    icon="👥"
+    owner="Aman"
+    description="Member directory, memberships and approvals"
+  />
+);
+
+const ApplicationsPlaceholderScreen: React.FC = () => (
+  <ModulePlaceholderScreen
+    title="Applications"
+    icon="📄"
+    owner="Arshad"
+    description="Assistance request review workflow"
+  />
+);
+
+const ComplaintsPlaceholderScreen: React.FC = () => (
+  <ModulePlaceholderScreen
+    title="Complaints"
+    icon="💬"
+    owner="Arshad"
+    description="Support ticket management"
+  />
+);
+
 export interface TabDefinition {
   name: keyof AdminTabParamList;
   label: string;
   icon: string;
-  screen: React.ReactNode;
+  component: React.ComponentType<any>;
 }
 
 export const TAB_DEFINITIONS: TabDefinition[] = [
@@ -49,52 +76,31 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
     name: AppRoutes.ADMIN_DASHBOARD_TAB,
     label: 'Dashboard',
     icon: '🏠',
-    screen: null,
+    component: AdminDashboardScreen,
   },
   {
     name: AppRoutes.ADMIN_MEMBERS_TAB,
     label: 'Members',
     icon: '👥',
-    screen: (
-      <ModulePlaceholderScreen
-        title="Members"
-        icon="👥"
-        owner="Aman"
-        description="Member directory, memberships and approvals"
-      />
-    ),
+    component: MembersPlaceholderScreen,
   },
   {
     name: AppRoutes.ADMIN_APPLICATIONS_TAB,
     label: 'Applications',
     icon: '📄',
-    screen: (
-      <ModulePlaceholderScreen
-        title="Applications"
-        icon="📄"
-        owner="Arshad"
-        description="Assistance request review workflow"
-      />
-    ),
+    component: ApplicationsPlaceholderScreen,
   },
   {
     name: AppRoutes.ADMIN_COMPLAINTS_TAB,
     label: 'Complaints',
     icon: '💬',
-    screen: (
-      <ModulePlaceholderScreen
-        title="Complaints"
-        icon="💬"
-        owner="Arshad"
-        description="Support ticket management"
-      />
-    ),
+    component: ComplaintsPlaceholderScreen,
   },
   {
     name: AppRoutes.ADMIN_MORE_TAB,
     label: 'Settings',
     icon: '⚙️',
-    screen: <MoreNavigator />,
+    component: MoreNavigator,
   },
 ];
 
@@ -199,15 +205,8 @@ export const AdminNavigationBar: React.FC = () => {
           <Tab.Screen
             key={tab.name}
             name={tab.name}
-          >
-            {({ navigation: tabNavigation }: { navigation: BottomTabNavigationProp<AdminTabParamList, keyof AdminTabParamList> }) =>
-              tab.name === AppRoutes.ADMIN_DASHBOARD_TAB ? (
-                <AdminDashboardScreen navigation={tabNavigation} />
-              ) : (
-                tab.screen
-              )
-            }
-          </Tab.Screen>
+            component={tab.component}
+          />
         );
       })}
     </Tab.Navigator>

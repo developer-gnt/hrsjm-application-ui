@@ -252,6 +252,39 @@ export const AdminDashboardScreen: React.FC<{
           />
         </View>
 
+        {/* Quick Module Actions Bar */}
+        <View style={styles.quickActionsContainer}>
+          <TouchableOpacity
+            style={styles.quickActionButton}
+            activeOpacity={0.7}
+            onPress={() => handleDrawerNavigate('Donations')}
+          >
+            <View style={styles.quickActionIconWrap}>
+              <Text style={styles.quickActionIcon}>🎁</Text>
+            </View>
+            <View style={styles.quickActionTextCol}>
+              <Text style={styles.quickActionTitle}>Donations</Text>
+              <Text style={styles.quickActionSubtitle}>View Records & Receipts</Text>
+            </View>
+            <Text style={styles.quickActionChevron}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionButton}
+            activeOpacity={0.7}
+            onPress={() => handleDrawerNavigate('Events')}
+          >
+            <View style={[styles.quickActionIconWrap, { backgroundColor: '#F3E8FF' }]}>
+              <Text style={styles.quickActionIcon}>📅</Text>
+            </View>
+            <View style={styles.quickActionTextCol}>
+              <Text style={styles.quickActionTitle}>Events</Text>
+              <Text style={styles.quickActionSubtitle}>Manage Programs & Meets</Text>
+            </View>
+            <Text style={styles.quickActionChevron}>›</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Membership Growth Line Chart */}
         <MembershipGrowthCard
           points={growthPoints}
@@ -483,6 +516,53 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     color: '#2563EB',
+  },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginVertical: Spacing.xs,
+  },
+  quickActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.sm,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.card,
+  },
+  quickActionIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: BorderRadius.base,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.xs,
+  },
+  quickActionIcon: {
+    fontSize: 18,
+  },
+  quickActionTextCol: {
+    flex: 1,
+  },
+  quickActionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  quickActionSubtitle: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  quickActionChevron: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#94A3B8',
+    marginLeft: 2,
   },
 });
 
