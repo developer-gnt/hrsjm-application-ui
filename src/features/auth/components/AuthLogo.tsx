@@ -18,6 +18,8 @@ interface AuthLogoProps {
   /** 'light' renders wordmark for navy backgrounds; 'dark' for light ones. */
   variant?: 'light' | 'dark';
   showWordmark?: boolean;
+  /** Whether to show the bilingual subtitles (English mission + Hindi motto). Defaults to true. */
+  showSubtitle?: boolean;
   layout?: 'vertical' | 'horizontal';
   style?: ViewStyle;
 }
@@ -38,6 +40,7 @@ export const AuthLogo: React.FC<AuthLogoProps> = ({
   size = 'md',
   variant = 'dark',
   showWordmark = true,
+  showSubtitle = true,
   layout = 'vertical',
   style,
 }) => {
@@ -78,24 +81,28 @@ export const AuthLogo: React.FC<AuthLogoProps> = ({
           >
             HRSJM
           </Text>
-          <Text
-            style={[
-              isHorizontal ? styles.horizontalMission : styles.verticalMission,
-              { color: missionColor },
-            ]}
-            numberOfLines={1}
-          >
-            HUMAN RIGHTS & SOCIAL JUSTICE MISSION
-          </Text>
-          <Text
-            style={[
-              isHorizontal ? styles.horizontalHindi : styles.verticalHindi,
-              { color: hindiColor },
-            ]}
-            numberOfLines={1}
-          >
-            मानव अधिकार <Text style={styles.dot}>•</Text> सामाजिक न्याय
-          </Text>
+          {showSubtitle && (
+            <>
+              <Text
+                style={[
+                  isHorizontal ? styles.horizontalMission : styles.verticalMission,
+                  { color: missionColor },
+                ]}
+                numberOfLines={1}
+              >
+                HUMAN RIGHTS & SOCIAL JUSTICE MISSION
+              </Text>
+              <Text
+                style={[
+                  isHorizontal ? styles.horizontalHindi : styles.verticalHindi,
+                  { color: hindiColor },
+                ]}
+                numberOfLines={1}
+              >
+                मानव अधिकार <Text style={styles.dot}>•</Text> सामाजिक न्याय
+              </Text>
+            </>
+          )}
         </View>
       )}
     </View>
@@ -125,10 +132,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   horizontalWordmark: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
-    letterSpacing: 0.5,
-    lineHeight: 18,
+    letterSpacing: 0.8,
+    lineHeight: 22,
   },
   verticalMission: {
     ...Typography.badge,

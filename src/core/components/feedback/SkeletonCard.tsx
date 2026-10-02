@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
-import { AdminColors } from '../../theme/colors';
 import { Spacing, BorderRadius } from '../../theme/spacing';
 
 interface SkeletonCardProps {
@@ -10,6 +9,9 @@ interface SkeletonCardProps {
   lines?: number;
 }
 
+/**
+ * Animated shimmering skeleton loader card for smooth visual feedback during loading.
+ */
 export const SkeletonCard: React.FC<SkeletonCardProps> = ({
   height = 80,
   borderRadius = BorderRadius.lg,
@@ -19,28 +21,33 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
   const animatedValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const animation = Animated.loop(
+    const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(animatedValue, {
           toValue: 1,
-          duration: 900,
-          useNativeDriver: true,
+          duration: 750,
+          useNativeDriver: false,
         }),
         Animated.timing(animatedValue, {
           toValue: 0,
-          duration: 900,
-          useNativeDriver: true,
+          duration: 750,
+          useNativeDriver: false,
         }),
-      ])
+      ]),
     );
-    animation.start();
+    pulse.start();
 
-    return () => animation.stop();
+    return () => pulse.stop();
   }, [animatedValue]);
 
+  const backgroundColor = animatedValue.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: ['#E2E8F0', '#F8FAFC', '#E2E8F0'],
+  });
+
   const opacity = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.35, 0.75],
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.65, 0.95, 0.65],
   });
 
   return (
@@ -53,6 +60,7 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
             {
               height,
               borderRadius,
+              backgroundColor,
               opacity,
               marginBottom: lines > 1 && index < lines - 1 ? Spacing.sm : 0,
             },
@@ -65,7 +73,9 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: AdminColors.shimmerBase,
     width: '100%',
+    overflow: 'hidden',
   },
 });
+
+export default SkeletonCard;

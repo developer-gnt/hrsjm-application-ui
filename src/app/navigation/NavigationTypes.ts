@@ -49,6 +49,9 @@ export type MoreStackParamList = {
   [AppRoutes.DONATIONS]: undefined;
   [AppRoutes.ROLES_PERMISSIONS]: undefined;
   [AppRoutes.SETTINGS]: undefined;
+  [AppRoutes.EVENTS]: undefined;
+  [AppRoutes.EVENT_DETAILS]: { event: any };
+  [AppRoutes.CREATE_EVENT]: undefined;
 };
 
 /** Placeholder stack for non-admin authenticated users until their role

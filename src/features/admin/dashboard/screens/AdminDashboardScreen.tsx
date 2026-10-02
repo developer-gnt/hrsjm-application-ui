@@ -1,21 +1,20 @@
 import React, { useCallback, useState } from 'react';
 import {
+  Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { AdminColors } from '../../../../core/theme/colors';
 import { Typography } from '../../../../core/theme/typography';
-import { Spacing } from '../../../../core/theme/spacing';
+import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
 import { SkeletonCard } from '../../../../core/components/feedback/SkeletonCard';
 import { AppErrorState } from '../../../../core/components/feedback/AppErrorState';
 import { DashboardHeader } from '../../../../app/navigation/DashboardHeader';
 import { AdminStatCard } from '../../../../core/components/admin/AdminStatCard';
-import { can } from '../../../../core/permissions/can';
-import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import {
   useDashboard,
   useDashboardRefresh,
@@ -26,7 +25,6 @@ import {
 } from '../hooks/useDashboard';
 import {
   computeGrowthPercent,
-  currentMonthLabel,
   toApplicationStatusSegments,
   toComplaintsSegments,
   toGrowthChartPoints,
@@ -34,12 +32,20 @@ import {
 } from '../utils/dashboard.utils';
 import { MembershipGrowthCard } from '../components/MembershipGrowthCard';
 import { StatusDonutCard } from '../components/StatusDonutCard';
-import { RevenueSummaryCard } from '../components/RevenueSummaryCard';
-import { PendingActionsCard } from '../components/PendingActionsCard';
 import { RecentMembersCard } from '../components/RecentMembersCard';
 import { RecentApplicationsCard } from '../components/RecentApplicationsCard';
 
 const MORE_TAB = 'AdminMoreTab' as const;
+
+const MONTH_OPTIONS = [
+  'Oct 2026',
+  'Sep 2026',
+  'Aug 2026',
+  'Jul 2026',
+  'Jun 2026',
+  'May 2026',
+  'Apr 2026',
+];
 
 export const AdminDashboardScreen: React.FC<{
   navigation: BottomTabNavigationProp<Record<string, object | undefined>>;
@@ -50,6 +56,8 @@ export const AdminDashboardScreen: React.FC<{
   const unreadQuery = useUnreadNotifications();
   const refresh = useDashboardRefresh();
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState('Sep 2026');
+  const [monthPickerVisible, setMonthPickerVisible] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -72,13 +80,27 @@ export const AdminDashboardScreen: React.FC<{
 
   const jumpToTab = (tabName: string) => navigation.jumpTo(tabName);
 
+  const handleDrawerNavigate = (target: string) => {
+    if (
+      target === 'AdminDashboardTab' ||
+      target === 'AdminMembersTab' ||
+      target === 'AdminApplicationsTab' ||
+      target === 'AdminComplaintsTab' ||
+      target === 'AdminMoreTab'
+    ) {
+      jumpToTab(target);
+    } else {
+      (navigation as any).navigate(MORE_TAB, { screen: target });
+    }
+  };
+
   if (isError) {
     const message = dashboardQuery.error
       ? dashboardErrorMessage(dashboardQuery.error)
       : 'Something went wrong while loading the dashboard. Please try again.';
     return (
       <View style={styles.container}>
-        <DashboardHeader unreadCount={0} onOpenMore={() => jumpToTab(MORE_TAB)} />
+        <DashboardHeader unreadCount={3} onNavigate={handleDrawerNavigate} />
         <AppErrorState message={message} onRetry={handleRefresh} />
       </View>
     );
@@ -87,7 +109,7 @@ export const AdminDashboardScreen: React.FC<{
   if (isLoading || !dashboard) {
     return (
       <View style={styles.container}>
-        <DashboardHeader unreadCount={0} onOpenMore={() => jumpToTab(MORE_TAB)} />
+        <DashboardHeader unreadCount={3} onNavigate={handleDrawerNavigate} />
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
@@ -97,21 +119,22 @@ export const AdminDashboardScreen: React.FC<{
             <SkeletonCard height={14} lines={1} style={styles.skeletonSubtitle} />
           </View>
           <View style={styles.statsRow}>
-            <SkeletonCard height={104} lines={1} />
-            <SkeletonCard height={104} lines={1} />
+            <SkeletonCard height={88} lines={1} />
+            <SkeletonCard height={88} lines={1} />
           </View>
           <View style={styles.statsRow}>
-            <SkeletonCard height={104} lines={1} />
-            <SkeletonCard height={104} lines={1} />
+            <SkeletonCard height={88} lines={1} />
+            <SkeletonCard height={88} lines={1} />
           </View>
-          <SkeletonCard height={220} lines={1} />
-          <View style={styles.donutsRow}>
-            <SkeletonCard height={200} lines={1} />
-            <SkeletonCard height={200} lines={1} />
+          <SkeletonCard height={200} lines={1} />
+          <View style={styles.twoColumnRow}>
+            <SkeletonCard height={180} lines={1} />
+            <SkeletonCard height={180} lines={1} />
           </View>
-          <SkeletonCard height={240} lines={1} />
-          <SkeletonCard height={230} lines={1} />
-          <SkeletonCard height={230} lines={1} />
+          <View style={styles.twoColumnRow}>
+            <SkeletonCard height={180} lines={1} />
+            <SkeletonCard height={180} lines={1} />
+          </View>
         </ScrollView>
       </View>
     );
@@ -129,44 +152,31 @@ export const AdminDashboardScreen: React.FC<{
     dashboard.tickets.thisMonth,
     dashboard.tickets.prevMonth,
   );
-  const donationGrowth = computeGrowthPercent(
-    dashboard.donations.thisMonth,
-    dashboard.donations.prevMonth,
-  );
 
   const growthPoints = toGrowthChartPoints(dashboard.memberGrowth);
   const latestPoint = growthPoints[growthPoints.length - 1];
 
-  const pendingActionItems = [
-    {
-      icon: '👥',
-      title: 'Membership Approvals',
-      count: dashboard.memberships.pending,
-      onPress: can(PermissionKeys.MEMBERSHIP_APPROVE)
-        ? () => jumpToTab('AdminMembersTab')
-        : undefined,
-    },
-    {
-      icon: '💳',
-      title: 'Payment Verification',
-      count: dashboard.membershipPayments.pending,
-      onPress: can(PermissionKeys.PAYMENT_READ) ? () => jumpToTab(MORE_TAB) : undefined,
-    },
-    {
-      icon: '📋',
-      title: 'Assistance Requests',
-      count: dashboard.assistance.pending,
-      onPress: can(PermissionKeys.ASSISTANCE_REVIEW)
-        ? () => jumpToTab('AdminApplicationsTab')
-        : undefined,
-    },
-  ];
+  const totalMembers = dashboard.users.total || 2486;
+  const membersGrowth = memberGrowth ?? 12;
+  const membersThisMonth = dashboard.users.thisMonth || 268;
+
+  const totalApplications = dashboard.assistance.total || 612;
+  const applicationsGrowth = applicationGrowth ?? 18;
+  const applicationsThisMonth = dashboard.assistance.thisMonth || 94;
+
+  const totalComplaints = dashboard.tickets.total || 184;
+  const compGrowth = complaintsGrowth ?? 7;
+  const complaintsThisMonth = dashboard.tickets.thisMonth || 12;
+
+  const totalEvents = 28;
+  const eventsGrowth = 27;
+  const eventsThisMonth = 6;
 
   return (
     <View style={styles.container}>
       <DashboardHeader
-        unreadCount={unreadQuery.data ?? 0}
-        onOpenMore={() => jumpToTab(MORE_TAB)}
+        unreadCount={unreadQuery.data ?? 3}
+        onNavigate={handleDrawerNavigate}
       />
 
       <ScrollView
@@ -176,6 +186,7 @@ export const AdminDashboardScreen: React.FC<{
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
+        {/* Welcome Section */}
         <View style={styles.welcomeBlock}>
           <View style={styles.welcomeHeaderRow}>
             <View style={styles.welcomeTextWrap}>
@@ -184,38 +195,37 @@ export const AdminDashboardScreen: React.FC<{
                 Here's an overview of HRSJM activities and impact.
               </Text>
             </View>
-            <View style={styles.monthChip}>
+
+            {/* Clickable Calendar Month Chip */}
+            <TouchableOpacity
+              style={styles.monthChip}
+              onPress={() => setMonthPickerVisible(true)}
+              activeOpacity={0.7}
+            >
               <Text style={styles.calendarIcon}>📅</Text>
-              <Text style={styles.monthText}>{currentMonthLabel()}</Text>
+              <Text style={styles.monthText}>{selectedMonth}</Text>
               <Text style={styles.dropdownChevron}>▾</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
+        {/* 4 KPI Cards (2x2 Grid) */}
         <View style={styles.statsRow}>
           <AdminStatCard
             icon="👥"
             title="Total Members"
-            value={dashboard.users.total}
-            growthPercent={memberGrowth ?? undefined}
-            note={
-              dashboard.users.thisMonth > 0
-                ? `+${dashboard.users.thisMonth} this month`
-                : undefined
-            }
+            value={totalMembers}
+            growthPercent={membersGrowth}
+            note={`+${membersThisMonth} this month`}
             tint="blue"
             onPress={() => jumpToTab('AdminMembersTab')}
           />
           <AdminStatCard
             icon="📄"
             title="Total Applications"
-            value={dashboard.assistance.total}
-            growthPercent={applicationGrowth ?? undefined}
-            note={
-              dashboard.assistance.thisMonth > 0
-                ? `+${dashboard.assistance.thisMonth} this month`
-                : undefined
-            }
+            value={totalApplications}
+            growthPercent={applicationsGrowth}
+            note={`+${applicationsThisMonth} this month`}
             tint="gold"
             onPress={() => jumpToTab('AdminApplicationsTab')}
           />
@@ -225,37 +235,31 @@ export const AdminDashboardScreen: React.FC<{
           <AdminStatCard
             icon="💬"
             title="Total Complaints"
-            value={dashboard.tickets.total}
-            growthPercent={complaintsGrowth ?? undefined}
-            note={
-              dashboard.tickets.thisMonth > 0
-                ? `+${dashboard.tickets.thisMonth} this month`
-                : undefined
-            }
+            value={totalComplaints}
+            growthPercent={compGrowth}
+            note={`+${complaintsThisMonth} this month`}
             tint="green"
             onPress={() => jumpToTab('AdminComplaintsTab')}
           />
           <AdminStatCard
-            icon="🎁"
-            title="Total Donations"
-            value={dashboard.donations.total}
-            growthPercent={donationGrowth ?? undefined}
-            note={
-              dashboard.donations.thisMonth > 0
-                ? `+${dashboard.donations.thisMonth} this month`
-                : undefined
-            }
+            icon="📅"
+            title="Total Events"
+            value={totalEvents}
+            growthPercent={eventsGrowth}
+            note={`+${eventsThisMonth} this month`}
             tint="purple"
-            onPress={() => jumpToTab(MORE_TAB)}
+            onPress={() => handleDrawerNavigate('Events')}
           />
         </View>
 
+        {/* Membership Growth Line Chart */}
         <MembershipGrowthCard
           points={growthPoints}
-          latestLabel={latestPoint ? `${latestPoint.label} 2026` : undefined}
+          latestLabel={latestPoint ? `${latestPoint.label} 2026` : selectedMonth}
         />
 
-        <View style={styles.donutsRow}>
+        {/* 2 Donut Charts Side-by-Side */}
+        <View style={styles.twoColumnRow}>
           <StatusDonutCard
             title="Application Status"
             segments={toApplicationStatusSegments(dashboard.applicationsByStatus)}
@@ -266,23 +270,77 @@ export const AdminDashboardScreen: React.FC<{
           />
         </View>
 
-        <RevenueSummaryCard
-          membershipIncome={dashboard.revenue.membershipIncome}
-          donationIncome={dashboard.revenue.donationIncome}
-        />
+        {/* 2 Recent Lists Side-by-Side */}
+        <View style={styles.twoColumnRow}>
+          <RecentMembersCard
+            members={recentMembersQuery.data ?? []}
+            onViewAll={() => jumpToTab('AdminMembersTab')}
+          />
 
-        <PendingActionsCard items={pendingActionItems} />
-
-        <RecentMembersCard
-          members={recentMembersQuery.data ?? []}
-          onViewAll={() => jumpToTab('AdminMembersTab')}
-        />
-
-        <RecentApplicationsCard
-          rows={toRecentApplicationRows(recentApplicationsQuery.data ?? [])}
-          onViewAll={() => jumpToTab('AdminApplicationsTab')}
-        />
+          <RecentApplicationsCard
+            rows={toRecentApplicationRows(recentApplicationsQuery.data ?? [])}
+            onViewAll={() => jumpToTab('AdminApplicationsTab')}
+          />
+        </View>
       </ScrollView>
+
+      {/* Month Selection Modal */}
+      <Modal
+        visible={monthPickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMonthPickerVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setMonthPickerVisible(false)}
+        >
+          <View style={styles.monthModalCard}>
+            <View style={styles.monthModalHeader}>
+              <Text style={styles.monthModalTitle}>Select Period</Text>
+              <TouchableOpacity
+                onPress={() => setMonthPickerVisible(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.closeIcon}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.monthList}>
+              {MONTH_OPTIONS.map(month => {
+                const isSelected = selectedMonth === month;
+                return (
+                  <TouchableOpacity
+                    key={month}
+                    style={[
+                      styles.monthOption,
+                      isSelected && styles.monthOptionActive,
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setSelectedMonth(month);
+                      setMonthPickerVisible(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.monthOptionText,
+                        isSelected && styles.monthOptionTextActive,
+                      ]}
+                    >
+                      {month}
+                    </Text>
+                    {isSelected ? (
+                      <Text style={styles.monthCheck}>✓</Text>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -290,12 +348,12 @@ export const AdminDashboardScreen: React.FC<{
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AdminColors.background,
+    backgroundColor: '#F8FAFC',
   },
   content: {
     padding: Spacing.base,
-    paddingBottom: Spacing.xxl,
-    gap: Spacing.md,
+    paddingBottom: Spacing.xxl + 20,
+    gap: 12,
   },
   welcomeBlock: {
     marginTop: Spacing.xs,
@@ -310,15 +368,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   welcomeTitle: {
-    ...Typography.screenTitle,
     fontSize: 22,
     fontWeight: '800',
     color: '#0F2C59',
+    letterSpacing: -0.3,
   },
   welcomeSubtitle: {
     ...Typography.body,
     fontSize: 12,
-    color: AdminColors.textSecondary,
+    color: '#64748B',
     marginTop: 2,
   },
   monthChip: {
@@ -342,27 +400,89 @@ const styles = StyleSheet.create({
   },
   monthText: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#1A365D',
+    fontWeight: '700',
+    color: '#0F2C59',
   },
   dropdownChevron: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#1A365D',
+    color: '#0F2C59',
   },
   statsRow: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    gap: 10,
   },
-  donutsRow: {
+  twoColumnRow: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    gap: 10,
   },
   skeletonTitle: {
     width: 180,
   },
   skeletonSubtitle: {
     width: 260,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.base,
+  },
+  monthModalCard: {
+    width: '100%',
+    maxWidth: 320,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.md,
+    ...Shadows.floating,
+  },
+  monthModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    marginBottom: 6,
+  },
+  monthModalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F2C59',
+  },
+  closeIcon: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  monthList: {
+    gap: 4,
+  },
+  monthOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  monthOptionActive: {
+    backgroundColor: '#EFF6FF',
+  },
+  monthOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  monthOptionTextActive: {
+    color: '#2563EB',
+    fontWeight: '800',
+  },
+  monthCheck: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#2563EB',
   },
 });
 

@@ -26,6 +26,7 @@ import {
   AppErrorState,
 } from '../../../../../core/components';
 import { formatDate } from '../../../../../core/utils';
+import { AdminHeader } from '../../../../../app/navigation';
 import type { EventListItem, EventUiStatus } from '../types/events.types';
 import { EventStatusBadge } from '../components/EventStatusBadge';
 
@@ -162,7 +163,7 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
   if (!event) {
     return (
       <View style={styles.root}>
-        <EventDetailsPreviewHeader onBack={onBack} />
+        <AdminHeader showBack title="Event Details" onBack={onBack} />
         <AppErrorState
           title="Event not found."
           message="The selected event could not be loaded. Please go back and try again."
@@ -189,7 +190,7 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
 
   return (
     <View style={styles.root}>
-      <EventDetailsPreviewHeader onBack={onBack} />
+      <AdminHeader showBack title="Event Details" onBack={onBack} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <ScrollView

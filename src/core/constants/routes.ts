@@ -39,4 +39,7 @@ export const AppRoutes = {
   DONATIONS: 'Donations',
   ROLES_PERMISSIONS: 'RolesPermissions',
   SETTINGS: 'Settings',
+  EVENTS: 'Events',
+  EVENT_DETAILS: 'EventDetails',
+  CREATE_EVENT: 'CreateEvent',
 } as const;

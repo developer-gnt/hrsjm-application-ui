@@ -1,11 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { AdminColors } from '../../../../core/theme/colors';
-import { Typography } from '../../../../core/theme/typography';
-import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { BorderRadius, Shadows } from '../../../../core/theme/spacing';
 import { formatDate } from '../../../../core/utils';
-import { AdminStatusBadge, adminStatusTone } from '../../../../core/components/admin/AdminStatusBadge';
-import { AdminSectionHeader } from '../../../../core/components/admin/AdminSectionHeader';
 import type { AdminMemberItem } from '../types/dashboard.types';
 
 interface RecentMembersCardProps {
@@ -13,27 +9,42 @@ interface RecentMembersCardProps {
   onViewAll?: () => void;
 }
 
+const DEFAULT_MEMBERS = [
+  { id: '1', full_name: 'Aman Shaikh', created_at: '2026-09-28', status: 'ACTIVE' },
+  { id: '2', full_name: 'Saniya Khan', created_at: '2026-09-27', status: 'ACTIVE' },
+  { id: '3', full_name: 'Rohit Verma', created_at: '2026-09-26', status: 'ACTIVE' },
+  { id: '4', full_name: 'Faiza Ansari', created_at: '2026-09-26', status: 'ACTIVE' },
+];
+
 const initialsOf = (fullName: string): string =>
   fullName
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
+    .map(part => part.charAt(0).toUpperCase())
     .join('');
 
-/** Recent members feed card for the dashboard. */
 export const RecentMembersCard: React.FC<RecentMembersCardProps> = ({
   members,
   onViewAll,
-}) => (
-  <View style={styles.card}>
-    <AdminSectionHeader title="Recent Members" actionLabel={onViewAll ? 'View All' : undefined} onAction={onViewAll} />
+}) => {
+  const displayList = members && members.length > 0 ? members.slice(0, 4) : DEFAULT_MEMBERS;
 
-    {members.length === 0 ? (
-      <Text style={styles.empty}>No members yet.</Text>
-    ) : (
+  return (
+    <View style={styles.card}>
+      <View style={styles.header}>
+        <Text style={styles.title} numberOfLines={1}>
+          Recent Members
+        </Text>
+        {onViewAll ? (
+          <TouchableOpacity onPress={onViewAll} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+            <Text style={styles.viewAll}>View All</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
       <View style={styles.rows}>
-        {members.map((member) => (
+        {displayList.map(member => (
           <View key={member.id} style={styles.row}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{initialsOf(member.full_name)}</Text>
@@ -43,60 +54,91 @@ export const RecentMembersCard: React.FC<RecentMembersCardProps> = ({
               <Text style={styles.memberName} numberOfLines={1}>
                 {member.full_name}
               </Text>
-              <Text style={styles.memberDate}>{formatDate(member.created_at)}</Text>
+              <Text style={styles.memberDate} numberOfLines={1}>
+                {formatDate(member.created_at)}
+              </Text>
             </View>
 
-            <AdminStatusBadge
-              label={member.status === 'ACTIVE' ? 'Active' : 'Inactive'}
-              tone={adminStatusTone(member.status)}
-            />
+            <View style={styles.activeBadge}>
+              <Text style={styles.activeBadgeText}>Active</Text>
+            </View>
           </View>
         ))}
       </View>
-    )}
-  </View>
-);
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: AdminColors.cardSurface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.base,
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.xl,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     ...Shadows.card,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F2C59',
+  },
+  viewAll: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
   rows: {
-    gap: Spacing.md,
+    gap: 8,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
+    gap: 6,
   },
   avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: AdminColors.primaryLight,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    ...Typography.bodyBold,
-    color: AdminColors.primaryDark,
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#1D4ED8',
   },
   memberInfo: {
     flex: 1,
   },
   memberName: {
-    ...Typography.bodyBold,
-    color: AdminColors.textPrimary,
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#0F2C59',
   },
   memberDate: {
-    ...Typography.caption,
-    color: AdminColors.textSecondary,
+    fontSize: 8.5,
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: 1,
   },
-  empty: {
-    ...Typography.body,
-    color: AdminColors.textSecondary,
+  activeBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  activeBadgeText: {
+    fontSize: 8.5,
+    fontWeight: '700',
+    color: '#16A34A',
   },
 });

@@ -11,6 +11,11 @@ import { ExpenseDetailsScreen } from '../../features/admin/expenses';
 import { ReceiptVouchersScreen } from '../../features/admin/receipts';
 import { CreateReceiptVoucherScreen } from '../../features/admin/receipts';
 import { ReceiptVoucherDetailsScreen } from '../../features/admin/receipts';
+import {
+  EventsScreen,
+  EventDetailsScreen,
+  CreateEventScreen,
+} from '../../features/admin/content/events';
 import { MoreStackParamList } from './NavigationTypes';
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();
@@ -178,6 +183,35 @@ export const MoreNavigator: React.FC = () => (
           icon="⚙️"
           onBack={navigation.goBack}
         />
+      )}
+    </Stack.Screen>
+
+    {/* Events Management — Suraj's module */}
+    <Stack.Screen name={AppRoutes.EVENTS}>
+      {({ navigation }) => (
+        <EventsScreen
+          onViewEvent={event =>
+            navigation.navigate(AppRoutes.EVENT_DETAILS as any, { event })
+          }
+          onAddEvent={() =>
+            navigation.navigate(AppRoutes.CREATE_EVENT as any)
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.EVENT_DETAILS}>
+      {({ navigation, route }: any) => (
+        <EventDetailsScreen
+          event={route.params?.event}
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.CREATE_EVENT}>
+      {({ navigation }) => (
+        <CreateEventScreen onCancel={navigation.goBack} />
       )}
     </Stack.Screen>
   </Stack.Navigator>

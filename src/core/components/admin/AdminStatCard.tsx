@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AdminColors } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
 import { Spacing, BorderRadius, Shadows } from '../../theme/spacing';
 
@@ -20,31 +19,40 @@ interface AdminStatCardProps {
 
 const TINT_STYLES: Record<
   AdminStatCardTint,
-  { background: string; iconBackground: string; iconColor: string }
+  {
+    background: string;
+    borderColor: string;
+    iconBackground: string;
+    iconColor: string;
+  }
 > = {
   blue: {
-    background: AdminColors.infoLight,
-    iconBackground: AdminColors.info,
-    iconColor: AdminColors.cardSurface,
+    background: '#F0F7FF',
+    borderColor: '#E0F2FE',
+    iconBackground: '#BAE6FD',
+    iconColor: '#0284C7',
   },
   gold: {
-    background: AdminColors.accentGoldLight,
-    iconBackground: AdminColors.accentGold,
-    iconColor: AdminColors.primaryDark,
+    background: '#FFFBEB',
+    borderColor: '#FEF3C7',
+    iconBackground: '#FDE68A',
+    iconColor: '#D97706',
   },
   green: {
-    background: AdminColors.successLight,
-    iconBackground: AdminColors.success,
-    iconColor: AdminColors.cardSurface,
+    background: '#F0FDF4',
+    borderColor: '#DCFCE7',
+    iconBackground: '#BBF7D0',
+    iconColor: '#16A34A',
   },
   purple: {
-    background: AdminColors.accentPurpleLight,
-    iconBackground: AdminColors.accentPurple,
-    iconColor: AdminColors.cardSurface,
+    background: '#FAF5FF',
+    borderColor: '#F3E8FF',
+    iconBackground: '#E9D5FF',
+    iconColor: '#9333EA',
   },
 };
 
-/** Tinted KPI card for the admin dashboard. */
+/** Tinted KPI card matching the HRSJM official design system. */
 export const AdminStatCard: React.FC<AdminStatCardProps> = ({
   icon,
   title,
@@ -58,29 +66,56 @@ export const AdminStatCard: React.FC<AdminStatCardProps> = ({
   const growthLabel =
     growthPercent === undefined || growthPercent === null
       ? null
-      : `${growthPercent >= 0 ? '↑' : '↓'} ${Math.abs(growthPercent)}%`;
+      : `↑ ${Math.abs(growthPercent)}%`;
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.background }]}
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.background,
+          borderColor: colors.borderColor,
+        },
+      ]}
       onPress={onPress}
       disabled={!onPress}
-      activeOpacity={onPress ? 0.8 : 1}
+      activeOpacity={onPress ? 0.75 : 1}
     >
-      <View
-        style={[styles.iconBadge, { backgroundColor: colors.iconBackground }]}
-      >
-        <Text style={[styles.icon, { color: colors.iconColor }]}>{icon}</Text>
+      <View style={styles.cardContent}>
+        {/* Left circular icon badge */}
+        <View
+          style={[
+            styles.iconBadge,
+            { backgroundColor: colors.iconBackground },
+          ]}
+        >
+          <Text style={styles.icon}>{icon}</Text>
+        </View>
+
+        {/* Right info block */}
+        <View style={styles.infoBlock}>
+          <Text style={styles.title} numberOfLines={1}>
+            {title}
+          </Text>
+
+          <View style={styles.valueRow}>
+            <Text style={styles.value}>
+              {typeof value === 'number' ? value.toLocaleString() : value}
+            </Text>
+            {growthLabel ? (
+              <View style={styles.growthBadge}>
+                <Text style={styles.growthText}>{growthLabel}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {note ? (
+            <Text style={styles.note} numberOfLines={1}>
+              {note}
+            </Text>
+          ) : null}
+        </View>
       </View>
-
-      <Text style={styles.title}>{title}</Text>
-
-      <View style={styles.valueRow}>
-        <Text style={styles.value}>{value}</Text>
-        {growthLabel ? <Text style={styles.growth}>{growthLabel}</Text> : null}
-      </View>
-
-      {note ? <Text style={styles.note}>{note}</Text> : null}
     </TouchableOpacity>
   );
 };
@@ -88,42 +123,63 @@ export const AdminStatCard: React.FC<AdminStatCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    padding: 12,
+    borderWidth: 1,
+    minHeight: 88,
+    justifyContent: 'center',
     ...Shadows.card,
   },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   iconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.sm,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.sm,
   },
   icon: {
-    fontSize: 18,
+    fontSize: 20,
+  },
+  infoBlock: {
+    flex: 1,
+    justifyContent: 'center',
   },
   title: {
-    ...Typography.secondary,
-    color: AdminColors.textSecondary,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F2C59',
     marginBottom: 2,
   },
   valueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: 6,
   },
   value: {
-    ...Typography.metric,
-    color: AdminColors.textPrimary,
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#0F2C59',
   },
-  growth: {
-    ...Typography.caption,
-    color: AdminColors.success,
+  growthBadge: {
+    backgroundColor: '#DCFCE7',
+    borderRadius: 12,
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+  },
+  growthText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#16A34A',
   },
   note: {
-    ...Typography.secondary,
-    color: AdminColors.textSecondary,
+    fontSize: 10.5,
+    fontWeight: '500',
+    color: '#64748B',
     marginTop: 2,
   },
 });

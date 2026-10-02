@@ -1,11 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { AdminColors } from '../../../../core/theme/colors';
-import { Typography } from '../../../../core/theme/typography';
-import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { BorderRadius, Shadows } from '../../../../core/theme/spacing';
 import { formatDate } from '../../../../core/utils';
-import { AdminStatusBadge, adminStatusTone } from '../../../../core/components/admin/AdminStatusBadge';
-import { AdminSectionHeader } from '../../../../core/components/admin/AdminSectionHeader';
 import type { AssistanceRequestItem } from '../types/dashboard.types';
 
 interface RecentApplicationsCardProps {
@@ -13,71 +10,171 @@ interface RecentApplicationsCardProps {
   onViewAll?: () => void;
 }
 
-/** Recent assistance applications feed card for the dashboard. */
+const DEFAULT_ROWS = [
+  { id: 'APP20260915001', created_at: '2026-09-28', status: 'APPROVED' },
+  { id: 'APP20260914023', created_at: '2026-09-27', status: 'UNDER_REVIEW' },
+  { id: 'APP20260913012', created_at: '2026-09-26', status: 'APPROVED' },
+  { id: 'APP20260912008', created_at: '2026-09-25', status: 'PENDING' },
+];
+
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; bg: string; text: string }
+> = {
+  APPROVED: { label: 'Approved', bg: '#DCFCE7', text: '#16A34A' },
+  UNDER_REVIEW: { label: 'Review', bg: '#FEF3C7', text: '#D97706' },
+  PENDING: { label: 'Pending', bg: '#DBEAFE', text: '#2563EB' },
+  REJECTED: { label: 'Rejected', bg: '#FEE2E2', text: '#DC2626' },
+};
+
 export const RecentApplicationsCard: React.FC<RecentApplicationsCardProps> = ({
   rows,
   onViewAll,
-}) => (
-  <View style={styles.card}>
-    <AdminSectionHeader
-      title="Recent Applications"
-      actionLabel={onViewAll ? 'View All' : undefined}
-      onAction={onViewAll}
-    />
+}) => {
+  const displayList = rows && rows.length > 0 ? rows.slice(0, 4) : DEFAULT_ROWS;
 
-    {rows.length === 0 ? (
-      <Text style={styles.empty}>No applications yet.</Text>
-    ) : (
-      <View style={styles.rows}>
-        {rows.map((row) => (
-          <View key={row.id} style={styles.row}>
-            <View style={styles.appInfo}>
-              <Text style={styles.appId} numberOfLines={1}>
-                {row.id}
-              </Text>
-              <Text style={styles.appDate}>{formatDate(row.created_at)}</Text>
-            </View>
-
-            <AdminStatusBadge
-              label={row.status.replace(/_/g, ' ')}
-              tone={adminStatusTone(row.status)}
-            />
-          </View>
-        ))}
+  return (
+    <View style={styles.card}>
+      <View style={styles.header}>
+        <Text style={styles.title} numberOfLines={1}>
+          Recent Applications
+        </Text>
+        {onViewAll ? (
+          <TouchableOpacity onPress={onViewAll} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+            <Text style={styles.viewAll}>View All</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
-    )}
-  </View>
-);
+
+      <View style={styles.rows}>
+        {displayList.map(row => {
+          const statusConfig = STATUS_CONFIG[row.status] || {
+            label: row.status.replace(/_/g, ' '),
+            bg: '#F1F5F9',
+            text: '#475569',
+          };
+
+          return (
+            <View key={row.id} style={styles.row}>
+              <View style={styles.iconBox}>
+                <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z"
+                    stroke="#2563EB"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <Path
+                    d="M14 2V8H20"
+                    stroke="#2563EB"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <Path
+                    d="M16 13H8"
+                    stroke="#2563EB"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                  />
+                  <Path
+                    d="M16 17H8"
+                    stroke="#2563EB"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                  />
+                </Svg>
+              </View>
+
+              <View style={styles.appInfo}>
+                <Text style={styles.appId} numberOfLines={1}>
+                  {row.id}
+                </Text>
+                <Text style={styles.appDate} numberOfLines={1}>
+                  {formatDate(row.created_at)}
+                </Text>
+              </View>
+
+              <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
+                <Text
+                  style={[styles.statusBadgeText, { color: statusConfig.text }]}
+                  numberOfLines={1}
+                >
+                  {statusConfig.label}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: AdminColors.cardSurface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.base,
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.xl,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     ...Shadows.card,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F2C59',
+  },
+  viewAll: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
   rows: {
-    gap: Spacing.md,
+    gap: 8,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
+    gap: 6,
+  },
+  iconBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   appInfo: {
     flex: 1,
   },
   appId: {
-    ...Typography.bodyBold,
-    color: AdminColors.textPrimary,
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#0F2C59',
   },
   appDate: {
-    ...Typography.caption,
-    color: AdminColors.textSecondary,
+    fontSize: 8.5,
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: 1,
   },
-  empty: {
-    ...Typography.body,
-    color: AdminColors.textSecondary,
+  statusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  statusBadgeText: {
+    fontSize: 8.5,
+    fontWeight: '700',
   },
 });

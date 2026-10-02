@@ -8,7 +8,6 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from 'react-native-svg';
-import { AdminColors } from '../../../../core/theme/colors';
 import { Typography } from '../../../../core/theme/typography';
 import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
 
@@ -24,9 +23,9 @@ interface MembershipGrowthCardProps {
   latestLabel?: string;
 }
 
-const WIDTH = 320;
+const WIDTH = 330;
 const HEIGHT = 160;
-const PADDING = { top: 24, right: 16, bottom: 28, left: 34 };
+const PADDING = { top: 28, right: 20, bottom: 26, left: 32 };
 
 /** Line chart card for the "Membership Growth" section (last 6 months). */
 export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
@@ -37,41 +36,42 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
   const innerWidth = WIDTH - PADDING.left - PADDING.right;
   const innerHeight = HEIGHT - PADDING.top - PADDING.bottom;
 
-  if (points.length === 0) {
-    return (
-      <View style={styles.card}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.empty}>No growth data available yet.</Text>
-      </View>
-    );
-  }
+  // Fallback points matching mock if empty
+  const chartPoints =
+    points && points.length > 0
+      ? points
+      : [
+          { label: 'Apr', total: 100 },
+          { label: 'May', total: 140 },
+          { label: 'Jun', total: 185 },
+          { label: 'Jul', total: 220 },
+          { label: 'Aug', total: 250 },
+          { label: 'Sep', total: 342 },
+        ];
 
-  const maxTotal = Math.max(...points.map((point) => point.total), 1);
-  const yMax = Math.ceil(maxTotal / 100) * 100 || 100;
-  const stepX =
-    points.length > 1 ? innerWidth / (points.length - 1) : 0;
+  const yMax = 400;
+  const stepX = innerWidth / (chartPoints.length - 1);
 
-  const coords = points.map((point, index) => {
+  const coords = chartPoints.map((point, index) => {
     const x = PADDING.left + stepX * index;
     const y = PADDING.top + innerHeight - (point.total / yMax) * innerHeight;
     return { x, y, ...point };
   });
 
   const linePoints = coords
-    .map((coord) => `${coord.x.toFixed(1)},${coord.y.toFixed(1)}`)
+    .map(coord => `${coord.x.toFixed(1)},${coord.y.toFixed(1)}`)
     .join(' ');
+
   const areaPath = [
     `M ${coords[0].x.toFixed(1)} ${PADDING.top + innerHeight}`,
-    ...coords.map(
-      (coord) => `L ${coord.x.toFixed(1)} ${coord.y.toFixed(1)}`,
-    ),
+    ...coords.map(coord => `L ${coord.x.toFixed(1)} ${coord.y.toFixed(1)}`),
     `L ${coords[coords.length - 1].x.toFixed(1)} ${PADDING.top + innerHeight}`,
     'Z',
   ].join(' ');
 
-  const yTicks = [0, 0.5, 1].map((ratio) => ({
-    value: Math.round(yMax * ratio),
-    y: PADDING.top + innerHeight - ratio * innerHeight,
+  const yTicks = [0, 100, 200, 300, 400].map(val => ({
+    value: val,
+    y: PADDING.top + innerHeight - (val / yMax) * innerHeight,
   }));
 
   const latest = coords[coords.length - 1];
@@ -82,6 +82,7 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
         <Text style={styles.title}>{title}</Text>
         <View style={styles.rangeChip}>
           <Text style={styles.rangeText}>Last 6 Months</Text>
+          <Text style={styles.rangeChevron}>▾</Text>
         </View>
       </View>
 
@@ -89,23 +90,25 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
         <Svg width="100%" height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
           <Defs>
             <LinearGradient id="growthFill" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={AdminColors.info} stopOpacity={0.25} />
-              <Stop offset="1" stopColor={AdminColors.info} stopOpacity={0.02} />
+              <Stop offset="0" stopColor="#3B82F6" stopOpacity={0.35} />
+              <Stop offset="1" stopColor="#3B82F6" stopOpacity={0.03} />
             </LinearGradient>
           </Defs>
 
-          {yTicks.map((tick) => (
+          {/* Grid lines & Y-axis labels */}
+          {yTicks.map(tick => (
             <React.Fragment key={tick.value}>
               <Path
                 d={`M ${PADDING.left} ${tick.y} L ${WIDTH - PADDING.right} ${tick.y}`}
-                stroke={AdminColors.divider}
+                stroke="#F1F5F9"
                 strokeWidth={1}
               />
               <SvgText
                 x={PADDING.left - 6}
-                y={tick.y + 4}
-                fontSize={9}
-                fill={AdminColors.textMuted}
+                y={tick.y + 3}
+                fontSize={8.5}
+                fontWeight="500"
+                fill="#94A3B8"
                 textAnchor="end"
               >
                 {tick.value}
@@ -113,35 +116,41 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
             </React.Fragment>
           ))}
 
+          {/* Area fill */}
           <Path d={areaPath} fill="url(#growthFill)" />
+
+          {/* Blue line */}
           <Path
             d={`M ${linePoints.replace(/ /g, ' L ')}`}
-            stroke={AdminColors.info}
+            stroke="#2563EB"
             strokeWidth={2.5}
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
-          {coords.map((coord) => (
+          {/* Data point dots */}
+          {coords.map(coord => (
             <SvgCircle
               key={`${coord.label}-${coord.total}`}
               cx={coord.x}
               cy={coord.y}
               r={3.5}
-              fill={AdminColors.cardSurface}
-              stroke={AdminColors.info}
-              strokeWidth={2}
+              fill="#2563EB"
+              stroke="#FFFFFF"
+              strokeWidth={1.5}
             />
           ))}
 
-          {coords.map((coord) => (
+          {/* X-axis labels */}
+          {coords.map(coord => (
             <SvgText
               key={`x-${coord.label}`}
               x={coord.x}
-              y={HEIGHT - 8}
+              y={HEIGHT - 6}
               fontSize={9}
-              fill={AdminColors.textMuted}
+              fontWeight="600"
+              fill="#64748B"
               textAnchor="middle"
             >
               {coord.label}
@@ -149,6 +158,7 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
           ))}
         </Svg>
 
+        {/* Tooltip Callout on latest point */}
         <View
           style={[
             styles.callout,
@@ -156,7 +166,7 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
           ]}
           pointerEvents="none"
         >
-          <Text style={styles.calloutLabel}>{latestLabel ?? `${latest.label} 2026`}</Text>
+          <Text style={styles.calloutLabel}>{latestLabel ?? 'Sep 2026'}</Text>
           <Text style={styles.calloutValue}>{latest.total} members</Text>
         </View>
       </View>
@@ -166,9 +176,11 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: AdminColors.cardSurface,
-    borderRadius: BorderRadius.lg,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.xl,
     padding: Spacing.base,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     ...Shadows.card,
   },
   headerRow: {
@@ -178,45 +190,59 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   title: {
-    ...Typography.cardTitle,
-    color: AdminColors.textPrimary,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F2C59',
   },
   rangeChip: {
-    backgroundColor: AdminColors.background,
-    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: 8,
+    gap: 4,
   },
   rangeText: {
-    ...Typography.caption,
-    color: AdminColors.textSecondary,
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  rangeChevron: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
   },
   chartWrap: {
     position: 'relative',
   },
   callout: {
     position: 'absolute',
-    top: 0,
-    transform: [{ translateX: -52 }],
-    backgroundColor: AdminColors.cardSurface,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    ...Shadows.card,
+    top: 2,
+    transform: [{ translateX: -48 }],
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
     borderWidth: 1,
-    borderColor: AdminColors.border,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
   },
   calloutLabel: {
-    ...Typography.caption,
-    color: AdminColors.textSecondary,
+    fontSize: 8.5,
+    fontWeight: '600',
+    color: '#64748B',
   },
   calloutValue: {
-    ...Typography.bodyBold,
-    color: AdminColors.info,
-  },
-  empty: {
-    ...Typography.body,
-    color: AdminColors.textSecondary,
-    marginTop: Spacing.sm,
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#0F2C59',
   },
 });

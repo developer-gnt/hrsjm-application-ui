@@ -23,11 +23,12 @@ import {
   SkeletonCard,
 } from '../../../../../core/components';
 import { formatDate } from '../../../../../core/utils';
+import { useNavigation } from '@react-navigation/native';
 import { EventCard, EventListHeader } from '../components/EventCard';
 import { EventFilters } from '../components/EventFilters';
 import { EventSummaryStats } from '../components/EventSummaryStats';
-import { AdminShellHeader } from '../preview/AdminShellHeader';
-import { AdminShellTabBar } from '../preview/AdminShellTabBar';
+import { AdminHeader } from '../../../../../app/navigation';
+import { useEvents, useRefreshEvents } from '../hooks/useEvents';
 import { SAMPLE_EVENTS, SAMPLE_EVENT_CATEGORIES } from '../data/sample-events';
 import type {
   EventListItem,
@@ -100,6 +101,7 @@ interface EventsScreenProps {
 }
 
 export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEvent }) => {
+  const navigation = useNavigation<any>();
   const [uiState, setUiState] = useState<EventsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -107,25 +109,25 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  /** TEMPORARY: replace `events` with the data returned by the real useEvents hook. */
-  const events = SAMPLE_EVENTS;
+  const { data, isLoading, isError, refetch } = useEvents({
+    status: activeStatus,
+    category: activeCategory || undefined,
+    search: searchQuery,
+  });
 
-  // TEMPORARY (UI-only phase): simulated latency so the loading state is
-  // demonstrable during review. Remove when the real events hook drives this screen.
-  useEffect(() => {
-    const timer = setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, []);
+  const refreshEvents = useRefreshEvents({
+    status: activeStatus,
+    category: activeCategory || undefined,
+    search: searchQuery,
+  });
 
-  const stats = useMemo<EventStatsSummary>(
-    () => ({
-      total: events.length,
-      upcoming: events.filter(event => event.status === 'UPCOMING').length,
-      completed: events.filter(event => event.status === 'COMPLETED').length,
-      cancelled: events.filter(event => event.status === 'CANCELLED').length,
-    }),
-    [events],
-  );
+  const events = data?.events ?? SAMPLE_EVENTS;
+  const stats: EventStatsSummary = data?.stats ?? {
+    total: events.length,
+    upcoming: events.filter(event => event.status === 'UPCOMING').length,
+    completed: events.filter(event => event.status === 'COMPLETED').length,
+    cancelled: events.filter(event => event.status === 'CANCELLED').length,
+  };
 
   const statusTabs = useMemo(
     () => [
@@ -225,21 +227,37 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
   const handleStatusChange = (status: EventStatusFilter) => setActiveStatus(status);
 
   const handleRetry = () => {
-    setUiState('loading');
-    // TEMPORARY (UI-only phase): retry returns to the sample data — no API call yet.
-    setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
+    refetch();
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    // TEMPORARY (UI-only phase): simulated refresh latency — no API call yet.
-    setTimeout(() => setRefreshing(false), SAMPLE_DATA_LOAD_DELAY_MS);
+    try {
+      await refreshEvents();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleDrawerNavigate = (target: string) => {
+    if (
+      target === 'AdminDashboardTab' ||
+      target === 'AdminMembersTab' ||
+      target === 'AdminApplicationsTab' ||
+      target === 'AdminComplaintsTab'
+    ) {
+      (navigation.getParent() as any)?.jumpTo(target);
+    } else if (target === 'AdminMoreTab') {
+      navigation.navigate('MoreMenu' as any);
+    } else {
+      navigation.navigate(target as any);
+    }
   };
 
   return (
     <View style={styles.root}>
-      {/* TEMPORARY preview shell: real global header is owned by the app-level architecture. */}
-      <AdminShellHeader />
+      {/* Unified official Admin Header */}
+      <AdminHeader onNavigate={handleDrawerNavigate} unreadCount={3} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         {/* Page header: title/subtitle + Add Event */}
@@ -304,9 +322,9 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
           />
         </View>
 
-        {uiState === 'loading' ? (
+        {isLoading && !data ? (
           <LoadingListView />
-        ) : uiState === 'error' ? (
+        ) : isError && !data ? (
           <AppErrorState
             title="Unable to load events."
             message="Something went wrong while loading events. Please try again."
@@ -343,9 +361,6 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
           />
         )}
       </SafeAreaView>
-
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar />
     </View>
   );
 };

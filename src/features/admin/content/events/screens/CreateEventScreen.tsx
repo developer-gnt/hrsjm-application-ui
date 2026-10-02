@@ -22,6 +22,8 @@ import {
   Typography,
 } from '../../../../../core/theme';
 import { AppButton, AppInput } from '../../../../../core/components';
+import { AdminHeader } from '../../../../../app/navigation';
+import { useCreateEvent } from '../hooks/useEvents';
 import { EventFormField } from '../components/EventFormField';
 import { EventFormSection } from '../components/EventFormSection';
 import { EventPickerSheet } from '../components/EventPickerSheet';
@@ -176,6 +178,7 @@ interface CreateEventScreenProps {
  * validated; it does NOT claim the event was saved to a backend.
  */
 export const CreateEventScreen: React.FC<CreateEventScreenProps> = ({ onCancel }) => {
+  const createMutation = useCreateEvent();
   const [form, setForm] = useState<CreateEventFormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<CreateEventFieldErrors>({});
   const [submitted, setSubmitted] = useState(false);
@@ -249,7 +252,7 @@ export const CreateEventScreen: React.FC<CreateEventScreenProps> = ({ onCancel }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDirty, onCancel]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSubmitted(true);
     const validationErrors = validateForm(form);
     setErrors(validationErrors);
@@ -259,17 +262,22 @@ export const CreateEventScreen: React.FC<CreateEventScreenProps> = ({ onCancel }
       return;
     }
 
-    // UI-only confirmation: the form was validated locally. NO backend call
-    // happens here and no event is claimed to be saved (spec: no fake APIs).
-    setToast({
-      message: `Form validated successfully (${form.status === 'DRAFT' ? 'Draft' : 'Publish'} intent). Backend saving will be connected in a later phase.`,
-      variant: 'success',
-    });
+    try {
+      await createMutation.mutateAsync(form);
+      Alert.alert('Event Created', 'The event was successfully created and published.', [
+        { text: 'OK', onPress: onCancel },
+      ]);
+    } catch (e: any) {
+      setToast({
+        message: e?.message || 'Failed to create event. Please try again.',
+        variant: 'error',
+      });
+    }
   };
 
   return (
     <View style={styles.root}>
-      <CreateEventPreviewHeader onBack={requestCancel} />
+      <AdminHeader showBack title="Create Event" onBack={requestCancel} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <KeyboardAvoidingView

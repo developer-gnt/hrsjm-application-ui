@@ -80,4 +80,10 @@ export const ApiRoutes = {
     PERMISSIONS: '/permissions',
     USER_ROLES: (id: string | number) => `/users/${id}/roles`,
   },
+
+  // Events
+  EVENTS: {
+    BASE: '/events',
+    DETAILS: (id: string | number) => `/events/${id}`,
+  },
 } as const;
