@@ -9,6 +9,11 @@ export const ApiRoutes = {
     REFRESH: '/auth/refresh',
   },
 
+  // Donations
+  DONATIONS: {
+    BASE: '/donations',
+  },
+
   // Dashboard
   DASHBOARD: {
     USERS: '/users',

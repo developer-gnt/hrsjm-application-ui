@@ -1,11 +1,15 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { Platform } from 'react-native';
 import { authRequestInterceptor } from './interceptors/auth.interceptor';
 import { setupRefreshInterceptor } from './interceptors/refresh.interceptor';
 import { errorResponseInterceptor } from './interceptors/error.interceptor';
 import { ApiResponse } from './api.types';
 
 // Default configuration for development / production
-export const API_BASE_URL = 'http://10.0.2.2:5000/api/v1'; // Android emulator localhost default
+// Android emulator reaches host machine via 10.0.2.2; the web dev
+// preview uses a relative path proxied by the dev server (no CORS).
+export const API_BASE_URL =
+  Platform.OS === 'web' ? '/api/v1' : 'http://10.0.2.2:5000/api/v1';
 
 const createApiClient = (baseURL: string = API_BASE_URL): AxiosInstance => {
   const instance = axios.create({

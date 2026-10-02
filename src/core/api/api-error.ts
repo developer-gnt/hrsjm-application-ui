@@ -24,10 +24,23 @@ export class ApiError extends Error {
   static fromAxiosError(error: any): ApiError {
     if (error.response) {
       const { data, status } = error.response;
-      const message =
+      let message =
         data?.message ||
         data?.error ||
         (typeof data === 'string' ? data : 'An unexpected server error occurred.');
+      if (typeof message === 'string') {
+        const lower = message.toLowerCase();
+        if (
+          lower.includes('localhost') ||
+          lower.includes('proxy error') ||
+          lower.includes('econnrefused') ||
+          lower.includes('axioserror') ||
+          lower.includes('<html') ||
+          lower.includes('fetch failed')
+        ) {
+          message = 'Unable to reach the server. Please check your connection and try again.';
+        }
+      }
       return new ApiError(message, status, data?.errors, data);
     } else if (error.request) {
       return new ApiError(
@@ -35,6 +48,10 @@ export class ApiError extends Error {
         0
       );
     }
-    return new ApiError(error.message || 'An unknown error occurred.', 500);
+    const cleanMsg =
+      error.message && !error.message.toLowerCase().includes('axios')
+        ? error.message
+        : 'Unable to reach the server. Please check your connection.';
+    return new ApiError(cleanMsg, 500);
   }
 }
