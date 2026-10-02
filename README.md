@@ -1,5 +1,16 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
+# Web Preview (development only)
+
+Run the shared app code (same `App.tsx` / `src/`) in a browser via react-native-web — useful for fast UI iteration without an Android/iOS build:
+
+```sh
+npm run web
+# → http://localhost:8081
+```
+
+The web target is additive tooling only (`vite.config.ts`, `index.html`, `web-entry.jsx`, `web-shims/`); the native Android/iOS projects and Metro are unaffected. A phone-like viewport is emulated by `#root` styling in `index.html`.
+
 # Getting Started
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
