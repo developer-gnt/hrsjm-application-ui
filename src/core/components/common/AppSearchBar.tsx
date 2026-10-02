@@ -50,7 +50,10 @@ export const AppSearchBar: React.FC<AppSearchBarProps> = ({
 
   return (
     <View style={[styles.container, containerStyle]}>
-      <Text style={styles.searchIcon}>🔍</Text>
+      <View style={styles.searchIcon}>
+      <View style={styles.magnifierCircle} />
+      <View style={styles.magnifierHandle} />
+    </View>
       <TextInput
         value={internalValue}
         onChangeText={handleChangeText}
@@ -85,8 +88,29 @@ const styles = StyleSheet.create({
     height: 44,
   },
   searchIcon: {
-    fontSize: 14,
+    width: 18,
+    height: 18,
     marginRight: Spacing.sm,
+  },
+  magnifierCircle: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: AdminColors.primary,
+  },
+  magnifierHandle: {
+    position: 'absolute',
+    bottom: 1,
+    right: 1,
+    width: 2,
+    height: 6,
+    borderRadius: 1,
+    backgroundColor: AdminColors.primary,
+    transform: [{ rotate: '45deg' }],
   },
   input: {
     flex: 1,

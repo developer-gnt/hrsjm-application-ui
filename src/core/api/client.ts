@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { Platform } from 'react-native';
 import { authRequestInterceptor } from './interceptors/auth.interceptor';
 import { setupRefreshInterceptor } from './interceptors/refresh.interceptor';
 import { errorResponseInterceptor } from './interceptors/error.interceptor';
@@ -6,7 +7,8 @@ import { ApiResponse } from './api.types';
 import { APP_CONFIG } from '../../app/config/app.config';
 
 // Single source of truth for the environment base URL (see app.config.ts).
-export const API_BASE_URL = APP_CONFIG.apiBaseUrl;
+export const API_BASE_URL =
+  Platform.OS === 'web' ? '/api/v1' : APP_CONFIG.apiBaseUrl;
 
 /**
  * Invoked when the refresh interceptor exhausts the refresh token (expired /

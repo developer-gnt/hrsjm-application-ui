@@ -15,6 +15,11 @@ export const ApiRoutes = {
     ME_PERMISSIONS: '/users/me/permissions',
   },
 
+  // Donations
+  DONATIONS: {
+    BASE: '/donations',
+  },
+
   // Dashboard
   DASHBOARD: {
     USERS: '/users',
