@@ -129,6 +129,8 @@ interface EventDetailsScreenProps {
   event: EventListItem | null;
   /** Back navigation to the Events list. */
   onBack: () => void;
+  /** Opens the Edit Event screen for this event. */
+  onEdit: () => void;
 }
 
 /**
@@ -142,6 +144,7 @@ interface EventDetailsScreenProps {
 export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
   event,
   onBack,
+  onEdit,
 }) => {
   const [coverFailed, setCoverFailed] = useState(false);
 
@@ -328,7 +331,7 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
               title="Edit Event"
               variant="outline"
               size="sm"
-              onPress={() => handlePlaceholderAction('Edit Event')}
+              onPress={onEdit}
               icon={<Text style={styles.actionIcon}>✏️</Text>}
               style={styles.actionButton}
             />
@@ -364,7 +367,7 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
           <View style={styles.placeholderNote}>
             <Text style={styles.placeholderIcon}>ⓘ</Text>
             <Text style={styles.placeholderText}>
-              These actions are UI placeholders. Actual functionality will be
+              Publish, unpublish and delete are UI placeholders. They will be
               connected in a later phase after backend integration.
             </Text>
           </View>
@@ -406,6 +409,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: AdminColors.textPrimary,
+    // The ← glyph is drawn on the baseline inside its line box, which leaves
+    // it visibly below the title's optical center — nudge it up to align.
+    transform: [{ translateY: -4 }],
   },
   previewTitle: {
     ...Typography.sectionHeader,

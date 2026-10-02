@@ -1,11 +1,11 @@
 /**
  * TEMPORARY APP ENTRY (Events UI phase).
  *
- * Switches between the Events list, Event Details, and Create Event screens
- * using local state only, so the full List → View/Add → Details/Create → Back
- * flow can be reviewed on a device/emulator. This is NOT the navigation
- * architecture: the real root navigation is owned by Mubasshir (Phase 2) and
- * will replace this file.
+ * Switches between the Events list, Event Details, Create Event and Edit
+ * Event screens using local state only, so the full
+ * List → View/Add → Details → Create/Edit → Back flow can be reviewed on a
+ * device/emulator. This is NOT the navigation architecture: the real root
+ * navigation is owned by Mubasshir (Phase 2) and will replace this file.
  */
 import React, { useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -14,13 +14,15 @@ import {
   EventsScreen,
   EventDetailsScreen,
   CreateEventScreen,
+  EditEventScreen,
 } from './src/features/admin/content/events';
 import type { EventListItem } from './src/features/admin/content/events';
 
 type AppRoute =
   | { name: 'list' }
   | { name: 'details'; event: EventListItem }
-  | { name: 'create' };
+  | { name: 'create' }
+  | { name: 'edit'; event: EventListItem };
 
 function App() {
   const [route, setRoute] = useState<AppRoute>({ name: 'list' });
@@ -28,10 +30,16 @@ function App() {
   return (
     <SafeAreaProvider>
       <StatusBar barStyle="dark-content" />
-      {route.name === 'details' ? (
+      {route.name === 'edit' ? (
+        <EditEventScreen
+          event={route.event}
+          onBack={() => setRoute({ name: 'details', event: route.event })}
+        />
+      ) : route.name === 'details' ? (
         <EventDetailsScreen
           event={route.event}
           onBack={() => setRoute({ name: 'list' })}
+          onEdit={() => setRoute({ name: 'edit', event: route.event })}
         />
       ) : route.name === 'create' ? (
         <CreateEventScreen onCancel={() => setRoute({ name: 'list' })} />
