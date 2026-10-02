@@ -1,8 +1,6 @@
 /* eslint-env jest */
 /**
- * Jest global mocks for native modules used by the auth/storage layer.
- * Keychain-backed secure storage and MMKV are simulated with plain JS so
- * unit tests exercise real logic without a device.
+ * Jest global mocks for native modules used across auth, storage, navigation, and UI components.
  */
 
 jest.mock('react-native-keychain', () => {
@@ -53,3 +51,40 @@ jest.mock('react-native-screens', () => {
   let enableScreens = jest.fn();
   return { enableScreens, enableFreeze: jest.fn() };
 });
+
+const makeInertIconModule = () => {
+  const inertComponent = () => null;
+  return new Proxy(
+    { __esModule: true, default: inertComponent },
+    {
+      get(target, prop) {
+        if (typeof prop === 'symbol') return undefined;
+        if (prop === '__esModule' || prop === 'default') return target[prop];
+        return inertComponent;
+      },
+    }
+  );
+};
+
+jest.mock('lucide-react-native', () => makeInertIconModule());
+jest.mock('react-native-svg', () => makeInertIconModule());
+
+jest.mock('react-native-safe-area-context', () => {
+  const zeroInsets = { top: 0, bottom: 0, left: 0, right: 0 };
+  return {
+    __esModule: true,
+    SafeAreaProvider: (props: any) => props.children ?? null,
+    SafeAreaView: (props: any) => props.children ?? null,
+    SafeAreaConsumer: (props: any) => (props.children ? props.children(zeroInsets) : null),
+    useSafeAreaInsets: () => zeroInsets,
+  };
+});
+
+jest.mock('./src/core/components/feedback/SkeletonCard', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    SkeletonCard: (props: any) => React.createElement(View, props),
+  };
+});
+

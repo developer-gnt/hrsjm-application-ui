@@ -7,6 +7,12 @@ export * from './common/AppCard';
 export * from './common/AppBadge';
 export * from './common/AppAvatar';
 export * from './common/AppSearchBar';
+export * from './common/PressableScale';
+export * from './common/AppCheckbox';
+export * from './common/AppBottomNavigation';
+
+// Icon system (single family — lucide, only imported through this barrel)
+export * from './icons';
 
 // Feedback Components
 export * from './feedback/AppLoader';

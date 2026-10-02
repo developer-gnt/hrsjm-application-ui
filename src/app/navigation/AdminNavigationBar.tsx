@@ -2,7 +2,6 @@ import React from 'react';
 import {
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import type {
@@ -18,7 +17,19 @@ import { AppRoutes } from '../../core/constants/routes';
 import { MoreNavigator } from './MoreNavigator';
 import { ModulePlaceholderScreen } from './ModulePlaceholderScreen';
 import { AdminDashboardScreen } from '../../features/admin/dashboard';
+import { MembersScreen } from '../../features/admin/members/screens/MembersScreen';
 import { AdminTabParamList } from './NavigationTypes';
+import {
+  House,
+  UsersRound,
+  FileText,
+  MessageSquare,
+  LayoutGrid,
+} from '../../core/components/icons';
+import type { AppIconComponent } from '../../core/components/icons';
+import { PressableScale } from '../../core/components/common/PressableScale';
+import { BrandColors } from '../../core/theme/colors';
+import { Spacing, BorderRadius } from '../../core/theme/spacing';
 
 /**
  * ============================================================================
@@ -32,19 +43,10 @@ import { AdminTabParamList } from './NavigationTypes';
  * 2. 👥 Members       -> Member directory, renewals, ID cards, approvals.
  * 3. 📄 Applications  -> Legal aid & financial assistance request reviews.
  * 4. 💬 Complaints    -> Public grievances, ticket tracking, resolution.
- * 5. ⚙️ Settings      -> Platform settings, organization profile, security, config.
+ * 5. ⊞ More           -> Platform settings, organization profile, security, config.
  */
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
-
-const MembersPlaceholderScreen: React.FC = () => (
-  <ModulePlaceholderScreen
-    title="Members"
-    icon="👥"
-    owner="Aman"
-    description="Member directory, memberships and approvals"
-  />
-);
 
 const ApplicationsPlaceholderScreen: React.FC = () => (
   <ModulePlaceholderScreen
@@ -67,7 +69,8 @@ const ComplaintsPlaceholderScreen: React.FC = () => (
 export interface TabDefinition {
   name: keyof AdminTabParamList;
   label: string;
-  icon: string;
+  Icon: AppIconComponent;
+  icon?: string;
   component: React.ComponentType<any>;
 }
 
@@ -75,30 +78,35 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
   {
     name: AppRoutes.ADMIN_DASHBOARD_TAB,
     label: 'Dashboard',
+    Icon: House,
     icon: '🏠',
     component: AdminDashboardScreen,
   },
   {
     name: AppRoutes.ADMIN_MEMBERS_TAB,
     label: 'Members',
+    Icon: UsersRound,
     icon: '👥',
-    component: MembersPlaceholderScreen,
+    component: MembersScreen,
   },
   {
     name: AppRoutes.ADMIN_APPLICATIONS_TAB,
     label: 'Applications',
+    Icon: FileText,
     icon: '📄',
     component: ApplicationsPlaceholderScreen,
   },
   {
     name: AppRoutes.ADMIN_COMPLAINTS_TAB,
     label: 'Complaints',
+    Icon: MessageSquare,
     icon: '💬',
     component: ComplaintsPlaceholderScreen,
   },
   {
     name: AppRoutes.ADMIN_MORE_TAB,
-    label: 'Settings',
+    label: 'More',
+    Icon: LayoutGrid,
     icon: '⚙️',
     component: MoreNavigator,
   },
@@ -110,12 +118,16 @@ const TAB_PERMISSIONS: Partial<Record<keyof AdminTabParamList, string[]>> = {
   [AppRoutes.ADMIN_COMPLAINTS_TAB]: [PermissionKeys.SUPPORT_MANAGE],
 };
 
+const NAV_ICON_SIZE = 24;
+const NAV_LABEL_SIZE = 11;
+
 /**
- * Custom Tab Bar component that guarantees:
+ * Custom Tab Bar component:
  * - Equal 20% width per tab (`flex: 1`).
- * - Perfectly centered icon and label.
- * - Active tab highlighted with a pastel yellow pill (`#FEF3C7`) and amber text (`#D97706`).
- * - Zero overlapping, clipping or text collision on all screen sizes.
+ * - Professional Lucide outline icons.
+ * - Active tab highlighted with subtle gold pill (`BrandColors.goldSoft`) and dark gold accent.
+ * - Interactive micro-animation with `PressableScale`.
+ * - Safe-area aware on the bottom inset.
  */
 const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
   const insets = useSafeAreaInsets();
@@ -124,13 +136,16 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
     <View
       style={[
         styles.tabBarContainer,
-        { paddingBottom: Math.max(insets.bottom, 4) },
+        { paddingBottom: Math.max(insets.bottom, Spacing.sm) },
       ]}
+      accessibilityRole="tablist"
     >
       {state.routes.map((route, index) => {
         const isFocused = state.index === index;
         const tabDef = TAB_DEFINITIONS.find(t => t.name === route.name);
         if (!tabDef) return null;
+
+        const { Icon, label } = tabDef;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -144,28 +159,43 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
           }
         };
 
+        const onLongPress = () => {
+          navigation.emit({
+            type: 'tabLongPress',
+            target: route.key,
+          });
+        };
+
         return (
-          <TouchableOpacity
+          <PressableScale
             key={route.key}
-            accessibilityRole="button"
-            accessibilityState={isFocused ? { selected: true } : {}}
-            accessibilityLabel={tabDef.label}
             onPress={onPress}
-            style={styles.tabButton}
-            activeOpacity={0.7}
+            onLongPress={onLongPress}
+            scaleTo={0.94}
+            accessibilityRole="tab"
+            accessibilityLabel={label}
+            accessibilityState={{ selected: isFocused }}
+            testID={`bottom-nav-${route.name}`}
+            containerStyle={styles.tabItem}
+            style={styles.tabItemInner}
           >
-            <View style={[styles.tabPill, isFocused && styles.tabPillActive]}>
-              <Text style={[styles.tabIcon, isFocused && styles.tabIconActive]}>
-                {tabDef.icon}
-              </Text>
-              <Text
-                style={[styles.tabLabel, isFocused && styles.tabLabelActive]}
-                numberOfLines={1}
-              >
-                {tabDef.label}
-              </Text>
+            <View style={[styles.iconPill, isFocused && styles.iconPillActive]}>
+              <Icon
+                size={NAV_ICON_SIZE}
+                color={isFocused ? BrandColors.goldDark : BrandColors.textMuted}
+                strokeWidth={isFocused ? 2.2 : 1.8}
+              />
             </View>
-          </TouchableOpacity>
+            <Text
+              style={[
+                styles.tabLabel,
+                isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
+              ]}
+              numberOfLines={1}
+            >
+              {label}
+            </Text>
+          </PressableScale>
         );
       })}
     </View>
@@ -221,50 +251,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: '#FFFFFF',
-    borderTopColor: '#F1F5F9',
+    backgroundColor: BrandColors.surface,
+    borderTopColor: BrandColors.border,
     borderTopWidth: 1,
-    paddingTop: 6,
-    height: 64,
+    paddingTop: Spacing.sm,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
   },
-  tabButton: {
+  tabItem: {
     flex: 1,
+    minWidth: 0,
+  },
+  tabItemInner: {
+    width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: Spacing.xs,
+    minHeight: 52,
+  },
+  iconPill: {
+    paddingHorizontal: 14,
     paddingVertical: 2,
-  },
-  tabPill: {
+    borderRadius: BorderRadius.lg,
+    minHeight: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 14,
-    minWidth: 58,
   },
-  tabPillActive: {
-    backgroundColor: '#FEF3C7',
-  },
-  tabIcon: {
-    fontSize: 18,
-    color: '#64748B',
-    marginBottom: 2,
-  },
-  tabIconActive: {
-    color: '#D97706',
+  iconPillActive: {
+    backgroundColor: BrandColors.goldSoft,
   },
   tabLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#64748B',
+    marginTop: 3,
+    fontSize: NAV_LABEL_SIZE,
+    fontWeight: '500',
+    lineHeight: 14,
+    maxWidth: '100%',
   },
   tabLabelActive: {
-    color: '#D97706',
-    fontWeight: '800',
+    color: BrandColors.goldDark,
+    fontWeight: '600',
+  },
+  tabLabelInactive: {
+    color: BrandColors.textMuted,
   },
 });
 
