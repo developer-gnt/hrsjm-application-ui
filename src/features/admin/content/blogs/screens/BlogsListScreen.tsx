@@ -26,7 +26,7 @@ import { BlogCard, BlogListHeader } from '../components/BlogCard';
 import { BlogFilterSheet } from '../components/BlogFilterSheet';
 import { BlogStatusTabs } from '../components/BlogStatusTabs';
 import { BlogSummaryCard } from '../components/BlogSummaryCard';
-import { showBlogActionMenu } from '../components/BlogActionMenu';
+import { BlogActionMenu } from '../components/BlogActionMenu';
 import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
 import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
 import {
@@ -73,8 +73,14 @@ interface BlogsListScreenProps {
    */
   onAddBlog?: () => void;
   /**
-   * TEMPORARY (UI-only phase): called when the user taps a blog row (or its
-   * Edit action). When not provided, a placeholder alert is shown.
+   * TEMPORARY (UI-only phase): called when the user taps a blog row, to open
+   * the Blog Details screen. When not provided, a placeholder alert is shown.
+   */
+  onOpenBlog?: (blog: BlogListItem) => void;
+  /**
+   * TEMPORARY (UI-only phase): called when the user taps a row's Edit button.
+   * When not provided, a placeholder alert is shown (Edit Blog is a later
+   * phase).
    */
   onEditBlog?: (blog: BlogListItem) => void;
   /**
@@ -88,6 +94,28 @@ interface BlogsListScreenProps {
 /** Date-range window in days for the UI-only date filter (approximate). */
 const DATE_FILTER_DAYS: Record<string, number> = { TODAY: 1, WEEK: 7, MONTH: 31 };
 
+/** Month abbreviations used by the sample display dates ("28 Sep 2026"). */
+const BLOG_MONTH_INDEX: Record<string, number> = {
+  Jan: 0,
+  Feb: 1,
+  Mar: 2,
+  Apr: 3,
+  May: 4,
+  Jun: 5,
+  Jul: 6,
+  Aug: 7,
+  Sep: 8,
+  Oct: 9,
+  Nov: 10,
+  Dec: 11,
+};
+
+/** Display date -> timestamp so recent-first sorting is calendar-correct. */
+const blogDateValue = (date: string): number => {
+  const [day, month, year] = date.split(' ');
+  return Date.UTC(Number(year), BLOG_MONTH_INDEX[month] ?? 0, Number(day));
+};
+
 /**
  * Blogs List screen (UI-only phase).
  *
@@ -97,6 +125,7 @@ const DATE_FILTER_DAYS: Record<string, number> = { TODAY: 1, WEEK: 7, MONTH: 31 
  */
 export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
   onAddBlog,
+  onOpenBlog,
   onEditBlog,
   onTabPress,
 }) => {
@@ -107,6 +136,10 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeDateRange, setActiveDateRange] = useState('ANY');
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
+  // Action sheet state: the blog is kept while the sheet closes so the
+  // slide-out animation still shows it.
+  const [actionMenuBlog, setActionMenuBlog] = useState<BlogListItem | null>(null);
+  const [actionMenuVisible, setActionMenuVisible] = useState(false);
 
   /** TEMPORARY: replace `blogs` with the data returned by the real useBlogs hook. */
   const blogs = SAMPLE_BLOGS;
@@ -130,6 +163,20 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
   const filteredBlogs = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
+    // UI-only date filter: sample dates sit in Sep–Aug 2026, so a real
+    // calendar comparison would empty the list. Approximate: "Today/Week/
+    // Month" narrow to the N most recent sample records until the backend
+    // defines real date semantics. Sorted by the parsed display date, not
+    // the raw string (alphabetical order put "28 Aug" before "15 Sep").
+    let recentIds: Set<string> | null = null;
+    if (activeDateRange !== 'ANY') {
+      const sortedByDate = [...blogs].sort((a, b) => blogDateValue(b.date) - blogDateValue(a.date));
+      const limit = DATE_FILTER_DAYS[activeDateRange] ?? 0;
+      recentIds = new Set(
+        sortedByDate.slice(0, Math.max(1, Math.min(limit, 4))).map(item => item.id),
+      );
+    }
+
     return blogs.filter(blog => {
       if (activeStatus !== 'ALL' && blog.status !== activeStatus) {
         return false;
@@ -137,17 +184,8 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
       if (activeCategory && blog.category !== activeCategory) {
         return false;
       }
-      // UI-only date filter: sample dates sit in Sep–Aug 2026, so a real
-      // calendar comparison would empty the list. Approximate: "Today/Week/
-      // Month" narrow to the most recent sample records until the backend
-      // defines real date semantics.
-      if (activeDateRange !== 'ANY') {
-        const sortedByDate = [...blogs].sort((a, b) => b.date.localeCompare(a.date));
-        const limit = DATE_FILTER_DAYS[activeDateRange] ?? 0;
-        const recentIds = new Set(sortedByDate.slice(0, Math.max(1, Math.min(limit, 4))).map(item => item.id));
-        if (!recentIds.has(blog.id)) {
-          return false;
-        }
+      if (recentIds && !recentIds.has(blog.id)) {
+        return false;
       }
       if (!query) {
         return true;
@@ -187,6 +225,18 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
   };
 
   const handleBlogPress = (blog: BlogListItem) => {
+    if (onOpenBlog) {
+      onOpenBlog(blog);
+      return;
+    }
+    // UI placeholder only: Blog Details opens through the host app when wired.
+    Alert.alert(
+      blog.title,
+      'The Edit Blog screen will be implemented in a later phase after backend integration.',
+    );
+  };
+
+  const handleBlogEdit = (blog: BlogListItem) => {
     if (onEditBlog) {
       onEditBlog(blog);
       return;
@@ -198,7 +248,10 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
     );
   };
 
-  const handleBlogMenu = (blog: BlogListItem) => showBlogActionMenu(blog);
+  const handleBlogMenu = (blog: BlogListItem) => {
+    setActionMenuBlog(blog);
+    setActionMenuVisible(true);
+  };
 
   const handleStatusChange = (status: BlogStatusFilter) => setActiveStatus(status);
 
@@ -308,7 +361,12 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
             keyExtractor={item => item.id}
             ListHeaderComponent={BlogListHeader}
             renderItem={({ item }) => (
-              <BlogCard blog={item} onPress={handleBlogPress} onMorePress={handleBlogMenu} />
+              <BlogCard
+                blog={item}
+                onPress={handleBlogPress}
+                onEditPress={handleBlogEdit}
+                onMorePress={handleBlogMenu}
+              />
             )}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
@@ -347,6 +405,12 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
         onApply={handleApplyFilters}
         onReset={clearFilters}
         onClose={() => setFilterSheetVisible(false)}
+      />
+
+      <BlogActionMenu
+        visible={actionMenuVisible}
+        blog={actionMenuBlog}
+        onClose={() => setActionMenuVisible(false)}
       />
     </View>
   );

@@ -13,7 +13,7 @@ import {
   Typography,
 } from '../../../../../core/theme';
 import { AppCard } from '../../../../../core/components';
-import type { BlogListItem, BlogStatus } from '../../types/blog.types';
+import type { BlogListItem, BlogStatus } from '../types/blog.types';
 
 /**
  * Compact admin-table column proportions shared by the list header row and
@@ -71,9 +71,10 @@ export const formatBlogViews = (views: number): string => {
 
 /**
  * Single-line category chip (same inline approach as the News row so long
- * labels shrink to one line instead of wrapping).
+ * labels shrink to one line instead of wrapping). Exported for the details
+ * screen, which shows the same chip under the headline.
  */
-const CategoryChip: React.FC<{ category: string }> = ({ category }) => {
+export const BlogCategoryChip: React.FC<{ category: string }> = ({ category }) => {
   const tone = categoryChipTone(category);
 
   return (
@@ -130,19 +131,27 @@ export const BlogListHeader: React.FC = () => {
 
 interface BlogCardProps {
   blog: BlogListItem;
-  /** Fired when the row or the row action (Edit) is pressed. */
+  /** Fired when the row body is pressed (opens Blog Details). */
   onPress?: (blog: BlogListItem) => void;
+  /** Fired when the row Edit button is pressed (placeholder until Edit Blog exists). */
+  onEditPress?: (blog: BlogListItem) => void;
   /** Fired when the three-dot action menu is pressed. */
   onMorePress?: (blog: BlogListItem) => void;
 }
 
-export const BlogCard: React.FC<BlogCardProps> = ({ blog, onPress, onMorePress }) => {
+export const BlogCard: React.FC<BlogCardProps> = ({
+  blog,
+  onPress,
+  onEditPress,
+  onMorePress,
+}) => {
   const [imageFailed, setImageFailed] = useState(false);
   const thumbnailUri = blog.thumbnailUrl && !imageFailed ? blog.thumbnailUrl : undefined;
 
   const badgeTone = BLOG_STATUS_TONES[blog.status];
 
   const handlePress = () => onPress?.(blog);
+  const handleEdit = () => (onEditPress ? onEditPress(blog) : onPress?.(blog));
   const handleMore = () => onMorePress?.(blog);
 
   return (
@@ -176,7 +185,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({ blog, onPress, onMorePress }
 
         {/* Category */}
         <View style={styles.colCategory}>
-          <CategoryChip category={blog.category} />
+          <BlogCategoryChip category={blog.category} />
         </View>
 
         {/* Date */}
@@ -189,7 +198,9 @@ export const BlogCard: React.FC<BlogCardProps> = ({ blog, onPress, onMorePress }
           >
             {blog.date}
           </Text>
-          <Text style={styles.timeText}>{blog.time}</Text>
+          <Text style={styles.timeText} adjustsFontSizeToFit minimumFontScale={0.75} numberOfLines={1}>
+            {blog.time}
+          </Text>
         </View>
 
         {/* Status */}
@@ -220,7 +231,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({ blog, onPress, onMorePress }
         <View style={styles.colAction}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={handlePress}
+            onPress={handleEdit}
             accessibilityRole="button"
             accessibilityLabel={`Edit ${blog.title}`}
           >

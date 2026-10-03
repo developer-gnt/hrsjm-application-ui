@@ -22,9 +22,14 @@ import {
   CreateNewsScreen,
   EditNewsScreen,
 } from './src/features/admin/content/news';
-import { BlogsListScreen } from './src/features/admin/content/blogs';
+import {
+  BlogsListScreen,
+  BlogDetailsScreen,
+  CreateBlogScreen,
+} from './src/features/admin/content/blogs';
 import type { EventListItem } from './src/features/admin/content/events';
 import type { NewsListItem } from './src/features/admin/content/news';
+import type { BlogListItem } from './src/features/admin/content/blogs';
 import { showAdminShellPreviewNotice } from './src/features/admin/content/events/preview/AdminShellTabBar';
 
 type AppRoute =
@@ -36,7 +41,9 @@ type AppRoute =
   | { name: 'news-details'; news: NewsListItem }
   | { name: 'news-create' }
   | { name: 'news-edit'; news: NewsListItem }
-  | { name: 'blogs' };
+  | { name: 'blogs' }
+  | { name: 'blog-details'; blog: BlogListItem }
+  | { name: 'blog-create' };
 
 function App() {
   const [route, setRoute] = useState<AppRoute>({ name: 'list' });
@@ -72,6 +79,10 @@ function App() {
               setRoute({ name: 'list' });
               return;
             }
+            if (tab === 'blogs') {
+              setRoute({ name: 'blogs' });
+              return;
+            }
             showAdminShellPreviewNotice();
           }}
         />
@@ -79,6 +90,39 @@ function App() {
         <CreateNewsScreen onCancel={() => setRoute({ name: 'news' })} />
       ) : route.name === 'blogs' ? (
         <BlogsListScreen
+          onAddBlog={() => setRoute({ name: 'blog-create' })}
+          onOpenBlog={blog => setRoute({ name: 'blog-details', blog })}
+          onTabPress={tab => {
+            if (tab === 'events') {
+              setRoute({ name: 'list' });
+              return;
+            }
+            if (tab === 'news') {
+              setRoute({ name: 'news' });
+              return;
+            }
+            showAdminShellPreviewNotice();
+          }}
+        />
+      ) : route.name === 'blog-details' ? (
+        <BlogDetailsScreen
+          blog={route.blog}
+          onBack={() => setRoute({ name: 'blogs' })}
+          onTabPress={tab => {
+            if (tab === 'events') {
+              setRoute({ name: 'list' });
+              return;
+            }
+            if (tab === 'news') {
+              setRoute({ name: 'news' });
+              return;
+            }
+            showAdminShellPreviewNotice();
+          }}
+        />
+      ) : route.name === 'blog-create' ? (
+        <CreateBlogScreen
+          onCancel={() => setRoute({ name: 'blogs' })}
           onTabPress={tab => {
             if (tab === 'events') {
               setRoute({ name: 'list' });
@@ -98,6 +142,10 @@ function App() {
           onTabPress={tab => {
             if (tab === 'events') {
               setRoute({ name: 'list' });
+              return;
+            }
+            if (tab === 'blogs') {
+              setRoute({ name: 'blogs' });
               return;
             }
             showAdminShellPreviewNotice();
