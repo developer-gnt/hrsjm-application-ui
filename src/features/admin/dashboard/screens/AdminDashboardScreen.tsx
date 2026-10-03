@@ -15,6 +15,7 @@ import { SkeletonCard } from '../../../../core/components/feedback/SkeletonCard'
 import { AppErrorState } from '../../../../core/components/feedback/AppErrorState';
 import { DashboardHeader } from '../../../../app/navigation/DashboardHeader';
 import { AdminStatCard } from '../../../../core/components/admin/AdminStatCard';
+import { Users, FileText, MessageSquare, Calendar } from '../../../../core/components/icons';
 import {
   useDashboard,
   useDashboardRefresh,
@@ -212,42 +213,38 @@ export const AdminDashboardScreen: React.FC<{
         {/* 4 KPI Cards (2x2 Grid) */}
         <View style={styles.statsRow}>
           <AdminStatCard
-            icon="👥"
+            Icon={Users}
             title="Total Members"
             value={totalMembers}
-            growthPercent={membersGrowth}
             note={`+${membersThisMonth} this month`}
-            tint="blue"
+            tone="navy"
             onPress={() => jumpToTab('AdminMembersTab')}
           />
           <AdminStatCard
-            icon="📄"
+            Icon={FileText}
             title="Total Applications"
             value={totalApplications}
-            growthPercent={applicationsGrowth}
             note={`+${applicationsThisMonth} this month`}
-            tint="gold"
+            tone="warning"
             onPress={() => jumpToTab('AdminApplicationsTab')}
           />
         </View>
 
         <View style={styles.statsRow}>
           <AdminStatCard
-            icon="💬"
+            Icon={MessageSquare}
             title="Total Complaints"
             value={totalComplaints}
-            growthPercent={compGrowth}
             note={`+${complaintsThisMonth} this month`}
-            tint="green"
+            tone="success"
             onPress={() => jumpToTab('AdminComplaintsTab')}
           />
           <AdminStatCard
-            icon="📅"
+            Icon={Calendar}
             title="Total Events"
             value={totalEvents}
-            growthPercent={eventsGrowth}
             note={`+${eventsThisMonth} this month`}
-            tint="purple"
+            tone="gold"
             onPress={() => handleDrawerNavigate('Events')}
           />
         </View>

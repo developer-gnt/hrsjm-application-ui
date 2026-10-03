@@ -55,56 +55,63 @@ export const AdminStatCard: React.FC<AdminStatCardProps> = ({
   const activeTone = mapTone(tone || tint);
   const colors = StatusTones[activeTone] || StatusTones.navy;
   const cardLabel = label || title || '';
-  const cardSublabel = sublabel || note || (growthPercent !== undefined ? `↑ ${growthPercent}%` : undefined);
+  const cardSublabel =
+    sublabel || note || (growthPercent !== undefined ? `↑ ${growthPercent}%` : undefined);
 
   const displayValue = typeof value === 'number' ? value.toLocaleString() : value;
 
   const CardWrapper = onPress ? TouchableOpacity : View;
 
   return (
-    <CardWrapper
-      style={[styles.card, { backgroundColor: colors.bg }]}
-      onPress={onPress}
-      activeOpacity={onPress ? 0.8 : 1}
-      accessibilityRole="text"
-      accessibilityLabel={`${cardLabel}: ${displayValue}${cardSublabel ? ` ${cardSublabel}` : ''}`}
-    >
-      <View style={[styles.iconContainer, { backgroundColor: colors.solid }]}>
-        {Icon ? (
-          <Icon size={ICON_SIZE} color={BrandColors.surface} strokeWidth={2} />
+    <View style={[styles.outerContainer, { backgroundColor: colors.bg }]}>
+      <CardWrapper
+        style={styles.card}
+        onPress={onPress}
+        activeOpacity={onPress ? 0.75 : 1}
+        accessibilityRole="text"
+        accessibilityLabel={`${cardLabel}: ${displayValue}${cardSublabel ? ` ${cardSublabel}` : ''}`}
+      >
+        <View style={[styles.iconContainer, { backgroundColor: colors.solid }]}>
+          {Icon ? (
+            <Icon size={ICON_SIZE} color={BrandColors.surface} strokeWidth={2} />
+          ) : (
+            <Text style={styles.emojiIcon}>{icon || '📊'}</Text>
+          )}
+        </View>
+
+        {loading ? (
+          <View style={[styles.valueSkeleton, { backgroundColor: colors.solid }]} />
         ) : (
-          <Text style={styles.emojiIcon}>{icon || '📊'}</Text>
+          <Text style={styles.value} numberOfLines={1}>
+            {displayValue}
+          </Text>
         )}
-      </View>
 
-      {loading ? (
-        <View style={[styles.valueSkeleton, { backgroundColor: colors.solid }]} />
-      ) : (
-        <Text style={styles.value} numberOfLines={1}>
-          {displayValue}
+        <Text style={[styles.label, { color: colors.text }]} numberOfLines={1}>
+          {cardLabel}
         </Text>
-      )}
-
-      <Text style={[styles.label, { color: colors.text }]} numberOfLines={1}>
-        {cardLabel}
-      </Text>
-      {cardSublabel ? (
-        <Text style={styles.sublabel} numberOfLines={1}>
-          {cardSublabel}
-        </Text>
-      ) : null}
-    </CardWrapper>
+        {cardSublabel ? (
+          <Text style={styles.sublabel} numberOfLines={1}>
+            {cardSublabel}
+          </Text>
+        ) : null}
+      </CardWrapper>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
+  outerContainer: {
     flex: 1,
     borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+    ...Shadows.card,
+  },
+  card: {
+    flex: 1,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     alignItems: 'flex-start',
-    ...Shadows.card,
   },
   iconContainer: {
     width: ICON_CONTAINER,
