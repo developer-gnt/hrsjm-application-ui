@@ -25,6 +25,8 @@ export interface Member {
   status: MemberStatus;
   /** Optional member photo; initials avatar is used as fallback. */
   photo?: ImageSourcePropType | { uri: string };
+  categoryName?: string;
+  rawBackend?: unknown;
 }
 
 /** Aggregate counts for the statistics cards / filter tabs. */

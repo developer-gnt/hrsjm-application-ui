@@ -19,6 +19,7 @@ import { AppBottomSheet } from './AppBottomSheet';
 interface MemberActionsSheetProps {
   member: Member | null;
   onClose: () => void;
+  onSelectAction?: (key: string, member: Member) => void;
 }
 
 interface ActionItem {
@@ -30,7 +31,11 @@ interface ActionItem {
 }
 
 /** Row action menu for the three-dot control, presented as a bottom sheet. */
-export const MemberActionsSheet: React.FC<MemberActionsSheetProps> = ({ member, onClose }) => {
+export const MemberActionsSheet: React.FC<MemberActionsSheetProps> = ({
+  member,
+  onClose,
+  onSelectAction,
+}) => {
   if (!member) return null;
 
   // Account-level action: only INACTIVE accounts can be activated; every
@@ -89,7 +94,10 @@ export const MemberActionsSheet: React.FC<MemberActionsSheetProps> = ({ member, 
       {actions.map(({ key, label, description, Icon, destructive }) => (
         <PressableScale
           key={key}
-          onPress={onClose}
+          onPress={() => {
+            onClose();
+            onSelectAction?.(key, member);
+          }}
           accessibilityRole="button"
           accessibilityLabel={label}
           testID={`member-action-${key}`}

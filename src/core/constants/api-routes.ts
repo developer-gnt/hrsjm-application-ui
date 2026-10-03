@@ -27,10 +27,22 @@ export const ApiRoutes = {
     RECEIPTS: '/receipts',
   },
 
+  // Memberships
+  MEMBERSHIPS: {
+    BASE: '/memberships',
+    DETAILS: (id: string | number) => `/memberships/${id}`,
+    STATUS: (id: string | number) => `/memberships/${id}/status`,
+    DOCUMENTS: (id: string | number) => `/memberships/${id}/documents`,
+    PAYMENT_HISTORY: (id: string | number) => `/memberships/${id}/payment-history`,
+    RENEWAL_HISTORY: (id: string | number) => `/memberships/${id}/renewal-history`,
+    CATEGORIES: '/membership-categories',
+    ID_CARD: (id: string | number) => `/membership-id/memberships/${id}/card`,
+  },
+
   // Admin
   ADMIN: {
     DASHBOARD: '/admin/dashboard',
-    MEMBERS: '/admin/members',
+    MEMBERS: '/memberships',
   },
 
   // Assistance Requests

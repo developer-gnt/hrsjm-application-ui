@@ -1,7 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import {
+  Alert,
   FlatList,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -54,8 +56,8 @@ interface MembersScreenProps {
 }
 
 /**
- * Admin › Members directory (UI-only build, mock data).
- * IA (fixed by the reference design): Header → Page title + Add Member →
+ * Admin › Members directory.
+ * IA: Header → Page title + Add Member →
  * Statistics → Search + Filters → Status tabs → Member list → Bottom navigation.
  */
 export const MembersScreen: React.FC<MembersScreenProps> = ({
@@ -78,6 +80,63 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
 
   const handleApplySort = useCallback(
     (sort: MemberSortOption) => members.setSort(sort),
+    [members]
+  );
+
+  const handleMemberAction = useCallback(
+    (key: string, member: Member) => {
+      if (key === 'deactivate') {
+        Alert.alert(
+          'Suspend Member',
+          `Are you sure you want to suspend ${member.name}'s membership?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Suspend',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await members.handleUpdateStatus(member.id, 'SUSPENDED');
+                  Alert.alert('Success', `${member.name} has been suspended.`);
+                } catch (e: any) {
+                  Alert.alert('Error', e?.message || 'Failed to update member status.');
+                }
+              },
+            },
+          ]
+        );
+      } else if (key === 'activate') {
+        Alert.alert(
+          'Activate Member',
+          `Are you sure you want to restore and activate ${member.name}'s membership?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Activate',
+              onPress: async () => {
+                try {
+                  await members.handleUpdateStatus(member.id, 'ACTIVE');
+                  Alert.alert('Success', `${member.name} has been activated.`);
+                } catch (e: any) {
+                  Alert.alert('Error', e?.message || 'Failed to activate member.');
+                }
+              },
+            },
+          ]
+        );
+      } else if (key === 'view') {
+        Alert.alert(
+          'Member Profile',
+          `Name: ${member.name}\nID: ${member.membershipId}\nPhone: ${member.phone}\nEmail: ${member.email}\nStatus: ${member.status}\nJoined: ${new Date(member.joinedDate).toLocaleDateString()}`
+        );
+      } else if (key === 'reset-password') {
+        Alert.alert(
+          'Reset Password',
+          `A password reset link will be sent to ${member.email || member.phone}.`,
+          [{ text: 'OK' }]
+        );
+      }
+    },
     [members]
   );
 
@@ -199,6 +258,14 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
             </View>
           ) : undefined
         }
+        refreshControl={
+          <RefreshControl
+            refreshing={members.isLoading}
+            onRefresh={members.retry}
+            colors={[BrandColors.goldSoft, BrandColors.navyDeep]}
+            tintColor={BrandColors.navyDeep}
+          />
+        }
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -233,7 +300,11 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
         onApply={handleApplySort}
         onClose={() => setFilterSheetVisible(false)}
       />
-      <MemberActionsSheet member={actionsMember} onClose={() => setActionsMember(null)} />
+      <MemberActionsSheet
+        member={actionsMember}
+        onClose={() => setActionsMember(null)}
+        onSelectAction={handleMemberAction}
+      />
     </View>
   );
 };
