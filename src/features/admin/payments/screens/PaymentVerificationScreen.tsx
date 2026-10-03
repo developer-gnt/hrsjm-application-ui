@@ -12,6 +12,8 @@ import { AppSearchBar } from '../../../../core/components/common/AppSearchBar';
 import { AppLoader } from '../../../../core/components/feedback/AppLoader';
 import { AppEmptyState } from '../../../../core/components/feedback/AppEmptyState';
 import { AppErrorState } from '../../../../core/components/feedback/AppErrorState';
+import { AdminStatCard } from '../../../../core/components/admin/AdminStatCard';
+import { Users, Clock3, UserCheck, UserX } from '../../../../core/components/icons';
 import { AdminFilterTabs } from '../../../../core/components/admin/AdminFilterTabs';
 import { PermissionDenied } from '../../../../core/permissions/permission.guard';
 import { can } from '../../../../core/permissions/can';
@@ -83,46 +85,39 @@ export const PaymentVerificationScreen: React.FC<
           </Text>
         </View>
 
-        {/* Modern KPI Stats Cards */}
-        <View style={styles.statsGrid}>
-          <View style={[styles.statCard, styles.statCardTotal]}>
-            <View style={styles.statTop}>
-              <Text style={[styles.statBadgeLabel, { color: '#1E40AF' }]}>TOTAL</Text>
-            </View>
-            <Text style={[styles.statNumber, { color: '#1E3A8A' }]}>
-              {stats.data?.all ?? 0}
-            </Text>
-            <Text style={styles.statSubText}>All payments</Text>
+        {/* 2×2 Reference KPI Stats Grid */}
+        <View style={styles.kpiGrid}>
+          <View style={styles.kpiRow}>
+            <AdminStatCard
+              label="Total Payments"
+              value={stats.data?.all ?? 0}
+              tone="navy"
+              Icon={Users}
+              loading={stats.isLoading}
+            />
+            <AdminStatCard
+              label="Pending Review"
+              value={stats.data?.pending ?? 0}
+              tone="warning"
+              Icon={Clock3}
+              loading={stats.isLoading}
+            />
           </View>
-
-          <View style={[styles.statCard, styles.statCardPending]}>
-            <View style={styles.statTop}>
-              <Text style={[styles.statBadgeLabel, { color: '#B45309' }]}>PENDING</Text>
-            </View>
-            <Text style={[styles.statNumber, { color: '#B45309' }]}>
-              {stats.data?.pending ?? 0}
-            </Text>
-            <Text style={styles.statSubText}>Needs review</Text>
-          </View>
-
-          <View style={[styles.statCard, styles.statCardVerified]}>
-            <View style={styles.statTop}>
-              <Text style={[styles.statBadgeLabel, { color: '#047857' }]}>VERIFIED</Text>
-            </View>
-            <Text style={[styles.statNumber, { color: '#047857' }]}>
-              {stats.data?.verified ?? 0}
-            </Text>
-            <Text style={styles.statSubText}>Approved</Text>
-          </View>
-
-          <View style={[styles.statCard, styles.statCardFailed]}>
-            <View style={styles.statTop}>
-              <Text style={[styles.statBadgeLabel, { color: '#B91C1C' }]}>FAILED</Text>
-            </View>
-            <Text style={[styles.statNumber, { color: '#B91C1C' }]}>
-              {stats.data?.failed ?? 0}
-            </Text>
-            <Text style={styles.statSubText}>Rejected</Text>
+          <View style={styles.kpiRow}>
+            <AdminStatCard
+              label="Verified"
+              value={stats.data?.verified ?? 0}
+              tone="success"
+              Icon={UserCheck}
+              loading={stats.isLoading}
+            />
+            <AdminStatCard
+              label="Failed"
+              value={stats.data?.failed ?? 0}
+              tone="danger"
+              Icon={UserX}
+              loading={stats.isLoading}
+            />
           </View>
         </View>
 
@@ -236,57 +231,13 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 2,
   },
-  statsGrid: {
+  kpiGrid: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  kpiRow: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  statCard: {
-    flex: 1,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  statCardTotal: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
-  },
-  statCardPending: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
-  },
-  statCardVerified: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#A7F3D0',
-  },
-  statCardFailed: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
-  },
-  statTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  statBadgeLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  statSubText: {
-    fontSize: 10,
-    color: '#64748B',
-    marginTop: 2,
-    fontWeight: '500',
+    gap: Spacing.sm,
   },
   listContent: {
     paddingBottom: Spacing.xxl,

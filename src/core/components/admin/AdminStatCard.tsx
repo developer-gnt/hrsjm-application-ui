@@ -1,148 +1,99 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Typography } from '../../theme/typography';
+import { BrandColors, StatusTones, StatusToneKey } from '../../theme/colors';
 import { Spacing, BorderRadius, Shadows } from '../../theme/spacing';
-
-export type AdminStatCardTint = 'blue' | 'gold' | 'green' | 'purple' | 'red' | 'neutral';
+import { Typography } from '../../theme/typography';
+import type { AppIconComponent } from '../icons';
 
 export interface AdminStatCardProps {
-  icon?: string;
-  title?: string;
   label?: string;
+  title?: string;
   value: string | number;
-  /** Month-over-month growth percent, e.g. 12 for "+12%". */
-  growthPercent?: number;
-  /** Supporting note, e.g. "+268 this month". */
+  /** Optional small sub-label, e.g. "(30 days)" or "Needs reply". */
+  sublabel?: string;
   note?: string;
-  tint?: AdminStatCardTint;
-  tone?: string;
+  growthPercent?: number;
+  tone?: StatusToneKey | string;
+  tint?: StatusToneKey | string;
+  Icon?: AppIconComponent;
+  icon?: string;
   loading?: boolean;
   onPress?: () => void;
 }
 
-const TINT_STYLES: Record<
-  string,
-  {
-    background: string;
-    borderColor: string;
-    iconBackground: string;
-    iconColor: string;
-  }
-> = {
-  blue: {
-    background: '#F0F7FF',
-    borderColor: '#E0F2FE',
-    iconBackground: '#BAE6FD',
-    iconColor: '#0284C7',
-  },
-  gold: {
-    background: '#FFFBEB',
-    borderColor: '#FEF3C7',
-    iconBackground: '#FDE68A',
-    iconColor: '#D97706',
-  },
-  green: {
-    background: '#F0FDF4',
-    borderColor: '#DCFCE7',
-    iconBackground: '#BBF7D0',
-    iconColor: '#16A34A',
-  },
-  purple: {
-    background: '#FAF5FF',
-    borderColor: '#F3E8FF',
-    iconBackground: '#E9D5FF',
-    iconColor: '#9333EA',
-  },
-  red: {
-    background: '#FEF2F2',
-    borderColor: '#FECACA',
-    iconBackground: '#FEE2E2',
-    iconColor: '#DC2626',
-  },
-  danger: {
-    background: '#FEF2F2',
-    borderColor: '#FECACA',
-    iconBackground: '#FEE2E2',
-    iconColor: '#DC2626',
-  },
-  neutral: {
-    background: '#F8FAFC',
-    borderColor: '#E2E8F0',
-    iconBackground: '#F1F5F9',
-    iconColor: '#475569',
-  },
+const ICON_CONTAINER = 34;
+const ICON_SIZE = 18;
+
+const mapTone = (tone?: string): StatusToneKey => {
+  if (!tone) return 'navy';
+  if (tone === 'primary' || tone === 'blue') return 'navy';
+  if (tone === 'warning' || tone === 'gold') return 'warning';
+  if (tone === 'success' || tone === 'green') return 'success';
+  if (tone === 'danger' || tone === 'red') return 'danger';
+  if (tone === 'purple') return 'gold';
+  if (tone in StatusTones) return tone as StatusToneKey;
+  return 'navy';
 };
 
-/** Tinted KPI card matching the HRSJM official design system. */
+/**
+ * Universal KPI Stat Card matching the HRSJM official 2×2 reference design (Image 1).
+ */
 export const AdminStatCard: React.FC<AdminStatCardProps> = ({
-  icon = '📊',
-  title,
   label,
+  title,
   value,
-  growthPercent,
+  sublabel,
   note,
-  tint = 'blue',
+  growthPercent,
   tone,
+  tint,
+  Icon,
+  icon,
   loading = false,
   onPress,
 }) => {
-  const activeTint = tone || tint;
-  const colors = TINT_STYLES[activeTint] || TINT_STYLES.blue;
-  const cardTitle = title || label || '';
-  const growthLabel =
-    growthPercent === undefined || growthPercent === null
-      ? null
-      : `↑ ${Math.abs(growthPercent)}%`;
+  const activeTone = mapTone(tone || tint);
+  const colors = StatusTones[activeTone] || StatusTones.navy;
+  const cardLabel = label || title || '';
+  const cardSublabel = sublabel || note || (growthPercent !== undefined ? `↑ ${growthPercent}%` : undefined);
+
+  const displayValue = typeof value === 'number' ? value.toLocaleString() : value;
+
+  const CardWrapper = onPress ? TouchableOpacity : View;
 
   return (
-    <TouchableOpacity
-      style={[
-        styles.card,
-        {
-          backgroundColor: colors.background,
-          borderColor: colors.borderColor,
-        },
-      ]}
+    <CardWrapper
+      style={[styles.card, { backgroundColor: colors.bg }]}
       onPress={onPress}
-      disabled={!onPress}
-      activeOpacity={onPress ? 0.75 : 1}
+      activeOpacity={onPress ? 0.8 : 1}
+      accessibilityRole="text"
+      accessibilityLabel={`${cardLabel}: ${displayValue}${cardSublabel ? ` ${cardSublabel}` : ''}`}
     >
-      <View style={styles.cardContent}>
-        {/* Left circular icon badge */}
-        <View
-          style={[
-            styles.iconBadge,
-            { backgroundColor: colors.iconBackground },
-          ]}
-        >
-          <Text style={styles.icon}>{icon}</Text>
-        </View>
-
-        {/* Right info block */}
-        <View style={styles.infoBlock}>
-          <Text style={styles.title} numberOfLines={1}>
-            {cardTitle}
-          </Text>
-
-          <View style={styles.valueRow}>
-            <Text style={styles.value}>
-              {typeof value === 'number' ? value.toLocaleString() : value}
-            </Text>
-            {growthLabel ? (
-              <View style={styles.growthBadge}>
-                <Text style={styles.growthText}>{growthLabel}</Text>
-              </View>
-            ) : null}
-          </View>
-
-          {note ? (
-            <Text style={styles.note} numberOfLines={1}>
-              {note}
-            </Text>
-          ) : null}
-        </View>
+      <View style={[styles.iconContainer, { backgroundColor: colors.solid }]}>
+        {Icon ? (
+          <Icon size={ICON_SIZE} color={BrandColors.surface} strokeWidth={2} />
+        ) : (
+          <Text style={styles.emojiIcon}>{icon || '📊'}</Text>
+        )}
       </View>
-    </TouchableOpacity>
+
+      {loading ? (
+        <View style={[styles.valueSkeleton, { backgroundColor: colors.solid }]} />
+      ) : (
+        <Text style={styles.value} numberOfLines={1}>
+          {displayValue}
+        </Text>
+      )}
+
+      <Text style={[styles.label, { color: colors.text }]} numberOfLines={1}>
+        {cardLabel}
+      </Text>
+      {cardSublabel ? (
+        <Text style={styles.sublabel} numberOfLines={1}>
+          {cardSublabel}
+        </Text>
+      ) : null}
+    </CardWrapper>
   );
 };
 
@@ -150,63 +101,40 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     borderRadius: BorderRadius.xl,
-    padding: 12,
-    borderWidth: 1,
-    minHeight: 88,
-    justifyContent: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    alignItems: 'flex-start',
     ...Shadows.card,
   },
-  cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  iconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  iconContainer: {
+    width: ICON_CONTAINER,
+    height: ICON_CONTAINER,
+    borderRadius: ICON_CONTAINER / 2,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: Spacing.sm,
   },
-  icon: {
-    fontSize: 20,
-  },
-  infoBlock: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#0F2C59',
-    marginBottom: 2,
-  },
-  valueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  emojiIcon: {
+    fontSize: 16,
   },
   value: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: '#0F2C59',
+    ...Typography.statValue,
+    color: BrandColors.textPrimary,
   },
-  growthBadge: {
-    backgroundColor: '#DCFCE7',
-    borderRadius: 12,
-    paddingHorizontal: 5,
-    paddingVertical: 1.5,
+  valueSkeleton: {
+    width: '70%',
+    height: 18,
+    borderRadius: BorderRadius.sm,
+    opacity: 0.35,
   },
-  growthText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#16A34A',
-  },
-  note: {
-    fontSize: 10.5,
-    fontWeight: '500',
-    color: '#64748B',
+  label: {
+    ...Typography.statLabel,
     marginTop: 2,
+  },
+  sublabel: {
+    ...Typography.caption,
+    color: BrandColors.textMuted,
+    marginTop: 1,
   },
 });
 
