@@ -56,8 +56,16 @@ export const MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
       { id: 'dashboard', icon: '🏠', title: 'Dashboard', target: 'AdminDashboardTab' },
       { id: 'members', icon: '👥', title: 'Members Directory', target: 'AdminMembersTab' },
       { id: 'applications', icon: '📄', title: 'Applications Review', target: 'AdminApplicationsTab' },
-      { id: 'complaints', icon: '💬', title: 'Support & Complaints', target: 'AdminComplaintsTab' },
+      { id: 'complaints', icon: '💬', title: 'Support & Complaints', target: 'SupportTickets' },
+      { id: 'assistance', icon: '🤝', title: 'Donation Seekers', target: 'AssistanceRequests' },
+    ],
+  },
+  {
+    groupTitle: 'CONTENT & MEDIA',
+    items: [
       { id: 'events', icon: '📅', title: 'Events Management', target: 'Events' },
+      { id: 'news', icon: '📰', title: 'News & Press', target: 'News' },
+      { id: 'blogs', icon: '✍️', title: 'Articles & Blogs', target: 'Blogs' },
     ],
   },
   {
@@ -74,8 +82,9 @@ export const MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
   {
     groupTitle: 'PLATFORM & SYSTEM',
     items: [
+      { id: 'notifications', icon: '🔔', title: 'Notifications', target: 'Notifications' },
       { id: 'roles', icon: '🛡️', title: 'Roles & Permissions', target: 'RolesPermissions' },
-      { id: 'settings', icon: '⚙️', title: 'Settings', target: 'AdminMoreTab' },
+      { id: 'settings', icon: '⚙️', title: 'Settings & Profile', target: 'ProfileSettings' },
     ],
   },
 ];

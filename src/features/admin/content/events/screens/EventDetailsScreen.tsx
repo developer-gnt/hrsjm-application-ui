@@ -131,7 +131,7 @@ interface EventDetailsScreenProps {
   /** Back navigation to the Events list. */
   onBack: () => void;
   /** Opens the Edit Event screen for this event. */
-  onEdit: () => void;
+  onEdit?: () => void;
 }
 
 /**
@@ -332,7 +332,7 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
               title="Edit Event"
               variant="outline"
               size="sm"
-              onPress={onEdit}
+              onPress={onEdit ?? (() => handlePlaceholderAction('Edit Event'))}
               icon={<Text style={styles.actionIcon}>✏️</Text>}
               style={styles.actionButton}
             />

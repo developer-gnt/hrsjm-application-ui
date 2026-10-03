@@ -3,28 +3,41 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppRoutes } from '../../core/constants/routes';
 import { MoreMenuScreen } from './MoreMenuScreen';
 import { ModulePlaceholderScreen } from './ModulePlaceholderScreen';
-import { PaymentVerificationScreen } from '../../features/admin/payments';
-import { PaymentDetailsScreen } from '../../features/admin/payments';
-import { ExpenseVouchersScreen } from '../../features/admin/expenses';
-import { CreateExpenseVoucherScreen } from '../../features/admin/expenses';
-import { ExpenseDetailsScreen } from '../../features/admin/expenses';
-import { ReceiptVouchersScreen } from '../../features/admin/receipts';
-import { CreateReceiptVoucherScreen } from '../../features/admin/receipts';
-import { ReceiptVoucherDetailsScreen } from '../../features/admin/receipts';
+import { PaymentVerificationScreen, PaymentDetailsScreen } from '../../features/admin/payments';
+import { ExpenseVouchersScreen, CreateExpenseVoucherScreen, ExpenseDetailsScreen } from '../../features/admin/expenses';
+import { ReceiptVouchersScreen, CreateReceiptVoucherScreen, ReceiptVoucherDetailsScreen } from '../../features/admin/receipts';
 import {
   EventsScreen,
   EventDetailsScreen,
   CreateEventScreen,
 } from '../../features/admin/content/events';
+import {
+  NewsListScreen,
+  NewsDetailsScreen,
+  CreateNewsScreen,
+  EditNewsScreen,
+} from '../../features/admin/content/news';
+import { BlogsListScreen } from '../../features/admin/content/blogs';
+import {
+  AssistanceRequestsScreen,
+  AssistanceDetailsScreen,
+  AssistanceDocumentsScreen,
+} from '../../features/admin/assistance';
+import {
+  SupportTicketsScreen,
+  TicketDetailsScreen,
+  TicketChatScreen,
+} from '../../features/admin/support';
+import { NotificationsScreen } from '../../features/admin/notifications';
+import { ProfileSettingsScreen } from '../../features/admin/settings';
 import { DonationsScreen } from '../../features/admin/donations';
 import { MoreStackParamList } from './NavigationTypes';
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();
 
 /**
- * Stack behind the More tab. Mubasshir owns all route definitions here
- * (spec §46); placeholder screens stand in for modules implemented in
- * Phases 4-8 and for other developers' modules (Donations).
+ * Stack behind the More tab — the unified hub for financial, content,
+ * assistance, support, notifications and settings modules.
  */
 export const MoreNavigator: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -180,16 +193,12 @@ export const MoreNavigator: React.FC = () => (
       )}
     </Stack.Screen>
 
-    {/* Settings — shared */}
-    <Stack.Screen name={AppRoutes.SETTINGS}>
-      {({ navigation }) => (
-        <ModulePlaceholderScreen
-          title="Settings"
-          icon="⚙️"
-          onBack={navigation.goBack}
-        />
-      )}
-    </Stack.Screen>
+    {/* Settings — Real merged ProfileSettingsScreen */}
+    <Stack.Screen name={AppRoutes.SETTINGS} component={ProfileSettingsScreen} />
+    <Stack.Screen name={AppRoutes.PROFILE_SETTINGS} component={ProfileSettingsScreen} />
+
+    {/* Notifications — Real merged NotificationsScreen */}
+    <Stack.Screen name={AppRoutes.NOTIFICATIONS} component={NotificationsScreen} />
 
     {/* Events Management — Suraj's module */}
     <Stack.Screen name={AppRoutes.EVENTS}>
@@ -219,6 +228,80 @@ export const MoreNavigator: React.FC = () => (
         <CreateEventScreen onCancel={navigation.goBack} />
       )}
     </Stack.Screen>
+
+    {/* News Management — Suraj's module */}
+    <Stack.Screen name={AppRoutes.NEWS}>
+      {({ navigation }) => (
+        <NewsListScreen
+          onViewNews={news =>
+            navigation.navigate(AppRoutes.NEWS_DETAILS as any, { news })
+          }
+          onAddNews={() =>
+            navigation.navigate(AppRoutes.CREATE_NEWS as any)
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.NEWS_DETAILS}>
+      {({ navigation, route }: any) => (
+        <NewsDetailsScreen
+          news={route.params?.news}
+          onBack={navigation.goBack}
+          onEdit={news =>
+            navigation.navigate(AppRoutes.EDIT_NEWS as any, { news })
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.CREATE_NEWS}>
+      {({ navigation }) => (
+        <CreateNewsScreen onCancel={navigation.goBack} />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.EDIT_NEWS}>
+      {({ navigation, route }: any) => (
+        <EditNewsScreen
+          news={route.params?.news}
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+
+    {/* Blogs Management — Suraj's module */}
+    <Stack.Screen name={AppRoutes.BLOGS}>
+      {() => <BlogsListScreen />}
+    </Stack.Screen>
+
+    {/* Assistance Requests / Donation Seekers — Arshad's module */}
+    <Stack.Screen
+      name={AppRoutes.ASSISTANCE_REQUESTS}
+      component={AssistanceRequestsScreen}
+    />
+    <Stack.Screen
+      name={AppRoutes.ASSISTANCE_DETAILS}
+      component={AssistanceDetailsScreen as any}
+    />
+    <Stack.Screen
+      name={AppRoutes.ASSISTANCE_DOCUMENTS}
+      component={AssistanceDocumentsScreen as any}
+    />
+
+    {/* Support / Complaints — Arshad's module */}
+    <Stack.Screen
+      name={AppRoutes.SUPPORT_TICKETS}
+      component={SupportTicketsScreen}
+    />
+    <Stack.Screen
+      name={AppRoutes.TICKET_DETAILS}
+      component={TicketDetailsScreen as any}
+    />
+    <Stack.Screen
+      name={AppRoutes.TICKET_CHAT}
+      component={TicketChatScreen as any}
+    />
   </Stack.Navigator>
 );
 

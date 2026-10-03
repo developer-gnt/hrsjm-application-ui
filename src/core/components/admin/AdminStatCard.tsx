@@ -3,22 +3,25 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Typography } from '../../theme/typography';
 import { Spacing, BorderRadius, Shadows } from '../../theme/spacing';
 
-export type AdminStatCardTint = 'blue' | 'gold' | 'green' | 'purple';
+export type AdminStatCardTint = 'blue' | 'gold' | 'green' | 'purple' | 'red' | 'neutral';
 
-interface AdminStatCardProps {
-  icon: string;
-  title: string;
+export interface AdminStatCardProps {
+  icon?: string;
+  title?: string;
+  label?: string;
   value: string | number;
   /** Month-over-month growth percent, e.g. 12 for "+12%". */
   growthPercent?: number;
   /** Supporting note, e.g. "+268 this month". */
   note?: string;
   tint?: AdminStatCardTint;
+  tone?: string;
+  loading?: boolean;
   onPress?: () => void;
 }
 
 const TINT_STYLES: Record<
-  AdminStatCardTint,
+  string,
   {
     background: string;
     borderColor: string;
@@ -50,19 +53,42 @@ const TINT_STYLES: Record<
     iconBackground: '#E9D5FF',
     iconColor: '#9333EA',
   },
+  red: {
+    background: '#FEF2F2',
+    borderColor: '#FECACA',
+    iconBackground: '#FEE2E2',
+    iconColor: '#DC2626',
+  },
+  danger: {
+    background: '#FEF2F2',
+    borderColor: '#FECACA',
+    iconBackground: '#FEE2E2',
+    iconColor: '#DC2626',
+  },
+  neutral: {
+    background: '#F8FAFC',
+    borderColor: '#E2E8F0',
+    iconBackground: '#F1F5F9',
+    iconColor: '#475569',
+  },
 };
 
 /** Tinted KPI card matching the HRSJM official design system. */
 export const AdminStatCard: React.FC<AdminStatCardProps> = ({
-  icon,
+  icon = '📊',
   title,
+  label,
   value,
   growthPercent,
   note,
   tint = 'blue',
+  tone,
+  loading = false,
   onPress,
 }) => {
-  const colors = TINT_STYLES[tint];
+  const activeTint = tone || tint;
+  const colors = TINT_STYLES[activeTint] || TINT_STYLES.blue;
+  const cardTitle = title || label || '';
   const growthLabel =
     growthPercent === undefined || growthPercent === null
       ? null
@@ -95,7 +121,7 @@ export const AdminStatCard: React.FC<AdminStatCardProps> = ({
         {/* Right info block */}
         <View style={styles.infoBlock}>
           <Text style={styles.title} numberOfLines={1}>
-            {title}
+            {cardTitle}
           </Text>
 
           <View style={styles.valueRow}>
@@ -183,3 +209,5 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+
+export default AdminStatCard;

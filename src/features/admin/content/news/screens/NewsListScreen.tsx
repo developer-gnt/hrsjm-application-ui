@@ -23,12 +23,11 @@ import {
   SkeletonCard,
 } from '../../../../../core/components';
 import { NewsCard, NewsListHeader } from '../components/NewsCard';
+import { showNewsActionMenu } from '../components/NewsActionMenu';
 import { NewsFilterSheet } from '../components/NewsFilterSheet';
 import { NewsStatusTabs } from '../components/NewsStatusTabs';
 import { NewsSummaryStats } from '../components/NewsSummaryCard';
-import { showNewsActionMenu } from '../components/NewsActionMenu';
-import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
-import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import {
   DEMO_NEWS_STATS,
   NEWS_STATUS_TABS,
@@ -213,8 +212,7 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
 
   return (
     <View style={styles.root}>
-      {/* TEMPORARY preview shell: real global header is owned by the app-level architecture. */}
-      <AdminShellHeader />
+      <AdminHeader />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         {/* Page header: title/subtitle + Add News */}
@@ -318,9 +316,6 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
           />
         )}
       </SafeAreaView>
-
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar activeTab="news" onTabPress={handleShellTabPress} />
 
       <NewsFilterSheet
         visible={filterSheetVisible}

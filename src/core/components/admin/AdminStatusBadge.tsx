@@ -9,9 +9,10 @@ export type AdminBadgeTone =
   | 'danger'
   | 'info'
   | 'neutral'
-  | 'purple';
+  | 'purple'
+  | 'gold';
 
-interface AdminStatusBadgeProps {
+export interface AdminStatusBadgeProps {
   label: string;
   tone?: AdminBadgeTone;
 }
@@ -23,6 +24,7 @@ const TONE_STYLES: Record<AdminBadgeTone, { bg: string; fg: string; border: stri
   info: { bg: '#EFF6FF', fg: '#1D4ED8', border: '#BFDBFE' },
   neutral: { bg: '#F8FAFC', fg: '#475569', border: '#E2E8F0' },
   purple: { bg: '#FAF5FF', fg: '#6D28D9', border: '#E9D5FF' },
+  gold: { bg: '#FFFBEB', fg: '#B45309', border: '#FDE68A' },
 };
 
 /** Colored pill for entity statuses across admin modules. */
@@ -91,3 +93,5 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 });
+
+export default AdminStatusBadge;

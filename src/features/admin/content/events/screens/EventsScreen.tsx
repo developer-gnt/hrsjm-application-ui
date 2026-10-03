@@ -106,12 +106,8 @@ interface EventsScreenProps {
   onTabPress?: (tab: string) => void;
 }
 
-<<<<<<< HEAD
-export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEvent }) => {
-  const navigation = useNavigation<any>();
-=======
 export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEvent, onTabPress }) => {
->>>>>>> origin/feature/suraj/events
+  const navigation = useNavigation<any>();
   const [uiState, setUiState] = useState<EventsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -371,12 +367,6 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
           />
         )}
       </SafeAreaView>
-<<<<<<< HEAD
-=======
-
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar onTabPress={onTabPress} />
->>>>>>> origin/feature/suraj/events
     </View>
   );
 };

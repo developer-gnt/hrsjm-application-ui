@@ -23,12 +23,11 @@ import {
   SkeletonCard,
 } from '../../../../../core/components';
 import { BlogCard, BlogListHeader } from '../components/BlogCard';
+import { showBlogActionMenu } from '../components/BlogActionMenu';
 import { BlogFilterSheet } from '../components/BlogFilterSheet';
 import { BlogStatusTabs } from '../components/BlogStatusTabs';
 import { BlogSummaryCard } from '../components/BlogSummaryCard';
-import { showBlogActionMenu } from '../components/BlogActionMenu';
-import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
-import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import {
   BLOG_STATUS_TABS,
   DEMO_BLOG_STATS,
@@ -231,8 +230,7 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
 
   return (
     <View style={styles.root}>
-      {/* TEMPORARY preview shell: real global header is owned by the app-level architecture. */}
-      <AdminShellHeader />
+      <AdminHeader />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         {/* Page header: title/subtitle + Add Blog */}
@@ -336,9 +334,6 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
           />
         )}
       </SafeAreaView>
-
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar activeTab="blogs" onTabPress={handleShellTabPress} />
 
       <BlogFilterSheet
         visible={filterSheetVisible}

@@ -4,39 +4,47 @@ import { AdminColors } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
 import { Spacing } from '../../theme/spacing';
 
-export interface AdminFilterTab {
-  key: string;
+export interface AdminFilterTab<T = string> {
+  key: T;
   label: string;
   /** Optional count rendered as a badge inside the chip. */
   count?: number;
 }
 
-interface AdminFilterTabsProps {
-  tabs: AdminFilterTab[];
-  activeKey: string;
-  onChange: (key: string) => void;
+export interface AdminFilterTabsProps<T = string> {
+  tabs: AdminFilterTab<T>[];
+  activeKey: T;
+  onChange?: (key: T) => void;
+  onSelect?: (key: T) => void;
 }
 
 /** Horizontal status/filter chip row (spec §10 AdminFilterTabs). */
-export const AdminFilterTabs: React.FC<AdminFilterTabsProps> = ({
+export const AdminFilterTabs = <T extends string = string>({
   tabs,
   activeKey,
   onChange,
-}) => (
-  <ScrollView
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={styles.row}
-  >
-    {tabs.map(tab => {
-      const active = tab.key === activeKey;
-      return (
-        <TouchableOpacity
-          key={tab.key}
-          onPress={() => onChange(tab.key)}
-          activeOpacity={0.7}
-          style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
-        >
+  onSelect,
+}: AdminFilterTabsProps<T>) => {
+  const handlePress = (key: T) => {
+    if (onChange) onChange(key);
+    if (onSelect) onSelect(key);
+  };
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.row}
+    >
+      {tabs.map(tab => {
+        const active = tab.key === activeKey;
+        return (
+          <TouchableOpacity
+            key={String(tab.key)}
+            onPress={() => handlePress(tab.key)}
+            activeOpacity={0.7}
+            style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
+          >
           <Text style={[styles.label, active ? styles.labelActive : styles.labelInactive]}>
             {tab.label}
           </Text>
@@ -57,8 +65,9 @@ export const AdminFilterTabs: React.FC<AdminFilterTabsProps> = ({
         </TouchableOpacity>
       );
     })}
-  </ScrollView>
-);
+    </ScrollView>
+  );
+};
 
 const styles = StyleSheet.create({
   row: {
@@ -131,3 +140,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
+export default AdminFilterTabs;

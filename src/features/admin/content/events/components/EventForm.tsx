@@ -22,6 +22,7 @@ import {
   Typography,
 } from '../../../../../core/theme';
 import { AppButton, AppInput } from '../../../../../core/components';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { EventFormField } from './EventFormField';
 import { EventFormSection } from './EventFormSection';
 import { EventPickerSheet } from './EventPickerSheet';
@@ -352,7 +353,7 @@ export const EventForm: React.FC<EventFormProps> = ({
 
   return (
     <View style={styles.root}>
-      <EventFormPreviewHeader title={title} backDestination={backDestination} onBack={requestCancel} />
+      <AdminHeader showBack title={title} onBack={requestCancel} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <KeyboardAvoidingView

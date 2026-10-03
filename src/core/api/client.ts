@@ -90,4 +90,29 @@ export const apiClient = {
   },
 };
 
+export const api = apiClient;
+
+export const unwrap = <T>(res: ApiResponse<T> | T): T => {
+  if (res && typeof res === 'object' && 'data' in (res as any) && (res as any).success !== undefined) {
+    return (res as any).data;
+  }
+  return res as T;
+};
+
+export const getApiErrorMessage = (
+  error: unknown,
+  defaultMsg: string = 'An error occurred'
+): string => {
+  if (error && typeof error === 'object') {
+    if ('message' in error && typeof (error as any).message === 'string') {
+      return (error as any).message;
+    }
+  }
+  return defaultMsg;
+};
+
+export const authEvents = {
+  onSessionExpired: (cb: () => void) => setSessionExpiredHandler(cb),
+};
+
 export default apiClient;

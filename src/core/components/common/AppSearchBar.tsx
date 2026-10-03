@@ -3,10 +3,11 @@ import { View, TextInput, StyleSheet, TouchableOpacity, Text, ViewStyle } from '
 import Svg, { Path, Circle } from 'react-native-svg';
 import { debounce } from '../../utils/debounce';
 
-interface AppSearchBarProps {
+export interface AppSearchBarProps {
   placeholder?: string;
   value?: string;
-  onSearch: (text: string) => void;
+  onSearch?: (text: string) => void;
+  onChangeText?: (text: string) => void;
   debounceMs?: number;
   containerStyle?: ViewStyle;
 }
@@ -15,6 +16,7 @@ export const AppSearchBar: React.FC<AppSearchBarProps> = ({
   placeholder = 'Search by name, ID, or keywords...',
   value: controlledValue,
   onSearch,
+  onChangeText,
   debounceMs = 400,
   containerStyle,
 }) => {
@@ -31,19 +33,25 @@ export const AppSearchBar: React.FC<AppSearchBarProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSearch = useCallback(
     debounce((text: string) => {
-      onSearch(text);
+      if (onSearch) onSearch(text);
     }, debounceMs),
     [onSearch, debounceMs]
   );
 
   const handleChangeText = (text: string) => {
     setInternalValue(text);
-    debouncedSearch(text);
+    if (onChangeText) {
+      onChangeText(text);
+    }
+    if (onSearch) {
+      debouncedSearch(text);
+    }
   };
 
   const handleClear = () => {
     setInternalValue('');
-    onSearch('');
+    if (onChangeText) onChangeText('');
+    if (onSearch) onSearch('');
   };
 
   return (
@@ -135,3 +143,5 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 });
+
+export default AppSearchBar;

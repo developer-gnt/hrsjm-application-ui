@@ -27,7 +27,7 @@ import { NewsPreviewSheet } from './NewsPreviewSheet';
 import { EventPickerSheet } from '../../events/components/EventPickerSheet';
 import { EventTagInput } from '../../events/components/EventTagInput';
 import { EventFormToast } from '../../events/components/EventFormToast';
-import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { SAMPLE_NEWS, SAMPLE_NEWS_AUTHORS, SAMPLE_NEWS_CATEGORIES } from '../data/sample-news';
 import { STATUS_LABELS } from './NewsCard';
 import type {
@@ -465,7 +465,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
 
   return (
     <View style={styles.root}>
-      <AdminShellHeader leading="back" onBack={requestCancel} />
+      <AdminHeader showBack title={title} onBack={requestCancel} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <KeyboardAvoidingView

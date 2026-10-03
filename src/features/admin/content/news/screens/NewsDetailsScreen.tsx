@@ -32,8 +32,7 @@ import {
   NewsDeleteConfirmDialog,
   NewsDetailsActionMenu,
 } from '../components/NewsDetailsActionMenu';
-import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
-import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import type { NewsListItem } from '../types/news.types';
 
 interface NewsDetailsScreenProps {
@@ -153,7 +152,7 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
   if (loading) {
     return (
       <View style={styles.root}>
-        <AdminShellHeader leading="back" onBack={onBack} />
+        <AdminHeader showBack title="News Details" onBack={onBack} />
         <AppLoader fullScreen message="Loading news..." />
       </View>
     );
@@ -162,7 +161,7 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
   if (!news) {
     return (
       <View style={styles.root}>
-        <AdminShellHeader leading="back" onBack={onBack} />
+        <AdminHeader showBack title="News Details" onBack={onBack} />
         <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
           <AppEmptyState
             icon="📰"
@@ -185,8 +184,7 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
 
   return (
     <View style={styles.root}>
-      {/* TEMPORARY preview shell: real global header is owned by the app-level architecture. */}
-      <AdminShellHeader leading="back" onBack={onBack} />
+      <AdminHeader showBack title="News Details" onBack={onBack} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <ScrollView
@@ -422,9 +420,6 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar activeTab="news" onTabPress={handleShellTabPress} />
 
       <NewsDetailsActionMenu
         visible={actionSheetVisible}

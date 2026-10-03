@@ -17,11 +17,13 @@ export type BadgeStatus =
   | 'INFO'
   | 'DEFAULT';
 
-interface AppBadgeProps {
+export interface AppBadgeProps {
   label: string;
   status?: BadgeStatus;
   customBg?: string;
   customTextColor?: string;
+  bg?: string;
+  fg?: string;
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
@@ -31,12 +33,17 @@ export const AppBadge: React.FC<AppBadgeProps> = ({
   status = 'DEFAULT',
   customBg,
   customTextColor,
+  bg,
+  fg,
   style,
   textStyle,
 }) => {
+  const finalBg = bg || customBg;
+  const finalFg = fg || customTextColor;
+
   const getBadgeColors = (): { bg: string; text: string } => {
-    if (customBg && customTextColor) {
-      return { bg: customBg, text: customTextColor };
+    if (finalBg && finalFg) {
+      return { bg: finalBg, text: finalFg };
     }
 
     switch (status) {
@@ -75,11 +82,11 @@ export const AppBadge: React.FC<AppBadgeProps> = ({
     }
   };
 
-  const { bg, text } = getBadgeColors();
+  const badgeColors = getBadgeColors();
 
   return (
-    <View style={[styles.badgeContainer, { backgroundColor: bg }, style]}>
-      <Text style={[styles.badgeText, { color: text }, textStyle]}>
+    <View style={[styles.badgeContainer, { backgroundColor: badgeColors.bg }, style]}>
+      <Text style={[styles.badgeText, { color: badgeColors.text }, textStyle]}>
         {label}
       </Text>
     </View>

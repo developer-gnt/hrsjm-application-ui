@@ -5,9 +5,10 @@ import { Typography } from '../../theme/typography';
 import { Spacing } from '../../theme/spacing';
 import { AppButton } from '../common/AppButton';
 
-interface AppErrorStateProps {
+export interface AppErrorStateProps {
   title?: string;
   message?: string;
+  description?: string;
   onRetry?: () => void;
   retryTitle?: string;
   style?: ViewStyle;
@@ -15,11 +16,13 @@ interface AppErrorStateProps {
 
 export const AppErrorState: React.FC<AppErrorStateProps> = ({
   title = 'Something went wrong',
-  message = 'We encountered an error loading this information. Please try again.',
+  message,
+  description,
   onRetry,
   retryTitle = 'Try Again',
   style,
 }) => {
+  const displayMsg = message || description || 'We encountered an error loading this information. Please try again.';
   return (
     <View style={[styles.container, style]}>
       <Text style={styles.icon}>⚠️</Text>

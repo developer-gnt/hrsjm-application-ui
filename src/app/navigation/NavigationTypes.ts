@@ -52,6 +52,19 @@ export type MoreStackParamList = {
   [AppRoutes.EVENTS]: undefined;
   [AppRoutes.EVENT_DETAILS]: { event: any };
   [AppRoutes.CREATE_EVENT]: undefined;
+  [AppRoutes.NEWS]: undefined;
+  [AppRoutes.NEWS_DETAILS]: { news: any };
+  [AppRoutes.CREATE_NEWS]: undefined;
+  [AppRoutes.EDIT_NEWS]: { news: any };
+  [AppRoutes.BLOGS]: undefined;
+  [AppRoutes.ASSISTANCE_REQUESTS]: undefined;
+  [AppRoutes.ASSISTANCE_DETAILS]: { requestId: string };
+  [AppRoutes.ASSISTANCE_DOCUMENTS]: { requestId: string; seekerName?: string };
+  [AppRoutes.SUPPORT_TICKETS]: undefined;
+  [AppRoutes.TICKET_DETAILS]: { ticketId: string };
+  [AppRoutes.TICKET_CHAT]: { ticketId: string; subject?: string };
+  [AppRoutes.NOTIFICATIONS]: undefined;
+  [AppRoutes.PROFILE_SETTINGS]: undefined;
 };
 
 /** Placeholder stack for non-admin authenticated users until their role

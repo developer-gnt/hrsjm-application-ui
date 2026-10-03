@@ -13,7 +13,7 @@ import {
   Typography,
 } from '../../../../../core/theme';
 import { AppCard } from '../../../../../core/components';
-import type { BlogListItem, BlogStatus } from '../../types/blog.types';
+import type { BlogListItem, BlogStatus } from '../types/blog.types';
 
 /**
  * Compact admin-table column proportions shared by the list header row and
