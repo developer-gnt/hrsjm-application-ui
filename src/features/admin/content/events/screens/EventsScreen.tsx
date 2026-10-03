@@ -98,10 +98,20 @@ interface EventsScreenProps {
    * When not provided, a placeholder alert is shown instead.
    */
   onAddEvent?: () => void;
+  /**
+   * TEMPORARY (UI-only phase): called when a bottom tab is pressed on the
+   * preview shell (e.g. jumping to News). When not provided, the shell shows
+   * its preview notice (original behavior). Real navigation replaces this.
+   */
+  onTabPress?: (tab: string) => void;
 }
 
+<<<<<<< HEAD
 export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEvent }) => {
   const navigation = useNavigation<any>();
+=======
+export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEvent, onTabPress }) => {
+>>>>>>> origin/feature/suraj/events
   const [uiState, setUiState] = useState<EventsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -361,6 +371,12 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
           />
         )}
       </SafeAreaView>
+<<<<<<< HEAD
+=======
+
+      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
+      <AdminShellTabBar onTabPress={onTabPress} />
+>>>>>>> origin/feature/suraj/events
     </View>
   );
 };

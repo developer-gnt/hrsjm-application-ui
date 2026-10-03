@@ -21,18 +21,25 @@ const showPreviewNotice = () => {
   );
 };
 
-export const AdminShellHeader: React.FC = () => {
+export const AdminShellHeader: React.FC<{
+  /** Leading control. Defaults to 'menu' (the original shell behavior). */
+  leading?: 'menu' | 'back';
+  /** Called by the back-arrow leading control (leading="back"). */
+  onBack?: () => void;
+}> = ({ leading = 'menu', onBack }) => {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.header, { paddingTop: Math.max(insets.top, Spacing.sm) }]}>
       <TouchableOpacity
         style={styles.menuButton}
-        onPress={showPreviewNotice}
+        onPress={leading === 'back' ? onBack : showPreviewNotice}
         accessibilityRole="button"
-        accessibilityLabel="Open navigation menu"
+        accessibilityLabel={leading === 'back' ? 'Go back' : 'Open navigation menu'}
       >
-        <Text style={styles.menuIcon}>☰</Text>
+        <Text style={[styles.menuIcon, leading === 'back' && styles.menuIconBack]}>
+          {leading === 'back' ? '←' : '☰'}
+        </Text>
       </TouchableOpacity>
 
       <View style={styles.logoPlaceholder} accessible accessibilityLabel="HRSJM logo">
@@ -96,6 +103,12 @@ const styles = StyleSheet.create({
   menuIcon: {
     fontSize: 20,
     color: AdminColors.textPrimary,
+  },
+  menuIconBack: {
+    // The ← glyph is drawn on the baseline inside its line box, which leaves
+    // it visibly below the branding block's optical center — nudge it up so
+    // the arrow sits on the same vertical center line as the logo + text.
+    transform: [{ translateY: -4 }],
   },
   logoPlaceholder: {
     width: 32,
