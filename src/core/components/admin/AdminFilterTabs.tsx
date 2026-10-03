@@ -1,8 +1,14 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+  Platform,
+} from 'react-native';
 import { AdminColors } from '../../theme/colors';
-import { Typography } from '../../theme/typography';
-import { Spacing } from '../../theme/spacing';
 
 export interface AdminFilterTab<T = string> {
   key: T;
@@ -16,14 +22,16 @@ export interface AdminFilterTabsProps<T = string> {
   activeKey: T;
   onChange?: (key: T) => void;
   onSelect?: (key: T) => void;
+  containerStyle?: ViewStyle;
 }
 
-/** Horizontal status/filter chip row (spec §10 AdminFilterTabs). */
+/** Horizontal status/filter chip row with crisp typography & guaranteed height on Android/iOS/Web */
 export const AdminFilterTabs = <T extends string = string>({
   tabs,
   activeKey,
   onChange,
   onSelect,
+  containerStyle,
 }: AdminFilterTabsProps<T>) => {
   const handlePress = (key: T) => {
     if (onChange) onChange(key);
@@ -31,81 +39,112 @@ export const AdminFilterTabs = <T extends string = string>({
   };
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}
-    >
-      {tabs.map(tab => {
-        const active = tab.key === activeKey;
-        return (
-          <TouchableOpacity
-            key={String(tab.key)}
-            onPress={() => handlePress(tab.key)}
-            activeOpacity={0.7}
-            style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
-          >
-          <Text style={[styles.label, active ? styles.labelActive : styles.labelInactive]}>
-            {tab.label}
-          </Text>
-          {tab.count !== undefined ? (
-            <View
-              style={[styles.countPill, active ? styles.countPillActive : styles.countPillInactive]}
+    <View style={[styles.wrapper, containerStyle]}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.scrollView}
+        contentContainerStyle={styles.row}
+      >
+        {tabs.map(tab => {
+          const active = tab.key === activeKey;
+          const hasCount = tab.count !== undefined && tab.count !== null;
+
+          return (
+            <TouchableOpacity
+              key={String(tab.key)}
+              onPress={() => handlePress(tab.key)}
+              activeOpacity={0.7}
+              style={[
+                styles.chip,
+                active ? styles.chipActive : styles.chipInactive,
+              ]}
             >
               <Text
                 style={[
-                  styles.countText,
-                  active ? styles.countTextActive : styles.countTextInactive,
+                  styles.label,
+                  active ? styles.labelActive : styles.labelInactive,
                 ]}
+                numberOfLines={1}
               >
-                {tab.count}
+                {tab.label}
               </Text>
-            </View>
-          ) : null}
-        </TouchableOpacity>
-      );
-    })}
-    </ScrollView>
+              {hasCount ? (
+                <View
+                  style={[
+                    styles.countPill,
+                    active ? styles.countPillActive : styles.countPillInactive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.countText,
+                      active ? styles.countTextActive : styles.countTextInactive,
+                    ]}
+                  >
+                    {tab.count}
+                  </Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flexGrow: 0,
+    flexShrink: 0,
+    minHeight: 44,
+    justifyContent: 'center',
+    marginVertical: 2,
+  },
+  scrollView: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 4,
     paddingHorizontal: 2,
+    paddingVertical: 2,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    justifyContent: 'center',
+    height: 38,
+    minHeight: 38,
+    paddingHorizontal: 16,
     borderRadius: 20,
-    borderWidth: 1.2,
+    borderWidth: 1.5,
   },
   chipActive: {
     backgroundColor: '#123B7A',
     borderColor: '#123B7A',
     shadowColor: '#123B7A',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.18,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
   chipInactive: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
+    shadowOpacity: 0.04,
     shadowRadius: 2,
     elevation: 1,
   },
   label: {
     fontSize: 13,
+    lineHeight: 18,
+    ...(Platform.OS === 'android' ? { includeFontPadding: false } : {}),
   },
   labelActive: {
     color: '#FFFFFF',
@@ -116,28 +155,31 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   countPill: {
+    minWidth: 20,
+    height: 20,
     borderRadius: 10,
-    paddingHorizontal: 7,
-    paddingVertical: 1.5,
+    paddingHorizontal: 6,
+    marginLeft: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   countPillActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(255, 255, 255, 0.28)',
   },
   countPillInactive: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#E2E8F0',
   },
   countText: {
     fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    ...(Platform.OS === 'android' ? { includeFontPadding: false } : {}),
   },
   countTextActive: {
     color: '#FFFFFF',
-    fontWeight: '700',
   },
   countTextInactive: {
-    color: '#64748B',
-    fontWeight: '700',
+    color: '#475569',
   },
 });
 
