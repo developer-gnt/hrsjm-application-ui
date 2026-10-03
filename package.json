@@ -7,9 +7,7 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest",
-    "web": "vite",
-    "web:webpack": "webpack serve --config webpack.config.web.js"
+    "test": "jest"
   },
   "dependencies": {
     "@react-native/assets-registry": "^0.87.1",
