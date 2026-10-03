@@ -18,6 +18,8 @@ import { MoreNavigator } from './MoreNavigator';
 import { ModulePlaceholderScreen } from './ModulePlaceholderScreen';
 import { AdminDashboardScreen } from '../../features/admin/dashboard';
 import { MembersScreen } from '../../features/admin/members/screens/MembersScreen';
+import { AssistanceRequestsScreen } from '../../features/admin/assistance';
+import { SupportTicketsScreen } from '../../features/admin/support';
 import { AdminTabParamList } from './NavigationTypes';
 import {
   House,
@@ -48,24 +50,6 @@ import { Spacing, BorderRadius } from '../../core/theme/spacing';
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
 
-const ApplicationsPlaceholderScreen: React.FC = () => (
-  <ModulePlaceholderScreen
-    title="Applications"
-    icon="📄"
-    owner="Arshad"
-    description="Assistance request review workflow"
-  />
-);
-
-const ComplaintsPlaceholderScreen: React.FC = () => (
-  <ModulePlaceholderScreen
-    title="Complaints"
-    icon="💬"
-    owner="Arshad"
-    description="Support ticket management"
-  />
-);
-
 export interface TabDefinition {
   name: keyof AdminTabParamList;
   label: string;
@@ -94,14 +78,14 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
     label: 'Applications',
     Icon: FileText,
     icon: '📄',
-    component: ApplicationsPlaceholderScreen,
+    component: AssistanceRequestsScreen,
   },
   {
     name: AppRoutes.ADMIN_COMPLAINTS_TAB,
     label: 'Complaints',
     Icon: MessageSquare,
     icon: '💬',
-    component: ComplaintsPlaceholderScreen,
+    component: SupportTicketsScreen,
   },
   {
     name: AppRoutes.ADMIN_MORE_TAB,

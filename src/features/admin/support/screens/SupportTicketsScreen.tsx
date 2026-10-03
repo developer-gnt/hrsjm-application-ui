@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -20,7 +19,9 @@ import { SkeletonList } from '../../../../core/components/common/AppSkeleton';
 import { AdminFilterTabs } from '../../../../core/components/admin/AdminFilterTabs';
 import { useAuth } from '../../../../core/auth/AuthContext';
 import { can } from '../../../../core/permissions/permissions';
-import { colors, serif, spacing, typography } from '../../../../core/theme/theme';
+import { BrandColors } from '../../../../core/theme/colors';
+import { Typography } from '../../../../core/theme/typography';
+import { Spacing, BorderRadius } from '../../../../core/theme/spacing';
 import type { AppStackParamList, TabsParamList } from '../../../../core/navigation/types';
 import { TicketCard } from '../components/TicketCard';
 import { TicketFilters } from '../components/TicketFilters';
@@ -57,15 +58,15 @@ export function SupportTicketsScreen() {
 
   if (!can(user, 'support.manage')) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <AdminHeader />
+      <View style={styles.flex}>
+        <AdminHeader onNavigate={target => navigation.navigate(target as any)} />
         <View style={styles.center}>
           <AppEmptyState
             title="Access Restricted"
             message="You do not have permission to view support tickets."
           />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -82,9 +83,13 @@ export function SupportTicketsScreen() {
   }));
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <AdminHeader />
+    <View style={styles.flex}>
+      <AdminHeader
+        onNavigate={target => navigation.navigate(target as any)}
+      />
+
       <FlatList
+        style={styles.list}
         data={filteredItems}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
@@ -97,37 +102,53 @@ export function SupportTicketsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={refresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
+            tintColor={BrandColors.navy}
+            colors={[BrandColors.navy]}
           />
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <View>
+            {/* Page Context Banner */}
             <View style={styles.headerArea}>
-              <Text style={styles.pageTitle}>Complaints</Text>
-              <Text style={styles.subtitle}>
+              <Text style={styles.pageTitle}>Complaints & Support</Text>
+              <Text style={styles.pageSubtitle}>
                 Review, track and resolve support tickets.
               </Text>
             </View>
+
+            {/* 4-Column Executive KPI Cards */}
             <TicketStatsRow stats={stats} loading={statsLoading} />
+
+            {/* Search and Filters Bar */}
             <View style={styles.searchRow}>
-              <AppSearchBar
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Search by ticket ID / subject / user"
-              />
+              <View style={styles.searchContainer}>
+                <AppSearchBar
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder="Search by ticket ID, subject..."
+                />
+              </View>
               <TouchableOpacity
                 onPress={() => setFiltersVisible(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Open filters"
-                style={styles.filterButton}>
-                <Text style={styles.filterText}>Filters</Text>
+                style={styles.filtersButton}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.filterIcon}>⚙️</Text>
+                <Text style={styles.filtersText}>Filters</Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.tabs}>
-              <AdminFilterTabs tabs={tabs} activeKey={activeTab} onSelect={setActiveTab} />
+
+            {/* Filter Tabs */}
+            <View style={styles.tabsContainer}>
+              <AdminFilterTabs
+                tabs={tabs}
+                activeKey={activeTab}
+                onSelect={setActiveTab}
+              />
             </View>
           </View>
         }
@@ -152,11 +173,9 @@ export function SupportTicketsScreen() {
         ListFooterComponent={
           loadingMore ? <Text style={styles.loadingMore}>Loading more…</Text> : undefined
         }
-        contentContainerStyle={[
-          styles.listContent,
-          filteredItems.length === 0 && styles.emptyList,
-        ]}
+        contentContainerStyle={styles.listContent}
       />
+
       <TicketFilters
         visible={filtersVisible}
         currentTab={activeTab}
@@ -166,70 +185,79 @@ export function SupportTicketsScreen() {
           setFiltersVisible(false);
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  flex: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAFC',
+  },
+  list: {
+    flex: 1,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
   },
   headerArea: {
-    padding: spacing.lg,
-    paddingBottom: 0,
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
   },
   pageTitle: {
-    ...serif,
-    fontSize: 30,
-    fontWeight: '700',
-    color: colors.primary,
+    ...Typography.screenTitle,
+    fontSize: 24,
+    color: '#0F2C59',
   },
-  subtitle: {
-    ...typography.body,
-    color: colors.periwinkle,
+  pageSubtitle: {
+    ...Typography.body,
+    fontSize: 13,
+    color: '#64748B',
     marginTop: 2,
-    marginBottom: spacing.lg,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
-    gap: spacing.sm,
+    paddingHorizontal: Spacing.base,
+    marginBottom: Spacing.sm,
+    gap: 8,
   },
-  filterButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 999,
-    paddingHorizontal: spacing.lg,
-    minHeight: 44,
+  searchContainer: {
+    flex: 1,
+  },
+  filtersButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 14,
+    height: 44,
+    borderRadius: BorderRadius.lg,
   },
-  filterText: {
-    color: colors.white,
-    fontWeight: '600',
-    fontSize: 14,
+  filterIcon: {
+    fontSize: 13,
   },
-  tabs: {
-    marginBottom: spacing.lg,
+  filtersText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F2C59',
+  },
+  tabsContainer: {
+    marginBottom: Spacing.md,
   },
   listContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl * 2,
-  },
-  emptyList: {
-    flexGrow: 1,
-    justifyContent: 'center',
+    paddingHorizontal: Spacing.base,
+    paddingBottom: Spacing.xxl * 2,
   },
   loadingMore: {
     textAlign: 'center',
-    color: colors.textMuted,
-    paddingVertical: spacing.md,
+    color: '#94A3B8',
+    paddingVertical: Spacing.md,
+    fontSize: 12,
   },
 });
 
