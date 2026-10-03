@@ -11,8 +11,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppEmptyState } from '../../../../core/components/common/AppEmptyState';
-import { AppErrorState } from '../../../../core/components/common/AppErrorState';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppSearchBar } from '../../../../core/components/common/AppSearchBar';
 import { SkeletonList } from '../../../../core/components/common/AppSkeleton';
@@ -28,6 +26,7 @@ import { TicketFilters } from '../components/TicketFilters';
 import { TicketStatsRow } from '../components/TicketStats';
 import { TICKET_TABS } from '../support.utils';
 import { useSupportTickets } from '../hooks/useSupportTickets';
+import { AppEmptyState, AppErrorState } from '../../../../core';
 
 type TabProps = BottomTabScreenProps<TabsParamList, 'ComplaintsTab'>;
 type NavProp = CompositeNavigationProp<

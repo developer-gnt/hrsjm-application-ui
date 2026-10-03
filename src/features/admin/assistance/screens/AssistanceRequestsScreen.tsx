@@ -13,8 +13,6 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppBottomSheet } from '../../../../core/components/common/AppBottomSheet';
-import { AppEmptyState } from '../../../../core/components/common/AppEmptyState';
-import { AppErrorState } from '../../../../core/components/common/AppErrorState';
 import { AppSearchBar } from '../../../../core/components/common/AppSearchBar';
 import { SkeletonList } from '../../../../core/components/common/AppSkeleton';
 import { AdminFilterTabs } from '../../../../core/components/admin/AdminFilterTabs';
@@ -29,6 +27,7 @@ import { AssistanceFilters } from '../components/AssistanceFilters';
 import { AssistanceStatsRow } from '../components/AssistanceStats';
 import { ASSISTANCE_TABS } from '../assistance.utils';
 import { useAssistance } from '../hooks/useAssistance';
+import { AppEmptyState, AppErrorState } from '../../../../core';
 
 type TabProps = BottomTabScreenProps<TabsParamList, 'DonationSeekersTab'>;
 type NavProp = CompositeNavigationProp<
@@ -180,7 +179,7 @@ export function AssistanceRequestsScreen() {
           )
         }
         ListFooterComponent={
-          loadingMore ? <Text style={styles.loadingMore}>Loading more…</Text> : null
+          loadingMore ? <Text style={styles.loadingMore}>Loading more…</Text> : undefined
         }
         contentContainerStyle={styles.listContent}
       />
