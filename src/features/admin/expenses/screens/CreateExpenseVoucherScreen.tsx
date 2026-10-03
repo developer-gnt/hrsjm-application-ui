@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppHeader } from '../../../../core/components/common/AppHeader';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppInput } from '../../../../core/components/common/AppInput';
 import { ApiError } from '../../../../core/api/api-error';
@@ -94,10 +95,11 @@ export const CreateExpenseVoucherScreen: React.FC<
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <AppHeader
+      <AdminHeader
         title="Create Expense Voucher"
         showBack
         onBack={() => navigation.goBack()}
+        onNavigate={target => navigation.navigate(target as any)}
       />
       <ScrollView
         style={styles.flex}

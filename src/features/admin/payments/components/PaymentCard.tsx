@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AdminColors } from '../../../../core/theme/colors';
 import { Typography } from '../../../../core/theme/typography';
-import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
+import { Spacing, BorderRadius } from '../../../../core/theme/spacing';
 import { formatDate, formatINR } from '../../../../core/utils';
 import {
   AdminStatusBadge,
@@ -15,101 +15,197 @@ interface PaymentCardProps {
   onPress: () => void;
 }
 
+const getInitials = (name?: string): string => {
+  if (!name) return 'P';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+};
+
 /** Payment row in the verification queue (spec §24 layout). */
 export const PaymentCard: React.FC<PaymentCardProps> = ({
   payment,
   onPress,
-}) => (
-  <TouchableOpacity
-    style={styles.card}
-    activeOpacity={0.8}
-    onPress={onPress}
-  >
-    <View style={styles.topRow}>
-      <View style={styles.userInfo}>
-        <Text style={styles.userName} numberOfLines={1}>
-          {payment.user?.full_name ?? 'Unknown member'}
-        </Text>
-        <Text style={styles.paymentMeta}>
-          {payment.membership?.category?.name ?? 'Membership'} ·{' '}
-          {formatDate(payment.created_at)}
-        </Text>
-      </View>
-      <AdminStatusBadge
-        label={payment.payment_status}
-        tone={adminStatusTone(payment.payment_status)}
-      />
-    </View>
+}) => {
+  const memberName = payment.user?.full_name ?? 'Unknown member';
+  const initials = getInitials(memberName);
+  const isOnline = payment.payment_method?.toUpperCase().includes('ONLINE') ||
+    payment.payment_method?.toUpperCase().includes('GATEWAY') ||
+    payment.payment_method?.toUpperCase().includes('RAZORPAY');
 
-    <View style={styles.bottomRow}>
-      <View style={styles.amountBox}>
-        <Text style={styles.amount}>{formatINR(payment.amount)}</Text>
-        <Text style={styles.method}>{payment.payment_method}</Text>
+  return (
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.7}
+      onPress={onPress}
+    >
+      <View style={styles.topRow}>
+        <View style={styles.avatarCircle}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+
+        <View style={styles.userInfo}>
+          <Text style={styles.userName} numberOfLines={1}>
+            {memberName}
+          </Text>
+          <Text style={styles.paymentMeta} numberOfLines={1}>
+            {payment.membership?.category?.name ?? 'Membership'} · {formatDate(payment.created_at)}
+          </Text>
+        </View>
+
+        <AdminStatusBadge
+          label={payment.payment_status}
+          tone={adminStatusTone(payment.payment_status)}
+        />
       </View>
-      <View style={styles.actionHint}>
-        <Text style={styles.reference} numberOfLines={1}>
-          {payment.transaction_id ?? payment.gateway_order_id ?? '—'}
-        </Text>
-        <Text style={styles.chevron}>›</Text>
+
+      <View style={styles.divider} />
+
+      <View style={styles.bottomRow}>
+        <View style={styles.amountBox}>
+          <Text style={styles.amountLabel}>AMOUNT</Text>
+          <Text style={styles.amount}>{formatINR(payment.amount)}</Text>
+        </View>
+
+        <View style={styles.rightInfo}>
+          <View style={styles.methodPill}>
+            <View
+              style={[
+                styles.methodDot,
+                { backgroundColor: isOnline ? '#3B82F6' : '#10B981' },
+              ]}
+            />
+            <Text style={styles.methodText}>
+              {payment.payment_method || 'OFFLINE'}
+            </Text>
+          </View>
+
+          <View style={styles.actionHint}>
+            <Text style={styles.reference} numberOfLines={1}>
+              {payment.transaction_id ?? payment.gateway_order_id ?? '—'}
+            </Text>
+            <Text style={styles.chevron}>›</Text>
+          </View>
+        </View>
       </View>
-    </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: AdminColors.cardSurface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    ...Shadows.card,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: Spacing.base,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   topRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#EAF1FB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D4E2F7',
+  },
+  avatarText: {
+    color: '#123B7A',
+    fontSize: 14,
+    fontWeight: '700',
   },
   userInfo: {
     flex: 1,
   },
   userName: {
     ...Typography.bodyBold,
-    color: AdminColors.textPrimary,
+    fontSize: 15,
+    color: '#0F172A',
   },
   paymentMeta: {
     ...Typography.caption,
-    color: AdminColors.textSecondary,
+    color: '#64748B',
     marginTop: 2,
+    fontSize: 12,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 12,
   },
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    marginTop: Spacing.md,
   },
   amountBox: {
     gap: 2,
   },
-  amount: {
-    ...Typography.metric,
-    color: AdminColors.primary,
+  amountLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
   },
-  method: {
-    ...Typography.caption,
-    color: AdminColors.textSecondary,
+  amount: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#123B7A',
+  },
+  rightInfo: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  methodPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  methodDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  methodText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+    textTransform: 'uppercase',
   },
   actionHint: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
-    maxWidth: 140,
+    gap: 4,
+    maxWidth: 160,
   },
   reference: {
     ...Typography.caption,
-    color: AdminColors.textMuted,
+    color: '#94A3B8',
+    fontSize: 11,
   },
   chevron: {
-    ...Typography.sectionHeader,
-    color: AdminColors.textMuted,
+    fontSize: 16,
+    lineHeight: 18,
+    color: '#94A3B8',
+    fontWeight: '700',
   },
 });

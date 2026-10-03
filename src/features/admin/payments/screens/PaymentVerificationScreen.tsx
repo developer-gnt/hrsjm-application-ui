@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppHeader } from '../../../../core/components/common/AppHeader';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppSearchBar } from '../../../../core/components/common/AppSearchBar';
 import { AppLoader } from '../../../../core/components/feedback/AppLoader';
 import { AppEmptyState } from '../../../../core/components/feedback/AppEmptyState';
@@ -17,7 +17,7 @@ import { PermissionDenied } from '../../../../core/permissions/permission.guard'
 import { can } from '../../../../core/permissions/can';
 import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import { useDebouncedValue } from '../../../../core/hooks/useDebouncedValue';
-import { AdminColors } from '../../../../core/theme/colors';
+import { AdminColors, BrandColors } from '../../../../core/theme/colors';
 import { Typography } from '../../../../core/theme/typography';
 import { Spacing } from '../../../../core/theme/spacing';
 import { AppRoutes } from '../../../../core/constants/routes';
@@ -60,7 +60,9 @@ export const PaymentVerificationScreen: React.FC<
   if (!can(PermissionKeys.PAYMENT_READ)) {
     return (
       <View style={styles.flex}>
-        <AppHeader title="Payment Verification" showBack onBack={() => navigation.goBack()} />
+        <AdminHeader
+          onNavigate={target => navigation.navigate(target as any)}
+        />
         <PermissionDenied />
       </View>
     );
@@ -68,33 +70,69 @@ export const PaymentVerificationScreen: React.FC<
 
   return (
     <View style={styles.flex}>
-      <AppHeader
-        title="Payment Verification"
-        subtitle="Offline & gateway membership payments"
-        showBack
-        onBack={() => navigation.goBack()}
+      <AdminHeader
+        onNavigate={target => navigation.navigate(target as any)}
       />
 
       <View style={styles.body}>
-        <View style={styles.statsRow}>
-          {[
-            { label: 'Total', value: stats.data?.all ?? 0, tint: styles.statNeutral },
-            { label: 'Pending', value: stats.data?.pending ?? 0, tint: styles.statPending },
-            { label: 'Verified', value: stats.data?.verified ?? 0, tint: styles.statVerified },
-            { label: 'Failed', value: stats.data?.failed ?? 0, tint: styles.statFailed },
-          ].map(stat => (
-            <View key={stat.label} style={[styles.statChip, stat.tint]}>
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-            </View>
-          ))}
+        {/* Page Context Banner */}
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Payment Verification</Text>
+          <Text style={styles.pageSubtitle}>
+            Review and approve offline & gateway membership transactions
+          </Text>
         </View>
 
+        {/* Modern KPI Stats Cards */}
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, styles.statCardTotal]}>
+            <View style={styles.statTop}>
+              <Text style={[styles.statBadgeLabel, { color: '#1E40AF' }]}>TOTAL</Text>
+            </View>
+            <Text style={[styles.statNumber, { color: '#1E3A8A' }]}>
+              {stats.data?.all ?? 0}
+            </Text>
+            <Text style={styles.statSubText}>All payments</Text>
+          </View>
+
+          <View style={[styles.statCard, styles.statCardPending]}>
+            <View style={styles.statTop}>
+              <Text style={[styles.statBadgeLabel, { color: '#B45309' }]}>PENDING</Text>
+            </View>
+            <Text style={[styles.statNumber, { color: '#B45309' }]}>
+              {stats.data?.pending ?? 0}
+            </Text>
+            <Text style={styles.statSubText}>Needs review</Text>
+          </View>
+
+          <View style={[styles.statCard, styles.statCardVerified]}>
+            <View style={styles.statTop}>
+              <Text style={[styles.statBadgeLabel, { color: '#047857' }]}>VERIFIED</Text>
+            </View>
+            <Text style={[styles.statNumber, { color: '#047857' }]}>
+              {stats.data?.verified ?? 0}
+            </Text>
+            <Text style={styles.statSubText}>Approved</Text>
+          </View>
+
+          <View style={[styles.statCard, styles.statCardFailed]}>
+            <View style={styles.statTop}>
+              <Text style={[styles.statBadgeLabel, { color: '#B91C1C' }]}>FAILED</Text>
+            </View>
+            <Text style={[styles.statNumber, { color: '#B91C1C' }]}>
+              {stats.data?.failed ?? 0}
+            </Text>
+            <Text style={styles.statSubText}>Rejected</Text>
+          </View>
+        </View>
+
+        {/* Search Bar */}
         <AppSearchBar
-          placeholder="Search by name, transaction ID…"
+          placeholder="Search by member name, transaction ID…"
           onSearch={setSearch}
         />
 
+        {/* Filter Tabs */}
         <AdminFilterTabs
           tabs={STATUS_FILTERS.map(filter => ({
             ...filter,
@@ -113,6 +151,7 @@ export const PaymentVerificationScreen: React.FC<
           onChange={setStatusFilter}
         />
 
+        {/* Content List */}
         {paymentsQuery.isLoading ? (
           <AppLoader fullScreen message="Loading payments…" />
         ) : paymentsQuery.isError ? (
@@ -144,7 +183,11 @@ export const PaymentVerificationScreen: React.FC<
             contentContainerStyle={styles.listContent}
             ItemSeparatorComponent={ListSeparator}
             refreshControl={
-              <RefreshControl refreshing={paymentsQuery.isRefetching} onRefresh={refresh} />
+              <RefreshControl
+                refreshing={paymentsQuery.isRefetching}
+                onRefresh={refresh}
+                colors={[BrandColors.navy]}
+              />
             }
             onEndReachedThreshold={0.4}
             onEndReached={() => {
@@ -172,48 +215,85 @@ const ListSeparator: React.FC = () => <View style={styles.separator} />;
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: AdminColors.background,
+    backgroundColor: '#F8FAFC',
   },
   body: {
     flex: 1,
     padding: Spacing.base,
-    gap: Spacing.md,
+    gap: 12,
   },
-  statsRow: {
+  pageHeader: {
+    paddingVertical: 2,
+  },
+  pageTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.3,
+  },
+  pageSubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  statsGrid: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    gap: 8,
   },
-  statChip: {
+  statCard: {
     flex: 1,
-    borderRadius: 10,
-    padding: Spacing.md,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  statCardTotal: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+  },
+  statCardPending: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+  },
+  statCardVerified: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  statCardFailed: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+  statTop: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 4,
   },
-  statNeutral: {
-    backgroundColor: AdminColors.infoLight,
+  statBadgeLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  statPending: {
-    backgroundColor: AdminColors.warningLight,
+  statNumber: {
+    fontSize: 18,
+    fontWeight: '800',
   },
-  statVerified: {
-    backgroundColor: AdminColors.successLight,
-  },
-  statFailed: {
-    backgroundColor: AdminColors.errorLight,
-  },
-  statValue: {
-    ...Typography.metric,
-    color: AdminColors.textPrimary,
-  },
-  statLabel: {
-    ...Typography.caption,
-    color: AdminColors.textSecondary,
+  statSubText: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 2,
+    fontWeight: '500',
   },
   listContent: {
     paddingBottom: Spacing.xxl,
+    paddingTop: 4,
   },
   separator: {
-    height: Spacing.sm,
+    height: 10,
   },
   filterHint: {
     ...Typography.secondary,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { AppHeader } from '../../core/components/common/AppHeader';
+import { AdminHeader } from './AdminHeader';
 import { AppEmptyState } from '../../core/components/feedback/AppEmptyState';
 import { AdminColors } from '../../core/theme/colors';
 import { Spacing } from '../../core/theme/spacing';
@@ -37,7 +37,7 @@ export const ModulePlaceholderScreen: React.FC<ModulePlaceholderScreenProps> = (
 
   return (
     <View style={styles.flex}>
-      <AppHeader title={title} showBack={Boolean(onBack)} onBack={onBack} />
+      <AdminHeader title={title} showBack={Boolean(onBack)} onBack={onBack} />
       <View style={styles.body}>
         <AppEmptyState
           icon={icon ?? '🚧'}

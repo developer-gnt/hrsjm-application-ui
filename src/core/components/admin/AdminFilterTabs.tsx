@@ -34,20 +34,20 @@ export const AdminFilterTabs: React.FC<AdminFilterTabsProps> = ({
         <TouchableOpacity
           key={tab.key}
           onPress={() => onChange(tab.key)}
-          activeOpacity={0.8}
-          style={[styles.chip, active ? styles.chipActive : null]}
+          activeOpacity={0.7}
+          style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
         >
-          <Text style={[styles.label, active ? styles.labelActive : null]}>
+          <Text style={[styles.label, active ? styles.labelActive : styles.labelInactive]}>
             {tab.label}
           </Text>
           {tab.count !== undefined ? (
             <View
-              style={[styles.countPill, active ? styles.countPillActive : null]}
+              style={[styles.countPill, active ? styles.countPillActive : styles.countPillInactive]}
             >
               <Text
                 style={[
                   styles.countText,
-                  active ? styles.countTextActive : null,
+                  active ? styles.countTextActive : styles.countTextInactive,
                 ]}
               >
                 {tab.count}
@@ -62,47 +62,72 @@ export const AdminFilterTabs: React.FC<AdminFilterTabsProps> = ({
 
 const styles = StyleSheet.create({
   row: {
-    gap: Spacing.sm,
-    paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    backgroundColor: AdminColors.cardSurface,
+    borderRadius: 20,
+    borderWidth: 1.2,
   },
   chipActive: {
-    backgroundColor: AdminColors.primary,
-    borderColor: AdminColors.primary,
+    backgroundColor: '#123B7A',
+    borderColor: '#123B7A',
+    shadowColor: '#123B7A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  chipInactive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
   },
   label: {
-    ...Typography.secondaryMedium,
-    color: AdminColors.textSecondary,
+    fontSize: 13,
   },
   labelActive: {
-    color: AdminColors.textOnDark,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  labelInactive: {
+    color: '#334155',
+    fontWeight: '600',
   },
   countPill: {
-    backgroundColor: AdminColors.background,
-    borderRadius: 999,
-    minWidth: 20,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 1.5,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   countPillActive: {
-    backgroundColor: AdminColors.accentGold,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  countPillInactive: {
+    backgroundColor: '#F1F5F9',
   },
   countText: {
-    ...Typography.caption,
-    color: AdminColors.textSecondary,
+    fontSize: 11,
   },
   countTextActive: {
-    color: AdminColors.textOnDark,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  countTextInactive: {
+    color: '#64748B',
+    fontWeight: '700',
   },
 });

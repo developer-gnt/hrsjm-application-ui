@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text, ViewStyle } from 'react-native';
-import { AdminColors } from '../../theme/colors';
-import { Typography } from '../../theme/typography';
-import { Spacing, BorderRadius } from '../../theme/spacing';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { debounce } from '../../utils/debounce';
 
 interface AppSearchBarProps {
@@ -51,23 +49,40 @@ export const AppSearchBar: React.FC<AppSearchBarProps> = ({
   return (
     <View style={[styles.container, containerStyle]}>
       <View style={styles.searchIcon}>
-      <View style={styles.magnifierCircle} />
-      <View style={styles.magnifierHandle} />
-    </View>
+        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+          <Circle
+            cx={11}
+            cy={11}
+            r={7}
+            stroke="#123B7A"
+            strokeWidth={2.2}
+          />
+          <Path
+            d="M20 20L16.5 16.5"
+            stroke="#123B7A"
+            strokeWidth={2.2}
+            strokeLinecap="round"
+          />
+        </Svg>
+      </View>
       <TextInput
         value={internalValue}
         onChangeText={handleChangeText}
         placeholder={placeholder}
-        placeholderTextColor={AdminColors.textMuted}
+        placeholderTextColor="#64748B"
         style={styles.input}
         returnKeyType="search"
-        clearButtonMode="while-editing"
+        clearButtonMode="never"
+        autoCapitalize="none"
+        autoCorrect={false}
       />
       {internalValue.length > 0 && (
         <TouchableOpacity
           onPress={handleClear}
           style={styles.clearButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Clear search"
         >
           <Text style={styles.clearIcon}>✕</Text>
         </TouchableOpacity>
@@ -80,50 +95,43 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AdminColors.cardSurface,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    borderRadius: BorderRadius.base,
-    paddingHorizontal: Spacing.md,
-    height: 44,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 48,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
   },
   searchIcon: {
-    width: 18,
-    height: 18,
-    marginRight: Spacing.sm,
-  },
-  magnifierCircle: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: AdminColors.primary,
-  },
-  magnifierHandle: {
-    position: 'absolute',
-    bottom: 1,
-    right: 1,
-    width: 2,
-    height: 6,
-    borderRadius: 1,
-    backgroundColor: AdminColors.primary,
-    transform: [{ rotate: '45deg' }],
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     flex: 1,
-    ...Typography.body,
-    color: AdminColors.textPrimary,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#0F172A',
     paddingVertical: 0,
+    height: '100%',
   },
   clearButton: {
-    padding: Spacing.xs,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 6,
   },
   clearIcon: {
-    fontSize: 12,
-    color: AdminColors.textMuted,
-    fontWeight: '700',
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '800',
   },
 });

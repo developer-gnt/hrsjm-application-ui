@@ -6,7 +6,7 @@ import {
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppHeader } from '../../../../core/components/common/AppHeader';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppSearchBar } from '../../../../core/components/common/AppSearchBar';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppLoader } from '../../../../core/components/feedback/AppLoader';
@@ -56,7 +56,9 @@ export const ExpenseVouchersScreen: React.FC<ExpenseVouchersScreenProps> = ({
   if (!can(PermissionKeys.EXPENSE_READ)) {
     return (
       <View style={styles.flex}>
-        <AppHeader title="Expense Vouchers" showBack onBack={() => navigation.goBack()} />
+        <AdminHeader
+          onNavigate={target => navigation.navigate(target as any)}
+        />
         <PermissionDenied />
       </View>
     );
@@ -64,11 +66,8 @@ export const ExpenseVouchersScreen: React.FC<ExpenseVouchersScreenProps> = ({
 
   return (
     <View style={styles.flex}>
-      <AppHeader
-        title="Expense Vouchers"
-        subtitle="Dr Expense · Cr Bank/Cash"
-        showBack
-        onBack={() => navigation.goBack()}
+      <AdminHeader
+        onNavigate={target => navigation.navigate(target as any)}
         rightAction={
           can(PermissionKeys.EXPENSE_CREATE) ? (
             <AppButton

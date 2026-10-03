@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppHeader } from '../../../../core/components/common/AppHeader';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppCard } from '../../../../core/components/common/AppCard';
 import { ConfirmDialog } from '../../../../core/components/common/ConfirmDialog';
@@ -50,7 +50,12 @@ export const ReceiptVoucherDetailsScreen: React.FC<
   if (detail.isLoading) {
     return (
       <View style={styles.flex}>
-        <AppHeader title="Receipt Details" showBack onBack={() => navigation.goBack()} />
+        <AdminHeader
+          title="Receipt Details"
+          showBack
+          onBack={() => navigation.goBack()}
+          onNavigate={target => navigation.navigate(target as any)}
+        />
         <AppLoader fullScreen message="Loading voucher…" />
       </View>
     );
@@ -59,7 +64,12 @@ export const ReceiptVoucherDetailsScreen: React.FC<
   if (detail.isError || !voucher) {
     return (
       <View style={styles.flex}>
-        <AppHeader title="Receipt Details" showBack onBack={() => navigation.goBack()} />
+        <AdminHeader
+          title="Receipt Details"
+          showBack
+          onBack={() => navigation.goBack()}
+          onNavigate={target => navigation.navigate(target as any)}
+        />
         <AppErrorState
           title="Unable to load voucher"
           onRetry={() => void detail.refetch()}
@@ -73,7 +83,12 @@ export const ReceiptVoucherDetailsScreen: React.FC<
 
   return (
     <View style={styles.flex}>
-      <AppHeader title="Receipt Details" showBack onBack={() => navigation.goBack()} />
+      <AdminHeader
+        title="Receipt Details"
+        showBack
+        onBack={() => navigation.goBack()}
+        onNavigate={target => navigation.navigate(target as any)}
+      />
       <ScrollView contentContainerStyle={styles.content} bounces={false}>
         <AppCard variant="elevated">
           <View style={styles.topRow}>

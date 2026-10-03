@@ -55,6 +55,8 @@ export interface AdminHeaderProps {
   onOpenMore?: () => void;
   /** Callback when user selects an item in the slide-in sidebar. */
   onNavigate?: (target: string) => void;
+  /** Optional custom right action element (e.g. button or custom control). */
+  rightAction?: React.ReactNode;
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
@@ -64,6 +66,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   unreadCount = 3,
   onOpenMore,
   onNavigate,
+  rightAction,
 }) => {
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
@@ -153,8 +156,12 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           )}
         </View>
 
-        {/* Right Controls: Notifications & Profile */}
+        {/* Right Controls: Custom Right Action + Notifications & Profile */}
         <View style={styles.rightRow}>
+          {rightAction ? (
+            <View style={styles.customRightAction}>{rightAction}</View>
+          ) : null}
+
           {/* Notification Bell */}
           <TouchableOpacity
             style={styles.bellWrap}
@@ -327,6 +334,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  customRightAction: {
+    marginRight: 2,
   },
   bellWrap: {
     position: 'relative',
