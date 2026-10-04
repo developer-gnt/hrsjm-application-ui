@@ -94,6 +94,7 @@ function App() {
         <BlogsListScreen
           onAddBlog={() => setRoute({ name: 'blog-create' })}
           onOpenBlog={blog => setRoute({ name: 'blog-details', blog })}
+          onEditBlog={blog => setRoute({ name: 'blog-edit', blog })}
           onTabPress={tab => {
             if (tab === 'events') {
               setRoute({ name: 'list' });

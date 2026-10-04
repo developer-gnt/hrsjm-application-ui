@@ -78,9 +78,8 @@ interface BlogsListScreenProps {
    */
   onOpenBlog?: (blog: BlogListItem) => void;
   /**
-   * TEMPORARY (UI-only phase): called when the user taps a row's Edit button.
-   * When not provided, a placeholder alert is shown (Edit Blog is a later
-   * phase).
+   * Called when the user taps a row's Edit button: opens the shared
+   * Edit Blog screen for that blog (same screen as Blog Details → Edit).
    */
   onEditBlog?: (blog: BlogListItem) => void;
   /**
@@ -237,15 +236,9 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
   };
 
   const handleBlogEdit = (blog: BlogListItem) => {
-    if (onEditBlog) {
-      onEditBlog(blog);
-      return;
-    }
-    // UI placeholder only: Edit Blog is a later phase (no backend yet).
-    Alert.alert(
-      blog.title,
-      'The Edit Blog screen will be implemented in a later phase after backend integration.',
-    );
+    // Opens the shared EditBlogScreen through the host app — the same screen
+    // the Blog Details ⋮ → Edit path uses, pre-filled with this blog.
+    onEditBlog?.(blog);
   };
 
   const handleBlogMenu = (blog: BlogListItem) => {
