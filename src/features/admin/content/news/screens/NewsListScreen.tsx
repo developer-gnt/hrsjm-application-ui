@@ -187,7 +187,7 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
   // Preview-shell tabs: hand off to the host for tabs it can navigate to;
   // everything else falls back to the shell's temporary preview notice.
   const handleShellTabPress = (tab: string) => {
-    if ((tab === 'events' || tab === 'blogs') && onTabPress) {
+    if ((tab === 'events' || tab === 'blogs' || tab === 'rights') && onTabPress) {
       onTabPress(tab);
       return;
     }

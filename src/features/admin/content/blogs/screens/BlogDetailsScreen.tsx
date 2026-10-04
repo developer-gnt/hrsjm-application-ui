@@ -106,7 +106,7 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
     if (tab === 'blogs') {
       return;
     }
-    if ((tab === 'events' || tab === 'news') && onTabPress) {
+    if ((tab === 'events' || tab === 'news' || tab === 'rights') && onTabPress) {
       onTabPress(tab);
       return;
     }

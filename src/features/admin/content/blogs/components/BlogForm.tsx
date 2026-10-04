@@ -397,7 +397,7 @@ export const BlogForm: React.FC<BlogFormProps> = ({
     if (tab === 'blogs') {
       return;
     }
-    if (tab === 'events' || tab === 'news') {
+    if (tab === 'events' || tab === 'news' || tab === 'rights') {
       if (!isDirty) {
         onTabPress?.(tab);
         return;

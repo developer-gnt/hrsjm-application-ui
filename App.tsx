@@ -28,9 +28,16 @@ import {
   CreateBlogScreen,
   EditBlogScreen,
 } from './src/features/admin/content/blogs';
+import {
+  KnowYourRightsScreen,
+  RightArticleDetailsScreen,
+  CreateRightsArticleScreen,
+  EditRightsArticleScreen,
+} from './src/features/admin/content/rights';
 import type { EventListItem } from './src/features/admin/content/events';
 import type { NewsListItem } from './src/features/admin/content/news';
 import type { BlogListItem } from './src/features/admin/content/blogs';
+import type { RightsArticle } from './src/features/admin/content/rights';
 import { showAdminShellPreviewNotice } from './src/features/admin/content/events/preview/AdminShellTabBar';
 
 type AppRoute =
@@ -45,10 +52,38 @@ type AppRoute =
   | { name: 'blogs' }
   | { name: 'blog-details'; blog: BlogListItem }
   | { name: 'blog-create' }
-  | { name: 'blog-edit'; blog: BlogListItem };
+  | { name: 'blog-edit'; blog: BlogListItem }
+  | { name: 'rights' }
+  | { name: 'rights-details'; article: RightsArticle }
+  | { name: 'rights-create' }
+  | { name: 'rights-edit'; article: RightsArticle; from: 'details' | 'list' };
 
 function App() {
   const [route, setRoute] = useState<AppRoute>({ name: 'list' });
+
+  // TEMPORARY preview-shell tab routing shared by the content screens: the
+  // host switches to the matching list route; unhandled tabs show the shell's
+  // preview notice. Pressing the active tab re-selects the same route, which
+  // is a harmless no-op.
+  const handleContentTabPress = (tab: string) => {
+    if (tab === 'events') {
+      setRoute({ name: 'list' });
+      return;
+    }
+    if (tab === 'news') {
+      setRoute({ name: 'news' });
+      return;
+    }
+    if (tab === 'blogs') {
+      setRoute({ name: 'blogs' });
+      return;
+    }
+    if (tab === 'rights') {
+      setRoute({ name: 'rights' });
+      return;
+    }
+    showAdminShellPreviewNotice();
+  };
 
   return (
     <SafeAreaProvider>
@@ -76,17 +111,7 @@ function App() {
           news={route.news}
           onBack={() => setRoute({ name: 'news' })}
           onEdit={news => setRoute({ name: 'news-edit', news })}
-          onTabPress={tab => {
-            if (tab === 'events') {
-              setRoute({ name: 'list' });
-              return;
-            }
-            if (tab === 'blogs') {
-              setRoute({ name: 'blogs' });
-              return;
-            }
-            showAdminShellPreviewNotice();
-          }}
+          onTabPress={handleContentTabPress}
         />
       ) : route.name === 'news-create' ? (
         <CreateNewsScreen onCancel={() => setRoute({ name: 'news' })} />
@@ -95,97 +120,66 @@ function App() {
           onAddBlog={() => setRoute({ name: 'blog-create' })}
           onOpenBlog={blog => setRoute({ name: 'blog-details', blog })}
           onEditBlog={blog => setRoute({ name: 'blog-edit', blog })}
-          onTabPress={tab => {
-            if (tab === 'events') {
-              setRoute({ name: 'list' });
-              return;
-            }
-            if (tab === 'news') {
-              setRoute({ name: 'news' });
-              return;
-            }
-            showAdminShellPreviewNotice();
-          }}
+          onTabPress={handleContentTabPress}
         />
       ) : route.name === 'blog-details' ? (
         <BlogDetailsScreen
           blog={route.blog}
           onBack={() => setRoute({ name: 'blogs' })}
           onEdit={blog => setRoute({ name: 'blog-edit', blog })}
-          onTabPress={tab => {
-            if (tab === 'events') {
-              setRoute({ name: 'list' });
-              return;
-            }
-            if (tab === 'news') {
-              setRoute({ name: 'news' });
-              return;
-            }
-            showAdminShellPreviewNotice();
-          }}
+          onTabPress={handleContentTabPress}
         />
       ) : route.name === 'blog-edit' ? (
         <EditBlogScreen
           blog={route.blog}
           onBack={() => setRoute({ name: 'blog-details', blog: route.blog })}
-          onTabPress={tab => {
-            if (tab === 'events') {
-              setRoute({ name: 'list' });
-              return;
-            }
-            if (tab === 'news') {
-              setRoute({ name: 'news' });
-              return;
-            }
-            showAdminShellPreviewNotice();
-          }}
+          onTabPress={handleContentTabPress}
         />
       ) : route.name === 'blog-create' ? (
         <CreateBlogScreen
           onCancel={() => setRoute({ name: 'blogs' })}
-          onTabPress={tab => {
-            if (tab === 'events') {
-              setRoute({ name: 'list' });
-              return;
-            }
-            if (tab === 'news') {
-              setRoute({ name: 'news' });
-              return;
-            }
-            showAdminShellPreviewNotice();
-          }}
+          onTabPress={handleContentTabPress}
+        />
+      ) : route.name === 'rights' ? (
+        <KnowYourRightsScreen
+          onAddRights={() => setRoute({ name: 'rights-create' })}
+          onOpenArticle={article => setRoute({ name: 'rights-details', article })}
+          onEditArticle={article => setRoute({ name: 'rights-edit', article, from: 'list' })}
+          onTabPress={handleContentTabPress}
+        />
+      ) : route.name === 'rights-create' ? (
+        <CreateRightsArticleScreen
+          onCancel={() => setRoute({ name: 'rights' })}
+          onTabPress={handleContentTabPress}
+        />
+      ) : route.name === 'rights-details' ? (
+        <RightArticleDetailsScreen
+          article={route.article}
+          onBack={() => setRoute({ name: 'rights' })}
+          onEdit={article => setRoute({ name: 'rights-edit', article, from: 'details' })}
+          onTabPress={handleContentTabPress}
+        />
+      ) : route.name === 'rights-edit' ? (
+        <EditRightsArticleScreen
+          article={route.article}
+          onBack={() =>
+            route.from === 'list'
+              ? setRoute({ name: 'rights' })
+              : setRoute({ name: 'rights-details', article: route.article })
+          }
+          onTabPress={handleContentTabPress}
         />
       ) : route.name === 'news' ? (
         <NewsListScreen
           onViewNews={news => setRoute({ name: 'news-details', news })}
           onAddNews={() => setRoute({ name: 'news-create' })}
-          onTabPress={tab => {
-            if (tab === 'events') {
-              setRoute({ name: 'list' });
-              return;
-            }
-            if (tab === 'blogs') {
-              setRoute({ name: 'blogs' });
-              return;
-            }
-            showAdminShellPreviewNotice();
-          }}
+          onTabPress={handleContentTabPress}
         />
       ) : (
         <EventsScreen
           onViewEvent={event => setRoute({ name: 'details', event })}
           onAddEvent={() => setRoute({ name: 'create' })}
-          onTabPress={tab => {
-            if (tab === 'news') {
-              setRoute({ name: 'news' });
-              return;
-            }
-            if (tab === 'blogs') {
-              setRoute({ name: 'blogs' });
-              return;
-            }
-            showAdminShellPreviewNotice();
-          }}
+          onTabPress={handleContentTabPress}
         />
       )}
     </SafeAreaProvider>
