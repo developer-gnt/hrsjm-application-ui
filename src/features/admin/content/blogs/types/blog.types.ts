@@ -38,6 +38,8 @@ export interface BlogListItem {
   author?: string;
   /** Article body paragraphs (details screen only; falls back to `excerpt`). */
   content?: string[];
+  /** Demo tags for the Edit Blog chips editor; local UI state, not a backend field. */
+  tags?: string[];
 }
 
 /** Aggregated counts shown in the summary/stat cards (UI demonstration values). */
@@ -73,8 +75,10 @@ export interface BlogFilterState {
  *
  * NOT the backend DTO: the final API payload must be created only after the
  * Blogs backend contract is confirmed. Mirrors the Create News form-state
- * pattern. `status` deliberately narrows to Draft/Published — a new blog is
- * never created archived (existing BlogStatus keeps Archived for the list).
+ * pattern. `status` keeps the full existing BlogStatus set: Create Blog's
+ * picker offers Draft/Published only (a new blog is never archived), while
+ * Edit Blog pre-fills the selected blog's current status, which may be
+ * Archived.
  */
 export interface CreateBlogFormState {
   /** Local demo image URI chosen from the sample imagery; no upload happens. */
@@ -84,7 +88,7 @@ export interface CreateBlogFormState {
   shortDescription: string;
   content: string;
   author: string;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: BlogStatus;
   /** Local UI-only preferences; no backend fields exist yet. */
   allowComments: boolean;
   featured: boolean;

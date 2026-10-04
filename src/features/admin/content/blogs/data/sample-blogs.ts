@@ -34,6 +34,7 @@ export const SAMPLE_BLOGS: BlogListItem[] = [
       'Every citizen has fundamental rights that protect their freedom, dignity and equality. Understanding these rights helps individuals participate actively in a democratic society and seek justice when needed.',
       'In this blog, we explore the key constitutional rights, their importance in daily life, and how citizens can make informed decisions to safeguard their rights.',
     ],
+    tags: ['Know Your Rights', 'Citizenship', 'Constitution', 'Legal Awareness'],
   },
   {
     id: 'b-02',
@@ -50,6 +51,7 @@ export const SAMPLE_BLOGS: BlogListItem[] = [
       'Strong communities are built on mutual support and collective responsibility. When people come together, they can overcome challenges that no individual could face alone.',
       'This blog looks at how community networks strengthen social justice, and how small acts of solidarity create lasting change in neighbourhoods.',
     ],
+    tags: ['Community', 'Social Justice', 'Solidarity'],
   },
   {
     id: 'b-03',
@@ -66,6 +68,7 @@ export const SAMPLE_BLOGS: BlogListItem[] = [
       'When floods affect a region, timely relief can make the difference between recovery and prolonged hardship. HRSJM teams work alongside affected families from day one.',
       'This update covers our on-ground relief efforts, the supplies distributed, and how volunteers coordinated with local authorities to reach the families who needed help most.',
     ],
+    tags: ['Relief Work', 'Flood Response', 'Volunteers'],
   },
   {
     id: 'b-04',
@@ -82,6 +85,7 @@ export const SAMPLE_BLOGS: BlogListItem[] = [
       'Education is the foundation of opportunity, yet millions of children remain out of school due to poverty, displacement and social barriers.',
       'This draft explores how child rights and access to education go hand in hand, and what communities can do to keep every child learning.',
     ],
+    tags: ['Child Rights', 'Education', 'Learning'],
   },
   {
     id: 'b-05',
@@ -98,6 +102,7 @@ export const SAMPLE_BLOGS: BlogListItem[] = [
       'Environmental justice means every community deserves clean air, safe water and a healthy place to live, regardless of income or background.',
       'Here we share practical steps our teams and volunteers are taking to protect local ecosystems and build healthier, more sustainable neighbourhoods.',
     ],
+    tags: ['Environment', 'Sustainability', 'Green Living'],
   },
   {
     id: 'b-06',
@@ -114,6 +119,7 @@ export const SAMPLE_BLOGS: BlogListItem[] = [
       'Legal awareness is often the first step towards justice for women facing discrimination or violence. Knowing their rights empowers women to seek help with confidence.',
       "This blog outlines the key legal protections available to women and how HRSJM's awareness programmes are making them accessible at the grassroots level.",
     ],
+    tags: ['Women Rights', 'Legal Awareness', 'Empowerment'],
   },
   {
     id: 'b-07',
@@ -130,6 +136,7 @@ export const SAMPLE_BLOGS: BlogListItem[] = [
       'Filing a complaint can feel overwhelming, especially when you are unfamiliar with the process. A clear, step-by-step approach removes much of that uncertainty.',
       'This archived guide walks through each stage of filing a complaint, from gathering evidence to following up, so you can act with confidence.',
     ],
+    tags: ['Complaints', 'Guides', 'Step-by-Step'],
   },
   {
     id: 'b-08',
@@ -146,6 +153,7 @@ export const SAMPLE_BLOGS: BlogListItem[] = [
       'Our recent community outreach programme brought together volunteers, families and local partners for a day of service, learning and connection.',
       'This look back at the programme highlights the activities conducted, the people reached, and the moments that made the outreach memorable.',
     ],
+    tags: ['Outreach', 'Community', 'HRSJM'],
   },
 ];
 

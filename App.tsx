@@ -26,6 +26,7 @@ import {
   BlogsListScreen,
   BlogDetailsScreen,
   CreateBlogScreen,
+  EditBlogScreen,
 } from './src/features/admin/content/blogs';
 import type { EventListItem } from './src/features/admin/content/events';
 import type { NewsListItem } from './src/features/admin/content/news';
@@ -43,7 +44,8 @@ type AppRoute =
   | { name: 'news-edit'; news: NewsListItem }
   | { name: 'blogs' }
   | { name: 'blog-details'; blog: BlogListItem }
-  | { name: 'blog-create' };
+  | { name: 'blog-create' }
+  | { name: 'blog-edit'; blog: BlogListItem };
 
 function App() {
   const [route, setRoute] = useState<AppRoute>({ name: 'list' });
@@ -108,6 +110,23 @@ function App() {
         <BlogDetailsScreen
           blog={route.blog}
           onBack={() => setRoute({ name: 'blogs' })}
+          onEdit={blog => setRoute({ name: 'blog-edit', blog })}
+          onTabPress={tab => {
+            if (tab === 'events') {
+              setRoute({ name: 'list' });
+              return;
+            }
+            if (tab === 'news') {
+              setRoute({ name: 'news' });
+              return;
+            }
+            showAdminShellPreviewNotice();
+          }}
+        />
+      ) : route.name === 'blog-edit' ? (
+        <EditBlogScreen
+          blog={route.blog}
+          onBack={() => setRoute({ name: 'blog-details', blog: route.blog })}
           onTabPress={tab => {
             if (tab === 'events') {
               setRoute({ name: 'list' });

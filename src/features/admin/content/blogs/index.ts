@@ -7,6 +7,7 @@
 export { BlogsListScreen } from './screens/BlogsListScreen';
 export { BlogDetailsScreen } from './screens/BlogDetailsScreen';
 export { CreateBlogScreen } from './screens/CreateBlogScreen';
+export { EditBlogScreen } from './screens/EditBlogScreen';
 export type {
   BlogListItem,
   BlogStatus,

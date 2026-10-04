@@ -24,6 +24,7 @@ import {
 import { AppButton } from '../../../../../core/components';
 import { EventPickerSheet } from '../../events/components/EventPickerSheet';
 import { EventFormToast } from '../../events/components/EventFormToast';
+import { EventTagInput } from '../../events/components/EventTagInput';
 import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
 import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
 import { SAMPLE_BLOGS, SAMPLE_BLOG_CATEGORIES } from '../data/sample-blogs';
@@ -34,13 +35,18 @@ import type {
 } from '../types/blog.types';
 
 /**
- * Shared Create Blog form (UI + local form behaviour only — NO backend).
+ * Shared Create/Edit Blog form (UI + local form behaviour only — NO backend).
  *
  * Follows the Create Blog reference: flat field layout with leading input
  * icons, a dashed cover-image upload card, character counters, the
  * "Additional Options" toggles card and Save Draft / Create Blog actions.
  * Validation, pickers, dirty-state guard and confirmations are UI-only.
- * Structured so the Edit Blog flow can reuse it with a different initialForm.
+ *
+ * mode="edit" reuses the identical form pre-filled with the selected blog:
+ * the cover row switches to the Edit reference (preview + Change Image card),
+ * tags render as removable chips, the status picker offers the full existing
+ * BlogStatus set (a blog may already be archived) and the primary action
+ * becomes "Update Blog" (confirm → toast → back to Blog Details).
  */
 
 const SHORT_DESCRIPTION_MAX_LENGTH = 200;
@@ -59,6 +65,13 @@ export const EMPTY_BLOG_FORM: CreateBlogFormState = {
   featured: false,
   tagsText: '',
 };
+
+/** Parses the comma-separated tags storage into the edit-mode chips list. */
+const parseTagList = (tagsText: string): string[] =>
+  tagsText
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(Boolean);
 
 /** Local frontend validation for the required Create Blog fields. */
 const validateBlogForm = (form: CreateBlogFormState): CreateBlogFieldErrors => {
@@ -267,7 +280,9 @@ const BlogConfirmDialog: React.FC<{
 );
 
 interface BlogFormProps {
-  /** Header bar + page title ("Create Blog"). */
+  /** 'create' (default) keeps Create wording; 'edit' pre-fills and updates. */
+  mode?: 'create' | 'edit';
+  /** Header bar + page title ("Create Blog" / "Edit Blog"). */
   title: string;
   /** Page subtitle under the title. */
   subtitle: string;
@@ -276,6 +291,11 @@ interface BlogFormProps {
   /** Leave the screen (after confirmation when the form is dirty). */
   onCancel: () => void;
   /**
+   * Edit mode only: leave after the "Update Blog" confirmation (success toast
+   * first). Falls back to onCancel when not provided.
+   */
+  onSaved?: () => void;
+  /**
    * TEMPORARY (UI-only phase): called when a bottom tab is pressed on the
    * preview shell; guarded by the dirty-state dialog like every other exit.
    */
@@ -283,12 +303,15 @@ interface BlogFormProps {
 }
 
 export const BlogForm: React.FC<BlogFormProps> = ({
+  mode = 'create',
   title,
   subtitle,
   initialForm,
   onCancel,
+  onSaved,
   onTabPress,
 }) => {
+  const isEdit = mode === 'edit';
   const [form, setForm] = useState<CreateBlogFormState>(initialForm);
   const [errors, setErrors] = useState<CreateBlogFieldErrors>({});
   const [submitted, setSubmitted] = useState(false);
@@ -411,23 +434,36 @@ export const BlogForm: React.FC<BlogFormProps> = ({
 
   const handleCreatePress = () => {
     if (runValidation()) {
-      setPrimaryConfirm({
-        icon: '📝',
-        title: 'Create Blog?',
-        message: 'Are you sure you want to create this blog?',
-        confirmLabel: 'Create',
-        toast: 'Blog created successfully.',
-      });
+      setPrimaryConfirm(
+        isEdit
+          ? {
+              icon: '📝',
+              title: 'Update Blog?',
+              message: 'Save your changes to this blog?',
+              confirmLabel: 'Update',
+              toast: 'Blog updated successfully.',
+            }
+          : {
+              icon: '📝',
+              title: 'Create Blog?',
+              message: 'Are you sure you want to create this blog?',
+              confirmLabel: 'Create',
+              toast: 'Blog created successfully.',
+            },
+      );
     }
   };
 
-  const handleCreateConfirmed = () => {
+  const handlePrimaryConfirmed = () => {
+    const config = primaryConfirm;
     setPrimaryConfirm(null);
     // UI-only confirmation — no backend call, nothing is persisted remotely.
-    setToast({ message: 'Blog created successfully.', variant: 'success' });
-    // Reference flow: return to the Blogs list once the blog is created.
-    // Brief delay so the success toast is visible before leaving.
-    setTimeout(onCancel, 900);
+    if (config) {
+      setToast({ message: config.toast, variant: 'success' });
+    }
+    // Reference flow: back to the Blogs list after create, Blog Details after
+    // update. Brief delay so the success toast is visible before leaving.
+    setTimeout(isEdit ? onSaved || onCancel : onCancel, 900);
   };
 
   return (
@@ -453,7 +489,37 @@ export const BlogForm: React.FC<BlogFormProps> = ({
             {/* Cover image card (label + dashed upload area per reference) */}
             <View style={styles.coverCard}>
               <FieldShell label="Cover Image" required error={errors.coverImageUri}>
-                {form.coverImageUri ? (
+                {form.coverImageUri && isEdit ? (
+                  /* Edit reference: preview + Change Image card side by side */
+                  <View style={styles.editCoverRow}>
+                    <View style={styles.editPreviewBox}>
+                      <Image
+                        source={{ uri: form.coverImageUri }}
+                        style={styles.uploadPreview}
+                        resizeMode="cover"
+                      />
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => updateField('coverImageUri', null)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Remove cover image"
+                      >
+                        <Text style={styles.removeIcon}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.changeImageCard}
+                      onPress={() => setImageChooserVisible(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Change Cover Image"
+                    >
+                      <Text style={styles.changeCardIcon}>🖼️</Text>
+                      <Text style={styles.changeCardTitle}>Change Image</Text>
+                      <Text style={styles.changeCardMeta}>JPG, PNG or WebP</Text>
+                      <Text style={styles.changeCardMeta}>(Max 5MB)</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : form.coverImageUri ? (
                   <View>
                     <View style={styles.imagePreviewContainer}>
                       <Image
@@ -563,7 +629,11 @@ export const BlogForm: React.FC<BlogFormProps> = ({
               label="Author"
               required
               error={errors.author}
-              helperText="This name will be displayed on the blog article."
+              helperText={
+                isEdit
+                  ? 'Name of the author or organization.'
+                  : 'This name will be displayed on the blog article.'
+              }
             >
               <IconInput
                 icon="👤"
@@ -625,25 +695,36 @@ export const BlogForm: React.FC<BlogFormProps> = ({
               </View>
             </View>
 
-            {/* Tags */}
+            {/* Tags: chips editor in edit mode, comma input in create mode */}
             <FieldShell
               label="Tags (Optional)"
-              helperText="Add relevant tags to help users find this blog (e.g. rights, law, citizen)"
+              helperText={
+                isEdit
+                  ? undefined
+                  : 'Add relevant tags to help users find this blog (e.g. rights, law, citizen)'
+              }
             >
-              <IconInput
-                icon="🏷️"
-                value={form.tagsText}
-                onChangeText={value => updateField('tagsText', value)}
-                placeholder="Enter tags separated by commas"
-                hasError={false}
-                accessibilityLabel="Tags"
-              />
+              {isEdit ? (
+                <EventTagInput
+                  tags={parseTagList(form.tagsText)}
+                  onChange={tags => updateField('tagsText', tags.join(', '))}
+                />
+              ) : (
+                <IconInput
+                  icon="🏷️"
+                  value={form.tagsText}
+                  onChangeText={value => updateField('tagsText', value)}
+                  placeholder="Enter tags separated by commas"
+                  hasError={false}
+                  accessibilityLabel="Tags"
+                />
+              )}
             </FieldShell>
 
-            {/* Bottom actions (reference: Save Draft + Create Blog) */}
+            {/* Bottom actions (reference: Save Draft + Create/Update Blog) */}
             <View style={styles.bottomActions}>
               <AppButton
-                title="Save Draft"
+                title={isEdit ? 'Save as Draft' : 'Save Draft'}
                 variant="outline"
                 size="md"
                 onPress={handleSaveDraft}
@@ -651,11 +732,11 @@ export const BlogForm: React.FC<BlogFormProps> = ({
                 style={styles.bottomButton}
               />
               <AppButton
-                title="Create Blog"
+                title={isEdit ? 'Update Blog' : 'Create Blog'}
                 variant="primary"
                 size="md"
                 onPress={handleCreatePress}
-                icon={<Text style={styles.createIcon}>✈️</Text>}
+                icon={isEdit ? undefined : <Text style={styles.createIcon}>✈️</Text>}
                 style={styles.bottomButton}
               />
             </View>
@@ -681,7 +762,7 @@ export const BlogForm: React.FC<BlogFormProps> = ({
         message={primaryConfirm?.message ?? ''}
         confirmLabel={primaryConfirm?.confirmLabel ?? ''}
         onCancel={() => setPrimaryConfirm(null)}
-        onConfirm={handleCreateConfirmed}
+        onConfirm={handlePrimaryConfirmed}
       />
 
       {/* Discard changes (reference dialog; cancel label per reference) */}
@@ -708,7 +789,10 @@ export const BlogForm: React.FC<BlogFormProps> = ({
         itemLabel={uri => `Blog image ${COVER_IMAGE_OPTIONS.indexOf(uri) + 1}`}
         onSelect={value => {
           updateField('coverImageUri', value);
-          setToast({ message: 'Cover image selected.', variant: 'success' });
+          setToast({
+            message: isEdit ? 'Cover image updated.' : 'Cover image selected.',
+            variant: 'success',
+          });
         }}
         onClose={() => setImageChooserVisible(false)}
       />
@@ -727,7 +811,9 @@ export const BlogForm: React.FC<BlogFormProps> = ({
         visible={statusPickerVisible}
         title="Select Status"
         hint="UI-only status selection"
-        options={['DRAFT', 'PUBLISHED']}
+        // Edit offers the full existing BlogStatus set (the blog may already
+        // be archived); Create never archives a new blog.
+        options={isEdit ? ['DRAFT', 'PUBLISHED', 'ARCHIVED'] : ['DRAFT', 'PUBLISHED']}
         selected={form.status}
         itemLabel={value => BLOG_STATUS_LABELS[value as CreateBlogFormState['status']]}
         onSelect={value => updateField('status', value as CreateBlogFormState['status'])}
@@ -938,6 +1024,46 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: AdminColors.textOnDark,
+  },
+
+  // Edit-mode cover row (reference: preview + Change Image card side by side)
+  editCoverRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  editPreviewBox: {
+    flex: 1.35,
+    height: 170,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: AdminColors.primary,
+    overflow: 'hidden',
+    backgroundColor: AdminColors.background,
+  },
+  changeImageCard: {
+    flex: 1,
+    height: 170,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: AdminColors.border,
+    backgroundColor: AdminColors.cardSurface,
+  },
+  changeCardIcon: {
+    fontSize: 22,
+    marginBottom: Spacing.xs,
+  },
+  changeCardTitle: {
+    ...Typography.bodyMedium,
+    fontWeight: '600',
+    color: AdminColors.textPrimary,
+  },
+  changeCardMeta: {
+    ...Typography.caption,
+    color: AdminColors.textMuted,
   },
 
   optionsCard: {
