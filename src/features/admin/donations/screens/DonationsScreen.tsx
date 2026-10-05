@@ -49,7 +49,7 @@ import { DonationsDateSelector } from '../components/DonationsDateSelector';
 import { DateRangePickerModal } from '../components/DateRangePickerModal';
 import { AddDonationModal } from '../components/AddDonationModal';
 import { DonationDetailsModal } from '../components/DonationDetailsModal';
-import { navigateToReceipt } from '../navigation';
+import { navigateToReceipt, navigateToProfile } from '../navigation';
 import {
   addPreviewDonation,
   filterPreviewRowsAdvanced,
@@ -412,7 +412,7 @@ export const DonationsScreen: React.FC = () => {
           paddingTop={insets.top}
           onMenuPress={() => showToast('Menu')}
           onBellPress={() => showToast('You have 3 notifications')}
-          onProfilePress={() => showToast('Admin Profile')}
+          onProfilePress={navigateToProfile}
         />
       </View>
 

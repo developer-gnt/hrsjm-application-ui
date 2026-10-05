@@ -26,7 +26,7 @@ import { donationsService } from '../services/donations.service';
 import { getPreviewReceipt } from '../services/donations.preview';
 import { donationStatusPresentation } from '../components/DonationStatusBadge';
 import { DonationsTopBar } from '../components/DonationsTopBar';
-import { navigateToDonations } from '../navigation';
+import { navigateToDonations, navigateToProfile } from '../navigation';
 import {
   buildReceiptHtml,
   downloadReceiptPDF,
@@ -407,7 +407,7 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
         paddingTop={insets.top}
         onMenuPress={() => setActionMessage('Menu')}
         onBellPress={() => setActionMessage('You have 3 notifications')}
-        onProfilePress={() => setActionMessage('Admin Profile')}
+        onProfilePress={navigateToProfile}
       />
       <ScrollView
         style={styles.scroll}
