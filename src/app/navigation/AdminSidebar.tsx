@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '../../core/theme/typography';
 import { Spacing, BorderRadius } from '../../core/theme/spacing';
+import { AppRoutes } from '../../core/constants/routes';
 import { useAuthStore } from '../../features/auth/store/authStore';
 import { DEFAULT_ADMIN_AVATAR } from '../../features/auth/components/UserProfileModal';
 import { AuthLogo } from '../../features/auth/components/AuthLogo';
@@ -53,39 +54,39 @@ export const MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
   {
     groupTitle: 'MAIN NAVIGATION',
     items: [
-      { id: 'dashboard', icon: '🏠', title: 'Dashboard', target: 'AdminDashboardTab' },
-      { id: 'members', icon: '👥', title: 'Members Directory', target: 'AdminMembersTab' },
-      { id: 'applications', icon: '📄', title: 'Applications Review', target: 'AdminApplicationsTab' },
-      { id: 'complaints', icon: '💬', title: 'Support & Complaints', target: 'SupportTickets' },
-      { id: 'assistance', icon: '🤝', title: 'Donation Seekers', target: 'AssistanceRequests' },
+      { id: 'dashboard', icon: '🏠', title: 'Dashboard', target: AppRoutes.ADMIN_DASHBOARD_TAB },
+      { id: 'members', icon: '👥', title: 'Members Directory', target: AppRoutes.ADMIN_MEMBERS_TAB },
+      { id: 'applications', icon: '📄', title: 'Applications Review', target: AppRoutes.ADMIN_APPLICATIONS_TAB },
+      { id: 'complaints', icon: '💬', title: 'Support & Complaints', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
+      { id: 'assistance', icon: '🤝', title: 'Donation Seekers', target: AppRoutes.ADMIN_APPLICATIONS_TAB },
     ],
   },
   {
     groupTitle: 'CONTENT & MEDIA',
     items: [
-      { id: 'events', icon: '📅', title: 'Events Management', target: 'Events' },
-      { id: 'news', icon: '📰', title: 'News & Press', target: 'News' },
-      { id: 'blogs', icon: '✍️', title: 'Articles & Blogs', target: 'Blogs' },
+      { id: 'events', icon: '📅', title: 'Events Management', target: AppRoutes.EVENTS },
+      { id: 'news', icon: '📰', title: 'News & Press', target: AppRoutes.NEWS },
+      { id: 'blogs', icon: '✍️', title: 'Articles & Blogs', target: AppRoutes.BLOGS },
     ],
   },
   {
     groupTitle: 'FINANCE & VOUCHERS',
     items: [
-      { id: 'payments', icon: '💰', title: 'Payment Verification', target: 'PaymentVerification' },
-      { id: 'expenses', icon: '🧾', title: 'Expense Vouchers', target: 'ExpenseVouchers' },
-      { id: 'receipts', icon: '📥', title: 'Receipt Vouchers', target: 'ReceiptVouchers' },
-      { id: 'accounting', icon: '📚', title: 'Accounting & Ledger', target: 'Accounting' },
-      { id: 'reports', icon: '📈', title: 'Financial Reports', target: 'Reports' },
-      { id: 'donations', icon: '🎁', title: 'Donations Management', target: 'Donations' },
+      { id: 'payments', icon: '💰', title: 'Payment Verification', target: AppRoutes.PAYMENT_VERIFICATION },
+      { id: 'expenses', icon: '🧾', title: 'Expense Vouchers', target: AppRoutes.EXPENSE_VOUCHERS },
+      { id: 'receipts', icon: '📥', title: 'Receipt Vouchers', target: AppRoutes.RECEIPT_VOUCHERS },
+      { id: 'accounting', icon: '📚', title: 'Accounting & Ledger', target: AppRoutes.ACCOUNTING },
+      { id: 'reports', icon: '📈', title: 'Financial Reports', target: AppRoutes.REPORTS },
+      { id: 'donations', icon: '🎁', title: 'Donations Management', target: AppRoutes.DONATIONS },
     ],
   },
   {
     groupTitle: 'PLATFORM & SYSTEM',
     items: [
-      { id: 'profile', icon: '👤', title: 'My Profile & ID Card', target: 'MyProfile' },
-      { id: 'notifications', icon: '🔔', title: 'Notifications', target: 'Notifications' },
-      { id: 'roles', icon: '🛡️', title: 'Roles & Permissions', target: 'RolesPermissions' },
-      { id: 'settings', icon: '⚙️', title: 'Settings & Preferences', target: 'ProfileSettings' },
+      { id: 'profile', icon: '👤', title: 'My Profile & ID Card', target: AppRoutes.MY_PROFILE },
+      { id: 'notifications', icon: '🔔', title: 'Notifications', target: AppRoutes.NOTIFICATIONS },
+      { id: 'roles', icon: '🛡️', title: 'Roles & Permissions', target: AppRoutes.ROLES_PERMISSIONS },
+      { id: 'settings', icon: '⚙️', title: 'Settings & Preferences', target: AppRoutes.SETTINGS },
     ],
   },
 ];

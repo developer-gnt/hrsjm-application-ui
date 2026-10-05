@@ -76,9 +76,7 @@ export function AssistanceRequestsScreen() {
 
   return (
     <View style={styles.flex}>
-      <AdminHeader
-        onNavigate={target => navigation.navigate(target as any)}
-      />
+      <AdminHeader />
 
       <FlatList
         style={styles.list}

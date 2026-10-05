@@ -103,6 +103,29 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     }
   };
 
+  const TAB_TARGET_MAP: Record<string, string> = {
+    SupportTickets: AppRoutes.ADMIN_COMPLAINTS_TAB,
+    AssistanceRequests: AppRoutes.ADMIN_APPLICATIONS_TAB,
+    Complaints: AppRoutes.ADMIN_COMPLAINTS_TAB,
+    Members: AppRoutes.ADMIN_MEMBERS_TAB,
+    Applications: AppRoutes.ADMIN_APPLICATIONS_TAB,
+    Dashboard: AppRoutes.ADMIN_DASHBOARD_TAB,
+    AdminDashboardTab: AppRoutes.ADMIN_DASHBOARD_TAB,
+    AdminMembersTab: AppRoutes.ADMIN_MEMBERS_TAB,
+    AdminApplicationsTab: AppRoutes.ADMIN_APPLICATIONS_TAB,
+    AdminComplaintsTab: AppRoutes.ADMIN_COMPLAINTS_TAB,
+    AdminMoreTab: AppRoutes.ADMIN_MORE_TAB,
+    ProfileSettings: AppRoutes.SETTINGS,
+  };
+
+  const TAB_ROUTE_SET = new Set([
+    AppRoutes.ADMIN_DASHBOARD_TAB,
+    AppRoutes.ADMIN_MEMBERS_TAB,
+    AppRoutes.ADMIN_APPLICATIONS_TAB,
+    AppRoutes.ADMIN_COMPLAINTS_TAB,
+    AppRoutes.ADMIN_MORE_TAB,
+  ]);
+
   const handleOpenFullProfile = () => {
     setProfileModalVisible(false);
     if (onNavigate) {
@@ -111,23 +134,40 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       try {
         navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
       } catch {
-        navigation.navigate(AppRoutes.MY_PROFILE);
+        try {
+          navigation.navigate(AppRoutes.MY_PROFILE);
+        } catch {
+          // ignore
+        }
       }
     }
   };
 
-  const handleDrawerNavigate = (target: string) => {
+  const handleDrawerNavigate = (rawTarget: string) => {
+    const target = TAB_TARGET_MAP[rawTarget] || rawTarget;
+
     if (onNavigate) {
       onNavigate(target);
-    } else if (navigation?.navigate) {
-      if (target === AppRoutes.MY_PROFILE || target === 'MyProfile') {
+      return;
+    }
+
+    if (navigation?.navigate) {
+      if (TAB_ROUTE_SET.has(target as any)) {
         try {
-          navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
+          navigation.navigate(target);
         } catch {
-          navigation.navigate(AppRoutes.MY_PROFILE);
+          // ignore
         }
       } else {
-        navigation.navigate(target);
+        try {
+          navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: target });
+        } catch {
+          try {
+            navigation.navigate(target);
+          } catch {
+            // ignore
+          }
+        }
       }
     } else if (onOpenMore) {
       onOpenMore();

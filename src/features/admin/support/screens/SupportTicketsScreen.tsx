@@ -58,7 +58,7 @@ export function SupportTicketsScreen() {
   if (!can(user, 'support.manage')) {
     return (
       <View style={styles.flex}>
-        <AdminHeader onNavigate={target => navigation.navigate(target as any)} />
+        <AdminHeader />
         <View style={styles.center}>
           <AppEmptyState
             title="Access Restricted"
@@ -83,9 +83,7 @@ export function SupportTicketsScreen() {
 
   return (
     <View style={styles.flex}>
-      <AdminHeader
-        onNavigate={target => navigation.navigate(target as any)}
-      />
+      <AdminHeader />
 
       <FlatList
         style={styles.list}
