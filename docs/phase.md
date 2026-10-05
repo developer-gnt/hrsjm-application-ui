@@ -166,20 +166,32 @@ Deliver the financial verification workflows for offline/online payments, expens
 Implement double-entry bookkeeping interfaces including Chart of Accounts, General Ledger, and Journal Entries.
 
 ### Deliverables
-- [ ] **Chart of Accounts (COA)**:
-  - `GET /api/v1/accounts`
-  - Interactive hierarchical tree component (`AccountTree.tsx`, `AccountRow.tsx`).
-- [ ] **General Ledger**:
-  - `GET /api/v1/accounting/ledger` & `GET /api/v1/accounts/:id/ledger`
-  - Date range filters, opening balance, debit/credit rows, closing balance.
-- [ ] **Journal Entries & Reversals**:
-  - `GET /api/v1/accounting/entries`
-  - `POST /api/v1/accounting/entries/:id/reverse` (Mirror reversal flow).
-  - `JournalEntriesScreen.tsx`, `ReverseEntryModal.tsx`.
+- [x] **Chart of Accounts (COA)**:
+  - `GET /api/v1/accounts`, `POST /api/v1/accounts`, `PATCH /api/v1/accounts/:id`, `PATCH /api/v1/accounts/:id/status`
+  - Interactive hierarchical tree component (`AccountTree.tsx`, `AccountNodeRow.tsx`).
+  - Account creation modal with parent-account picker (`CreateAccountModal.tsx`).
+  - Account details bottom sheet (`AccountDetailsSheet.tsx`) with status toggling and jump-to-ledger action.
+  - Screen: `ChartOfAccountsScreen.tsx` (category tabs: Assets/Liabilities/Equity/Income/Expenses, search, expand/collapse tree, create modal).
+- [x] **General Ledger**:
+  - `GET /api/v1/accounting/ledger` (Global) & `GET /api/v1/accounts/:id/ledger` (Single Account).
+  - Date preset selector (This Month, Last Quarter, This FY: April 1 – March 31).
+  - 4-card KPI summary header (`LedgerSummaryCard.tsx` - Opening Balance, Total Debit, Total Credit, Closing Balance).
+  - Detailed running balance transaction list (`LedgerTransactionRow.tsx`).
+  - Screen: `GeneralLedgerScreen.tsx` with pull-to-refresh and empty/error states.
+- [x] **Journal Entries & Reversals**:
+  - `GET /api/v1/accounting/entries` (filtering by entry_type / is_reversed / search).
+  - `POST /api/v1/accounting/entries/:id/reverse` (atomic mirror reversal with audit reason capture).
+  - Double-entry inspection modal with balanced debit/credit indicator (`JournalEntryLinesModal.tsx`).
+  - Reversal confirmation dialog (`ReverseEntryDialog.tsx`).
+  - Screen: `JournalEntriesScreen.tsx` (All / Posted / Reversed tabs, search, entry cards).
+- [x] **Navigation & Integration**:
+  - Registered routes in `MoreNavigator.tsx` (`ChartOfAccounts`, `GeneralLedger`, `JournalEntries`).
+  - Added quick-access cards and tiles in `AdminSettingsScreen.tsx`.
 
 ### Success Criteria
-- Chart of Accounts correctly renders parent-child hierarchy dynamically from API.
-- Journal entry reversal creates mirror accounting entries and updates ledger balances.
+- [x] Chart of Accounts correctly renders parent-child hierarchy dynamically from API.
+- [x] Journal entry reversal creates mirror accounting entries and updates ledger balances.
+- [x] Both backend and frontend compile with 0 TypeScript/build errors.
 
 ---
 
