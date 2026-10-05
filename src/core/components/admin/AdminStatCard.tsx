@@ -103,15 +103,17 @@ export const AdminStatCard: React.FC<AdminStatCardProps> = ({
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
+    minHeight: 106,
     borderRadius: BorderRadius.xl,
     overflow: 'hidden',
     ...Shadows.card,
   },
   card: {
-    flex: 1,
+    width: '100%',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     alignItems: 'flex-start',
+    justifyContent: 'center',
   },
   iconContainer: {
     width: ICON_CONTAINER,
@@ -119,7 +121,7 @@ const styles = StyleSheet.create({
     borderRadius: ICON_CONTAINER / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   emojiIcon: {
     fontSize: 16,
