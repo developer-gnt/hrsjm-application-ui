@@ -4,6 +4,7 @@ import {
   getEventsList,
   getEventDetails,
   createEventApi,
+  updateEventApi,
   deleteEventApi,
   EventsFilterParams,
 } from '../services/events.service';
@@ -38,6 +39,20 @@ export const useCreateEvent = () => {
     mutationFn: (form: CreateEventFormState) => createEventApi(form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEYS.all });
+    },
+  });
+};
+
+export const useUpdateEvent = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, form }: { id: string; form: CreateEventFormState }) =>
+      updateEventApi(id, form),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEYS.all });
+      queryClient.invalidateQueries({
+        queryKey: EVENTS_QUERY_KEYS.details(variables.id),
+      });
     },
   });
 };

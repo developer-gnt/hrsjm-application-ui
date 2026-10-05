@@ -141,6 +141,47 @@ export const createEventApi = async (
   return mapBackendEventToUi(res.data);
 };
 
+export const updateEventApi = async (
+  id: string,
+  form: CreateEventFormState,
+): Promise<EventListItem> => {
+  const startAt = form.eventDate
+    ? `${form.eventDate}T${form.startTime || '09:00'}:00`
+    : new Date().toISOString();
+
+  const endAt = form.endDate
+    ? `${form.endDate}T${form.endTime || '17:00'}:00`
+    : undefined;
+
+  const payload = {
+    title: form.title,
+    description: form.description,
+    short_information: form.shortInformation || undefined,
+    category: form.category || 'Seminar',
+    event_type: form.eventType || 'IN_PERSON',
+    cover_image_url: form.coverImageUri || 'https://picsum.photos/seed/hrsjm-new-event/400/300',
+    start_at: startAt,
+    end_at: endAt,
+    all_day: form.allDay,
+    location: form.location,
+    address: form.address || undefined,
+    organized_by: form.organizedBy || undefined,
+    registration_required: form.registrationRequired,
+    capacity: Number(form.totalSeats) || 100,
+    per_person_limit: Number(form.perPersonLimit) || 1,
+    target_audience: form.targetAudience || undefined,
+    language: form.language || undefined,
+    tags: form.tags,
+    status: form.status === 'PUBLISH' ? 'UPCOMING' : 'DRAFT',
+  };
+
+  const res = await apiClient.patch<BackendEventItem>(
+    ApiRoutes.EVENTS.DETAILS(id),
+    payload,
+  );
+  return mapBackendEventToUi(res.data);
+};
+
 export const deleteEventApi = async (id: string): Promise<void> => {
   await apiClient.delete(ApiRoutes.EVENTS.DETAILS(id));
 };

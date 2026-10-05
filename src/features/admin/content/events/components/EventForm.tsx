@@ -43,6 +43,7 @@ import type {
   CreateEventFieldErrors,
   CreateEventFormState,
 } from '../types/events.types';
+import { useCreateEvent, useUpdateEvent } from '../hooks/useEvents';
 
 /** How long the edit-mode success toast stays before returning to Event Details. */
 const EDIT_SUCCESS_REDIRECT_MS = 1800;
@@ -192,8 +193,9 @@ const EventFormPreviewHeader: React.FC<EventFormPreviewHeaderProps> = ({
 export type EventFormMode = 'create' | 'edit';
 
 interface EventFormProps {
-  /** 'create' saves nothing and stays; 'edit' shows the UI-only success toast and returns. */
   mode: EventFormMode;
+  /** Existing event ID when in edit mode. */
+  eventId?: string;
   /** Header bar + page title ("Create Event" / "Edit Event"). */
   title: string;
   /** Page subtitle under the title. */
@@ -213,16 +215,11 @@ interface EventFormProps {
 }
 
 /**
- * Shared Create/Edit Event form (spec section 10 / PRD Create Event).
- *
- * One form for both flows so they stay visually and behaviorally identical:
- * same sections, same validation, same pickers, same discard-change guard.
- * UI + local behavior only — NO API is called. Saving performs local
- * validation and shows a UI confirmation that the FORM was validated; it does
- * NOT claim the event was saved to a backend.
+ * Shared Create/Edit Event form connected to the HRSJM Events API.
  */
 export const EventForm: React.FC<EventFormProps> = ({
   mode,
+  eventId,
   title,
   subtitle,
   initialForm,
@@ -236,6 +233,10 @@ export const EventForm: React.FC<EventFormProps> = ({
   const [errors, setErrors] = useState<CreateEventFieldErrors>({});
   const [submitted, setSubmitted] = useState(false);
   const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null);
+
+  const createEventMutation = useCreateEvent();
+  const updateEventMutation = useUpdateEvent();
+  const isSaving = createEventMutation.isPending || updateEventMutation.isPending;
 
   // Picker visibility
   const [categoryPicker, setCategoryPicker] = useState(false);
@@ -319,8 +320,8 @@ export const EventForm: React.FC<EventFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDirty, onCancel]);
 
-  const handleSave = () => {
-    if (completingRef.current) {
+  const handleSave = async () => {
+    if (completingRef.current || isSaving) {
       return;
     }
     setSubmitted(true);
@@ -332,23 +333,37 @@ export const EventForm: React.FC<EventFormProps> = ({
       return;
     }
 
-    // UI-only confirmation: the form was validated locally. NO backend call
-    // happens here and no event is claimed to be saved/updated (spec: no fake
-    // APIs). Edit mode returns to Event Details once the toast has been seen.
-    if (mode === 'edit' && onSaved) {
-      completingRef.current = true;
+    try {
+      if (mode === 'edit' && eventId) {
+        await updateEventMutation.mutateAsync({ id: eventId, form });
+        completingRef.current = true;
+        setToast({
+          message: 'Event updated successfully.',
+          variant: 'success',
+        });
+        redirectTimerRef.current = setTimeout(() => {
+          if (onSaved) onSaved();
+          else onCancel();
+        }, EDIT_SUCCESS_REDIRECT_MS);
+      } else {
+        await createEventMutation.mutateAsync(form);
+        completingRef.current = true;
+        setToast({
+          message: `Event ${form.status === 'DRAFT' ? 'saved as draft' : 'published'} successfully.`,
+          variant: 'success',
+        });
+        redirectTimerRef.current = setTimeout(onCancel, EDIT_SUCCESS_REDIRECT_MS);
+      }
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to save event. Please check required fields and try again.';
       setToast({
-        message: 'Form validated successfully. Backend update will be connected in a later phase.',
-        variant: 'success',
+        message: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg,
+        variant: 'error',
       });
-      redirectTimerRef.current = setTimeout(onSaved, EDIT_SUCCESS_REDIRECT_MS);
-      return;
     }
-
-    setToast({
-      message: `Form validated successfully (${form.status === 'DRAFT' ? 'Draft' : 'Publish'} intent). Backend saving will be connected in a later phase.`,
-      variant: 'success',
-    });
   };
 
   return (
@@ -587,6 +602,7 @@ export const EventForm: React.FC<EventFormProps> = ({
                 variant="outline"
                 size="md"
                 onPress={requestCancel}
+                disabled={isSaving}
                 style={styles.bottomButton}
               />
               <AppButton
@@ -594,6 +610,8 @@ export const EventForm: React.FC<EventFormProps> = ({
                 variant="primary"
                 size="md"
                 onPress={handleSave}
+                loading={isSaving}
+                disabled={isSaving}
                 style={styles.bottomButton}
               />
             </View>

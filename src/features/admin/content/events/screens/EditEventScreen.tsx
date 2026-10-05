@@ -78,6 +78,7 @@ export const EditEventScreen: React.FC<EditEventScreenProps> = ({ event, onBack 
   return (
     <EventForm
       mode="edit"
+      eventId={event.id}
       title="Edit Event"
       subtitle="Update event information and save your changes."
       initialForm={initialForm}
