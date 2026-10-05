@@ -103,4 +103,18 @@ export const ApiRoutes = {
     BASE: '/events',
     DETAILS: (id: string | number) => `/events/${id}`,
   },
+
+  // News
+  NEWS: {
+    BASE: '/news',
+    DETAILS: (id: string | number) => `/news/${id}`,
+    VIEWS: (id: string | number) => `/news/${id}/views`,
+  },
+
+  // Blogs
+  BLOGS: {
+    BASE: '/blogs',
+    DETAILS: (id: string | number) => `/blogs/${id}`,
+    VIEWS: (id: string | number) => `/blogs/${id}/views`,
+  },
 } as const;

@@ -58,6 +58,9 @@ export type MoreStackParamList = {
   [AppRoutes.CREATE_NEWS]: undefined;
   [AppRoutes.EDIT_NEWS]: { news: any };
   [AppRoutes.BLOGS]: undefined;
+  [AppRoutes.BLOG_DETAILS]: { blog: any };
+  [AppRoutes.CREATE_BLOG]: undefined;
+  [AppRoutes.EDIT_BLOG]: { blog: any };
   [AppRoutes.ASSISTANCE_REQUESTS]: undefined;
   [AppRoutes.ASSISTANCE_DETAILS]: { requestId: string };
   [AppRoutes.ASSISTANCE_DOCUMENTS]: { requestId: string; seekerName?: string };

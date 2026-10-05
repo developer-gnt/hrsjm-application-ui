@@ -28,14 +28,11 @@ import { BlogStatusTabs } from '../components/BlogStatusTabs';
 import { BlogSummaryCard } from '../components/BlogSummaryCard';
 import { BlogActionMenu } from '../components/BlogActionMenu';
 import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
-import {
-  BLOG_STATUS_TABS,
-  DEMO_BLOG_STATS,
-  SAMPLE_BLOGS,
-  SAMPLE_BLOG_CATEGORIES,
-} from '../data/sample-blogs';
+import { SAMPLE_BLOG_CATEGORIES } from '../data/sample-blogs';
+import { useBlogs } from '../hooks/useBlogs';
 import type {
   BlogFilterState,
+  BlogFilterTab,
   BlogListItem,
   BlogStatusFilter,
   BlogsUiState,
@@ -127,73 +124,43 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
   onEditBlog,
   onTabPress,
 }) => {
-  const [uiState, setUiState] = useState<BlogsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatus, setActiveStatus] = useState<BlogStatusFilter>('ALL');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeDateRange, setActiveDateRange] = useState('ANY');
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
-  // Action sheet state: the blog is kept while the sheet closes so the
-  // slide-out animation still shows it.
   const [actionMenuBlog, setActionMenuBlog] = useState<BlogListItem | null>(null);
   const [actionMenuVisible, setActionMenuVisible] = useState(false);
 
-  /** TEMPORARY: replace `blogs` with the data returned by the real useBlogs hook. */
-  const blogs = SAMPLE_BLOGS;
+  const {
+    blogs: filteredBlogs,
+    stats,
+    state: uiState,
+    refresh,
+    updateBlog,
+    deleteBlog,
+  } = useBlogs({
+    status: activeStatus,
+    category: activeCategory,
+    dateRange: activeDateRange as any,
+    search: searchQuery,
+  });
 
-  // TEMPORARY (UI-only phase): simulated latency so the loading state is
-  // demonstrable during review. Remove when the real blogs hook drives this screen.
-  useEffect(() => {
-    const timer = setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Display-only reference numbers (28/6/18/4) — NOT computed from the 8
-  // sample rows; replaced by real backend counts when the contract lands.
-  const stats = DEMO_BLOG_STATS;
+  const statusTabs = useMemo<BlogFilterTab[]>(
+    () => [
+      { key: 'ALL', label: 'All', count: stats.total },
+      { key: 'PUBLISHED', label: 'Published', count: stats.published },
+      { key: 'DRAFT', label: 'Drafts', count: stats.drafts },
+      { key: 'ARCHIVED', label: 'Archived', count: stats.archived },
+    ],
+    [stats],
+  );
 
   const appliedFilters = useMemo<BlogFilterState>(
     () => ({ status: activeStatus, category: activeCategory, dateRange: activeDateRange as BlogFilterState['dateRange'] }),
     [activeStatus, activeCategory, activeDateRange],
   );
-
-  const filteredBlogs = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    // UI-only date filter: sample dates sit in Sep–Aug 2026, so a real
-    // calendar comparison would empty the list. Approximate: "Today/Week/
-    // Month" narrow to the N most recent sample records until the backend
-    // defines real date semantics. Sorted by the parsed display date, not
-    // the raw string (alphabetical order put "28 Aug" before "15 Sep").
-    let recentIds: Set<string> | null = null;
-    if (activeDateRange !== 'ANY') {
-      const sortedByDate = [...blogs].sort((a, b) => blogDateValue(b.date) - blogDateValue(a.date));
-      const limit = DATE_FILTER_DAYS[activeDateRange] ?? 0;
-      recentIds = new Set(
-        sortedByDate.slice(0, Math.max(1, Math.min(limit, 4))).map(item => item.id),
-      );
-    }
-
-    return blogs.filter(blog => {
-      if (activeStatus !== 'ALL' && blog.status !== activeStatus) {
-        return false;
-      }
-      if (activeCategory && blog.category !== activeCategory) {
-        return false;
-      }
-      if (recentIds && !recentIds.has(blog.id)) {
-        return false;
-      }
-      if (!query) {
-        return true;
-      }
-      const haystack = [blog.title, blog.excerpt, blog.category]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [blogs, searchQuery, activeStatus, activeCategory, activeDateRange]);
 
   const hasActiveFilters =
     searchQuery.trim() !== '' || activeStatus !== 'ALL' || activeCategory !== null || activeDateRange !== 'ANY';
@@ -216,10 +183,7 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
       onAddBlog();
       return;
     }
-    Alert.alert(
-      'Add Blog',
-      'The Create Blog screen is not part of this phase. It will be implemented after the backend contract is confirmed.',
-    );
+    Alert.alert('Add Blog', 'Create Blog is not configured.');
   };
 
   const handleBlogPress = (blog: BlogListItem) => {
@@ -227,16 +191,10 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
       onOpenBlog(blog);
       return;
     }
-    // UI placeholder only: Blog Details opens through the host app when wired.
-    Alert.alert(
-      blog.title,
-      'The Edit Blog screen will be implemented in a later phase after backend integration.',
-    );
+    Alert.alert(blog.title, blog.excerpt);
   };
 
   const handleBlogEdit = (blog: BlogListItem) => {
-    // Opens the shared EditBlogScreen through the host app — the same screen
-    // the Blog Details ⋮ → Edit path uses, pre-filled with this blog.
     onEditBlog?.(blog);
   };
 
@@ -245,10 +203,35 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
     setActionMenuVisible(true);
   };
 
+  const handleActionMenuSelect = async (actionKey: string) => {
+    if (!actionMenuBlog) return;
+    const current = actionMenuBlog;
+    try {
+      if (actionKey === 'edit') {
+        onEditBlog?.(current);
+      } else if (actionKey === 'publish') {
+        await updateBlog(current.id, { status: 'PUBLISHED' });
+        Alert.alert('Published', 'Article has been published.');
+      } else if (actionKey === 'unpublish') {
+        await updateBlog(current.id, { status: 'DRAFT' });
+        Alert.alert('Unpublished', 'Article set to draft.');
+      } else if (actionKey === 'archive') {
+        await updateBlog(current.id, { status: 'ARCHIVED' });
+        Alert.alert('Archived', 'Article has been archived.');
+      } else if (actionKey === 'restore') {
+        await updateBlog(current.id, { status: 'PUBLISHED' });
+        Alert.alert('Restored', 'Article restored to published.');
+      } else if (actionKey === 'delete') {
+        await deleteBlog(current.id);
+        Alert.alert('Deleted', 'Article has been removed.');
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Action failed.');
+    }
+  };
+
   const handleStatusChange = (status: BlogStatusFilter) => setActiveStatus(status);
 
-  // Preview-shell tabs: hand off to the host for tabs it can navigate to;
-  // everything else falls back to the shell's temporary preview notice.
   const handleShellTabPress = (tab: string) => {
     if ((tab === 'events' || tab === 'news' || tab === 'rights') && onTabPress) {
       onTabPress(tab);
@@ -256,22 +239,20 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
     }
     if (tab !== 'blogs') {
       Alert.alert(
-        'Preview shell',
-        'Global navigation is owned by the app-level architecture. This bar is a temporary visual preview only.',
+        'Navigation',
+        'Use the bottom navigation bar to switch between modules.',
       );
     }
   };
 
   const handleRetry = () => {
-    setUiState('loading');
-    // TEMPORARY (UI-only phase): retry returns to the sample data — no API call yet.
-    setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
+    refresh();
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    // TEMPORARY (UI-only phase): simulated refresh latency — no API call yet.
-    setTimeout(() => setRefreshing(false), SAMPLE_DATA_LOAD_DELAY_MS);
+    await refresh();
+    setRefreshing(false);
   };
 
   return (
@@ -331,7 +312,7 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
 
         <View style={styles.tabsSection}>
           <BlogStatusTabs
-            tabs={BLOG_STATUS_TABS}
+            tabs={statusTabs}
             activeTab={activeStatus}
             onTabChange={handleStatusChange}
           />
@@ -398,7 +379,11 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
       <BlogActionMenu
         visible={actionMenuVisible}
         blog={actionMenuBlog}
-        onClose={() => setActionMenuVisible(false)}
+        onAction={handleActionMenuSelect}
+        onClose={() => {
+          setActionMenuVisible(false);
+          setActionMenuBlog(null);
+        }}
       />
     </View>
   );

@@ -83,6 +83,18 @@ export const SETTING_SECTIONS: SettingSection[] = [
         route: AppRoutes.EVENTS,
       },
       {
+        icon: '📰',
+        title: 'News & Announcements',
+        description: 'Publish and manage news releases, media updates and alerts.',
+        route: AppRoutes.NEWS,
+      },
+      {
+        icon: '✍️',
+        title: 'Blogs & Articles',
+        description: 'Publish and manage educational articles and field stories.',
+        route: AppRoutes.BLOGS,
+      },
+      {
         icon: '💰',
         title: 'Payment Verification',
         description:

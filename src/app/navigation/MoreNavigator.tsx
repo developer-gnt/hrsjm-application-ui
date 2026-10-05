@@ -17,7 +17,12 @@ import {
   CreateNewsScreen,
   EditNewsScreen,
 } from '../../features/admin/content/news';
-import { BlogsListScreen } from '../../features/admin/content/blogs';
+import {
+  BlogsListScreen,
+  BlogDetailsScreen,
+  CreateBlogScreen,
+  EditBlogScreen,
+} from '../../features/admin/content/blogs';
 import {
   AssistanceRequestsScreen,
   AssistanceDetailsScreen,
@@ -303,7 +308,46 @@ export const MoreNavigator: React.FC = () => (
 
     {/* Blogs Management — Suraj's module */}
     <Stack.Screen name={AppRoutes.BLOGS}>
-      {() => <BlogsListScreen />}
+      {({ navigation }) => (
+        <BlogsListScreen
+          onOpenBlog={blog =>
+            navigation.navigate(AppRoutes.BLOG_DETAILS as any, { blog })
+          }
+          onAddBlog={() =>
+            navigation.navigate(AppRoutes.CREATE_BLOG as any)
+          }
+          onEditBlog={blog =>
+            navigation.navigate(AppRoutes.EDIT_BLOG as any, { blog })
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.BLOG_DETAILS}>
+      {({ navigation, route }: any) => (
+        <BlogDetailsScreen
+          blog={route.params?.blog}
+          onBack={navigation.goBack}
+          onEdit={blog =>
+            navigation.navigate(AppRoutes.EDIT_BLOG as any, { blog })
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.CREATE_BLOG}>
+      {({ navigation }) => (
+        <CreateBlogScreen onCancel={navigation.goBack} />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.EDIT_BLOG}>
+      {({ navigation, route }: any) => (
+        <EditBlogScreen
+          blog={route.params?.blog}
+          onBack={navigation.goBack}
+        />
+      )}
     </Stack.Screen>
 
     {/* Assistance Requests / Donation Seekers — Arshad's module */}
