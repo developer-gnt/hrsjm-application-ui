@@ -19,15 +19,20 @@ export const listAccounts = async (
   params?: ListAccountsParams,
 ): Promise<AccountItem[]> => {
   const queryParams: Record<string, any> = {
-    limit: params?.limit ?? 200,
+    limit: Math.min(params?.limit ?? 100, 100),
   };
   if (params?.type) {
     queryParams.account_type = params.type;
-    queryParams.type = params.type;
   }
-  if (params?.is_active !== undefined) queryParams.is_active = params.is_active;
-  if (params?.search && params.search.trim()) queryParams.search = params.search.trim();
-  if (params?.page) queryParams.page = params.page;
+  if (params?.is_active !== undefined) {
+    queryParams.is_active = params.is_active;
+  }
+  if (params?.search && params.search.trim()) {
+    queryParams.search = params.search.trim();
+  }
+  if (params?.page) {
+    queryParams.page = params.page;
+  }
 
   const res = await apiClient.get<any>(
     ApiRoutes.ACCOUNTING.ACCOUNTS,
