@@ -13,13 +13,13 @@ import {
   Typography,
 } from '../../../../../core/theme';
 import { AppCard } from '../../../../../core/components';
-import type { BlogListItem, BlogStatus } from '../types/blog.types';
+import type { RightsListItem, RightsStatus } from '../types/rights.types';
 
 /**
  * Compact admin-table column proportions shared by the list header row and
- * every blog row, so labels always align with the data columns.
+ * every article row, so labels always align with the data columns.
  */
-export const BLOG_COL_FLEX = {
+export const RIGHTS_COL_FLEX = {
   details: 2.6,
   category: 0.9,
   date: 0.8,
@@ -30,37 +30,38 @@ export const BLOG_COL_FLEX = {
 
 /**
  * Category chip tones per the reference (subtle pastel per category).
- * Fixed mapping — replace with backend category metadata when confirmed.
+ * Fixed mapping using the existing theme tokens — replace with backend
+ * category metadata when confirmed.
  */
 const CATEGORY_CHIP_TONES: Record<string, { bg: string; text: string }> = {
-  'Know Your Rights': { bg: AdminColors.successLight, text: AdminColors.success },
-  'Social Justice': { bg: AdminColors.statusPendingLight, text: AdminColors.statusPending },
-  'Relief Work': { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
-  Education: { bg: AdminColors.accentGoldLight, text: AdminColors.accentGold },
-  Environment: { bg: AdminColors.successLight, text: AdminColors.success },
+  Constitution: { bg: AdminColors.infoLight, text: AdminColors.info },
   'Women Rights': { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
-  Guides: { bg: AdminColors.infoLight, text: AdminColors.info },
-  Events: { bg: AdminColors.primaryLight, text: AdminColors.primary },
+  'Child Rights': { bg: AdminColors.primaryLight, text: AdminColors.primary },
+  'Senior Citizens': { bg: AdminColors.accentGoldLight, text: AdminColors.accentGold },
+  'Labour Rights': { bg: AdminColors.statusExpiringLight, text: AdminColors.statusExpiring },
+  'Minority Rights': { bg: AdminColors.statusPendingLight, text: AdminColors.statusPending },
+  Property: { bg: AdminColors.successLight, text: AdminColors.success },
+  Environment: { bg: AdminColors.successLight, text: AdminColors.success },
 };
 
 const categoryChipTone = (category: string): { bg: string; text: string } =>
   CATEGORY_CHIP_TONES[category] ?? { bg: AdminColors.primaryLight, text: AdminColors.primary };
 
 /** Status badge tones per the reference: Published green, Draft amber, Archived red. */
-export const BLOG_STATUS_TONES: Record<BlogStatus, { bg: string; text: string }> = {
+export const RIGHTS_STATUS_TONES: Record<RightsStatus, { bg: string; text: string }> = {
   PUBLISHED: { bg: AdminColors.statusActiveLight, text: AdminColors.statusActive },
   DRAFT: { bg: AdminColors.warningLight, text: AdminColors.warning },
   ARCHIVED: { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
 };
 
-export const BLOG_STATUS_LABELS: Record<BlogStatus, string> = {
+export const RIGHTS_STATUS_LABELS: Record<RightsStatus, string> = {
   PUBLISHED: 'Published',
   DRAFT: 'Draft',
   ARCHIVED: 'Archived',
 };
 
-/** Raw count -> compact display (2100 -> "2.1K", 320 -> "320"). */
-export const formatBlogViews = (views: number): string => {
+/** Raw count -> compact display (2100 -> "2.1K", 980 -> "980"). */
+export const formatRightsViews = (views: number): string => {
   if (views < 1000) {
     return String(views);
   }
@@ -70,11 +71,10 @@ export const formatBlogViews = (views: number): string => {
 };
 
 /**
- * Single-line category chip (same inline approach as the News row so long
- * labels shrink to one line instead of wrapping). Exported for the details
- * screen, which shows the same chip under the headline.
+ * Single-line category chip (same inline approach as the Blog/News rows so
+ * long labels shrink to one line instead of wrapping).
  */
-export const BlogCategoryChip: React.FC<{ category: string }> = ({ category }) => {
+export const RightsCategoryChip: React.FC<{ category: string }> = ({ category }) => {
   const tone = categoryChipTone(category);
 
   return (
@@ -91,13 +91,13 @@ export const BlogCategoryChip: React.FC<{ category: string }> = ({ category }) =
   );
 };
 
-/** Column labels above the blog rows (reference "table header"). */
-export const BlogListHeader: React.FC = () => {
+/** Column labels above the article rows (reference "table header"). */
+export const RightsListHeader: React.FC = () => {
   return (
     <View style={styles.listHeader} accessible accessibilityRole="header">
       <View style={styles.colDetails}>
         <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          Blog Details
+          Title
         </Text>
       </View>
       <View style={styles.colCategory}>
@@ -107,7 +107,7 @@ export const BlogListHeader: React.FC = () => {
       </View>
       <View style={styles.colDate}>
         <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          Date ↓
+          Last Updated ↓
         </Text>
       </View>
       <View style={styles.colStatus}>
@@ -129,35 +129,36 @@ export const BlogListHeader: React.FC = () => {
   );
 };
 
-interface BlogCardProps {
-  blog: BlogListItem;
-  /** Fired when the row body is pressed (opens Blog Details). */
-  onPress?: (blog: BlogListItem) => void;
-  /** Fired when the row Edit button is pressed (placeholder until Edit Blog exists). */
-  onEditPress?: (blog: BlogListItem) => void;
+interface RightsCardProps {
+  article: RightsListItem;
+  /** Fired when the row body is pressed. */
+  onPress?: (article: RightsListItem) => void;
+  /** Fired when the row Edit button is pressed. */
+  onEditPress?: (article: RightsListItem) => void;
   /** Fired when the three-dot action menu is pressed. */
-  onMorePress?: (blog: BlogListItem) => void;
+  onMorePress?: (article: RightsListItem) => void;
 }
 
-export const BlogCard: React.FC<BlogCardProps> = ({
-  blog,
+export const RightsCard: React.FC<RightsCardProps> = ({
+  article,
   onPress,
   onEditPress,
   onMorePress,
 }) => {
   const [imageFailed, setImageFailed] = useState(false);
-  const thumbnailUri = blog.thumbnailUrl && !imageFailed ? blog.thumbnailUrl : undefined;
+  const thumbnailUri =
+    article.thumbnailUrl && !imageFailed ? article.thumbnailUrl : undefined;
 
-  const badgeTone = BLOG_STATUS_TONES[blog.status];
+  const badgeTone = RIGHTS_STATUS_TONES[article.status];
 
-  const handlePress = () => onPress?.(blog);
-  const handleEdit = () => (onEditPress ? onEditPress(blog) : onPress?.(blog));
-  const handleMore = () => onMorePress?.(blog);
+  const handlePress = () => onPress?.(article);
+  const handleEdit = () => (onEditPress ? onEditPress(article) : onPress?.(article));
+  const handleMore = () => onMorePress?.(article);
 
   return (
     <AppCard style={styles.card} padding="sm" onPress={handlePress}>
       <View style={styles.row}>
-        {/* Blog details: thumbnail + title + excerpt */}
+        {/* Article details: thumbnail + title + description */}
         <View style={styles.colDetails}>
           <View style={styles.detailsRow}>
             {thumbnailUri ? (
@@ -169,15 +170,15 @@ export const BlogCard: React.FC<BlogCardProps> = ({
               />
             ) : (
               <View style={[styles.thumbnail, styles.thumbnailFallback]}>
-                <Text style={styles.thumbnailFallbackIcon}>📝</Text>
+                <Text style={styles.thumbnailFallbackIcon}>⚖️</Text>
               </View>
             )}
             <View style={styles.detailsText}>
               <Text style={styles.title} numberOfLines={2}>
-                {blog.title}
+                {article.title}
               </Text>
-              <Text style={styles.excerpt} numberOfLines={2}>
-                {blog.excerpt}
+              <Text style={styles.description} numberOfLines={2}>
+                {article.description}
               </Text>
             </View>
           </View>
@@ -185,10 +186,10 @@ export const BlogCard: React.FC<BlogCardProps> = ({
 
         {/* Category */}
         <View style={styles.colCategory}>
-          <BlogCategoryChip category={blog.category} />
+          <RightsCategoryChip category={article.category} />
         </View>
 
-        {/* Date */}
+        {/* Last updated */}
         <View style={styles.colDate}>
           <Text
             style={styles.dateText}
@@ -196,10 +197,15 @@ export const BlogCard: React.FC<BlogCardProps> = ({
             minimumFontScale={0.75}
             numberOfLines={1}
           >
-            {blog.date}
+            {article.lastUpdatedDate}
           </Text>
-          <Text style={styles.timeText} adjustsFontSizeToFit minimumFontScale={0.75} numberOfLines={1}>
-            {blog.time}
+          <Text
+            style={styles.timeText}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            numberOfLines={1}
+          >
+            {article.lastUpdatedTime}
           </Text>
         </View>
 
@@ -212,7 +218,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
               minimumFontScale={0.8}
               numberOfLines={1}
             >
-              {BLOG_STATUS_LABELS[blog.status]}
+              {RIGHTS_STATUS_LABELS[article.status]}
             </Text>
           </View>
         </View>
@@ -222,7 +228,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
           <View style={styles.viewsRow}>
             <Text style={styles.viewsIcon}>👁</Text>
             <Text style={styles.viewsText} adjustsFontSizeToFit numberOfLines={1}>
-              {formatBlogViews(blog.views)}
+              {formatRightsViews(article.views)}
             </Text>
           </View>
         </View>
@@ -233,7 +239,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
             style={styles.actionButton}
             onPress={handleEdit}
             accessibilityRole="button"
-            accessibilityLabel={`Edit ${blog.title}`}
+            accessibilityLabel={`Edit ${article.title}`}
           >
             <Text style={styles.actionButtonText} adjustsFontSizeToFit numberOfLines={1}>
               Edit
@@ -244,7 +250,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
             onPress={handleMore}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel={`More actions for ${blog.title}`}
+            accessibilityLabel={`More actions for ${article.title}`}
           >
             <Text style={styles.moreIcon}>⋮</Text>
           </TouchableOpacity>
@@ -280,24 +286,24 @@ const styles = StyleSheet.create({
 
   // Shared column flex proportions (must match list header).
   colDetails: {
-    flex: BLOG_COL_FLEX.details,
+    flex: RIGHTS_COL_FLEX.details,
   },
   colCategory: {
-    flex: BLOG_COL_FLEX.category,
+    flex: RIGHTS_COL_FLEX.category,
     alignItems: 'flex-start',
   },
   colDate: {
-    flex: BLOG_COL_FLEX.date,
+    flex: RIGHTS_COL_FLEX.date,
   },
   colStatus: {
-    flex: BLOG_COL_FLEX.status,
+    flex: RIGHTS_COL_FLEX.status,
     alignItems: 'flex-start',
   },
   colViews: {
-    flex: BLOG_COL_FLEX.views,
+    flex: RIGHTS_COL_FLEX.views,
   },
   colAction: {
-    flex: BLOG_COL_FLEX.action,
+    flex: RIGHTS_COL_FLEX.action,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -333,7 +339,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     color: AdminColors.textPrimary,
   },
-  excerpt: {
+  description: {
     ...Typography.caption,
     fontSize: 9.5,
     lineHeight: 12.5,

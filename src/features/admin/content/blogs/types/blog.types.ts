@@ -34,6 +34,12 @@ export interface BlogListItem {
   views: number;
   /** Demo remote URL for now; replaced by the backend asset flow later. */
   thumbnailUrl?: string | null;
+  /** Details-screen fields below mirror the News list item's optional fields. */
+  author?: string;
+  /** Article body paragraphs (details screen only; falls back to `excerpt`). */
+  content?: string[];
+  /** Demo tags for the Edit Blog chips editor; local UI state, not a backend field. */
+  tags?: string[];
 }
 
 /** Aggregated counts shown in the summary/stat cards (UI demonstration values). */
@@ -63,3 +69,32 @@ export interface BlogFilterState {
   category: string | null;
   dateRange: BlogDateFilter;
 }
+
+/**
+ * Create Blog screen — local FORM STATE field names only.
+ *
+ * NOT the backend DTO: the final API payload must be created only after the
+ * Blogs backend contract is confirmed. Mirrors the Create News form-state
+ * pattern. `status` keeps the full existing BlogStatus set: Create Blog's
+ * picker offers Draft/Published only (a new blog is never archived), while
+ * Edit Blog pre-fills the selected blog's current status, which may be
+ * Archived.
+ */
+export interface CreateBlogFormState {
+  /** Local demo image URI chosen from the sample imagery; no upload happens. */
+  coverImageUri: string | null;
+  title: string;
+  category: string | null;
+  shortDescription: string;
+  content: string;
+  author: string;
+  status: BlogStatus;
+  /** Local UI-only preferences; no backend fields exist yet. */
+  allowComments: boolean;
+  featured: boolean;
+  /** Comma-separated tags as typed (parsed for display later, local only). */
+  tagsText: string;
+}
+
+/** Validation errors keyed by CreateBlogFormState field name. */
+export type CreateBlogFieldErrors = Partial<Record<keyof CreateBlogFormState, string>>;

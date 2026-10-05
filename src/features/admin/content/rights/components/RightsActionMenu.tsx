@@ -14,16 +14,16 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import type { BlogListItem, BlogStatus } from '../types/blog.types';
+import type { RightsListItem, RightsStatus } from '../types/rights.types';
 
 /**
- * Three-dot action menu for a blog row, rendered as a bottom action sheet that
- * matches the News details action menu pattern. ALL actions are UI-only
+ * Three-dot action menu for a rights article, rendered as a bottom action
+ * sheet that matches the Blog action menu pattern. ALL actions are UI-only
  * placeholders in this phase — no backend calls, no endpoints, nothing is
  * persisted. The placeholder copy says so.
  *
  * Implemented as a Modal instead of Alert.alert because Android renders at
- * most three Alert buttons, which silently dropped Delete/Cancel.
+ * most three Alert buttons, which would drop Delete/Cancel.
  */
 
 const PLACEHOLDER_MESSAGE =
@@ -33,16 +33,16 @@ const showPlaceholder = (action: string) => {
   Alert.alert(action, PLACEHOLDER_MESSAGE);
 };
 
-interface BlogActionRow {
+interface RightsActionRow {
   key: string;
   icon: string;
   label: string;
   destructive?: boolean;
 }
 
-/** Actions per status per the reference (Archived rows offer Restore). */
-const actionsForStatus = (status: BlogStatus): BlogActionRow[] => {
-  const rows: BlogActionRow[] = [{ key: 'edit', icon: '✏️', label: 'Edit' }];
+/** Actions per status per the reference (Publish/Unpublish follow the status). */
+const actionsForStatus = (status: RightsStatus): RightsActionRow[] => {
+  const rows: RightsActionRow[] = [{ key: 'edit', icon: '✏️', label: 'Edit' }];
 
   if (status === 'PUBLISHED') {
     rows.push(
@@ -59,10 +59,10 @@ const actionsForStatus = (status: BlogStatus): BlogActionRow[] => {
   return rows;
 };
 
-interface BlogActionMenuProps {
+interface RightsActionMenuProps {
   visible: boolean;
-  /** Blog whose menu is open; kept mounted during the close animation. */
-  blog: BlogListItem | null;
+  /** Article whose menu is open; kept mounted during the close animation. */
+  article: RightsListItem | null;
   /**
    * Optional handler for a pressed action key ('edit', 'unpublish', ...).
    * When not provided, every action shows the UI-only placeholder alert.
@@ -71,17 +71,17 @@ interface BlogActionMenuProps {
   onClose: () => void;
 }
 
-export const BlogActionMenu: React.FC<BlogActionMenuProps> = ({
+export const RightsActionMenu: React.FC<RightsActionMenuProps> = ({
   visible,
-  blog,
+  article,
   onAction,
   onClose,
 }) => {
-  if (!blog) {
+  if (!article) {
     return null;
   }
 
-  const handleAction = (row: BlogActionRow) => {
+  const handleAction = (row: RightsActionRow) => {
     onClose();
     if (onAction) {
       onAction(row.key);
@@ -102,10 +102,10 @@ export const BlogActionMenu: React.FC<BlogActionMenuProps> = ({
           <View style={styles.sheet}>
             <View style={styles.dragHandle} />
             <Text style={styles.sheetTitle} numberOfLines={1} ellipsizeMode="tail">
-              {blog.title}
+              {article.title}
             </Text>
 
-            {actionsForStatus(blog.status).map(row => (
+            {actionsForStatus(article.status).map(row => (
               <TouchableOpacity
                 key={row.key}
                 style={styles.actionRow}

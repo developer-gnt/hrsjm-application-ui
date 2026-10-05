@@ -5,6 +5,9 @@
  * UI-only phase: sample data + local filtering. No API/services yet.
  */
 export { BlogsListScreen } from './screens/BlogsListScreen';
+export { BlogDetailsScreen } from './screens/BlogDetailsScreen';
+export { CreateBlogScreen } from './screens/CreateBlogScreen';
+export { EditBlogScreen } from './screens/EditBlogScreen';
 export type {
   BlogListItem,
   BlogStatus,
@@ -13,4 +16,6 @@ export type {
   BlogStatsSummary,
   BlogFilterState,
   BlogsUiState,
+  CreateBlogFormState,
+  CreateBlogFieldErrors,
 } from './types/blog.types';

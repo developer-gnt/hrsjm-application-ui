@@ -100,8 +100,9 @@ interface EventsScreenProps {
   onAddEvent?: () => void;
   /**
    * TEMPORARY (UI-only phase): called when a bottom tab is pressed on the
-   * preview shell (e.g. jumping to News). When not provided, the shell shows
-   * its preview notice (original behavior). Real navigation replaces this.
+   * preview shell (e.g. jumping to News/Blogs/Rights). When not provided, the
+   * shell shows its preview notice (original behavior). Real navigation
+   * replaces this.
    */
   onTabPress?: (tab: string) => void;
 }
