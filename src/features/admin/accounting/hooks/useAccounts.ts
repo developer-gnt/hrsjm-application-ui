@@ -20,6 +20,7 @@ export const buildAccountTree = (
   parentAccountId: string | null = null,
   level: number = 0,
 ): AccountTreeNode[] => {
+  if (!Array.isArray(accounts)) return [];
   return accounts
     .filter(a => (a.parent_account_id ?? null) === parentAccountId)
     .sort((a, b) => (a.account_code || '').localeCompare(b.account_code || ''))

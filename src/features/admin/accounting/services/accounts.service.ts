@@ -11,21 +11,36 @@ export interface ListAccountsParams {
   type?: AccountType;
   is_active?: boolean;
   search?: string;
+  limit?: number;
+  page?: number;
 }
 
 export const listAccounts = async (
   params?: ListAccountsParams,
 ): Promise<AccountItem[]> => {
-  const queryParams: Record<string, any> = {};
-  if (params?.type) queryParams.type = params.type;
+  const queryParams: Record<string, any> = {
+    limit: params?.limit ?? 200,
+  };
+  if (params?.type) {
+    queryParams.account_type = params.type;
+    queryParams.type = params.type;
+  }
   if (params?.is_active !== undefined) queryParams.is_active = params.is_active;
   if (params?.search && params.search.trim()) queryParams.search = params.search.trim();
+  if (params?.page) queryParams.page = params.page;
 
-  const res = await apiClient.get<AccountItem[]>(
+  const res = await apiClient.get<any>(
     ApiRoutes.ACCOUNTING.ACCOUNTS,
     { params: queryParams },
   );
-  return res.data || [];
+  const data = res.data;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && Array.isArray(data.items)) {
+    return data.items;
+  }
+  return [];
 };
 
 export const getAccountById = async (id: string): Promise<AccountItem> => {
