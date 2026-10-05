@@ -45,6 +45,14 @@ export {
   SearchX,
   TriangleAlert,
   UsersRound,
+
+  // About page (mission / values glyphs)
+  Target,
+  Scale,
+  ShieldCheck,
+  Heart,
+  Leaf,
+  UserRound,
 } from 'lucide-react-native';
 
 /**

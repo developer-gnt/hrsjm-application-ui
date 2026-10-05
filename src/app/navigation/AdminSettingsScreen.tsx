@@ -113,9 +113,10 @@ export const SETTING_SECTIONS: SettingSection[] = [
     items: [
       {
         icon: '🏢',
-        title: 'Organization Profile',
+        title: 'Organization Profile (About HRSJM)',
         description:
-          'Update organization details, logo, description, and contact information.',
+          'Organization background, mission, vision, core values, and leadership.',
+        route: AppRoutes.ABOUT,
       },
       {
         icon: '📞',

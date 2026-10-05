@@ -24,7 +24,7 @@ import {
 import { BrandColors } from '../../../../core/theme/colors';
 import { Spacing } from '../../../../core/theme/spacing';
 import { Member, MemberSortOption } from '../types';
-import { useMembers, MembersPreviewState } from '../hooks/useMembers';
+import { useMembers, useCreateMember, MembersPreviewState } from '../hooks/useMembers';
 import { MembersPageHeader } from '../components/MembersPageHeader';
 import { MemberStats } from '../components/MemberStats';
 import { MemberSearchFilterBar } from '../components/MemberSearchFilterBar';
@@ -34,6 +34,8 @@ import { MemberRow } from '../components/MemberRow';
 import { MemberFilterSheet } from '../components/MemberFilterSheet';
 import { MemberActionsSheet } from '../components/MemberActionsSheet';
 import { MembersStateView, MembersLoadingState } from '../components/MembersStateView';
+import { AddMemberModal } from '../components/AddMemberModal';
+import type { CreateMemberPayload } from '../services/members.service';
 
 /** Width at/above which the member list renders as an aligned column grid. */
 const WIDE_LAYOUT_BREAKPOINT = 700;
@@ -45,8 +47,6 @@ const BOTTOM_NAV_ITEMS = [
   { key: 'complaints', label: 'Complaints', Icon: MessageSquare },
   { key: 'more', label: 'More', Icon: LayoutGrid },
 ];
-
-const PREVIEW_STATES: MembersPreviewState[] = ['default', 'loading', 'empty', 'error'];
 
 interface MembersScreenProps {
   /** Dev/preview override: renders a specific UI state with mock data. */
@@ -65,12 +65,13 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   showBottomNav = false,
   onNavigate,
 }) => {
-  const [devPreviewState, setDevPreviewState] = useState<MembersPreviewState | null>(null);
-  const effectiveState: MembersPreviewState = previewState ?? devPreviewState ?? 'default';
+  const effectiveState: MembersPreviewState = previewState ?? 'default';
 
   const members = useMembers(effectiveState);
+  const createMemberMutation = useCreateMember();
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [actionsMember, setActionsMember] = useState<Member | null>(null);
+  const [addModalVisible, setAddModalVisible] = useState(false);
 
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_LAYOUT_BREAKPOINT;
@@ -81,6 +82,26 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   const handleApplySort = useCallback(
     (sort: MemberSortOption) => members.setSort(sort),
     [members]
+  );
+
+  const handleAddMember = useCallback(
+    async (payload: CreateMemberPayload) => {
+      try {
+        await createMemberMutation.mutateAsync(payload);
+        Alert.alert(
+          'Member Added',
+          `${payload.full_name} has been successfully registered.`
+        );
+      } catch (err: any) {
+        const errorMsg =
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to add member. Please verify the information and try again.';
+        Alert.alert('Registration Failed', errorMsg);
+        throw err;
+      }
+    },
+    [createMemberMutation]
   );
 
   const handleMemberAction = useCallback(
@@ -199,6 +220,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
           title="No members yet"
           description="Approved members will appear here once registrations begin."
           actionTitle="Add Member"
+          onAction={() => setAddModalVisible(true)}
         />
       );
     }
@@ -210,7 +232,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   const listHeader = (
     <View>
       <View>
-        <MembersPageHeader onAddMember={() => undefined} />
+        <MembersPageHeader onAddMember={() => setAddModalVisible(true)} />
         <View style={styles.sectionGap}>
           <MemberStats stats={members.stats} loading={members.isLoading} />
         </View>
@@ -273,19 +295,6 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
         testID="members-flatlist"
       />
 
-      {__DEV__ && (
-        <View style={styles.devStrip}>
-          {PREVIEW_STATES.map(state => (
-            <StateChip
-              key={state}
-              label={state === 'default' ? 'Normal' : state.charAt(0).toUpperCase() + state.slice(1)}
-              active={effectiveState === state}
-              onPress={() => setDevPreviewState(state)}
-            />
-          ))}
-        </View>
-      )}
-
       {showBottomNav && (
         <AppBottomNavigation
           items={BOTTOM_NAV_ITEMS}
@@ -293,6 +302,13 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
           onItemPress={onNavigate}
         />
       )}
+
+      <AddMemberModal
+        visible={addModalVisible}
+        onClose={() => setAddModalVisible(false)}
+        onSubmit={handleAddMember}
+        isSubmitting={createMemberMutation.isPending}
+      />
 
       <MemberFilterSheet
         visible={filterSheetVisible}
@@ -309,15 +325,6 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   );
 };
 
-/** __DEV__-only chip to preview each required UI state with mock data. */
-function StateChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={[styles.chip, active && styles.chipActive]}>
-      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -331,31 +338,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingBottom: Spacing.xl + Spacing.md,
     gap: Spacing.sm + 2,
-  },
-  devStrip: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    paddingVertical: 5,
-    backgroundColor: 'rgba(7, 29, 58, 0.92)',
-  },
-  chip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
-  },
-  chipActive: {
-    backgroundColor: BrandColors.goldSoft,
-  },
-  chipText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.85)',
-  },
-  chipTextActive: {
-    color: BrandColors.navyDeep,
   },
 });
 

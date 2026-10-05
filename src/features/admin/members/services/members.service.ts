@@ -204,6 +204,51 @@ export const membersService = {
   },
 
   /**
+   * Fetch all active membership categories.
+   */
+  async getCategories(): Promise<MembershipCategoryItem[]> {
+    try {
+      const res = await apiClient.get<any>(
+        ApiRoutes.MEMBERSHIPS.CATEGORIES
+      );
+      if (Array.isArray(res.data)) {
+        return res.data;
+      }
+      return res.data?.items || [];
+    } catch {
+      return [
+        { id: '1', name: 'General Member', code: 'GENERAL', fee: 500, status: 'ACTIVE' },
+        { id: '2', name: 'Life Member', code: 'LIFE', fee: 5000, status: 'ACTIVE' },
+        { id: '3', name: 'Patron Member', code: 'PATRON', fee: 15000, status: 'ACTIVE' },
+        { id: '4', name: 'Executive Member', code: 'EXECUTIVE', fee: 25000, status: 'ACTIVE' },
+      ];
+    }
+  },
+
+  /**
+   * Create / register a new member with membership application.
+   */
+  async create(payload: CreateMemberPayload): Promise<BackendMembership> {
+    const { auto_activate, ...dto } = payload;
+    const res = await apiClient.post<BackendMembership>(
+      ApiRoutes.MEMBERSHIPS.BASE,
+      dto
+    );
+    const created = res.data;
+    if (auto_activate && created?.id) {
+      try {
+        await apiClient.patch(ApiRoutes.MEMBERSHIPS.STATUS(created.id), {
+          status: 'ACTIVE',
+          admin_notes: 'Auto-approved on creation by admin',
+        });
+      } catch (err) {
+        console.warn('Could not auto-activate newly created member:', err);
+      }
+    }
+    return created;
+  },
+
+  /**
    * Fetch a single membership details by ID.
    */
   async getById(id: string): Promise<BackendMembership> {
@@ -227,5 +272,31 @@ export const membersService = {
     return res.data;
   },
 };
+
+export interface MembershipCategoryItem {
+  id: string;
+  name: string;
+  code: string;
+  fee: number | string;
+  validity_days?: number;
+  status: string;
+}
+
+export interface CreateMemberPayload {
+  category_id: string;
+  full_name: string;
+  mobile_number: string;
+  email?: string;
+  personal_details?: {
+    dob?: string;
+    gender?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+  };
+  admin_notes?: string;
+  auto_activate?: boolean;
+}
 
 export default membersService;

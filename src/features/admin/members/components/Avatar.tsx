@@ -13,7 +13,8 @@ interface AvatarProps {
 
 const TONE_ROTATION: StatusToneKey[] = ['navy', 'success', 'gold', 'warning', 'neutral', 'danger'];
 
-const getToneForName = (name: string): StatusToneKey => {
+const getToneForName = (name?: string | null): StatusToneKey => {
+  if (!name || typeof name !== 'string') return 'navy';
   let hash = 0;
   for (let i = 0; i < name.length; i += 1) {
     hash = (hash * 31 + name.charCodeAt(i)) % 997;
@@ -21,12 +22,16 @@ const getToneForName = (name: string): StatusToneKey => {
   return TONE_ROTATION[hash % TONE_ROTATION.length];
 };
 
-const getInitials = (name: string): string => {
-  const parts = name.trim().split(/\s+/);
+const getInitials = (name?: string | null): string => {
+  if (!name || typeof name !== 'string') return 'M';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {
     return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   }
-  return name.substring(0, 2).toUpperCase();
+  if (parts.length === 1 && parts[0].length > 0) {
+    return parts[0].substring(0, 2).toUpperCase();
+  }
+  return 'M';
 };
 
 /**

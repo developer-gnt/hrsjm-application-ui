@@ -71,12 +71,14 @@ export interface DonationsScreenProps {
   onBack?: () => void;
   showBack?: boolean;
   onNavigate?: (target: string) => void;
+  onViewReceipt?: (donationId: string) => void;
 }
 
 export const DonationsScreen: React.FC<DonationsScreenProps> = ({
   onBack,
   showBack,
   onNavigate,
+  onViewReceipt,
 }) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -221,8 +223,12 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
   };
 
   const handleViewReceipt = (row: DonationRowModel) => {
-    setSelectedRowForReceipt(row);
-    setReceiptModalVisible(true);
+    if (onViewReceipt) {
+      onViewReceipt(row.id);
+    } else {
+      setSelectedRowForReceipt(row);
+      setReceiptModalVisible(true);
+    }
   };
 
   const handleViewDetails = (row: DonationRowModel) => {

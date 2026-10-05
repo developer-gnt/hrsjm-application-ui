@@ -50,14 +50,17 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function initialsOf(fullName: string): string {
+export function initialsOf(fullName?: string | null): string {
+  if (!fullName || typeof fullName !== 'string') {
+    return 'M';
+  }
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) {
-    return '?';
+    return 'M';
   }
   const first = parts[0][0] ?? '';
   const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
-  return `${first}${last}`.toUpperCase();
+  return (`${first}${last}`.toUpperCase()) || 'M';
 }
 
 export function maskEmail(email: string | null | undefined): string {

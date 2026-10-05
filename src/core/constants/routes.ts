@@ -37,6 +37,7 @@ export const AppRoutes = {
   PROFIT_LOSS: 'ProfitLoss',
   BALANCE_SHEET: 'BalanceSheet',
   DONATIONS: 'Donations',
+  DONATION_RECEIPT_DETAILS: 'DonationReceiptDetails',
   ROLES_PERMISSIONS: 'RolesPermissions',
   SETTINGS: 'Settings',
   EVENTS: 'Events',
@@ -55,4 +56,5 @@ export const AppRoutes = {
   TICKET_CHAT: 'TicketChat',
   NOTIFICATIONS: 'Notifications',
   PROFILE_SETTINGS: 'ProfileSettings',
+  ABOUT: 'About',
 } as const;

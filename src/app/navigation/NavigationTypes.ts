@@ -47,6 +47,7 @@ export type MoreStackParamList = {
   [AppRoutes.PROFIT_LOSS]: undefined;
   [AppRoutes.BALANCE_SHEET]: undefined;
   [AppRoutes.DONATIONS]: undefined;
+  [AppRoutes.DONATION_RECEIPT_DETAILS]: { donationId: string };
   [AppRoutes.ROLES_PERMISSIONS]: undefined;
   [AppRoutes.SETTINGS]: undefined;
   [AppRoutes.EVENTS]: undefined;
@@ -65,6 +66,7 @@ export type MoreStackParamList = {
   [AppRoutes.TICKET_CHAT]: { ticketId: string; subject?: string };
   [AppRoutes.NOTIFICATIONS]: undefined;
   [AppRoutes.PROFILE_SETTINGS]: undefined;
+  [AppRoutes.ABOUT]: undefined;
 };
 
 /** Placeholder stack for non-admin authenticated users until their role

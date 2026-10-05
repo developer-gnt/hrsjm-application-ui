@@ -7,7 +7,11 @@
  * DonationsScreen) once auth + backend connectivity land.
  */
 import { AdminColors, formatDate, formatDateTime } from '../../../../core';
-import { DonationRowModel, DateRange } from '../types/donations.types';
+import {
+  DonationRowModel,
+  DateRange,
+  DonationReceiptModel,
+} from '../types/donations.types';
 import { donationStatusPresentation } from '../components/DonationStatusBadge';
 import type { DonationStatItem } from '../components/DonationStats';
 
@@ -23,6 +27,8 @@ export interface DonationPreviewRow {
   amount: number;
   status: string;
   donation_type: Exclude<DonationPreviewTabKey, 'ALL'>;
+  payment_method: string;
+  transaction_id: string;
   created_at: string;
   has_receipt: boolean;
 }
@@ -37,6 +43,8 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     description: 'Support for mission activities',
     amount: 10000,
     status: 'SUCCESS',
+    payment_method: 'UPI (Google Pay)',
+    transaction_id: 'UPI1234567890',
     donation_type: 'ONE_TIME',
     created_at: '2026-09-28T11:24:00',
     has_receipt: true,
@@ -50,6 +58,8 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     description: 'Help for underprivileged students',
     amount: 5000,
     status: 'SUCCESS',
+    payment_method: 'UPI (PhonePe)',
+    transaction_id: 'UPI987654321102',
     donation_type: 'ONE_TIME',
     created_at: '2026-09-27T16:15:00',
     has_receipt: true,
@@ -63,6 +73,8 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     description: 'Support for medical treatment',
     amount: 25000,
     status: 'SUCCESS',
+    payment_method: 'Bank Transfer (NEFT)',
+    transaction_id: 'NEFT2026092612',
     donation_type: 'ONE_TIME',
     created_at: '2026-09-26T14:40:00',
     has_receipt: true,
@@ -76,6 +88,8 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     description: 'Support for mission activities',
     amount: 2000,
     status: 'SUCCESS',
+    payment_method: 'UPI (Paytm)',
+    transaction_id: 'UPI8811224455',
     donation_type: 'ONE_TIME',
     created_at: '2026-09-25T10:05:00',
     has_receipt: true,
@@ -89,6 +103,8 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     description: 'Support for disaster relief work',
     amount: 50000,
     status: 'SUCCESS',
+    payment_method: 'Bank Transfer (RTGS)',
+    transaction_id: 'RTGS2026092401',
     donation_type: 'ONE_TIME',
     created_at: '2026-09-24T18:20:00',
     has_receipt: true,
@@ -102,6 +118,8 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     description: 'Monthly contribution (₹2,000/month)',
     amount: 2000,
     status: 'SUCCESS',
+    payment_method: 'UPI (Google Pay)',
+    transaction_id: 'UPI7788990011',
     donation_type: 'RECURRING',
     created_at: '2026-09-24T09:10:00',
     has_receipt: true,
@@ -115,6 +133,8 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     description: 'Construction & infrastructure support',
     amount: 100000,
     status: 'SUCCESS',
+    payment_method: 'Bank Transfer (NEFT)',
+    transaction_id: 'NEFT2026092317',
     donation_type: 'ONE_TIME',
     created_at: '2026-09-23T17:30:00',
     has_receipt: true,
@@ -128,6 +148,8 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     description: 'Monthly contribution (₹1,000/month)',
     amount: 1000,
     status: 'SUCCESS',
+    payment_method: 'UPI (PhonePe)',
+    transaction_id: 'UPI5566778899',
     donation_type: 'RECURRING',
     created_at: '2026-09-22T11:12:00',
     has_receipt: true,
@@ -158,6 +180,8 @@ export const addPreviewDonation = (input: {
     amount: input.amount,
     status: 'SUCCESS',
     donation_type: input.donation_type || 'ONE_TIME',
+    payment_method: 'Online',
+    transaction_id: `TXN${Date.now()}`,
     created_at: new Date().toISOString(),
     has_receipt: true,
   };
@@ -187,6 +211,33 @@ const toPreviewRowModel = (row: DonationPreviewRow): DonationRowModel => {
 
 export const getPreviewRowModels = (): DonationRowModel[] =>
   previewDonationsList.map(toPreviewRowModel);
+
+/**
+ * Receipt for a preview donation, used while the API is unreachable.
+ * Mirrors donationsService.getReceiptByDonationId so the Receipt
+ * Details page can swap to live data without changes.
+ */
+export const getPreviewReceipt = (
+  donationId: string,
+): DonationReceiptModel | null => {
+  const row = previewDonationsList.find(item => item.id === donationId);
+  if (!row) return null;
+  return {
+    id: row.id,
+    receiptNumber: `HRSJM-2026-${row.id.slice(-4)}`,
+    receiptDate: row.created_at,
+    donorName: row.donor_name,
+    donorMobile: row.donor_mobile,
+    donorEmail: null,
+    memberCode: row.member_code,
+    cause: row.cause,
+    amount: row.amount,
+    paymentMethod: row.payment_method,
+    transactionId: row.transaction_id,
+    status: row.status,
+    notes: row.description,
+  };
+};
 
 export interface FilterPreviewParams {
   tab?: DonationPreviewTabKey | string;

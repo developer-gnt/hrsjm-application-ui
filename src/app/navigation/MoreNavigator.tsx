@@ -25,7 +25,8 @@ import {
 } from '../../features/admin/assistance';
 import { NotificationsScreen } from '../../features/admin/notifications';
 import { ProfileSettingsScreen } from '../../features/admin/settings';
-import { DonationsScreen } from '../../features/admin/donations';
+import { DonationsScreen, ReceiptDetailsPage } from '../../features/admin/donations';
+import { AboutScreen } from '../../features/about';
 import { MoreStackParamList } from './NavigationTypes';
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();
@@ -165,6 +166,25 @@ export const MoreNavigator: React.FC = () => (
       {({ navigation }) => (
         <DonationsScreen
           onBack={navigation.goBack}
+          onViewReceipt={(donationId: string) =>
+            navigation.navigate(AppRoutes.DONATION_RECEIPT_DETAILS, { donationId })
+          }
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.DONATION_RECEIPT_DETAILS}>
+      {({ navigation, route }: any) => (
+        <ReceiptDetailsPage
+          donationId={route.params?.donationId}
+          onBack={navigation.goBack}
           onNavigate={(target: string) => {
             if (target === 'AdminMoreTab') {
               navigation.navigate('MoreMenu' as any);
@@ -191,6 +211,22 @@ export const MoreNavigator: React.FC = () => (
     {/* Settings — Real merged ProfileSettingsScreen */}
     <Stack.Screen name={AppRoutes.SETTINGS} component={ProfileSettingsScreen} />
     <Stack.Screen name={AppRoutes.PROFILE_SETTINGS} component={ProfileSettingsScreen} />
+
+    {/* About HRSJM — Aman's module */}
+    <Stack.Screen name={AppRoutes.ABOUT}>
+      {({ navigation }) => (
+        <AboutScreen
+          onBack={navigation.goBack}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
+        />
+      )}
+    </Stack.Screen>
 
     {/* Notifications — Real merged NotificationsScreen */}
     <Stack.Screen name={AppRoutes.NOTIFICATIONS} component={NotificationsScreen} />

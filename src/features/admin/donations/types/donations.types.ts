@@ -77,6 +77,7 @@ export interface DonationReceiptModel {
   cause: string;
   amount: number;
   paymentMethod: string;
+  transactionId?: string | null;
   status: string;
   notes?: string | null;
 }

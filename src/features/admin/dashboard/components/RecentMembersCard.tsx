@@ -16,19 +16,32 @@ const DEFAULT_MEMBERS = [
   { id: '4', full_name: 'Faiza Ansari', created_at: '2026-09-26', status: 'ACTIVE' },
 ];
 
-const initialsOf = (fullName: string): string =>
-  fullName
+const initialsOf = (fullName?: string | null): string => {
+  if (!fullName || typeof fullName !== 'string') {
+    return 'M';
+  }
+  const parts = fullName
+    .trim()
     .split(/\s+/)
-    .filter(Boolean)
+    .filter(Boolean);
+  if (parts.length === 0) {
+    return 'M';
+  }
+  return parts
     .slice(0, 2)
     .map(part => part.charAt(0).toUpperCase())
     .join('');
+};
+
+const getDisplayName = (member: any): string => {
+  return member?.full_name || member?.fullName || member?.name || member?.mobile_number || 'Member';
+};
 
 export const RecentMembersCard: React.FC<RecentMembersCardProps> = ({
   members,
   onViewAll,
 }) => {
-  const displayList = members && members.length > 0 ? members.slice(0, 4) : DEFAULT_MEMBERS;
+  const displayList = Array.isArray(members) && members.length > 0 ? members.slice(0, 4) : DEFAULT_MEMBERS;
 
   return (
     <View style={styles.card}>
@@ -44,26 +57,32 @@ export const RecentMembersCard: React.FC<RecentMembersCardProps> = ({
       </View>
 
       <View style={styles.rows}>
-        {displayList.map(member => (
-          <View key={member.id} style={styles.row}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initialsOf(member.full_name)}</Text>
-            </View>
+        {displayList.map(member => {
+          const displayName = getDisplayName(member);
+          const initials = initialsOf(displayName);
+          return (
+            <View key={member.id} style={styles.row}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{initials}</Text>
+              </View>
 
-            <View style={styles.memberInfo}>
-              <Text style={styles.memberName} numberOfLines={1}>
-                {member.full_name}
-              </Text>
-              <Text style={styles.memberDate} numberOfLines={1}>
-                {formatDate(member.created_at)}
-              </Text>
-            </View>
+              <View style={styles.memberInfo}>
+                <Text style={styles.memberName} numberOfLines={1}>
+                  {displayName}
+                </Text>
+                <Text style={styles.memberDate} numberOfLines={1}>
+                  {member?.created_at ? formatDate(member.created_at) : '—'}
+                </Text>
+              </View>
 
-            <View style={styles.activeBadge}>
-              <Text style={styles.activeBadgeText}>Active</Text>
+              <View style={styles.activeBadge}>
+                <Text style={styles.activeBadgeText}>
+                  {member?.status === 'ACTIVE' || !member?.status ? 'Active' : member.status}
+                </Text>
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </View>
     </View>
   );

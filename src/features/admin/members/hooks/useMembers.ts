@@ -27,6 +27,33 @@ export const MEMBERS_QUERY_KEYS = {
     ['memberships', 'list', status ?? 'ALL', search ?? ''] as const,
   detail: (id: string) => ['memberships', 'detail', id] as const,
   stats: ['memberships', 'stats'] as const,
+  categories: ['memberships', 'categories'] as const,
+};
+
+/**
+ * Hook to fetch active membership categories.
+ */
+export const useMembershipCategories = () =>
+  useQuery({
+    queryKey: MEMBERS_QUERY_KEYS.categories,
+    queryFn: () => membersService.getCategories(),
+    staleTime: 60_000,
+  });
+
+/**
+ * Mutation hook to create / register a new member.
+ */
+export const useCreateMember = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Parameters<typeof membersService.create>[0]) =>
+      membersService.create(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: MEMBERS_QUERY_KEYS.all,
+      });
+    },
+  });
 };
 
 /**
