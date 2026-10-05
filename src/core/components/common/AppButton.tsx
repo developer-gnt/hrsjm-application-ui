@@ -26,6 +26,8 @@ interface AppButtonProps {
   iconPosition?: 'left' | 'right';
   /** Optional border color override (used by variant 'outline'). */
   borderColor?: string;
+  /** Accessible name; defaults to the title. */
+  accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
 }
@@ -40,6 +42,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
   icon,
   iconPosition = 'left',
   borderColor,
+  accessibilityLabel,
   style,
   textStyle,
 }) => {
@@ -140,6 +143,8 @@ export const AppButton: React.FC<AppButtonProps> = ({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
       style={[
         styles.baseButton,
         getVariantContainerStyle(),

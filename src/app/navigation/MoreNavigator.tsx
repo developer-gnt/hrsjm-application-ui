@@ -17,6 +17,7 @@ import {
   CreateEventScreen,
 } from '../../features/admin/content/events';
 import { DonationsScreen } from '../../features/admin/donations';
+import { AboutScreen } from '../../features/about';
 import { MoreStackParamList } from './NavigationTypes';
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();
@@ -217,6 +218,22 @@ export const MoreNavigator: React.FC = () => (
     <Stack.Screen name={AppRoutes.CREATE_EVENT}>
       {({ navigation }) => (
         <CreateEventScreen onCancel={navigation.goBack} />
+      )}
+    </Stack.Screen>
+
+    {/* About HRSJM — organization profile page */}
+    <Stack.Screen name={AppRoutes.ABOUT}>
+      {({ navigation }) => (
+        <AboutScreen
+          onBack={navigation.goBack}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
+        />
       )}
     </Stack.Screen>
   </Stack.Navigator>

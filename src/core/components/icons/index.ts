@@ -45,6 +45,14 @@ export {
   SearchX,
   TriangleAlert,
   UsersRound,
+
+  // About page (mission / values glyphs) — Eye is exported with row actions
+  Target,
+  Scale,
+  ShieldCheck,
+  Heart,
+  Leaf,
+  UserRound,
 } from 'lucide-react-native';
 
 /**

@@ -42,4 +42,7 @@ export const AppRoutes = {
   EVENTS: 'Events',
   EVENT_DETAILS: 'EventDetails',
   CREATE_EVENT: 'CreateEvent',
+
+  // About page (organization profile)
+  ABOUT: 'About',
 } as const;
