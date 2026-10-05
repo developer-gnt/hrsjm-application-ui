@@ -24,6 +24,7 @@ import {
   useRecentApplications,
   useUnreadNotifications,
 } from '../hooks/useDashboard';
+import { useEvents } from '../../content/events/hooks/useEvents';
 import {
   computeGrowthPercent,
   toApplicationStatusSegments,
@@ -55,19 +56,21 @@ export const AdminDashboardScreen: React.FC<{
   const recentMembersQuery = useRecentMembers();
   const recentApplicationsQuery = useRecentApplications();
   const unreadQuery = useUnreadNotifications();
+  const eventsQuery = useEvents();
   const refresh = useDashboardRefresh();
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState('Sep 2026');
+  const currentMonthLabel = new Date().toLocaleString('en-US', { month: 'short', year: 'numeric' });
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthLabel || 'Oct 2026');
   const [monthPickerVisible, setMonthPickerVisible] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await refresh();
+      await Promise.all([refresh(), eventsQuery.refetch()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refresh]);
+  }, [refresh, eventsQuery]);
 
   const dashboard = dashboardQuery.data;
   const isLoading =
@@ -157,21 +160,18 @@ export const AdminDashboardScreen: React.FC<{
   const growthPoints = toGrowthChartPoints(dashboard.memberGrowth);
   const latestPoint = growthPoints[growthPoints.length - 1];
 
-  const totalMembers = dashboard.users.total || 2486;
-  const membersGrowth = memberGrowth ?? 12;
-  const membersThisMonth = dashboard.users.thisMonth || 268;
+  const totalMembers = dashboard.users?.total ?? 0;
+  const membersThisMonth = dashboard.users?.thisMonth ?? 0;
 
-  const totalApplications = dashboard.assistance.total || 612;
-  const applicationsGrowth = applicationGrowth ?? 18;
-  const applicationsThisMonth = dashboard.assistance.thisMonth || 94;
+  const totalApplications = dashboard.assistance?.total ?? 0;
+  const applicationsThisMonth = dashboard.assistance?.thisMonth ?? 0;
 
-  const totalComplaints = dashboard.tickets.total || 184;
-  const compGrowth = complaintsGrowth ?? 7;
-  const complaintsThisMonth = dashboard.tickets.thisMonth || 12;
+  const totalComplaints = dashboard.tickets?.total ?? 0;
+  const complaintsThisMonth = dashboard.tickets?.thisMonth ?? 0;
 
-  const totalEvents = 28;
-  const eventsGrowth = 27;
-  const eventsThisMonth = 6;
+  const eventsStats = eventsQuery.data?.stats;
+  const totalEvents = eventsStats?.total ?? eventsQuery.data?.events.length ?? 0;
+  const upcomingEvents = eventsStats?.upcoming ?? 0;
 
   return (
     <View style={styles.container}>
@@ -243,7 +243,7 @@ export const AdminDashboardScreen: React.FC<{
             Icon={Calendar}
             title="Total Events"
             value={totalEvents}
-            note={`+${eventsThisMonth} this month`}
+            note={upcomingEvents > 0 ? `${upcomingEvents} upcoming` : `${totalEvents} active`}
             tone="gold"
             onPress={() => handleDrawerNavigate('Events')}
           />
