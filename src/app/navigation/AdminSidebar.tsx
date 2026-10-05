@@ -82,9 +82,10 @@ export const MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
   {
     groupTitle: 'PLATFORM & SYSTEM',
     items: [
+      { id: 'profile', icon: '👤', title: 'My Profile & ID Card', target: 'MyProfile' },
       { id: 'notifications', icon: '🔔', title: 'Notifications', target: 'Notifications' },
       { id: 'roles', icon: '🛡️', title: 'Roles & Permissions', target: 'RolesPermissions' },
-      { id: 'settings', icon: '⚙️', title: 'Settings & Profile', target: 'ProfileSettings' },
+      { id: 'settings', icon: '⚙️', title: 'Settings & Preferences', target: 'ProfileSettings' },
     ],
   },
 ];

@@ -124,6 +124,13 @@ export const SETTING_SECTIONS: SettingSection[] = [
     iconColor: '#0284C7',
     items: [
       {
+        icon: '👤',
+        title: 'My Profile & ID Card',
+        description:
+          'View and manage your administrator profile, official ID card and QR code.',
+        route: AppRoutes.MY_PROFILE,
+      },
+      {
         icon: '🏢',
         title: 'Organization Profile (About HRSJM)',
         description:

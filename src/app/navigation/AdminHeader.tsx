@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { AppRoutes } from '../../core/constants/routes';
 import { AuthLogo } from '../../features/auth/components/AuthLogo';
 import { Typography } from '../../core/theme/typography';
 import { useAuthStore } from '../../features/auth/store/authStore';
@@ -71,6 +73,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
   const signOut = useAuthStore(state => state.signOut);
+  const navigation = useNavigation<any>();
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -87,12 +90,45 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 
   const handleViewProfile = () => {
     setDropdownVisible(false);
-    setProfileModalVisible(true);
+    if (onNavigate) {
+      onNavigate(AppRoutes.MY_PROFILE);
+    } else if (navigation?.navigate) {
+      try {
+        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
+      } catch {
+        navigation.navigate(AppRoutes.MY_PROFILE);
+      }
+    } else {
+      setProfileModalVisible(true);
+    }
+  };
+
+  const handleOpenFullProfile = () => {
+    setProfileModalVisible(false);
+    if (onNavigate) {
+      onNavigate(AppRoutes.MY_PROFILE);
+    } else if (navigation?.navigate) {
+      try {
+        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
+      } catch {
+        navigation.navigate(AppRoutes.MY_PROFILE);
+      }
+    }
   };
 
   const handleDrawerNavigate = (target: string) => {
     if (onNavigate) {
       onNavigate(target);
+    } else if (navigation?.navigate) {
+      if (target === AppRoutes.MY_PROFILE || target === 'MyProfile') {
+        try {
+          navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
+        } catch {
+          navigation.navigate(AppRoutes.MY_PROFILE);
+        }
+      } else {
+        navigation.navigate(target);
+      }
     } else if (onOpenMore) {
       onOpenMore();
     }
@@ -275,6 +311,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         visible={profileModalVisible}
         onClose={() => setProfileModalVisible(false)}
         onSignOut={handleSignOut}
+        onViewFullProfile={handleOpenFullProfile}
       />
     </>
   );

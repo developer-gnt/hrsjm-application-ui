@@ -69,6 +69,10 @@ export type MoreStackParamList = {
   [AppRoutes.TICKET_CHAT]: { ticketId: string; subject?: string };
   [AppRoutes.NOTIFICATIONS]: undefined;
   [AppRoutes.PROFILE_SETTINGS]: undefined;
+  [AppRoutes.MY_PROFILE]: undefined;
+  [AppRoutes.ADMIN_DETAILS]: undefined;
+  [AppRoutes.EDIT_PERSONAL_INFO]: undefined;
+  [AppRoutes.MY_ID_CARD]: undefined;
   [AppRoutes.ABOUT]: undefined;
 };
 

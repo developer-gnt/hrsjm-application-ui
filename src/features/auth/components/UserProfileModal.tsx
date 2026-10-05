@@ -21,12 +21,14 @@ interface UserProfileModalProps {
   visible: boolean;
   onClose: () => void;
   onSignOut: () => void;
+  onViewFullProfile?: () => void;
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   visible,
   onClose,
   onSignOut,
+  onViewFullProfile,
 }) => {
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
@@ -135,6 +137,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
             {/* Actions */}
             <View style={styles.actions}>
+              {onViewFullProfile ? (
+                <TouchableOpacity
+                  style={styles.fullProfileButton}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    onClose();
+                    onViewFullProfile();
+                  }}
+                >
+                  <Text style={styles.fullProfileIcon}>👤</Text>
+                  <Text style={styles.fullProfileText}>
+                    Open Full Profile & ID Card
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+
               <TouchableOpacity
                 style={styles.signOutButton}
                 activeOpacity={0.8}
@@ -284,6 +302,26 @@ const styles = StyleSheet.create({
   },
   actions: {
     marginTop: Spacing.sm,
+    gap: 8,
+  },
+  fullProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingVertical: 12,
+    borderRadius: BorderRadius.md,
+    gap: 8,
+  },
+  fullProfileIcon: {
+    fontSize: 16,
+  },
+  fullProfileText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1D4ED8',
   },
   signOutButton: {
     flexDirection: 'row',

@@ -36,6 +36,12 @@ import {
 import { NotificationsScreen } from '../../features/admin/notifications';
 import { ProfileSettingsScreen } from '../../features/admin/settings';
 import { DonationsScreen, ReceiptDetailsPage } from '../../features/admin/donations';
+import {
+  ProfileScreen,
+  EditPersonalInfoScreen,
+  AdminDetailsScreen,
+  MyIdCardScreen,
+} from '../../features/admin/profile';
 import { AboutScreen } from '../../features/about';
 import { MoreStackParamList } from './NavigationTypes';
 
@@ -257,6 +263,78 @@ export const MoreNavigator: React.FC = () => (
     {/* Settings — Real merged ProfileSettingsScreen */}
     <Stack.Screen name={AppRoutes.SETTINGS} component={ProfileSettingsScreen} />
     <Stack.Screen name={AppRoutes.PROFILE_SETTINGS} component={ProfileSettingsScreen} />
+
+    {/* Admin Profile & ID Card — Sahil's module */}
+    <Stack.Screen name={AppRoutes.MY_PROFILE}>
+      {({ navigation }) => (
+        <ProfileScreen
+          onBack={navigation.goBack}
+          onEditPersonal={() =>
+            navigation.navigate(AppRoutes.EDIT_PERSONAL_INFO as any)
+          }
+          onEditAdminDetails={() =>
+            navigation.navigate(AppRoutes.ADMIN_DETAILS as any)
+          }
+          onViewIdCard={() =>
+            navigation.navigate(AppRoutes.MY_ID_CARD as any)
+          }
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.EDIT_PERSONAL_INFO}>
+      {({ navigation }) => (
+        <EditPersonalInfoScreen
+          onBack={navigation.goBack}
+          onSaved={navigation.goBack}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.ADMIN_DETAILS}>
+      {({ navigation }) => (
+        <AdminDetailsScreen
+          onBack={navigation.goBack}
+          onSaved={navigation.goBack}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.MY_ID_CARD}>
+      {({ navigation }) => (
+        <MyIdCardScreen
+          onBack={navigation.goBack}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
+        />
+      )}
+    </Stack.Screen>
 
     {/* About HRSJM — Aman's module */}
     <Stack.Screen name={AppRoutes.ABOUT}>

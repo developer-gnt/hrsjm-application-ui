@@ -59,5 +59,9 @@ export const AppRoutes = {
   TICKET_CHAT: 'TicketChat',
   NOTIFICATIONS: 'Notifications',
   PROFILE_SETTINGS: 'ProfileSettings',
+  MY_PROFILE: 'MyProfile',
+  ADMIN_DETAILS: 'AdminDetails',
+  EDIT_PERSONAL_INFO: 'EditPersonalInfo',
+  MY_ID_CARD: 'MyIdCard',
   ABOUT: 'About',
 } as const;
