@@ -2,6 +2,7 @@ import React from 'react';
 import {
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import type {
@@ -120,15 +121,15 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
     <View
       style={[
         styles.tabBarContainer,
-        { paddingBottom: Math.max(insets.bottom, Spacing.sm) },
+        { paddingBottom: Math.max(insets.bottom, Spacing.xs) },
       ]}
       accessibilityRole="tablist"
     >
-      {state.routes.map((route, index) => {
+      {TAB_DEFINITIONS.map(tabDef => {
+        const route = state.routes.find(r => r.name === tabDef.name);
+        if (!route) return null;
+        const index = state.routes.indexOf(route);
         const isFocused = state.index === index;
-        const tabDef = TAB_DEFINITIONS.find(t => t.name === route.name);
-        if (!tabDef) return null;
-
         const { Icon, label } = tabDef;
 
         const onPress = () => {
@@ -151,17 +152,16 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
         };
 
         return (
-          <PressableScale
-            key={route.key}
+          <TouchableOpacity
+            key={tabDef.name}
             onPress={onPress}
             onLongPress={onLongPress}
-            scaleTo={0.94}
+            activeOpacity={0.7}
             accessibilityRole="tab"
             accessibilityLabel={label}
             accessibilityState={{ selected: isFocused }}
-            testID={`bottom-nav-${route.name}`}
-            containerStyle={styles.tabItem}
-            style={styles.tabItemInner}
+            testID={`bottom-nav-${tabDef.name}`}
+            style={styles.tabItem}
           >
             <View style={[styles.iconPill, isFocused && styles.iconPillActive]}>
               <Icon
@@ -176,10 +176,11 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
                 isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
               ]}
               numberOfLines={1}
+              ellipsizeMode="tail"
             >
               {label}
             </Text>
-          </PressableScale>
+          </TouchableOpacity>
         );
       })}
     </View>
@@ -187,23 +188,6 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
 };
 
 export const AdminNavigationBar: React.FC = () => {
-  usePermissionStore(state => state.isLoaded);
-  const membersVisible = useCanAny(
-    TAB_PERMISSIONS[AppRoutes.ADMIN_MEMBERS_TAB] ?? [],
-  );
-  const applicationsVisible = useCanAny(
-    TAB_PERMISSIONS[AppRoutes.ADMIN_APPLICATIONS_TAB] ?? [],
-  );
-  const complaintsVisible = useCanAny(
-    TAB_PERMISSIONS[AppRoutes.ADMIN_COMPLAINTS_TAB] ?? [],
-  );
-
-  const tabVisibility: Partial<Record<keyof AdminTabParamList, boolean>> = {
-    [AppRoutes.ADMIN_MEMBERS_TAB]: membersVisible,
-    [AppRoutes.ADMIN_APPLICATIONS_TAB]: applicationsVisible,
-    [AppRoutes.ADMIN_COMPLAINTS_TAB]: complaintsVisible,
-  };
-
   return (
     <Tab.Navigator
       tabBar={props => <CustomTabBar {...props} />}
@@ -211,18 +195,13 @@ export const AdminNavigationBar: React.FC = () => {
         headerShown: false,
       }}
     >
-      {TAB_DEFINITIONS.map(tab => {
-        if (tabVisibility[tab.name] === false) {
-          return null;
-        }
-        return (
-          <Tab.Screen
-            key={tab.name}
-            name={tab.name}
-            component={tab.component}
-          />
-        );
-      })}
+      {TAB_DEFINITIONS.map(tab => (
+        <Tab.Screen
+          key={tab.name}
+          name={tab.name}
+          component={tab.component}
+        />
+      ))}
     </Tab.Navigator>
   );
 };
@@ -234,11 +213,11 @@ const styles = StyleSheet.create({
   tabBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     backgroundColor: BrandColors.surface,
     borderTopColor: BrandColors.border,
     borderTopWidth: 1,
-    paddingTop: Spacing.sm,
+    paddingTop: 6,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -247,17 +226,14 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     flex: 1,
-    minWidth: 0,
-  },
-  tabItemInner: {
-    width: '100%',
     alignItems: 'center',
-    paddingVertical: Spacing.xs,
-    minHeight: 52,
+    justifyContent: 'center',
+    paddingVertical: 4,
+    minHeight: 50,
   },
   iconPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
     borderRadius: BorderRadius.lg,
     minHeight: 28,
     alignItems: 'center',
@@ -267,15 +243,15 @@ const styles = StyleSheet.create({
     backgroundColor: BrandColors.goldSoft,
   },
   tabLabel: {
-    marginTop: 3,
+    marginTop: 2,
     fontSize: NAV_LABEL_SIZE,
     fontWeight: '500',
     lineHeight: 14,
-    maxWidth: '100%',
+    textAlign: 'center',
   },
   tabLabelActive: {
     color: BrandColors.goldDark,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   tabLabelInactive: {
     color: BrandColors.textMuted,
