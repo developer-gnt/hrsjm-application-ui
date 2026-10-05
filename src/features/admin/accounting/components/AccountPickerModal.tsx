@@ -64,13 +64,13 @@ export const AccountPickerModal: React.FC<AccountPickerModalProps> = ({
   return (
     <AppModal visible={visible} onClose={onClose} title={title} maxHeight={480}>
       <AppSearchBar placeholder="Search accounts…" onSearch={setSearch} />
-      {accountsQuery.isLoading ? (
+      {accountsQuery.loading ? (
         <AppLoader size="small" />
-      ) : accountsQuery.isError ? (
+      ) : accountsQuery.error ? (
         <Text style={styles.errorText}>
-          Unable to load accounts. Try again.
+          {accountsQuery.error || 'Unable to load accounts. Try again.'}
         </Text>
-      ) : (accountsQuery.data?.items?.length ?? 0) === 0 ? (
+      ) : accountsQuery.accounts.length === 0 ? (
         <AppEmptyState
           icon="📚"
           title="No accounts found"
@@ -82,7 +82,7 @@ export const AccountPickerModal: React.FC<AccountPickerModalProps> = ({
         />
       ) : (
         <FlatList
-          data={accountsQuery.data?.items ?? []}
+          data={accountsQuery.accounts}
           keyExtractor={item => item.id}
           renderItem={renderRow}
           style={styles.list}

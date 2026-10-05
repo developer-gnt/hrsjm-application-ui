@@ -445,6 +445,57 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
               </View>
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.itemRow}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate(AppRoutes.CHART_OF_ACCOUNTS)}
+            >
+              <Text style={styles.itemIcon}>📚</Text>
+              <View style={styles.itemTextBlock}>
+                <Text style={styles.itemTitle}>Chart of Accounts</Text>
+                <Text style={styles.itemDescription}>
+                  Hierarchical structure of organizational ledger accounts
+                </Text>
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.itemRow}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate(AppRoutes.GENERAL_LEDGER as any)}
+            >
+              <Text style={styles.itemIcon}>📖</Text>
+              <View style={styles.itemTextBlock}>
+                <Text style={styles.itemTitle}>General Ledger</Text>
+                <Text style={styles.itemDescription}>
+                  Transaction book with opening, debit, credit & running balance
+                </Text>
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.itemRow}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate(AppRoutes.JOURNAL_ENTRIES)}
+            >
+              <Text style={styles.itemIcon}>📝</Text>
+              <View style={styles.itemTextBlock}>
+                <Text style={styles.itemTitle}>Journal Entries</Text>
+                <Text style={styles.itemDescription}>
+                  Dual-sided double entry vouchers and reversal audit history
+                </Text>
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>

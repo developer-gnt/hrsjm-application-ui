@@ -7,6 +7,11 @@ import { PaymentVerificationScreen, PaymentDetailsScreen } from '../../features/
 import { ExpenseVouchersScreen, CreateExpenseVoucherScreen, ExpenseDetailsScreen } from '../../features/admin/expenses';
 import { ReceiptVouchersScreen, CreateReceiptVoucherScreen, ReceiptVoucherDetailsScreen } from '../../features/admin/receipts';
 import {
+  ChartOfAccountsScreen,
+  GeneralLedgerScreen,
+  JournalEntriesScreen,
+} from '../../features/admin/accounting';
+import {
   EventsScreen,
   EventDetailsScreen,
   CreateEventScreen,
@@ -82,44 +87,80 @@ export const MoreNavigator: React.FC = () => (
       component={ReceiptVoucherDetailsScreen}
     />
 
-    {/* Accounting — Phase 6 */}
+    {/* Accounting — Phase 6 (Real integrated screens) */}
     <Stack.Screen name={AppRoutes.ACCOUNTING}>
       {({ navigation }) => (
-        <ModulePlaceholderScreen
-          title="Accounting"
-          icon="📚"
-          phase="Phase 6"
+        <ChartOfAccountsScreen
           onBack={navigation.goBack}
+          onViewAccountLedger={node =>
+            navigation.navigate(AppRoutes.GENERAL_LEDGER as any, {
+              accountId: node.id,
+              accountName: node.account_name,
+              accountCode: node.account_code,
+            })
+          }
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
         />
       )}
     </Stack.Screen>
+
     <Stack.Screen name={AppRoutes.CHART_OF_ACCOUNTS}>
       {({ navigation }) => (
-        <ModulePlaceholderScreen
-          title="Chart of Accounts"
-          icon="📚"
-          phase="Phase 6"
+        <ChartOfAccountsScreen
           onBack={navigation.goBack}
+          onViewAccountLedger={node =>
+            navigation.navigate(AppRoutes.GENERAL_LEDGER as any, {
+              accountId: node.id,
+              accountName: node.account_name,
+              accountCode: node.account_code,
+            })
+          }
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
         />
       )}
     </Stack.Screen>
+
     <Stack.Screen name={AppRoutes.GENERAL_LEDGER}>
-      {({ navigation }) => (
-        <ModulePlaceholderScreen
-          title="General Ledger"
-          icon="📚"
-          phase="Phase 6"
+      {({ navigation, route }: any) => (
+        <GeneralLedgerScreen
+          accountId={route.params?.accountId}
+          accountName={route.params?.accountName}
+          accountCode={route.params?.accountCode}
           onBack={navigation.goBack}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
         />
       )}
     </Stack.Screen>
+
     <Stack.Screen name={AppRoutes.JOURNAL_ENTRIES}>
       {({ navigation }) => (
-        <ModulePlaceholderScreen
-          title="Journal Entries"
-          icon="📚"
-          phase="Phase 6"
+        <JournalEntriesScreen
           onBack={navigation.goBack}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
         />
       )}
     </Stack.Screen>

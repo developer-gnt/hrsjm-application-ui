@@ -40,7 +40,7 @@ export type MoreStackParamList = {
   [AppRoutes.RECEIPT_DETAILS]: { voucherId: string };
   [AppRoutes.ACCOUNTING]: undefined;
   [AppRoutes.CHART_OF_ACCOUNTS]: undefined;
-  [AppRoutes.GENERAL_LEDGER]: undefined;
+  [AppRoutes.GENERAL_LEDGER]: { accountId?: string; accountName?: string; accountCode?: string | null } | undefined;
   [AppRoutes.JOURNAL_ENTRIES]: undefined;
   [AppRoutes.REPORTS]: undefined;
   [AppRoutes.TRIAL_BALANCE]: undefined;
