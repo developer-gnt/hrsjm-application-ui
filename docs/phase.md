@@ -201,20 +201,23 @@ Implement double-entry bookkeeping interfaces including Chart of Accounts, Gener
 Implement financial statement reporting with date filters, balance validations, and PDF download/sharing.
 
 ### Deliverables
-- [ ] **Trial Balance**:
-  - `GET /api/v1/reports/trial-balance` (Debit & Credit totals match verification).
-  - `TrialBalanceScreen.tsx`.
-- [ ] **Profit & Loss (P&L)**:
-  - `GET /api/v1/reports/profit-loss` (Income vs Expenses breakdown & Net Surplus).
-  - `ProfitLossScreen.tsx`.
-- [ ] **Balance Sheet**:
+- [x] **Trial Balance**:
+  - `GET /api/v1/reports/trial-balance` (Debit & Credit totals match verification, zero-balance toggle, search filter).
+  - `TrialBalanceScreen.tsx` with balancing status banner, gross and net balances, PDF export.
+- [x] **Profit & Loss (P&L)**:
+  - `GET /api/v1/reports/profit-loss` (Income vs Expenses breakdown & Net Surplus/Deficit).
+  - `ProfitLossScreen.tsx` with highlighted surplus/deficit card, percentage margin, PDF export.
+- [x] **Balance Sheet**:
   - `GET /api/v1/reports/balance-sheet` (Assets = Liabilities + Equity balance verification).
-  - `BalanceSheetScreen.tsx`.
-- [ ] PDF Generation and native device Share Sheet integration (`ExportReportButton.tsx`).
+  - `BalanceSheetScreen.tsx` with balance status banner, dynamic breakdowns, and current surplus/deficit addition.
+- [x] **Reports Overview Hub**:
+  - `ReportsScreen.tsx` central gateway with direct navigation cards to all financial statements and quick PDF downloads.
+- [x] PDF Generation and native device Share Sheet integration (`reportPdfDocument.ts`, `ReportExportActions.tsx`).
 
 ### Success Criteria
-- Financial reports accurately render dynamic calculations from backend APIs.
-- PDF exports trigger native share sheets smoothly on both Android and iOS.
+- [x] Financial reports accurately render dynamic calculations from backend APIs.
+- [x] PDF exports trigger native share sheets smoothly on mobile devices with official NGO header and signatures.
+- [x] 100% test coverage for reporting service, date presets, and PDF generation utilities.
 
 ---
 

@@ -42,6 +42,12 @@ import {
   AdminDetailsScreen,
   MyIdCardScreen,
 } from '../../features/admin/profile';
+import {
+  ReportsScreen,
+  TrialBalanceScreen,
+  ProfitLossScreen,
+  BalanceSheetScreen,
+} from '../../features/admin/reports';
 import { AboutScreen } from '../../features/about';
 import { MoreStackParamList } from './NavigationTypes';
 
@@ -171,44 +177,67 @@ export const MoreNavigator: React.FC = () => (
       )}
     </Stack.Screen>
 
-    {/* Financial reports — Phase 7 */}
+    {/* Financial reports — Phase 7 (Real integrated screens) */}
     <Stack.Screen name={AppRoutes.REPORTS}>
       {({ navigation }) => (
-        <ModulePlaceholderScreen
-          title="Financial Reports"
-          icon="📈"
-          phase="Phase 7"
+        <ReportsScreen
           onBack={navigation.goBack}
+          onOpenTrialBalance={() => navigation.navigate(AppRoutes.TRIAL_BALANCE as any)}
+          onOpenProfitLoss={() => navigation.navigate(AppRoutes.PROFIT_LOSS as any)}
+          onOpenBalanceSheet={() => navigation.navigate(AppRoutes.BALANCE_SHEET as any)}
+          onOpenLedger={() => navigation.navigate(AppRoutes.GENERAL_LEDGER as any)}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
         />
       )}
     </Stack.Screen>
+
     <Stack.Screen name={AppRoutes.TRIAL_BALANCE}>
       {({ navigation }) => (
-        <ModulePlaceholderScreen
-          title="Trial Balance"
-          icon="📈"
-          phase="Phase 7"
+        <TrialBalanceScreen
           onBack={navigation.goBack}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
         />
       )}
     </Stack.Screen>
+
     <Stack.Screen name={AppRoutes.PROFIT_LOSS}>
       {({ navigation }) => (
-        <ModulePlaceholderScreen
-          title="Profit & Loss"
-          icon="📈"
-          phase="Phase 7"
+        <ProfitLossScreen
           onBack={navigation.goBack}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
         />
       )}
     </Stack.Screen>
+
     <Stack.Screen name={AppRoutes.BALANCE_SHEET}>
       {({ navigation }) => (
-        <ModulePlaceholderScreen
-          title="Balance Sheet"
-          icon="📈"
-          phase="Phase 7"
+        <BalanceSheetScreen
           onBack={navigation.goBack}
+          onNavigate={(target: string) => {
+            if (target === 'AdminMoreTab') {
+              navigation.navigate('MoreMenu' as any);
+            } else {
+              navigation.navigate(target as any);
+            }
+          }}
         />
       )}
     </Stack.Screen>

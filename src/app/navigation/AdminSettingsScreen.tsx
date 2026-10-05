@@ -113,6 +113,18 @@ export const SETTING_SECTIONS: SettingSection[] = [
         description: 'Manual receipt entries against income accounts.',
         route: AppRoutes.RECEIPT_VOUCHERS,
       },
+      {
+        icon: '📚',
+        title: 'Accounting & Ledger',
+        description: 'Chart of accounts, general ledger, and journal entries.',
+        route: AppRoutes.ACCOUNTING,
+      },
+      {
+        icon: '📈',
+        title: 'Financial Reports',
+        description: 'Trial balance, profit & loss, and balance sheet statements.',
+        route: AppRoutes.REPORTS,
+      },
     ],
   },
   {
