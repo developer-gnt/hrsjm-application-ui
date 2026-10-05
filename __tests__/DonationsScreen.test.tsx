@@ -16,7 +16,8 @@ import {
 import { donationsService } from '../src/features/admin/donations/services/donations.service';
 import { apiClient } from '../src/core';
 import { AddDonationModal } from '../src/features/admin/donations/components/AddDonationModal';
-import { DonationReceiptModal } from '../src/features/admin/donations/components/DonationReceiptModal';
+import { ReceiptDetailsPage } from '../src/features/admin/donations/screens/ReceiptDetailsPage';
+import { buildReceiptHtml } from '../src/features/admin/donations/utils/receiptDocument';
 import { DonationDetailsModal } from '../src/features/admin/donations/components/DonationDetailsModal';
 import { DateRangePickerModal } from '../src/features/admin/donations/components/DateRangePickerModal';
 
@@ -203,41 +204,83 @@ describe('Donations Functionality Tests', () => {
     });
   });
 
-  describe('5. Receipt & Details Modals', () => {
-    const mockRow = {
-      id: 'test-don-1',
-      donorName: 'Aman Shaikh',
-      memberCode: 'MEM000123',
-      phone: '+91 98765 43210',
-      donationTitle: 'General Donation',
-      donationDescription: 'Support for mission activities',
-      amount: 10000,
-      dateText: '28 Sept 2026',
-      timeText: '11:24 AM',
-      statusLabel: 'Completed',
-      statusTone: 'active' as const,
-      hasReceipt: true,
-      donationType: 'ONE_TIME' as const,
-      rawStatus: 'SUCCESS',
+  describe('5. Receipt Details Page', () => {
+    const flushAsyncLoad = async () => {
+      // Let the receipt fetch promise chain settle (service falls back
+      // to preview data when the API is unreachable).
+      for (let i = 0; i < 24; i++) {
+        await Promise.resolve();
+      }
     };
 
-    it('renders DonationReceiptModal with official HRSJM receipt', async () => {
+    const renderReceiptPage = async (donationId: string) => {
       let renderer: ReactTestRenderer.ReactTestRenderer;
-      await ReactTestRenderer.act(() => {
+      await ReactTestRenderer.act(async () => {
         renderer = ReactTestRenderer.create(
-          <DonationReceiptModal
-            visible={true}
-            row={mockRow}
-            onClose={() => undefined}
-          />,
+          <SafeAreaProvider
+            initialMetrics={{
+              insets: { top: 0, bottom: 0, left: 0, right: 0 },
+              frame: { x: 0, y: 0, width: 390, height: 844 },
+            }}
+          >
+            <ReceiptDetailsPage donationId={donationId} />
+          </SafeAreaProvider>,
         );
+        await flushAsyncLoad();
       });
-      const root = renderer!.root;
+      return renderer!.root;
+    };
+
+    const expectValueRendered = (root: any, value: string) => {
+      expect(root.findAllByProps({ children: value }).length).toBeGreaterThan(
+        0,
+      );
+    };
+
+    it('renders the receipt for the selected donation (Aman Shaikh)', async () => {
+      const root = await renderReceiptPage('preview-don-1001');
+      expect(root.findByProps({ children: 'Receipt Details' })).toBeDefined();
       expect(root.findByProps({ children: 'DONATION RECEIPT' })).toBeDefined();
-      expect(root.findByProps({ children: '₹ 10,000' })).toBeDefined();
+      expect(root.findByProps({ children: 'Back to Donation' })).toBeDefined();
+      expectValueRendered(root, 'Aman Shaikh');
+      expectValueRendered(root, 'MEM000123');
+      expectValueRendered(root, '₹10,000');
+      expectValueRendered(root, 'UPI (Google Pay)');
+      expectValueRendered(root, 'UPI1234567890');
+      // Thank-you card is temporarily commented out in the bottom panel.
+      expect(
+        root.findAllByProps({
+          children: 'Thank you for your generous support!',
+        }).length,
+      ).toBe(0);
+    });
+
+    it('renders another donor receipt when a different donation is opened (Saniya Khan)', async () => {
+      const root = await renderReceiptPage('preview-don-1002');
+      expectValueRendered(root, 'Saniya Khan');
+      expectValueRendered(root, 'MEM000124');
+      expectValueRendered(root, '₹5,000');
+      expectValueRendered(root, 'UPI (PhonePe)');
+      expectValueRendered(root, 'UPI987654321102');
     });
 
     it('renders DonationDetailsModal with complete donor & donation information', async () => {
+      const mockRow = {
+        id: 'test-don-1',
+        donorName: 'Aman Shaikh',
+        memberCode: 'MEM000123',
+        phone: '+91 98765 43210',
+        donationTitle: 'General Donation',
+        donationDescription: 'Support for mission activities',
+        amount: 10000,
+        dateText: '28 Sept 2026',
+        timeText: '11:24 AM',
+        statusLabel: 'Completed',
+        statusTone: 'ACTIVE' as const,
+        hasReceipt: true,
+        donationType: 'ONE_TIME' as const,
+        rawStatus: 'SUCCESS',
+      };
       let renderer: ReactTestRenderer.ReactTestRenderer;
       await ReactTestRenderer.act(() => {
         renderer = ReactTestRenderer.create(
@@ -252,6 +295,30 @@ describe('Donations Functionality Tests', () => {
       const root = renderer!.root;
       expect(root.findByProps({ children: 'Donation Details' })).toBeDefined();
       expect(root.findByProps({ children: 'Aman Shaikh' })).toBeDefined();
+    });
+
+    it('builds a standalone receipt document from the selected donation', () => {
+      const html = buildReceiptHtml({
+        id: 'preview-don-1001',
+        receiptNumber: 'HRSJM-2026-1001',
+        receiptDate: '2026-09-28T11:24:00',
+        donorName: 'Aman Shaikh',
+        donorMobile: '+91 98765 43210',
+        donorEmail: null,
+        memberCode: 'MEM000123',
+        cause: 'General Donation',
+        amount: 10000,
+        paymentMethod: 'UPI (Google Pay)',
+        transactionId: 'UPI1234567890',
+        status: 'SUCCESS',
+        notes: null,
+      });
+      expect(html).toContain('DONATION RECEIPT');
+      expect(html).toContain('Aman Shaikh');
+      expect(html).toContain('MEM000123');
+      expect(html).toContain('₹10,000');
+      expect(html).toContain('UPI1234567890');
+      expect(html).toContain('Section 80G');
     });
   });
 

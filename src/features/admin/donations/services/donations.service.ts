@@ -121,6 +121,7 @@ export const donationsService = {
           cause: 'Donation Contribution',
           amount: data.amount,
           paymentMethod: data.payment_method || 'Online',
+          transactionId: data.transaction_id || data.reference_number || null,
           status: 'SUCCESS',
           notes: data.notes || null,
         };
@@ -132,7 +133,9 @@ export const donationsService = {
     const donation = await this.getDonationById(id);
     return {
       id: donation.id,
-      receiptNumber: `RCP-DON-${donation.id.slice(0, 8).toUpperCase()}`,
+      receiptNumber: `HRSJM-${
+        new Date(donation.created_at).getFullYear() || new Date().getFullYear()
+      }-${donation.id.slice(-4).toUpperCase()}`,
       receiptDate: donation.created_at,
       donorName: donation.donor_name,
       donorMobile: donation.donor_mobile,
@@ -141,6 +144,7 @@ export const donationsService = {
       cause: donation.cause || 'General Donation',
       amount: donation.amount,
       paymentMethod: 'Direct Payment',
+      transactionId: null,
       status: donation.status,
       notes: donation.remark,
     };
