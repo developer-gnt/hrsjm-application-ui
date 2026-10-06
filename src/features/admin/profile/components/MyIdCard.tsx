@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   ImageBackground,
   StyleSheet,
   Text,
@@ -9,10 +10,10 @@ import {
 import { AdminColors } from '../../../../core';
 import { AdminProfile } from '../types/profile.types';
 import { QrCode } from './QrCode';
-import { CrestLogo } from './ProfileIcons';
 
-// Background asset — official HRSJM background image
+// Official HRSJM assets
 const ID_CARD_BG = require('../../../../assets/id_card_bg.png');
+const OFFICIAL_LOGO = require('../../../../assets/logo/logo.png');
 
 interface MyIdCardProps {
   profile: AdminProfile;
@@ -93,8 +94,15 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
               },
             ]}
           >
-            {/* Crest Logo */}
-            <CrestLogo size={crestSize} />
+            {/* Official HRSJM Brand Logo (Golden Shield & Dove) */}
+            <Image
+              source={OFFICIAL_LOGO}
+              style={{
+                width: crestSize * 1.15,
+                height: crestSize * 1.15,
+              }}
+              resizeMode="contain"
+            />
 
             {/* Identity Text */}
             <View style={[styles.headerIdentity, { marginLeft: width * 0.022 }]}>
@@ -152,6 +160,28 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
             },
           ]}
         >
+          {/* Optional Member Photo / Avatar */}
+          {profile.avatar ? (
+            <View
+              style={[
+                styles.avatarBox,
+                {
+                  width: width * 0.165,
+                  height: width * 0.195,
+                  borderRadius: width * 0.02,
+                  marginRight: width * 0.025,
+                  borderWidth: Math.max(1, width * 0.004),
+                },
+              ]}
+            >
+              <Image
+                source={{ uri: profile.avatar }}
+                style={styles.avatarPhoto}
+                resizeMode="cover"
+              />
+            </View>
+          ) : null}
+
           {/* Left Column: Name, Type, Info Rows */}
           <View style={styles.bodyLeft}>
             {/* Member Name */}
@@ -329,6 +359,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  avatarBox: {
+    borderColor: '#CAA048',
+    backgroundColor: '#0A2550',
+    overflow: 'hidden',
+  },
+  avatarPhoto: {
+    width: '100%',
+    height: '100%',
   },
   bodyLeft: {
     flex: 1,

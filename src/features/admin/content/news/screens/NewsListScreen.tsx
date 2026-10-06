@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -21,7 +20,8 @@ import {
   AppErrorState,
   AppSearchBar,
   SkeletonCard,
-} from '../../../../../core/components';
+  feedback,
+} from '../../../../../core';
 import { NewsCard, NewsListHeader } from '../components/NewsCard';
 import { showNewsActionMenu } from '../components/NewsActionMenu';
 import { NewsFilterSheet } from '../components/NewsFilterSheet';
@@ -144,7 +144,7 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
       onAddNews();
       return;
     }
-    Alert.alert('Add News', 'Create News is not configured.');
+    feedback.info('Add News', 'Create News is not configured.');
   };
 
   const handleNewsPress = (news: NewsListItem) => {
@@ -152,7 +152,7 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
       onViewNews(news);
       return;
     }
-    Alert.alert(news.title, news.summary);
+    feedback.info(news.title, news.summary);
   };
 
   const handleNewsMenu = (news: NewsListItem) => showNewsActionMenu(news);
@@ -165,7 +165,7 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
       return;
     }
     if (tab !== 'news') {
-      Alert.alert(
+      feedback.info(
         'Navigation',
         'Use the bottom navigation bar to switch between modules.',
       );
@@ -182,87 +182,94 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
     setRefreshing(false);
   };
 
+  const renderListHeader = () => (
+    <View>
+      {/* Page header: title/subtitle + Add News */}
+      <View style={styles.pageHeader}>
+        <View style={styles.pageHeaderText}>
+          <Text style={styles.pageTitle}>News</Text>
+          <Text
+            style={styles.pageSubtitle}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            numberOfLines={1}
+          >
+            Manage and publish news, updates and announcements.
+          </Text>
+        </View>
+        <AppButton
+          title="Add News"
+          size="sm"
+          onPress={handleAddNews}
+          icon={<Text style={styles.addIcon}>+</Text>}
+          textStyle={styles.addButtonText}
+          style={styles.addButton}
+        />
+      </View>
+
+      <View style={styles.statsSection}>
+        <NewsSummaryStats stats={stats} />
+      </View>
+
+      <View style={styles.searchRow}>
+        <AppSearchBar
+          placeholder="Search by title, category or keyword..."
+          value={searchQuery}
+          onSearch={setSearchQuery}
+          containerStyle={styles.searchBar}
+        />
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            (filterSheetVisible || activeCategory !== null || activeStatus !== 'ALL') &&
+              styles.filterButtonActive,
+          ]}
+          onPress={() => setFilterSheetVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Filters"
+          accessibilityState={{ expanded: filterSheetVisible }}
+        >
+          <Text style={styles.filterIcon}>▾</Text>
+          <Text style={styles.filterText}>Filters</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.tabsSection}>
+        <NewsStatusTabs
+          tabs={statusTabs}
+          activeTab={activeStatus}
+          onTabChange={handleStatusChange}
+        />
+      </View>
+
+      <NewsListHeader />
+    </View>
+  );
+
   return (
     <View style={styles.root}>
+      {/* Unified official Admin Header - Fixed at Top */}
       <AdminHeader />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        {/* Page header: title/subtitle + Add News */}
-        <View style={styles.pageHeader}>
-          <View style={styles.pageHeaderText}>
-            <Text style={styles.pageTitle}>News</Text>
-            <Text
-              style={styles.pageSubtitle}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              numberOfLines={1}
-            >
-              Manage and publish news, updates and announcements.
-            </Text>
-          </View>
-          <AppButton
-            title="Add News"
-            size="sm"
-            onPress={handleAddNews}
-            icon={<Text style={styles.addIcon}>+</Text>}
-            textStyle={styles.addButtonText}
-            style={styles.addButton}
-          />
-        </View>
-
-        <View style={styles.statsSection}>
-          <NewsSummaryStats stats={stats} />
-        </View>
-
-        <View style={styles.searchRow}>
-          <AppSearchBar
-            placeholder="Search by title, category or keyword..."
-            value={searchQuery}
-            onSearch={setSearchQuery}
-            containerStyle={styles.searchBar}
-          />
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              (filterSheetVisible || activeCategory !== null || activeStatus !== 'ALL') &&
-                styles.filterButtonActive,
-            ]}
-            onPress={() => setFilterSheetVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Filters"
-            accessibilityState={{ expanded: filterSheetVisible }}
-          >
-            <Text style={styles.filterIcon}>▾</Text>
-            <Text style={styles.filterText}>Filters</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.tabsSection}>
-          <NewsStatusTabs
-            tabs={statusTabs}
-            activeTab={activeStatus}
-            onTabChange={handleStatusChange}
-          />
-        </View>
-
-        {uiState === 'loading' ? (
-          <LoadingListView />
-        ) : uiState === 'error' ? (
-          <AppErrorState
-            title="Unable to load news."
-            message="Something went wrong while loading news. Please try again."
-            onRetry={handleRetry}
-            style={styles.errorState}
-          />
-        ) : (
-          <FlatList
-            data={filteredNews}
-            keyExtractor={item => item.id}
-            ListHeaderComponent={NewsListHeader}
-            renderItem={({ item }) => (
-              <NewsCard news={item} onPress={handleNewsPress} onMorePress={handleNewsMenu} />
-            )}
-            ListEmptyComponent={
+        <FlatList
+          data={uiState === 'loading' ? [] : filteredNews}
+          keyExtractor={item => item.id}
+          ListHeaderComponent={renderListHeader}
+          renderItem={({ item }) => (
+            <NewsCard news={item} onPress={handleNewsPress} onMorePress={handleNewsMenu} />
+          )}
+          ListEmptyComponent={
+            uiState === 'loading' ? (
+              <LoadingListView />
+            ) : uiState === 'error' ? (
+              <AppErrorState
+                title="Unable to load news."
+                message="Something went wrong while loading news. Please try again."
+                onRetry={handleRetry}
+                style={styles.errorState}
+              />
+            ) : (
               <View style={styles.emptyContainer}>
                 <AppEmptyState
                   icon="🔍"
@@ -272,21 +279,21 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
                   onAction={hasActiveFilters ? clearFilters : undefined}
                 />
               </View>
-            }
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                tintColor={AdminColors.primary}
-                colors={[AdminColors.primary]}
-              />
-            }
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-          />
-        )}
+            )
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={AdminColors.primary}
+              colors={[AdminColors.primary]}
+            />
+          }
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
       </SafeAreaView>
 
       <NewsFilterSheet

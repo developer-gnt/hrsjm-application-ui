@@ -83,7 +83,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <View style={styles.profileHero}>
               <View style={styles.avatarWrap}>
                 <Image
-                  source={{ uri: DEFAULT_ADMIN_AVATAR }}
+                  source={{ uri: user?.avatar || DEFAULT_ADMIN_AVATAR }}
                   style={styles.avatar}
                 />
                 <View style={styles.statusDot} />

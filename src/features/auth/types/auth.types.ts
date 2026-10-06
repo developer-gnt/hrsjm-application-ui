@@ -15,6 +15,7 @@ export interface UserProfile {
   full_name: string;
   mobile_number: string;
   email: string | null;
+  avatar?: string | null;
   status: string;
   roles: UserRoleInfo[];
   created_at: string;

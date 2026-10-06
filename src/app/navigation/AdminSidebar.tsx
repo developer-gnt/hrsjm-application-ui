@@ -56,9 +56,8 @@ export const MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
     items: [
       { id: 'dashboard', icon: '🏠', title: 'Dashboard', target: AppRoutes.ADMIN_DASHBOARD_TAB },
       { id: 'members', icon: '👥', title: 'Members Directory', target: AppRoutes.ADMIN_MEMBERS_TAB },
-      { id: 'applications', icon: '📄', title: 'Applications Review', target: AppRoutes.ADMIN_APPLICATIONS_TAB },
+      { id: 'assistance', icon: '🤝', title: 'Donation Seekers & Aid', target: AppRoutes.ADMIN_APPLICATIONS_TAB },
       { id: 'complaints', icon: '💬', title: 'Support & Complaints', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
-      { id: 'assistance', icon: '🤝', title: 'Donation Seekers', target: AppRoutes.ADMIN_APPLICATIONS_TAB },
     ],
   },
   {
@@ -99,6 +98,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
   const signOut = useAuthStore(state => state.signOut);
+  const avatarUrl = user?.avatar || DEFAULT_ADMIN_AVATAR;
 
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -199,8 +199,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </View>
 
             {/* User Profile Summary */}
-            <View style={styles.userCard}>
-              <Image source={{ uri: DEFAULT_ADMIN_AVATAR }} style={styles.userAvatar} />
+            <TouchableOpacity
+              style={styles.userCard}
+              activeOpacity={0.7}
+              onPress={() => handleSelect(AppRoutes.MY_PROFILE)}
+            >
+              <Image source={{ uri: avatarUrl }} style={styles.userAvatar} />
               <View style={styles.userInfo}>
                 <Text style={styles.userName} numberOfLines={1}>
                   {user?.full_name || 'Admin User'}
@@ -209,7 +213,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   {(user?.roles?.[0]?.name || 'SUPER_ADMIN').replace(/_/g, ' ')}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Grouped Navigation Links */}

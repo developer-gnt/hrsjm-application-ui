@@ -18,6 +18,7 @@ import { useAuth } from '../../../../core/auth/AuthContext';
 import { can } from '../../../../core/permissions/permissions';
 import { colors, spacing, typography } from '../../../../core/theme/theme';
 import { formatDateTime } from '../../../../core/utils/format';
+import { feedback } from '../../../../core/feedback/FeedbackContext';
 import type { AppStackParamList } from '../../../../core/navigation/types';
 import { TicketStatusBadge } from '../components/TicketStatusBadge';
 import TicketStatusModal from '../components/TicketStatusModal';
@@ -70,17 +71,24 @@ export function TicketDetailsScreen({ route, navigation }: ScreenProps) {
     const result = await run;
     if (result.ok && ticket) {
       // Reflect the transition locally; useTicketDetails refreshes on focus.
+      const newStatus =
+        modalAction === 'START_REVIEW'
+          ? 'UNDER_REVIEW'
+          : modalAction === 'RESOLVE'
+            ? 'RESOLVED'
+            : 'CLOSED';
       applyUpdate({
         ...ticket,
-        status:
-          modalAction === 'START_REVIEW'
-            ? 'UNDER_REVIEW'
-            : modalAction === 'RESOLVE'
-              ? 'RESOLVED'
-              : 'CLOSED',
+        status: newStatus,
         resolved_at: modalAction === 'RESOLVE' ? new Date().toISOString() : ticket.resolved_at,
       });
       setModalAction(null);
+      feedback.success(
+        'Ticket Updated',
+        `Ticket #${shortTicketId(ticket.id)} status changed to ${ticketStatusMeta(newStatus).label}.`,
+      );
+    } else if (!result.ok && 'error' in result && result.error) {
+      feedback.error('Update Failed', result.error);
     }
   };
 

@@ -33,6 +33,11 @@ import {
   AssistanceDetailsScreen,
   AssistanceDocumentsScreen,
 } from '../../features/admin/assistance';
+import {
+  SupportTicketsScreen,
+  TicketDetailsScreen,
+  TicketChatScreen,
+} from '../../features/admin/support';
 import { NotificationsScreen } from '../../features/admin/notifications';
 import { ProfileSettingsScreen } from '../../features/admin/settings';
 import { DonationsScreen, ReceiptDetailsPage } from '../../features/admin/donations';
@@ -510,6 +515,20 @@ export const MoreNavigator: React.FC = () => (
     <Stack.Screen
       name={AppRoutes.ASSISTANCE_DOCUMENTS}
       component={AssistanceDocumentsScreen as any}
+    />
+
+    {/* Complaints & Support — Ticket Details and Chat */}
+    <Stack.Screen
+      name={AppRoutes.SUPPORT_TICKETS}
+      component={SupportTicketsScreen}
+    />
+    <Stack.Screen
+      name={AppRoutes.TICKET_DETAILS}
+      component={TicketDetailsScreen as any}
+    />
+    <Stack.Screen
+      name={AppRoutes.TICKET_CHAT}
+      component={TicketChatScreen as any}
     />
   </Stack.Navigator>
 );

@@ -26,7 +26,7 @@ import { AppBadge } from '../../../../core/components/common/AppBadge';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
 import { MyIdCard } from '../components/MyIdCard';
-import { ProfileToast } from '../components/ProfileToast';
+import { ProfileToast, ToastState } from '../components/ProfileToast';
 import {
   DownloadIcon,
   ShareIcon,
@@ -47,18 +47,17 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
   const { width: windowWidth } = useWindowDimensions();
   const profile = useProfileStore(state => state.profile);
 
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | ToastState | null>(null);
   const { download, share, busyAction } = useIdCardFiles({
     onMessage: setToastMessage,
+    profile,
   });
 
+  const fetchProfile = useProfileStore(state => state.fetchProfile);
+
   useEffect(() => {
-    if (!toastMessage) {
-      return undefined;
-    }
-    const timer = setTimeout(() => setToastMessage(null), 3500);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleBack = () => {
     if (onBack) {
@@ -168,7 +167,10 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
 
       {toastMessage ? (
         <View style={[styles.toastHost, { top: insets.top + 70 }]}>
-          <ProfileToast message={toastMessage} />
+          <ProfileToast
+            message={toastMessage}
+            onDismiss={() => setToastMessage(null)}
+          />
         </View>
       ) : null}
     </View>

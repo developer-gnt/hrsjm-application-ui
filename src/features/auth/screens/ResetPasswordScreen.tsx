@@ -4,7 +4,6 @@ import {
   ScrollView,
   View,
   Text,
-  Alert,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppHeader } from '../../../core/components/common/AppHeader';
@@ -13,6 +12,7 @@ import { AppInput } from '../../../core/components/common/AppInput';
 import { AdminColors } from '../../../core/theme/colors';
 import { Typography } from '../../../core/theme/typography';
 import { Spacing, BorderRadius } from '../../../core/theme/spacing';
+import { feedback } from '../../../core/feedback/FeedbackContext';
 import { ApiError } from '../../../core/api/api-error';
 import { authService } from '../services/auth.service';
 import {
@@ -67,10 +67,15 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
         parsed.data.password,
         parsed.data.confirm_password,
       );
-      Alert.alert(
-        'Password updated',
-        'Your password has been changed. Please login with the new password.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }],
+      feedback.success(
+        'Password Updated',
+        'Your password has been changed successfully. Please sign in with your new password.',
+        {
+          primaryAction: {
+            text: 'Sign In Now',
+            onPress: () => navigation.navigate('Login'),
+          },
+        },
       );
     } catch (error) {
       if (error instanceof ApiError && error.statusCode === 400) {

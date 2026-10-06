@@ -20,7 +20,7 @@ import { ModulePlaceholderScreen } from './ModulePlaceholderScreen';
 import { AdminDashboardScreen } from '../../features/admin/dashboard';
 import { MembersScreen } from '../../features/admin/members/screens/MembersScreen';
 import { AssistanceRequestsScreen } from '../../features/admin/assistance';
-import { SupportTicketsScreen } from '../../features/admin/support';
+import { ComplaintsNavigator } from './ComplaintsNavigator';
 import { AdminTabParamList } from './NavigationTypes';
 import {
   House,
@@ -86,7 +86,7 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
     label: 'Complaints',
     Icon: MessageSquare,
     icon: '💬',
-    component: SupportTicketsScreen,
+    component: ComplaintsNavigator,
   },
   {
     name: AppRoutes.ADMIN_MORE_TAB,

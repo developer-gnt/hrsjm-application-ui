@@ -30,7 +30,8 @@ import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
 import { ProfileSectionCard } from '../components/ProfileSectionCard';
 import { ProfileInfoRow } from '../components/ProfileInfoRow';
-import { ProfileToast } from '../components/ProfileToast';
+import { ProfileToast, ToastState } from '../components/ProfileToast';
+import { AvatarPickerModal } from '../components/AvatarPickerModal';
 import { MyIdCard } from '../components/MyIdCard';
 import {
   PersonIcon,
@@ -62,29 +63,37 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const profile = useProfileStore(state => state.profile);
+  const updateAvatar = useProfileStore(state => state.updateAvatar);
   const consumeStagedMessage = useProfileStore(
     state => state.consumeStagedMessage,
   );
 
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | ToastState | null>(null);
   const { download, busyAction } = useIdCardFiles({
     onMessage: setToastMessage,
+    profile,
   });
 
-  // Toast auto-dismiss (same 3.5s cadence as the Donations screen).
+  const fetchProfile = useProfileStore(state => state.fetchProfile);
+
   useEffect(() => {
-    if (!toastMessage) {
-      return undefined;
-    }
-    const timer = setTimeout(() => setToastMessage(null), 3500);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const handleSelectAvatar = async (url: string | null) => {
+    await updateAvatar(url);
+    setToastMessage({
+      message: 'Profile photo updated successfully.',
+      variant: 'success',
+    });
+  };
 
   // Edit screens stage success messages here before navigating back.
   useEffect(() => {
     const staged = consumeStagedMessage();
     if (staged) {
-      setToastMessage(staged);
+      setToastMessage({ message: staged, variant: 'success' });
     }
   }, [consumeStagedMessage]);
 
@@ -136,9 +145,25 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           Manage your personal information and account settings.
         </Text>
 
-        {/* Admin summary card */}
+        {/* Admin summary card with Avatar Pencil Edit */}
         <View style={[styles.summaryCard, { marginTop: Spacing.base }]}>
-          <AppAvatar name={profile.accountName} size={46} />
+          <TouchableOpacity
+            style={styles.avatarTouchable}
+            onPress={() => setAvatarPickerVisible(true)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
+          >
+            <AppAvatar
+              name={profile.accountName}
+              imageUrl={profile.avatar}
+              size={50}
+            />
+            <View style={styles.pencilBadge}>
+              <Text style={styles.pencilIcon}>✏️</Text>
+            </View>
+          </TouchableOpacity>
+
           <View style={styles.summaryIdentity}>
             <Text style={styles.summaryName} numberOfLines={1}>
               {profile.accountName}
@@ -203,11 +228,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             value={profile.role}
           />
           <ProfileInfoRow
-            icon={<PersonIcon size={16} color={AdminColors.textSecondary} />}
-            label="Department"
-            value={profile.department}
-          />
-          <ProfileInfoRow
             icon={<BadgeCheckIcon size={16} />}
             label="Account Status"
             value={profile.accountStatus}
@@ -259,10 +279,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         />
       </View>
 
+      {/* Avatar Picker Modal */}
+      <AvatarPickerModal
+        visible={avatarPickerVisible}
+        currentAvatarUrl={profile.avatar}
+        onClose={() => setAvatarPickerVisible(false)}
+        onSelectAvatar={handleSelectAvatar}
+      />
+
       {/* Floating toast */}
       {toastMessage ? (
         <View style={[styles.toastHost, { top: insets.top + 70 }]}>
-          <ProfileToast message={toastMessage} />
+          <ProfileToast
+            message={toastMessage}
+            onDismiss={() => setToastMessage(null)}
+          />
         </View>
       ) : null}
     </View>
@@ -304,6 +335,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     ...Shadows.card,
+  },
+  avatarTouchable: {
+    position: 'relative',
+  },
+  pencilBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#0F172A',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  pencilIcon: {
+    fontSize: 9.5,
+    lineHeight: 11,
   },
   summaryIdentity: {
     flex: 1,

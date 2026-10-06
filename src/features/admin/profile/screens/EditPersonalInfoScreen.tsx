@@ -98,7 +98,7 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
 
     setIsSaving(true);
     try {
-      updatePersonalInfo({
+      await updatePersonalInfo({
         fullName: form.fullName.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),

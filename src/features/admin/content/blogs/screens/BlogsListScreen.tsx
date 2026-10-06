@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -21,7 +20,8 @@ import {
   AppErrorState,
   AppSearchBar,
   SkeletonCard,
-} from '../../../../../core/components';
+  feedback,
+} from '../../../../../core';
 import { BlogCard, BlogListHeader } from '../components/BlogCard';
 import { BlogFilterSheet } from '../components/BlogFilterSheet';
 import { BlogStatusTabs } from '../components/BlogStatusTabs';
@@ -183,7 +183,7 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
       onAddBlog();
       return;
     }
-    Alert.alert('Add Blog', 'Create Blog is not configured.');
+    feedback.info('Add Blog', 'Create Blog is not configured.');
   };
 
   const handleBlogPress = (blog: BlogListItem) => {
@@ -191,7 +191,7 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
       onOpenBlog(blog);
       return;
     }
-    Alert.alert(blog.title, blog.excerpt);
+    feedback.info(blog.title, blog.excerpt);
   };
 
   const handleBlogEdit = (blog: BlogListItem) => {
@@ -211,22 +211,22 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
         onEditBlog?.(current);
       } else if (actionKey === 'publish') {
         await updateBlog(current.id, { status: 'PUBLISHED' });
-        Alert.alert('Published', 'Article has been published.');
+        feedback.success('Published', 'Article has been published successfully.');
       } else if (actionKey === 'unpublish') {
         await updateBlog(current.id, { status: 'DRAFT' });
-        Alert.alert('Unpublished', 'Article set to draft.');
+        feedback.warning('Unpublished', 'Article reverted to draft mode.');
       } else if (actionKey === 'archive') {
         await updateBlog(current.id, { status: 'ARCHIVED' });
-        Alert.alert('Archived', 'Article has been archived.');
+        feedback.info('Archived', 'Article has been archived.');
       } else if (actionKey === 'restore') {
         await updateBlog(current.id, { status: 'PUBLISHED' });
-        Alert.alert('Restored', 'Article restored to published.');
+        feedback.success('Restored', 'Article restored to published.');
       } else if (actionKey === 'delete') {
         await deleteBlog(current.id);
-        Alert.alert('Deleted', 'Article has been removed.');
+        feedback.success('Deleted', 'Article has been removed.');
       }
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Action failed.');
+      feedback.error('Error', err?.message || 'Action failed.');
     }
   };
 
@@ -238,7 +238,7 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
       return;
     }
     if (tab !== 'blogs') {
-      Alert.alert(
+      feedback.info(
         'Navigation',
         'Use the bottom navigation bar to switch between modules.',
       );
@@ -255,92 +255,99 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
     setRefreshing(false);
   };
 
+  const renderListHeader = () => (
+    <View>
+      {/* Page header: title/subtitle + Add Blog */}
+      <View style={styles.pageHeader}>
+        <View style={styles.pageHeaderText}>
+          <Text style={styles.pageTitle}>Blogs</Text>
+          <Text
+            style={styles.pageSubtitle}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            numberOfLines={1}
+          >
+            Create, manage and publish blog articles.
+          </Text>
+        </View>
+        <AppButton
+          title="Add Blog"
+          size="sm"
+          onPress={handleAddBlog}
+          icon={<Text style={styles.addIcon}>+</Text>}
+          textStyle={styles.addButtonText}
+          style={styles.addButton}
+        />
+      </View>
+
+      <View style={styles.statsSection}>
+        <BlogSummaryCard stats={stats} />
+      </View>
+
+      <View style={styles.searchRow}>
+        <AppSearchBar
+          placeholder="Search by title, category or keyword..."
+          value={searchQuery}
+          onSearch={setSearchQuery}
+          containerStyle={styles.searchBar}
+        />
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            (filterSheetVisible || activeCategory !== null || activeStatus !== 'ALL' || activeDateRange !== 'ANY') &&
+              styles.filterButtonActive,
+          ]}
+          onPress={() => setFilterSheetVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Filters"
+          accessibilityState={{ expanded: filterSheetVisible }}
+        >
+          <Text style={styles.filterIcon}>▾</Text>
+          <Text style={styles.filterText}>Filters</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.tabsSection}>
+        <BlogStatusTabs
+          tabs={statusTabs}
+          activeTab={activeStatus}
+          onTabChange={handleStatusChange}
+        />
+      </View>
+
+      <BlogListHeader />
+    </View>
+  );
+
   return (
     <View style={styles.root}>
+      {/* Unified official Admin Header - Fixed at Top */}
       <AdminHeader />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        {/* Page header: title/subtitle + Add Blog */}
-        <View style={styles.pageHeader}>
-          <View style={styles.pageHeaderText}>
-            <Text style={styles.pageTitle}>Blogs</Text>
-            <Text
-              style={styles.pageSubtitle}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              numberOfLines={1}
-            >
-              Create, manage and publish blog articles.
-            </Text>
-          </View>
-          <AppButton
-            title="Add Blog"
-            size="sm"
-            onPress={handleAddBlog}
-            icon={<Text style={styles.addIcon}>+</Text>}
-            textStyle={styles.addButtonText}
-            style={styles.addButton}
-          />
-        </View>
-
-        <View style={styles.statsSection}>
-          <BlogSummaryCard stats={stats} />
-        </View>
-
-        <View style={styles.searchRow}>
-          <AppSearchBar
-            placeholder="Search by title, category or keyword..."
-            value={searchQuery}
-            onSearch={setSearchQuery}
-            containerStyle={styles.searchBar}
-          />
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              (filterSheetVisible || activeCategory !== null || activeStatus !== 'ALL' || activeDateRange !== 'ANY') &&
-                styles.filterButtonActive,
-            ]}
-            onPress={() => setFilterSheetVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Filters"
-            accessibilityState={{ expanded: filterSheetVisible }}
-          >
-            <Text style={styles.filterIcon}>▾</Text>
-            <Text style={styles.filterText}>Filters</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.tabsSection}>
-          <BlogStatusTabs
-            tabs={statusTabs}
-            activeTab={activeStatus}
-            onTabChange={handleStatusChange}
-          />
-        </View>
-
-        {uiState === 'loading' ? (
-          <LoadingListView />
-        ) : uiState === 'error' ? (
-          <AppErrorState
-            title="Unable to load blogs."
-            message="Something went wrong while loading blogs. Please try again."
-            onRetry={handleRetry}
-            style={styles.errorState}
-          />
-        ) : (
-          <FlatList
-            data={filteredBlogs}
-            keyExtractor={item => item.id}
-            ListHeaderComponent={BlogListHeader}
-            renderItem={({ item }) => (
-              <BlogCard
-                blog={item}
-                onPress={handleBlogPress}
-                onEditPress={handleBlogEdit}
-                onMorePress={handleBlogMenu}
+        <FlatList
+          data={uiState === 'loading' ? [] : filteredBlogs}
+          keyExtractor={item => item.id}
+          ListHeaderComponent={renderListHeader}
+          renderItem={({ item }) => (
+            <BlogCard
+              blog={item}
+              onPress={handleBlogPress}
+              onEditPress={handleBlogEdit}
+              onMorePress={handleBlogMenu}
+            />
+          )}
+          ListEmptyComponent={
+            uiState === 'loading' ? (
+              <LoadingListView />
+            ) : uiState === 'error' ? (
+              <AppErrorState
+                title="Unable to load blogs."
+                message="Something went wrong while loading blogs. Please try again."
+                onRetry={handleRetry}
+                style={styles.errorState}
               />
-            )}
-            ListEmptyComponent={
+            ) : (
               <View style={styles.emptyContainer}>
                 <AppEmptyState
                   icon="🔍"
@@ -350,21 +357,21 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
                   onAction={hasActiveFilters ? clearFilters : undefined}
                 />
               </View>
-            }
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                tintColor={AdminColors.primary}
-                colors={[AdminColors.primary]}
-              />
-            }
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-          />
-        )}
+            )
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={AdminColors.primary}
+              colors={[AdminColors.primary]}
+            />
+          }
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
       </SafeAreaView>
 
       <BlogFilterSheet

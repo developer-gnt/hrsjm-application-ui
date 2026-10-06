@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppHeader } from '../../../core/components/common/AppHeader';
@@ -17,6 +16,7 @@ import { AppInput } from '../../../core/components/common/AppInput';
 import { AdminColors } from '../../../core/theme/colors';
 import { Typography } from '../../../core/theme/typography';
 import { Spacing, BorderRadius, Shadows } from '../../../core/theme/spacing';
+import { feedback } from '../../../core/feedback/FeedbackContext';
 import { ApiError } from '../../../core/api/api-error';
 import {
   ACCOUNT_TYPE_OPTIONS,
@@ -141,7 +141,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
 
   const handleFinish = () => {
     completeRegistration();
-    Alert.alert('Welcome to HRSJM 🎉', 'Your account is ready.');
+    feedback.success(
+      'Welcome to HRSJM 🎉',
+      'Your account is ready and activated. You can now access your dashboard.',
+    );
   };
 
   const passwordChecks = [

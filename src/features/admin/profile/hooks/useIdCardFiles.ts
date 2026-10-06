@@ -1,15 +1,11 @@
-/**
- * Shared download/share behaviour for the member ID card. Both the My
- * Profile screen (inline card) and the My ID Card detail page use this
- * hook so the real-PDF delivery logic exists in exactly one place.
- */
 import { useCallback, useState } from 'react';
-import { Platform } from 'react-native';
 import { AdminProfile } from '../types/profile.types';
+import { ToastState } from '../components/ProfileToast';
 import {
   downloadIdCardPdfNative,
   downloadIdCardPdfWeb,
   isWebEnvironment,
+  prewarmIdCardPdf,
   shareIdCardPdfNative,
   shareIdCardPdfWeb,
 } from '../utils/idCardDocument';
@@ -17,34 +13,48 @@ import {
 export type IdCardAction = 'download' | 'share' | null;
 
 interface UseIdCardFilesOptions {
-  onMessage: (message: string) => void;
+  onMessage: (message: string | ToastState) => void;
+  profile?: AdminProfile;
 }
 
-export const useIdCardFiles = ({ onMessage }: UseIdCardFilesOptions) => {
+export const useIdCardFiles = ({ onMessage, profile }: UseIdCardFilesOptions) => {
   const [busyAction, setBusyAction] = useState<IdCardAction>(null);
 
+  // Background prewarm queue
+  if (profile) {
+    prewarmIdCardPdf(profile).catch(() => undefined);
+  }
+
   const download = useCallback(
-    async (profile: AdminProfile) => {
+    async (targetProfile: AdminProfile) => {
       if (busyAction) return;
       setBusyAction('download');
+      onMessage({ message: 'Downloading ID card PDF...', variant: 'loading' });
       try {
-        if (Platform.OS !== 'web' || !isWebEnvironment()) {
-          const result = await downloadIdCardPdfNative(profile);
-          onMessage(
-            result === 'downloaded'
-              ? 'ID card PDF saved to your device downloads folder.'
-              : 'ID card PDF opened. Use the save option in the preview to keep it on your device.',
-          );
+        if (isWebEnvironment()) {
+          const result = await downloadIdCardPdfWeb(targetProfile);
+          onMessage({
+            message:
+              result === 'downloaded'
+                ? 'ID card PDF downloaded.'
+                : 'ID card PDF opened.',
+            variant: 'success',
+          });
         } else {
-          const result = await downloadIdCardPdfWeb(profile);
-          onMessage(
-            result === 'downloaded'
-              ? 'ID card PDF downloaded.'
-              : 'Your browser does not allow direct file saving. The ID card has been opened so you can save it.',
-          );
+          const result = await downloadIdCardPdfNative(targetProfile);
+          onMessage({
+            message:
+              result === 'downloaded'
+                ? 'ID card PDF saved to Downloads folder.'
+                : 'ID card PDF opened in preview.',
+            variant: 'success',
+          });
         }
-      } catch {
-        onMessage('Unable to generate the ID card PDF. Please try again.');
+      } catch (err: any) {
+        onMessage({
+          message: err?.message || 'Unable to download ID card PDF.',
+          variant: 'error',
+        });
       } finally {
         setBusyAction(null);
       }
@@ -53,26 +63,38 @@ export const useIdCardFiles = ({ onMessage }: UseIdCardFilesOptions) => {
   );
 
   const share = useCallback(
-    async (profile: AdminProfile) => {
+    async (targetProfile: AdminProfile) => {
       if (busyAction) return;
       setBusyAction('share');
+      onMessage({ message: 'Preparing ID card PDF...', variant: 'loading' });
       try {
-        if (Platform.OS !== 'web' || !isWebEnvironment()) {
-          // Native share sheet receives the actual PDF file; a user
-          // cancel is normal behaviour and returns 'cancelled' silently.
-          await shareIdCardPdfNative(profile);
-        } else {
-          const result = await shareIdCardPdfWeb(profile);
+        if (isWebEnvironment()) {
+          const result = await shareIdCardPdfWeb(targetProfile);
           if (result === 'opened') {
-            onMessage(
-              'File sharing is not available in this browser. The ID card PDF has been opened so you can save or attach it.',
-            );
+            onMessage({
+              message: 'ID card PDF opened. You can now save or attach it.',
+              variant: 'success',
+            });
+          } else if (result === 'shared') {
+            onMessage({
+              message: 'ID card PDF shared successfully.',
+              variant: 'success',
+            });
+          }
+        } else {
+          const result = await shareIdCardPdfNative(targetProfile);
+          if (result === 'shared') {
+            onMessage({
+              message: 'ID card PDF shared successfully.',
+              variant: 'success',
+            });
           }
         }
       } catch (error: any) {
-        onMessage(
-          error?.message || 'Unable to share ID card. Please try again.',
-        );
+        onMessage({
+          message: error?.message || 'Unable to share ID card.',
+          variant: 'error',
+        });
       } finally {
         setBusyAction(null);
       }

@@ -7,7 +7,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   TouchableOpacity,
   TextStyle,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { AppButton } from '../../../core/components/common/AppButton';
 import { AdminColors } from '../../../core/theme/colors';
 import { Typography } from '../../../core/theme/typography';
 import { Spacing, BorderRadius } from '../../../core/theme/spacing';
+import { feedback } from '../../../core/feedback/FeedbackContext';
 import { ApiError } from '../../../core/api/api-error';
 import { appPreferences } from '../../../core/storage/app-storage';
 import { AuthLogo } from '../components/AuthLogo';
@@ -76,14 +76,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     if (!isAvailable || appPreferences.isBiometricEnabled()) {
       return;
     }
-    Alert.alert(
-      'Enable Biometric Unlock',
-      `Use ${biometryLabel} to unlock the app next time?`,
-      [
-        { text: 'Not now', style: 'cancel', onPress: () => setEnabled(false) },
-        { text: 'Enable', onPress: () => setEnabled(true) },
-      ],
-    );
+    feedback.confirm({
+      title: 'Enable Biometric Unlock',
+      message: `Would you like to use ${biometryLabel} to quickly unlock the HRSJM app next time?`,
+      confirmText: 'Enable',
+      cancelText: 'Not Now',
+      onConfirm: () => setEnabled(true),
+      onCancel: () => setEnabled(false),
+    });
   }, [isAvailable, biometryLabel, setEnabled]);
 
   const handleSubmit = async (values: LoginFormData, rememberMe: boolean) => {
@@ -181,9 +181,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           <AppButton
             title="Continue with Google"
             onPress={() =>
-              Alert.alert(
-                'Coming soon',
-                'Google sign-in will be available in a future update.',
+              feedback.info(
+                'Coming Soon',
+                'Google sign-in integration will be available in the upcoming release.',
               )
             }
             variant="outline"

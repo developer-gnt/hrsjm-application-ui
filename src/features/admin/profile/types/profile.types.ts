@@ -17,7 +17,6 @@ export interface PersonalInfoInput {
 /** Values editable through the Admin Details screen. */
 export interface AdminDetailsInput {
   role: string;
-  department: string;
   accountStatus: AccountStatus;
 }
 
@@ -27,6 +26,8 @@ export interface AdminProfile extends PersonalInfoInput, AdminDetailsInput {
   accountName: string;
   /** Administrator identifier shown as the ADMIN001 badge. */
   adminId: string;
+  /** Profile photo / avatar URL. */
+  avatar?: string | null;
   /** Membership card identity (My ID Card section). */
   membershipType: string;
   memberId: string;

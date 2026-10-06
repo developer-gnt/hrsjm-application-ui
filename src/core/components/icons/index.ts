@@ -62,6 +62,10 @@ export {
   FileCheck,
   ExternalLink,
   File,
+  Camera,
+  Image as ImageIcon,
+  UploadCloud,
+  Trash2,
 
   // About page (mission / values glyphs)
   Target,

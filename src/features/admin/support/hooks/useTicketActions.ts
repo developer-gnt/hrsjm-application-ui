@@ -24,7 +24,7 @@ export function useTicketActions() {
       kind: TicketActionKind,
       id: string,
       note?: string,
-    ): Promise<{ ok: true } | { ok: false }> => {
+    ): Promise<{ ok: true } | { ok: false; error: string }> => {
       setActing(kind);
       setError(null);
       try {
@@ -34,8 +34,9 @@ export function useTicketActions() {
         });
         return { ok: true };
       } catch (err) {
-        setError(getApiErrorMessage(err, 'Action failed. Please try again.'));
-        return { ok: false };
+        const errorMsg = getApiErrorMessage(err, 'Action failed. Please try again.');
+        setError(errorMsg);
+        return { ok: false, error: errorMsg };
       } finally {
         setActing(null);
       }

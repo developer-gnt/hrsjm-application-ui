@@ -261,112 +261,118 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
     }
   };
 
+  const renderListHeader = () => (
+    <View>
+      {/* Page header: title/subtitle + Add Event */}
+      <View style={styles.pageHeader}>
+        <View style={styles.pageHeaderText}>
+          <Text style={styles.pageTitle}>Events</Text>
+          <Text
+            style={styles.pageSubtitle}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            numberOfLines={1}
+          >
+            Manage and view all events and activities.
+          </Text>
+        </View>
+        <AppButton
+          title="Add Event"
+          size="sm"
+          onPress={handleAddEvent}
+          icon={<Text style={styles.addIcon}>+</Text>}
+          textStyle={styles.addButtonText}
+          style={styles.addButton}
+        />
+      </View>
+
+      <View style={styles.statsSection}>
+        <EventSummaryStats stats={stats} />
+      </View>
+
+      <View style={styles.searchRow}>
+        <AppSearchBar
+          placeholder="Search by event name, location or date..."
+          value={searchQuery}
+          onSearch={handleSearch}
+          containerStyle={styles.searchBar}
+        />
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            (filtersExpanded || activeCategory !== null) && styles.filterButtonActive,
+          ]}
+          onPress={() => setFiltersExpanded(previous => !previous)}
+          accessibilityRole="button"
+          accessibilityLabel="Filters"
+          accessibilityState={{ expanded: filtersExpanded }}
+        >
+          <Text style={styles.filterIcon}>{filtersExpanded ? '▴' : '▾'}</Text>
+          <Text style={styles.filterText}>Filters</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.filtersSection}>
+        <EventFilters
+          tabs={statusTabs}
+          activeTab={activeStatus}
+          onTabChange={handleStatusChange}
+          expanded={filtersExpanded}
+          categories={SAMPLE_EVENT_CATEGORIES}
+          activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory}
+          onApply={() => setFiltersExpanded(false)}
+        />
+      </View>
+
+      <EventListHeader />
+    </View>
+  );
+
   return (
     <View style={styles.root}>
-      {/* Unified official Admin Header */}
+      {/* Unified official Admin Header - Fixed at Top */}
       <AdminHeader onNavigate={handleDrawerNavigate} unreadCount={3} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        {/* Page header: title/subtitle + Add Event */}
-        <View style={styles.pageHeader}>
-          <View style={styles.pageHeaderText}>
-            <Text style={styles.pageTitle}>Events</Text>
-            <Text
-              style={styles.pageSubtitle}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              numberOfLines={1}
-            >
-              Manage and view all events and activities.
-            </Text>
-          </View>
-          <AppButton
-            title="Add Event"
-            size="sm"
-            onPress={handleAddEvent}
-            icon={<Text style={styles.addIcon}>+</Text>}
-            textStyle={styles.addButtonText}
-            style={styles.addButton}
-          />
-        </View>
-
-        <View style={styles.statsSection}>
-          <EventSummaryStats stats={stats} />
-        </View>
-
-        <View style={styles.searchRow}>
-          <AppSearchBar
-            placeholder="Search by event name, location or date..."
-            value={searchQuery}
-            onSearch={handleSearch}
-            containerStyle={styles.searchBar}
-          />
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              (filtersExpanded || activeCategory !== null) && styles.filterButtonActive,
-            ]}
-            onPress={() => setFiltersExpanded(previous => !previous)}
-            accessibilityRole="button"
-            accessibilityLabel="Filters"
-            accessibilityState={{ expanded: filtersExpanded }}
-          >
-            <Text style={styles.filterIcon}>{filtersExpanded ? '▴' : '▾'}</Text>
-            <Text style={styles.filterText}>Filters</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.filtersSection}>
-          <EventFilters
-            tabs={statusTabs}
-            activeTab={activeStatus}
-            onTabChange={handleStatusChange}
-            expanded={filtersExpanded}
-            categories={SAMPLE_EVENT_CATEGORIES}
-            activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-            onApply={() => setFiltersExpanded(false)}
-          />
-        </View>
-
-        {isLoading && !data ? (
-          <LoadingListView />
-        ) : isError && !data ? (
-          <AppErrorState
-            title="Unable to load events."
-            message="Something went wrong while loading events. Please try again."
-            onRetry={handleRetry}
-            style={styles.errorState}
-          />
-        ) : (
-          <FlatList
-            data={filteredEvents}
-            keyExtractor={item => item.id}
-            ListHeaderComponent={EventListHeader}
-            renderItem={({ item }) => (
-              <EventCard event={item} onPress={handleEventPress} onMorePress={handleEventMenu} />
-            )}
-            ListEmptyComponent={
+        <FlatList
+          data={isLoading && !data ? [] : filteredEvents}
+          keyExtractor={item => item.id}
+          ListHeaderComponent={renderListHeader}
+          renderItem={({ item }) => (
+            <EventCard event={item} onPress={handleEventPress} onMorePress={handleEventMenu} />
+          )}
+          ListEmptyComponent={
+            isLoading && !data ? (
+              <LoadingListView />
+            ) : isError && !data ? (
+              <AppErrorState
+                title="Unable to load events."
+                message="Something went wrong while loading events. Please try again."
+                onRetry={handleRetry}
+                style={styles.errorState}
+              />
+            ) : (
               <EmptyStateView
                 hasActiveFilters={hasActiveFilters}
                 onClearFilters={clearFilters}
                 onAddEvent={handleAddEvent}
               />
-            }
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                tintColor={AdminColors.primary}
-                colors={[AdminColors.primary]}
-              />
-            }
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-          />
-        )}
+            )
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={AdminColors.primary}
+              colors={[AdminColors.primary]}
+            />
+          }
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
       </SafeAreaView>
     </View>
   );

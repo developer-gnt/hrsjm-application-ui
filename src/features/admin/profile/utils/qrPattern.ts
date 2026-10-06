@@ -8,11 +8,16 @@
  */
 import { create as createQr, QRCodeErrorCorrectionLevel } from 'qrcode';
 
+const qrCache = new Map<string, boolean[][]>();
+
 /**
  * Renders the QR for verification URLs/IDs at the highest error
  * correction level so the code survives printing and glare on a card.
  */
 export const getQrMatrix = (data: string): boolean[][] => {
+  if (qrCache.has(data)) {
+    return qrCache.get(data)!;
+  }
   const qr = createQr(data, {
     errorCorrectionLevel: 'H' as QRCodeErrorCorrectionLevel,
   });
@@ -26,5 +31,6 @@ export const getQrMatrix = (data: string): boolean[][] => {
     }
     matrix.push(line);
   }
+  qrCache.set(data, matrix);
   return matrix;
 };

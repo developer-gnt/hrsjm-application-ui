@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -16,6 +15,7 @@ import { BrandColors } from '../../../../core/theme/colors';
 import { BorderRadius, Shadows, Spacing } from '../../../../core/theme/spacing';
 import { Typography } from '../../../../core/theme/typography';
 import { Check, X } from '../../../../core/components/icons';
+import { feedback } from '../../../../core/feedback/FeedbackContext';
 import { supportService } from '../services/support.service';
 import type { CreateTicketBody } from '../types/support.types';
 
@@ -98,7 +98,10 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
         description: description.trim(),
       };
       await supportService.create(payload);
-      Alert.alert('Complaint Submitted', 'Your support ticket has been submitted successfully.');
+      feedback.success(
+        'Complaint Submitted',
+        'Your support ticket has been submitted successfully and routed to our support team.',
+      );
       resetForm();
       onSuccess();
     } catch (err: any) {

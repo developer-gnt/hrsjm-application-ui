@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import { jsPDF } from 'jspdf';
 import { AdminColors, BorderRadius, Spacing } from '../../../../core/theme';
+import { feedback } from '../../../../core/feedback/FeedbackContext';
 import { downloadReportPdf, shareReportPdf } from '../utils/reportPdfDocument';
 
 interface ReportExportActionsProps {
@@ -31,14 +31,14 @@ export const ReportExportActions: React.FC<ReportExportActionsProps> = ({
     try {
       const pdf = generatePdf();
       const res = await downloadReportPdf(fileName, pdf);
-      Alert.alert(
+      feedback.success(
         'Report Exported',
         res === 'downloaded'
           ? `PDF successfully saved to your downloads folder (${fileName}).`
           : 'Report PDF opened in your device viewer.',
       );
     } catch (err: any) {
-      Alert.alert('Export Failed', err?.message || 'Unable to export report PDF.');
+      feedback.error('Export Failed', err?.message || 'Unable to export report PDF.');
     } finally {
       setDownloading(false);
     }
@@ -51,7 +51,7 @@ export const ReportExportActions: React.FC<ReportExportActionsProps> = ({
       const pdf = generatePdf();
       await shareReportPdf(fileName, reportTitle, pdf);
     } catch (err: any) {
-      Alert.alert('Share Failed', err?.message || 'Unable to share report PDF.');
+      feedback.error('Share Failed', err?.message || 'Unable to share report PDF.');
     } finally {
       setSharing(false);
     }

@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   RefreshControl,
   Text,
@@ -21,6 +20,7 @@ import {
   AppErrorState,
   SkeletonCard,
   formatDate,
+  feedback,
 } from '../../../../core';
 import {
   useDonations,
@@ -237,33 +237,34 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
   };
 
   const handleRefund = (row: DonationRowModel) => {
-    Alert.alert(
-      'Confirm Refund',
-      `Are you sure you want to refund ₹${row.amount.toLocaleString(
+    feedback.confirm({
+      title: 'Confirm Refund',
+      message: `Are you sure you want to refund ₹${row.amount.toLocaleString(
         'en-IN',
       )} to ${row.donorName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Refund',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              if (!previewMode) {
-                await refundDonationMutation.mutateAsync({
-                  id: row.id,
-                  reason: 'Admin initiated refund from Donations screen',
-                });
-              }
-              showToast(`Refund processed for ${row.donorName}.`);
-              handleRefresh();
-            } catch {
-              showToast('Unable to complete refund. Please try again.');
-            }
-          },
-        },
-      ],
-    );
+      confirmText: 'Refund',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          if (!previewMode) {
+            await refundDonationMutation.mutateAsync({
+              id: row.id,
+              reason: 'Admin initiated refund from Donations screen',
+            });
+          }
+          feedback.success(
+            'Refund Processed',
+            `Refund of ₹${row.amount.toLocaleString('en-IN')} for ${row.donorName} completed.`,
+          );
+          handleRefresh();
+        } catch {
+          feedback.error(
+            'Refund Failed',
+            'Unable to complete refund. Please try again.',
+          );
+        }
+      },
+    });
   };
 
   const handleAddDonation = async (input: CreateDonationInput) => {

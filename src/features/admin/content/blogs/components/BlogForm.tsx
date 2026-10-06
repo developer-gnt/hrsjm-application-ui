@@ -25,8 +25,7 @@ import { AppButton } from '../../../../../core/components';
 import { EventPickerSheet } from '../../events/components/EventPickerSheet';
 import { EventFormToast } from '../../events/components/EventFormToast';
 import { EventTagInput } from '../../events/components/EventTagInput';
-import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
-import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { SAMPLE_BLOGS, SAMPLE_BLOG_CATEGORIES } from '../data/sample-blogs';
 import { BLOG_STATUS_LABELS } from './BlogCard';
 import type {
@@ -468,7 +467,7 @@ export const BlogForm: React.FC<BlogFormProps> = ({
 
   return (
     <View style={styles.root}>
-      <AdminShellHeader leading="back" onBack={requestCancel} />
+      <AdminHeader showBack onBack={requestCancel} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <KeyboardAvoidingView
@@ -743,9 +742,6 @@ export const BlogForm: React.FC<BlogFormProps> = ({
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar activeTab="blogs" onTabPress={handleShellTabPress} />
 
       <EventFormToast
         message={toast?.message ?? null}

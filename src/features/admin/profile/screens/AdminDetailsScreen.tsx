@@ -1,7 +1,7 @@
 /**
- * Admin Details edit screen — Role / Department / Account Status
- * bottom-sheet selects. Saves to the local profile store (UI phase)
- * and stages the success toast for the profile screen.
+ * Admin Details edit screen — Role & Account Status selects.
+ * In edit mode, we have only 4 roles: Admin, Donar Seeker, User, Member.
+ * Department field has been removed as per specification.
  */
 import React, { useState } from 'react';
 import {
@@ -25,19 +25,10 @@ import { AdminDetailsInput, AccountStatus } from '../types/profile.types';
 import { AppSelect } from '../components/AppSelect';
 
 const ROLE_OPTIONS = [
-  'Administrator',
-  'Super Admin',
-  'Manager',
-  'Coordinator',
-  'Volunteer',
-];
-
-const DEPARTMENT_OPTIONS = [
-  'Management',
-  'Human Resources',
-  'Finance',
-  'Operations',
-  'Outreach',
+  'Admin',
+  'Donar Seeker',
+  'User',
+  'Member',
 ];
 
 const ACCOUNT_STATUS_OPTIONS: AccountStatus[] = [
@@ -63,16 +54,15 @@ export const AdminDetailsScreen: React.FC<AdminDetailsScreenProps> = ({
   const stageMessage = useProfileStore(state => state.stageMessage);
 
   const [form, setForm] = useState<AdminDetailsInput>({
-    role: profile.role,
-    department: profile.department,
+    role: ROLE_OPTIONS.includes(profile.role) ? profile.role : 'Admin',
     accountStatus: profile.accountStatus,
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      updateAdminDetails(form);
+      await updateAdminDetails(form);
       stageMessage('Admin details updated successfully.');
       if (onSaved) {
         onSaved();
@@ -118,15 +108,6 @@ export const AdminDetailsScreen: React.FC<AdminDetailsScreenProps> = ({
             value={form.role}
             options={ROLE_OPTIONS}
             onSelect={value => setForm(prev => ({ ...prev, role: value }))}
-          />
-
-          <AppSelect
-            label="Department"
-            value={form.department}
-            options={DEPARTMENT_OPTIONS}
-            onSelect={value =>
-              setForm(prev => ({ ...prev, department: value }))
-            }
           />
 
           <AppSelect
@@ -196,14 +177,6 @@ const styles = StyleSheet.create({
     borderColor: AdminColors.border,
     padding: Spacing.base,
     ...Shadows.card,
-  },
-  selectIconRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  selectIcon: {
-    marginRight: Spacing.sm,
-    paddingBottom: Spacing.md + 14,
   },
   actionsRow: {
     flexDirection: 'row',

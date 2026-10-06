@@ -88,6 +88,24 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     }
   };
 
+  const handleOpenNotifications = () => {
+    if (onNavigate) {
+      onNavigate(AppRoutes.NOTIFICATIONS);
+    } else if (navigation?.navigate) {
+      try {
+        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS });
+      } catch {
+        try {
+          navigation.navigate(AppRoutes.NOTIFICATIONS);
+        } catch {
+          // ignore
+        }
+      }
+    } else if (onOpenMore) {
+      onOpenMore();
+    }
+  };
+
   const handleViewProfile = () => {
     setDropdownVisible(false);
     if (onNavigate) {
@@ -241,7 +259,10 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           {/* Notification Bell */}
           <TouchableOpacity
             style={styles.bellWrap}
+            onPress={handleOpenNotifications}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={`Notifications, ${unreadCount} unread`}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
@@ -269,7 +290,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             activeOpacity={0.8}
           >
             <Image
-              source={{ uri: DEFAULT_ADMIN_AVATAR }}
+              source={{ uri: user?.avatar || DEFAULT_ADMIN_AVATAR }}
               style={styles.avatarImage}
             />
             <Text style={styles.chevron}>▾</Text>
