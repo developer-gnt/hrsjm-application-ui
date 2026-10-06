@@ -30,6 +30,7 @@ export {
   Calendar,
 
   // People & stats
+  User,
   Users,
   UserCheck,
   UserX,
@@ -45,6 +46,22 @@ export {
   SearchX,
   TriangleAlert,
   UsersRound,
+
+  // Details & documents
+  Phone,
+  Mail,
+  MapPin,
+  GraduationCap,
+  CreditCard,
+  Download,
+  Share2,
+  Copy,
+  CheckCircle2,
+  AlertCircle,
+  Shield,
+  FileCheck,
+  ExternalLink,
+  File,
 
   // About page (mission / values glyphs)
   Target,

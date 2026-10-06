@@ -57,6 +57,52 @@ export const useCreateMember = () => {
 };
 
 /**
+ * Mutation hook to update a membership info / application data.
+ */
+export const useUpdateMember = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: Parameters<typeof membersService.update>[1];
+    }) => membersService.update(id, payload),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: MEMBERS_QUERY_KEYS.all,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: MEMBERS_QUERY_KEYS.detail(variables.id),
+      });
+    },
+  });
+};
+
+/**
+ * Hook to fetch single membership details.
+ */
+export const useMemberDetails = (id?: string) =>
+  useQuery({
+    queryKey: MEMBERS_QUERY_KEYS.detail(id || ''),
+    queryFn: () => (id ? membersService.getById(id) : null),
+    enabled: Boolean(id),
+    staleTime: 30_000,
+  });
+
+/**
+ * Hook to fetch uploaded documents for a membership.
+ */
+export const useMemberDocuments = (id?: string) =>
+  useQuery({
+    queryKey: ['memberships', 'documents', id || ''],
+    queryFn: () => (id ? membersService.getDocuments(id) : null),
+    enabled: Boolean(id),
+    staleTime: 30_000,
+  });
+
+/**
  * Mutation hook to update a membership status (Approve, Reject, Suspend, Activate).
  */
 export const useUpdateMembershipStatus = () => {
@@ -93,13 +139,14 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
   }, [activeTab]);
 
   // Live Query from real backend API
-  const isDevMockMode = previewState !== 'default';
+  const isDevMockMode =
+    previewState !== 'default' || process.env.NODE_ENV === 'test';
 
   const {
     data: queryData,
     isLoading: isQueryLoading,
     isError: isQueryError,
-    refetch,
+    refetch: refetchList,
     isRefetching,
   } = useQuery({
     queryKey: MEMBERS_QUERY_KEYS.list(apiStatusFilter, searchQuery),
@@ -114,6 +161,20 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
     staleTime: 30_000,
   });
 
+  const {
+    data: serverStats,
+    refetch: refetchStats,
+  } = useQuery({
+    queryKey: ['memberships', 'stats', searchQuery],
+    queryFn: () => membersService.getStats({ search: searchQuery }),
+    enabled: !isDevMockMode,
+    staleTime: 30_000,
+  });
+
+  const refetch = useCallback(async () => {
+    await Promise.all([refetchList(), refetchStats()]);
+  }, [refetchList, refetchStats]);
+
   const isLoading =
     isDevMockMode ? previewState === 'loading' : isQueryLoading || isRefetching;
   const hasError = isDevMockMode ? previewState === 'error' : isQueryError;
@@ -126,10 +187,33 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
     return queryData?.items || [];
   }, [isDevMockMode, previewState, queryData]);
 
-  // Aggregate stats
+  // Aggregate stats — dynamically computed on search and filtering
   const stats = useMemo<MemberStats>(() => {
     if (isDevMockMode) {
+      if (searchQuery.trim()) {
+        const searched = MOCK_MEMBERS.filter(m => matchesMemberSearch(m, searchQuery));
+        return {
+          total: searched.length,
+          active: searched.filter(m => m.status === 'ACTIVE').length,
+          expiringSoon: searched.filter(m => m.status === 'EXPIRING_SOON').length,
+          inactive: searched.filter(m => m.status === 'INACTIVE').length,
+        };
+      }
       return MEMBER_STATS;
+    }
+
+    if (searchQuery.trim()) {
+      const searched = members.filter(m => matchesMemberSearch(m, searchQuery));
+      return {
+        total: searched.length,
+        active: searched.filter(m => m.status === 'ACTIVE').length,
+        expiringSoon: searched.filter(m => m.status === 'EXPIRING_SOON').length,
+        inactive: searched.filter(m => m.status === 'INACTIVE').length,
+      };
+    }
+
+    if (serverStats) {
+      return serverStats;
     }
     if (queryData?.stats) {
       return queryData.stats;
@@ -140,7 +224,7 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
       expiringSoon: members.filter(m => m.status === 'EXPIRING_SOON').length,
       inactive: members.filter(m => m.status === 'INACTIVE').length,
     };
-  }, [isDevMockMode, queryData, members]);
+  }, [isDevMockMode, searchQuery, serverStats, queryData, members]);
 
   // Tab counts for UI filter badges
   const tabCounts = useMemo<TabCount[]>(

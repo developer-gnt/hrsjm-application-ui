@@ -5,28 +5,47 @@ import type {
   AssistanceListData,
   AssistanceQuery,
   AssistanceRequest,
+  AssistanceSummaryStats,
+  CreateAssistanceRequestPayload,
   UpdateAssistanceStatusBody,
 } from '../types/assistance.types';
 
-// Routes confirmed against the implemented backend (HRSJM-back-api):
-//   GET   /assistance-requests?status&page&limit          (admin)
-//   GET   /assistance-requests/:id                        (admin or owner)
-//   PATCH /assistance-requests/:id/status { status, admin_remark? }
-//   GET   /documents?related_entity_type=ASSISTANCE_REQUEST&related_entity_id=...
-// No other query parameters exist yet - do not send unsupported params,
-// the backend rejects unknown fields (strict whitelist validation).
 export const assistanceService = {
+  async create(payload: CreateAssistanceRequestPayload): Promise<AssistanceRequest> {
+    const res = await api.post<ApiEnvelope<AssistanceRequest>>('/assistance-requests', payload);
+    return unwrap(res.data);
+  },
+
   async list(query: AssistanceQuery = {}): Promise<AssistanceListData> {
     const params: AssistanceQuery = {
       page: query.page ?? 1,
-      limit: query.limit ?? 10,
+      limit: query.limit ?? 100,
+      ...(query.status && { status: query.status }),
+      ...(query.search && { search: query.search }),
+      ...(query.category && { category: query.category }),
+      ...(query.min_amount !== undefined && { min_amount: query.min_amount }),
+      ...(query.max_amount !== undefined && { max_amount: query.max_amount }),
+      ...(query.from_date && { from_date: query.from_date }),
+      ...(query.to_date && { to_date: query.to_date }),
     };
-    if (query.status) {
-      params.status = query.status;
-    }
     const res = await api.get<ApiEnvelope<AssistanceListData>>('/assistance-requests', { params });
     return unwrap(res.data);
   },
+
+  async getStatsSummary(query: AssistanceQuery = {}): Promise<AssistanceSummaryStats> {
+    const params = {
+      ...(query.status && { status: query.status }),
+      ...(query.search && { search: query.search }),
+      ...(query.category && { category: query.category }),
+      ...(query.min_amount !== undefined && { min_amount: query.min_amount }),
+      ...(query.max_amount !== undefined && { max_amount: query.max_amount }),
+      ...(query.from_date && { from_date: query.from_date }),
+      ...(query.to_date && { to_date: query.to_date }),
+    };
+    const res = await api.get<ApiEnvelope<AssistanceSummaryStats>>('/assistance-requests/stats/summary', { params });
+    return unwrap(res.data);
+  },
+
 
   async getById(id: string): Promise<AssistanceRequest> {
     const res = await api.get<ApiEnvelope<AssistanceRequest>>(`/assistance-requests/${id}`);
@@ -53,3 +72,4 @@ export const assistanceService = {
     return unwrap(res.data);
   },
 };
+

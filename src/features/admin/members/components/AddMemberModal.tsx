@@ -16,7 +16,8 @@ import { BrandColors } from '../../../../core/theme/colors';
 import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
 import { Typography } from '../../../../core/theme/typography';
 import { AppButton } from '../../../../core/components/common/AppButton';
-import { Check, Plus, UsersRound, X } from '../../../../core/components/icons';
+import { DatePickerModal } from '../../../../core/components/common/DatePickerModal';
+import { Calendar, Check, Plus, UsersRound, X } from '../../../../core/components/icons';
 import { useMembershipCategories } from '../hooks/useMembers';
 import type { CreateMemberPayload, MembershipCategoryItem } from '../services/members.service';
 
@@ -33,6 +34,14 @@ const GENDER_OPTIONS = [
   { key: 'OTHER', label: 'Other' },
 ];
 
+const QUALIFICATION_OPTIONS = [
+  { key: '10th Pass', label: '10th Pass (10 TH)' },
+  { key: '12th Pass', label: '12th Pass (12 TH)' },
+  { key: 'Graduate', label: 'Graduate' },
+  { key: 'Post Graduate', label: 'Post Graduate' },
+  { key: 'Other', label: 'Other' },
+];
+
 export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   visible,
   onClose,
@@ -45,8 +54,11 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
   const [mobileNumber, setMobileNumber] = useState('');
   const [email, setEmail] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [qualification, setQualification] = useState<string>('10th Pass');
+  const [customQualification, setCustomQualification] = useState('');
   const [gender, setGender] = useState<string>('MALE');
   const [dob, setDob] = useState('');
+  const [dobPickerVisible, setDobPickerVisible] = useState(false);
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
@@ -82,6 +94,10 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       newErrors.category = 'Please select a membership category.';
     }
 
+    if (qualification === 'Other' && !customQualification.trim()) {
+      newErrors.customQualification = 'Please specify the qualification.';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -91,6 +107,8 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
     setMobileNumber('');
     setEmail('');
     setGender('MALE');
+    setQualification('10th Pass');
+    setCustomQualification('');
     setDob('');
     setAddress('');
     setCity('');
@@ -113,6 +131,11 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
     if (!validate()) return;
 
     try {
+      const finalQualification =
+        qualification === 'Other'
+          ? customQualification.trim() || 'Other'
+          : qualification;
+
       await onSubmit({
         category_id: selectedCategoryId,
         full_name: fullName.trim(),
@@ -120,6 +143,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
         email: email.trim() || undefined,
         personal_details: {
           gender,
+          qualification: finalQualification,
           dob: dob.trim() || undefined,
           address: address.trim() || undefined,
           city: city.trim() || undefined,
@@ -226,6 +250,19 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                             </View>
                           )}
                         </View>
+
+                        {cat.description ? (
+                          <Text
+                            style={[
+                              styles.categoryDesc,
+                              isSelected && styles.categoryDescSelected,
+                            ]}
+                            numberOfLines={2}
+                          >
+                            {cat.description}
+                          </Text>
+                        ) : null}
+
                         <Text
                           style={[
                             styles.categoryFee,
@@ -317,6 +354,68 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               ) : null}
             </View>
 
+            {/* Educational Qualification */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Educational Qualification</Text>
+              <View style={styles.qualificationWrap}>
+                {QUALIFICATION_OPTIONS.map(opt => {
+                  const isSelected = qualification === opt.key;
+                  return (
+                    <TouchableOpacity
+                      key={opt.key}
+                      style={[
+                        styles.qualChip,
+                        isSelected && styles.qualChipSelected,
+                      ]}
+                      onPress={() => {
+                        setQualification(opt.key);
+                        if (opt.key !== 'Other') {
+                          setCustomQualification('');
+                          if (errors.customQualification) {
+                            setErrors(prev => ({ ...prev, customQualification: '' }));
+                          }
+                        }
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.qualChipText,
+                          isSelected && styles.qualChipTextSelected,
+                        ]}
+                      >
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {qualification === 'Other' && (
+                <View style={styles.customQualBox}>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      errors.customQualification && styles.inputError,
+                    ]}
+                    placeholder="Specify other qualification (e.g. Diploma, PhD)"
+                    placeholderTextColor={BrandColors.textMuted}
+                    value={customQualification}
+                    onChangeText={text => {
+                      setCustomQualification(text);
+                      if (errors.customQualification) {
+                        setErrors(prev => ({ ...prev, customQualification: '' }));
+                      }
+                    }}
+                    autoFocus
+                  />
+                  {errors.customQualification ? (
+                    <Text style={styles.errorText}>{errors.customQualification}</Text>
+                  ) : null}
+                </View>
+              )}
+            </View>
+
             {/* Gender Selection */}
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Gender</Text>
@@ -344,6 +443,29 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                     </TouchableOpacity>
                   );
                 })}
+              </View>
+            </View>
+
+            {/* Date of Birth */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Date of Birth (DOB)</Text>
+              <View style={styles.datePickerInputRow}>
+                <TextInput
+                  style={[styles.input, styles.dateInput]}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={BrandColors.textMuted}
+                  value={dob}
+                  onChangeText={setDob}
+                />
+                <TouchableOpacity
+                  onPress={() => setDobPickerVisible(true)}
+                  style={styles.calendarPickerBtn}
+                  activeOpacity={0.7}
+                  accessibilityLabel="Open calendar"
+                  accessibilityRole="button"
+                >
+                  <Calendar size={18} color={BrandColors.navy} />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -476,6 +598,14 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      <DatePickerModal
+        visible={dobPickerVisible}
+        value={dob}
+        onSelect={(selectedDate) => setDob(selectedDate)}
+        onClose={() => setDobPickerVisible(false)}
+        title="Select Date of Birth"
+      />
     </Modal>
   );
 };
@@ -651,6 +781,15 @@ const styles = StyleSheet.create({
   categoryNameSelected: {
     color: BrandColors.navy,
   },
+  categoryDesc: {
+    fontSize: 9.5,
+    color: BrandColors.textSecondary,
+    marginTop: 2,
+    lineHeight: 12,
+  },
+  categoryDescSelected: {
+    color: BrandColors.navy,
+  },
   checkBadge: {
     width: 16,
     height: 16,
@@ -660,13 +799,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoryFee: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
-    color: BrandColors.goldSoft,
-    marginTop: 2,
+    color: '#1E40AF',
+    marginTop: 4,
   },
   categoryFeeSelected: {
+    color: BrandColors.navyDeep,
+    fontWeight: '900',
+  },
+  qualificationWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  qualChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: BorderRadius.base,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  qualChipSelected: {
+    backgroundColor: '#EFF6FF',
+    borderColor: BrandColors.navy,
+  },
+  qualChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: BrandColors.textSecondary,
+  },
+  qualChipTextSelected: {
     color: BrandColors.navy,
+    fontWeight: '700',
+  },
+  customQualBox: {
+    marginTop: 8,
   },
   genderRow: {
     flexDirection: 'row',
@@ -764,6 +933,24 @@ const styles = StyleSheet.create({
     backgroundColor: BrandColors.navy,
     minHeight: 42,
     paddingHorizontal: Spacing.lg,
+  },
+  datePickerInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  dateInput: {
+    flex: 1,
+  },
+  calendarPickerBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.md,
+    backgroundColor: '#F0F7FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

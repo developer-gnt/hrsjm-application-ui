@@ -45,10 +45,10 @@ export const usePaymentStats = () =>
         statuses.map(status => paymentsService.list({ page: 1, limit: 1, status })),
       );
       return {
-        all: results[0].meta.total,
-        pending: results[1].meta.total,
-        verified: results[2].meta.total,
-        failed: results[3].meta.total,
+        all: results[0]?.meta?.total ?? 0,
+        pending: results[1]?.meta?.total ?? 0,
+        verified: results[2]?.meta?.total ?? 0,
+        failed: results[3]?.meta?.total ?? 0,
       };
     },
     staleTime: 15_000,

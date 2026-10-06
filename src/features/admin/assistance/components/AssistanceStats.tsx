@@ -51,10 +51,11 @@ export function AssistanceStatsRow({ stats, loading = false }: AssistanceStatsPr
 
 const styles = StyleSheet.create({
   grid: {
-    paddingHorizontal: Spacing.base,
+    paddingHorizontal: Spacing.sm,
     marginBottom: Spacing.md,
     gap: Spacing.sm,
   },
+
   row: {
     flexDirection: 'row',
     gap: Spacing.sm,

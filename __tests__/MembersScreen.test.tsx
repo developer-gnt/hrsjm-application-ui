@@ -1,13 +1,50 @@
 import React from 'react';
 import ReactTestRenderer, { ReactTestInstance } from 'react-test-renderer';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NavigationContainer } from '@react-navigation/native';
 import { MembersScreen } from '../src/features/admin/members/screens/MembersScreen';
+
+jest.mock('../src/features/admin/members/services/members.service', () => {
+  const { MOCK_MEMBERS, MEMBER_STATS } = require('../src/features/admin/members/data/members.mock');
+  return {
+    membersService: {
+      list: jest.fn().mockResolvedValue({
+        items: MOCK_MEMBERS,
+        rawItems: [],
+        meta: { page: 1, limit: 20, total: 2486, totalPages: 1 },
+        stats: MEMBER_STATS,
+      }),
+      getStats: jest.fn().mockResolvedValue(MEMBER_STATS),
+      getCategories: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      updateStatus: jest.fn().mockResolvedValue({}),
+      getById: jest.fn().mockResolvedValue({}),
+    },
+  };
+});
 
 type PreviewState = 'default' | 'loading' | 'empty' | 'error';
 
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
 const renderScreen = async (props?: { previewState?: PreviewState }) => {
+  const queryClient = createTestQueryClient();
   let tree: ReactTestRenderer.ReactTestRenderer | undefined;
   await ReactTestRenderer.act(async () => {
-    tree = ReactTestRenderer.create(<MembersScreen {...props} />);
+    tree = ReactTestRenderer.create(
+      <NavigationContainer>
+        <QueryClientProvider client={queryClient}>
+          <MembersScreen {...props} />
+        </QueryClientProvider>
+      </NavigationContainer>
+    );
   });
   return tree!;
 };

@@ -30,6 +30,7 @@ export const ApiRoutes = {
   // Memberships
   MEMBERSHIPS: {
     BASE: '/memberships',
+    STATS: '/memberships/stats',
     DETAILS: (id: string | number) => `/memberships/${id}`,
     STATUS: (id: string | number) => `/memberships/${id}/status`,
     DOCUMENTS: (id: string | number) => `/memberships/${id}/documents`,

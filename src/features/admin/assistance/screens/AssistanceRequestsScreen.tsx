@@ -5,38 +5,40 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { CompositeNavigationProp } from '@react-navigation/native';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
-import { AppBottomSheet } from '../../../../core/components/common/AppBottomSheet';
 import { AppSearchBar } from '../../../../core/components/common/AppSearchBar';
 import { SkeletonList } from '../../../../core/components/common/AppSkeleton';
-import { AdminFilterTabs } from '../../../../core/components/admin/AdminFilterTabs';
+import { AppFeedbackModal } from '../../../../core/components/common/AppFeedbackModal';
 import { useAuth } from '../../../../core/auth/AuthContext';
 import { can } from '../../../../core/permissions/permissions';
-import { AdminColors, BrandColors } from '../../../../core/theme/colors';
+import { BrandColors } from '../../../../core/theme/colors';
 import { Typography } from '../../../../core/theme/typography';
 import { Spacing, BorderRadius } from '../../../../core/theme/spacing';
-import type { AppStackParamList, TabsParamList } from '../../../../core/navigation/types';
-import { AssistanceCard } from '../components/AssistanceCard';
+import { getApiErrorMessage } from '../../../../core/api/client';
+import { SeekerRowCard } from '../components/SeekerRowCard';
+import { SeekerDetailsModal } from '../components/SeekerDetailsModal';
 import { AssistanceFilters } from '../components/AssistanceFilters';
 import { AssistanceStatsRow } from '../components/AssistanceStats';
-import { ASSISTANCE_TABS } from '../assistance.utils';
-import { useAssistance } from '../hooks/useAssistance';
+import { AddSeekerModal } from '../components/AddSeekerModal';
+import { ASSISTANCE_TABS, type AssistanceTabKey } from '../assistance.utils';
+import {
+  useAssistance,
+  useUpdateAssistanceStatus,
+} from '../hooks/useAssistance';
+import type {
+  AssistanceRequest,
+  CreateAssistanceRequestPayload,
+  UpdateAssistanceStatusBody,
+} from '../types/assistance.types';
 import { AppEmptyState, AppErrorState } from '../../../../core';
 
-type TabProps = BottomTabScreenProps<TabsParamList, 'DonationSeekersTab'>;
-type NavProp = CompositeNavigationProp<
-  TabProps['navigation'],
-  NativeStackNavigationProp<AppStackParamList>
->;
-
 export function AssistanceRequestsScreen() {
-  const navigation = useNavigation<NavProp>();
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+
   const { user } = useAuth();
   const {
     filteredItems,
@@ -44,35 +46,117 @@ export function AssistanceRequestsScreen() {
     statsLoading,
     activeTab,
     searchQuery,
+    filterState,
     initialLoading,
     refreshing,
-    loadingMore,
     error,
     setSearchQuery,
     setActiveTab,
+    applyFilters,
     refresh,
-    loadMore,
     clearFilters,
+    createRequest,
   } = useAssistance();
+
+  const updateStatusMutation = useUpdateAssistanceStatus();
+
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [addSeekerVisible, setAddSeekerVisible] = useState(false);
+  const [isSubmittingSeeker, setIsSubmittingSeeker] = useState(false);
+
+  const [selectedRequest, setSelectedRequest] = useState<AssistanceRequest | null>(null);
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+
+  const [feedbackConfig, setFeedbackConfig] = useState<{
+    visible: boolean;
+    tone: 'success' | 'warning' | 'error';
+    title: string;
+    message: string;
+    badgeText?: string;
+  }>({
+    visible: false,
+    tone: 'success',
+    title: '',
+    message: '',
+  });
 
   const canReview = can(user, 'assistance.review');
 
-  const tabs = ASSISTANCE_TABS.map(tab => ({
-    ...tab,
-    count:
-      tab.key === 'ALL'
-        ? stats.total
-        : tab.key === 'UNDER_REVIEW'
-          ? stats.underReview
-          : tab.key === 'APPROVED'
-            ? stats.approved
-            : stats.rejected,
-  }));
+  const tabs: Array<{ key: AssistanceTabKey; label: string; count: number }> = [
+    { key: 'ALL', label: 'All', count: stats.total },
+    { key: 'UNDER_REVIEW', label: 'Under Review', count: stats.underReview },
+    { key: 'APPROVED', label: 'Approved', count: stats.approved },
+    { key: 'REJECTED', label: 'Rejected', count: stats.rejected },
+  ];
 
-  const openDetails = (requestId: string) =>
-    navigation.navigate('AssistanceDetails', { requestId });
+  const handleOpenDetails = (request: AssistanceRequest) => {
+    setSelectedRequest(request);
+    setDetailsModalVisible(true);
+  };
+
+  const handleUpdateStatus = async (
+    id: string,
+    body: UpdateAssistanceStatusBody,
+  ) => {
+    setIsUpdatingStatus(true);
+    try {
+      await updateStatusMutation.mutateAsync({ id, body });
+      setDetailsModalVisible(false);
+      setFeedbackConfig({
+        visible: true,
+        tone: 'success',
+        title: 'Status Updated',
+        message: `Application status has been changed to ${body.status.replace('_', ' ')}.`,
+        badgeText: 'UPDATED',
+      });
+      refresh();
+    } catch (err: any) {
+      setFeedbackConfig({
+        visible: true,
+        tone: 'error',
+        title: 'Update Failed',
+        message: getApiErrorMessage(
+          err,
+          'Failed to update assistance request status.',
+        ),
+        badgeText: 'ERROR',
+      });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleCreateSeekerSubmit = async (
+    payload: CreateAssistanceRequestPayload,
+  ) => {
+    setIsSubmittingSeeker(true);
+    try {
+      const created = await createRequest(payload);
+      setAddSeekerVisible(false);
+      setFeedbackConfig({
+        visible: true,
+        tone: 'success',
+        title: 'Assistance Request Created',
+        message: `Successfully registered assistance request for ${created.full_name || payload.full_name} (₹${payload.requested_amount.toLocaleString('en-IN')}). The case is placed under review.`,
+        badgeText: 'CASE RECORDED',
+      });
+    } catch (err: any) {
+      setFeedbackConfig({
+        visible: true,
+        tone: 'error',
+        title: 'Creation Failed',
+        message: getApiErrorMessage(
+          err,
+          'Unable to submit assistance request. Please verify mobile number and details.',
+        ),
+        badgeText: 'ERROR',
+      });
+    } finally {
+      setIsSubmittingSeeker(false);
+    }
+  };
 
   return (
     <View style={styles.flex}>
@@ -83,9 +167,11 @@ export function AssistanceRequestsScreen() {
         data={filteredItems}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <AssistanceCard
+          <SeekerRowCard
             request={item}
-            onPress={() => openDetails(item.id)}
+            onPress={() => handleOpenDetails(item)}
+            onReviewPress={() => handleOpenDetails(item)}
+            onMenuPress={() => handleOpenDetails(item)}
           />
         )}
         refreshControl={
@@ -96,11 +182,9 @@ export function AssistanceRequestsScreen() {
             colors={[BrandColors.navy]}
           />
         }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <View>
-            {/* Page Context Banner */}
+            {/* Top Title & Add Seeker CTA */}
             <View style={styles.headerArea}>
               <View style={styles.titleRow}>
                 <View style={styles.titleBlock}>
@@ -127,13 +211,13 @@ export function AssistanceRequestsScreen() {
             {/* 4-Column Executive KPI Cards */}
             <AssistanceStatsRow stats={stats} loading={statsLoading} />
 
-            {/* Search and Filters Bar */}
+            {/* Search & Filter Bar matching requested UI */}
             <View style={styles.searchRow}>
               <View style={styles.searchContainer}>
                 <AppSearchBar
                   value={searchQuery}
                   onChangeText={setSearchQuery}
-                  placeholder="Search by name, ID, cause..."
+                  placeholder="Search by name, request ID, cause or location..."
                 />
               </View>
               <TouchableOpacity
@@ -148,16 +232,60 @@ export function AssistanceRequestsScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Filter Tabs */}
+            {/* Clean Custom Status Filter Tabs with smooth horizontal scrolling */}
             <View style={styles.tabsContainer}>
-              <AdminFilterTabs
-                tabs={tabs}
-                activeKey={activeTab}
-                onSelect={setActiveTab}
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={tabs}
+                keyExtractor={item => item.key}
+                contentContainerStyle={styles.tabsScrollContent}
+                renderItem={({ item: tab }) => {
+                  const isActive = activeTab === tab.key;
+                  return (
+                    <TouchableOpacity
+                      key={tab.key}
+                      style={[
+                        styles.tabPill,
+                        isActive ? styles.tabPillActive : styles.tabPillInactive,
+                      ]}
+                      onPress={() => setActiveTab(tab.key)}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.tabLabel,
+                          isActive ? styles.tabLabelActive : styles.tabLabelInactive,
+                        ]}
+                      >
+                        {tab.label} ({tab.count})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }}
               />
             </View>
+
+            {/* Table Column Headers (Only for wide screens / tablets) */}
+            {isWide ? (
+              <View style={styles.tableHeaderRow}>
+                <Text style={[styles.tableHeaderText, styles.colSeeker]}>
+                  Seeker Details
+                </Text>
+                <Text style={[styles.tableHeaderText, styles.colCause]}>
+                  Cause & Description
+                </Text>
+                <Text style={[styles.tableHeaderText, styles.colAmount]}>
+                  Requested Amount
+                </Text>
+                <Text style={[styles.tableHeaderText, styles.colStatus]}>
+                  Status
+                </Text>
+              </View>
+            ) : null}
           </View>
         }
+
         ListEmptyComponent={
           initialLoading ? (
             <SkeletonList count={4} />
@@ -176,33 +304,52 @@ export function AssistanceRequestsScreen() {
             />
           )
         }
-        ListFooterComponent={
-          loadingMore ? <Text style={styles.loadingMore}>Loading more…</Text> : undefined
-        }
         contentContainerStyle={styles.listContent}
       />
 
       <AssistanceFilters
         visible={filtersVisible}
-        currentTab={activeTab}
+        filters={filterState}
         onClose={() => setFiltersVisible(false)}
-        onApply={tab => {
-          setActiveTab(tab);
+        onApply={newFilters => {
+          applyFilters(newFilters);
+          setFiltersVisible(false);
+        }}
+        onReset={() => {
+          clearFilters();
           setFiltersVisible(false);
         }}
       />
 
-      <AppBottomSheet
+
+      <AddSeekerModal
         visible={addSeekerVisible}
-        title="Add Seeker"
         onClose={() => setAddSeekerVisible(false)}
-      >
-        <Text style={styles.addSeekerNote}>
-          Creating assistance requests on behalf of seekers is not supported by
-          the backend yet. Seekers submit their own requests from their app, and
-          they appear here for review.
-        </Text>
-      </AppBottomSheet>
+        onSubmit={handleCreateSeekerSubmit}
+        isSubmitting={isSubmittingSeeker}
+      />
+
+      <SeekerDetailsModal
+        visible={detailsModalVisible}
+        request={selectedRequest}
+        onClose={() => {
+          setDetailsModalVisible(false);
+          setSelectedRequest(null);
+        }}
+        onUpdateStatus={handleUpdateStatus}
+        isUpdating={isUpdatingStatus}
+      />
+
+      <AppFeedbackModal
+        visible={feedbackConfig.visible}
+        tone={feedbackConfig.tone}
+        title={feedbackConfig.title}
+        message={feedbackConfig.message}
+        badgeText={feedbackConfig.badgeText}
+        onClose={() =>
+          setFeedbackConfig(prev => ({ ...prev, visible: false }))
+        }
+      />
     </View>
   );
 }
@@ -216,11 +363,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: Spacing.base,
+    paddingHorizontal: Spacing.sm,
     paddingBottom: Spacing.xxl * 2,
   },
   headerArea: {
-    paddingHorizontal: Spacing.base,
+    paddingHorizontal: Spacing.sm,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
   },
@@ -272,7 +419,7 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.base,
+    paddingHorizontal: Spacing.sm,
     marginBottom: Spacing.sm,
     gap: 8,
   },
@@ -301,19 +448,71 @@ const styles = StyleSheet.create({
   tabsContainer: {
     marginBottom: Spacing.md,
   },
-  loadingMore: {
-    textAlign: 'center',
-    color: '#94A3B8',
-    paddingVertical: Spacing.md,
-    fontSize: 12,
+  tabsScrollContent: {
+    paddingHorizontal: Spacing.sm,
+    gap: 8,
   },
-  addSeekerNote: {
-    ...Typography.body,
-    fontSize: 13.5,
-    color: '#475569',
-    lineHeight: 20,
-    padding: Spacing.base,
+  tabPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabPillActive: {
+    backgroundColor: '#0F2C59',
+    shadowColor: '#0F2C59',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  tabPillInactive: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  tabLabel: {
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  tabLabelActive: {
+    color: '#FFFFFF',
+  },
+  tabLabelInactive: {
+    color: '#0F2C59',
+  },
+  tableHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginBottom: 4,
+    gap: 8,
+  },
+  tableHeaderText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0F2C59',
+    letterSpacing: 0.4,
+  },
+  colSeeker: {
+    flex: 2.4,
+  },
+  colCause: {
+    flex: 2.2,
+    paddingHorizontal: 4,
+  },
+  colAmount: {
+    flex: 1.8,
+    paddingHorizontal: 4,
+  },
+  colStatus: {
+    width: 95,
+    textAlign: 'center',
   },
 });
 
+
 export default AssistanceRequestsScreen;
+

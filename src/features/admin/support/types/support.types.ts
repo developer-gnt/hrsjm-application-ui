@@ -25,8 +25,26 @@ export interface SupportTicketListData {
   meta: PaginationMeta;
 }
 
+export interface CreateTicketBody {
+  subject: string;
+  description: string;
+  category?: string;
+  priority?: 'NORMAL' | 'HIGH' | 'URGENT';
+}
+
+export interface SupportFilterState {
+  status: string; // 'ALL' | TicketStatus
+  category: string; // 'ALL' | specific category
+  dateRange: string; // 'ALL' | 'TODAY' | '7_DAYS' | 'THIS_MONTH' | '90_DAYS'
+  fromDate?: string;
+  toDate?: string;
+}
+
 export interface SupportTicketQuery {
   status?: TicketStatus;
+  category?: string;
+  from_date?: string;
+  to_date?: string;
   page?: number;
   limit?: number;
   search?: string;

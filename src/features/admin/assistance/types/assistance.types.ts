@@ -44,12 +44,52 @@ export interface AssistanceQuery {
   status?: AssistanceStatus;
   page?: number;
   limit?: number;
+  search?: string;
+  category?: string;
+  min_amount?: number;
+  max_amount?: number;
+  from_date?: string;
+  to_date?: string;
+}
+
+export interface AssistanceFilterState {
+  status?: AssistanceStatus;
+  category?: string;
+  amountPreset?: string;
+  minAmount?: number;
+  maxAmount?: number;
+  datePreset?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+
+export interface CreateAssistanceRequestPayload {
+  full_name: string;
+  mobile: string;
+  email?: string;
+  requested_amount: number;
+  reason: string;
+  description?: string;
+  user_id?: string;
+  admin_remark?: string;
+  status?: AssistanceStatus;
+}
+
+export interface AssistanceSummaryStats {
+  total: number;
+  underReview: number;
+  approved: number;
+  rejected: number;
+  closed: number;
+  totalAmount: number;
 }
 
 export interface UpdateAssistanceStatusBody {
   status: AssistanceStatus;
   admin_remark?: string;
 }
+
 
 export interface AssistanceDocumentItem {
   id: string;

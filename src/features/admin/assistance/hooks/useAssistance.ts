@@ -1,17 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getApiErrorMessage } from '../../../../core/api/client';
-import type { PaginationMeta } from '../../../../core/api/types';
 import { assistanceService } from '../services/assistance.service';
-import type { AssistanceRequest } from '../types/assistance.types';
+import type {
+  AssistanceFilterState,
+  AssistanceQuery,
+  AssistanceRequest,
+  CreateAssistanceRequestPayload,
+  UpdateAssistanceStatusBody,
+} from '../types/assistance.types';
 import {
   matchesSearch,
   tabToStatus,
   type AssistanceTabKey,
 } from '../assistance.utils';
-
-const PAGE_SIZE = 10;
-const SEARCH_DEBOUNCE_MS = 350;
 
 export interface AssistanceStats {
   total: number;
@@ -20,168 +22,220 @@ export interface AssistanceStats {
   rejected: number;
 }
 
-type LoadMode = 'initial' | 'silent' | 'refresh' | 'more';
+export const ASSISTANCE_QUERY_KEYS = {
+  all: ['assistance-requests'] as const,
+  list: (status?: string, search?: string, filters?: AssistanceFilterState) =>
+    ['assistance-requests', 'list', status ?? 'ALL', search ?? '', filters ?? {}] as const,
+  stats: (filters?: AssistanceFilterState) =>
+    ['assistance-requests', 'stats', filters ?? {}] as const,
+  detail: (id: string) => ['assistance-requests', 'detail', id] as const,
+  documents: (id: string) => ['assistance-requests', 'documents', id] as const,
+};
+
+export const useCreateAssistanceRequest = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateAssistanceRequestPayload) =>
+      assistanceService.create(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ASSISTANCE_QUERY_KEYS.all });
+    },
+  });
+};
+
+export const useUpdateAssistanceStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: UpdateAssistanceStatusBody }) =>
+      assistanceService.updateStatus(id, body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ASSISTANCE_QUERY_KEYS.all });
+    },
+  });
+};
 
 export function useAssistance() {
-  const [items, setItems] = useState<AssistanceRequest[]>([]);
-  const [meta, setMeta] = useState<PaginationMeta | null>(null);
-  const [activeTab, setActiveTabState] = useState<AssistanceTabKey>('ALL');
+  const [activeTab, setActiveTab] = useState<AssistanceTabKey>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<AssistanceStats>({
-    total: 0,
-    underReview: 0,
-    approved: 0,
-    rejected: 0,
-  });
-  const [statsLoading, setStatsLoading] = useState(true);
+  const [filterState, setFilterState] = useState<AssistanceFilterState>({});
 
-  const pageRef = useRef(1);
-  const seqRef = useRef(0);
-  const activeTabRef = useRef<AssistanceTabKey>('ALL');
-  const loadedOnceRef = useRef(false);
+  const queryClient = useQueryClient();
+  const createMutation = useCreateAssistanceRequest();
 
-  const fetchPage = useCallback(async (page: number, mode: LoadMode) => {
-    const seq = ++seqRef.current;
-    const status = tabToStatus(activeTabRef.current);
-
-    if (mode === 'initial') {
-      setInitialLoading(true);
+  // Effective status from active tab or filterState
+  const statusFilter = useMemo(() => {
+    if (filterState.status) {
+      return filterState.status;
     }
-    if (mode === 'refresh') {
-      setRefreshing(true);
-    }
-    if (mode === 'more') {
-      setLoadingMore(true);
-    }
+    return tabToStatus(activeTab);
+  }, [activeTab, filterState.status]);
 
-    try {
-      const data = await assistanceService.list({ status, page, limit: PAGE_SIZE });
-      if (seq !== seqRef.current) {
-        return; // a newer request superseded this one
-      }
-      pageRef.current = page;
-      setMeta(data.meta);
-      setItems(prev =>
-        mode === 'more' && page > 1 ? [...prev, ...data.items] : data.items,
-      );
-      setError(null);
-    } catch (err) {
-      if (seq !== seqRef.current) {
-        return;
-      }
-      setError(getApiErrorMessage(err, 'Unable to load assistance requests.'));
-      if (mode === 'more' && page > 1) {
-        pageRef.current = page - 1; // allow retrying the same page
-      }
-    } finally {
-      if (seq === seqRef.current) {
-        setInitialLoading(false);
-        setRefreshing(false);
-        setLoadingMore(false);
-      }
-    }
-  }, []);
-
-  const reloadStats = useCallback(async () => {
-    try {
-      const [all, underReview, approved, rejected] = await Promise.all([
-        assistanceService.list({ page: 1, limit: 1 }),
-        assistanceService.list({ status: 'UNDER_REVIEW', page: 1, limit: 1 }),
-        assistanceService.list({ status: 'APPROVED', page: 1, limit: 1 }),
-        assistanceService.list({ status: 'REJECTED', page: 1, limit: 1 }),
-      ]);
-      setStats({
-        total: all.meta.total,
-        underReview: underReview.meta.total,
-        approved: approved.meta.total,
-        rejected: rejected.meta.total,
-      });
-    } catch {
-      // Keep the last known stats instead of flashing zeros on a transient error.
-    } finally {
-      setStatsLoading(false);
-    }
-  }, []);
-
-  // Debounced search - the backend is not called per keystroke.
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchQuery), SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!loadedOnceRef.current) {
-        loadedOnceRef.current = true;
-        fetchPage(1, 'initial');
-        reloadStats();
-      } else {
-        // Returning to the list (e.g. after approve/reject): refresh silently.
-        fetchPage(1, 'silent');
-        reloadStats();
-      }
-    }, [fetchPage, reloadStats]),
-  );
-
-  const setActiveTab = useCallback(
-    (tab: AssistanceTabKey) => {
-      if (tab === activeTabRef.current) {
-        return;
-      }
-      activeTabRef.current = tab;
-      setActiveTabState(tab);
-      fetchPage(1, 'initial');
+  // Live Query from backend API
+  const {
+    data: listData,
+    isLoading: isListLoading,
+    isRefetching,
+    error: queryError,
+    refetch: refetchList,
+  } = useQuery({
+    queryKey: ASSISTANCE_QUERY_KEYS.list(statusFilter, searchQuery, filterState),
+    queryFn: () => {
+      const q: AssistanceQuery = {
+        status: statusFilter,
+        search: searchQuery.trim() || undefined,
+        category: filterState.category,
+        min_amount: filterState.minAmount,
+        max_amount: filterState.maxAmount,
+        from_date: filterState.fromDate,
+        to_date: filterState.toDate,
+        page: 1,
+        limit: 100,
+      };
+      return assistanceService.list(q);
     },
-    [fetchPage],
-  );
+    staleTime: 30_000,
+  });
+
+  // Summary stats query with matching filters
+  const {
+    data: statsSummary,
+    isLoading: isStatsLoading,
+    refetch: refetchStats,
+  } = useQuery({
+    queryKey: ASSISTANCE_QUERY_KEYS.stats(filterState),
+    queryFn: () => {
+      const q: AssistanceQuery = {
+        category: filterState.category,
+        min_amount: filterState.minAmount,
+        max_amount: filterState.maxAmount,
+        from_date: filterState.fromDate,
+        to_date: filterState.toDate,
+      };
+      return assistanceService.getStatsSummary(q);
+    },
+    staleTime: 30_000,
+  });
+
+  const rawItems = useMemo(() => listData?.items ?? [], [listData?.items]);
+
+  // Client-side quick filter matching
+  const filteredItems = useMemo(() => {
+    return rawItems.filter(item => {
+      // Search matching
+      if (!matchesSearch(item, searchQuery)) return false;
+
+      // Category matching
+      if (filterState.category) {
+        const catLower = filterState.category.toLowerCase();
+        if (!item.reason.toLowerCase().includes(catLower)) return false;
+      }
+
+      // Min amount matching
+      if (filterState.minAmount !== undefined) {
+        if (item.requested_amount < filterState.minAmount) return false;
+      }
+
+      // Max amount matching
+      if (filterState.maxAmount !== undefined) {
+        if (item.requested_amount > filterState.maxAmount) return false;
+      }
+
+      return true;
+    });
+  }, [rawItems, searchQuery, filterState]);
+
+  const baselineStats = useMemo<AssistanceStats>(() => {
+    if (statsSummary) {
+      return {
+        total: statsSummary.total,
+        underReview: statsSummary.underReview,
+        approved: statsSummary.approved,
+        rejected: statsSummary.rejected,
+      };
+    }
+    return {
+      total: rawItems.length,
+      underReview: rawItems.filter(
+        i => i.status === 'UNDER_REVIEW' || i.status === 'PENDING',
+      ).length,
+      approved: rawItems.filter(i => i.status === 'APPROVED').length,
+      rejected: rawItems.filter(i => i.status === 'REJECTED').length,
+    };
+  }, [statsSummary, rawItems]);
+
+  // Dynamic KPI stats: connected live with active search & filters
+  const dynamicStats = useMemo<AssistanceStats>(() => {
+    const hasActiveFilters =
+      Boolean(searchQuery.trim()) ||
+      Boolean(filterState.category) ||
+      filterState.minAmount !== undefined ||
+      filterState.maxAmount !== undefined ||
+      Boolean(filterState.fromDate);
+
+    if (!hasActiveFilters) {
+      return baselineStats;
+    }
+
+    const total = filteredItems.length;
+    let underReview = 0;
+    let approved = 0;
+    let rejected = 0;
+
+    filteredItems.forEach(item => {
+      if (item.status === 'UNDER_REVIEW' || item.status === 'PENDING') underReview++;
+      else if (item.status === 'APPROVED') approved++;
+      else if (item.status === 'REJECTED') rejected++;
+    });
+
+    return { total, underReview, approved, rejected };
+  }, [searchQuery, filterState, filteredItems, baselineStats]);
 
   const refresh = useCallback(async () => {
-    await Promise.all([fetchPage(1, 'refresh'), reloadStats()]);
-  }, [fetchPage, reloadStats]);
-
-  const hasMore = meta ? pageRef.current < meta.totalPages : false;
-
-  const loadMore = useCallback(() => {
-    if (loadingMore || refreshing || initialLoading || !hasMore) {
-      return;
-    }
-    return fetchPage(pageRef.current + 1, 'more');
-  }, [fetchPage, hasMore, initialLoading, loadingMore, refreshing]);
+    await Promise.all([refetchList(), refetchStats()]);
+  }, [refetchList, refetchStats]);
 
   const clearFilters = useCallback(() => {
     setSearchQuery('');
-    setDebouncedSearch('');
-    activeTabRef.current = 'ALL';
-    setActiveTabState('ALL');
-    fetchPage(1, 'initial');
-  }, [fetchPage]);
+    setActiveTab('ALL');
+    setFilterState({});
+  }, []);
 
-  const filteredItems = useMemo(
-    () => items.filter(request => matchesSearch(request, debouncedSearch)),
-    [items, debouncedSearch],
+  const applyFilters = useCallback((newFilters: AssistanceFilterState) => {
+    setFilterState(newFilters);
+    if (newFilters.status) {
+      setActiveTab(newFilters.status as AssistanceTabKey);
+    }
+  }, []);
+
+  const createRequest = useCallback(
+    async (payload: CreateAssistanceRequestPayload) => {
+      return createMutation.mutateAsync(payload);
+    },
+    [createMutation],
   );
 
   return {
     filteredItems,
-    totalCount: meta?.total ?? 0,
-    stats,
-    statsLoading,
+    totalCount: listData?.meta.total ?? rawItems.length,
+    stats: dynamicStats,
+    rawStats: baselineStats,
+    statsLoading: isStatsLoading && !statsSummary,
     activeTab,
     searchQuery,
-    initialLoading,
-    refreshing,
-    loadingMore,
-    error,
-    hasMore,
+    filterState,
+    initialLoading: isListLoading,
+    refreshing: isRefetching,
+    loadingMore: false,
+    error: queryError
+      ? getApiErrorMessage(queryError, 'Unable to load assistance requests.')
+      : null,
+    hasMore: false,
     setSearchQuery,
     setActiveTab,
+    applyFilters,
     refresh,
-    loadMore,
+    loadMore: () => {},
     clearFilters,
+    createRequest,
   };
 }

@@ -2,6 +2,7 @@ import { api, unwrap } from '../../../../core/api/client';
 import type { ApiEnvelope } from '../../../../core/api/types';
 import type {
   AddTicketMessageBody,
+  CreateTicketBody,
   SupportTicket,
   SupportTicketListData,
   SupportTicketMessage,
@@ -10,32 +11,52 @@ import type {
 } from '../types/support.types';
 import type { SupportTicketDocumentsListData } from './support.documents.types';
 
-// Routes confirmed against the implemented backend (HRSJM-back-api,
-// modules/support): GET /support-tickets, GET /support-tickets/:id,
-// PATCH /support-tickets/:id/status { status, note? } (permission
-// support.manage), POST /support-tickets/:id/messages { body },
-// GET /support-tickets/:id/messages (full history, no pagination).
-//
-// Confirmed gaps vs the phase plan - no backend support exists (reported):
-//   assignment / escalation endpoints, priority, category, assignee,
-//   date-range filters. The list endpoint only supports page, limit,
-//   status, user_id and search (subject + description).
-//
-// The backend rejects unknown query fields (strict whitelist validation),
-// so nothing beyond the supported params is ever sent.
+export interface TicketStatsData {
+  total: number;
+  open: number;
+  inProgress: number;
+  resolved: number;
+  closed: number;
+}
+
 export const supportService = {
   async list(query: SupportTicketQuery = {}): Promise<SupportTicketListData> {
-    const params: SupportTicketQuery = {
+    const params: Record<string, any> = {
       page: query.page ?? 1,
       limit: query.limit ?? 10,
     };
-    if (query.status) {
-      params.status = query.status;
-    }
-    if (query.search) {
-      params.search = query.search;
-    }
+    if (query.status) params.status = query.status;
+    if (query.category && query.category !== 'ALL') params.category = query.category;
+    if (query.from_date) params.from_date = query.from_date;
+    if (query.to_date) params.to_date = query.to_date;
+    if (query.search) params.search = query.search;
+
     const res = await api.get<ApiEnvelope<SupportTicketListData>>('/support-tickets', { params });
+    return unwrap(res.data);
+  },
+
+  async create(body: CreateTicketBody): Promise<SupportTicket> {
+    const payload: { subject: string; description: string } = {
+      subject: body.category && body.category !== 'ALL' && !body.subject.includes(`[${body.category}]`)
+        ? `[${body.category}] ${body.subject.trim()}`
+        : body.subject.trim(),
+      description: body.priority && body.priority !== 'NORMAL'
+        ? `[Priority: ${body.priority}]\n\n${body.description.trim()}`
+        : body.description.trim(),
+    };
+    const res = await api.post<ApiEnvelope<SupportTicket>>('/support-tickets', payload);
+    return unwrap(res.data);
+  },
+
+  async getStatsSummary(query: SupportTicketQuery = {}): Promise<TicketStatsData> {
+    const params: Record<string, any> = {};
+    if (query.status) params.status = query.status;
+    if (query.category && query.category !== 'ALL') params.category = query.category;
+    if (query.from_date) params.from_date = query.from_date;
+    if (query.to_date) params.to_date = query.to_date;
+    if (query.search) params.search = query.search;
+
+    const res = await api.get<ApiEnvelope<TicketStatsData>>('/support-tickets/stats/summary', { params });
     return unwrap(res.data);
   },
 

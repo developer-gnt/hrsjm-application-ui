@@ -19,11 +19,13 @@ import { useAuth } from '../../../../core/auth/AuthContext';
 import { can } from '../../../../core/permissions/permissions';
 import { BrandColors } from '../../../../core/theme/colors';
 import { Typography } from '../../../../core/theme/typography';
-import { Spacing, BorderRadius } from '../../../../core/theme/spacing';
+import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
+import { Plus, ListFilter, X } from '../../../../core/components/icons';
 import type { AppStackParamList, TabsParamList } from '../../../../core/navigation/types';
 import { TicketCard } from '../components/TicketCard';
 import { TicketFilters } from '../components/TicketFilters';
 import { TicketStatsRow } from '../components/TicketStats';
+import { CreateTicketModal } from '../components/CreateTicketModal';
 import { TICKET_TABS } from '../support.utils';
 import { useSupportTickets } from '../hooks/useSupportTickets';
 import { AppEmptyState, AppErrorState } from '../../../../core';
@@ -47,13 +49,18 @@ export function SupportTicketsScreen() {
     refreshing,
     loadingMore,
     error,
+    filterState,
+    activeFiltersCount,
     setSearchQuery,
     setActiveTab,
+    applyFilters,
     refresh,
     loadMore,
     clearFilters,
   } = useSupportTickets();
+
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
 
   if (!can(user, 'support.manage')) {
     return (
@@ -78,8 +85,14 @@ export function SupportTicketsScreen() {
           ? stats.open
           : tab.key === 'UNDER_REVIEW'
             ? stats.inProgress
-            : stats.resolved,
+            : tab.key === 'RESOLVED'
+              ? stats.resolved
+              : (stats.closed ?? 0),
   }));
+
+  const hasActiveFilterChips =
+    (filterState.category && filterState.category !== 'ALL') ||
+    (filterState.dateRange && filterState.dateRange !== 'ALL');
 
   return (
     <View style={styles.flex}>
@@ -107,12 +120,23 @@ export function SupportTicketsScreen() {
         onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <View>
-            {/* Page Context Banner */}
+            {/* Page Context Banner & Action Header */}
             <View style={styles.headerArea}>
-              <Text style={styles.pageTitle}>Complaints & Support</Text>
-              <Text style={styles.pageSubtitle}>
-                Review, track and resolve support tickets.
-              </Text>
+              <View style={styles.headerTitleCol}>
+                <Text style={styles.pageTitle}>Complaints & Support</Text>
+                <Text style={styles.pageSubtitle}>
+                  Review, track and resolve support tickets.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.addBtn}
+                onPress={() => setCreateModalVisible(true)}
+                activeOpacity={0.85}
+              >
+                <Plus size={15} color="#FFFFFF" strokeWidth={2.5} />
+                <Text style={styles.addBtnText}>New Complaint</Text>
+              </TouchableOpacity>
             </View>
 
             {/* 4-Column Executive KPI Cards */}
@@ -131,13 +155,53 @@ export function SupportTicketsScreen() {
                 onPress={() => setFiltersVisible(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Open filters"
-                style={styles.filtersButton}
+                style={[
+                  styles.filtersButton,
+                  activeFiltersCount > 0 && styles.filtersButtonActive,
+                ]}
                 activeOpacity={0.85}
               >
-                <Text style={styles.filterIcon}>⚙️</Text>
-                <Text style={styles.filtersText}>Filters</Text>
+                <ListFilter
+                  size={15}
+                  color={activeFiltersCount > 0 ? '#1D4ED8' : '#0F2C59'}
+                />
+                <Text
+                  style={[
+                    styles.filtersText,
+                    activeFiltersCount > 0 && styles.filtersTextActive,
+                  ]}
+                >
+                  Filters{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ''}
+                </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Active Filter Chips Banner */}
+            {hasActiveFilterChips ? (
+              <View style={styles.activeFilterPillsRow}>
+                {filterState.category && filterState.category !== 'ALL' ? (
+                  <View style={styles.filterPill}>
+                    <Text style={styles.filterPillText}>
+                      Category: {filterState.category}
+                    </Text>
+                  </View>
+                ) : null}
+                {filterState.dateRange && filterState.dateRange !== 'ALL' ? (
+                  <View style={styles.filterPill}>
+                    <Text style={styles.filterPillText}>
+                      Period: {filterState.dateRange}
+                    </Text>
+                  </View>
+                ) : null}
+                <TouchableOpacity
+                  onPress={clearFilters}
+                  style={styles.clearAllBtn}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.clearAllText}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
 
             {/* Filter Tabs */}
             <View style={styles.tabsContainer}>
@@ -173,13 +237,28 @@ export function SupportTicketsScreen() {
         contentContainerStyle={styles.listContent}
       />
 
+      {/* Filter Bottom Sheet */}
       <TicketFilters
         visible={filtersVisible}
-        currentTab={activeTab}
+        filters={filterState}
         onClose={() => setFiltersVisible(false)}
-        onApply={tab => {
-          setActiveTab(tab);
+        onApply={(newFilters) => {
+          applyFilters(newFilters);
           setFiltersVisible(false);
+        }}
+        onReset={() => {
+          clearFilters();
+          setFiltersVisible(false);
+        }}
+      />
+
+      {/* New Complaint / Ticket Modal */}
+      <CreateTicketModal
+        visible={createModalVisible}
+        onClose={() => setCreateModalVisible(false)}
+        onSuccess={() => {
+          setCreateModalVisible(false);
+          refresh();
         }}
       />
     </View>
@@ -199,20 +278,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: Spacing.base,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  headerTitleCol: {
+    flex: 1,
   },
   pageTitle: {
     ...Typography.screenTitle,
-    fontSize: 24,
+    fontSize: 22,
+    fontWeight: '800',
     color: '#0F2C59',
   },
   pageSubtitle: {
     ...Typography.body,
-    fontSize: 13,
+    fontSize: 12.5,
     color: '#64748B',
     marginTop: 2,
+  },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#0F2C59',
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderRadius: BorderRadius.lg,
+    ...Shadows.card,
+  },
+  addBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    fontWeight: '700',
   },
   searchRow: {
     flexDirection: 'row',
@@ -231,17 +333,51 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     height: 44,
     borderRadius: BorderRadius.lg,
   },
-  filterIcon: {
-    fontSize: 13,
+  filtersButtonActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#93C5FD',
   },
   filtersText: {
     fontSize: 13,
     fontWeight: '700',
     color: '#0F2C59',
+  },
+  filtersTextActive: {
+    color: '#1D4ED8',
+  },
+  activeFilterPillsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: Spacing.base,
+    marginBottom: Spacing.sm,
+  },
+  filterPill: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  filterPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1E40AF',
+  },
+  clearAllBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+  },
+  clearAllText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#DC2626',
   },
   tabsContainer: {
     marginBottom: Spacing.md,

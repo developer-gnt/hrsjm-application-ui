@@ -15,9 +15,11 @@ import { MemberStatusBadge } from './MemberStatusBadge';
 interface MemberRowProps {
   member: Member;
   selected: boolean;
+  selectionMode?: boolean;
   /** Wide (tablet/landscape) grid layout vs stacked phone card layout. */
   wide: boolean;
   onToggleSelect: (id: string) => void;
+  onLongPress?: (id: string) => void;
   onOpenActions: (member: Member) => void;
 }
 
@@ -46,87 +48,121 @@ const renderValidityText = (member: Member) => {
 const MemberRowComponent: React.FC<MemberRowProps> = ({
   member,
   selected,
+  selectionMode = false,
   wide,
   onToggleSelect,
+  onLongPress,
   onOpenActions,
 }) => {
+  const isSelecting = selectionMode || selected;
+
+  const handlePress = () => {
+    if (isSelecting) {
+      onToggleSelect(member.id);
+    } else {
+      onOpenActions(member);
+    }
+  };
+
+  const handleLongPress = () => {
+    if (onLongPress) {
+      onLongPress(member.id);
+    } else {
+      onToggleSelect(member.id);
+    }
+  };
+
   if (wide) {
     return (
-      <View style={[styles.card, styles.cardWide, selected && styles.cardSelected]}>
-        <View style={styles.checkboxCell}>
-          <AppCheckbox
-            checked={selected}
-            onPress={() => onToggleSelect(member.id)}
-            accessibilityLabel={`Select ${member.name}`}
-          />
-        </View>
+      <PressableScale
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+        scaleTo={0.99}
+        pressedOpacity={0.9}
+        accessibilityRole="button"
+        accessibilityLabel={`Member ${member.name}`}
+      >
+        <View style={[styles.card, styles.cardWide, selected && styles.cardSelected]}>
+          {isSelecting && (
+            <View style={styles.checkboxCell}>
+              <AppCheckbox
+                checked={selected}
+                onPress={() => onToggleSelect(member.id)}
+                accessibilityLabel={`Select ${member.name}`}
+              />
+            </View>
+          )}
 
-        <View style={styles.memberColumn}>
-          <Avatar name={member.name} source={member.photo} size={AVATAR_SIZE} />
-          <View style={styles.contactStack}>
-            <Text style={styles.name} numberOfLines={1}>
-              {member.name}
+          <View style={styles.memberColumn}>
+            <Avatar name={member.name} source={member.photo} size={AVATAR_SIZE} />
+            <View style={styles.contactStack}>
+              <Text style={styles.name} numberOfLines={1}>
+                {member.name}
+              </Text>
+              <Text style={styles.contact} numberOfLines={1}>
+                {member.phone}
+              </Text>
+              <Text style={styles.contact} numberOfLines={1}>
+                {member.email}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.idColumn}>
+            <Text style={styles.membershipId} numberOfLines={1}>
+              {member.membershipId}
             </Text>
-            <Text style={styles.contact} numberOfLines={1}>
-              {member.phone}
-            </Text>
-            <Text style={styles.contact} numberOfLines={1}>
-              {member.email}
+            <Text style={styles.meta} numberOfLines={1}>
+              Joined: {formatDate(member.joinedDate)}
             </Text>
           </View>
-        </View>
 
-        <View style={styles.idColumn}>
-          <Text style={styles.membershipId} numberOfLines={1}>
-            {member.membershipId}
-          </Text>
-          <Text style={styles.meta} numberOfLines={1}>
-            Joined: {formatDate(member.joinedDate)}
-          </Text>
-        </View>
+          <View style={styles.validColumn}>
+            <Text style={styles.validDate} numberOfLines={1}>
+              {formatDate(member.validTill)}
+            </Text>
+            {renderValidityText(member)}
+          </View>
 
-        <View style={styles.validColumn}>
-          <Text style={styles.validDate} numberOfLines={1}>
-            {formatDate(member.validTill)}
-          </Text>
-          {renderValidityText(member)}
-        </View>
+          <View style={styles.statusColumn}>
+            <MemberStatusBadge status={member.status} />
+          </View>
 
-        <View style={styles.statusColumn}>
-          <MemberStatusBadge status={member.status} />
+          <View style={styles.menuColumn}>
+            <PressableScale
+              onPress={() => onOpenActions(member)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`More actions for ${member.name}`}
+              style={styles.menuButton}
+            >
+              <EllipsisVertical size={20} color={BrandColors.textMuted} strokeWidth={2} />
+            </PressableScale>
+          </View>
         </View>
-
-        <View style={styles.menuColumn}>
-          <PressableScale
-            onPress={() => onOpenActions(member)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel={`More actions for ${member.name}`}
-            style={styles.menuButton}
-          >
-            <EllipsisVertical size={20} color={BrandColors.textMuted} strokeWidth={2} />
-          </PressableScale>
-        </View>
-      </View>
+      </PressableScale>
     );
   }
 
   return (
     <PressableScale
-      onPress={() => onOpenActions(member)}
+      onPress={handlePress}
+      onLongPress={handleLongPress}
       scaleTo={0.99}
       pressedOpacity={0.9}
       accessibilityRole="button"
-      accessibilityLabel={`Member ${member.name}, open actions`}
+      accessibilityLabel={`Member ${member.name}`}
       testID={`member-row-${member.id}`}
     >
       <View style={[styles.card, selected && styles.cardSelected]}>
         <View style={styles.narrowHeaderRow}>
-          <AppCheckbox
-            checked={selected}
-            onPress={() => onToggleSelect(member.id)}
-            accessibilityLabel={`Select ${member.name}`}
-          />
+          {isSelecting && (
+            <AppCheckbox
+              checked={selected}
+              onPress={() => onToggleSelect(member.id)}
+              accessibilityLabel={`Select ${member.name}`}
+            />
+          )}
           <Avatar name={member.name} source={member.photo} size={AVATAR_SIZE} />
           <View style={styles.narrowNameStack}>
             <Text style={styles.name} numberOfLines={1}>
@@ -145,7 +181,12 @@ const MemberRowComponent: React.FC<MemberRowProps> = ({
           </PressableScale>
         </View>
 
-        <View style={styles.narrowDetailStack}>
+        <View
+          style={[
+            styles.narrowDetailStack,
+            isSelecting ? styles.narrowDetailStackSelecting : styles.narrowDetailStackNormal,
+          ]}
+        >
           <Text style={styles.contact} numberOfLines={1}>
             {member.phone} · {member.email}
           </Text>
@@ -186,6 +227,7 @@ const styles = StyleSheet.create({
   // Wide grid cells (flex values match MemberListHeader)
   checkboxCell: {
     width: 20,
+    marginRight: Spacing.sm,
   },
   memberColumn: {
     flex: 2.4,
@@ -225,8 +267,13 @@ const styles = StyleSheet.create({
   },
   narrowDetailStack: {
     marginTop: Spacing.sm,
-    paddingLeft: AVATAR_SIZE + Spacing.md + 20 + Spacing.md,
     gap: 3,
+  },
+  narrowDetailStackNormal: {
+    paddingLeft: AVATAR_SIZE + Spacing.md,
+  },
+  narrowDetailStackSelecting: {
+    paddingLeft: AVATAR_SIZE + Spacing.md + 20 + Spacing.md,
   },
   narrowValidityRow: {
     flexDirection: 'row',

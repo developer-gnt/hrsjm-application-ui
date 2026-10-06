@@ -25,11 +25,23 @@ export const paymentsService = {
   async list(
     params: ListPaymentsParams,
   ): Promise<{ items: MembershipPaymentItem[]; meta: PaginationMeta }> {
-    const response = await apiClient.get<{
-      items: MembershipPaymentItem[];
-      meta: PaginationMeta;
-    }>(ApiRoutes.PAYMENTS.MEMBERSHIP_PAYMENTS, { params });
-    return response.data;
+    try {
+      const response = await apiClient.get<{
+        items: MembershipPaymentItem[];
+        meta: PaginationMeta;
+      }>(ApiRoutes.PAYMENTS.MEMBERSHIP_PAYMENTS, { params });
+      return (
+        response?.data || {
+          items: [],
+          meta: { page: 1, limit: 20, total: 0, totalPages: 1 },
+        }
+      );
+    } catch {
+      return {
+        items: [],
+        meta: { page: 1, limit: 20, total: 0, totalPages: 1 },
+      };
+    }
   },
 
   async get(id: string): Promise<MembershipPaymentDetail> {

@@ -204,6 +204,28 @@ export const membersService = {
   },
 
   /**
+   * Fetch aggregate KPI statistics for memberships directly from the server.
+   */
+  async getStats(params?: { search?: string; category_id?: string }): Promise<MemberStats> {
+    try {
+      const res = await apiClient.get<MemberStats>(ApiRoutes.MEMBERSHIPS.STATS, {
+        params: {
+          search: params?.search?.trim() || undefined,
+          category_id: params?.category_id || undefined,
+        },
+      });
+      return res.data;
+    } catch {
+      return {
+        total: 0,
+        active: 0,
+        expiringSoon: 0,
+        inactive: 0,
+      };
+    }
+  },
+
+  /**
    * Fetch all active membership categories.
    */
   async getCategories(): Promise<MembershipCategoryItem[]> {
@@ -211,16 +233,67 @@ export const membersService = {
       const res = await apiClient.get<any>(
         ApiRoutes.MEMBERSHIPS.CATEGORIES
       );
-      if (Array.isArray(res.data)) {
-        return res.data;
-      }
-      return res.data?.items || [];
+      const raw = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+      const allowedCodes = new Set([
+        'DISTRICT_UNIT',
+        'STATE_UNIT',
+        'LION_COUNSELOR_AMBASSADOR',
+        'STATE_DIRECTOR',
+        'NATIONAL_COUNCIL_CELL',
+      ]);
+      const filtered = raw.filter(
+        (cat: any) =>
+          cat.status === 'ACTIVE' &&
+          (allowedCodes.has(cat.code) ||
+            (!cat.code?.startsWith('RENEWAL_') &&
+              !cat.name?.toLowerCase().includes('renewal') &&
+              !cat.code?.startsWith('P13') &&
+              !cat.name?.startsWith('Acc ')))
+      );
+      if (filtered.length > 0) return filtered;
+      return raw;
     } catch {
       return [
-        { id: '1', name: 'General Member', code: 'GENERAL', fee: 500, status: 'ACTIVE' },
-        { id: '2', name: 'Life Member', code: 'LIFE', fee: 5000, status: 'ACTIVE' },
-        { id: '3', name: 'Patron Member', code: 'PATRON', fee: 15000, status: 'ACTIVE' },
-        { id: '4', name: 'Executive Member', code: 'EXECUTIVE', fee: 25000, status: 'ACTIVE' },
+        {
+          id: '1',
+          name: 'District Unit',
+          code: 'DISTRICT_UNIT',
+          fee: 3000,
+          description: 'Qualification: 10th Pass (10 TH) · 1 Yr Free Renewal',
+          status: 'ACTIVE',
+        },
+        {
+          id: '2',
+          name: 'State Unit',
+          code: 'STATE_UNIT',
+          fee: 3000,
+          description: 'Qualification: 10th Pass (10 TH) · 2 Yrs Free Renewal',
+          status: 'ACTIVE',
+        },
+        {
+          id: '3',
+          name: 'Lion, Counselor or Ambassador of State',
+          code: 'LION_COUNSELOR_AMBASSADOR',
+          fee: 3000,
+          description: 'Qualification: 12th Pass (12 TH) · 3 Yrs Free Renewal',
+          status: 'ACTIVE',
+        },
+        {
+          id: '4',
+          name: "Hon'ble State Director",
+          code: 'STATE_DIRECTOR',
+          fee: 3000,
+          description: 'Qualification: Graduate (GRADUATES) · 4 Yrs Free Renewal',
+          status: 'ACTIVE',
+        },
+        {
+          id: '5',
+          name: 'National Council Cell',
+          code: 'NATIONAL_COUNCIL_CELL',
+          fee: 3000,
+          description: 'Lawyers, Women or Minority · Qualification: Graduate · 5 Yrs Free Renewal',
+          status: 'ACTIVE',
+        },
       ];
     }
   },
@@ -259,6 +332,36 @@ export const membersService = {
   },
 
   /**
+   * Update membership details (Admin edit).
+   */
+  async update(
+    id: string,
+    payload: UpdateMemberPayload
+  ): Promise<BackendMembership> {
+    const res = await apiClient.patch<BackendMembership>(
+      ApiRoutes.MEMBERSHIPS.DETAILS(id),
+      payload
+    );
+    return res.data;
+  },
+
+  /**
+   * Fetch uploaded documents for membership.
+   */
+  async getDocuments(
+    id: string
+  ): Promise<{ membership_id: string; documents: any[] }> {
+    try {
+      const res = await apiClient.get<{ membership_id: string; documents: any[] }>(
+        ApiRoutes.MEMBERSHIPS.DOCUMENTS(id)
+      );
+      return res.data;
+    } catch {
+      return { membership_id: id, documents: [] };
+    }
+  },
+
+  /**
    * Update membership status (Approve, Reject, Suspend, Activate).
    */
   async updateStatus(
@@ -278,6 +381,7 @@ export interface MembershipCategoryItem {
   name: string;
   code: string;
   fee: number | string;
+  description?: string;
   validity_days?: number;
   status: string;
 }
@@ -290,6 +394,7 @@ export interface CreateMemberPayload {
   personal_details?: {
     dob?: string;
     gender?: string;
+    qualification?: string;
     address?: string;
     city?: string;
     state?: string;
@@ -297,6 +402,28 @@ export interface CreateMemberPayload {
   };
   admin_notes?: string;
   auto_activate?: boolean;
+}
+
+export interface UpdateMemberPayload {
+  category_id?: string;
+  application_data?: {
+    full_name?: string;
+    mobile_number?: string;
+    email?: string;
+    personal_details?: {
+      dob?: string;
+      gender?: string;
+      qualification?: string;
+      other_qualification?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+  admin_notes?: string;
 }
 
 export default membersService;

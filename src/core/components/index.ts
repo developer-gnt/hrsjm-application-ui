@@ -26,3 +26,5 @@ export * from './admin';
 // Modals & Dialogs
 export * from './common/AppModal';
 export * from './common/ConfirmDialog';
+export * from './common/AppFeedbackModal';
+export * from './common/DatePickerModal';

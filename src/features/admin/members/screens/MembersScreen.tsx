@@ -12,6 +12,11 @@ import {
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppBottomNavigation } from '../../../../core/components/common/AppBottomNavigation';
 import {
+  AppFeedbackModal,
+  FeedbackTone,
+  FeedbackAction,
+} from '../../../../core/components/common/AppFeedbackModal';
+import {
   FileText,
   House,
   LayoutGrid,
@@ -24,7 +29,6 @@ import {
 import { BrandColors } from '../../../../core/theme/colors';
 import { Spacing } from '../../../../core/theme/spacing';
 import { Member, MemberSortOption } from '../types';
-import { useMembers, useCreateMember, MembersPreviewState } from '../hooks/useMembers';
 import { MembersPageHeader } from '../components/MembersPageHeader';
 import { MemberStats } from '../components/MemberStats';
 import { MemberSearchFilterBar } from '../components/MemberSearchFilterBar';
@@ -35,7 +39,18 @@ import { MemberFilterSheet } from '../components/MemberFilterSheet';
 import { MemberActionsSheet } from '../components/MemberActionsSheet';
 import { MembersStateView, MembersLoadingState } from '../components/MembersStateView';
 import { AddMemberModal } from '../components/AddMemberModal';
-import type { CreateMemberPayload } from '../services/members.service';
+import { EditMemberModal } from '../components/EditMemberModal';
+import { MemberProfileModal } from '../components/MemberProfileModal';
+import {
+  useMembers,
+  useCreateMember,
+  useUpdateMember,
+  MembersPreviewState,
+} from '../hooks/useMembers';
+import type {
+  CreateMemberPayload,
+  UpdateMemberPayload,
+} from '../services/members.service';
 
 /** Width at/above which the member list renders as an aligned column grid. */
 const WIDE_LAYOUT_BREAKPOINT = 700;
@@ -65,16 +80,46 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   showBottomNav = false,
   onNavigate,
 }) => {
-  const effectiveState: MembersPreviewState = previewState ?? 'default';
+  const { width } = useWindowDimensions();
+  const isWide = width >= WIDE_LAYOUT_BREAKPOINT;
 
+  const effectiveState: MembersPreviewState = previewState ?? 'default';
   const members = useMembers(effectiveState);
   const createMemberMutation = useCreateMember();
+  const updateMemberMutation = useUpdateMember();
+
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [actionsMember, setActionsMember] = useState<Member | null>(null);
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [editMember, setEditMember] = useState<Member | null>(null);
+  const [viewMember, setViewMember] = useState<Member | null>(null);
 
-  const { width } = useWindowDimensions();
-  const isWide = width >= WIDE_LAYOUT_BREAKPOINT;
+  // Professional Feedback Modal State
+  const [feedback, setFeedback] = useState<{
+    visible: boolean;
+    tone: FeedbackTone;
+    title: string;
+    message: string;
+    badgeText?: string;
+    primaryAction?: FeedbackAction;
+    secondaryAction?: FeedbackAction;
+  }>({
+    visible: false,
+    tone: 'success',
+    title: '',
+    message: '',
+  });
+
+  const showFeedback = useCallback(
+    (config: Omit<typeof feedback, 'visible'>) => {
+      setFeedback({ ...config, visible: true });
+    },
+    []
+  );
+
+  const closeFeedback = useCallback(() => {
+    setFeedback((prev) => ({ ...prev, visible: false }));
+  }, []);
 
   const someSelected =
     members.selectedIds.size > 0 && members.selectedIds.size < members.filteredMembers.length;
@@ -88,90 +133,151 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
     async (payload: CreateMemberPayload) => {
       try {
         await createMemberMutation.mutateAsync(payload);
-        Alert.alert(
-          'Member Added',
-          `${payload.full_name} has been successfully registered.`
-        );
+        showFeedback({
+          tone: 'success',
+          title: 'Member Added',
+          message: `${payload.full_name} has been successfully registered into the directory.`,
+          badgeText: 'REGISTERED',
+          primaryAction: { text: 'Great, Done' },
+        });
       } catch (err: any) {
         const errorMsg =
           err?.response?.data?.message ||
           err?.message ||
           'Failed to add member. Please verify the information and try again.';
-        Alert.alert('Registration Failed', errorMsg);
+        showFeedback({
+          tone: 'error',
+          title: 'Registration Failed',
+          message: errorMsg,
+          badgeText: 'FAILED',
+          primaryAction: { text: 'Try Again' },
+        });
         throw err;
       }
     },
-    [createMemberMutation]
+    [createMemberMutation, showFeedback]
+  );
+
+  const handleUpdateMember = useCallback(
+    async (id: string, payload: UpdateMemberPayload) => {
+      try {
+        await updateMemberMutation.mutateAsync({ id, payload });
+        showFeedback({
+          tone: 'success',
+          title: 'Member Updated',
+          message: 'Member details have been updated successfully.',
+          badgeText: 'UPDATED',
+          primaryAction: { text: 'Done' },
+        });
+      } catch (err: any) {
+        const errorMsg =
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to update member information.';
+        showFeedback({
+          tone: 'error',
+          title: 'Update Failed',
+          message: errorMsg,
+          badgeText: 'ERROR',
+          primaryAction: { text: 'Dismiss' },
+        });
+        throw err;
+      }
+    },
+    [updateMemberMutation, showFeedback]
   );
 
   const handleMemberAction = useCallback(
     (key: string, member: Member) => {
       if (key === 'deactivate') {
-        Alert.alert(
-          'Suspend Member',
-          `Are you sure you want to suspend ${member.name}'s membership?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Suspend',
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  await members.handleUpdateStatus(member.id, 'SUSPENDED');
-                  Alert.alert('Success', `${member.name} has been suspended.`);
-                } catch (e: any) {
-                  Alert.alert('Error', e?.message || 'Failed to update member status.');
-                }
-              },
+        showFeedback({
+          tone: 'warning',
+          title: 'Suspend Member',
+          message: `Are you sure you want to suspend ${member.name}'s membership account?`,
+          badgeText: 'SUSPENSION',
+          secondaryAction: { text: 'Cancel' },
+          primaryAction: {
+            text: 'Suspend Account',
+            variant: 'destructive',
+            onPress: async () => {
+              try {
+                await members.handleUpdateStatus(member.id, 'SUSPENDED');
+                showFeedback({
+                  tone: 'success',
+                  title: 'Member Suspended',
+                  message: `${member.name} has been suspended.`,
+                  badgeText: 'SUSPENDED',
+                });
+              } catch (e: any) {
+                showFeedback({
+                  tone: 'error',
+                  title: 'Action Failed',
+                  message: e?.message || 'Failed to update member status.',
+                });
+              }
             },
-          ]
-        );
+          },
+        });
       } else if (key === 'activate') {
-        Alert.alert(
-          'Activate Member',
-          `Are you sure you want to restore and activate ${member.name}'s membership?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Activate',
-              onPress: async () => {
-                try {
-                  await members.handleUpdateStatus(member.id, 'ACTIVE');
-                  Alert.alert('Success', `${member.name} has been activated.`);
-                } catch (e: any) {
-                  Alert.alert('Error', e?.message || 'Failed to activate member.');
-                }
-              },
+        showFeedback({
+          tone: 'info',
+          title: 'Activate Member',
+          message: `Are you sure you want to restore and activate ${member.name}'s membership?`,
+          badgeText: 'ACTIVATION',
+          secondaryAction: { text: 'Cancel' },
+          primaryAction: {
+            text: 'Activate Account',
+            onPress: async () => {
+              try {
+                await members.handleUpdateStatus(member.id, 'ACTIVE');
+                showFeedback({
+                  tone: 'success',
+                  title: 'Member Activated',
+                  message: `${member.name} has been successfully activated.`,
+                  badgeText: 'ACTIVE',
+                });
+              } catch (e: any) {
+                showFeedback({
+                  tone: 'error',
+                  title: 'Action Failed',
+                  message: e?.message || 'Failed to activate member.',
+                });
+              }
             },
-          ]
-        );
+          },
+        });
       } else if (key === 'view') {
-        Alert.alert(
-          'Member Profile',
-          `Name: ${member.name}\nID: ${member.membershipId}\nPhone: ${member.phone}\nEmail: ${member.email}\nStatus: ${member.status}\nJoined: ${new Date(member.joinedDate).toLocaleDateString()}`
-        );
+        setViewMember(member);
+      } else if (key === 'edit') {
+        setEditMember(member);
       } else if (key === 'reset-password') {
-        Alert.alert(
-          'Reset Password',
-          `A password reset link will be sent to ${member.email || member.phone}.`,
-          [{ text: 'OK' }]
-        );
+        showFeedback({
+          tone: 'info',
+          title: 'Reset Password',
+          message: `A secure password reset link will be sent to ${member.email || member.phone}.`,
+          badgeText: 'SECURITY',
+          primaryAction: { text: 'Send Link' },
+        });
       }
     },
-    [members]
+    [members, showFeedback]
   );
+
+  const isSelectionMode = members.selectedIds.size > 0;
 
   const renderMemberRow = useCallback(
     ({ item }: { item: Member }) => (
       <MemberRow
         member={item}
         selected={members.selectedIds.has(item.id)}
+        selectionMode={isSelectionMode}
         wide={isWide}
         onToggleSelect={members.toggleMemberSelected}
+        onLongPress={members.toggleMemberSelected}
         onOpenActions={setActionsMember}
       />
     ),
-    [members.selectedIds, members.toggleMemberSelected, isWide]
+    [members.selectedIds, isSelectionMode, members.toggleMemberSelected, isWide]
   );
 
   const renderStateViews = (): React.ReactNode => {
@@ -253,6 +359,32 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
         </View>
       </View>
 
+      {isSelectionMode && (
+        <View style={styles.selectionBar}>
+          <Text style={styles.selectionCount}>
+            {members.selectedIds.size} Selected
+          </Text>
+          <View style={styles.selectionActions}>
+            <Pressable
+              onPress={members.toggleSelectAll}
+              style={styles.selectionBtn}
+              hitSlop={6}
+            >
+              <Text style={styles.selectionBtnText}>
+                {members.allSelected ? 'Deselect All' : 'Select All'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={members.clearSelection}
+              style={[styles.selectionBtn, styles.selectionCancelBtn]}
+              hitSlop={6}
+            >
+              <Text style={styles.selectionCancelText}>Done</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
       {showColumnHeader && (
         <MemberListHeader
           allSelected={members.allSelected}
@@ -284,8 +416,8 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
           <RefreshControl
             refreshing={members.isLoading}
             onRefresh={members.retry}
-            colors={[BrandColors.goldSoft, BrandColors.navyDeep]}
-            tintColor={BrandColors.navyDeep}
+            colors={['#000000', '#0F172A']}
+            tintColor="#000000"
           />
         }
         contentContainerStyle={styles.listContent}
@@ -321,6 +453,41 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
         onClose={() => setActionsMember(null)}
         onSelectAction={handleMemberAction}
       />
+
+      <EditMemberModal
+        visible={Boolean(editMember)}
+        member={editMember}
+        onClose={() => setEditMember(null)}
+        onSubmit={handleUpdateMember}
+        isSubmitting={updateMemberMutation.isPending}
+      />
+
+      <MemberProfileModal
+        visible={Boolean(viewMember)}
+        member={viewMember}
+        onClose={() => setViewMember(null)}
+        onEdit={(m) => {
+          setViewMember(null);
+          setEditMember(m);
+        }}
+        onToggleStatus={(m) => {
+          handleMemberAction(
+            m.status === 'ACTIVE' ? 'deactivate' : 'activate',
+            m
+          );
+        }}
+      />
+
+      <AppFeedbackModal
+        visible={feedback.visible}
+        tone={feedback.tone}
+        title={feedback.title}
+        message={feedback.message}
+        badgeText={feedback.badgeText}
+        primaryAction={feedback.primaryAction}
+        secondaryAction={feedback.secondaryAction}
+        onClose={closeFeedback}
+      />
     </View>
   );
 };
@@ -338,6 +505,50 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingBottom: Spacing.xl + Spacing.md,
     gap: Spacing.sm + 2,
+  },
+  selectionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginTop: Spacing.base,
+  },
+  selectionCount: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: BrandColors.navyDeep,
+  },
+  selectionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  selectionBtn: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+    borderRadius: 6,
+  },
+  selectionBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: BrandColors.navy,
+  },
+  selectionCancelBtn: {
+    backgroundColor: BrandColors.navy,
+    borderColor: BrandColors.navy,
+  },
+  selectionCancelText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
 

@@ -19,14 +19,15 @@ export function ticketStatusMeta(status: TicketStatus): TicketStatusMeta {
   return STATUS_META[status];
 }
 
-// Status tabs per the phase plan: All / Open / In Progress / Resolved.
-export type TicketTabKey = 'ALL' | 'SUBMITTED' | 'UNDER_REVIEW' | 'RESOLVED';
+// Status tabs per the phase plan: All / Open / In Progress / Resolved / Closed.
+export type TicketTabKey = 'ALL' | 'SUBMITTED' | 'UNDER_REVIEW' | 'RESOLVED' | 'CLOSED';
 
 export const TICKET_TABS: Array<{ key: TicketTabKey; label: string }> = [
   { key: 'ALL', label: 'All' },
   { key: 'SUBMITTED', label: 'Open' },
   { key: 'UNDER_REVIEW', label: 'In Progress' },
   { key: 'RESOLVED', label: 'Resolved' },
+  { key: 'CLOSED', label: 'Closed' },
 ];
 
 export function tabToStatus(tab: TicketTabKey): TicketStatus | undefined {
