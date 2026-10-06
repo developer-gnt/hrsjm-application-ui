@@ -46,14 +46,18 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
   onSuccess,
 }) => {
   const [category, setCategory] = useState<string>('Membership');
+  const [customCategory, setCustomCategory] = useState('');
   const [priority, setPriority] = useState<'NORMAL' | 'HIGH' | 'URGENT'>('NORMAL');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const isOtherCategory = category === 'General';
+
   const resetForm = () => {
     setCategory('Membership');
+    setCustomCategory('');
     setPriority('NORMAL');
     setSubject('');
     setDescription('');
@@ -66,6 +70,10 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (isOtherCategory && (!customCategory.trim() || customCategory.trim().length < 2)) {
+      setErrorMsg('Please specify the custom category/topic.');
+      return;
+    }
     if (!subject.trim() || subject.trim().length < 3) {
       setErrorMsg('Please enter a valid subject (at least 3 characters).');
       return;
@@ -79,8 +87,12 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
     setSubmitting(true);
 
     try {
+      const finalCategory = isOtherCategory && customCategory.trim()
+        ? customCategory.trim()
+        : category;
+
       const payload: CreateTicketBody = {
-        category,
+        category: finalCategory,
         priority,
         subject: subject.trim(),
         description: description.trim(),
@@ -105,6 +117,7 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent
       onRequestClose={handleClose}
     >
       <View style={styles.overlay}>
@@ -136,6 +149,8 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
               style={styles.scrollArea}
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets={true}
+              showsVerticalScrollIndicator={true}
             >
               {errorMsg ? (
                 <View style={styles.errorBox}>
@@ -176,6 +191,23 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
                   })}
                 </View>
               </View>
+
+              {/* Custom Topic Input (when Other / General is selected) */}
+              {isOtherCategory ? (
+                <View style={styles.fieldSection}>
+                  <Text style={styles.fieldLabel}>
+                    Specify Custom Topic / Category <Text style={styles.requiredStar}>*</Text>
+                  </Text>
+                  <TextInput
+                    value={customCategory}
+                    onChangeText={setCustomCategory}
+                    placeholder="e.g. Website Issue, Certificate Request, Event Help..."
+                    placeholderTextColor="#94A3B8"
+                    style={styles.textInput}
+                    maxLength={60}
+                  />
+                </View>
+              ) : null}
 
               {/* Priority Selector */}
               <View style={styles.fieldSection}>
@@ -288,13 +320,16 @@ const styles = StyleSheet.create({
   },
   keyboardAvoid: {
     width: '100%',
-    maxHeight: '90%',
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   modalCard: {
     backgroundColor: '#F8FAFC',
     borderTopLeftRadius: BorderRadius.xxl,
     borderTopRightRadius: BorderRadius.xxl,
-    maxHeight: '100%',
+    maxHeight: '92%',
+    display: 'flex',
+    flexDirection: 'column',
     ...Shadows.elevated,
   },
   header: {
@@ -328,10 +363,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
   },
   scrollArea: {
-    maxHeight: 460,
+    flexShrink: 1,
   },
   scrollContent: {
     padding: Spacing.base,
+    paddingBottom: Spacing.xxl,
     gap: Spacing.md,
   },
   errorBox: {
@@ -418,17 +454,17 @@ const styles = StyleSheet.create({
   },
   textInput: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#CBD5E1',
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.md,
-    paddingVertical: 10,
-    fontSize: 13.5,
+    paddingVertical: 11,
+    fontSize: 14,
     color: '#0F172A',
   },
   textArea: {
-    minHeight: 90,
-    paddingTop: 10,
+    minHeight: 100,
+    paddingTop: 11,
   },
   footer: {
     flexDirection: 'row',
