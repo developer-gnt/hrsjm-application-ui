@@ -7,6 +7,8 @@ export const AdminColors = {
   // Accent Colors
   accentGold: '#C9A227',
   accentGoldLight: '#FFF8E6',
+  accentPurple: '#8B5CF6',
+  accentPurpleLight: '#F3EEFB',
 
   // Status Colors
   statusActive: '#10B981',

@@ -6,6 +6,12 @@
  * List → View/Add → Details → Create/Edit → Back flow can be reviewed on a
  * device/emulator. This is NOT the navigation architecture: the real root
  * navigation is owned by Mubasshir (Phase 2) and will replace this file.
+ *
+ * PHASE 1 (User Home): the app boots into the 'user-home' preview route.
+ * The Home page is one continuous scroll: content sections followed by the
+ * Contact details/map and the closing Contact CTA. The Admin content
+ * preview routes below remain available in code (reachable by switching the
+ * initial route while the real navigation is pending).
  */
 import React, { useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -38,9 +44,15 @@ import type { EventListItem } from './src/features/admin/content/events';
 import type { NewsListItem } from './src/features/admin/content/news';
 import type { BlogListItem } from './src/features/admin/content/blogs';
 import type { RightsArticle } from './src/features/admin/content/rights';
+import { UserHomeScreen } from './src/features/user/home';
+import { ContactUsScreen } from './src/features/user/contact';
+import { KnowYourRightsScreen as UserKnowYourRightsScreen } from './src/features/user/rights';
 import { showAdminShellPreviewNotice } from './src/features/admin/content/events/preview/AdminShellTabBar';
 
 type AppRoute =
+  | { name: 'user-home' }
+  | { name: 'contact' }
+  | { name: 'user-rights' }
   | { name: 'list' }
   | { name: 'details'; event: EventListItem }
   | { name: 'create' }
@@ -58,8 +70,14 @@ type AppRoute =
   | { name: 'rights-create' }
   | { name: 'rights-edit'; article: RightsArticle; from: 'details' | 'list' };
 
+/** TEMPORARY: launch route of the preview shell. 'user-home' | 'contact'. */
+const INITIAL_ROUTE: AppRoute = { name: 'user-home' };
+
 function App() {
-  const [route, setRoute] = useState<AppRoute>({ name: 'list' });
+  // Boots into the Home screen. Flip to 'contact' to preview the standalone
+  // Contact Us page (it will be reachable from the User navigation — e.g.
+  // the About entry — once that phase lands).
+  const [route, setRoute] = useState<AppRoute>(INITIAL_ROUTE);
 
   // TEMPORARY preview-shell tab routing shared by the content screens: the
   // host switches to the matching list route; unhandled tabs show the shell's
@@ -86,9 +104,24 @@ function App() {
   };
 
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle="dark-content" />
-      {route.name === 'edit' ? (
+      <SafeAreaProvider>
+        <StatusBar barStyle="dark-content" />
+        {route.name === 'user-home' ? (
+          <UserHomeScreen
+            onOpenContact={() => setRoute({ name: 'contact' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+          />
+        ) : route.name === 'contact' ? (
+          <ContactUsScreen
+            onBack={() => setRoute({ name: 'user-home' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+          />
+        ) : route.name === 'user-rights' ? (
+          <UserKnowYourRightsScreen
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+          />
+        ) : route.name === 'edit' ? (
         <EditEventScreen
           event={route.event}
           onBack={() => setRoute({ name: 'details', event: route.event })}

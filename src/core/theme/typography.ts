@@ -1,4 +1,14 @@
-import { TextStyle } from 'react-native';
+import { Platform, TextStyle } from 'react-native';
+
+/**
+ * System serif faces used by the user-facing Home reference (major section
+ * headings and the hero headline). No custom font files ship with the app
+ * yet; Georgia is preinstalled on iOS and `serif` resolves to Noto Serif on
+ * Android. Replace with the brand font family once font assets are added.
+ */
+export const FontFamilies = {
+  serif: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+} as const;
 
 export const Typography = {
   screenTitle: {
