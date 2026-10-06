@@ -87,8 +87,11 @@ const PrintIcon: React.FC<{ color: string }> = ({ color }) => (
  */
 export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
   donationId,
+<<<<<<< HEAD
   onBack,
   onNavigate,
+=======
+>>>>>>> origin/sahil
 }) => {
   const [receipt, setReceipt] = useState<DonationReceiptModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -171,7 +174,11 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
     : [];
 
   const handleBack = () => {
+<<<<<<< HEAD
     onBack?.();
+=======
+    navigateToDonations();
+>>>>>>> origin/sahil
   };
 
   const getReceiptFileName = (): string =>
@@ -224,9 +231,15 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
         }
         // 'shared' (iOS save-to-files via share sheet) and 'cancelled' are silent.
       }
+<<<<<<< HEAD
     } catch (error: any) {
       console.error('Receipt download error:', error);
       setActionMessage(error?.message || 'Unable to download the receipt PDF. Please try again.');
+=======
+    } catch (error) {
+      console.error('Receipt download error:', error);
+      setActionMessage('Unable to download the receipt PDF. Please try again.');
+>>>>>>> origin/sahil
     } finally {
       setPendingAction(null);
     }
@@ -304,7 +317,13 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
     } catch (error: any) {
       console.error('Share Receipt error:', error);
       setActionMessage(
+<<<<<<< HEAD
         error?.message || 'Unable to share the receipt. Please try again.',
+=======
+        error?.message === 'Sharing the PDF is not supported on this device.'
+          ? error.message
+          : 'Unable to share the receipt PDF. Please try again.',
+>>>>>>> origin/sahil
       );
     } finally {
       setPendingAction(null);

@@ -25,7 +25,6 @@ export { DonationSearch } from './components/DonationSearch';
 export { DonationFilters } from './components/DonationFilters';
 export { DateRangePickerModal } from './components/DateRangePickerModal';
 export { AddDonationModal } from './components/AddDonationModal';
-export { DonationReceiptModal } from './components/DonationReceiptModal';
 export { DonationDetailsModal } from './components/DonationDetailsModal';
 export {
   DonationStatusBadge,

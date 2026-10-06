@@ -47,8 +47,8 @@ import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { DonationsDateSelector } from '../components/DonationsDateSelector';
 import { DateRangePickerModal } from '../components/DateRangePickerModal';
 import { AddDonationModal } from '../components/AddDonationModal';
-import { DonationReceiptModal } from '../components/DonationReceiptModal';
 import { DonationDetailsModal } from '../components/DonationDetailsModal';
+import { navigateToReceipt, navigateToProfile } from '../navigation';
 import {
   addPreviewDonation,
   filterPreviewRowsAdvanced,
@@ -103,9 +103,6 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
-  const [receiptModalVisible, setReceiptModalVisible] = useState(false);
-  const [selectedRowForReceipt, setSelectedRowForReceipt] =
-    useState<DonationRowModel | null>(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [selectedRowForDetails, setSelectedRowForDetails] =
     useState<DonationRowModel | null>(null);
@@ -222,13 +219,19 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
     setActiveTab(key);
   };
 
+  // Opens the Receipt Details page for the selected donation (replaces
+  // the old receipt popup).
   const handleViewReceipt = (row: DonationRowModel) => {
+<<<<<<< HEAD
     if (onViewReceipt) {
       onViewReceipt(row.id);
     } else {
       setSelectedRowForReceipt(row);
       setReceiptModalVisible(true);
     }
+=======
+    navigateToReceipt(row.id);
+>>>>>>> origin/sahil
   };
 
   const handleViewDetails = (row: DonationRowModel) => {
@@ -522,15 +525,6 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
         onClose={() => setAddModalVisible(false)}
         onSubmit={handleAddDonation}
         isSubmitting={createDonationMutation.isPending}
-      />
-
-      <DonationReceiptModal
-        visible={receiptModalVisible}
-        row={selectedRowForReceipt}
-        onClose={() => {
-          setReceiptModalVisible(false);
-          setSelectedRowForReceipt(null);
-        }}
       />
 
       <DonationDetailsModal

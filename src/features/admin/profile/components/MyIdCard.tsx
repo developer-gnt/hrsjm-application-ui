@@ -1,35 +1,18 @@
-/**
- * HRSJM membership ID card — exact recreation of the approved
- * reference design. This is the single source of truth for the card:
- * the My Profile inline preview, the My ID Card detail page and the
- * downloadable PDF (`utils/idCardDocument.ts`) all derive from it.
- *
- * Layout (top to bottom):
- *   crest logo + HRSJM + full name + Hindi subtitle
- *   member photo | name, membership type | Active badge
- *   icon info rows (Member ID / DOB / Member Since / Valid Till) |
- *   right column: QR → "Scan QR for verification" → HRSJM MEMBER
- *   badge → tagline
- *   gold footer strip — HUMAN RIGHTS | SOCIAL JUSTICE | EQUALITY |
- *   EMPOWERMENT
- *
- * All sizing derives from the rendered `width`, so the same component
- * scales from the small profile preview to the large detail page
- * without redesign.
- */
 import React from 'react';
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import {
+  ImageBackground,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { AdminColors } from '../../../../core';
 import { AdminProfile } from '../types/profile.types';
 import { QrCode } from './QrCode';
-import {
-  CrestLogo,
-  CalendarIcon,
-  StarIcon,
-  BadgeCheckIcon,
-  PersonIcon,
-} from './ProfileIcons';
-import { initialsOf } from '../utils/format';
+import { CrestLogo } from './ProfileIcons';
+
+// Background asset — official HRSJM background image
+const ID_CARD_BG = require('../../../../assets/id_card_bg.png');
 
 interface MyIdCardProps {
   profile: AdminProfile;
@@ -39,55 +22,34 @@ interface MyIdCardProps {
 }
 
 export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => {
-  const height = width * 0.86;
-  const pad = width * 0.045;
-  const footerHeight = width * 0.062;
+  // Exact aspect ratio of physical standard ID card (w: 85.6mm, h: 54mm ≈ 1.585)
+  const height = width / 1.585;
+  const radius = width * 0.04;
 
-  const photoWidth = width * 0.15;
-  const photoHeight = photoWidth * 1.25;
-  const nameSize = Math.max(13, width * 0.058);
-  const typeSize = Math.max(9, width * 0.04);
-  const rowLabelSize = Math.max(7.5, width * 0.032);
-  const rowValueSize = Math.max(8.5, width * 0.036);
-  const qrSize = width * 0.185;
-  const footerTextSize = Math.max(5.5, width * 0.026);
+  // Sizing tokens scaled to width
+  const padH = width * 0.045;
+  const padV = height * 0.05;
 
-  const infoRows: Array<{
-    key: string;
-    label: string;
-    value: string;
-    icon: React.ReactNode;
-  }> = [
-    {
-      key: 'memberId',
-      label: 'Member ID',
-      value: profile.memberId,
-      icon: <PersonIcon size={width * 0.032} color={AdminColors.textOnDark} />,
-    },
-    {
-      key: 'dob',
-      label: 'Date of Birth',
-      value: profile.dateOfBirth,
-      icon: <CalendarIcon size={width * 0.032} color={AdminColors.textOnDark} />,
-    },
-    {
-      key: 'since',
-      label: 'Member Since',
-      value: profile.memberSince,
-      icon: <StarIcon size={width * 0.032} color={AdminColors.accentGold} />,
-    },
-    {
-      key: 'valid',
-      label: 'Valid Till',
-      value: profile.validTill,
-      icon: (
-        <BadgeCheckIcon
-          size={width * 0.032}
-          color={AdminColors.textOnDark}
-        />
-      ),
-    },
-  ];
+  // Header cream shape with curve
+  const headerWidth = width * 0.72;
+  const headerHeight = height * 0.32;
+  const headerCurveRadius = width * 0.055;
+  const goldLineWidth = Math.max(1.5, width * 0.005);
+
+  const crestSize = width * 0.11;
+  const brandSize = Math.max(11, width * 0.038);
+  const subtitleSize = Math.max(6, width * 0.021);
+  const hindiSize = Math.max(7, width * 0.024);
+
+  const badgeFontSize = Math.max(7.5, width * 0.025);
+
+  const nameSize = Math.max(13, width * 0.044);
+  const memberTypeSize = Math.max(8.5, width * 0.027);
+  const infoLabelSize = Math.max(7.5, width * 0.024);
+  const infoValueSize = Math.max(8, width * 0.025);
+
+  const qrSize = width * 0.18;
+  const tapToViewSize = Math.max(6.5, width * 0.02);
 
   return (
     <View
@@ -96,375 +58,328 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
         {
           width,
           height,
-          borderRadius: width * 0.045,
+          borderRadius: radius,
         },
         style,
       ]}
     >
-      {/* ── Subtle decorative background (upper-right treatment) ─────── */}
-      <View
-        pointerEvents="none"
-        style={[
-          styles.decoBand,
-          {
-            width: width * 1.1,
-            height: width * 0.22,
-            top: -width * 0.06,
-            right: -width * 0.35,
-            transform: [{ rotate: '-24deg' }],
-          },
-        ]}
-      />
-      <View
-        pointerEvents="none"
-        style={[
-          styles.decoBand,
-          {
-            width: width * 0.9,
-            height: width * 0.14,
-            top: width * 0.1,
-            right: -width * 0.3,
-            transform: [{ rotate: '-24deg' }],
-          },
-        ]}
-      />
-      {/* ── Header: crest + HRSJM + full name + Hindi ─────────────────── */}
-      <View style={[styles.headerRow, { padding: pad, paddingBottom: pad * 0.45 }]}>
-        <CrestLogo size={width * 0.082} />
-        <View style={[styles.headerIdentity, { marginLeft: pad * 0.55 }]}>
-          <Text
-            style={[styles.headerBrand, { fontSize: Math.max(12, width * 0.056) }]}
-          >
-            HRSJM
-          </Text>
-          <Text
-            style={[
-              styles.headerFullName,
-              { fontSize: Math.max(5, width * 0.021) },
-            ]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-          >
-            HUMAN RIGHTS &amp; SOCIAL JUSTICE MISSION
-          </Text>
-          <Text
-            style={[
-              styles.headerHindi,
-              { fontSize: Math.max(5, width * 0.021) },
-            ]}
-            numberOfLines={1}
-          >
-            मानव अधिकार · सामाजिक न्याय
-          </Text>
-        </View>
-      </View>
-
-      {/* ── Main area ──────────────────────────────────────────────────── */}
-      <View style={[styles.mainArea, { paddingHorizontal: pad, paddingBottom: pad * 0.4 }]}>
-        {/* Photo + name + membership type + Active badge */}
-        <View style={styles.identityRow}>
+      <ImageBackground
+        source={ID_CARD_BG}
+        style={styles.fullBg}
+        imageStyle={[styles.fullBgImage, { borderRadius: radius }]}
+        resizeMode="cover"
+      >
+        {/* ── HEADER CREAM SHAPE (Gold curve border) ────────────────── */}
+        <View
+          style={[
+            styles.headerCreamShape,
+            {
+              width: headerWidth,
+              height: headerHeight,
+              borderBottomRightRadius: headerCurveRadius,
+              borderBottomWidth: goldLineWidth,
+              borderRightWidth: goldLineWidth,
+            },
+          ]}
+        >
           <View
             style={[
-              styles.photo,
+              styles.headerContent,
               {
-                width: photoWidth,
-                height: photoHeight,
-                borderRadius: width * 0.02,
-                borderWidth: Math.max(1.5, width * 0.007),
+                paddingLeft: padH,
+                paddingRight: width * 0.03,
+                paddingTop: padV,
+                paddingBottom: padV * 0.6,
               },
             ]}
           >
-            <Text
-              style={[
-                styles.photoInitials,
-                { fontSize: Math.max(9, width * 0.05) },
-              ]}
-            >
-              {initialsOf(profile.fullName)}
-            </Text>
-          </View>
+            {/* Crest Logo */}
+            <CrestLogo size={crestSize} />
 
-          <View style={[styles.identityText, { marginLeft: pad * 0.5 }]}>
+            {/* Identity Text */}
+            <View style={[styles.headerIdentity, { marginLeft: width * 0.022 }]}>
+              <Text
+                style={[styles.brandText, { fontSize: brandSize }]}
+                numberOfLines={1}
+              >
+                HRSJM
+              </Text>
+              <Text
+                style={[styles.subtitleText, { fontSize: subtitleSize }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                HUMAN RIGHTS &amp; SOCIAL JUSTICE MISSION
+              </Text>
+              <Text
+                style={[styles.hindiText, { fontSize: hindiSize }]}
+                numberOfLines={1}
+              >
+                <Text style={styles.hindiWord}>मानव अधिकार</Text>
+                <Text style={styles.hindiDot}> · </Text>
+                <Text style={styles.hindiWord}>सामाजिक न्याय</Text>
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ── ACTIVE BADGE (top right over navy background) ──────────── */}
+        <View
+          style={[
+            styles.activeBadge,
+            {
+              top: height * 0.065,
+              right: padH,
+              paddingHorizontal: width * 0.026,
+              paddingVertical: height * 0.012,
+              borderRadius: width * 0.025,
+            },
+          ]}
+        >
+          <Text style={[styles.activeBadgeText, { fontSize: badgeFontSize }]}>
+            {profile.accountStatus}
+          </Text>
+        </View>
+
+        {/* ── CARD BODY (Name, Membership Type, Info Rows, QR Code) ──── */}
+        <View
+          style={[
+            styles.bodyContainer,
+            {
+              paddingHorizontal: padH,
+              paddingBottom: height * 0.055,
+              paddingTop: headerHeight + height * 0.04,
+            },
+          ]}
+        >
+          {/* Left Column: Name, Type, Info Rows */}
+          <View style={styles.bodyLeft}>
+            {/* Member Name */}
             <Text
-              style={[styles.name, { fontSize: nameSize }]}
+              style={[styles.memberName, { fontSize: nameSize }]}
               numberOfLines={1}
               adjustsFontSizeToFit
             >
               {profile.fullName}
             </Text>
+
+            {/* Membership Type */}
             <Text
-              style={[styles.membershipType, { fontSize: typeSize }]}
+              style={[styles.memberType, { fontSize: memberTypeSize }]}
               numberOfLines={1}
             >
               {profile.membershipType}
             </Text>
+
+            {/* Info Rows */}
+            <View style={[styles.infoRows, { marginTop: height * 0.035 }]}>
+              <InfoRow
+                label="Member ID"
+                value={profile.memberId}
+                labelSize={infoLabelSize}
+                valueSize={infoValueSize}
+                rowMarginBottom={height * 0.022}
+              />
+              <InfoRow
+                label="Valid Till"
+                value={profile.validTill}
+                labelSize={infoLabelSize}
+                valueSize={infoValueSize}
+                rowMarginBottom={height * 0.022}
+              />
+              <InfoRow
+                label="Joined On"
+                value={profile.memberSince}
+                labelSize={infoLabelSize}
+                valueSize={infoValueSize}
+                rowMarginBottom={0}
+              />
+            </View>
           </View>
 
-          <View
-            style={[
-              styles.activeBadge,
-              {
-                paddingHorizontal: width * 0.026,
-                paddingVertical: width * 0.012,
-                borderRadius: width * 0.018,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.activeBadgeText,
-                { fontSize: Math.max(7, width * 0.03) },
-              ]}
-            >
-              {profile.accountStatus}
-            </Text>
-          </View>
-        </View>
-
-        {/* Info rows (left) + QR column (right) */}
-        <View style={[styles.detailRow, { marginTop: height * 0.03 }]}>
-          <View style={styles.infoRowsColumn}>
-            {infoRows.map(row => (
-              <View
-                key={row.key}
-                style={[styles.infoRow, { marginBottom: height * 0.026 }]}
-              >
-                <View style={styles.infoIcon}>{row.icon}</View>
-                <Text
-                  style={[styles.infoLabel, { fontSize: rowLabelSize }]}
-                  numberOfLines={1}
-                >
-                  {row.label}
-                </Text>
-                <Text
-                  style={[styles.infoValue, { fontSize: rowValueSize }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  {row.value}
-                </Text>
-              </View>
-            ))}
-          </View>
-
-          <View style={[styles.qrColumn, { marginLeft: pad * 0.5 }]}>
-            <QrCode size={qrSize} data={profile.memberId} />
-            <Text
-              style={[
-                styles.qrCaption,
-                {
-                  fontSize: Math.max(6, width * 0.026),
-                  lineHeight: Math.max(8, width * 0.034),
-                },
-              ]}
-              numberOfLines={2}
-            >
-              Scan QR for{'\n'}verification
-            </Text>
+          {/* Right Column: QR Code + Tap to View */}
+          <View style={styles.bodyRight}>
             <View
               style={[
-                styles.memberBadge,
+                styles.qrWrapper,
                 {
-                  borderWidth: 1,
-                  borderColor: AdminColors.accentGold,
-                  paddingHorizontal: width * 0.024,
-                  paddingVertical: width * 0.011,
-                  borderRadius: width * 0.016,
-                  marginTop: height * 0.012,
+                  borderRadius: width * 0.022,
+                  padding: width * 0.012,
                 },
               ]}
             >
-              <Text
-                style={[
-                  styles.memberBadgeText,
-                  { fontSize: Math.max(6.5, width * 0.028) },
-                ]}
-              >
-                HRSJM MEMBER
-              </Text>
+              <QrCode size={qrSize} data={profile.memberId} />
             </View>
-            <Text
-              style={[
-                styles.tagline,
-                {
-                  fontSize: Math.max(6, width * 0.025),
-                  lineHeight: Math.max(8, width * 0.032),
-                  marginTop: height * 0.01,
-                },
-              ]}
-              numberOfLines={2}
-            >
-              Together for a Fairer,{'\n'}More Just Society
+            <Text style={[styles.tapToView, { fontSize: tapToViewSize }]}>
+              Tap to View
             </Text>
           </View>
         </View>
-      </View>
-
-      {/* ── Gold footer strip ──────────────────────────────────────────── */}
-      <View style={[styles.goldFooter, { height: footerHeight }]}>
-        {['HUMAN RIGHTS', 'SOCIAL JUSTICE', 'EQUALITY', 'EMPOWERMENT'].map(
-          (item, index) => (
-            <View key={item} style={styles.footerItem}>
-              {index > 0 && <View style={styles.footerDivider} />}
-              <Text
-                style={[styles.footerText, { fontSize: footerTextSize }]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
-                {item}
-              </Text>
-            </View>
-          ),
-        )}
-      </View>
+      </ImageBackground>
     </View>
   );
 };
 
+/**
+ * Single info row: "Label  :  Value"
+ */
+interface InfoRowProps {
+  label: string;
+  value: string;
+  labelSize: number;
+  valueSize: number;
+  rowMarginBottom: number;
+}
+
+const InfoRow: React.FC<InfoRowProps> = ({
+  label,
+  value,
+  labelSize,
+  valueSize,
+  rowMarginBottom,
+}) => (
+  <View style={[styles.infoRow, { marginBottom: rowMarginBottom }]}>
+    <Text style={[styles.infoLabel, { fontSize: labelSize }]} numberOfLines={1}>
+      {label}
+    </Text>
+    <Text style={[styles.infoColon, { fontSize: labelSize }]}> : </Text>
+    <Text
+      style={[styles.infoValue, { fontSize: valueSize }]}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+    >
+      {value}
+    </Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: AdminColors.primaryDark,
     overflow: 'hidden',
+    backgroundColor: AdminColors.primaryDark,
   },
-  decoBand: {
+
+  fullBg: {
+    width: '100%',
+    height: '100%',
+  },
+  fullBgImage: {},
+
+  // ── Header cream shape with gold curve border ──────────────────────────
+  headerCreamShape: {
     position: 'absolute',
-    backgroundColor: 'rgba(255, 255, 255, 0.045)',
-    borderRadius: 999,
+    top: 0,
+    left: 0,
+    backgroundColor: '#FAF5EA',
+    borderBottomColor: '#CAA048',
+    borderRightColor: '#CAA048',
+    overflow: 'hidden',
+    zIndex: 2,
   },
-  headerRow: {
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: '100%',
   },
   headerIdentity: {
     flex: 1,
     justifyContent: 'center',
   },
-  headerBrand: {
-    fontWeight: '800',
-    color: AdminColors.textOnDark,
-    letterSpacing: 0.4,
+  brandText: {
+    fontFamily: 'serif',
+    fontWeight: '900',
+    color: '#082046',
+    letterSpacing: 0.5,
   },
-  headerFullName: {
+  subtitleText: {
+    fontWeight: '800',
+    color: '#082046',
+    letterSpacing: 0.15,
+    marginTop: 1,
+  },
+  hindiText: {
     fontWeight: '700',
-    color: AdminColors.textOnDark,
-    letterSpacing: 0.2,
-    marginTop: 1,
+    marginTop: 1.5,
   },
-  headerHindi: {
-    color: AdminColors.accentGold,
-    marginTop: 1,
+  hindiWord: {
+    color: '#082046',
   },
-  mainArea: {
-    flex: 1,
-    paddingBottom: 0,
+  hindiDot: {
+    color: '#CAA048',
+    fontWeight: '900',
   },
-  identityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  photo: {
-    backgroundColor: AdminColors.primaryLight,
-    borderColor: AdminColors.textOnDark,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoInitials: {
-    fontWeight: '800',
-    color: AdminColors.primary,
-  },
-  identityText: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  name: {
-    fontWeight: '800',
-    color: AdminColors.textOnDark,
-  },
-  membershipType: {
-    color: AdminColors.accentGold,
-    marginTop: 2,
-  },
+
+  // ── Active badge (positioned on top right over navy) ───────────────────
   activeBadge: {
-    backgroundColor: AdminColors.statusActive,
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    backgroundColor: '#1E6539',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 3,
   },
   activeBadgeText: {
-    color: AdminColors.textOnDark,
+    color: '#FFFFFF',
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
-  detailRow: {
+
+  // ── Body content ──────────────────────────────────────────────────────
+  bodyContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  infoRowsColumn: {
+  bodyLeft: {
     flex: 1,
+    justifyContent: 'center',
+    paddingRight: 8,
   },
+  memberName: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  memberType: {
+    color: '#E5B842',
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  infoRows: {},
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  infoIcon: {
-    width: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   infoLabel: {
-    color: AdminColors.accentGold,
-    marginLeft: 8,
-    flexShrink: 0,
-    width: '37%',
+    color: '#FFFFFF',
+    width: '32%',
+    fontWeight: '400',
+  },
+  infoColon: {
+    color: '#FFFFFF',
+    fontWeight: '400',
   },
   infoValue: {
-    color: AdminColors.textOnDark,
-    fontWeight: '600',
-    flexShrink: 1,
-    textAlign: 'left',
-  },
-  qrColumn: {
-    alignItems: 'center',
-  },
-  qrCaption: {
-    color: AdminColors.textOnDark,
-    textAlign: 'center',
-    marginTop: 3,
-  },
-  memberBadge: {
-    backgroundColor: 'transparent',
-  },
-  memberBadgeText: {
-    color: AdminColors.textOnDark,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-  },
-  tagline: {
-    color: AdminColors.textOnDark,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  goldFooter: {
-    backgroundColor: AdminColors.accentGold,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-  },
-  footerItem: {
+    color: '#FFFFFF',
+    fontWeight: '400',
     flex: 1,
-    flexDirection: 'row',
+  },
+
+  // ── QR column ─────────────────────────────────────────────────────────
+  bodyRight: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: '100%',
   },
-  footerDivider: {
-    width: 1,
-    height: '55%',
-    backgroundColor: 'rgba(15, 40, 96, 0.35)',
-    marginRight: 6,
+  qrWrapper: {
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  footerText: {
-    color: AdminColors.primaryDark,
-    fontWeight: '700',
-    flexShrink: 1,
+  tapToView: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginTop: 4,
+    fontWeight: '400',
   },
 });
 

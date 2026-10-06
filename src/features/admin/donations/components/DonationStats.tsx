@@ -42,6 +42,49 @@ export const DonationStats: React.FC<DonationStatsProps> = ({
   // 4-across cards are narrow; use the reference's compact metrics there.
   const narrow = cardWidth < 130;
 
+  // Admin-dashboard card layout: icon on the left, label + value (with
+  // change indicator) beside it, support text underneath.
+  const renderStatCard = (stat: DonationStatItem) => (
+    <View
+      key={stat.id}
+      style={[
+        styles.card,
+        narrow && styles.cardSm,
+        layout === 'grid' ? styles.gridCard : { width: cardWidth },
+        { backgroundColor: stat.background },
+      ]}
+    >
+      <View style={styles.topRow}>
+        <View style={styles.iconCircle}>
+          <Text style={styles.icon}>{stat.icon}</Text>
+        </View>
+        <View style={styles.topText}>
+          <Text style={[styles.label, narrow && styles.labelSm]}>
+            {stat.label}
+          </Text>
+          <View style={styles.valueRow}>
+            <Text
+              style={[styles.value, narrow && styles.valueSm]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+            >
+              {stat.value}
+            </Text>
+            {stat.indicator ? (
+              <View style={styles.indicatorPill}>
+                <Text style={styles.indicatorText}>{stat.indicator}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </View>
+      <Text style={[styles.support, narrow && styles.supportSm]}>
+        {stat.supportText}
+      </Text>
+    </View>
+  );
+
   if (loading && layout === 'grid') {
     return (
       <View style={styles.grid}>
@@ -50,7 +93,7 @@ export const DonationStats: React.FC<DonationStatsProps> = ({
             key={stat.id}
             style={[styles.skeletonWrapper, styles.gridCard]}
           >
-            <SkeletonCard height={158} />
+            <SkeletonCard height={96} />
           </View>
         ))}
       </View>
@@ -59,48 +102,7 @@ export const DonationStats: React.FC<DonationStatsProps> = ({
 
   if (layout === 'grid') {
     return (
-      <View style={styles.grid}>
-        {stats.map(stat => (
-          <View
-            key={stat.id}
-            style={[
-              styles.card,
-              narrow && styles.cardSm,
-              styles.gridCard,
-              { backgroundColor: stat.background },
-            ]}
-          >
-            <View style={styles.iconCircle}>
-              <Text style={styles.icon}>{stat.icon}</Text>
-            </View>
-            <Text
-              style={[styles.label, narrow && styles.labelSm]}
-              numberOfLines={1}
-            >
-              {stat.label}
-            </Text>
-            <Text
-              style={[styles.value, narrow && styles.valueSm]}
-              numberOfLines={1}
-            >
-              {stat.value}
-            </Text>
-            <View style={styles.supportRow}>
-              {stat.indicator ? (
-                <View style={styles.indicatorPill}>
-                  <Text style={styles.indicatorText}>{stat.indicator}</Text>
-                </View>
-              ) : null}
-              <Text
-                style={[styles.support, narrow && styles.supportSm]}
-                numberOfLines={2}
-              >
-                {stat.supportText}
-              </Text>
-            </View>
-          </View>
-        ))}
-      </View>
+      <View style={styles.grid}>{stats.map(renderStatCard)}</View>
     );
   }
   if (loading) {
@@ -115,7 +117,7 @@ export const DonationStats: React.FC<DonationStatsProps> = ({
             key={stat.id}
             style={[styles.skeletonWrapper, { width: cardWidth }]}
           >
-            <SkeletonCard height={158} />
+            <SkeletonCard height={96} />
           </View>
         ))}
       </ScrollView>
@@ -128,49 +130,7 @@ export const DonationStats: React.FC<DonationStatsProps> = ({
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.content}
     >
-      {stats.map(stat => (
-        <View
-          key={stat.id}
-          style={[
-            styles.card,
-            narrow && styles.cardSm,
-            { backgroundColor: stat.background, width: cardWidth },
-          ]}
-        >
-          <View style={styles.iconCircle}>
-            <Text style={styles.icon}>{stat.icon}</Text>
-          </View>
-          <Text
-            style={[styles.label, narrow && styles.labelSm]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.6}
-          >
-            {stat.label}
-          </Text>
-          <Text
-            style={[styles.value, narrow && styles.valueSm]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.6}
-          >
-            {stat.value}
-          </Text>
-          <View style={styles.supportRow}>
-            {stat.indicator ? (
-              <View style={styles.indicatorPill}>
-                <Text style={styles.indicatorText}>{stat.indicator}</Text>
-              </View>
-            ) : null}
-            <Text
-              style={[styles.support, narrow && styles.supportSm]}
-              numberOfLines={2}
-            >
-              {stat.supportText}
-            </Text>
-          </View>
-        </View>
-      ))}
+      {stats.map(renderStatCard)}
     </ScrollView>
   );
 };
@@ -194,29 +154,42 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: BorderRadius.xl,
-    padding: Spacing.base,
+    padding: Spacing.md,
     marginRight: Spacing.sm,
   },
   cardSm: {
-    padding: 12,
+    padding: 10,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  topText: {
+    flex: 1,
+    marginLeft: Spacing.sm,
+  },
+  valueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 1,
   },
   iconCircle: {
-    width: 44,
-    height: 44,
+    width: 34,
+    height: 34,
     borderRadius: BorderRadius.full,
     backgroundColor: AdminColors.cardSurface,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.md,
   },
   icon: {
-    fontSize: 20,
+    fontSize: 16,
   },
   labelSm: {
     fontSize: 8.5,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: AdminColors.primaryDark,
   },
@@ -224,22 +197,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   value: {
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: '800',
     color: AdminColors.primaryDark,
-    marginTop: 2,
-  },
-  supportRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 3,
+    flexShrink: 1,
   },
   indicatorPill: {
     backgroundColor: AdminColors.statusActiveLight,
     borderRadius: BorderRadius.full,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
-    marginRight: Spacing.xs,
+    marginLeft: Spacing.xs,
+    flexShrink: 0,
   },
   indicatorText: {
     ...Typography.caption,
@@ -253,6 +222,5 @@ const styles = StyleSheet.create({
   support: {
     ...Typography.caption,
     color: AdminColors.textSecondary,
-    flexShrink: 1,
   },
 });
