@@ -111,7 +111,7 @@ export const MyIdCardScreen: React.FC = () => {
         />
         <AppButton
           title={
-            busyAction === 'share' ? 'Preparing card…' : 'Share ID Card'
+            busyAction === 'share' ? 'Preparing ID Card...' : 'Share ID Card'
           }
           variant="outline"
           size="lg"
