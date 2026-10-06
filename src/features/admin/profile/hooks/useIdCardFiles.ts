@@ -59,7 +59,7 @@ export const useIdCardFiles = ({ onMessage }: UseIdCardFilesOptions) => {
       try {
         if (Platform.OS !== 'web' || !isWebEnvironment()) {
           // Native share sheet receives the actual PDF file; a user
-          // cancel is normal behaviour and returns 'cancelled' silently.
+          // cancel is normal behaviour and stays silent.
           await shareIdCardPdfNative(profile);
         } else {
           const result = await shareIdCardPdfWeb(profile);
@@ -71,7 +71,10 @@ export const useIdCardFiles = ({ onMessage }: UseIdCardFilesOptions) => {
         }
       } catch (error: any) {
         onMessage(
-          error?.message || 'Unable to share ID card. Please try again.',
+          error?.message ===
+            'Sharing the ID card is not supported on this device.'
+            ? error.message
+            : 'Unable to share the ID card PDF. Please try again.',
         );
       } finally {
         setBusyAction(null);

@@ -29,6 +29,8 @@ module.exports = {
   resolve: {
     alias: {
       'react-native$': 'react-native-web',
+      'react-native-share': path.resolve(__dirname, 'web/mocks/react-native-share.js'),
+      'react-native-blob-util': path.resolve(__dirname, 'web/mocks/react-native-blob-util.js'),
     },
     extensions: [
       '.web.js',
@@ -52,6 +54,10 @@ module.exports = {
             presets: ['module:@react-native/babel-preset'],
           },
         },
+      },
+      {
+        test: /\.(png|jpe?g|gif|svg|webp)$/i,
+        type: 'asset/resource',
       },
     ],
   },

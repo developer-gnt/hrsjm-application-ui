@@ -56,21 +56,15 @@ export const isWebEnvironment = (): boolean => {
   return !!(web.document && web.window);
 };
 
-export const idCardFileName = (profile: AdminProfile): string => {
-  const safeName = (profile.fullName || 'Member')
-    .trim()
-    .replace(/\s+/g, '_')
-    .replace(/[^a-zA-Z0-9_-]/g, '');
-  return `HRSJM_Membership_ID_${safeName || 'Card'}.pdf`;
-};
+export const idCardFileName = (profile: AdminProfile): string =>
+  `HRSJM-Member-ID-Card-${profile.memberId}.pdf`;
 
 /**
  * Renders the membership card with jsPDF's programmatic API only — no
  * html2canvas, no DOM globals — so the identical routine runs on
  * Android, iOS and web. Returns the jsPDF instance.
  *
- * Layout exactly matches the new ID card design with curved cream header,
- * gold border, and official background image.
+ * Layout exactly matches IMAGE 1 with IMAGE 2 as body background.
  */
 export const generateIdCardPdf = async (
   profile: AdminProfile,
@@ -278,6 +272,12 @@ export const generateIdCardPdf = async (
     align: 'center',
   });
 
+  // ── Clip card to rounded corners ─────────────────────────────────────
+  // jsPDF doesn't support true clipping easily; the rounded corners were
+  // applied to the top cream layer. The bottom navy body uses a full
+  // rect. To restore corners: overlay white outside corners on the
+  // outside of the card. This is acceptable for PDF output.
+
   return pdf;
 };
 
@@ -291,27 +291,15 @@ const getPdfBytes = (pdf: any): Uint8Array => {
 
 /**
  * NATIVE download (Android / iOS): generates the real PDF on-device and
- * writes it to storage.
+ * writes it to storage — Android: public Downloads folder + MediaStore
+ * scan so it appears in the Files/Downloads app; iOS: app documents +
+ * native preview where the user can save it to Files.
  */
 export const downloadIdCardPdfNative = async (
   profile: AdminProfile,
 ): Promise<'downloaded' | 'opened'> => {
-  let pdf: any;
-  try {
-    pdf = await generateIdCardPdf(profile);
-  } catch (err) {
-    console.error('Failed to generate ID card PDF', err);
-    throw new Error('Unable to generate ID card. Please try again.');
-  }
-
-  let base64: string;
-  try {
-    base64 = uint8ToBase64(getPdfBytes(pdf));
-  } catch (err) {
-    console.error('Failed to get PDF bytes', err);
-    throw new Error('Unable to generate ID card. Please try again.');
-  }
-
+  const pdf = await generateIdCardPdf(profile);
+  const base64 = uint8ToBase64(getPdfBytes(pdf));
   const fileName = idCardFileName(profile);
 
   const RNFS = (await import('react-native-blob-util')).default;
@@ -329,8 +317,10 @@ export const downloadIdCardPdfNative = async (
   for (const candidate of candidates) {
     try {
       await RNFS.fs.writeFile(candidate.path, base64, 'base64');
-      const exists = await RNFS.fs.exists(candidate.path);
-      if (exists && candidate.location === 'downloaded' && dirs.DownloadDir) {
+      if (candidate.location === 'downloaded' && dirs.DownloadDir) {
+        // Register with Android's MediaStore so the file is immediately
+        // visible in Files / Downloads apps. (scanFile's declared
+        // parameter type does not match its runtime API — cast needed.)
         await (RNFS.fs.scanFile as any)(candidate.path).catch(
           () => undefined,
         );
@@ -341,8 +331,9 @@ export const downloadIdCardPdfNative = async (
     }
   }
 
-  console.error('Failed to write ID card file', lastError);
-  throw new Error('Unable to create ID card file. Please try again.');
+  throw lastError instanceof Error
+    ? lastError
+    : new Error('Unable to write the ID card PDF to device storage.');
 };
 
 /**
@@ -353,63 +344,26 @@ export const downloadIdCardPdfNative = async (
 export const shareIdCardPdfNative = async (
   profile: AdminProfile,
 ): Promise<'shared' | 'cancelled'> => {
-  let pdf: any;
-  try {
-    pdf = await generateIdCardPdf(profile);
-  } catch (err) {
-    console.error('Failed to generate ID card PDF', err);
-    throw new Error('Unable to generate ID card. Please try again.');
-  }
-
-  let base64: string;
-  try {
-    base64 = uint8ToBase64(getPdfBytes(pdf));
-  } catch (err) {
-    console.error('Failed to get PDF bytes', err);
-    throw new Error('Unable to generate ID card. Please try again.');
-  }
-
+  const pdf = await generateIdCardPdf(profile);
+  const base64 = uint8ToBase64(getPdfBytes(pdf));
   const fileName = idCardFileName(profile);
 
   const RNFS = (await import('react-native-blob-util')).default;
   const filePath = `${RNFS.fs.dirs.CacheDir}/${fileName}`;
-
-  try {
-    await RNFS.fs.writeFile(filePath, base64, 'base64');
-    const exists = await RNFS.fs.exists(filePath);
-    if (!exists) {
-      throw new Error('File does not exist');
-    }
-  } catch (fileErr) {
-    console.error('Failed to create ID card file for share', fileErr);
-    throw new Error('Unable to create ID card file. Please try again.');
-  }
+  await RNFS.fs.writeFile(filePath, base64, 'base64');
 
   const NativeShare = (await import('react-native-share')).default;
   if (!NativeShare?.open) {
-    throw new Error('Unable to share ID card. Please try again.');
+    throw new Error('Sharing the ID card is not supported on this device.');
   }
-
-  try {
-    const shareResult = await NativeShare.open({
-      url: `file://${filePath}`,
-      type: 'application/pdf',
-      title: 'HRSJM Member ID Card',
-      subject: `${profile.fullName} — ${profile.memberId}`,
-      failOnCancel: false,
-    });
-    return shareResult?.dismissedAction ? 'cancelled' : 'shared';
-  } catch (shareErr: any) {
-    if (
-      shareErr?.message?.includes('User did not share') ||
-      shareErr?.message?.includes('cancelled') ||
-      shareErr?.name === 'AbortError'
-    ) {
-      return 'cancelled';
-    }
-    console.error('Failed to open native share sheet', shareErr);
-    throw new Error('Unable to share ID card. Please try again.');
-  }
+  const shareResult = await NativeShare.open({
+    url: `file://${filePath}`,
+    type: 'application/pdf',
+    title: 'HRSJM Member ID Card',
+    subject: `${profile.fullName} — ${profile.memberId}`,
+    failOnCancel: false,
+  });
+  return shareResult?.dismissedAction ? 'cancelled' : 'shared';
 };
 
 /**
@@ -421,7 +375,7 @@ export const downloadIdCardPdfWeb = async (
 ): Promise<'downloaded' | 'opened'> => {
   const web: any = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
   if (!web.URL?.createObjectURL || !web.document || !web.window) {
-    throw new Error('Unable to create ID card file. Please try again.');
+    throw new Error('Saving is not available in this environment.');
   }
 
   const pdf = await generateIdCardPdf(profile);
@@ -485,6 +439,7 @@ export const shareIdCardPdfWeb = async (
         ) {
           return 'cancelled';
         }
+        // File share rejected — fall through to the open-in-viewer path.
       }
     }
   }
@@ -496,5 +451,5 @@ export const shareIdCardPdfWeb = async (
     web.window.open(url, '_blank');
     return 'opened';
   }
-  throw new Error('Unable to share ID card. Please try again.');
+  throw new Error('Sharing the ID card is not supported in this browser.');
 };

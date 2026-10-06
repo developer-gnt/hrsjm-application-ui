@@ -15,7 +15,10 @@ export type AppRoute =
   | { name: 'profile' }
   | { name: 'profile-edit-personal' }
   | { name: 'profile-admin-details' }
-  | { name: 'profile-id-card' };
+  | { name: 'profile-id-card' }
+  | { name: 'create-account' }
+  | { name: 'create-account-additional' }
+  | { name: 'create-account-verification' };
 
 const RECEIPT_HASH_PATTERN = /^\/donations\/([^/]+)\/receipt$/;
 
@@ -24,6 +27,10 @@ const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/profile/edit/personal': { name: 'profile-edit-personal' },
   '/profile/edit/admin-details': { name: 'profile-admin-details' },
   '/profile/id-card': { name: 'profile-id-card' },
+  '/create-account': { name: 'create-account' },
+  '/create-account/additional': { name: 'create-account-additional' },
+  '/create-account/verification': { name: 'create-account-verification' },
+  '/register': { name: 'create-account' },
 };
 
 const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
@@ -33,6 +40,9 @@ const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
   'profile-edit-personal': '#/profile/edit/personal',
   'profile-admin-details': '#/profile/edit/admin-details',
   'profile-id-card': '#/profile/id-card',
+  'create-account': '#/create-account',
+  'create-account-additional': '#/create-account/additional',
+  'create-account-verification': '#/create-account/verification',
 };
 
 const getWebWindow = (): any =>
@@ -131,3 +141,17 @@ export const navigateToProfileAdminDetails = (): void => {
 export const navigateToProfileIdCard = (): void => {
   navigate({ name: 'profile-id-card' });
 };
+
+export const navigateToCreateAccount = (): void => {
+  navigate({ name: 'create-account' });
+};
+
+export const navigateToCreateAccountAdditional = (): void => {
+  navigate({ name: 'create-account-additional' });
+};
+
+export const navigateToCreateAccountVerification = (): void => {
+  navigate({ name: 'create-account-verification' });
+};
+
+

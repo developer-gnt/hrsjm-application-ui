@@ -13,16 +13,21 @@ import {
   MyIdCardScreen,
 } from './src/features/admin/profile';
 import {
+  CreateAccountScreen,
+  CreateAccountAdditionalScreen,
+  CreateAccountVerificationScreen,
+} from './src/features/auth';
+import {
   getRouteSnapshot,
   subscribeToRoute,
+  navigateToCreateAccount,
+  navigateToCreateAccountAdditional,
+  navigateToCreateAccountVerification,
 } from './src/core/navigation/appRouter';
 
 // Temporary app shell: navigation infrastructure is not built yet, so
 // screens are hosted directly and switched by the lightweight hash
-// router (`#/donations`, `#/donations/:donationId/receipt`,
-// `#/profile`, `#/profile/edit/personal`,
-// `#/profile/edit/admin-details`, `#/profile/id-card`). Move to
-// src/app/ once the shared navigation stack lands.
+// router (`#/create-account`, `#/create-account/additional`, `#/create-account/verification`, etc.)
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -43,18 +48,45 @@ function App() {
 
   const renderRoute = () => {
     switch (route.name) {
+      case 'create-account':
+        return (
+          <CreateAccountScreen
+            key="create-account-screen"
+            onContinue={() => navigateToCreateAccountAdditional()}
+          />
+        );
+      case 'create-account-additional':
+        return (
+          <CreateAccountAdditionalScreen
+            key="create-account-additional-screen"
+            onBack={() => navigateToCreateAccount()}
+            onContinue={() => navigateToCreateAccountVerification()}
+          />
+        );
+      case 'create-account-verification':
+        return (
+          <CreateAccountVerificationScreen
+            key="create-account-verification-screen"
+            onBack={() => navigateToCreateAccountAdditional()}
+          />
+        );
       case 'receipt':
-        return <ReceiptDetailsPage donationId={route.donationId} />;
+        return <ReceiptDetailsPage key={route.donationId} donationId={route.donationId} />;
       case 'profile':
-        return <ProfileScreen />;
+        return <ProfileScreen key="profile-screen" />;
       case 'profile-edit-personal':
-        return <EditPersonalInfoScreen />;
+        return <EditPersonalInfoScreen key="profile-edit-personal" />;
       case 'profile-admin-details':
-        return <AdminDetailsScreen />;
+        return <AdminDetailsScreen key="profile-admin-details" />;
       case 'profile-id-card':
-        return <MyIdCardScreen />;
+        return <MyIdCardScreen key="profile-id-card" />;
       default:
-        return <DonationsScreen />;
+        return (
+          <CreateAccountScreen
+            key="create-account-default"
+            onContinue={() => navigateToCreateAccountAdditional()}
+          />
+        );
     }
   };
 
