@@ -47,6 +47,8 @@ const CATEGORY_TABS: Array<{ key: AccountCategory; label: string }> = [
   { key: 'EXPENSE', label: 'Expenses' },
 ];
 
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
+
 export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
   onBack,
   onViewAccountLedger,
@@ -57,8 +59,6 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [selectedNode, setSelectedNode] = useState<AccountTreeNode | null>(null);
   const [detailsSheetVisible, setDetailsSheetVisible] = useState(false);
-
-  const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const {
     accounts,
@@ -74,7 +74,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
     data: trialBalanceData,
     refetch: refetchBalances,
     isLoading: balancesLoading,
-  } = useTrialBalance(todayIso, true);
+  } = useTrialBalance(TODAY_ISO, true);
 
   // Map of account ID to live balance item
   const balanceMap = useMemo(() => {
