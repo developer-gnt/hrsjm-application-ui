@@ -56,10 +56,10 @@ export const useLedger = ({ accountId, fromDate, toDate }: UseLedgerParams): Use
           net_change: (data.total_credit || 0) - (data.total_debit || 0),
         });
       } else {
-        // Fetch genuine expense vouchers and income receipt vouchers concurrently
+        // Fetch genuine expense vouchers and income receipt vouchers concurrently (limit max 100 on backend)
         const [expenseRes, receiptRes] = await Promise.allSettled([
-          expensesService.list({ limit: 200 }),
-          receiptEntriesService.list({ limit: 200 }),
+          expensesService.list({ page: 1, limit: 100 }),
+          receiptEntriesService.list({ page: 1, limit: 100 }),
         ]);
 
         const rawList: LedgerTransaction[] = [];

@@ -83,6 +83,8 @@ export {
   ChevronRight,
   ArrowUpRight,
   ArrowDownLeft,
+  ArrowUp,
+  BarChart3,
   Wallet,
   FolderTree,
 } from 'lucide-react-native';

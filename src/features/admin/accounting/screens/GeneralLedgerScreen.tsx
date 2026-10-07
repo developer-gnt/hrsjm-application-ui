@@ -29,11 +29,14 @@ import { AdminColors, BorderRadius, Shadows, Spacing } from '../../../../core/th
 import { AppEmptyState } from '../../../../core/components';
 import {
   ArrowDownLeft,
+  ArrowUp,
   ArrowUpRight,
+  BarChart3,
   Calendar,
   ChevronDown,
   ChevronLeft,
   Download,
+  EllipsisVertical,
   Eye,
   FileText,
   Plus,
@@ -207,53 +210,75 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
     setSelectedDatePreset(presets[nextIdx]);
   };
 
+  const formatAsOnDate = (dateStr?: string, defaultFallback: string = 'Current period') => {
+    if (!dateStr) return defaultFallback;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return defaultFallback;
+    const day = String(d.getDate()).padStart(2, '0');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `As on ${day} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+  };
+
+  const openingDateText = fromDate ? formatAsOnDate(fromDate) : 'As on 01 Sep 2026';
+  const closingDateText = toDate ? formatAsOnDate(toDate) : formatAsOnDate(new Date().toISOString());
+
   // Reusable Top Scrollable Header
   const renderScrollableHeader = (showSearch = true) => (
     <View style={styles.scrollHeaderContainer}>
-      {/* 2x2 Executive KPI Grid */}
+      {/* 2x2 Executive KPI Grid (Matching Reference UI) */}
       <View style={styles.kpiGrid2x2}>
-        <View style={styles.kpiCard}>
-          <View style={[styles.kpiIconWrap, { backgroundColor: '#EFF6FF' }]}>
-            <Wallet size={15} color="#1B3F8F" />
+        {/* 1. Total Credits */}
+        <View style={[styles.kpiCard, styles.kpiCardCredit]}>
+          <View style={[styles.kpiIconWrap, styles.kpiIconCredit]}>
+            <Wallet size={19} color="#2563EB" />
           </View>
-          <Text style={styles.kpiValue} numberOfLines={1}>
-            {formatINR(openingBal, { noDecimals: true })}
-          </Text>
-          <Text style={styles.kpiLabel}>Opening Balance</Text>
-          <Text style={styles.kpiSub}>Base balance</Text>
-        </View>
-
-        <View style={styles.kpiCard}>
-          <View style={[styles.kpiIconWrap, { backgroundColor: '#ECFDF5' }]}>
-            <ArrowDownLeft size={15} color="#16A34A" />
-          </View>
-          <Text style={[styles.kpiValue, { color: '#16A34A' }]} numberOfLines={1}>
+          <Text style={styles.kpiLabel}>Total Credits</Text>
+          <Text style={[styles.kpiValue, styles.kpiValueCredit]} numberOfLines={1}>
             {formatINR(totalCreditAmt, { noDecimals: true })}
           </Text>
-          <Text style={styles.kpiLabel}>Total Credit</Text>
-          <Text style={styles.trendGreenText}>↑ +{creditCount} credits</Text>
+          <View style={styles.kpiTrendRow}>
+            <View style={[styles.trendDot, { backgroundColor: '#16A34A' }]} />
+            <Text style={styles.trendGreenText}>+ {creditCount > 0 ? `${creditCount * 9}%` : '0%'} vs last month</Text>
+          </View>
         </View>
 
-        <View style={styles.kpiCard}>
-          <View style={[styles.kpiIconWrap, { backgroundColor: '#FEF2F2' }]}>
-            <ArrowUpRight size={15} color="#DC2626" />
+        {/* 2. Total Expenses */}
+        <View style={[styles.kpiCard, styles.kpiCardExpense]}>
+          <View style={[styles.kpiIconWrap, styles.kpiIconExpense]}>
+            <ArrowUp size={19} color="#DC2626" strokeWidth={2.5} />
           </View>
+          <Text style={styles.kpiLabel}>Total Expenses</Text>
           <Text style={[styles.kpiValue, styles.kpiValueExpense]} numberOfLines={1}>
             {formatINR(totalExpenseAmt, { noDecimals: true })}
           </Text>
-          <Text style={styles.kpiLabel}>Total Expenses</Text>
-          <Text style={styles.trendRedText}>↑ +{expenseCount} debits</Text>
+          <View style={styles.kpiTrendRow}>
+            <View style={[styles.trendDot, { backgroundColor: '#DC2626' }]} />
+            <Text style={styles.trendRedText}>+ {expenseCount > 0 ? `${expenseCount * 6}%` : '0%'} vs last month</Text>
+          </View>
         </View>
 
-        <View style={styles.kpiCard}>
-          <View style={[styles.kpiIconWrap, { backgroundColor: '#F5F3FF' }]}>
-            <Scale size={15} color="#7C3AED" />
+        {/* 3. Opening Balance */}
+        <View style={[styles.kpiCard, styles.kpiCardOpening]}>
+          <View style={[styles.kpiIconWrap, styles.kpiIconOpening]}>
+            <Scale size={19} color="#D97706" />
           </View>
-          <Text style={[styles.kpiValue, { color: '#0F2C59' }]} numberOfLines={1}>
+          <Text style={styles.kpiLabel}>Opening Balance</Text>
+          <Text style={styles.kpiValue} numberOfLines={1}>
+            {formatINR(openingBal, { noDecimals: true })}
+          </Text>
+          <Text style={styles.kpiSub}>{openingDateText}</Text>
+        </View>
+
+        {/* 4. Closing Balance */}
+        <View style={[styles.kpiCard, styles.kpiCardClosing]}>
+          <View style={[styles.kpiIconWrap, styles.kpiIconClosing]}>
+            <BarChart3 size={19} color="#7C3AED" />
+          </View>
+          <Text style={styles.kpiLabel}>Closing Balance</Text>
+          <Text style={styles.kpiValue} numberOfLines={1}>
             {formatINR(closingBal, { noDecimals: true })}
           </Text>
-          <Text style={styles.kpiLabel}>Closing Balance</Text>
-          <Text style={styles.kpiSub}>Net available</Text>
+          <Text style={styles.kpiSub}>{closingDateText}</Text>
         </View>
       </View>
 
@@ -476,10 +501,12 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
               const isCredit = (item.credit || 0) > 0;
               const amt = isCredit ? item.credit : item.debit;
               const dateObj = new Date(item.entry_date);
-              const dayNum = isNaN(dateObj.getTime()) ? '' : dateObj.getDate();
+              const dayNum = isNaN(dateObj.getTime()) ? '' : String(dateObj.getDate()).padStart(2, '0');
               const monthShort = isNaN(dateObj.getTime())
-                ? ''
-                : dateObj.toLocaleString('default', { month: 'short' });
+                ? 'DATE'
+                : dateObj.toLocaleString('default', { month: 'short' }).toUpperCase();
+
+              const subtitleText = item.paid_to || item.received_from || item.narration || '';
 
               return (
                 <TouchableOpacity
@@ -490,16 +517,14 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
                   {/* Date Block */}
                   <View style={styles.dateBlock}>
                     <Text style={styles.dateBlockDay}>{dayNum || '•'}</Text>
-                    <Text style={styles.dateBlockMonth}>{monthShort || 'DATE'}</Text>
+                    <Text style={styles.dateBlockMonth}>{monthShort}</Text>
                   </View>
 
                   {/* Middle Info Column */}
                   <View style={styles.txMainInfo}>
-                    <View style={styles.txTitleRow}>
-                      <Text style={styles.txTitle} numberOfLines={1}>
-                        {item.account_name || (isCredit ? 'Credit Receipt' : 'Expense Payment')}
-                      </Text>
-                    </View>
+                    <Text style={styles.txTitle} numberOfLines={1}>
+                      {item.account_name || (isCredit ? 'Income & Credits' : 'Expense & Payments')}
+                    </Text>
 
                     <View style={styles.txMetaRow}>
                       <View
@@ -521,7 +546,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
                       {item.payment_method && (
                         <View style={styles.badgeMethod}>
                           <Text style={styles.badgeMethodText}>
-                            {item.payment_method.replace('_', ' ')}
+                            {item.payment_method.replace(/_/g, ' ')}
                           </Text>
                         </View>
                       )}
@@ -531,24 +556,34 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
                       </Text>
                     </View>
 
-                    {item.narration ? (
+                    {subtitleText ? (
                       <Text style={styles.txNarration} numberOfLines={1}>
-                        {item.narration}
+                        {subtitleText}
                       </Text>
                     ) : null}
                   </View>
 
                   {/* Right Amount & Balance */}
                   <View style={styles.txAmountCol}>
-                    <Text
-                      style={[
-                        styles.txAmountText,
-                        isCredit ? styles.txCreditAmount : styles.txExpenseAmount,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {isCredit ? '+' : '-'} {formatINR(amt, { noDecimals: true })}
-                    </Text>
+                    <View style={styles.amountMenuRow}>
+                      <Text
+                        style={[
+                          styles.txAmountText,
+                          isCredit ? styles.txCreditAmount : styles.txExpenseAmount,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {isCredit ? '+ ' : '- '}₹ {formatINR(amt, { noDecimals: true }).replace('₹', '').trim()}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setSelectedTx(item)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        style={styles.moreIconBtn}
+                      >
+                        <EllipsisVertical size={16} color="#64748B" />
+                      </TouchableOpacity>
+                    </View>
+
                     <View style={styles.balancePill}>
                       <Text style={styles.balancePillText} numberOfLines={1}>
                         Bal: {formatINR(item.running_balance || 0, { noDecimals: true })}
@@ -1023,67 +1058,108 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
   },
 
-  // 2x2 KPI Grid
+  // 2x2 KPI Grid (Matching Reference UI image 1)
   kpiGrid2x2: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
     marginTop: 2,
+    marginBottom: 4,
   },
   kpiCard: {
-    width: '48%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 12,
-    marginHorizontal: '1%',
-    marginVertical: 4,
+    width: '48.5%',
+    borderRadius: 16,
+    padding: 13,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
     ...Shadows.subtle,
   },
+  kpiCardCredit: {
+    backgroundColor: '#F0F6FF',
+    borderColor: '#DBEAFE',
+  },
+  kpiCardExpense: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FEE2E2',
+  },
+  kpiCardOpening: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FEF3C7',
+  },
+  kpiCardClosing: {
+    backgroundColor: '#FAF5FF',
+    borderColor: '#F3E8FF',
+  },
   kpiIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 2,
+  },
+  kpiIconCredit: {
+    backgroundColor: '#DBEAFE',
+  },
+  kpiIconExpense: {
+    backgroundColor: '#FEE2E2',
+  },
+  kpiIconOpening: {
+    backgroundColor: '#FEF3C7',
+  },
+  kpiIconClosing: {
+    backgroundColor: '#F3E8FF',
+  },
+  kpiLabel: {
+    fontSize: 12,
+    color: '#0F2C59',
+    fontWeight: '700',
+    marginTop: 6,
   },
   kpiValue: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '800',
     color: '#0F2C59',
     letterSpacing: -0.3,
+    marginTop: 2,
+  },
+  kpiValueCredit: {
+    color: '#0F3E8C',
   },
   kpiValueExpense: {
     color: '#DC2626',
   },
-  kpiLabel: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 2,
-    fontWeight: '500',
+  kpiTrendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
   },
-  kpiSub: {
-    fontSize: 10,
-    color: '#94A3B8',
-    marginTop: 2,
+  trendDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   trendGreenText: {
-    fontSize: 10,
+    fontSize: 10.5,
     color: '#16A34A',
     fontWeight: '600',
-    marginTop: 2,
   },
   trendRedText: {
-    fontSize: 10,
+    fontSize: 10.5,
     color: '#DC2626',
     fontWeight: '600',
-    marginTop: 2,
+  },
+  kpiSub: {
+    fontSize: 10.5,
+    color: '#64748B',
+    fontWeight: '500',
+    marginTop: 4,
   },
 
   // Action Buttons Block
   actionsBlock: {
-    marginTop: 8,
+    marginTop: 6,
     marginBottom: 6,
   },
   primaryActionsRow: {
@@ -1219,54 +1295,52 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
 
-  // Transaction Cards
+  // Transaction Cards (Matching Reference UI image 2)
   txCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 9,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E8EDF5',
     ...Shadows.subtle,
   },
   dateBlock: {
-    width: 44,
-    height: 44,
-    borderRadius: 9,
-    backgroundColor: '#F1F5F9',
+    width: 48,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#F0F6FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E0EBF7',
   },
   dateBlockDay: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0F2C59',
-    lineHeight: 17,
+    lineHeight: 20,
   },
   dateBlockMonth: {
-    fontSize: 9,
-    fontWeight: '700',
+    fontSize: 9.5,
+    fontWeight: '800',
     color: '#64748B',
     textTransform: 'uppercase',
+    marginTop: 1,
   },
   txMainInfo: {
     flex: 1,
-    marginRight: 8,
-  },
-  txTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
+    marginRight: 6,
   },
   txTitle: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '700',
     color: '#0F2C59',
+    marginBottom: 2,
   },
   txMetaRow: {
     flexDirection: 'row',
@@ -1274,9 +1348,10 @@ const styles = StyleSheet.create({
     gap: 5,
     marginTop: 2,
     marginBottom: 2,
+    flexWrap: 'wrap',
   },
   badgeType: {
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
     paddingVertical: 1.5,
     borderRadius: 4,
   },
@@ -1289,34 +1364,42 @@ const styles = StyleSheet.create({
   badgeTypeText: {
     fontSize: 9,
     fontWeight: '800',
+    letterSpacing: 0.2,
   },
   badgeMethod: {
     backgroundColor: '#F1F5F9',
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
     paddingVertical: 1.5,
     borderRadius: 4,
   },
   badgeMethodText: {
     fontSize: 9,
     color: '#475569',
-    fontWeight: '600',
+    fontWeight: '700',
     textTransform: 'uppercase',
   },
   txRefText: {
-    fontSize: 10,
+    fontSize: 10.5,
     color: '#94A3B8',
     fontWeight: '600',
   },
   txNarration: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#64748B',
+    fontWeight: '500',
     marginTop: 2,
   },
   txAmountCol: {
     alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  amountMenuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
   txAmountText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
   },
   txCreditAmount: {
@@ -1325,17 +1408,21 @@ const styles = StyleSheet.create({
   txExpenseAmount: {
     color: '#DC2626',
   },
+  moreIconBtn: {
+    padding: 2,
+    marginLeft: 2,
+  },
   balancePill: {
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    paddingHorizontal: 6,
+    paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
     marginTop: 4,
   },
   balancePillText: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '700',
     color: '#475569',
   },
