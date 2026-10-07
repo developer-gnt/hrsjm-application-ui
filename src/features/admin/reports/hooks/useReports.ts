@@ -3,6 +3,8 @@ import { reportsService } from '../services/reports.service';
 
 export const reportKeys = {
   all: ['reports'] as const,
+  analytics: (startDate?: string, endDate?: string) =>
+    [...reportKeys.all, 'analytics', startDate, endDate] as const,
   trialBalance: (asOfDate: string, includeZero?: boolean) =>
     [...reportKeys.all, 'trial-balance', asOfDate, Boolean(includeZero)] as const,
   trialBalanceSummary: (asOfDate: string) =>
@@ -15,6 +17,14 @@ export const reportKeys = {
     [...reportKeys.all, 'balance-sheet', asOfDate] as const,
   balanceSheetSummary: (asOfDate: string) =>
     [...reportKeys.all, 'balance-sheet-summary', asOfDate] as const,
+};
+
+export const useReportsAnalytics = (startDate?: string, endDate?: string) => {
+  return useQuery({
+    queryKey: reportKeys.analytics(startDate, endDate),
+    queryFn: () => reportsService.getAnalytics({ start_date: startDate, end_date: endDate }),
+    staleTime: 60_000,
+  });
 };
 
 export const useTrialBalance = (asOfDate: string, includeZeroBalance: boolean = false) => {

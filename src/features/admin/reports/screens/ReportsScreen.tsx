@@ -40,6 +40,7 @@ import { ReportDateSelector } from '../components/ReportDateSelector';
 import {
   useBalanceSheetSummary,
   useProfitLossSummary,
+  useReportsAnalytics,
   useTrialBalanceSummary,
 } from '../hooks/useReports';
 import { getDefaultDatePreset } from '../utils/reportDates';
@@ -57,41 +58,6 @@ interface ReportsScreenProps {
 
 type ContentTab = 'Rights' | 'Blogs' | 'News';
 
-const CONTENT_DATA: Record<
-  ContentTab,
-  Array<{ rank: number; title: string; views: string }>
-> = {
-  Rights: [
-    { rank: 1, title: 'Fundamental Rights of Every Citizen', views: '12.4K' },
-    { rank: 2, title: "Women's Rights and Legal Protection", views: '9.8K' },
-    { rank: 3, title: 'Child Rights and Protection Laws', views: '8.1K' },
-    { rank: 4, title: 'Labour Rights and Workplace Safety', views: '6.9K' },
-    { rank: 5, title: 'Environmental Rights & Green Acts', views: '6.2K' },
-  ],
-  Blogs: [
-    { rank: 1, title: 'Community Legal Aid Camp in Bihar', views: '10.5K' },
-    { rank: 2, title: 'Understanding Bail and Trial Rights', views: '8.7K' },
-    { rank: 3, title: 'Empowering Marginalized Youth', views: '7.3K' },
-    { rank: 4, title: 'Annual Human Rights Conference 2026', views: '5.9K' },
-    { rank: 5, title: 'Free Education Initiatives in Slums', views: '4.8K' },
-  ],
-  News: [
-    { rank: 1, title: 'HRSJM Launches National Helpline', views: '15.2K' },
-    { rank: 2, title: 'Supreme Court Landmark Ruling on Rights', views: '11.8K' },
-    { rank: 3, title: 'State Level Anti-Discrimination Forum', views: '9.4K' },
-    { rank: 4, title: 'RTI Awareness Workshop Schedule', views: '7.1K' },
-    { rank: 5, title: 'Winter Blanket Donation Drive Complete', views: '6.0K' },
-  ],
-};
-
-const USER_DISTRIBUTION = [
-  { label: 'Members', count: 438, pct: '35%', color: '#3B82F6' },
-  { label: 'Donation Seekers', count: 128, pct: '10%', color: '#10B981' },
-  { label: 'Donors', count: 214, pct: '17%', color: '#F59E0B' },
-  { label: 'Complaint Users', count: 186, pct: '15%', color: '#EF4444' },
-  { label: 'General Users', count: 282, pct: '23%', color: '#8B5CF6' },
-];
-
 export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   onBack,
   onNavigate,
@@ -108,9 +74,27 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   const [asOfDate, setAsOfDate] = useState(defaultPreset.asOfDate);
   const [activeContentTab, setActiveContentTab] = useState<ContentTab>('Rights');
 
+  const analytics = useReportsAnalytics(startDate, endDate);
   const tbSummary = useTrialBalanceSummary(asOfDate);
   const plSummary = useProfitLossSummary(startDate, endDate);
   const bsSummary = useBalanceSheetSummary(asOfDate);
+
+  const kpis = analytics.data?.kpis;
+  const userDist = analytics.data?.user_distribution || [];
+  const donationsOverview = analytics.data?.donations_overview;
+  const complaintsOverview = analytics.data?.complaints_overview;
+  const topContent = analytics.data?.top_content;
+  const eventsOverview = analytics.data?.events_overview;
+  const userGrowth = analytics.data?.user_growth || [];
+
+  // Active top content items based on tab
+  const activeContentKey = (activeContentTab.toLowerCase()) as 'rights' | 'blogs' | 'news';
+  const currentContentList = topContent?.[activeContentKey] || [];
+
+  // Donut chart calculations
+  const totalUsersCount = userDist.reduce((acc, curr) => acc + curr.count, 0) || kpis?.total_users || 1;
+  const CIRCUMFERENCE = 301.59; // 2 * PI * 48
+  let accumulatedDonutOffset = 0;
 
   const handleSelectPreset = (preset: DateRangePreset) => {
     setSelectedPreset(preset.key);
@@ -121,6 +105,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
 
   const handleRefresh = async () => {
     await Promise.all([
+      analytics.refetch(),
       tbSummary.refetch(),
       plSummary.refetch(),
       bsSummary.refetch(),
@@ -128,7 +113,10 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   };
 
   const isRefreshing =
-    tbSummary.isRefetching || plSummary.isRefetching || bsSummary.isRefetching;
+    analytics.isRefetching ||
+    tbSummary.isRefetching ||
+    plSummary.isRefetching ||
+    bsSummary.isRefetching;
 
   const handleGoTrialBalance = () => {
     if (onOpenTrialBalance) onOpenTrialBalance();
@@ -154,6 +142,23 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
 
   // Responsive chart width
   const chartWidth = Math.min(width - 48, 560);
+
+  // Dynamic user growth line chart points calculation
+  const maxGrowthCount = Math.max(...userGrowth.map(p => p.count), 200);
+  const chartPoints = userGrowth.map((point, index) => {
+    const totalPoints = Math.max(userGrowth.length - 1, 1);
+    const x = 30 + (index / totalPoints) * 290;
+    // Map count (0 -> 125, maxGrowthCount -> 20)
+    const y = 125 - ((point.count / maxGrowthCount) * 105);
+    return { x, y, point };
+  });
+
+  const linePathD = chartPoints.length > 0
+    ? chartPoints.reduce((acc, curr, idx) => `${acc} ${idx === 0 ? 'M' : 'L'} ${curr.x} ${curr.y}`, '')
+    : 'M 30 125 L 320 20';
+  const areaPathD = chartPoints.length > 0
+    ? `${linePathD} L ${chartPoints[chartPoints.length - 1].x} 135 L ${chartPoints[0].x} 135 Z`
+    : 'M 30 125 L 320 20 L 320 135 L 30 135 Z';
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -201,9 +206,13 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               <Users size={18} color="#3B82F6" />
             </View>
             <Text style={styles.kpiCardLabel}>Total Users</Text>
-            <Text style={styles.kpiCardValue}>1,248</Text>
+            <Text style={styles.kpiCardValue}>
+              {kpis?.total_users != null ? kpis.total_users.toLocaleString() : '—'}
+            </Text>
             <View style={styles.trendRow}>
-              <Text style={styles.trendGreen}>↑ 12%</Text>
+              <Text style={(kpis?.users_growth_pct ?? 0) >= 0 ? styles.trendGreen : styles.trendRed}>
+                {(kpis?.users_growth_pct ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(kpis?.users_growth_pct ?? 0)}%
+              </Text>
               <Text style={styles.trendSub}> vs last month</Text>
             </View>
           </View>
@@ -214,9 +223,13 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               <Heart size={18} color="#10B981" />
             </View>
             <Text style={styles.kpiCardLabel}>Total Donations</Text>
-            <Text style={styles.kpiCardValue}>₹5,42,300</Text>
+            <Text style={styles.kpiCardValue}>
+              {kpis ? formatINR(kpis.total_donations_amount, { noDecimals: true }) : '—'}
+            </Text>
             <View style={styles.trendRow}>
-              <Text style={styles.trendGreen}>↗ 28%</Text>
+              <Text style={(kpis?.donations_growth_pct ?? 0) >= 0 ? styles.trendGreen : styles.trendRed}>
+                {(kpis?.donations_growth_pct ?? 0) >= 0 ? '↗' : '↘'} {Math.abs(kpis?.donations_growth_pct ?? 0)}%
+              </Text>
               <Text style={styles.trendSub}> vs last month</Text>
             </View>
           </View>
@@ -227,9 +240,13 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               <FileText size={18} color="#EF4444" />
             </View>
             <Text style={styles.kpiCardLabel}>Total Complaints</Text>
-            <Text style={styles.kpiCardValue}>186</Text>
+            <Text style={styles.kpiCardValue}>
+              {kpis?.total_complaints != null ? kpis.total_complaints.toLocaleString() : '—'}
+            </Text>
             <View style={styles.trendRow}>
-              <Text style={styles.trendRed}>↓ 8%</Text>
+              <Text style={(kpis?.complaints_growth_pct ?? 0) <= 0 ? styles.trendGreen : styles.trendRed}>
+                {(kpis?.complaints_growth_pct ?? 0) <= 0 ? '↓' : '↑'} {Math.abs(kpis?.complaints_growth_pct ?? 0)}%
+              </Text>
               <Text style={styles.trendSub}> vs last month</Text>
             </View>
           </View>
@@ -240,9 +257,13 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               <Calendar size={18} color="#8B5CF6" />
             </View>
             <Text style={styles.kpiCardLabel}>Total Events</Text>
-            <Text style={styles.kpiCardValue}>24</Text>
+            <Text style={styles.kpiCardValue}>
+              {kpis?.total_events != null ? kpis.total_events.toLocaleString() : '—'}
+            </Text>
             <View style={styles.trendRow}>
-              <Text style={styles.trendGreen}>↑ 33%</Text>
+              <Text style={(kpis?.events_growth_pct ?? 0) >= 0 ? styles.trendGreen : styles.trendRed}>
+                ↑ {kpis?.events_growth_pct ?? 0}%
+              </Text>
               <Text style={styles.trendSub}> vs last month</Text>
             </View>
           </View>
@@ -264,7 +285,6 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </View>
             <View style={styles.timeDropdownChip}>
               <Text style={styles.timeDropdownText}>Last 30 Days</Text>
-              <ChevronDown size={14} color="#64748B" />
             </View>
           </View>
 
@@ -280,36 +300,32 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               {/* Grid Lines */}
               <Path d="M 30 20 L 320 20 M 30 55 L 320 55 M 30 90 L 320 90 M 30 125 L 320 125" stroke="#F1F5F9" strokeWidth="1" />
               {/* Y Axis Labels */}
-              <SvgText x="5" y="24" fontSize="9" fill="#94A3B8" fontWeight="600">200</SvgText>
-              <SvgText x="5" y="59" fontSize="9" fill="#94A3B8" fontWeight="600">150</SvgText>
-              <SvgText x="5" y="94" fontSize="9" fill="#94A3B8" fontWeight="600">100</SvgText>
+              <SvgText x="5" y="24" fontSize="9" fill="#94A3B8" fontWeight="600">{maxGrowthCount}</SvgText>
+              <SvgText x="5" y="59" fontSize="9" fill="#94A3B8" fontWeight="600">{Math.round(maxGrowthCount * 0.75)}</SvgText>
+              <SvgText x="5" y="94" fontSize="9" fill="#94A3B8" fontWeight="600">{Math.round(maxGrowthCount * 0.5)}</SvgText>
               <SvgText x="10" y="129" fontSize="9" fill="#94A3B8" fontWeight="600">0</SvgText>
               {/* Area Gradient */}
-              <Path
-                d="M 30 135 L 30 125 C 60 115, 80 120, 100 110 C 130 95, 150 100, 180 75 C 210 50, 230 65, 260 48 C 285 35, 300 28, 320 20 L 320 135 Z"
-                fill="url(#growthGrad)"
-              />
+              <Path d={areaPathD} fill="url(#growthGrad)" />
               {/* Line */}
-              <Path
-                d="M 30 125 C 60 115, 80 120, 100 110 C 130 95, 150 100, 180 75 C 210 50, 230 65, 260 48 C 285 35, 300 28, 320 20"
-                fill="none"
-                stroke="#2563EB"
-                strokeWidth="2.5"
-              />
+              <Path d={linePathD} fill="none" stroke="#2563EB" strokeWidth="2.5" />
               {/* Dots */}
-              <Circle cx="30" cy="125" r="3.5" fill="#2563EB" />
-              <Circle cx="100" cy="110" r="3.5" fill="#2563EB" />
-              <Circle cx="180" cy="75" r="3.5" fill="#2563EB" />
-              <Circle cx="260" cy="48" r="3.5" fill="#2563EB" />
-              <Circle cx="320" cy="20" r="4" fill="#2563EB" stroke="#FFFFFF" strokeWidth="1.5" />
+              {chartPoints.map((pt, idx) => (
+                <Circle
+                  key={`dot-${idx}`}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={idx === chartPoints.length - 1 ? 4 : 3.5}
+                  fill="#2563EB"
+                  stroke={idx === chartPoints.length - 1 ? '#FFFFFF' : undefined}
+                  strokeWidth={idx === chartPoints.length - 1 ? 1.5 : 0}
+                />
+              ))}
             </Svg>
             {/* X Axis labels */}
             <View style={styles.xAxisRow}>
-              <Text style={styles.xAxisText}>1 Sep</Text>
-              <Text style={styles.xAxisText}>7 Sep</Text>
-              <Text style={styles.xAxisText}>14 Sep</Text>
-              <Text style={styles.xAxisText}>21 Sep</Text>
-              <Text style={styles.xAxisText}>28 Sep</Text>
+              {userGrowth.map(pt => (
+                <Text key={pt.label} style={styles.xAxisText}>{pt.label}</Text>
+              ))}
             </View>
           </View>
         </View>
@@ -326,7 +342,6 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </View>
             <View style={styles.timeDropdownChip}>
               <Text style={styles.timeDropdownText}>All Users</Text>
-              <ChevronDown size={14} color="#64748B" />
             </View>
           </View>
 
@@ -335,28 +350,43 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             <View style={styles.donutWrap}>
               <Svg width={140} height={140} viewBox="0 0 140 140">
                 <G transform="rotate(-90 70 70)">
-                  {/* Slices using stroke-dasharray (circumference ~ 301.6 with r=48) */}
-                  <Circle cx="70" cy="70" r="48" stroke="#3B82F6" strokeWidth="20" fill="none" strokeDasharray="105 302" strokeDashoffset="0" />
-                  <Circle cx="70" cy="70" r="48" stroke="#10B981" strokeWidth="20" fill="none" strokeDasharray="30 302" strokeDashoffset="-105" />
-                  <Circle cx="70" cy="70" r="48" stroke="#F59E0B" strokeWidth="20" fill="none" strokeDasharray="51 302" strokeDashoffset="-135" />
-                  <Circle cx="70" cy="70" r="48" stroke="#EF4444" strokeWidth="20" fill="none" strokeDasharray="45 302" strokeDashoffset="-186" />
-                  <Circle cx="70" cy="70" r="48" stroke="#8B5CF6" strokeWidth="20" fill="none" strokeDasharray="71 302" strokeDashoffset="-231" />
+                  {userDist.map((item, idx) => {
+                    const sliceFraction = item.count / totalUsersCount;
+                    const dashLength = sliceFraction * CIRCUMFERENCE;
+                    const offset = accumulatedDonutOffset;
+                    accumulatedDonutOffset += dashLength;
+                    return (
+                      <Circle
+                        key={`slice-${idx}`}
+                        cx="70"
+                        cy="70"
+                        r="48"
+                        stroke={item.color}
+                        strokeWidth="20"
+                        fill="none"
+                        strokeDasharray={`${dashLength.toFixed(1)} ${CIRCUMFERENCE.toFixed(1)}`}
+                        strokeDashoffset={(-offset).toFixed(1)}
+                      />
+                    );
+                  })}
                 </G>
               </Svg>
               <View style={styles.donutCenter}>
-                <Text style={styles.donutCenterValue}>1,248</Text>
+                <Text style={styles.donutCenterValue}>
+                  {kpis?.total_users != null ? kpis.total_users.toLocaleString() : '—'}
+                </Text>
                 <Text style={styles.donutCenterLabel}>Total Users</Text>
               </View>
             </View>
 
             {/* Legend */}
             <View style={styles.legendWrap}>
-              {USER_DISTRIBUTION.map(item => (
+              {userDist.map(item => (
                 <View key={item.label} style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: item.color }]} />
                   <Text style={styles.legendLabel} numberOfLines={1}>{item.label}</Text>
                   <Text style={styles.legendNumbers}>
-                    <Text style={styles.legendCount}>{item.count}</Text>
+                    <Text style={styles.legendCount}>{item.count.toLocaleString()}</Text>
                     <Text style={styles.legendPct}> ({item.pct})</Text>
                   </Text>
                 </View>
@@ -377,7 +407,6 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </View>
             <View style={styles.timeDropdownChip}>
               <Text style={styles.timeDropdownText}>Last 30 Days</Text>
-              <ChevronDown size={14} color="#64748B" />
             </View>
           </View>
 
@@ -386,16 +415,20 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             <View>
               <Text style={styles.miniLabel}>Total Amount</Text>
               <View style={styles.miniValRow}>
-                <Text style={styles.miniValue}>₹5,42,300</Text>
-                <Text style={styles.trendGreenSmall}> ↗ 28%</Text>
+                <Text style={styles.miniValue}>
+                  {donationsOverview ? formatINR(donationsOverview.total_amount, { noDecimals: true }) : '—'}
+                </Text>
+                <Text style={styles.trendGreenSmall}> ↗ {donationsOverview?.growth_pct ?? 0}%</Text>
               </View>
             </View>
             <View style={styles.miniDivider} />
             <View>
               <Text style={styles.miniLabel}>Total Donations</Text>
               <View style={styles.miniValRow}>
-                <Text style={styles.miniValue}>214</Text>
-                <Text style={styles.trendGreenSmall}> ↑ 18%</Text>
+                <Text style={styles.miniValue}>
+                  {donationsOverview?.total_donations?.toLocaleString() ?? '—'}
+                </Text>
+                <Text style={styles.trendGreenSmall}> ↑ {donationsOverview?.donations_count_growth_pct ?? 0}%</Text>
               </View>
             </View>
           </View>
@@ -453,7 +486,6 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </View>
             <View style={styles.timeDropdownChip}>
               <Text style={styles.timeDropdownText}>Last 30 Days</Text>
-              <ChevronDown size={14} color="#64748B" />
             </View>
           </View>
 
@@ -461,19 +493,31 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           <View style={styles.complaintKpiGrid}>
             <View style={styles.complaintKpiCol}>
               <Text style={styles.complaintColLabel}>Total Complaints</Text>
-              <Text style={styles.complaintColVal}>186 <Text style={styles.trendGreenSmall}>↑ 12%</Text></Text>
+              <Text style={styles.complaintColVal}>
+                {complaintsOverview?.total ?? 0}{' '}
+                <Text style={styles.trendGreenSmall}>↑ {complaintsOverview?.growth_pct ?? 0}%</Text>
+              </Text>
             </View>
             <View style={styles.complaintKpiCol}>
               <Text style={styles.complaintColLabel}>Resolved</Text>
-              <Text style={styles.complaintColVal}>142 <Text style={styles.trendGreenSmall}>↗ 76%</Text></Text>
+              <Text style={styles.complaintColVal}>
+                {complaintsOverview?.resolved ?? 0}{' '}
+                <Text style={styles.trendGreenSmall}>↗ {complaintsOverview?.resolved_pct ?? 0}%</Text>
+              </Text>
             </View>
             <View style={styles.complaintKpiCol}>
               <Text style={styles.complaintColLabel}>In Progress</Text>
-              <Text style={styles.complaintColVal}>36 <Text style={styles.trendAmberSmall}>◆ 19%</Text></Text>
+              <Text style={styles.complaintColVal}>
+                {complaintsOverview?.in_progress ?? 0}{' '}
+                <Text style={styles.trendAmberSmall}>◆ {complaintsOverview?.in_progress_pct ?? 0}%</Text>
+              </Text>
             </View>
             <View style={styles.complaintKpiCol}>
               <Text style={styles.complaintColLabel}>Pending</Text>
-              <Text style={styles.complaintColVal}>8 <Text style={styles.trendRedSmall}>↓ 5%</Text></Text>
+              <Text style={styles.complaintColVal}>
+                {complaintsOverview?.pending ?? 0}{' '}
+                <Text style={styles.trendRedSmall}>↓ {complaintsOverview?.pending_pct ?? 0}%</Text>
+              </Text>
             </View>
           </View>
 
@@ -531,7 +575,6 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </View>
             <View style={styles.timeDropdownChip}>
               <Text style={styles.timeDropdownText}>Last 30 Days</Text>
-              <ChevronDown size={14} color="#64748B" />
             </View>
           </View>
 
@@ -564,7 +607,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             <Text style={[styles.thText, { flex: 1 }]}>Title</Text>
             <Text style={[styles.thText, { width: 60, textAlign: 'right' }]}>Views</Text>
           </View>
-          {CONTENT_DATA[activeContentTab].map(row => (
+          {currentContentList.map(row => (
             <View key={row.rank} style={styles.tableRow}>
               <Text style={[styles.tdRank, { width: 30 }]}>{row.rank}</Text>
               <Text style={[styles.tdTitle, { flex: 1 }]} numberOfLines={1}>
@@ -575,6 +618,11 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               </Text>
             </View>
           ))}
+          {currentContentList.length === 0 && (
+            <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+              <Text style={{ fontSize: 11, color: '#94A3B8' }}>No content available for this category</Text>
+            </View>
+          )}
         </View>
 
         {/* Chart Card 6: Events Overview */}
@@ -589,7 +637,6 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </View>
             <View style={styles.timeDropdownChip}>
               <Text style={styles.timeDropdownText}>Last 30 Days</Text>
-              <ChevronDown size={14} color="#64748B" />
             </View>
           </View>
 
@@ -597,15 +644,23 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           <View style={styles.eventsKpiRow}>
             <View style={styles.eventKpiBox}>
               <Text style={styles.miniLabel}>Total Events</Text>
-              <Text style={styles.eventKpiVal}>24 <Text style={styles.trendGreenSmall}>↑ 33%</Text></Text>
+              <Text style={styles.eventKpiVal}>
+                {eventsOverview?.total_events ?? 0}{' '}
+                <Text style={styles.trendGreenSmall}>↑ {eventsOverview?.events_growth_pct ?? 0}%</Text>
+              </Text>
             </View>
             <View style={styles.eventKpiBox}>
               <Text style={styles.miniLabel}>Total Registrations</Text>
-              <Text style={styles.eventKpiVal}>1,186 <Text style={styles.trendGreenSmall}>↑ 46%</Text></Text>
+              <Text style={styles.eventKpiVal}>
+                {eventsOverview?.total_registrations?.toLocaleString() ?? '—'}{' '}
+                <Text style={styles.trendGreenSmall}>↑ {eventsOverview?.registrations_growth_pct ?? 0}%</Text>
+              </Text>
             </View>
             <View style={[styles.eventKpiBox, { backgroundColor: '#F5F3FF' }]}>
               <Text style={styles.miniLabel}>Avg. Attendance</Text>
-              <Text style={[styles.eventKpiVal, { color: '#7C3AED' }]}>82%</Text>
+              <Text style={[styles.eventKpiVal, { color: '#7C3AED' }]}>
+                {eventsOverview?.avg_attendance_pct ?? 0}%
+              </Text>
             </View>
           </View>
 

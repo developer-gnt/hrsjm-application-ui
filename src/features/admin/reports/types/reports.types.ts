@@ -17,6 +17,80 @@ export interface DateRangePreset {
 }
 
 // ==========================================
+// PLATFORM ANALYTICS & DASHBOARD REPORTS
+// ==========================================
+export interface AnalyticsKpiData {
+  total_users: number;
+  users_growth_pct: number;
+  total_donations_amount: number;
+  donations_growth_pct: number;
+  total_donations_count: number;
+  total_complaints: number;
+  complaints_growth_pct: number;
+  total_events: number;
+  events_growth_pct: number;
+}
+
+export interface UserGrowthPoint {
+  label: string;
+  count: number;
+  date: string;
+}
+
+export interface UserDistributionSlice {
+  label: string;
+  count: number;
+  pct: string;
+  color: string;
+}
+
+export interface DonationsOverviewData {
+  total_amount: number;
+  growth_pct: number;
+  total_donations: number;
+  donations_count_growth_pct: number;
+}
+
+export interface ComplaintsOverviewData {
+  total: number;
+  resolved: number;
+  in_progress: number;
+  pending: number;
+  growth_pct: number;
+  resolved_pct: number;
+  in_progress_pct: number;
+  pending_pct: number;
+}
+
+export interface ContentPerformanceItem {
+  rank: number;
+  title: string;
+  views: string;
+}
+
+export interface EventsOverviewData {
+  total_events: number;
+  events_growth_pct: number;
+  total_registrations: number;
+  registrations_growth_pct: number;
+  avg_attendance_pct: number;
+}
+
+export interface ReportsAnalyticsResponse {
+  kpis: AnalyticsKpiData;
+  user_growth: UserGrowthPoint[];
+  user_distribution: UserDistributionSlice[];
+  donations_overview: DonationsOverviewData;
+  complaints_overview: ComplaintsOverviewData;
+  top_content: {
+    rights: ContentPerformanceItem[];
+    blogs: ContentPerformanceItem[];
+    news: ContentPerformanceItem[];
+  };
+  events_overview: EventsOverviewData;
+}
+
+// ==========================================
 // TRIAL BALANCE
 // ==========================================
 export interface TrialBalanceAccountItem {

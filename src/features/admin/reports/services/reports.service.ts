@@ -5,11 +5,24 @@ import type {
   BalanceSheetSummaryResponse,
   ProfitLossReportResponse,
   ProfitLossSummaryResponse,
+  ReportsAnalyticsResponse,
   TrialBalanceReportResponse,
   TrialBalanceSummaryResponse,
 } from '../types/reports.types';
 
 export const reportsService = {
+  // 0. Platform Analytics Overview
+  async getAnalytics(params?: {
+    start_date?: string;
+    end_date?: string;
+  }): Promise<ReportsAnalyticsResponse> {
+    const res = await apiClient.get<ReportsAnalyticsResponse>(
+      '/reports/analytics',
+      { params },
+    );
+    return res.data;
+  },
+
   // 1. Trial Balance
   async getTrialBalance(params: {
     as_of_date: string;
