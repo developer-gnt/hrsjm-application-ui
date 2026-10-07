@@ -36,7 +36,6 @@ import {
   Download,
   Eye,
   FileText,
-  ListFilter,
   Plus,
   Scale,
   Search,
@@ -71,7 +70,6 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
   const { width } = useWindowDimensions();
   const [activeMode, setActiveMode] = useState<MainMode>('PASSBOOK');
   const [activeDimensionTab, setActiveDimensionTab] = useState<DimensionTab>('Date Wise');
-  const [txFilterType, setTxFilterType] = useState<'ALL' | 'CREDIT' | 'EXPENSE'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDatePreset, setSelectedDatePreset] = useState<DatePresetKey>('ALL_TIME');
   const [selectedTx, setSelectedTx] = useState<LedgerTransaction | null>(null);
@@ -121,14 +119,12 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
   const filteredTransactions = useMemo(() => {
     let list = transactions;
 
-    // Filter by tab / mode
-    if (activeMode === 'CREDIT' || txFilterType === 'CREDIT') {
+    if (activeMode === 'CREDIT') {
       list = list.filter((t) => (t.credit || 0) > 0);
-    } else if (activeMode === 'EXPENSE' || txFilterType === 'EXPENSE') {
+    } else if (activeMode === 'EXPENSE') {
       list = list.filter((t) => (t.debit || 0) > 0);
     }
 
-    // Filter by search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(
@@ -143,7 +139,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
     }
 
     return list;
-  }, [transactions, activeMode, txFilterType, searchQuery]);
+  }, [transactions, activeMode, searchQuery]);
 
   // Counts
   const totalCount = transactions.length;
@@ -156,7 +152,6 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
   const totalExpenseAmt = summary.total_debit || 0;
   const closingBal = summary.closing_balance || 0;
 
-  // Responsive chart width
   const chartWidth = Math.min(width - 48, 560);
 
   // Grouped date-wise summary for Mode 3 (Details)
@@ -200,6 +195,194 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
     }
   };
 
+  const cycleDatePreset = () => {
+    const presets: DatePresetKey[] = [
+      'ALL_TIME',
+      'THIS_MONTH',
+      'LAST_MONTH',
+      'THIS_QUARTER',
+      'THIS_FY',
+    ];
+    const nextIdx = (presets.indexOf(selectedDatePreset) + 1) % presets.length;
+    setSelectedDatePreset(presets[nextIdx]);
+  };
+
+  // Reusable Top Scrollable Content (KPIs + Action Bar + Mode Tabs)
+  const renderScrollableHeader = (showSearch = true) => (
+    <View style={styles.scrollHeaderContainer}>
+      {/* 2x2 KPI Cards */}
+      <View style={styles.kpiGrid2x2}>
+        <View style={styles.kpiCard}>
+          <View style={[styles.kpiIconWrap, { backgroundColor: '#EFF6FF' }]}>
+            <Wallet size={15} color="#2563EB" />
+          </View>
+          <Text style={styles.kpiValue} numberOfLines={1}>
+            {formatINR(openingBal, { noDecimals: true })}
+          </Text>
+          <Text style={styles.kpiLabel}>Opening Balance</Text>
+          <Text style={styles.kpiSub}>Base balance</Text>
+        </View>
+
+        <View style={styles.kpiCard}>
+          <View style={[styles.kpiIconWrap, { backgroundColor: '#ECFDF5' }]}>
+            <ArrowDownLeft size={15} color="#16A34A" />
+          </View>
+          <Text style={[styles.kpiValue, { color: '#16A34A' }]} numberOfLines={1}>
+            {formatINR(totalCreditAmt, { noDecimals: true })}
+          </Text>
+          <Text style={styles.kpiLabel}>Total Credit Amount</Text>
+          <Text style={styles.trendGreenText}>↑ +{creditCount} credits</Text>
+        </View>
+
+        <View style={styles.kpiCard}>
+          <View style={[styles.kpiIconWrap, { backgroundColor: '#FEF2F2' }]}>
+            <ArrowUpRight size={15} color="#DC2626" />
+          </View>
+          <Text style={[styles.kpiValue, styles.kpiValueExpense]} numberOfLines={1}>
+            {formatINR(totalExpenseAmt, { noDecimals: true })}
+          </Text>
+          <Text style={styles.kpiLabel}>Total Expense Amount</Text>
+          <Text style={styles.trendRedText}>↑ +{expenseCount} debits</Text>
+        </View>
+
+        <View style={styles.kpiCard}>
+          <View style={[styles.kpiIconWrap, { backgroundColor: '#F5F3FF' }]}>
+            <Scale size={15} color="#7C3AED" />
+          </View>
+          <Text style={[styles.kpiValue, { color: '#0F2C59' }]} numberOfLines={1}>
+            {formatINR(closingBal, { noDecimals: true })}
+          </Text>
+          <Text style={styles.kpiLabel}>Closing Balance</Text>
+          <Text style={styles.kpiSub}>Net available</Text>
+        </View>
+      </View>
+
+      {/* Quick Action Bar */}
+      <View style={styles.quickActionBar}>
+        <TouchableOpacity
+          style={styles.actionBtnCredit}
+          onPress={() => {
+            if (onNavigate) onNavigate(AppRoutes.CREATE_RECEIPT_VOUCHER);
+          }}
+          activeOpacity={0.8}
+        >
+          <Plus size={13} color="#FFFFFF" />
+          <Text style={styles.actionBtnCreditText}>Add Credit</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionBtnExpense}
+          onPress={() => {
+            if (onNavigate) onNavigate(AppRoutes.CREATE_EXPENSE_VOUCHER);
+          }}
+          activeOpacity={0.8}
+        >
+          <Plus size={13} color="#FFFFFF" />
+          <Text style={styles.actionBtnExpenseText}>Add Expense</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionBtnOutline}
+          onPress={() => {
+            if (onNavigate) onNavigate(AppRoutes.RECEIPT_VOUCHERS);
+          }}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.actionBtnOutlineText}>Receipts</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionBtnOutline}
+          onPress={() => {
+            if (onNavigate) onNavigate(AppRoutes.EXPENSE_VOUCHERS);
+          }}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.actionBtnOutlineText}>Expenses</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Mode Navigation Tabs */}
+      <View style={styles.modeTabsRow}>
+        <TouchableOpacity
+          style={[styles.modeTabBtn, activeMode === 'PASSBOOK' && styles.modeTabBtnActive]}
+          onPress={() => setActiveMode('PASSBOOK')}
+          activeOpacity={0.8}
+        >
+          <Wallet size={13} color={activeMode === 'PASSBOOK' ? '#FFFFFF' : '#0F2C59'} />
+          <Text style={[styles.modeTabText, activeMode === 'PASSBOOK' && styles.modeTabTextActive]}>
+            Passbook ({totalCount})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.modeTabBtn, activeMode === 'CREDIT' && styles.modeTabBtnActive]}
+          onPress={() => setActiveMode('CREDIT')}
+          activeOpacity={0.8}
+        >
+          <ArrowDownLeft size={13} color={activeMode === 'CREDIT' ? '#FFFFFF' : '#16A34A'} />
+          <Text style={[styles.modeTabText, activeMode === 'CREDIT' && styles.modeTabTextActive]}>
+            Credit ({creditCount})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.modeTabBtn, activeMode === 'EXPENSE' && styles.modeTabBtnActive]}
+          onPress={() => setActiveMode('EXPENSE')}
+          activeOpacity={0.8}
+        >
+          <ArrowUpRight size={13} color={activeMode === 'EXPENSE' ? '#FFFFFF' : '#DC2626'} />
+          <Text style={[styles.modeTabText, activeMode === 'EXPENSE' && styles.modeTabTextActive]}>
+            Expense ({expenseCount})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.modeTabBtn, activeMode === 'LEDGER' && styles.modeTabBtnActive]}
+          onPress={() => setActiveMode('LEDGER')}
+          activeOpacity={0.8}
+        >
+          <FileText size={13} color={activeMode === 'LEDGER' ? '#FFFFFF' : '#64748B'} />
+          <Text style={[styles.modeTabText, activeMode === 'LEDGER' && styles.modeTabTextActive]}>
+            Statement
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.modeTabBtn, activeMode === 'ANALYTICS' && styles.modeTabBtnActive]}
+          onPress={() => setActiveMode('ANALYTICS')}
+          activeOpacity={0.8}
+        >
+          <Scale size={13} color={activeMode === 'ANALYTICS' ? '#FFFFFF' : '#64748B'} />
+          <Text style={[styles.modeTabText, activeMode === 'ANALYTICS' && styles.modeTabTextActive]}>
+            Analytics
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Clean Single Search Input (Only on Passbook / Credit / Expense tabs) */}
+      {showSearch && (
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputWrap}>
+            <Search size={15} color="#94A3B8" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by payee, source, voucher #..."
+              placeholderTextColor="#94A3B8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <X size={16} color="#94A3B8" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+    </View>
+  );
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
@@ -212,7 +395,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         {/* ========================================================================= */}
-        {/* 1. TOP PAGE HEADER & DATE PRESET PILL */}
+        {/* 1. TOP PAGE HEADER & DATE PRESET PILL (Single Unified Date Filter) */}
         {/* ========================================================================= */}
         <View style={styles.pageHeader}>
           <View style={styles.pageHeaderText}>
@@ -233,20 +416,10 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
             </Text>
           </View>
 
-          {/* Date Selector Pill */}
+          {/* Single Date Selector Pill */}
           <TouchableOpacity
             style={styles.datePill}
-            onPress={() => {
-              const presets: DatePresetKey[] = [
-                'ALL_TIME',
-                'THIS_MONTH',
-                'LAST_MONTH',
-                'THIS_QUARTER',
-                'THIS_FY',
-              ];
-              const nextIdx = (presets.indexOf(selectedDatePreset) + 1) % presets.length;
-              setSelectedDatePreset(presets[nextIdx]);
-            }}
+            onPress={cycleDatePreset}
             activeOpacity={0.8}
           >
             <Calendar size={13} color="#2563EB" />
@@ -256,382 +429,144 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
         </View>
 
         {/* ========================================================================= */}
-        {/* 2. TOP 4 KPI CARDS */}
-        {/* ========================================================================= */}
-        <View style={styles.kpiGrid2x2}>
-          {/* Card 1: Opening Balance */}
-          <View style={styles.kpiCard}>
-            <View style={[styles.kpiIconWrap, { backgroundColor: '#EFF6FF' }]}>
-              <Wallet size={16} color="#2563EB" />
-            </View>
-            <Text style={styles.kpiValue} numberOfLines={1}>
-              {formatINR(openingBal, { noDecimals: true })}
-            </Text>
-            <Text style={styles.kpiLabel}>Opening Balance</Text>
-            <Text style={styles.kpiSub}>Base balance</Text>
-          </View>
-
-          {/* Card 2: Total Credit Amount */}
-          <View style={styles.kpiCard}>
-            <View style={[styles.kpiIconWrap, { backgroundColor: '#ECFDF5' }]}>
-              <ArrowDownLeft size={16} color="#16A34A" />
-            </View>
-            <Text style={[styles.kpiValue, { color: '#16A34A' }]} numberOfLines={1}>
-              {formatINR(totalCreditAmt, { noDecimals: true })}
-            </Text>
-            <Text style={styles.kpiLabel}>Total Credit Amount</Text>
-            <Text style={styles.trendGreenText}>↑ +{creditCount} credits</Text>
-          </View>
-
-          {/* Card 3: Total Expense Amount */}
-          <View style={styles.kpiCard}>
-            <View style={[styles.kpiIconWrap, { backgroundColor: '#FEF2F2' }]}>
-              <ArrowUpRight size={16} color="#DC2626" />
-            </View>
-            <Text style={[styles.kpiValue, styles.kpiValueExpense]} numberOfLines={1}>
-              {formatINR(totalExpenseAmt, { noDecimals: true })}
-            </Text>
-            <Text style={styles.kpiLabel}>Total Expense Amount</Text>
-            <Text style={styles.trendRedText}>↑ +{expenseCount} debits</Text>
-          </View>
-
-          {/* Card 4: Closing Balance */}
-          <View style={styles.kpiCard}>
-            <View style={[styles.kpiIconWrap, { backgroundColor: '#F5F3FF' }]}>
-              <Scale size={16} color="#7C3AED" />
-            </View>
-            <Text style={[styles.kpiValue, { color: '#0F2C59' }]} numberOfLines={1}>
-              {formatINR(closingBal, { noDecimals: true })}
-            </Text>
-            <Text style={styles.kpiLabel}>Closing Balance</Text>
-            <Text style={styles.kpiSub}>Net available</Text>
-          </View>
-        </View>
-
-        {/* ========================================================================= */}
-        {/* 3. QUICK ACTION BAR (+ Credit, + Expense, Receipts, Expenses) */}
-        {/* ========================================================================= */}
-        <View style={styles.quickActionBar}>
-          <TouchableOpacity
-            style={styles.actionBtnCredit}
-            onPress={() => {
-              if (onNavigate) onNavigate(AppRoutes.CREATE_RECEIPT_VOUCHER);
-            }}
-            activeOpacity={0.8}
-          >
-            <Plus size={14} color="#FFFFFF" />
-            <Text style={styles.actionBtnCreditText}>+ Add Credit</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionBtnExpense}
-            onPress={() => {
-              if (onNavigate) onNavigate(AppRoutes.CREATE_EXPENSE_VOUCHER);
-            }}
-            activeOpacity={0.8}
-          >
-            <Plus size={14} color="#FFFFFF" />
-            <Text style={styles.actionBtnExpenseText}>+ Add Expense</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionBtnOutline}
-            onPress={() => {
-              if (onNavigate) onNavigate(AppRoutes.RECEIPT_VOUCHERS);
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.actionBtnOutlineText}>Receipts</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionBtnOutline}
-            onPress={() => {
-              if (onNavigate) onNavigate(AppRoutes.EXPENSE_VOUCHERS);
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.actionBtnOutlineText}>Expenses</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ========================================================================= */}
-        {/* 4. MAIN NAVIGATION TABS (Passbook | Credit | Expense | Ledger | Analytics) */}
-        {/* ========================================================================= */}
-        <View style={styles.modeTabsRow}>
-          <TouchableOpacity
-            style={[styles.modeTabBtn, activeMode === 'PASSBOOK' && styles.modeTabBtnActive]}
-            onPress={() => {
-              setActiveMode('PASSBOOK');
-              setTxFilterType('ALL');
-            }}
-            activeOpacity={0.8}
-          >
-            <Wallet size={13} color={activeMode === 'PASSBOOK' ? '#FFFFFF' : '#0F2C59'} />
-            <Text style={[styles.modeTabText, activeMode === 'PASSBOOK' && styles.modeTabTextActive]}>
-              Passbook
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.modeTabBtn, activeMode === 'CREDIT' && styles.modeTabBtnActive]}
-            onPress={() => {
-              setActiveMode('CREDIT');
-              setTxFilterType('CREDIT');
-            }}
-            activeOpacity={0.8}
-          >
-            <ArrowDownLeft size={13} color={activeMode === 'CREDIT' ? '#FFFFFF' : '#16A34A'} />
-            <Text style={[styles.modeTabText, activeMode === 'CREDIT' && styles.modeTabTextActive]}>
-              Credit ({creditCount})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.modeTabBtn, activeMode === 'EXPENSE' && styles.modeTabBtnActive]}
-            onPress={() => {
-              setActiveMode('EXPENSE');
-              setTxFilterType('EXPENSE');
-            }}
-            activeOpacity={0.8}
-          >
-            <ArrowUpRight size={13} color={activeMode === 'EXPENSE' ? '#FFFFFF' : '#DC2626'} />
-            <Text style={[styles.modeTabText, activeMode === 'EXPENSE' && styles.modeTabTextActive]}>
-              Expense ({expenseCount})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.modeTabBtn, activeMode === 'LEDGER' && styles.modeTabBtnActive]}
-            onPress={() => setActiveMode('LEDGER')}
-            activeOpacity={0.8}
-          >
-            <FileText size={13} color={activeMode === 'LEDGER' ? '#FFFFFF' : '#64748B'} />
-            <Text style={[styles.modeTabText, activeMode === 'LEDGER' && styles.modeTabTextActive]}>
-              Statement
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.modeTabBtn, activeMode === 'ANALYTICS' && styles.modeTabBtnActive]}
-            onPress={() => setActiveMode('ANALYTICS')}
-            activeOpacity={0.8}
-          >
-            <Scale size={13} color={activeMode === 'ANALYTICS' ? '#FFFFFF' : '#64748B'} />
-            <Text style={[styles.modeTabText, activeMode === 'ANALYTICS' && styles.modeTabTextActive]}>
-              Analytics
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ========================================================================= */}
-        {/* 5. PASSBOOK TRANSACTIONS VIEW */}
+        {/* 2. PASSBOOK VIEW (ALL / CREDIT / EXPENSE) - SCROLLS AS A SINGLE LIST */}
         {/* ========================================================================= */}
         {(activeMode === 'PASSBOOK' || activeMode === 'CREDIT' || activeMode === 'EXPENSE') && (
-          <View style={styles.transactionsContainer}>
-            {/* Search & Filter Bar */}
-            <View style={styles.searchRow}>
-              <View style={styles.searchInputWrap}>
-                <Search size={16} color="#94A3B8" />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search by payee, source, voucher #..."
-                  placeholderTextColor="#94A3B8"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')}>
-                    <X size={16} color="#94A3B8" />
-                  </TouchableOpacity>
-                )}
-              </View>
-              <TouchableOpacity
-                style={styles.filterBtn}
-                onPress={() => {
-                  const presets: DatePresetKey[] = [
-                    'ALL_TIME',
-                    'THIS_MONTH',
-                    'LAST_MONTH',
-                    'THIS_QUARTER',
-                    'THIS_FY',
-                  ];
-                  const nextIdx = (presets.indexOf(selectedDatePreset) + 1) % presets.length;
-                  setSelectedDatePreset(presets[nextIdx]);
-                }}
-                activeOpacity={0.8}
-              >
-                <ListFilter size={15} color="#0F2C59" />
-                <Text style={styles.filterBtnText}>{dateLabel}</Text>
-              </TouchableOpacity>
-            </View>
+          <FlatList
+            data={filteredTransactions}
+            keyExtractor={(item) => `${item.entry_id}-${item.id}`}
+            contentContainerStyle={styles.flatListContent}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={renderScrollableHeader(true)}
+            renderItem={({ item }) => {
+              const isCredit = (item.credit || 0) > 0;
+              const amt = isCredit ? item.credit : item.debit;
+              const dateObj = new Date(item.entry_date);
+              const dayNum = isNaN(dateObj.getTime()) ? '' : dateObj.getDate();
+              const monthShort = isNaN(dateObj.getTime())
+                ? ''
+                : dateObj.toLocaleString('default', { month: 'short' });
 
-            {/* Quick Filter Pills */}
-            <View style={styles.typePillsRow}>
-              <TouchableOpacity
-                style={[styles.typePill, txFilterType === 'ALL' && styles.typePillActive]}
-                onPress={() => setTxFilterType('ALL')}
-              >
-                <Text style={[styles.typePillText, txFilterType === 'ALL' && styles.typePillTextActive]}>
-                  All ({totalCount})
-                </Text>
-              </TouchableOpacity>
+              return (
+                <TouchableOpacity
+                  style={styles.txCard}
+                  onPress={() => setSelectedTx(item)}
+                  activeOpacity={0.7}
+                >
+                  {/* Date Block */}
+                  <View style={styles.dateBlock}>
+                    <Text style={styles.dateBlockDay}>{dayNum || '•'}</Text>
+                    <Text style={styles.dateBlockMonth}>{monthShort || 'DATE'}</Text>
+                  </View>
 
-              <TouchableOpacity
-                style={[styles.typePill, txFilterType === 'CREDIT' && styles.typePillActive]}
-                onPress={() => setTxFilterType('CREDIT')}
-              >
-                <Text style={[styles.typePillText, txFilterType === 'CREDIT' && styles.typePillTextActive]}>
-                  Credits ({creditCount})
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.typePill, txFilterType === 'EXPENSE' && styles.typePillActive]}
-                onPress={() => setTxFilterType('EXPENSE')}
-              >
-                <Text style={[styles.typePillText, txFilterType === 'EXPENSE' && styles.typePillTextActive]}>
-                  Expenses ({expenseCount})
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Transactions FlatList */}
-            <FlatList
-              data={filteredTransactions}
-              keyExtractor={(item) => `${item.entry_id}-${item.id}`}
-              contentContainerStyle={styles.txListContent}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => {
-                const isCredit = (item.credit || 0) > 0;
-                const amt = isCredit ? item.credit : item.debit;
-                const dateObj = new Date(item.entry_date);
-                const dayNum = isNaN(dateObj.getTime()) ? '' : dateObj.getDate();
-                const monthShort = isNaN(dateObj.getTime())
-                  ? ''
-                  : dateObj.toLocaleString('default', { month: 'short' });
-
-                return (
-                  <TouchableOpacity
-                    style={styles.txCard}
-                    onPress={() => setSelectedTx(item)}
-                    activeOpacity={0.7}
-                  >
-                    {/* Date Block */}
-                    <View style={styles.dateBlock}>
-                      <Text style={styles.dateBlockDay}>{dayNum || '•'}</Text>
-                      <Text style={styles.dateBlockMonth}>{monthShort || 'DATE'}</Text>
+                  {/* Middle Info Column */}
+                  <View style={styles.txMainInfo}>
+                    <View style={styles.txTitleRow}>
+                      <Text style={styles.txTitle} numberOfLines={1}>
+                        {item.account_name || (isCredit ? 'Credit Receipt' : 'Expense Payment')}
+                      </Text>
                     </View>
 
-                    {/* Middle Info Column */}
-                    <View style={styles.txMainInfo}>
-                      <View style={styles.txTitleRow}>
-                        <Text style={styles.txTitle} numberOfLines={1}>
-                          {item.account_name || (isCredit ? 'Credit Receipt' : 'Expense Payment')}
-                        </Text>
-                      </View>
-
-                      <View style={styles.txMetaRow}>
-                        <View
+                    <View style={styles.txMetaRow}>
+                      <View
+                        style={[
+                          styles.badgeType,
+                          isCredit ? styles.badgeTypeCredit : styles.badgeTypeExpense,
+                        ]}
+                      >
+                        <Text
                           style={[
-                            styles.badgeType,
-                            isCredit ? styles.badgeTypeCredit : styles.badgeTypeExpense,
+                            styles.badgeTypeText,
+                            { color: isCredit ? '#16A34A' : '#DC2626' },
                           ]}
                         >
-                          <Text
-                            style={[
-                              styles.badgeTypeText,
-                              { color: isCredit ? '#16A34A' : '#DC2626' },
-                            ]}
-                          >
-                            {isCredit ? 'CREDIT' : 'EXPENSE'}
+                          {isCredit ? 'CREDIT' : 'EXPENSE'}
+                        </Text>
+                      </View>
+
+                      {item.payment_method && (
+                        <View style={styles.badgeMethod}>
+                          <Text style={styles.badgeMethodText}>
+                            {item.payment_method.replace('_', ' ')}
                           </Text>
                         </View>
+                      )}
 
-                        {item.payment_method && (
-                          <View style={styles.badgeMethod}>
-                            <Text style={styles.badgeMethodText}>
-                              {item.payment_method.replace('_', ' ')}
-                            </Text>
-                          </View>
-                        )}
-
-                        <Text style={styles.txRefText} numberOfLines={1}>
-                          {item.entry_number || item.reference_id || 'REF-N/A'}
-                        </Text>
-                      </View>
-
-                      {item.narration ? (
-                        <Text style={styles.txNarration} numberOfLines={1}>
-                          {item.narration}
-                        </Text>
-                      ) : null}
-                    </View>
-
-                    {/* Right Amount & Balance */}
-                    <View style={styles.txAmountCol}>
-                      <Text
-                        style={[
-                          styles.txAmountText,
-                          isCredit ? styles.txCreditAmount : styles.txExpenseAmount,
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {isCredit ? '+' : '-'} {formatINR(amt, { noDecimals: true })}
+                      <Text style={styles.txRefText} numberOfLines={1}>
+                        {item.entry_number || item.reference_id || 'REF-N/A'}
                       </Text>
-                      <View style={styles.balancePill}>
-                        <Text style={styles.balancePillText} numberOfLines={1}>
-                          Bal: {formatINR(item.running_balance || 0, { noDecimals: true })}
-                        </Text>
-                      </View>
                     </View>
-                  </TouchableOpacity>
-                );
-              }}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <AppEmptyState
-                    icon="📖"
-                    title="No Transactions Found"
-                    description="No credit receipts or expense vouchers match the selected filter."
-                  />
-                  <View style={styles.emptyActionRow}>
-                    <TouchableOpacity
-                      style={styles.emptyActionBtn}
-                      onPress={() => {
-                        if (onNavigate) onNavigate(AppRoutes.CREATE_RECEIPT_VOUCHER);
-                      }}
-                    >
-                      <Text style={styles.emptyActionBtnText}>+ Record Credit</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.emptyActionBtn, { backgroundColor: '#DC2626' }]}
-                      onPress={() => {
-                        if (onNavigate) onNavigate(AppRoutes.CREATE_EXPENSE_VOUCHER);
-                      }}
-                    >
-                      <Text style={styles.emptyActionBtnText}>+ Record Expense</Text>
-                    </TouchableOpacity>
+
+                    {item.narration ? (
+                      <Text style={styles.txNarration} numberOfLines={1}>
+                        {item.narration}
+                      </Text>
+                    ) : null}
                   </View>
-                </View>
-              }
-              refreshControl={
-                <RefreshControl
-                  refreshing={loading}
-                  onRefresh={refresh}
-                  tintColor={AdminColors.primary}
+
+                  {/* Right Amount & Balance */}
+                  <View style={styles.txAmountCol}>
+                    <Text
+                      style={[
+                        styles.txAmountText,
+                        isCredit ? styles.txCreditAmount : styles.txExpenseAmount,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {isCredit ? '+' : '-'} {formatINR(amt, { noDecimals: true })}
+                    </Text>
+                    <View style={styles.balancePill}>
+                      <Text style={styles.balancePillText} numberOfLines={1}>
+                        Bal: {formatINR(item.running_balance || 0, { noDecimals: true })}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <AppEmptyState
+                  icon="📖"
+                  title="No Transactions Found"
+                  description="No transactions found for the selected view and filter."
                 />
-              }
-            />
-          </View>
+                <View style={styles.emptyActionRow}>
+                  <TouchableOpacity
+                    style={styles.emptyActionBtn}
+                    onPress={() => {
+                      if (onNavigate) onNavigate(AppRoutes.CREATE_RECEIPT_VOUCHER);
+                    }}
+                  >
+                    <Text style={styles.emptyActionBtnText}>+ Add Credit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.emptyActionBtn, { backgroundColor: '#DC2626' }]}
+                    onPress={() => {
+                      if (onNavigate) onNavigate(AppRoutes.CREATE_EXPENSE_VOUCHER);
+                    }}
+                  >
+                    <Text style={styles.emptyActionBtnText}>+ Add Expense</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            }
+            refreshControl={
+              <RefreshControl
+                refreshing={loading}
+                onRefresh={refresh}
+                tintColor={AdminColors.primary}
+              />
+            }
+          />
         )}
 
         {/* ========================================================================= */}
-        {/* 6. STATEMENT / LEDGER BREAKDOWN VIEW */}
+        {/* 3. STATEMENT / LEDGER BREAKDOWN VIEW (SCROLLABLE) */}
         {/* ========================================================================= */}
         {activeMode === 'LEDGER' && (
           <ScrollView
-            contentContainerStyle={styles.detailsScroll}
+            contentContainerStyle={styles.scrollPageContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -641,6 +576,8 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
               />
             }
           >
+            {renderScrollableHeader(false)}
+
             {/* Dimension Breakdown Tabs */}
             <ScrollView
               horizontal
@@ -670,7 +607,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
               )}
             </ScrollView>
 
-            {/* Date Wise Summary Table Card */}
+            {/* Summary Table Card */}
             <View style={styles.summaryTableCard}>
               <View style={styles.tableCardHeader}>
                 <View style={styles.tableHeaderTitleRow}>
@@ -754,11 +691,11 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* 7. ANALYTICS / CHART VIEW */}
+        {/* 4. ANALYTICS / CHART VIEW (SCROLLABLE) */}
         {/* ========================================================================= */}
         {activeMode === 'ANALYTICS' && (
           <ScrollView
-            contentContainerStyle={styles.overviewScroll}
+            contentContainerStyle={styles.scrollPageContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -768,6 +705,8 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
               />
             }
           >
+            {renderScrollableHeader(false)}
+
             {/* Balance Trend Card */}
             <View style={styles.trendCard}>
               <View style={styles.trendHeader}>
@@ -781,11 +720,11 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
               <View style={styles.chartLegend}>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#10B981' }]} />
-                  <Text style={styles.legendText}>Credits (Inflow)</Text>
+                  <Text style={styles.legendText}>Credits</Text>
                 </View>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
-                  <Text style={styles.legendText}>Expenses (Outflow)</Text>
+                  <Text style={styles.legendText}>Expenses</Text>
                 </View>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#3B82F6' }]} />
@@ -793,7 +732,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
                 </View>
               </View>
 
-              {/* Combined Chart (Dual Bar + Line Graph) */}
+              {/* Combined Chart */}
               <View style={styles.chartWrap}>
                 <Svg width={chartWidth} height={150} viewBox="0 0 330 150">
                   <Defs>
@@ -802,13 +741,11 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
                       <Stop offset="100%" stopColor="#3B82F6" stopOpacity="0.0" />
                     </LinearGradient>
                   </Defs>
-                  {/* Grid Lines */}
                   <Path
                     d="M 30 20 L 320 20 M 30 50 L 320 50 M 30 80 L 320 80 M 30 110 L 320 110 M 30 135 L 320 135"
                     stroke="#F1F5F9"
                     strokeWidth="1"
                   />
-                  {/* Dual Bars */}
                   <G>
                     <Rect x="42" y="95" width="6" height="40" rx="2" fill="#10B981" />
                     <Rect x="50" y="115" width="6" height="20" rx="2" fill="#EF4444" />
@@ -822,7 +759,6 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
                     <Rect x="270" y="105" width="6" height="30" rx="2" fill="#EF4444" />
                   </G>
 
-                  {/* Closing Balance Area & Line */}
                   <Path
                     d="M 30 115 L 45 105 L 100 85 L 155 75 L 210 55 L 265 40 L 315 30 L 315 135 L 30 135 Z"
                     fill="url(#lineGradPassbook2)"
@@ -874,7 +810,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* 8. TRANSACTION DETAIL MODAL */}
+        {/* 5. TRANSACTION DETAIL MODAL */}
         {/* ========================================================================= */}
         <Modal
           visible={!!selectedTx}
@@ -996,8 +932,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingTop: 10,
+    paddingBottom: 6,
+    backgroundColor: '#F8FAFC',
   },
   pageHeaderText: {
     flex: 1,
@@ -1025,8 +962,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -1039,12 +976,24 @@ const styles = StyleSheet.create({
     color: '#0F2C59',
   },
 
+  // Scroll Header inside FlatList
+  scrollHeaderContainer: {
+    paddingBottom: 4,
+  },
+  flatListContent: {
+    paddingHorizontal: 14,
+    paddingBottom: 32,
+  },
+  scrollPageContent: {
+    paddingHorizontal: 14,
+    paddingBottom: 32,
+  },
+
   // 2x2 KPI Cards
   kpiGrid2x2: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 12,
-    marginTop: 4,
+    marginTop: 2,
   },
   kpiCard: {
     width: '48%',
@@ -1058,12 +1007,12 @@ const styles = StyleSheet.create({
     ...Shadows.subtle,
   },
   kpiIconWrap: {
-    width: 28,
-    height: 28,
+    width: 26,
+    height: 26,
     borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 5,
   },
   kpiValue: {
     fontSize: 17,
@@ -1102,7 +1051,6 @@ const styles = StyleSheet.create({
   quickActionBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
     paddingVertical: 6,
     gap: 8,
   },
@@ -1150,10 +1098,9 @@ const styles = StyleSheet.create({
     color: '#334155',
   },
 
-  // Mode Tabs
+  // Mode Navigation Tabs
   modeTabsRow: {
     flexDirection: 'row',
-    marginHorizontal: 14,
     marginTop: 6,
     marginBottom: 8,
     backgroundColor: '#E2E8F0',
@@ -1167,14 +1114,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 7,
     borderRadius: 7,
-    gap: 4,
+    gap: 3,
   },
   modeTabBtnActive: {
     backgroundColor: '#0F2C59',
     ...Shadows.subtle,
   },
   modeTabText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '600',
     color: '#475569',
   },
@@ -1183,27 +1130,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Transactions Passbook View
-  transactionsContainer: {
-    flex: 1,
-    paddingHorizontal: 14,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    gap: 8,
+  // Search Bar (Single, full width)
+  searchContainer: {
     marginBottom: 8,
   },
   searchInputWrap: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    gap: 6,
-    height: 38,
+    gap: 8,
+    height: 40,
+    ...Shadows.subtle,
   },
   searchInput: {
     flex: 1,
@@ -1211,51 +1152,8 @@ const styles = StyleSheet.create({
     color: '#0F2C59',
     paddingVertical: 0,
   },
-  filterBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 5,
-    height: 38,
-  },
-  filterBtnText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#0F2C59',
-  },
-  typePillsRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 8,
-  },
-  typePill: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  typePillActive: {
-    backgroundColor: '#0F2C59',
-    borderColor: '#0F2C59',
-  },
-  typePillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  typePillTextActive: {
-    color: '#FFFFFF',
-  },
 
-  txListContent: {
-    paddingBottom: 24,
-  },
+  // Transaction Cards
   txCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1397,11 +1295,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // Details / Statement Breakdown
-  detailsScroll: {
-    paddingHorizontal: 14,
-    paddingBottom: 24,
-  },
+  // Statement Breakdown
   dimensionTabsRow: {
     gap: 8,
     paddingVertical: 8,
@@ -1502,10 +1396,6 @@ const styles = StyleSheet.create({
   },
 
   // Analytics View
-  overviewScroll: {
-    paddingHorizontal: 14,
-    paddingBottom: 24,
-  },
   trendCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
