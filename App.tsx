@@ -16,6 +16,9 @@ import {
   CreateAccountScreen,
   CreateAccountAdditionalScreen,
   CreateAccountVerificationScreen,
+  CreateAccountCompleteScreen,
+  updateRegistrationState,
+  getRegistrationState,
 } from './src/features/auth';
 import {
   getRouteSnapshot,
@@ -23,6 +26,9 @@ import {
   navigateToCreateAccount,
   navigateToCreateAccountAdditional,
   navigateToCreateAccountVerification,
+  navigateToCreateAccountComplete,
+  navigateToDashboard,
+  navigateToProfile,
 } from './src/core/navigation/appRouter';
 
 // Temporary app shell: navigation infrastructure is not built yet, so
@@ -52,7 +58,18 @@ function App() {
         return (
           <CreateAccountScreen
             key="create-account-screen"
-            onContinue={() => navigateToCreateAccountAdditional()}
+            onContinue={(formData) => {
+              updateRegistrationState({
+                fullName: formData.fullName.trim(),
+                email: formData.email.trim(),
+                phone: formData.phone.trim()
+                  ? `${formData.countryCode || '+91'} ${formData.phone.trim()}`
+                  : '',
+                countryCode: formData.countryCode || '+91',
+                dob: formData.dob.trim(),
+              });
+              navigateToCreateAccountAdditional();
+            }}
           />
         );
       case 'create-account-additional':
@@ -60,7 +77,22 @@ function App() {
           <CreateAccountAdditionalScreen
             key="create-account-additional-screen"
             onBack={() => navigateToCreateAccount()}
-            onContinue={() => navigateToCreateAccountVerification()}
+            onContinue={(accountType) => {
+              const labelMap: Record<string, string> = {
+                general: 'General User',
+                member: 'Member',
+                seeker: 'Donation Seeker',
+              };
+              updateRegistrationState({
+                accountType,
+                accountTypeLabel: labelMap[accountType] || 'General User',
+              });
+              if (accountType === 'general') {
+                navigateToCreateAccountComplete();
+              } else {
+                navigateToCreateAccountVerification();
+              }
+            }}
           />
         );
       case 'create-account-verification':
@@ -68,6 +100,41 @@ function App() {
           <CreateAccountVerificationScreen
             key="create-account-verification-screen"
             onBack={() => navigateToCreateAccountAdditional()}
+            onContinue={(selectedDoc, uploadedFile) => {
+              const docTitleMap: Record<string, string> = {
+                aadhaar: 'Aadhaar Card',
+                pan: 'PAN Card',
+                passport: 'Passport',
+                driving: 'Driving Licence',
+                voter: 'Voter ID',
+                other: 'Other Document',
+              };
+              updateRegistrationState({
+                selectedDocId: selectedDoc,
+                selectedDocTitle: docTitleMap[selectedDoc] || 'Document',
+                uploadedFileName: uploadedFile.name,
+                uploadedFileSize: uploadedFile.formattedSize,
+                uploadedFileUri: uploadedFile.uri,
+                hasUploadedDocument: true,
+              });
+              navigateToCreateAccountComplete();
+            }}
+          />
+        );
+      case 'create-account-complete':
+        return (
+          <CreateAccountCompleteScreen
+            key="create-account-complete-screen"
+            onBack={() => {
+              const currentState = getRegistrationState();
+              if (currentState.accountType === 'general') {
+                navigateToCreateAccountAdditional();
+              } else {
+                navigateToCreateAccountVerification();
+              }
+            }}
+            onGoToDashboard={() => navigateToDashboard()}
+            onViewProfile={() => navigateToProfile()}
           />
         );
       case 'receipt':
@@ -84,7 +151,18 @@ function App() {
         return (
           <CreateAccountScreen
             key="create-account-default"
-            onContinue={() => navigateToCreateAccountAdditional()}
+            onContinue={(formData) => {
+              updateRegistrationState({
+                fullName: formData.fullName.trim(),
+                email: formData.email.trim(),
+                phone: formData.phone.trim()
+                  ? `${formData.countryCode || '+91'} ${formData.phone.trim()}`
+                  : '',
+                countryCode: formData.countryCode || '+91',
+                dob: formData.dob.trim(),
+              });
+              navigateToCreateAccountAdditional();
+            }}
           />
         );
     }

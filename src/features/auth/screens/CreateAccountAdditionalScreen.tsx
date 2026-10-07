@@ -22,6 +22,11 @@ import {
   EyeSlashOutlineIcon,
   ArrowRightIcon,
 } from '../components/AuthIcons';
+import { getRegistrationState, updateRegistrationState } from '../state/registrationState';
+import {
+  navigateToCreateAccountVerification,
+  navigateToCreateAccountComplete,
+} from '../../../core/navigation/appRouter';
 
 export type AccountTypeOption = 'general' | 'member' | 'seeker';
 
@@ -39,10 +44,16 @@ interface StepItem {
 
 const STEPS: StepItem[] = [
   { number: 1, label: 'Personal\nDetails' },
-  { number: 2, label: 'Additional\nInformation' },
+  { number: 2, label: 'Account\nType' },
   { number: 3, label: 'Verification' },
   { number: 4, label: 'Complete' },
 ];
+
+const ACCOUNT_TYPE_LABELS: Record<AccountTypeOption, string> = {
+  general: 'General User',
+  member: 'Member',
+  seeker: 'Donation Seeker',
+};
 
 export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScreenProps> = ({
   onBack,
@@ -53,10 +64,12 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
   const { width } = useWindowDimensions();
   const isTabletOrDesktop = width > 520;
   const contentMaxWidth = isTabletOrDesktop ? 440 : width;
-  const currentStep = 2; // Step 2: Additional Information
+  const currentStep = 2; // Step 2: Account Type
 
-  // Phase 2: Account Type state (default: 'general')
-  const [selectedAccountType, setSelectedAccountType] = useState<AccountTypeOption>('general');
+  // Phase 2: Account Type state (read from registration state)
+  const [selectedAccountType, setSelectedAccountType] = useState<AccountTypeOption>(
+    () => (getRegistrationState().accountType as AccountTypeOption) || 'general'
+  );
 
   // Phase 3: Password state
   const [password, setPassword] = useState('');
@@ -127,13 +140,19 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
       return;
     }
 
+    updateRegistrationState({
+      accountType: selectedAccountType,
+      accountTypeLabel: ACCOUNT_TYPE_LABELS[selectedAccountType] || 'General User',
+    });
+
     if (onContinue) {
       onContinue(selectedAccountType, password);
     } else {
-      Alert.alert(
-        'Account Setup Complete',
-        `Account Type: ${selectedAccountType.toUpperCase()}\nSecurity: Password verified & terms accepted.`
-      );
+      if (selectedAccountType === 'general') {
+        navigateToCreateAccountComplete();
+      } else {
+        navigateToCreateAccountVerification();
+      }
     }
   };
 
@@ -188,15 +207,19 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
                           isActive && styles.stepCircleActive,
                         ]}
                       >
-                        <Text
-                          style={[
-                            styles.stepNumber,
-                            isCompleted && styles.stepNumberCompleted,
-                            isActive && styles.stepNumberActive,
-                          ]}
-                        >
-                          {step.number}
-                        </Text>
+                        {isCompleted ? (
+                          <View style={styles.whiteCheckmark} />
+                        ) : (
+                          <Text
+                            style={[
+                              styles.stepNumber,
+                              isCompleted && styles.stepNumberCompleted,
+                              isActive && styles.stepNumberActive,
+                            ]}
+                          >
+                            {step.number}
+                          </Text>
+                        )}
                       </View>
                       <Text
                         style={[
@@ -243,7 +266,13 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
                     styles.accountCard,
                     selectedAccountType === 'general' && styles.accountCardSelected,
                   ]}
-                  onPress={() => setSelectedAccountType('general')}
+                  onPress={() => {
+                    setSelectedAccountType('general');
+                    updateRegistrationState({
+                      accountType: 'general',
+                      accountTypeLabel: 'General User',
+                    });
+                  }}
                   activeOpacity={0.8}
                   accessibilityRole="button"
                   accessibilityLabel="General User Account Type"
@@ -268,7 +297,13 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
                     styles.accountCard,
                     selectedAccountType === 'member' && styles.accountCardSelected,
                   ]}
-                  onPress={() => setSelectedAccountType('member')}
+                  onPress={() => {
+                    setSelectedAccountType('member');
+                    updateRegistrationState({
+                      accountType: 'member',
+                      accountTypeLabel: 'Member',
+                    });
+                  }}
                   activeOpacity={0.8}
                   accessibilityRole="button"
                   accessibilityLabel="Member Account Type"
@@ -296,7 +331,13 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
                     styles.accountCard,
                     selectedAccountType === 'seeker' && styles.accountCardSelected,
                   ]}
-                  onPress={() => setSelectedAccountType('seeker')}
+                  onPress={() => {
+                    setSelectedAccountType('seeker');
+                    updateRegistrationState({
+                      accountType: 'seeker',
+                      accountTypeLabel: 'Donation Seeker',
+                    });
+                  }}
                   activeOpacity={0.8}
                   accessibilityRole="button"
                   accessibilityLabel="Donation Seeker Account Type"
@@ -622,8 +663,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#EAA224',
   },
   stepCircleActive: {
-    backgroundColor: '#EEF2F6',
-    borderWidth: 0,
+    backgroundColor: '#EAA224',
+  },
+  whiteCheckmark: {
+    width: 11,
+    height: 6,
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: '#FFFFFF',
+    transform: [{ rotate: '-45deg' }],
+    marginTop: -2,
   },
   stepNumber: {
     fontSize: 13,
@@ -634,7 +683,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   stepNumberActive: {
-    color: '#64748B',
+    color: '#FFFFFF',
   },
   stepLabel: {
     fontSize: 11,
@@ -656,7 +705,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   connectingLineActive: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#EAA224',
   },
   connectingLineInactive: {
     backgroundColor: '#E2E8F0',

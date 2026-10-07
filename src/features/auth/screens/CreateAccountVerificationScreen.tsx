@@ -8,6 +8,10 @@ import {
   useWindowDimensions,
   Platform,
   Alert,
+  Modal,
+  Image,
+  Linking,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -23,21 +27,30 @@ import {
   UploadTrayIcon,
   LockOutlineIcon,
   ArrowRightIcon,
+  ImageIcon,
+  EyeIcon,
+  TrashIcon,
 } from '../components/AuthIcons';
+import { CreateAccountFilesScreen } from './CreateAccountFilesScreen';
+import {
+  getRegistrationState,
+  updateRegistrationState,
+  addOrUpdateDocument,
+  removeDocument,
+  UploadedDocItem,
+  DocumentTypeOption,
+} from '../state/registrationState';
+import { navigateToCreateAccountComplete } from '../../../core/navigation/appRouter';
 
-export type DocumentTypeOption =
-  | 'aadhaar'
-  | 'pan'
-  | 'passport'
-  | 'driving'
-  | 'voter'
-  | 'other';
+export type { DocumentTypeOption };
 
 export interface UploadedDocFile {
   name: string;
   sizeBytes: number;
   type: string;
   formattedSize: string;
+  uri?: string;
+  uploadDate?: string;
 }
 
 interface DocumentConfig {
@@ -99,7 +112,7 @@ interface StepItem {
 
 const STEPS: StepItem[] = [
   { number: 1, label: 'Personal\nDetails' },
-  { number: 2, label: 'Additional\nInformation' },
+  { number: 2, label: 'Account\nType' },
   { number: 3, label: 'Verification' },
   { number: 4, label: 'Complete' },
 ];
@@ -115,14 +128,63 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
   const contentMaxWidth = isTabletOrDesktop ? 440 : width;
   const currentStep = 3; // Step 3: Verification
 
-  // Phase 2: Selected document type (default: 'aadhaar')
-  const [selectedDoc, setSelectedDoc] = useState<DocumentTypeOption>('aadhaar');
+  const regState = getRegistrationState();
 
-  // Phase 3: Uploaded files map per document type
+  // Selected document type
+  const [selectedDoc, setSelectedDoc] = useState<DocumentTypeOption>(
+    () => regState.selectedDocId || 'aadhaar'
+  );
+
+  // Dynamic Other Document entries list (starts with only 1 entry)
+  const [otherDocEntries, setOtherDocEntries] = useState<
+    { id: string; docName: string; nameError?: string }[]
+  >(() => {
+    const existingOtherDocs = (regState.documents || []).filter(
+      d => d.id === 'other' || d.id.startsWith('other_')
+    );
+    if (existingOtherDocs.length > 0) {
+      return existingOtherDocs.map(doc => {
+        const customName = doc.title.replace(/\s*\(Other Document\)$/i, '').trim();
+        return {
+          id: doc.id,
+          docName: customName === 'Other Document' ? '' : customName,
+        };
+      });
+    }
+    return [{ id: 'other_1', docName: '' }];
+  });
+
+  // Track active picking doc id & title for file selection
+  const [activePickingDoc, setActivePickingDoc] = useState<{
+    id: DocumentTypeOption;
+    title: string;
+  } | null>(null);
+
+  // Uploaded files map per document type (Single Source of Truth, initialized from registrationState)
   const [uploadedFiles, setUploadedFiles] = useState<
     Partial<Record<DocumentTypeOption, UploadedDocFile>>
-  >({});
+  >(() => {
+    const map: Partial<Record<DocumentTypeOption, UploadedDocFile>> = {};
+    if (regState.documents && regState.documents.length > 0) {
+      regState.documents.forEach(doc => {
+        map[doc.id] = {
+          name: doc.name,
+          sizeBytes: doc.sizeBytes,
+          type: doc.type,
+          formattedSize: doc.formattedSize,
+          uri: doc.uri,
+          uploadDate: doc.uploadDate,
+        };
+      });
+    }
+    return map;
+  });
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isFilesScreenOpen, setIsFilesScreenOpen] = useState(false);
+  const [previewItem, setPreviewItem] = useState<{
+    docTitle: string;
+    file: UploadedDocFile;
+  } | null>(null);
 
   const currentUploadedFile = uploadedFiles[selectedDoc];
   const selectedDocConfig = DOCUMENT_OPTIONS.find(d => d.id === selectedDoc);
@@ -135,10 +197,85 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
     }
   };
 
+  const handleAddMoreOtherDoc = () => {
+    const nextNum = otherDocEntries.length + 1;
+    const newId = `other_${Date.now()}_${nextNum}`;
+    setOtherDocEntries(prev => [...prev, { id: newId, docName: '' }]);
+  };
+
+  const handleRemoveOtherDocCard = (entryId: string) => {
+    removeDocument(entryId);
+    setUploadedFiles(prev => {
+      const copy = { ...prev };
+      delete copy[entryId];
+      return copy;
+    });
+    setOtherDocEntries(prev => {
+      const filtered = prev.filter(e => e.id !== entryId);
+      return filtered.length > 0 ? filtered : [{ id: 'other_1', docName: '' }];
+    });
+  };
+
+  const handleOtherDocNameChange = (entryId: string, text: string) => {
+    setOtherDocEntries(prev =>
+      prev.map(e => (e.id === entryId ? { ...e, docName: text, nameError: undefined } : e))
+    );
+    const currentFile = uploadedFiles[entryId];
+    if (currentFile) {
+      const displayTitle = text.trim() ? `${text.trim()} (Other Document)` : 'Other Document';
+      addOrUpdateDocument({
+        id: entryId,
+        title: displayTitle,
+        name: currentFile.name,
+        sizeBytes: currentFile.sizeBytes,
+        type: currentFile.type,
+        formattedSize: currentFile.formattedSize,
+        uri: currentFile.uri,
+        uploadDate: currentFile.uploadDate,
+        status: 'ready',
+      });
+    }
+  };
+
+  const handleChooseOtherFile = (
+    entry: { id: string; docName: string; nameError?: string },
+    _index: number
+  ) => {
+    if (!entry.docName || !entry.docName.trim()) {
+      setOtherDocEntries(prev =>
+        prev.map(e =>
+          e.id === entry.id
+            ? { ...e, nameError: 'Please enter your document name before choosing a file.' }
+            : e
+        )
+      );
+      return;
+    }
+    setOtherDocEntries(prev =>
+      prev.map(e => (e.id === entry.id ? { ...e, nameError: undefined } : e))
+    );
+    const displayTitle = `${entry.docName.trim()} (Other Document)`;
+    setActivePickingDoc({
+      id: entry.id,
+      title: displayTitle,
+    });
+    setIsFilesScreenOpen(true);
+  };
+
+  const handleChooseStandardFile = () => {
+    setUploadError(null);
+    setActivePickingDoc({
+      id: selectedDoc,
+      title: selectedDocConfig?.title || 'Document',
+    });
+    setIsFilesScreenOpen(true);
+  };
+
   const processSelectedFile = (
     fileName: string,
     sizeBytes: number,
-    mimeType: string
+    mimeType: string,
+    uri?: string
   ) => {
     setUploadError(null);
 
@@ -166,113 +303,73 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
         ? `${Math.round(sizeBytes / 1024)} KB`
         : `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
 
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = String(now.getFullYear()).slice(-2);
+    const uploadDate = `${day}/${month}/${year}`;
+
+    const docId = activePickingDoc?.id || selectedDoc;
+    const docTitle = activePickingDoc?.title || selectedDocConfig?.title || 'Document';
+
+    const newDocItem: UploadedDocItem = {
+      id: docId,
+      title: docTitle,
+      name: fileName,
+      sizeBytes,
+      type: mimeType || (cleanExt === 'pdf' ? 'application/pdf' : `image/${cleanExt || 'jpeg'}`),
+      formattedSize,
+      uri,
+      uploadDate,
+      status: 'ready',
+    };
+
+    // Update shared registration state array
+    addOrUpdateDocument(newDocItem);
+
+    // Update local verification view map
     setUploadedFiles(prev => ({
       ...prev,
-      [selectedDoc]: {
+      [docId]: {
         name: fileName,
         sizeBytes,
-        type: mimeType || `image/${cleanExt}`,
+        type: newDocItem.type,
         formattedSize,
+        uri,
+        uploadDate,
       },
     }));
   };
 
-  const handleChooseFile = () => {
-    setUploadError(null);
-
-    const docObj = typeof globalThis !== 'undefined' ? (globalThis as any).document : undefined;
-    if (docObj && docObj.createElement) {
-      // Remove any leftover picker inputs
-      const existing = docObj.getElementById('hrsjm-doc-file-input');
-      if (existing) {
-        try {
-          docObj.body.removeChild(existing);
-        } catch (_) {}
-      }
-
-      // Direct file chooser for web/browser environment
-      const fileInput = docObj.createElement('input');
-      fileInput.id = 'hrsjm-doc-file-input';
-      fileInput.type = 'file';
-      fileInput.accept = 'image/jpeg,image/png,image/jpg,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf';
-      fileInput.style.position = 'fixed';
-      fileInput.style.top = '-10000px';
-      fileInput.style.left = '-10000px';
-      fileInput.style.opacity = '0';
-      fileInput.style.visibility = 'hidden';
-
-      fileInput.onchange = (event: any) => {
-        const file = event.target?.files?.[0];
-        if (file) {
-          processSelectedFile(file.name, file.size, file.type || 'application/octet-stream');
-        }
-        try {
-          docObj.body.removeChild(fileInput);
-        } catch (_) {}
-      };
-
-      docObj.body.appendChild(fileInput);
-      fileInput.click();
-    } else {
-      // Mobile file picker handler / simulated file selection dialog for Android/iOS
-      Alert.alert(
-        'Select Document File',
-        `Choose file for ${selectedDocConfig?.title || 'Document'}:`,
-        [
-          {
-            text: `${selectedDocConfig?.title || 'Document'}_Scan.pdf (1.4 MB)`,
-            onPress: () =>
-              processSelectedFile(
-                `${selectedDoc}_scan.pdf`,
-                1.4 * 1024 * 1024,
-                'application/pdf'
-              ),
-          },
-          {
-            text: `${selectedDocConfig?.title || 'Document'}_Photo.jpg (2.1 MB)`,
-            onPress: () =>
-              processSelectedFile(
-                `${selectedDoc}_photo.jpg`,
-                2.1 * 1024 * 1024,
-                'image/jpeg'
-              ),
-          },
-          {
-            text: 'Test Oversized File (6.5 MB)',
-            onPress: () =>
-              processSelectedFile(
-                'large_scan.pdf',
-                6.5 * 1024 * 1024,
-                'application/pdf'
-              ),
-          },
-          {
-            text: 'Test Unsupported File (.docx)',
-            onPress: () =>
-              processSelectedFile(
-                'document.docx',
-                1.0 * 1024 * 1024,
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-              ),
-          },
-          { text: 'Cancel', style: 'cancel' },
-        ]
-      );
-    }
-  };
-
-
-  const handleRemoveFile = () => {
+  const handleDeleteDocument = (docId: DocumentTypeOption) => {
+    removeDocument(docId);
     setUploadedFiles(prev => {
       const copy = { ...prev };
-      delete copy[selectedDoc];
+      delete copy[docId];
       return copy;
     });
     setUploadError(null);
   };
 
+  const handleViewDocument = async (docTitle: string, file: UploadedDocFile) => {
+    if (file.uri) {
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      if (isPdf && Platform.OS === 'android') {
+        try {
+          const supported = await Linking.canOpenURL(file.uri);
+          if (supported) {
+            await Linking.openURL(file.uri);
+            return;
+          }
+        } catch (_) {}
+      }
+    }
+    setPreviewItem({ docTitle, file });
+  };
+
   const handleContinue = () => {
-    if (!currentUploadedFile) {
+    const currentUploadedDocs = getRegistrationState().documents;
+    if (!currentUploadedDocs || currentUploadedDocs.length === 0) {
       setUploadError(
         `Please choose and upload your ${selectedDocConfig?.title || 'document'} before continuing.`
       );
@@ -282,16 +379,38 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
     setUploadError(null);
 
     if (onContinue) {
-      onContinue(selectedDoc, currentUploadedFile);
+      const primary = currentUploadedDocs[0];
+      onContinue(primary.id, {
+        name: primary.name,
+        sizeBytes: primary.sizeBytes,
+        type: primary.type,
+        formattedSize: primary.formattedSize,
+        uri: primary.uri,
+      });
     } else {
-      Alert.alert(
-        'Identity Document Submitted',
-        `Your ${selectedDocConfig?.title} (${currentUploadedFile.name}) has been uploaded and submitted for verification.`,
-        [{ text: 'OK' }]
-      );
+      navigateToCreateAccountComplete();
     }
   };
 
+  if (isFilesScreenOpen) {
+    const pickingDocId = activePickingDoc?.id || selectedDoc;
+    const pickingDocTitle = activePickingDoc?.title || selectedDocConfig?.title || 'Document';
+    return (
+      <CreateAccountFilesScreen
+        documentType={pickingDocId}
+        documentTitle={pickingDocTitle}
+        onBack={() => {
+          setIsFilesScreenOpen(false);
+          setActivePickingDoc(null);
+        }}
+        onSelectFile={(fileName, sizeBytes, mimeType, uri) => {
+          processSelectedFile(fileName, sizeBytes, mimeType, uri);
+          setIsFilesScreenOpen(false);
+          setActivePickingDoc(null);
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
@@ -400,7 +519,12 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
             <View style={styles.docCardsList}>
               {DOCUMENT_OPTIONS.map(doc => {
                 const isSelected = selectedDoc === doc.id;
-                const hasUploadedFile = Boolean(uploadedFiles[doc.id]);
+                const hasUploadedFile =
+                  doc.id === 'other'
+                    ? Object.keys(uploadedFiles).some(
+                        k => k === 'other' || k.startsWith('other_')
+                      )
+                    : Boolean(uploadedFiles[doc.id]);
 
                 return (
                   <TouchableOpacity
@@ -412,6 +536,15 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
                     onPress={() => {
                       setSelectedDoc(doc.id);
                       setUploadError(null);
+                      const file = uploadedFiles[doc.id];
+                      updateRegistrationState({
+                        selectedDocId: doc.id,
+                        selectedDocTitle: doc.title,
+                        uploadedFileName: file?.name || '',
+                        uploadedFileSize: file?.formattedSize || '',
+                        uploadedFileUri: file?.uri || '',
+                        hasUploadedDocument: Boolean(file),
+                      });
                     }}
                     activeOpacity={0.8}
                     accessibilityRole="radio"
@@ -449,56 +582,17 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
               })}
             </View>
 
-            {/* 4. Upload Document Section */}
-            <View style={styles.uploadSection}>
-              <Text style={styles.uploadHeading}>Upload Document</Text>
+            {/* 4A. Standard Document Upload Section (Visible when non-other doc is selected and not yet uploaded) */}
+            {selectedDoc !== 'other' && !currentUploadedFile && (
+              <View style={styles.uploadSection}>
+                <Text style={styles.uploadHeading}>Upload Document</Text>
 
-              <TouchableOpacity
-                style={[
-                  styles.uploadBox,
-                  currentUploadedFile && styles.uploadBoxSuccess,
-                  uploadError && styles.uploadBoxError,
-                ]}
-                onPress={!currentUploadedFile ? handleChooseFile : undefined}
-                activeOpacity={!currentUploadedFile ? 0.9 : 1}
-                accessibilityRole="button"
-                accessibilityLabel="Upload Document"
-              >
-                {currentUploadedFile ? (
-                  /* Uploaded File State */
-                  <View style={styles.uploadedFileContainer}>
-                    <View style={styles.uploadedHeader}>
-                      <CheckCircleFilledIcon size={26} color="#10B981" />
-                      <View style={styles.uploadedMeta}>
-                        <Text style={styles.uploadedFileName} numberOfLines={1}>
-                          {currentUploadedFile.name}
-                        </Text>
-                        <Text style={styles.uploadedFileSize}>
-                          {currentUploadedFile.formattedSize} • Ready for verification
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.uploadedActions}>
-                      <TouchableOpacity
-                        style={styles.changeFileButton}
-                        onPress={handleChooseFile}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.changeFileText}>Change</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.removeFileButton}
-                        onPress={handleRemoveFile}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.removeFileText}>Remove</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : (
-                  /* Empty Upload State */
+                <View
+                  style={[
+                    styles.uploadBox,
+                    uploadError && styles.uploadBoxError,
+                  ]}
+                >
                   <View style={styles.uploadEmptyContainer}>
                     <View style={styles.uploadIconWrapper}>
                       <UploadDocSheetIcon size={46} color="#0F2860" />
@@ -512,7 +606,7 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
 
                     <TouchableOpacity
                       style={styles.chooseFileButton}
-                      onPress={handleChooseFile}
+                      onPress={handleChooseStandardFile}
                       activeOpacity={0.85}
                       accessibilityRole="button"
                       accessibilityLabel="Choose File"
@@ -521,16 +615,194 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
                       <Text style={styles.chooseFileText}>Choose File</Text>
                     </TouchableOpacity>
                   </View>
+                </View>
+
+                {/* Upload error message */}
+                {uploadError && (
+                  <Text style={styles.uploadErrorText}>{uploadError}</Text>
                 )}
-              </TouchableOpacity>
+              </View>
+            )}
 
-              {/* Upload error message */}
-              {uploadError && (
-                <Text style={styles.uploadErrorText}>{uploadError}</Text>
-              )}
-            </View>
+            {/* 4B. Other Document Multiple Upload Cards (Visible when 'Other Document' is selected) */}
+            {selectedDoc === 'other' && (
+              <View style={styles.otherDocsSection}>
+                {otherDocEntries.map((entry, index) => {
+                  const isUploaded = Boolean(uploadedFiles[entry.id]);
+                  const placeholderText =
+                    index === 0
+                      ? 'e.g. Employee ID, Student ID, etc.'
+                      : 'e.g. Government ID, Office ID, etc.';
 
-            {/* 5. Security Message */}
+                  return (
+                    <View key={entry.id} style={styles.otherDocCard}>
+                      {/* Top Row: Title & Delete Card Button */}
+                      <View style={styles.otherDocHeaderRow}>
+                        <Text style={styles.otherDocCardHeading}>
+                          Other Document {index + 1}
+                        </Text>
+                        <TouchableOpacity
+                          style={styles.otherDocDeleteButton}
+                          onPress={() => handleRemoveOtherDocCard(entry.id)}
+                          activeOpacity={0.75}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Delete Other Document ${index + 1}`}
+                        >
+                          <TrashIcon size={16} color="#64748B" />
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Document Name Input */}
+                      <Text style={styles.otherDocInputLabel}>
+                        Enter your document name
+                      </Text>
+                      <TextInput
+                        style={[
+                          styles.otherDocTextInput,
+                          entry.nameError ? styles.otherDocTextInputError : null,
+                        ]}
+                        placeholder={placeholderText}
+                        placeholderTextColor="#94A3B8"
+                        value={entry.docName}
+                        onChangeText={text => handleOtherDocNameChange(entry.id, text)}
+                        autoCapitalize="words"
+                      />
+                      {entry.nameError && (
+                        <Text style={styles.otherDocErrorText}>{entry.nameError}</Text>
+                      )}
+
+                      {/* Upload Box (Only shown if file not yet uploaded for this entry) */}
+                      {!isUploaded ? (
+                        <View style={styles.otherUploadBox}>
+                          <View style={styles.otherUploadIconWrapper}>
+                            <UploadDocSheetIcon size={36} color="#0F2860" />
+                          </View>
+                          <Text style={styles.otherUploadMainText}>
+                            Upload a clear image or PDF
+                          </Text>
+                          <Text style={styles.otherUploadSubText}>
+                            • JPG, PNG or PDF • Max 5 MB •
+                          </Text>
+
+                          <TouchableOpacity
+                            style={styles.otherChooseFileButton}
+                            onPress={() => handleChooseOtherFile(entry, index)}
+                            activeOpacity={0.85}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Choose file for Other Document ${index + 1}`}
+                          >
+                            <UploadTrayIcon size={16} color="#0F2860" />
+                            <Text style={styles.otherChooseFileText}>Choose File</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <View style={styles.otherUploadedSuccessRow}>
+                          <View style={styles.otherSuccessBadge}>
+                            <Text style={styles.otherSuccessBadgeText}>✓ File Uploaded</Text>
+                          </View>
+                          <Text style={styles.otherSuccessFileName} numberOfLines={1}>
+                            {uploadedFiles[entry.id]?.name}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+
+                {/* + Add More Button */}
+                <TouchableOpacity
+                  style={styles.addMoreButton}
+                  onPress={handleAddMoreOtherDoc}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add More Other Document"
+                >
+                  <Text style={styles.addMoreButtonText}>+ Add More</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* 5. Uploaded Documents Section (Rendered when one or more documents are uploaded) */}
+            {regState.documents && regState.documents.length > 0 && (
+              <View style={styles.uploadedDocsSection}>
+                <Text style={styles.uploadedDocsSectionHeading}>Uploaded Documents</Text>
+                <View style={styles.uploadedDocsList}>
+                  {regState.documents.map(doc => {
+                    const isPdf =
+                      doc.type === 'application/pdf' ||
+                      doc.name.toLowerCase().endsWith('.pdf');
+
+                    return (
+                      <View key={doc.id} style={styles.uploadedDocCard}>
+                        {/* Left: Document type badge (PDF with folded corner or Image icon) */}
+                        <View style={styles.uploadedDocBadgeWrapper}>
+                          {isPdf ? (
+                            <View style={styles.pdfBadgeContainer}>
+                              <View style={styles.pdfDocBody}>
+                                <View style={styles.pdfFold} />
+                                <Text style={styles.pdfText}>PDF</Text>
+                              </View>
+                            </View>
+                          ) : (
+                            <View style={styles.imageBadgeContainer}>
+                              <ImageIcon size={22} color="#0284C7" />
+                            </View>
+                          )}
+                        </View>
+
+                        {/* Middle: Document details */}
+                        <View style={styles.uploadedDocMeta}>
+                          <Text style={styles.uploadedDocTitle} numberOfLines={1}>
+                            {doc.title}
+                          </Text>
+                          <Text style={styles.uploadedDocFileName} numberOfLines={1} ellipsizeMode="middle">
+                            {doc.name}
+                          </Text>
+                          <Text style={styles.uploadedDocSubDetails} numberOfLines={1}>
+                            {doc.formattedSize}  •  {doc.uploadDate || 'Today'}
+                          </Text>
+                        </View>
+
+                        {/* Right: View & Delete Actions */}
+                        <View style={styles.uploadedDocActions}>
+                          <TouchableOpacity
+                            style={styles.viewButton}
+                            onPress={() =>
+                              handleViewDocument(doc.title, {
+                                name: doc.name,
+                                sizeBytes: doc.sizeBytes,
+                                type: doc.type,
+                                formattedSize: doc.formattedSize,
+                                uri: doc.uri,
+                                uploadDate: doc.uploadDate,
+                              })
+                            }
+                            activeOpacity={0.75}
+                            accessibilityRole="button"
+                            accessibilityLabel={`View ${doc.title}`}
+                          >
+                            <EyeIcon size={16} color="#0F2860" />
+                            <Text style={styles.viewButtonText}>View</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => handleDeleteDocument(doc.id)}
+                            activeOpacity={0.75}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Delete ${doc.title}`}
+                          >
+                            <TrashIcon size={16} color="#475569" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* 6. Security Message (Positioned right below upload / documents list) */}
             <View style={styles.securityContainer}>
               <LockOutlineIcon size={14} color="#64748B" />
               <Text style={styles.securityText}>
@@ -538,7 +810,7 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
               </Text>
             </View>
 
-            {/* 6. Continue Button */}
+            {/* 7. Continue Button */}
             <TouchableOpacity
               style={styles.continueButton}
               onPress={handleContinue}
@@ -554,6 +826,83 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
           </View>
         </View>
       </ScrollView>
+
+      {/* File Preview Modal */}
+      <Modal
+        visible={Boolean(previewItem)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewItem(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, { maxWidth: isTabletOrDesktop ? 480 : '92%' }]}>
+            <View style={styles.modalHeader}>
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <Text style={styles.modalDocTitle}>{previewItem?.docTitle}</Text>
+                <Text style={styles.modalFileName} numberOfLines={1}>
+                  {previewItem?.file.name}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setPreviewItem(null)}
+                style={styles.modalCloseButton}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Close preview"
+              >
+                <Text style={styles.modalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              {previewItem?.file.uri &&
+              (previewItem.file.type.startsWith('image/') ||
+                !previewItem.file.name.toLowerCase().endsWith('.pdf')) ? (
+                <Image
+                  source={{ uri: previewItem.file.uri }}
+                  style={styles.previewImage}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={styles.pdfPreviewBox}>
+                  <View style={styles.pdfBadgeContainer}>
+                    <View style={styles.pdfDocBody}>
+                      <View style={styles.pdfFold} />
+                      <Text style={styles.pdfText}>PDF</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.pdfPreviewTitle}>{previewItem?.file.name}</Text>
+                  <Text style={styles.pdfPreviewSize}>
+                    Size: {previewItem?.file.formattedSize}
+                  </Text>
+                  <Text style={styles.pdfPreviewStatus}>✓ Ready for verification</Text>
+                  {previewItem?.file.uri && (
+                    <TouchableOpacity
+                      style={styles.openExternalButton}
+                      onPress={() => {
+                        if (previewItem?.file.uri) {
+                          Linking.openURL(previewItem.file.uri).catch(() => {});
+                        }
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.openExternalText}>Open in System Viewer</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={styles.modalDoneButton}
+              onPress={() => setPreviewItem(null)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalDoneText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -969,6 +1318,404 @@ const styles = StyleSheet.create({
   },
   continueArrowWrapper: {
     marginLeft: 8,
+  },
+  /* Other Document Dynamic Cards */
+  otherDocsSection: {
+    marginTop: 18,
+    marginBottom: 6,
+  },
+  otherDocCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E8ECF2',
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  otherDocHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  otherDocCardHeading: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F2860',
+  },
+  otherDocDeleteButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  otherDocInputLabel: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#0F2860',
+    marginBottom: 6,
+  },
+  otherDocTextInput: {
+    height: 44,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: '#0F2860',
+    marginBottom: 12,
+  },
+  otherDocTextInputError: {
+    borderColor: '#EF4444',
+  },
+  otherDocErrorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: -8,
+    marginBottom: 10,
+    fontWeight: '500',
+  },
+  otherUploadBox: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#CBD5E1',
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  otherUploadIconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#EEF2F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  otherUploadMainText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F2860',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  otherUploadSubText: {
+    fontSize: 12,
+    color: '#64748B',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  otherChooseFileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FFFDF6',
+    borderWidth: 1.5,
+    borderColor: '#EAA224',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  otherChooseFileText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F2860',
+  },
+  otherUploadedSuccessRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DCFCE7',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  otherSuccessBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  otherSuccessBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#16A34A',
+  },
+  otherSuccessFileName: {
+    flex: 1,
+    fontSize: 12.5,
+    color: '#15803D',
+    fontWeight: '500',
+  },
+  addMoreButton: {
+    height: 46,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#EAA224',
+    borderRadius: 10,
+    backgroundColor: '#FFFDF6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  addMoreButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#B45309',
+  },
+  uploadedDocsSectionHeading: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F2860',
+    letterSpacing: 0.2,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    marginBottom: 12,
+  },
+  /* Uploaded Documents Section Styles */
+  uploadedDocsSection: {
+    marginTop: 14,
+    marginBottom: 6,
+  },
+  uploadedDocsList: {
+    gap: 10,
+  },
+  uploadedDocCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E8ECF2',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  uploadedDocBadgeWrapper: {
+    marginRight: 12,
+  },
+  pdfBadgeContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#FFF1F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pdfDocBody: {
+    width: 26,
+    height: 30,
+    backgroundColor: '#EF4444',
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  pdfFold: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 7,
+    height: 7,
+    backgroundColor: '#FCA5A5',
+    borderBottomLeftRadius: 3,
+  },
+  pdfText: {
+    color: '#FFFFFF',
+    fontSize: 8.5,
+    fontWeight: '900',
+    letterSpacing: 0.2,
+    marginTop: 2,
+  },
+  imageBadgeContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#F0F9FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uploadedDocMeta: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  uploadedDocTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F2860',
+    marginBottom: 2,
+  },
+  uploadedDocFileName: {
+    fontSize: 12.5,
+    fontWeight: '400',
+    color: '#64748B',
+    marginBottom: 2,
+  },
+  uploadedDocSubDetails: {
+    fontSize: 11.5,
+    fontWeight: '400',
+    color: '#94A3B8',
+  },
+  uploadedDocActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  viewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#EAA224',
+    backgroundColor: '#FFFFFF',
+  },
+  viewButtonText: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#0F2860',
+  },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  /* Preview Modal Styles */
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 40, 96, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalDocTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F2860',
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+  },
+  modalFileName: {
+    fontSize: 12.5,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  modalCloseButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  modalBody: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 220,
+    maxHeight: 380,
+    marginBottom: 18,
+  },
+  previewImage: {
+    width: '100%',
+    height: 260,
+    borderRadius: 10,
+    backgroundColor: '#F8FAFC',
+  },
+  pdfPreviewBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    width: '100%',
+  },
+  pdfPreviewTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F2860',
+    marginTop: 14,
+    textAlign: 'center',
+  },
+  pdfPreviewSize: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 4,
+  },
+  pdfPreviewStatus: {
+    fontSize: 13,
+    color: '#059669',
+    fontWeight: '700',
+    marginTop: 8,
+  },
+  openExternalButton: {
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#0F2860',
+  },
+  openExternalText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  modalDoneButton: {
+    backgroundColor: '#EAA224',
+    height: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalDoneText: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#0F2860',
   },
 });
 

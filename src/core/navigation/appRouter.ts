@@ -18,7 +18,8 @@ export type AppRoute =
   | { name: 'profile-id-card' }
   | { name: 'create-account' }
   | { name: 'create-account-additional' }
-  | { name: 'create-account-verification' };
+  | { name: 'create-account-verification' }
+  | { name: 'create-account-complete' };
 
 const RECEIPT_HASH_PATTERN = /^\/donations\/([^/]+)\/receipt$/;
 
@@ -30,6 +31,7 @@ const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/create-account': { name: 'create-account' },
   '/create-account/additional': { name: 'create-account-additional' },
   '/create-account/verification': { name: 'create-account-verification' },
+  '/create-account/complete': { name: 'create-account-complete' },
   '/register': { name: 'create-account' },
 };
 
@@ -43,6 +45,7 @@ const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
   'create-account': '#/create-account',
   'create-account-additional': '#/create-account/additional',
   'create-account-verification': '#/create-account/verification',
+  'create-account-complete': '#/create-account/complete',
 };
 
 const getWebWindow = (): any =>
@@ -122,6 +125,10 @@ export const navigateToDonations = (): void => {
   navigate({ name: 'donations' });
 };
 
+export const navigateToDashboard = (): void => {
+  navigate({ name: 'donations' });
+};
+
 export const navigateToReceipt = (donationId: string): void => {
   navigate({ name: 'receipt', donationId });
 };
@@ -152,6 +159,10 @@ export const navigateToCreateAccountAdditional = (): void => {
 
 export const navigateToCreateAccountVerification = (): void => {
   navigate({ name: 'create-account-verification' });
+};
+
+export const navigateToCreateAccountComplete = (): void => {
+  navigate({ name: 'create-account-complete' });
 };
 
 

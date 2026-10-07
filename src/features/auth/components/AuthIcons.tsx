@@ -658,5 +658,309 @@ export const UploadCloudIcon: React.FC<IconProps> = ({ size = 32, color = '#0F28
   </Container>
 );
 
+export const SearchIcon: React.FC<IconProps> = ({ size = 20, color = '#0F2860' }) => (
+  <Container size={size}>
+    <View
+      style={{
+        width: size * 0.52,
+        height: size * 0.52,
+        borderRadius: size * 0.26,
+        borderWidth: 1.8,
+        borderColor: color,
+        marginLeft: -size * 0.15,
+        marginTop: -size * 0.15,
+      }}
+    />
+    <View
+      style={{
+        width: size * 0.32,
+        height: 2,
+        backgroundColor: color,
+        transform: [{ rotate: '45deg' }],
+        position: 'absolute',
+        bottom: size * 0.15,
+        right: size * 0.12,
+      }}
+    />
+  </Container>
+);
 
+export const FilterLinesIcon: React.FC<IconProps> = ({ size = 20, color = '#0F2860' }) => (
+  <Container size={size}>
+    <View style={{ width: size * 0.85, gap: 3.5, alignItems: 'flex-start' }}>
+      <View style={{ width: '100%', height: 2, backgroundColor: color, borderRadius: 1 }} />
+      <View style={{ width: '70%', height: 2, backgroundColor: color, borderRadius: 1 }} />
+      <View style={{ width: '40%', height: 2, backgroundColor: color, borderRadius: 1 }} />
+    </View>
+  </Container>
+);
+
+export const ChevronRightIcon: React.FC<IconProps> = ({ size = 18, color = '#94A3B8' }) => (
+  <Container size={size}>
+    <View
+      style={{
+        width: size * 0.38,
+        height: size * 0.38,
+        borderTopWidth: 2,
+        borderRightWidth: 2,
+        borderColor: color,
+        transform: [{ rotate: '45deg' }],
+        marginLeft: -size * 0.1,
+      }}
+    />
+  </Container>
+);
+
+export const DocumentFileLinesIcon: React.FC<IconProps> = ({ size = 24, color = '#0F2860' }) => (
+  <Container size={size}>
+    <View
+      style={{
+        width: size * 0.72,
+        height: size * 0.88,
+        borderRadius: 4,
+        borderWidth: 1.8,
+        borderColor: color,
+        padding: 3,
+        justifyContent: 'center',
+        gap: 2.5,
+      }}
+    >
+      <View style={{ width: '70%', height: 1.6, backgroundColor: color }} />
+      <View style={{ width: '85%', height: 1.6, backgroundColor: color }} />
+      <View style={{ width: '55%', height: 1.6, backgroundColor: color }} />
+    </View>
+  </Container>
+);
+
+export const ImageIcon: React.FC<IconProps> = ({ size = 22, color = '#0F2860' }) => (
+  <Container size={size}>
+    <View
+      style={{
+        width: size * 0.82,
+        height: size * 0.68,
+        borderRadius: 4,
+        borderWidth: 1.8,
+        borderColor: color,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+      }}
+    >
+      <View
+        style={{
+          width: size * 0.2,
+          height: size * 0.2,
+          borderRadius: size * 0.1,
+          borderWidth: 1.2,
+          borderColor: color,
+          position: 'absolute',
+          top: 3,
+          left: 4,
+        }}
+      />
+      <View
+        style={{
+          width: size * 0.6,
+          height: size * 0.35,
+          borderTopWidth: 1.5,
+          borderLeftWidth: 1.5,
+          borderColor: color,
+          transform: [{ rotate: '45deg' }],
+          position: 'absolute',
+          bottom: -size * 0.12,
+          right: 2,
+        }}
+      />
+    </View>
+  </Container>
+);
+
+export const CameraIcon: React.FC<IconProps> = ({ size = 22, color = '#0F2860' }) => (
+  <Container size={size}>
+    <View
+      style={{
+        width: size * 0.85,
+        height: size * 0.62,
+        borderRadius: 4,
+        borderWidth: 1.8,
+        borderColor: color,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <View
+        style={{
+          width: size * 0.34,
+          height: size * 0.34,
+          borderRadius: size * 0.17,
+          borderWidth: 1.6,
+          borderColor: color,
+        }}
+      />
+    </View>
+  </Container>
+);
+
+export const EyeIcon: React.FC<IconProps> = ({ size = 18, color = '#0F2860' }) => (
+  <Container size={size}>
+    <View
+      style={{
+        width: size * 0.85,
+        height: size * 0.52,
+        borderRadius: size * 0.4,
+        borderWidth: 1.6,
+        borderColor: color,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <View
+        style={{
+          width: size * 0.26,
+          height: size * 0.26,
+          borderRadius: size * 0.13,
+          backgroundColor: color,
+        }}
+      />
+    </View>
+  </Container>
+);
+
+export const TrashIcon: React.FC<IconProps> = ({ size = 18, color = '#64748B' }) => (
+  <Container size={size}>
+    <View style={{ alignItems: 'center' }}>
+      {/* Lid */}
+      <View
+        style={{
+          width: size * 0.7,
+          height: 1.8,
+          backgroundColor: color,
+          borderRadius: 1,
+          marginBottom: 1.5,
+        }}
+      />
+      {/* Can body */}
+      <View
+        style={{
+          width: size * 0.54,
+          height: size * 0.58,
+          borderWidth: 1.6,
+          borderColor: color,
+          borderTopWidth: 0,
+          borderBottomLeftRadius: 3,
+          borderBottomRightRadius: 3,
+          flexDirection: 'row',
+          justifyContent: 'space-evenly',
+          paddingTop: 2,
+        }}
+      >
+        <View style={{ width: 1.2, height: size * 0.35, backgroundColor: color }} />
+        <View style={{ width: 1.2, height: size * 0.35, backgroundColor: color }} />
+      </View>
+    </View>
+  </Container>
+);
+
+export const ClockOutlineIcon: React.FC<IconProps> = ({ size = 16, color = '#D97706' }) => (
+  <Container size={size}>
+    <View
+      style={{
+        width: size * 0.88,
+        height: size * 0.88,
+        borderRadius: size * 0.44,
+        borderWidth: 1.5,
+        borderColor: color,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {/* Hour hand */}
+      <View
+        style={{
+          position: 'absolute',
+          top: size * 0.18,
+          width: 1.5,
+          height: size * 0.26,
+          backgroundColor: color,
+          borderRadius: 1,
+        }}
+      />
+      {/* Minute hand */}
+      <View
+        style={{
+          position: 'absolute',
+          left: size * 0.4,
+          top: size * 0.4,
+          width: size * 0.22,
+          height: 1.5,
+          backgroundColor: color,
+          borderRadius: 1,
+        }}
+      />
+    </View>
+  </Container>
+);
+
+export const FileTextOutlineIcon: React.FC<IconProps> = ({ size = 20, color = '#0F2860' }) => (
+  <Container size={size}>
+    <View
+      style={{
+        width: size * 0.72,
+        height: size * 0.9,
+        borderRadius: 4,
+        borderWidth: 1.6,
+        borderColor: color,
+        padding: 3,
+        justifyContent: 'center',
+        gap: 2.5,
+      }}
+    >
+      <View style={{ width: '80%', height: 1.5, backgroundColor: color, borderRadius: 1 }} />
+      <View style={{ width: '90%', height: 1.5, backgroundColor: color, borderRadius: 1 }} />
+      <View style={{ width: '60%', height: 1.5, backgroundColor: color, borderRadius: 1 }} />
+    </View>
+  </Container>
+);
+
+export const CheckCircleSuccessIcon: React.FC<IconProps> = ({ size = 18, color = '#10B981' }) => (
+  <View
+    style={{
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      backgroundColor: color,
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <View
+      style={{
+        width: size * 0.42,
+        height: size * 0.24,
+        borderLeftWidth: 2,
+        borderBottomWidth: 2,
+        borderColor: '#FFFFFF',
+        transform: [{ rotate: '-45deg' }],
+        marginTop: -size * 0.06,
+      }}
+    />
+  </View>
+);
+
+export const InfoCircleFilledIcon: React.FC<IconProps> = ({ size = 22, color = '#0284C7' }) => (
+  <View
+    style={{
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      backgroundColor: color,
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: size * 0.6, fontStyle: 'italic' }}>
+      i
+    </Text>
+  </View>
+);
 

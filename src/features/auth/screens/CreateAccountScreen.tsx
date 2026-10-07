@@ -25,6 +25,8 @@ import {
   ChevronDownIcon,
 } from '../components/AuthIcons';
 import { DobDatePickerModal } from '../components/DobDatePickerModal';
+import { getRegistrationState, updateRegistrationState } from '../state/registrationState';
+import { navigateToCreateAccountAdditional } from '../../../core/navigation/appRouter';
 
 const HRSJM_LOGO = require('../../../assets/hrsjm_logo.png');
 const HERO_BG = require('../../../assets/create_account_hero.jpg');
@@ -51,11 +53,17 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   onGoogleSignUp,
 }) => {
   const { width } = useWindowDimensions();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [countryCode] = useState('+91');
-  const [dob, setDob] = useState('');
+  const regState = getRegistrationState();
+  const [fullName, setFullName] = useState(() => regState.fullName || '');
+  const [email, setEmail] = useState(() => regState.email || '');
+  const [phone, setPhone] = useState(() => {
+    if (regState.phone && regState.phone.startsWith('+91 ')) {
+      return regState.phone.replace('+91 ', '');
+    }
+    return regState.phone || '';
+  });
+  const [countryCode, setCountryCode] = useState(() => regState.countryCode || '+91');
+  const [dob, setDob] = useState(() => regState.dob || '');
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
 
   // Sizing calculations for responsive layout
@@ -73,17 +81,20 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   };
 
   const handleContinue = () => {
+    const formattedPhone = phone.trim()
+      ? `${countryCode} ${phone.trim()}`
+      : '';
+    updateRegistrationState({
+      fullName: fullName.trim(),
+      email: email.trim(),
+      phone: formattedPhone,
+      countryCode,
+      dob: dob.trim(),
+    });
     if (onContinue) {
-      onContinue({ fullName, email, phone, countryCode, dob });
+      onContinue({ fullName: fullName.trim(), email: email.trim(), phone: phone.trim(), countryCode, dob: dob.trim() });
     } else {
-      if (!fullName.trim() && !email.trim() && !phone.trim()) {
-        Alert.alert('Details Required', 'Please fill in your personal information.');
-      } else {
-        Alert.alert(
-          'Account Details',
-          `Name: ${fullName || 'N/A'}\nEmail: ${email || 'N/A'}\nPhone: ${countryCode} ${phone || 'N/A'}\nDOB: ${dob || 'N/A'}`
-        );
-      }
+      navigateToCreateAccountAdditional();
     }
   };
 
@@ -192,7 +203,10 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   placeholder="Full Name *"
                   placeholderTextColor="#94A3B8"
                   value={fullName}
-                  onChangeText={setFullName}
+                  onChangeText={(text) => {
+                    setFullName(text);
+                    updateRegistrationState({ fullName: text });
+                  }}
                   autoCapitalize="words"
                   accessibilityLabel="Full Name"
                 />
@@ -208,7 +222,10 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   placeholder="Email Address *"
                   placeholderTextColor="#94A3B8"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    updateRegistrationState({ email: text });
+                  }}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   accessibilityLabel="Email Address"
@@ -231,7 +248,12 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   placeholder="Mobile Number *"
                   placeholderTextColor="#94A3B8"
                   value={phone}
-                  onChangeText={setPhone}
+                  onChangeText={(text) => {
+                    setPhone(text);
+                    updateRegistrationState({
+                      phone: text ? `${countryCode} ${text}` : '',
+                    });
+                  }}
                   keyboardType="phone-pad"
                   maxLength={10}
                   accessibilityLabel="Mobile Number"
@@ -267,7 +289,10 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
               <DobDatePickerModal
                 visible={isDatePickerVisible}
                 selectedDate={dob}
-                onSelectDate={setDob}
+                onSelectDate={(date) => {
+                  setDob(date);
+                  updateRegistrationState({ dob: date });
+                }}
                 onClose={() => setIsDatePickerVisible(false)}
               />
 

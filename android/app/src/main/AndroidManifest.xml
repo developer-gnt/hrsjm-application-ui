@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
     <!-- Only used on Android 9 and below for saving receipt PDFs to the
          public Downloads folder; Android 10+ uses scoped storage instead. -->
     <uses-permission
