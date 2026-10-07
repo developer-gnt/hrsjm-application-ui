@@ -13,6 +13,12 @@ import {
   MyIdCardScreen,
 } from './src/features/admin/profile';
 import {
+  MembershipApplicationsScreen,
+  MembershipApplicationDetailsScreen,
+  membershipApplicationsStore,
+  createApplicationFromRegistration,
+} from './src/features/admin/membershipApplications';
+import {
   CreateAccountScreen,
   CreateAccountAdditionalScreen,
   CreateAccountVerificationScreen,
@@ -29,6 +35,8 @@ import {
   navigateToCreateAccountComplete,
   navigateToDashboard,
   navigateToProfile,
+  navigateToMembershipApplications,
+  navigateToMembershipApplicationDetails,
 } from './src/core/navigation/appRouter';
 
 // Temporary app shell: navigation infrastructure is not built yet, so
@@ -109,14 +117,33 @@ function App() {
                 voter: 'Voter ID',
                 other: 'Other Document',
               };
+              const docTitle = docTitleMap[selectedDoc] || 'Document';
               updateRegistrationState({
                 selectedDocId: selectedDoc,
-                selectedDocTitle: docTitleMap[selectedDoc] || 'Document',
+                selectedDocTitle: docTitle,
                 uploadedFileName: uploadedFile.name,
                 uploadedFileSize: uploadedFile.formattedSize,
                 uploadedFileUri: uploadedFile.uri,
                 hasUploadedDocument: true,
               });
+
+              const currentState = getRegistrationState();
+              if (currentState.accountType === 'member') {
+                const newApp = createApplicationFromRegistration({
+                  fullName: currentState.fullName,
+                  email: currentState.email,
+                  phone: currentState.phone,
+                  countryCode: currentState.countryCode,
+                  dob: currentState.dob,
+                  selectedDocTitle: docTitle,
+                  uploadedFileName: uploadedFile.name,
+                  uploadedFileSize: uploadedFile.formattedSize,
+                  uploadedFileUri: uploadedFile.uri,
+                  documents: currentState.documents,
+                });
+                membershipApplicationsStore.addApplication(newApp);
+              }
+
               navigateToCreateAccountComplete();
             }}
           />
@@ -133,7 +160,7 @@ function App() {
                 navigateToCreateAccountVerification();
               }
             }}
-            onGoToDashboard={() => navigateToDashboard()}
+            onGoToDashboard={() => navigateToMembershipApplications()}
             onViewProfile={() => navigateToProfile()}
           />
         );
@@ -147,22 +174,29 @@ function App() {
         return <AdminDetailsScreen key="profile-admin-details" />;
       case 'profile-id-card':
         return <MyIdCardScreen key="profile-id-card" />;
+      case 'membership-application-details':
+        return (
+          <MembershipApplicationDetailsScreen
+            key={route.applicationId}
+            applicationId={route.applicationId}
+            onBack={() => navigateToMembershipApplications()}
+            onStatusPress={() => {}}
+          />
+        );
+      case 'membership-applications':
       default:
         return (
-          <CreateAccountScreen
-            key="create-account-default"
-            onContinue={(formData) => {
-              updateRegistrationState({
-                fullName: formData.fullName.trim(),
-                email: formData.email.trim(),
-                phone: formData.phone.trim()
-                  ? `${formData.countryCode || '+91'} ${formData.phone.trim()}`
-                  : '',
-                countryCode: formData.countryCode || '+91',
-                dob: formData.dob.trim(),
-              });
-              navigateToCreateAccountAdditional();
+          <MembershipApplicationsScreen
+            key="membership-applications"
+            onViewApplication={(app) => {
+              navigateToMembershipApplicationDetails(app.applicationId || app.id);
             }}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'more') navigateToProfile();
+            }}
+            onSignupPress={() => navigateToCreateAccount()}
           />
         );
     }

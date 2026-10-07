@@ -33,6 +33,8 @@ import {
   navigateToProfileEditPersonal,
   navigateToProfileAdminDetails,
   navigateToProfileIdCard,
+  navigateToMembershipApplications,
+  navigateToDonations,
 } from '../../../../core/navigation/appRouter';
 import { ProfileSectionCard } from '../components/ProfileSectionCard';
 import { ProfileInfoRow } from '../components/ProfileInfoRow';
@@ -232,9 +234,15 @@ export const ProfileScreen: React.FC = () => {
       {/* Existing HRSJM bottom navigation */}
       <DonationsBottomNav
         bottomInset={insets.bottom}
-        activeKey="donations"
+        activeKey="profile"
         onTabPress={key => {
-          if (key !== 'donations') {
+          if (key === 'donations' || key === 'dashboard') {
+            navigateToDonations();
+          } else if (key === 'applications') {
+            navigateToMembershipApplications();
+          } else if (key === 'more') {
+            // Already on profile
+          } else {
             setToastMessage(
               `${key.replace('_', ' ').replace(/^\w/, c => c.toUpperCase())} tab`,
             );

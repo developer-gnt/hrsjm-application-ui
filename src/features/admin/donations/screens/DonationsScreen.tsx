@@ -49,7 +49,11 @@ import { DonationsDateSelector } from '../components/DonationsDateSelector';
 import { DateRangePickerModal } from '../components/DateRangePickerModal';
 import { AddDonationModal } from '../components/AddDonationModal';
 import { DonationDetailsModal } from '../components/DonationDetailsModal';
-import { navigateToReceipt, navigateToProfile } from '../navigation';
+import {
+  navigateToReceipt,
+  navigateToProfile,
+  navigateToMembershipApplications,
+} from '../navigation';
 import {
   addPreviewDonation,
   filterPreviewRowsAdvanced,
@@ -488,6 +492,10 @@ export const DonationsScreen: React.FC = () => {
           onTabPress={key => {
             if (key === 'donations') {
               handleRefresh();
+            } else if (key === 'applications') {
+              navigateToMembershipApplications();
+            } else if (key === 'more') {
+              navigateToProfile();
             } else {
               showToast(`${key.replace('_', ' ').toUpperCase()} tab`);
             }
