@@ -75,9 +75,16 @@ export {
   Leaf,
   UserRound,
 
-  // Finance / accounting
+  // Finance / accounting & navigation
   TrendingUp,
+  TrendingDown,
   ArrowDownToLine,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Wallet,
+  FolderTree,
 } from 'lucide-react-native';
 
 /**
