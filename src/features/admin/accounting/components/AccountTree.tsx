@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { AccountTreeNode } from '../types/accounting.types';
+import type { TrialBalanceAccountItem } from '../../reports/types/reports.types';
 import { AccountNodeRow } from './AccountNodeRow';
 
 interface AccountTreeProps {
   nodes: AccountTreeNode[];
   onSelectNode: (node: AccountTreeNode) => void;
+  balanceMap?: Map<string, TrialBalanceAccountItem>;
 }
 
 export const AccountTree: React.FC<AccountTreeProps> = ({
   nodes,
   onSelectNode,
+  balanceMap,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>(() => {
     // Top-level root categories are expanded by default
@@ -32,6 +35,7 @@ export const AccountTree: React.FC<AccountTreeProps> = ({
     return branchNodes.map(node => {
       const isExpanded = !!expandedIds[node.id];
       const hasChildren = node.children && node.children.length > 0;
+      const nodeBalance = balanceMap?.get(node.id);
 
       return (
         <View key={node.id}>
@@ -40,6 +44,7 @@ export const AccountTree: React.FC<AccountTreeProps> = ({
             isExpanded={isExpanded}
             onToggleExpand={toggleExpand}
             onPress={onSelectNode}
+            balance={nodeBalance}
           />
           {hasChildren && isExpanded && (
             <View style={styles.branchContainer}>

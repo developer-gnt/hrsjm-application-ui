@@ -19,7 +19,9 @@ import {
   SkeletonCard,
 } from '../../../../core/components';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
+import { formatINR } from '../../../../core/utils/currency';
 import { useAccounts } from '../hooks/useAccounts';
+import { useTrialBalance } from '../../reports/hooks/useReports';
 import { AccountTree } from '../components/AccountTree';
 import { CreateAccountModal } from '../components/CreateAccountModal';
 import { AccountDetailsSheet } from '../components/AccountDetailsSheet';
@@ -28,6 +30,7 @@ import type {
   AccountTreeNode,
   AccountType,
 } from '../types/accounting.types';
+import type { TrialBalanceAccountItem } from '../../reports/types/reports.types';
 
 interface ChartOfAccountsScreenProps {
   onBack?: () => void;
@@ -36,7 +39,7 @@ interface ChartOfAccountsScreenProps {
 }
 
 const CATEGORY_TABS: Array<{ key: AccountCategory; label: string }> = [
-  { key: 'ALL', label: 'All' },
+  { key: 'ALL', label: 'All Accounts' },
   { key: 'ASSET', label: 'Assets' },
   { key: 'LIABILITY', label: 'Liabilities' },
   { key: 'FUND_EQUITY', label: 'Equity' },
@@ -55,6 +58,8 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
   const [selectedNode, setSelectedNode] = useState<AccountTreeNode | null>(null);
   const [detailsSheetVisible, setDetailsSheetVisible] = useState(false);
 
+  const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
   const {
     accounts,
     tree,
@@ -64,6 +69,49 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
     createAccount,
     toggleAccountStatus,
   } = useAccounts(selectedCategory, searchQuery);
+
+  const {
+    data: trialBalanceData,
+    refetch: refetchBalances,
+    isLoading: balancesLoading,
+  } = useTrialBalance(todayIso, true);
+
+  // Map of account ID to live balance item
+  const balanceMap = useMemo(() => {
+    const map = new Map<string, TrialBalanceAccountItem>();
+    trialBalanceData?.accounts?.forEach(item => {
+      map.set(item.account.id, item);
+    });
+    return map;
+  }, [trialBalanceData]);
+
+  // Aggregate KPI stats across current filtered/displayed accounts
+  const summaryKpi = useMemo(() => {
+    let totalCredit = 0;
+    let totalDebit = 0;
+    let totalClosing = 0;
+
+    accounts.forEach(acc => {
+      const b = balanceMap.get(acc.id);
+      if (b) {
+        totalCredit += b.gross_credit || 0;
+        totalDebit += b.gross_debit || 0;
+        const isDebitNormal = acc.account_type === 'ASSET' || acc.account_type === 'EXPENSE';
+        totalClosing += isDebitNormal ? (b.debit_balance || 0) : (b.credit_balance || 0);
+      }
+    });
+
+    return {
+      totalCredit,
+      totalDebit,
+      totalClosing,
+      accountCount: accounts.length,
+    };
+  }, [accounts, balanceMap]);
+
+  const handleRefresh = async () => {
+    await Promise.all([refresh(), refetchBalances()]);
+  };
 
   const handleNodePress = (node: AccountTreeNode) => {
     setSelectedNode(node);
@@ -102,10 +150,10 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
                   <Text style={styles.backChevron}>‹</Text>
                 </TouchableOpacity>
               )}
-              <Text style={styles.pageTitle}>Chart of Accounts</Text>
+              <Text style={styles.pageTitle}>Chart of Accounts & Balances</Text>
             </View>
             <Text style={styles.pageSubtitle}>
-              Hierarchical organizational accounts and general ledger structure.
+              Live financial balances, incoming credits, and expenses across accounts.
             </Text>
           </View>
 
@@ -116,6 +164,33 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
             icon={<Text style={styles.addIcon}>+</Text>}
             style={styles.addButton}
           />
+        </View>
+
+        {/* Top KPI Financial Summary Banner */}
+        <View style={styles.kpiContainer}>
+          <View style={[styles.kpiCard, styles.kpiCardCredit]}>
+            <Text style={styles.kpiLabel}>Total Incoming</Text>
+            <Text style={[styles.kpiValue, styles.kpiValueCredit]} numberOfLines={1}>
+              {formatINR(summaryKpi.totalCredit, { noDecimals: true, compact: true })}
+            </Text>
+            <Text style={styles.kpiSub}>Credits / Receipts</Text>
+          </View>
+
+          <View style={[styles.kpiCard, styles.kpiCardDebit]}>
+            <Text style={styles.kpiLabel}>Total Expenses</Text>
+            <Text style={[styles.kpiValue, styles.kpiValueDebit]} numberOfLines={1}>
+              {formatINR(summaryKpi.totalDebit, { noDecimals: true, compact: true })}
+            </Text>
+            <Text style={styles.kpiSub}>Debits / Outgoing</Text>
+          </View>
+
+          <View style={[styles.kpiCard, styles.kpiCardClosing]}>
+            <Text style={styles.kpiLabel}>Net Balance</Text>
+            <Text style={[styles.kpiValue, styles.kpiValueClosing]} numberOfLines={1}>
+              {formatINR(summaryKpi.totalClosing, { noDecimals: true, compact: true })}
+            </Text>
+            <Text style={styles.kpiSub}>{summaryKpi.accountCount} Accounts</Text>
+          </View>
         </View>
 
         {/* Search & Filter Tabs */}
@@ -146,25 +221,24 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
         </View>
 
         {/* Content Body */}
-        {loading ? (
+        {loading || balancesLoading ? (
           <View style={styles.skeletonContainer}>
-            <SkeletonCard height={60} borderRadius={8} />
-            <SkeletonCard height={60} borderRadius={8} />
-            <SkeletonCard height={60} borderRadius={8} />
-            <SkeletonCard height={60} borderRadius={8} />
+            <SkeletonCard height={80} borderRadius={8} />
+            <SkeletonCard height={80} borderRadius={8} />
+            <SkeletonCard height={80} borderRadius={8} />
           </View>
         ) : error ? (
           <AppErrorState
             title="Unable to load chart of accounts"
             message={error}
-            onRetry={refresh}
+            onRetry={handleRefresh}
           />
         ) : tree.length === 0 ? (
           <View style={styles.emptyContainer}>
             <AppEmptyState
               icon="📚"
               title="No Accounts Found"
-              description={searchQuery ? 'No accounts match your search.' : 'Create your first account.'}
+              description={searchQuery ? 'No accounts match your search or filter.' : 'Create your first account.'}
               actionTitle="Add Account"
               onAction={() => setCreateModalVisible(true)}
             />
@@ -176,13 +250,17 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
             refreshControl={
               <RefreshControl
                 refreshing={loading}
-                onRefresh={refresh}
+                onRefresh={handleRefresh}
                 tintColor={AdminColors.primary}
                 colors={[AdminColors.primary]}
               />
             }
           >
-            <AccountTree nodes={tree} onSelectNode={handleNodePress} />
+            <AccountTree
+              nodes={tree}
+              onSelectNode={handleNodePress}
+              balanceMap={balanceMap}
+            />
           </ScrollView>
         )}
       </SafeAreaView>
@@ -195,6 +273,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
         onClose={() => setCreateModalVisible(false)}
         onSubmit={async payload => {
           await createAccount(payload);
+          await handleRefresh();
           Alert.alert('Success', 'Account created successfully.');
         }}
       />
@@ -269,6 +348,60 @@ const styles = StyleSheet.create({
   addButton: {
     height: 36,
     paddingHorizontal: 12,
+  },
+  kpiContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: Spacing.base,
+    gap: 8,
+    marginBottom: Spacing.sm,
+  },
+  kpiCard: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: BorderRadius.md,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  kpiCardCredit: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  kpiCardDebit: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+  kpiCardClosing: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#CBD5E1',
+  },
+  kpiLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  kpiValue: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginVertical: 2,
+  },
+  kpiValueCredit: {
+    color: '#16A34A',
+  },
+  kpiValueDebit: {
+    color: '#DC2626',
+  },
+  kpiValueClosing: {
+    color: '#0F2C59',
+  },
+  kpiSub: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#94A3B8',
   },
   searchSection: {
     paddingHorizontal: Spacing.base,
