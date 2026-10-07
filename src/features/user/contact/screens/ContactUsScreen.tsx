@@ -24,6 +24,8 @@ export interface ContactUsScreenProps {
   /** Returns to the previous User screen (temporary router back navigation). */
   onBack?: () => void;
   onOpenRights?: () => void;
+  /** Opens the About page (About tab in the shared six-tab navigation). */
+  onOpenAbout?: () => void;
 }
 
 /**
@@ -37,6 +39,7 @@ export interface ContactUsScreenProps {
 export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
   onBack,
   onOpenRights,
+  onOpenAbout,
 }) => {
   const showComingSoon = (feature: string) => {
     // UI PHASE ONLY placeholder for actions that ship with later phases.
@@ -99,6 +102,8 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
             onBack?.();
           } else if (tab.id === 'rights') {
             onOpenRights?.();
+          } else if (tab.id === 'about') {
+            onOpenAbout?.();
           }
         }}
       />

@@ -7,9 +7,9 @@
  * device/emulator. This is NOT the navigation architecture: the real root
  * navigation is owned by Mubasshir (Phase 2) and will replace this file.
  *
- * PHASE 1 (User Home): the app boots into the 'user-home' preview route.
- * The Home page is one continuous scroll: content sections followed by the
- * Contact details/map and the closing Contact CTA. The Admin content
+ * USER APP PHASE: the app boots into the 'user-home' preview route. The
+ * About, Contact and User Rights pages are standalone screens reachable
+ * from the shared six-tab bottom navigation. The Admin content
  * preview routes below remain available in code (reachable by switching the
  * initial route while the real navigation is pending).
  */
@@ -45,12 +45,14 @@ import type { NewsListItem } from './src/features/admin/content/news';
 import type { BlogListItem } from './src/features/admin/content/blogs';
 import type { RightsArticle } from './src/features/admin/content/rights';
 import { UserHomeScreen } from './src/features/user/home';
+import { AboutScreen } from './src/features/user/about';
 import { ContactUsScreen } from './src/features/user/contact';
 import { KnowYourRightsScreen as UserKnowYourRightsScreen } from './src/features/user/rights';
 import { showAdminShellPreviewNotice } from './src/features/admin/content/events/preview/AdminShellTabBar';
 
 type AppRoute =
   | { name: 'user-home' }
+  | { name: 'about' }
   | { name: 'contact' }
   | { name: 'user-rights' }
   | { name: 'list' }
@@ -70,13 +72,12 @@ type AppRoute =
   | { name: 'rights-create' }
   | { name: 'rights-edit'; article: RightsArticle; from: 'details' | 'list' };
 
-/** TEMPORARY: launch route of the preview shell. 'user-home' | 'contact'. */
+/** TEMPORARY: launch route of the preview shell. */
 const INITIAL_ROUTE: AppRoute = { name: 'user-home' };
 
 function App() {
-  // Boots into the Home screen. Flip to 'contact' to preview the standalone
-  // Contact Us page (it will be reachable from the User navigation — e.g.
-  // the About entry — once that phase lands).
+  // Boots into the Home screen. The About, Contact and User Rights pages are
+  // standalone screens reachable from the shared six-tab bottom navigation.
   const [route, setRoute] = useState<AppRoute>(INITIAL_ROUTE);
 
   // TEMPORARY preview-shell tab routing shared by the content screens: the
@@ -108,17 +109,26 @@ function App() {
         <StatusBar barStyle="dark-content" />
         {route.name === 'user-home' ? (
           <UserHomeScreen
+            onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenContact={() => setRoute({ name: 'contact' })}
             onOpenRights={() => setRoute({ name: 'user-rights' })}
+          />
+        ) : route.name === 'about' ? (
+          <AboutScreen
+            onBack={() => setRoute({ name: 'user-home' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
           />
         ) : route.name === 'contact' ? (
           <ContactUsScreen
             onBack={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenRights={() => setRoute({ name: 'user-rights' })}
           />
         ) : route.name === 'user-rights' ? (
           <UserKnowYourRightsScreen
             onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenContact={() => setRoute({ name: 'contact' })}
           />
         ) : route.name === 'edit' ? (

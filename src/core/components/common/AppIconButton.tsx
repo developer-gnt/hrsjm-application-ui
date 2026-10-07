@@ -1,7 +1,5 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { AdminColors } from '../../theme/colors';
-import { BorderRadius } from '../../theme/spacing';
 
 interface AppIconButtonProps {
   onPress: () => void;
