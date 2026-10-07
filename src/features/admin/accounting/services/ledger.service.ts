@@ -6,8 +6,8 @@ import type {
 } from '../types/accounting.types';
 
 export interface GlobalLedgerParams {
-  from_date: string;
-  to_date: string;
+  from_date?: string;
+  to_date?: string;
   account_id?: string;
   entry_type?: string;
   reference?: string;

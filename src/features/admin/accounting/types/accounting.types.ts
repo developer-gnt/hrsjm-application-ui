@@ -100,6 +100,10 @@ export interface LedgerTransaction {
   debit: number;
   credit: number;
   running_balance: number;
+  payment_method?: string | null;
+  paid_to?: string | null;
+  received_from?: string | null;
+  status?: string | null;
 }
 
 /** Summary header for an account ledger or global ledger. */
