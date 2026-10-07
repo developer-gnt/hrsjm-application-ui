@@ -4,15 +4,15 @@ import { expensesService, ListVouchersParams } from '../services/expenses.servic
 import type { CreateExpensePayload } from '../types/expenses.types';
 
 export const EXPENSES_QUERY_KEYS = {
-  list: (status: string | undefined, search: string | undefined) =>
-    ['expense-entries', 'list', status ?? 'ALL', search ?? ''] as const,
+  list: (status: string | undefined, payment_method: string | undefined, search: string | undefined) =>
+    ['expense-entries', 'list', status ?? 'ALL', payment_method ?? 'ALL', search ?? ''] as const,
   detail: (id: string) => ['expense-entries', 'detail', id] as const,
   stats: ['expense-entries', 'stats'] as const,
 };
 
 export const useExpenses = (params: Omit<ListVouchersParams, 'page' | 'limit'>) =>
   useInfiniteQuery({
-    queryKey: EXPENSES_QUERY_KEYS.list(params.status, params.search),
+    queryKey: EXPENSES_QUERY_KEYS.list(params.status, params.payment_method, params.search),
     queryFn: ({ pageParam }) =>
       expensesService.list({ ...params, page: pageParam, limit: 15 }),
     initialPageParam: 1,
@@ -26,15 +26,20 @@ export const useExpenseStats = () =>
   useQuery({
     queryKey: EXPENSES_QUERY_KEYS.stats,
     queryFn: async () => {
-      const [all, posted, cancelled] = await Promise.all([
-        expensesService.list({ page: 1, limit: 1 }),
+      const [allRes, postedRes, cancelledRes] = await Promise.all([
+        expensesService.list({ page: 1, limit: 100 }),
         expensesService.list({ page: 1, limit: 1, status: 'POSTED' }),
         expensesService.list({ page: 1, limit: 1, status: 'CANCELLED' }),
       ]);
+      const totalAmount = allRes.items
+        .filter(item => item.status === 'POSTED')
+        .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+
       return {
-        all: all.meta.total,
-        posted: posted.meta.total,
-        cancelled: cancelled.meta.total,
+        all: allRes.meta.total,
+        posted: postedRes.meta.total,
+        cancelled: cancelledRes.meta.total,
+        totalAmount,
       };
     },
     staleTime: 15_000,

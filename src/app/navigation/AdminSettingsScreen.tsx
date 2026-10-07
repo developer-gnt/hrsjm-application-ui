@@ -103,13 +103,13 @@ export const SETTING_SECTIONS: SettingSection[] = [
       },
       {
         icon: '🧾',
-        title: 'Expense Vouchers',
-        description: 'Record and track organizational expense vouchers.',
+        title: 'Expenses',
+        description: 'Record and track organizational expenditure entries.',
         route: AppRoutes.EXPENSE_VOUCHERS,
       },
       {
         icon: '📥',
-        title: 'Receipt Vouchers',
+        title: 'Income Receipts',
         description: 'Manual receipt entries against income accounts.',
         route: AppRoutes.RECEIPT_VOUCHERS,
       },
@@ -396,7 +396,7 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
           </View>
         ))}
 
-        {/* Financial & Voucher Module Shortcuts */}
+        {/* Financial & Accounting Module Shortcuts */}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
             <View
@@ -410,7 +410,7 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
             <View style={styles.sectionTitleBlock}>
               <Text style={styles.sectionTitle}>Financial Modules</Text>
               <Text style={styles.sectionSubtitle}>
-                Vouchers, payment verification and accounting shortcuts.
+                Income, expenses, payment verification and accounting shortcuts.
               </Text>
             </View>
           </View>
@@ -440,9 +440,9 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
             >
               <Text style={styles.itemIcon}>🧾</Text>
               <View style={styles.itemTextBlock}>
-                <Text style={styles.itemTitle}>Expense Vouchers</Text>
+                <Text style={styles.itemTitle}>Expenses</Text>
                 <Text style={styles.itemDescription}>
-                  Manage outgoing vouchers & approvals
+                  Manage outgoing expenses & expenditure records
                 </Text>
               </View>
               <Text style={styles.chevron}>›</Text>
@@ -457,7 +457,7 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
             >
               <Text style={styles.itemIcon}>📥</Text>
               <View style={styles.itemTextBlock}>
-                <Text style={styles.itemTitle}>Receipt Vouchers</Text>
+                <Text style={styles.itemTitle}>Income Receipts</Text>
                 <Text style={styles.itemDescription}>
                   Manage incoming receipt entries
                 </Text>
@@ -510,7 +510,7 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
               <View style={styles.itemTextBlock}>
                 <Text style={styles.itemTitle}>Journal Entries</Text>
                 <Text style={styles.itemDescription}>
-                  Dual-sided double entry vouchers and reversal audit history
+                  Dual-sided double entry records and reversal audit history
                 </Text>
               </View>
               <Text style={styles.chevron}>›</Text>

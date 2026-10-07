@@ -7,6 +7,8 @@ import type {
   ReceiptEntryItem,
   ReceiptFlatList,
   ReceiptListResult,
+  ReceiptStatsResponse,
+  UpdateReceiptPayload,
 } from '../types/receipts.types';
 
 export interface ListReceiptsParams {
@@ -42,6 +44,13 @@ export const receiptEntriesService = {
     };
   },
 
+  async getStats(): Promise<ReceiptStatsResponse> {
+    const response = await apiClient.get<ReceiptStatsResponse>(
+      ApiRoutes.RECEIPTS.STATS,
+    );
+    return response.data;
+  },
+
   async get(id: string): Promise<ReceiptEntryDetail> {
     const response = await apiClient.get<ReceiptEntryDetail>(
       ApiRoutes.RECEIPTS.DETAILS(id),
@@ -52,6 +61,14 @@ export const receiptEntriesService = {
   async create(payload: CreateReceiptPayload): Promise<ReceiptEntryItem> {
     const response = await apiClient.post<ReceiptEntryItem>(
       ApiRoutes.RECEIPTS.BASE,
+      payload,
+    );
+    return response.data;
+  },
+
+  async update(id: string, payload: UpdateReceiptPayload): Promise<ReceiptEntryDetail> {
+    const response = await apiClient.patch<ReceiptEntryDetail>(
+      ApiRoutes.RECEIPTS.DETAILS(id),
       payload,
     );
     return response.data;

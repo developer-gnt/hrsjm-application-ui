@@ -30,7 +30,7 @@ const SLIDES = [
   },
   {
     icon: '✅',
-    title: 'Verify Payments & Vouchers',
+    title: 'Verify Payments & Receipts',
     description:
       'Confirm offline and gateway payments, then issue receipts in a few taps.',
   },

@@ -43,8 +43,10 @@ export interface ReceiptEntryDetail extends ReceiptEntryItem {
         account_name: string;
         account_code: string | null;
       } | null;
-      debit: number;
-      credit: number;
+      debit?: number;
+      credit?: number;
+      debit_amount?: number;
+      credit_amount?: number;
     }> | null;
   };
 }
@@ -59,6 +61,26 @@ export interface CreateReceiptPayload {
   payment_method: PaymentMethod;
   reference_number?: string;
   description?: string;
+}
+
+/** PATCH /receipt-entries/:id body — exactly the backend UpdateReceiptEntryDto. */
+export interface UpdateReceiptPayload {
+  receipt_date?: string;
+  received_from?: string;
+  income_account_id?: string;
+  received_in_account_id?: string;
+  amount?: number;
+  payment_method?: PaymentMethod;
+  reference_number?: string;
+  description?: string;
+  attachment_url?: string;
+}
+
+export interface ReceiptStatsResponse {
+  all: number;
+  posted: number;
+  cancelled: number;
+  totalAmount: number;
 }
 
 export interface ReceiptFlatList {

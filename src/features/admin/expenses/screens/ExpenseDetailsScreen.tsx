@@ -60,7 +60,7 @@ export const ExpenseDetailsScreen: React.FC<ExpenseDetailsScreenProps> = ({
           onBack={() => navigation.goBack()}
           onNavigate={target => navigation.navigate(target as any)}
         />
-        <AppLoader fullScreen message="Loading voucher…" />
+        <AppLoader fullScreen message="Loading expense…" />
       </View>
     );
   }
@@ -75,7 +75,7 @@ export const ExpenseDetailsScreen: React.FC<ExpenseDetailsScreenProps> = ({
           onNavigate={target => navigation.navigate(target as any)}
         />
         <AppErrorState
-          title="Unable to load voucher"
+          title="Unable to load expense"
           onRetry={() => void detail.refetch()}
         />
       </View>
@@ -106,7 +106,7 @@ export const ExpenseDetailsScreen: React.FC<ExpenseDetailsScreenProps> = ({
         </AppCard>
 
         <AppCard variant="elevated">
-          <Text style={styles.sectionTitle}>Voucher Information</Text>
+          <Text style={styles.sectionTitle}>Expense Information</Text>
           <DataRow label="Date" value={formatDate(voucher.expense_date)} />
           <DataRow label="Expense Account" value={voucher.expense_account?.account_name} />
           <DataRow label="Paid From" value={voucher.paid_from_account?.account_name} />
@@ -123,31 +123,37 @@ export const ExpenseDetailsScreen: React.FC<ExpenseDetailsScreenProps> = ({
             <Text style={styles.journalMeta}>
               {voucher.accounting_entry?.reference_type ?? 'MANUAL_EXPENSE'}
             </Text>
-            {lines.map(line => (
-              <View key={line.id} style={styles.lineRow}>
-                <View style={styles.lineAccount}>
-                  <Text style={styles.lineName} numberOfLines={1}>
-                    {line.account?.account_name ?? 'Account'}
+            {lines.map(line => {
+              const debit = Number(line.debit_amount ?? (line as any).debit ?? 0);
+              const credit = Number(line.credit_amount ?? (line as any).credit ?? 0);
+              const isDebit = debit > 0;
+              const lineAmount = isDebit ? debit : credit;
+
+              return (
+                <View key={line.id} style={styles.lineRow}>
+                  <View style={styles.lineAccount}>
+                    <Text style={styles.lineName} numberOfLines={1}>
+                      {line.account?.account_name ?? 'Account'}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.lineAmount,
+                      isDebit ? styles.debitText : styles.creditText,
+                    ]}
+                  >
+                    {isDebit ? 'Dr' : 'Cr'} {formatINR(lineAmount)}
                   </Text>
                 </View>
-                <Text
-                  style={[
-                    styles.lineAmount,
-                    line.debit > 0 ? styles.debitText : styles.creditText,
-                  ]}
-                >
-                  {line.debit > 0 ? 'Dr' : 'Cr'}{' '}
-                  {formatINR(line.debit > 0 ? line.debit : line.credit)}
-                </Text>
-              </View>
-            ))}
+              );
+            })}
           </AppCard>
         ) : null}
 
         {voucher.status === 'CANCELLED' ? (
           <AppCard variant="flat">
             <Text style={styles.cancelledNote}>
-              This voucher is cancelled — a mirrored reversal entry was posted
+              This expense record is cancelled — a mirrored reversal entry was posted
               to the ledger.
             </Text>
           </AppCard>
@@ -155,7 +161,7 @@ export const ExpenseDetailsScreen: React.FC<ExpenseDetailsScreenProps> = ({
 
         {isPosted && can(PermissionKeys.EXPENSE_MANAGE_STATUS) ? (
           <AppButton
-            title="Cancel Voucher"
+            title="Cancel Expense Entry"
             onPress={() => setCancelVisible(true)}
             variant="danger"
             size="lg"
@@ -165,9 +171,9 @@ export const ExpenseDetailsScreen: React.FC<ExpenseDetailsScreenProps> = ({
 
       <ConfirmDialog
         visible={cancelVisible}
-        title="Cancel Expense Voucher"
+        title="Cancel Expense Record"
         message={`Cancelling ${voucher.voucher_number} posts a mirrored reversal to the ledger. This cannot be undone.`}
-        confirmTitle="Cancel Voucher"
+        confirmTitle="Cancel Expense"
         requiresReason
         reasonPlaceholder="Reason for cancellation"
         loading={cancelMutation.isPending}

@@ -20,7 +20,7 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import { AppButton } from '../../../../../core/components';
+import { AppButton, AppMediaUploadSheet } from '../../../../../core/components';
 import { formatDate } from '../../../../../core/utils';
 import { NewsFormSection } from './NewsFormSection';
 import { NewsPreviewSheet } from './NewsPreviewSheet';
@@ -820,18 +820,18 @@ export const NewsForm: React.FC<NewsFormProps> = ({
         onClose={() => setPreviewVisible(false)}
       />
 
-      {/* Featured image chooser (news sample imagery, no upload) */}
-      <EventPickerSheet
+      {/* WhatsApp-Style Featured image chooser (Camera, Gallery, Presets, URL) */}
+      <AppMediaUploadSheet
         visible={imageChooserVisible}
         title="Select Featured Image"
-        hint="Demo images only — real upload needs the shared image picker + backend flow"
-        options={FEATURED_IMAGE_OPTIONS}
-        selected={form.featuredImageUri}
-        itemLabel={uri => `News image ${FEATURED_IMAGE_OPTIONS.indexOf(uri) + 1}`}
+        subtitle="Camera, Gallery, File or Curated Presets"
+        currentValue={form.featuredImageUri}
         onSelect={value => {
           updateField('featuredImageUri', value);
           setToast({
-            message: isEdit ? 'Featured image updated.' : 'Featured image selected.',
+            message: value
+              ? isEdit ? 'Featured image updated.' : 'Featured image selected.'
+              : 'Featured image removed.',
             variant: 'success',
           });
         }}

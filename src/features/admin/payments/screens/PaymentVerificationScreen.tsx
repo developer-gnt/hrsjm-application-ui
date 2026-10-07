@@ -70,137 +70,149 @@ export const PaymentVerificationScreen: React.FC<
     );
   }
 
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      {/* Page Context Banner */}
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageTitle}>Payment Verification</Text>
+        <Text style={styles.pageSubtitle}>
+          Review and approve offline &amp; gateway membership transactions
+        </Text>
+      </View>
+
+      {/* 2×2 Reference KPI Stats Grid (Scrolls naturally with the feed) */}
+      <View style={styles.kpiGrid}>
+        <View style={styles.kpiRow}>
+          <AdminStatCard
+            label="Total Payments"
+            value={stats.data?.all ?? 0}
+            tone="navy"
+            Icon={Users}
+            loading={stats.isLoading}
+          />
+          <AdminStatCard
+            label="Pending Review"
+            value={stats.data?.pending ?? 0}
+            tone="warning"
+            Icon={Clock3}
+            loading={stats.isLoading}
+          />
+        </View>
+        <View style={styles.kpiRow}>
+          <AdminStatCard
+            label="Verified"
+            value={stats.data?.verified ?? 0}
+            tone="success"
+            Icon={UserCheck}
+            loading={stats.isLoading}
+          />
+          <AdminStatCard
+            label="Failed"
+            value={stats.data?.failed ?? 0}
+            tone="danger"
+            Icon={UserX}
+            loading={stats.isLoading}
+          />
+        </View>
+      </View>
+
+      {/* Search Bar */}
+      <AppSearchBar
+        placeholder="Search by member name, transaction ID…"
+        onSearch={setSearch}
+      />
+
+      {/* Filter Tabs */}
+      <AdminFilterTabs
+        tabs={STATUS_FILTERS.map(filter => ({
+          ...filter,
+          count:
+            filter.key === 'ALL'
+              ? stats.data?.all
+              : filter.key === 'PENDING'
+                ? stats.data?.pending
+                : filter.key === 'SUCCESS'
+                  ? stats.data?.verified
+                  : filter.key === 'FAILED'
+                    ? stats.data?.failed
+                    : undefined,
+        }))}
+        activeKey={statusFilter}
+        onChange={setStatusFilter}
+      />
+    </View>
+  );
+
   return (
     <View style={styles.flex}>
       <AdminHeader
         onNavigate={target => navigation.navigate(target as any)}
       />
 
-      <View style={styles.body}>
-        {/* Page Context Banner */}
-        <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>Payment Verification</Text>
-          <Text style={styles.pageSubtitle}>
-            Review and approve offline & gateway membership transactions
-          </Text>
-        </View>
-
-        {/* 2×2 Reference KPI Stats Grid */}
-        <View style={styles.kpiGrid}>
-          <View style={styles.kpiRow}>
-            <AdminStatCard
-              label="Total Payments"
-              value={stats.data?.all ?? 0}
-              tone="navy"
-              Icon={Users}
-              loading={stats.isLoading}
-            />
-            <AdminStatCard
-              label="Pending Review"
-              value={stats.data?.pending ?? 0}
-              tone="warning"
-              Icon={Clock3}
-              loading={stats.isLoading}
-            />
-          </View>
-          <View style={styles.kpiRow}>
-            <AdminStatCard
-              label="Verified"
-              value={stats.data?.verified ?? 0}
-              tone="success"
-              Icon={UserCheck}
-              loading={stats.isLoading}
-            />
-            <AdminStatCard
-              label="Failed"
-              value={stats.data?.failed ?? 0}
-              tone="danger"
-              Icon={UserX}
-              loading={stats.isLoading}
-            />
-          </View>
-        </View>
-
-        {/* Search Bar */}
-        <AppSearchBar
-          placeholder="Search by member name, transaction ID…"
-          onSearch={setSearch}
-        />
-
-        {/* Filter Tabs */}
-        <AdminFilterTabs
-          tabs={STATUS_FILTERS.map(filter => ({
-            ...filter,
-            count:
-              filter.key === 'ALL'
-                ? stats.data?.all
-                : filter.key === 'PENDING'
-                  ? stats.data?.pending
-                  : filter.key === 'SUCCESS'
-                    ? stats.data?.verified
-                    : filter.key === 'FAILED'
-                      ? stats.data?.failed
-                      : undefined,
-          }))}
-          activeKey={statusFilter}
-          onChange={setStatusFilter}
-        />
-
-        {/* Content List */}
-        {paymentsQuery.isLoading ? (
-          <AppLoader fullScreen message="Loading payments…" />
-        ) : paymentsQuery.isError ? (
-          <AppErrorState
-            title="Unable to load payments"
-            message="Please check your connection and try again."
-            onRetry={refresh}
-          />
-        ) : payments.length === 0 ? (
-          <AppEmptyState
-            icon="💳"
-            title="No Payments Found"
-            description="There are no payments matching your current filters."
-          />
-        ) : (
-          <FlatList
-            data={payments}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <PaymentCard
-                payment={item}
-                onPress={() =>
-                  navigation.navigate(AppRoutes.PAYMENT_DETAILS, {
-                    paymentId: item.id,
-                  })
-                }
-              />
-            )}
-            contentContainerStyle={styles.listContent}
-            ItemSeparatorComponent={ListSeparator}
-            refreshControl={
-              <RefreshControl
-                refreshing={paymentsQuery.isRefetching}
-                onRefresh={refresh}
-                colors={[BrandColors.navy]}
-              />
-            }
-            onEndReachedThreshold={0.4}
-            onEndReached={() => {
-              if (paymentsQuery.hasNextPage && !paymentsQuery.isFetchingNextPage) {
-                void paymentsQuery.fetchNextPage();
-              }
-            }}
-            ListFooterComponent={paymentsQuery.isFetchingNextPage ? <AppLoader size="small" message="Loading more…" /> : undefined}
-            ListEmptyComponent={
-              debouncedSearch ? (
-                <Text style={styles.filterHint}>
-                  No results for "{debouncedSearch}" ({totalCount} total payments).
-                </Text>
-              ) : undefined
+      <FlatList
+        data={payments}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <PaymentCard
+            payment={item}
+            onPress={() =>
+              navigation.navigate(AppRoutes.PAYMENT_DETAILS, {
+                paymentId: item.id,
+              })
             }
           />
         )}
-      </View>
+        ListHeaderComponent={renderHeader}
+        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={ListSeparator}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={paymentsQuery.isRefetching}
+            onRefresh={refresh}
+            colors={[BrandColors.navy]}
+          />
+        }
+        onEndReachedThreshold={0.4}
+        onEndReached={() => {
+          if (paymentsQuery.hasNextPage && !paymentsQuery.isFetchingNextPage) {
+            void paymentsQuery.fetchNextPage();
+          }
+        }}
+        ListFooterComponent={
+          paymentsQuery.isFetchingNextPage ? (
+            <AppLoader size="small" message="Loading more…" />
+          ) : undefined
+        }
+        ListEmptyComponent={
+          paymentsQuery.isLoading ? (
+            <View style={styles.stateContainer}>
+              <AppLoader size="small" message="Loading payments…" />
+            </View>
+          ) : paymentsQuery.isError ? (
+            <View style={styles.stateContainer}>
+              <AppErrorState
+                title="Unable to load payments"
+                message="Please check your connection and try again."
+                onRetry={refresh}
+              />
+            </View>
+          ) : payments.length === 0 ? (
+            <View style={styles.stateContainer}>
+              <AppEmptyState
+                icon="💳"
+                title="No Payments Found"
+                description={
+                  debouncedSearch
+                    ? `No results found for "${debouncedSearch}".`
+                    : 'There are no payments matching your current filters.'
+                }
+              />
+            </View>
+          ) : undefined
+        }
+      />
     </View>
   );
 };
@@ -212,10 +224,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  body: {
-    flex: 1,
-    padding: Spacing.base,
+  headerContainer: {
     gap: 12,
+    marginBottom: 8,
   },
   pageHeader: {
     paddingVertical: 2,
@@ -233,18 +244,21 @@ const styles = StyleSheet.create({
   },
   kpiGrid: {
     gap: Spacing.sm,
-    marginBottom: Spacing.md,
+    marginBottom: 2,
   },
   kpiRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
   },
   listContent: {
-    paddingBottom: Spacing.xxl,
-    paddingTop: 4,
+    padding: Spacing.base,
+    paddingBottom: Spacing.xxl + 20,
   },
   separator: {
     height: 10,
+  },
+  stateContainer: {
+    paddingVertical: Spacing.xl,
   },
   filterHint: {
     ...Typography.secondary,

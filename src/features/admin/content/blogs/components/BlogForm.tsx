@@ -21,7 +21,7 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import { AppButton } from '../../../../../core/components';
+import { AppButton, AppMediaUploadSheet } from '../../../../../core/components';
 import { EventPickerSheet } from '../../events/components/EventPickerSheet';
 import { EventFormToast } from '../../events/components/EventFormToast';
 import { EventTagInput } from '../../events/components/EventTagInput';
@@ -775,18 +775,18 @@ export const BlogForm: React.FC<BlogFormProps> = ({
         onConfirm={handleDiscardConfirmed}
       />
 
-      {/* Cover image chooser (blog sample imagery, no upload) */}
-      <EventPickerSheet
+      {/* WhatsApp-Style Cover image chooser (Camera, Gallery, Presets, URL) */}
+      <AppMediaUploadSheet
         visible={imageChooserVisible}
-        title="Select Cover Image"
-        hint="Demo images only — real upload needs the shared image picker + backend flow"
-        options={COVER_IMAGE_OPTIONS}
-        selected={form.coverImageUri}
-        itemLabel={uri => `Blog image ${COVER_IMAGE_OPTIONS.indexOf(uri) + 1}`}
+        title="Select Blog Cover Image"
+        subtitle="Camera, Gallery, File or Curated Presets"
+        currentValue={form.coverImageUri}
         onSelect={value => {
           updateField('coverImageUri', value);
           setToast({
-            message: isEdit ? 'Cover image updated.' : 'Cover image selected.',
+            message: value
+              ? isEdit ? 'Cover image updated.' : 'Cover image selected.'
+              : 'Cover image removed.',
             variant: 'success',
           });
         }}

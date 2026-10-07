@@ -4,18 +4,22 @@ import {
   receiptEntriesService,
   ListReceiptsParams,
 } from '../services/receipt-entries.service';
-import type { CreateReceiptPayload } from '../types/receipts.types';
+import type { CreateReceiptPayload, UpdateReceiptPayload } from '../types/receipts.types';
 
 export const RECEIPTS_QUERY_KEYS = {
-  list: (status: string | undefined, search: string | undefined) =>
-    ['receipt-entries', 'list', status ?? 'ALL', search ?? ''] as const,
+  list: (
+    status: string | undefined,
+    search: string | undefined,
+    payment_method?: string,
+  ) =>
+    ['receipt-entries', 'list', status ?? 'ALL', search ?? '', payment_method ?? 'ALL'] as const,
   detail: (id: string) => ['receipt-entries', 'detail', id] as const,
   stats: ['receipt-entries', 'stats'] as const,
 };
 
 export const useReceipts = (params: Omit<ListReceiptsParams, 'page' | 'limit'>) =>
   useInfiniteQuery({
-    queryKey: RECEIPTS_QUERY_KEYS.list(params.status, params.search),
+    queryKey: RECEIPTS_QUERY_KEYS.list(params.status, params.search, params.payment_method),
     queryFn: ({ pageParam }) =>
       receiptEntriesService.list({ ...params, page: pageParam, limit: 15 }),
     initialPageParam: 1,
@@ -29,16 +33,24 @@ export const useReceiptStats = () =>
   useQuery({
     queryKey: RECEIPTS_QUERY_KEYS.stats,
     queryFn: async () => {
-      const [all, posted, cancelled] = await Promise.all([
-        receiptEntriesService.list({ page: 1, limit: 1 }),
-        receiptEntriesService.list({ page: 1, limit: 1, status: 'POSTED' }),
-        receiptEntriesService.list({ page: 1, limit: 1, status: 'CANCELLED' }),
-      ]);
-      return {
-        all: all.meta.total,
-        posted: posted.meta.total,
-        cancelled: cancelled.meta.total,
-      };
+      try {
+        return await receiptEntriesService.getStats();
+      } catch {
+        const [allRes, postedRes, cancelledRes] = await Promise.all([
+          receiptEntriesService.list({ page: 1, limit: 100 }),
+          receiptEntriesService.list({ page: 1, limit: 1, status: 'POSTED' }),
+          receiptEntriesService.list({ page: 1, limit: 1, status: 'CANCELLED' }),
+        ]);
+        const totalAmount = allRes.items
+          .filter(item => item.status === 'POSTED')
+          .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        return {
+          all: allRes.meta.total ?? 0,
+          posted: postedRes.meta.total ?? 0,
+          cancelled: cancelledRes.meta.total ?? 0,
+          totalAmount,
+        };
+      }
     },
     staleTime: 15_000,
   });
@@ -55,6 +67,17 @@ export const useCreateReceipt = () => {
   return useMutation({
     mutationFn: (payload: CreateReceiptPayload) =>
       receiptEntriesService.create(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['receipt-entries'] });
+    },
+  });
+};
+
+export const useUpdateReceipt = (id: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdateReceiptPayload) =>
+      receiptEntriesService.update(id, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['receipt-entries'] });
     },

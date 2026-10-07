@@ -7,7 +7,7 @@ jest.mock('react-native-keychain', () => {
   const store = new Map();
   return {
     ACCESSIBLE: { WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WHEN_UNLOCKED_THIS_DEVICE_ONLY' },
-    setGenericPassword: jest.fn(async (username: string, password: string) => {
+    setGenericPassword: jest.fn(async (username, password) => {
       store.set(username, password);
       return { service: 'jest', storage: 'storage' };
     }),
@@ -48,8 +48,28 @@ jest.mock('react-native-biometrics', () => ({
 }));
 
 jest.mock('react-native-screens', () => {
-  let enableScreens = jest.fn();
-  return { enableScreens, enableFreeze: jest.fn() };
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    enableScreens: jest.fn(),
+    enableFreeze: jest.fn(),
+    screensEnabled: jest.fn(() => true),
+    compatibilityFlags: {
+      isNewBackTitleImplementation: true,
+      usesHeaderFlexboxImplementation: true,
+      usesNewAndroidHeaderHeightImplementation: true,
+    },
+    Screen: ({ children, ...rest }) => React.createElement(View, rest, children),
+    ScreenContainer: ({ children, ...rest }) => React.createElement(View, rest, children),
+    NativeScreen: ({ children, ...rest }) => React.createElement(View, rest, children),
+    NativeScreenContainer: ({ children, ...rest }) => React.createElement(View, rest, children),
+    ScreenStack: ({ children, ...rest }) => React.createElement(View, rest, children),
+    ScreenStackItem: ({ children, ...rest }) => React.createElement(View, rest, children),
+    ScreenStackHeaderConfig: ({ children, ...rest }) => React.createElement(View, rest, children),
+    ScreenStackHeaderSubview: ({ children, ...rest }) => React.createElement(View, rest, children),
+    SearchBar: ({ children, ...rest }) => React.createElement(View, rest, children),
+    FullWindowOverlay: ({ children, ...rest }) => React.createElement(View, rest, children),
+  };
 });
 
 const makeInertIconModule = () => {
@@ -70,13 +90,28 @@ jest.mock('lucide-react-native', () => makeInertIconModule());
 jest.mock('react-native-svg', () => makeInertIconModule());
 
 jest.mock('react-native-safe-area-context', () => {
-  const zeroInsets = { top: 0, bottom: 0, left: 0, right: 0 };
+  const mock = require('react-native-safe-area-context/jest/mock').default;
   return {
     __esModule: true,
-    SafeAreaProvider: (props: any) => props.children ?? null,
-    SafeAreaView: (props: any) => props.children ?? null,
-    SafeAreaConsumer: (props: any) => (props.children ? props.children(zeroInsets) : null),
-    useSafeAreaInsets: () => zeroInsets,
+    ...mock,
+    default: mock,
+  };
+});
+
+jest.mock('@react-navigation/native', () => {
+  const actualNav = jest.requireActual('@react-navigation/native');
+  return {
+    ...actualNav,
+    useNavigation: () => ({
+      navigate: jest.fn(),
+      goBack: jest.fn(),
+      replace: jest.fn(),
+      setOptions: jest.fn(),
+      addListener: jest.fn(() => jest.fn()),
+    }),
+    useRoute: () => ({
+      params: {},
+    }),
   };
 });
 
@@ -84,7 +119,11 @@ jest.mock('./src/core/components/feedback/SkeletonCard', () => {
   const React = require('react');
   const { View } = require('react-native');
   return {
-    SkeletonCard: (props: any) => React.createElement(View, props),
+    SkeletonCard: props => React.createElement(View, props),
   };
 });
 
+jest.mock('react-native-image-picker', () => ({
+  launchCamera: jest.fn(),
+  launchImageLibrary: jest.fn(),
+}));

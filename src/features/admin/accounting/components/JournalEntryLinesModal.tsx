@@ -95,28 +95,32 @@ export const JournalEntryLinesModal: React.FC<JournalEntryLinesModalProps> = ({
 
             {/* Table Rows */}
             {entry.lines && entry.lines.length > 0 ? (
-              entry.lines.map(line => (
-                <View key={line.id} style={styles.tableRow}>
-                  <View style={styles.thAccount}>
-                    <Text style={styles.lineAccountName}>
-                      {line.account?.account_name || 'Account'}
-                    </Text>
-                    {line.account?.account_code && (
-                      <Text style={styles.lineAccountCode}>
-                        {line.account.account_code} • {line.account.account_type}
+              entry.lines.map(line => {
+                const debit = Number(line.debit_amount ?? (line as any).debit ?? 0);
+                const credit = Number(line.credit_amount ?? (line as any).credit ?? 0);
+                return (
+                  <View key={line.id} style={styles.tableRow}>
+                    <View style={styles.thAccount}>
+                      <Text style={styles.lineAccountName}>
+                        {line.account?.account_name || 'Account'}
                       </Text>
-                    )}
+                      {line.account?.account_code && (
+                        <Text style={styles.lineAccountCode}>
+                          {line.account.account_code} • {line.account.account_type}
+                        </Text>
+                      )}
+                    </View>
+
+                    <Text style={[styles.thAmount, styles.debitText]}>
+                      {debit > 0 ? formatINR(debit) : '—'}
+                    </Text>
+
+                    <Text style={[styles.thAmount, styles.creditText]}>
+                      {credit > 0 ? formatINR(credit) : '—'}
+                    </Text>
                   </View>
-
-                  <Text style={[styles.thAmount, styles.debitText]}>
-                    {line.debit > 0 ? formatINR(line.debit) : '—'}
-                  </Text>
-
-                  <Text style={[styles.thAmount, styles.creditText]}>
-                    {line.credit > 0 ? formatINR(line.credit) : '—'}
-                  </Text>
-                </View>
-              ))
+                );
+              })
             ) : (
               <View style={styles.emptyLines}>
                 <Text style={styles.emptyLinesText}>

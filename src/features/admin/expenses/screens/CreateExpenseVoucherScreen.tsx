@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppInput } from '../../../../core/components/common/AppInput';
+import { AppDatePickerInput } from '../../../../core/components/common/AppDatePickerInput';
 import { ApiError } from '../../../../core/api/api-error';
 import { AdminColors } from '../../../../core/theme/colors';
 import { Typography } from '../../../../core/theme/typography';
@@ -17,6 +18,9 @@ import { useCreateExpense } from '../hooks/useExpenses';
 import { createExpenseSchema, zodFieldErrors } from '../types/expenses.schemas';
 import type { MoreStackParamList } from '../../../../app/navigation/NavigationTypes';
 
+import { getExpenseTypeDescription } from '../../accounting/data/official-expense-types';
+import { AlertCircle } from '../../../../core/components/icons';
+
 type CreateExpenseVoucherScreenProps = NativeStackScreenProps<
   MoreStackParamList,
   typeof AppRoutes.CREATE_EXPENSE_VOUCHER
@@ -26,8 +30,7 @@ const todayIso = (): string => new Date().toISOString().slice(0, 10);
 
 /**
  * Create expense voucher (spec §27): Dr Expense Account / Cr Bank-Cash.
- * Submit is disabled while in flight to prevent duplicate vouchers (the
- * backend has no idempotency key on create).
+ * Submit is disabled while in flight to prevent duplicate vouchers.
  */
 export const CreateExpenseVoucherScreen: React.FC<
   CreateExpenseVoucherScreenProps
@@ -38,7 +41,6 @@ export const CreateExpenseVoucherScreen: React.FC<
   const [paidTo, setPaidTo] = useState('');
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
-  const [reference, setReference] = useState('');
   const [description, setDescription] = useState('');
 
   const [expenseAccount, setExpenseAccount] = useState<AccountItem | null>(null);
@@ -48,6 +50,10 @@ export const CreateExpenseVoucherScreen: React.FC<
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
 
+  const typeDescription =
+    expenseAccount?.description ||
+    getExpenseTypeDescription(expenseAccount?.account_name);
+
   const handleCreate = () => {
     const parsed = createExpenseSchema.safeParse({
       expense_date: expenseDate,
@@ -56,7 +62,6 @@ export const CreateExpenseVoucherScreen: React.FC<
       paid_from_account_id: paidFromAccount?.id ?? '',
       amount,
       payment_method: paymentMethod ?? undefined,
-      reference_number: reference,
       description,
     });
     if (!parsed.success) {
@@ -83,7 +88,7 @@ export const CreateExpenseVoucherScreen: React.FC<
           setFormError(
             error instanceof ApiError && error.message
               ? error.message
-              : 'Unable to create the voucher. Please try again.',
+              : 'Unable to record the expense. Please try again.',
           );
         },
       },
@@ -96,7 +101,7 @@ export const CreateExpenseVoucherScreen: React.FC<
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <AdminHeader
-        title="Create Expense Voucher"
+        title="Record Expense"
         showBack
         onBack={() => navigation.goBack()}
         onNavigate={target => navigation.navigate(target as any)}
@@ -111,9 +116,10 @@ export const CreateExpenseVoucherScreen: React.FC<
 
         {formError ? <Text style={styles.errorBanner}>{formError}</Text> : null}
 
+        {/* Type of Expense Field */}
         <View style={styles.pickerRow}>
           <View style={styles.pickerColumn}>
-            <Text style={styles.pickerLabel}>Expense Account *</Text>
+            <Text style={styles.pickerLabel}>Type of Expense *</Text>
             <TouchableOpacity
               style={[
                 styles.pickerButton,
@@ -121,19 +127,49 @@ export const CreateExpenseVoucherScreen: React.FC<
               ]}
               onPress={() => setPickerTarget('expense')}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Select type of expense"
             >
               <Text numberOfLines={1} style={styles.pickerValue}>
                 {expenseAccount
                   ? `${expenseAccount.account_name}${expenseAccount.account_code ? ` (${expenseAccount.account_code})` : ''}`
-                  : 'Select expense account'}
+                  : 'Select type of expense'}
               </Text>
             </TouchableOpacity>
+
+            {/* Type Scope & Description Card */}
+            {typeDescription ? (
+              <View style={styles.typeDescCard}>
+                <AlertCircle size={14} color="#0284C7" style={{ marginTop: 2 }} />
+                <View style={styles.typeDescTextWrap}>
+                  <Text style={styles.typeDescTitle}>Scope &amp; Coverage</Text>
+                  <Text style={styles.typeDescText}>{typeDescription}</Text>
+                </View>
+              </View>
+            ) : null}
+
+            {/* Description / Specific Details Input (Shown when type is selected) */}
+            {expenseAccount ? (
+              <View style={styles.typeDescInputWrap}>
+                <AppInput
+                  label={`Description for ${expenseAccount.account_name} *`}
+                  placeholder="Enter specific purpose, invoice no., items purchased, etc."
+                  value={description}
+                  onChangeText={setDescription}
+                  multiline
+                  editable={!createMutation.isPending}
+                  error={fieldErrors.description}
+                />
+              </View>
+            ) : null}
+
             {fieldErrors.expense_account_id ? (
               <Text style={styles.fieldError}>{fieldErrors.expense_account_id}</Text>
             ) : null}
           </View>
         </View>
 
+        {/* Paid From Field */}
         <View style={styles.pickerRow}>
           <View style={styles.pickerColumn}>
             <Text style={styles.pickerLabel}>Paid From (Bank/Cash) *</Text>
@@ -144,6 +180,8 @@ export const CreateExpenseVoucherScreen: React.FC<
               ]}
               onPress={() => setPickerTarget('paid_from')}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Select bank/cash account"
             >
               <Text numberOfLines={1} style={styles.pickerValue}>
                 {paidFromAccount
@@ -168,21 +206,20 @@ export const CreateExpenseVoucherScreen: React.FC<
           error={fieldErrors.amount}
         />
 
-        <AppInput
-          label="Voucher Date"
+        <AppDatePickerInput
+          label="Expense Date"
           required
-          placeholder="YYYY-MM-DD"
+          title="Select Expense Date"
           value={expenseDate}
-          onChangeText={setExpenseDate}
-          autoCapitalize="none"
-          editable={!createMutation.isPending}
+          onChange={setExpenseDate}
+          disabled={createMutation.isPending}
           error={fieldErrors.expense_date}
         />
 
         <AppInput
           label="Paid To"
           required
-          placeholder="Payee name"
+          placeholder="Payee or vendor name"
           value={paidTo}
           onChangeText={setPaidTo}
           editable={!createMutation.isPending}
@@ -194,28 +231,21 @@ export const CreateExpenseVoucherScreen: React.FC<
           onChange={setPaymentMethod}
         />
 
-        <AppInput
-          label="Reference Number"
-          placeholder="Optional (defaults to REF-<voucher>)"
-          value={reference}
-          onChangeText={setReference}
-          autoCapitalize="none"
-          editable={!createMutation.isPending}
-          error={fieldErrors.reference_number}
-        />
-
-        <AppInput
-          label="Description"
-          placeholder="Optional narration"
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          editable={!createMutation.isPending}
-          error={fieldErrors.description}
-        />
+        {/* Fallback description input if no type selected yet */}
+        {!expenseAccount ? (
+          <AppInput
+            label="Description / Expense Details"
+            placeholder="Describe purpose, invoice number, items purchased, etc."
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            editable={!createMutation.isPending}
+            error={fieldErrors.description}
+          />
+        ) : null}
 
         <AppButton
-          title="Create Voucher"
+          title="Record Expense"
           onPress={handleCreate}
           variant="primary"
           size="lg"
@@ -227,7 +257,7 @@ export const CreateExpenseVoucherScreen: React.FC<
 
       <AccountPickerModal
         visible={pickerTarget === 'expense'}
-        title="Select Expense Account"
+        title="Select Type of Expense"
         accountType="EXPENSE"
         selectedId={expenseAccount?.id}
         onSelect={setExpenseAccount}
@@ -298,6 +328,36 @@ const styles = StyleSheet.create({
     ...Typography.secondary,
     color: AdminColors.error,
     marginTop: 4,
+  },
+  typeDescCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#F0F9FF',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    padding: 10,
+    marginTop: 8,
+  },
+  typeDescTextWrap: {
+    flex: 1,
+  },
+  typeDescTitle: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#0369A1',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  typeDescText: {
+    fontSize: 12,
+    color: '#0284C7',
+    lineHeight: 16,
+  },
+  typeDescInputWrap: {
+    marginTop: 10,
   },
   submit: {
     marginTop: Spacing.lg,

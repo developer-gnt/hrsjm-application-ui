@@ -63,19 +63,21 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   value,
   onSelect,
   onClose,
-  title = 'Select Date of Birth',
-  maxYear = new Date().getFullYear(),
+  title = 'Select Date',
+  maxYear = new Date().getFullYear() + 5,
   minYear = 1940,
 }) => {
   const today = useMemo(() => new Date(), []);
   const initialParsed = useMemo(() => parseDateString(value), [value]);
 
+  const isDob = title.toLowerCase().includes('birth') || title.toLowerCase().includes('dob');
+
   const [selectedKey, setSelectedKey] = useState<string>(value || '');
   const [viewYear, setViewYear] = useState<number>(
-    initialParsed?.year ?? today.getFullYear() - 25 // default sensible adult DOB view
+    initialParsed?.year ?? (isDob ? today.getFullYear() - 25 : today.getFullYear())
   );
   const [viewMonth, setViewMonth] = useState<number>(
-    initialParsed?.month ?? 0
+    initialParsed?.month ?? today.getMonth()
   );
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
 
@@ -86,10 +88,13 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
       if (parsed) {
         setViewYear(parsed.year);
         setViewMonth(parsed.month);
+      } else {
+        setViewYear(isDob ? today.getFullYear() - 25 : today.getFullYear());
+        setViewMonth(today.getMonth());
       }
       setIsYearPickerOpen(false);
     }
-  }, [visible, value]);
+  }, [visible, value, isDob, today]);
 
   const yearsList = useMemo(() => {
     const list: number[] = [];

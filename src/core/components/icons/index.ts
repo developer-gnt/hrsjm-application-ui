@@ -74,6 +74,10 @@ export {
   Heart,
   Leaf,
   UserRound,
+
+  // Finance / accounting
+  TrendingUp,
+  ArrowDownToLine,
 } from 'lucide-react-native';
 
 /**

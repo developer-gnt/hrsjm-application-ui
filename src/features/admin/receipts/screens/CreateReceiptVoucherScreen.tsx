@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppInput } from '../../../../core/components/common/AppInput';
+import { AppDatePickerInput } from '../../../../core/components/common/AppDatePickerInput';
 import { ApiError } from '../../../../core/api/api-error';
 import { AdminColors } from '../../../../core/theme/colors';
 import { Typography } from '../../../../core/theme/typography';
@@ -36,7 +37,6 @@ export const CreateReceiptVoucherScreen: React.FC<
   const [receivedFrom, setReceivedFrom] = useState('');
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
-  const [reference, setReference] = useState('');
   const [description, setDescription] = useState('');
 
   const [incomeAccount, setIncomeAccount] = useState<AccountItem | null>(null);
@@ -54,7 +54,6 @@ export const CreateReceiptVoucherScreen: React.FC<
       received_in_account_id: receivedInAccount?.id ?? '',
       amount,
       payment_method: paymentMethod ?? undefined,
-      reference_number: reference,
       description,
     });
     if (!parsed.success) {
@@ -81,7 +80,7 @@ export const CreateReceiptVoucherScreen: React.FC<
           setFormError(
             error instanceof ApiError && error.message
               ? error.message
-              : 'Unable to create the voucher. Please try again.',
+              : 'Unable to record receipt. Please try again.',
           );
         },
       },
@@ -94,7 +93,7 @@ export const CreateReceiptVoucherScreen: React.FC<
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <AdminHeader
-        title="Create Receipt Voucher"
+        title="Record Income Receipt"
         showBack
         onBack={() => navigation.goBack()}
         onNavigate={target => navigation.navigate(target as any)}
@@ -166,14 +165,13 @@ export const CreateReceiptVoucherScreen: React.FC<
           error={fieldErrors.amount}
         />
 
-        <AppInput
-          label="Voucher Date"
+        <AppDatePickerInput
+          label="Receipt Date"
           required
-          placeholder="YYYY-MM-DD"
+          title="Select Receipt Date"
           value={receiptDate}
-          onChangeText={setReceiptDate}
-          autoCapitalize="none"
-          editable={!createMutation.isPending}
+          onChange={setReceiptDate}
+          disabled={createMutation.isPending}
           error={fieldErrors.receipt_date}
         />
 
@@ -193,16 +191,6 @@ export const CreateReceiptVoucherScreen: React.FC<
         />
 
         <AppInput
-          label="Reference Number"
-          placeholder="Optional (defaults to REF-<voucher>)"
-          value={reference}
-          onChangeText={setReference}
-          autoCapitalize="none"
-          editable={!createMutation.isPending}
-          error={fieldErrors.reference_number}
-        />
-
-        <AppInput
           label="Description"
           placeholder="Optional narration"
           value={description}
@@ -213,7 +201,7 @@ export const CreateReceiptVoucherScreen: React.FC<
         />
 
         <AppButton
-          title="Create Receipt"
+          title="Record Receipt"
           onPress={handleCreate}
           variant="primary"
           size="lg"

@@ -71,6 +71,7 @@ export const ApiRoutes = {
   },
   RECEIPTS: {
     BASE: '/receipt-entries',
+    STATS: '/receipt-entries/stats',
     DETAILS: (id: string | number) => `/receipt-entries/${id}`,
     STATUS: (id: string | number) => `/receipt-entries/${id}/status`,
   },

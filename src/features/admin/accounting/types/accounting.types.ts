@@ -50,8 +50,10 @@ export interface UpdateAccountPayload {
 export interface AccountingEntryLine {
   id: string;
   account: AccountItem | null;
-  debit: number;
-  credit: number;
+  debit?: number;
+  credit?: number;
+  debit_amount?: number;
+  credit_amount?: number;
 }
 
 /** Accounting entry item (journal voucher). */
