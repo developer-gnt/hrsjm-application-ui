@@ -56,7 +56,7 @@ interface GeneralLedgerScreenProps {
   onNavigate?: (target: string) => void;
 }
 
-type MainMode = 'OVERVIEW' | 'CREDIT' | 'EXPENSE' | 'LEDGER';
+type MainMode = 'PASSBOOK' | 'CREDIT' | 'EXPENSE' | 'LEDGER' | 'OVERVIEW';
 type DimensionTab = 'Date Wise' | 'Category Wise' | 'Member Wise' | 'Support Type';
 type DatePresetKey = 'SEP_2026' | 'THIS_MONTH' | 'LAST_MONTH' | 'THIS_QUARTER' | 'THIS_FY';
 
@@ -68,7 +68,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
   onNavigate,
 }) => {
   const { width } = useWindowDimensions();
-  const [activeMode, setActiveMode] = useState<MainMode>('OVERVIEW');
+  const [activeMode, setActiveMode] = useState<MainMode>('PASSBOOK');
   const [activeDimensionTab, setActiveDimensionTab] = useState<DimensionTab>('Date Wise');
   const [txFilterType, setTxFilterType] = useState<'ALL' | 'CREDIT' | 'EXPENSE'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -331,17 +331,20 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* 3. MAIN NAVIGATION TABS (Overview | Credit | Expense | Ledger) */}
+        {/* 3. MAIN NAVIGATION TABS (Passbook | Credit | Expense | Ledger | Overview) */}
         {/* ========================================================================= */}
         <View style={styles.modeTabsRow}>
           <TouchableOpacity
-            style={[styles.modeTabBtn, activeMode === 'OVERVIEW' && styles.modeTabBtnActive]}
-            onPress={() => setActiveMode('OVERVIEW')}
+            style={[styles.modeTabBtn, activeMode === 'PASSBOOK' && styles.modeTabBtnActive]}
+            onPress={() => {
+              setActiveMode('PASSBOOK');
+              setTxFilterType('ALL');
+            }}
             activeOpacity={0.8}
           >
-            <FileText size={13} color={activeMode === 'OVERVIEW' ? '#FFFFFF' : '#64748B'} />
-            <Text style={[styles.modeTabText, activeMode === 'OVERVIEW' && styles.modeTabTextActive]}>
-              Overview
+            <Wallet size={13} color={activeMode === 'PASSBOOK' ? '#FFFFFF' : '#0F2C59'} />
+            <Text style={[styles.modeTabText, activeMode === 'PASSBOOK' && styles.modeTabTextActive]}>
+              Passbook
             </Text>
           </TouchableOpacity>
 
@@ -381,6 +384,17 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
             <FileText size={13} color={activeMode === 'LEDGER' ? '#FFFFFF' : '#64748B'} />
             <Text style={[styles.modeTabText, activeMode === 'LEDGER' && styles.modeTabTextActive]}>
               Ledger
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.modeTabBtn, activeMode === 'OVERVIEW' && styles.modeTabBtnActive]}
+            onPress={() => setActiveMode('OVERVIEW')}
+            activeOpacity={0.8}
+          >
+            <Scale size={13} color={activeMode === 'OVERVIEW' ? '#FFFFFF' : '#64748B'} />
+            <Text style={[styles.modeTabText, activeMode === 'OVERVIEW' && styles.modeTabTextActive]}>
+              Analytics
             </Text>
           </TouchableOpacity>
         </View>
@@ -517,9 +531,9 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* 5. MODE 2: TRANSACTIONS LIST VIEW (Credit / Expense / All) */}
+        {/* 5. MODE 2: TRANSACTIONS LIST VIEW (Passbook / Credit / Expense / All) */}
         {/* ========================================================================= */}
-        {(activeMode === 'CREDIT' || activeMode === 'EXPENSE') && (
+        {(activeMode === 'PASSBOOK' || activeMode === 'CREDIT' || activeMode === 'EXPENSE') && (
           <View style={styles.transactionsContainer}>
             {/* Search & Filter Bar */}
             <View style={styles.searchRow}>
