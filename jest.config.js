@@ -1,6 +1,9 @@
 module.exports = {
   preset: '@react-native/jest-preset',
   setupFiles: ['./jest.setup.js'],
+  moduleNameMapper: {
+    '\\.(webp|jpg|jpeg|png|gif|svg)$': '<rootDir>/jest/fileMock.js',
+  },
   transformIgnorePatterns: [
     'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-mmkv|react-native-keychain|react-native-biometrics|react-native-screens|react-native-safe-area-context|react-native-nitro-modules|lucide-react-native|react-native-svg|jspdf|react-native-image-picker)/)',
   ],
