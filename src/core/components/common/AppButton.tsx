@@ -164,13 +164,8 @@ export const AppButton: React.FC<AppButtonProps> = ({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
-<<<<<<< HEAD
-      accessibilityRole={accessibilityRole}
-      accessibilityLabel={accessibilityLabel || title}
-=======
-      accessibilityRole="button"
+      accessibilityRole={accessibilityRole || 'button'}
       accessibilityLabel={accessibilityLabel ?? title}
->>>>>>> origin/Aman
       style={[
         styles.baseButton,
         getVariantContainerStyle(),

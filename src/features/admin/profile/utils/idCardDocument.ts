@@ -399,7 +399,6 @@ const getProfileKey = (p: AdminProfile): string =>
   `${p.memberId}_${p.fullName}_${p.role}_${p.membershipType}_${p.validTill}_${p.memberSince}_${p.accountStatus}_${p.avatar || ''}`;
 
 /**
-<<<<<<< HEAD
  * Pre-warms the ID card PDF in the background queue so user interactions are instantaneous.
  */
 export const prewarmIdCardPdf = async (
@@ -449,17 +448,10 @@ export const prewarmIdCardPdf = async (
 
 /**
  * NATIVE download (Android / iOS): Instant file save to public Downloads storage and auto-open.
-=======
- * NATIVE download (Android / iOS): generates the real PDF on-device and
- * writes it to storage — Android: public Downloads folder + MediaStore
- * scan so it appears in the Files/Downloads app; iOS: app documents +
- * native preview where the user can save it to Files.
->>>>>>> origin/sahil
  */
 export const downloadIdCardPdfNative = async (
   profile: AdminProfile,
 ): Promise<'downloaded' | 'opened'> => {
-<<<<<<< HEAD
   const { RNFS } = await getNativeModules();
   const pdfData = await prewarmIdCardPdf(profile);
   const { base64, fileName } = pdfData;
@@ -486,34 +478,6 @@ export const downloadIdCardPdfNative = async (
         savedToPublic = true;
       } catch (err) {
         console.log('LegacyDownloadDir write notice:', err);
-=======
-  const pdf = await generateIdCardPdf(profile);
-  const base64 = uint8ToBase64(getPdfBytes(pdf));
-  const fileName = idCardFileName(profile);
-
-  const RNFS = (await import('react-native-blob-util')).default;
-  const dirs = RNFS.fs.dirs;
-
-  const candidates: Array<{ path: string; location: 'downloaded' | 'opened' }> =
-    dirs.DownloadDir
-      ? [
-          { path: `${dirs.DownloadDir}/${fileName}`, location: 'downloaded' },
-          { path: `${dirs.DocumentDir}/${fileName}`, location: 'opened' },
-        ]
-      : [{ path: `${dirs.DocumentDir}/${fileName}`, location: 'opened' }];
-
-  let lastError: unknown = null;
-  for (const candidate of candidates) {
-    try {
-      await RNFS.fs.writeFile(candidate.path, base64, 'base64');
-      if (candidate.location === 'downloaded' && dirs.DownloadDir) {
-        // Register with Android's MediaStore so the file is immediately
-        // visible in Files / Downloads apps. (scanFile's declared
-        // parameter type does not match its runtime API — cast needed.)
-        await (RNFS.fs.scanFile as any)(candidate.path).catch(
-          () => undefined,
-        );
->>>>>>> origin/sahil
       }
     }
 
@@ -584,13 +548,7 @@ export const downloadIdCardPdfNative = async (
     await RNFS.fs.writeFile(docPath, base64, 'base64');
   }
 
-<<<<<<< HEAD
   return 'downloaded';
-=======
-  throw lastError instanceof Error
-    ? lastError
-    : new Error('Unable to write the ID card PDF to device storage.');
->>>>>>> origin/sahil
 };
 
 /**
@@ -599,7 +557,6 @@ export const downloadIdCardPdfNative = async (
 export const shareIdCardPdfNative = async (
   profile: AdminProfile,
 ): Promise<'shared' | 'cancelled'> => {
-<<<<<<< HEAD
   try {
     const { RNFS, NativeShare } = await getNativeModules();
     const pdfData = await prewarmIdCardPdf(profile);
@@ -660,28 +617,7 @@ export const shareIdCardPdfNative = async (
       return 'cancelled';
     }
     return 'cancelled';
-=======
-  const pdf = await generateIdCardPdf(profile);
-  const base64 = uint8ToBase64(getPdfBytes(pdf));
-  const fileName = idCardFileName(profile);
-
-  const RNFS = (await import('react-native-blob-util')).default;
-  const filePath = `${RNFS.fs.dirs.CacheDir}/${fileName}`;
-  await RNFS.fs.writeFile(filePath, base64, 'base64');
-
-  const NativeShare = (await import('react-native-share')).default;
-  if (!NativeShare?.open) {
-    throw new Error('Sharing the ID card is not supported on this device.');
->>>>>>> origin/sahil
   }
-  const shareResult = await NativeShare.open({
-    url: `file://${filePath}`,
-    type: 'application/pdf',
-    title: 'HRSJM Member ID Card',
-    subject: `${profile.fullName} — ${profile.memberId}`,
-    failOnCancel: false,
-  });
-  return shareResult?.dismissedAction ? 'cancelled' : 'shared';
 };
 
 /**
@@ -691,16 +627,8 @@ export const downloadIdCardPdfWeb = async (
   profile: AdminProfile,
 ): Promise<'downloaded' | 'opened'> => {
   const web: any = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
-<<<<<<< HEAD
   const avatarBase64 = await ensureBase64Image(profile.avatar);
   const pdf = generateIdCardPdf(profile, avatarBase64);
-=======
-  if (!web.URL?.createObjectURL || !web.document || !web.window) {
-    throw new Error('Saving is not available in this environment.');
-  }
-
-  const pdf = await generateIdCardPdf(profile);
->>>>>>> origin/sahil
   const blob = pdf.output('blob');
   const fileName = idCardFileName(profile);
 
@@ -764,7 +692,6 @@ export const shareIdCardPdfWeb = async (
           text: `HRSJM Membership ID - ${profile.fullName} (${profile.memberId})`,
         });
         return 'shared';
-<<<<<<< HEAD
       }
     } catch (shareError: any) {
       if (
@@ -772,32 +699,11 @@ export const shareIdCardPdfWeb = async (
         shareError?.name === 'NotAllowedError'
       ) {
         return 'cancelled';
-=======
-      } catch (shareError: any) {
-        if (
-          shareError?.name === 'AbortError' ||
-          shareError?.name === 'NotAllowedError'
-        ) {
-          return 'cancelled';
-        }
-        // File share rejected — fall through to the open-in-viewer path.
->>>>>>> origin/sahil
       }
     }
   }
 
-<<<<<<< HEAD
   // Fallback: download/open the file so the user has it immediately
   await downloadIdCardPdfWeb(profile);
   return 'opened';
-=======
-  const url = web.URL?.createObjectURL
-    ? web.URL.createObjectURL(blob)
-    : pdf.output('datauristring');
-  if (web.window?.open) {
-    web.window.open(url, '_blank');
-    return 'opened';
-  }
-  throw new Error('Sharing the ID card is not supported in this browser.');
->>>>>>> origin/sahil
 };
