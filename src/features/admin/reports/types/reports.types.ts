@@ -44,11 +44,25 @@ export interface UserDistributionSlice {
   color: string;
 }
 
+export interface DonationsTimelinePoint {
+  label: string;
+  amount: number;
+  count: number;
+}
+
 export interface DonationsOverviewData {
   total_amount: number;
   growth_pct: number;
   total_donations: number;
   donations_count_growth_pct: number;
+  timeline?: DonationsTimelinePoint[];
+}
+
+export interface ComplaintsTimelinePoint {
+  label: string;
+  received: number;
+  resolved: number;
+  pending: number;
 }
 
 export interface ComplaintsOverviewData {
@@ -60,6 +74,7 @@ export interface ComplaintsOverviewData {
   resolved_pct: number;
   in_progress_pct: number;
   pending_pct: number;
+  timeline?: ComplaintsTimelinePoint[];
 }
 
 export interface ContentPerformanceItem {
@@ -68,12 +83,20 @@ export interface ContentPerformanceItem {
   views: string;
 }
 
+export interface EventsTimelinePoint {
+  label: string;
+  events: number;
+  registrations: number;
+  attendance: number;
+}
+
 export interface EventsOverviewData {
   total_events: number;
   events_growth_pct: number;
   total_registrations: number;
   registrations_growth_pct: number;
   avg_attendance_pct: number;
+  timeline?: EventsTimelinePoint[];
 }
 
 export interface ReportsAnalyticsResponse {

@@ -433,45 +433,55 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </View>
           </View>
 
-          {/* Bar Chart */}
-          <View style={styles.chartContainer}>
-            <Svg width={chartWidth} height={130} viewBox="0 0 330 130">
-              {/* Y Axis Labels */}
-              <SvgText x="5" y="15" fontSize="8" fill="#94A3B8" fontWeight="600">100K</SvgText>
-              <SvgText x="5" y="45" fontSize="8" fill="#94A3B8" fontWeight="600">75K</SvgText>
-              <SvgText x="5" y="75" fontSize="8" fill="#94A3B8" fontWeight="600">50K</SvgText>
-              <SvgText x="5" y="105" fontSize="8" fill="#94A3B8" fontWeight="600">25K</SvgText>
-              <SvgText x="15" y="125" fontSize="8" fill="#94A3B8" fontWeight="600">0</SvgText>
-              {/* Bars */}
-              <G fill="#10B981">
-                <Rect x="40" y="90" width="8" height="30" rx="2" />
-                <Rect x="55" y="75" width="8" height="45" rx="2" />
-                <Rect x="70" y="45" width="8" height="75" rx="2" />
-                <Rect x="85" y="80" width="8" height="40" rx="2" />
-                <Rect x="100" y="70" width="8" height="50" rx="2" />
-                <Rect x="115" y="30" width="8" height="90" rx="2" />
-                <Rect x="130" y="95" width="8" height="25" rx="2" />
-                <Rect x="145" y="85" width="8" height="35" rx="2" />
-                <Rect x="160" y="75" width="8" height="45" rx="2" />
-                <Rect x="175" y="90" width="8" height="30" rx="2" />
-                <Rect x="190" y="80" width="8" height="40" rx="2" />
-                <Rect x="205" y="40" width="8" height="80" rx="2" />
-                <Rect x="220" y="65" width="8" height="55" rx="2" />
-                <Rect x="235" y="70" width="8" height="50" rx="2" />
-                <Rect x="250" y="55" width="8" height="65" rx="2" />
-                <Rect x="265" y="20" width="8" height="100" rx="2" />
-                <Rect x="280" y="45" width="8" height="75" rx="2" />
-                <Rect x="295" y="60" width="8" height="60" rx="2" />
-              </G>
-            </Svg>
-            <View style={styles.xAxisRow}>
-              <Text style={styles.xAxisText}>1 Sep</Text>
-              <Text style={styles.xAxisText}>7 Sep</Text>
-              <Text style={styles.xAxisText}>14 Sep</Text>
-              <Text style={styles.xAxisText}>21 Sep</Text>
-              <Text style={styles.xAxisText}>28 Sep</Text>
-            </View>
-          </View>
+          {/* Dynamic Donations Bar Chart */}
+          {(() => {
+            const timeline = donationsOverview?.timeline || [];
+            const maxDonation = Math.max(...timeline.map(t => t.amount), 1000);
+            return (
+              <View style={styles.chartContainer}>
+                <Svg width={chartWidth} height={130} viewBox="0 0 330 130">
+                  {/* Grid / Y Axis Labels */}
+                  <SvgText x="5" y="15" fontSize="8" fill="#94A3B8" fontWeight="600">
+                    {maxDonation >= 1000 ? `${Math.round(maxDonation / 1000)}K` : `${maxDonation}`}
+                  </SvgText>
+                  <SvgText x="5" y="45" fontSize="8" fill="#94A3B8" fontWeight="600">
+                    {maxDonation >= 1000 ? `${Math.round((maxDonation * 0.75) / 1000)}K` : `${Math.round(maxDonation * 0.75)}`}
+                  </SvgText>
+                  <SvgText x="5" y="75" fontSize="8" fill="#94A3B8" fontWeight="600">
+                    {maxDonation >= 1000 ? `${Math.round((maxDonation * 0.5) / 1000)}K` : `${Math.round(maxDonation * 0.5)}`}
+                  </SvgText>
+                  <SvgText x="5" y="105" fontSize="8" fill="#94A3B8" fontWeight="600">
+                    {maxDonation >= 1000 ? `${Math.round((maxDonation * 0.25) / 1000)}K` : `${Math.round(maxDonation * 0.25)}`}
+                  </SvgText>
+                  <SvgText x="15" y="125" fontSize="8" fill="#94A3B8" fontWeight="600">0</SvgText>
+                  {/* Dynamic Bars */}
+                  <G fill="#10B981">
+                    {timeline.map((pt, i) => {
+                      const barH = pt.amount > 0 ? Math.max(6, Math.round((pt.amount / maxDonation) * 95)) : 2;
+                      const x = 45 + i * 58;
+                      const y = 125 - barH;
+                      return (
+                        <Rect
+                          key={`don-bar-${i}`}
+                          x={x}
+                          y={y}
+                          width={14}
+                          height={barH}
+                          rx={3}
+                          fill={pt.amount > 0 ? '#10B981' : '#E2E8F0'}
+                        />
+                      );
+                    })}
+                  </G>
+                </Svg>
+                <View style={styles.xAxisRow}>
+                  {timeline.map((pt, i) => (
+                    <Text key={`don-lbl-${i}`} style={styles.xAxisText}>{pt.label}</Text>
+                  ))}
+                </View>
+              </View>
+            );
+          })()}
         </View>
 
         {/* Chart Card 4: Complaints Overview */}
@@ -537,30 +547,58 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </View>
           </View>
 
-          <View style={styles.chartContainer}>
-            <Svg width={chartWidth} height={120} viewBox="0 0 330 120">
-              {/* Grid */}
-              <Path d="M 30 20 L 320 20 M 30 50 L 320 50 M 30 80 L 320 80 M 30 105 L 320 105" stroke="#F1F5F9" strokeWidth="1" />
-              {/* Y Axis Labels */}
-              <SvgText x="8" y="24" fontSize="8" fill="#94A3B8" fontWeight="600">40</SvgText>
-              <SvgText x="8" y="54" fontSize="8" fill="#94A3B8" fontWeight="600">30</SvgText>
-              <SvgText x="8" y="84" fontSize="8" fill="#94A3B8" fontWeight="600">20</SvgText>
-              <SvgText x="8" y="109" fontSize="8" fill="#94A3B8" fontWeight="600">0</SvgText>
-              {/* Line 1: Received (Blue) */}
-              <Path d="M 30 90 Q 60 70 90 85 T 150 70 T 210 65 T 270 50 T 320 75" fill="none" stroke="#2563EB" strokeWidth="2" />
-              {/* Line 2: Resolved (Green) */}
-              <Path d="M 30 100 Q 60 90 90 95 T 150 85 T 210 75 T 270 70 T 320 85" fill="none" stroke="#10B981" strokeWidth="2" />
-              {/* Line 3: Pending (Amber) */}
-              <Path d="M 30 105 Q 60 102 90 104 T 150 100 T 210 102 T 270 98 T 320 100" fill="none" stroke="#F59E0B" strokeWidth="2" />
-            </Svg>
-            <View style={styles.xAxisRow}>
-              <Text style={styles.xAxisText}>1 Sep</Text>
-              <Text style={styles.xAxisText}>7 Sep</Text>
-              <Text style={styles.xAxisText}>14 Sep</Text>
-              <Text style={styles.xAxisText}>21 Sep</Text>
-              <Text style={styles.xAxisText}>28 Sep</Text>
-            </View>
-          </View>
+          {/* Dynamic Complaints Multi-Line SVG Chart */}
+          {(() => {
+            const timeline = complaintsOverview?.timeline || [];
+            const maxVal = Math.max(...timeline.map(t => Math.max(t.received, t.resolved, t.pending)), 5);
+            const numPoints = Math.max(timeline.length - 1, 1);
+            const receivedPoints = timeline.map((pt, i) => ({
+              x: 35 + (i / numPoints) * 280,
+              y: 105 - ((pt.received / maxVal) * 85),
+            }));
+            const resolvedPoints = timeline.map((pt, i) => ({
+              x: 35 + (i / numPoints) * 280,
+              y: 105 - ((pt.resolved / maxVal) * 85),
+            }));
+            const pendingPoints = timeline.map((pt, i) => ({
+              x: 35 + (i / numPoints) * 280,
+              y: 105 - ((pt.pending / maxVal) * 85),
+            }));
+
+            const makePath = (pts: Array<{ x: number; y: number }>) =>
+              pts.length > 0 ? pts.reduce((acc, curr, idx) => `${acc} ${idx === 0 ? 'M' : 'L'} ${curr.x} ${curr.y}`, '') : '';
+
+            return (
+              <View style={styles.chartContainer}>
+                <Svg width={chartWidth} height={120} viewBox="0 0 330 120">
+                  {/* Grid */}
+                  <Path d="M 30 20 L 320 20 M 30 50 L 320 50 M 30 80 L 320 80 M 30 105 L 320 105" stroke="#F1F5F9" strokeWidth="1" />
+                  {/* Y Axis Labels */}
+                  <SvgText x="8" y="24" fontSize="8" fill="#94A3B8" fontWeight="600">{maxVal}</SvgText>
+                  <SvgText x="8" y="54" fontSize="8" fill="#94A3B8" fontWeight="600">{Math.round(maxVal * 0.66)}</SvgText>
+                  <SvgText x="8" y="84" fontSize="8" fill="#94A3B8" fontWeight="600">{Math.round(maxVal * 0.33)}</SvgText>
+                  <SvgText x="8" y="109" fontSize="8" fill="#94A3B8" fontWeight="600">0</SvgText>
+                  {/* Line 1: Received (Blue) */}
+                  {makePath(receivedPoints) !== '' && (
+                    <Path d={makePath(receivedPoints)} fill="none" stroke="#2563EB" strokeWidth="2" />
+                  )}
+                  {/* Line 2: Resolved (Green) */}
+                  {makePath(resolvedPoints) !== '' && (
+                    <Path d={makePath(resolvedPoints)} fill="none" stroke="#10B981" strokeWidth="2" />
+                  )}
+                  {/* Line 3: Pending (Amber) */}
+                  {makePath(pendingPoints) !== '' && (
+                    <Path d={makePath(pendingPoints)} fill="none" stroke="#F59E0B" strokeWidth="2" />
+                  )}
+                </Svg>
+                <View style={styles.xAxisRow}>
+                  {timeline.map((pt, i) => (
+                    <Text key={`cmp-lbl-${i}`} style={styles.xAxisText}>{pt.label}</Text>
+                  ))}
+                </View>
+              </View>
+            );
+          })()}
         </View>
 
         {/* Chart Card 5: Top Content Performance */}
@@ -652,7 +690,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             <View style={styles.eventKpiBox}>
               <Text style={styles.miniLabel}>Total Registrations</Text>
               <Text style={styles.eventKpiVal}>
-                {eventsOverview?.total_registrations?.toLocaleString() ?? '—'}{' '}
+                {eventsOverview?.total_registrations?.toLocaleString() ?? '0'}{' '}
                 <Text style={styles.trendGreenSmall}>↑ {eventsOverview?.registrations_growth_pct ?? 0}%</Text>
               </Text>
             </View>
@@ -676,34 +714,52 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </View>
           </View>
 
-          <View style={styles.chartContainer}>
-            <Svg width={chartWidth} height={120} viewBox="0 0 330 120">
-              <G>
-                {/* 1 Sep */}
-                <Rect x="40" y="70" width="7" height="40" rx="2" fill="#2563EB" />
-                <Rect x="49" y="85" width="7" height="25" rx="2" fill="#10B981" />
-                {/* 7 Sep */}
-                <Rect x="85" y="45" width="7" height="65" rx="2" fill="#2563EB" />
-                <Rect x="94" y="60" width="7" height="50" rx="2" fill="#10B981" />
-                {/* 14 Sep */}
-                <Rect x="130" y="55" width="7" height="55" rx="2" fill="#2563EB" />
-                <Rect x="139" y="65" width="7" height="45" rx="2" fill="#10B981" />
-                {/* 21 Sep */}
-                <Rect x="175" y="30" width="7" height="80" rx="2" fill="#2563EB" />
-                <Rect x="184" y="50" width="7" height="60" rx="2" fill="#10B981" />
-                {/* 28 Sep */}
-                <Rect x="220" y="20" width="7" height="90" rx="2" fill="#2563EB" />
-                <Rect x="229" y="40" width="7" height="70" rx="2" fill="#10B981" />
-              </G>
-            </Svg>
-            <View style={styles.xAxisRow}>
-              <Text style={styles.xAxisText}>1 Sep</Text>
-              <Text style={styles.xAxisText}>7 Sep</Text>
-              <Text style={styles.xAxisText}>14 Sep</Text>
-              <Text style={styles.xAxisText}>21 Sep</Text>
-              <Text style={styles.xAxisText}>28 Sep</Text>
-            </View>
-          </View>
+          {/* Dynamic Dual Bar Chart */}
+          {(() => {
+            const timeline = eventsOverview?.timeline || [];
+            const maxEvents = Math.max(...timeline.map(t => Math.max(t.registrations, t.attendance)), 10);
+            return (
+              <View style={styles.chartContainer}>
+                <Svg width={chartWidth} height={120} viewBox="0 0 330 120">
+                  <G>
+                    {timeline.map((pt, i) => {
+                      const xReg = 40 + i * 58;
+                      const xAtt = 50 + i * 58;
+                      const regH = pt.registrations > 0 ? Math.max(6, Math.round((pt.registrations / maxEvents) * 90)) : 2;
+                      const attH = pt.attendance > 0 ? Math.max(6, Math.round((pt.attendance / maxEvents) * 90)) : 2;
+                      const yReg = 115 - regH;
+                      const yAtt = 115 - attH;
+                      return (
+                        <G key={`evt-grp-${i}`}>
+                          <Rect
+                            x={xReg}
+                            y={yReg}
+                            width={8}
+                            height={regH}
+                            rx={2}
+                            fill={pt.registrations > 0 ? '#2563EB' : '#E2E8F0'}
+                          />
+                          <Rect
+                            x={xAtt}
+                            y={yAtt}
+                            width={8}
+                            height={attH}
+                            rx={2}
+                            fill={pt.attendance > 0 ? '#10B981' : '#E2E8F0'}
+                          />
+                        </G>
+                      );
+                    })}
+                  </G>
+                </Svg>
+                <View style={styles.xAxisRow}>
+                  {timeline.map((pt, i) => (
+                    <Text key={`evt-lbl-${i}`} style={styles.xAxisText}>{pt.label}</Text>
+                  ))}
+                </View>
+              </View>
+            );
+          })()}
         </View>
 
         {/* ========================================================================= */}
