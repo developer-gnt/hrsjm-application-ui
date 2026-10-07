@@ -29,49 +29,51 @@ const WOMEN_KEY_AREAS: { title: string; icon: IconName }[] = [
 
 export const WomensRightsSection: React.FC = () => (
   <View style={styles.section}>
-    <View style={styles.tabs} accessibilityRole="tablist">
-      {WOMEN_RIGHTS_TABS.map((tab, index) => (
-        <View
-          key={tab}
-          style={[styles.tab, index === 0 && styles.tabActive]}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: index === 0 }}
-        >
-          <Text style={[styles.tabText, index === 0 && styles.tabTextActive]}>
-            {tab}
-          </Text>
-        </View>
-      ))}
-    </View>
-
-    <Text style={styles.heading}>What are Women's Rights?</Text>
-    <Text style={styles.bodyText}>
-      Women's rights are the fundamental human rights that ensure equality,
-      safety, dignity and equal opportunities for women in all areas of life,
-      at home, in society, at the workplace and in public spaces.
-    </Text>
-
-    <View style={styles.quoteCard}>
-      <Text style={styles.quoteMark}>“</Text>
-      <View style={styles.quoteContent}>
-        <Text style={styles.quoteText}>
-          “When women are empowered, families, communities and societies become
-          stronger.”
-        </Text>
-        <View style={styles.quoteRule} />
+    <View style={styles.sectionInner}>
+      <View style={styles.tabs} accessibilityRole="tablist">
+        {WOMEN_RIGHTS_TABS.map((tab, index) => (
+          <View
+            key={tab}
+            style={[styles.tab, index === 0 && styles.tabActive]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: index === 0 }}
+          >
+            <Text style={[styles.tabText, index === 0 && styles.tabTextActive]}>
+              {tab}
+            </Text>
+          </View>
+        ))}
       </View>
-    </View>
 
-    <Text style={styles.heading}>Key Areas</Text>
-    <Text style={styles.bodyText}>Women's rights cover many important areas, including:</Text>
+      <Text style={styles.heading}>What are Women's Rights?</Text>
+      <Text style={styles.bodyText}>
+        Women's rights are the fundamental human rights that ensure equality,
+        safety, dignity and equal opportunities for women in all areas of life,
+        at home, in society, at the workplace and in public spaces.
+      </Text>
 
-    <View style={styles.keyAreaGrid}>
-      {WOMEN_KEY_AREAS.map(area => (
-        <View key={area.title} style={styles.keyAreaCard}>
-          <AppIcon name={area.icon} size={24} color={AdminColors.primaryDark} />
-          <Text style={styles.keyAreaTitle}>{area.title}</Text>
+      <View style={styles.quoteCard}>
+        <Text style={styles.quoteMark}>“</Text>
+        <View style={styles.quoteContent}>
+          <Text style={styles.quoteText}>
+            “When women are empowered, families, communities and societies become
+            stronger.”
+          </Text>
+          <View style={styles.quoteRule} />
         </View>
-      ))}
+      </View>
+
+      <Text style={styles.heading}>Key Areas</Text>
+      <Text style={styles.bodyText}>Women's rights cover many important areas, including:</Text>
+
+      <View style={styles.keyAreaGrid}>
+        {WOMEN_KEY_AREAS.map(area => (
+          <View key={area.title} style={styles.keyAreaCard}>
+            <AppIcon name={area.icon} size={24} color={AdminColors.primaryDark} />
+            <Text style={styles.keyAreaTitle}>{area.title}</Text>
+          </View>
+        ))}
+      </View>
     </View>
 
     <View style={styles.supportBanner}>
@@ -101,9 +103,11 @@ export const WomensRightsSection: React.FC = () => (
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: Spacing.base,
     marginTop: Spacing.xl,
     backgroundColor: AdminColors.cardSurface,
+  },
+  sectionInner: {
+    paddingHorizontal: Spacing.base,
   },
   tabs: {
     flexDirection: 'row',
@@ -210,7 +214,6 @@ const styles = StyleSheet.create({
   supportBanner: {
     position: 'relative',
     marginTop: Spacing.lg,
-    borderRadius: BorderRadius.lg,
     backgroundColor: AdminColors.primaryDark,
     overflow: 'hidden',
   },

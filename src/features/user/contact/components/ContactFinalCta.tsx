@@ -10,6 +10,8 @@ import { CONTACT_FINAL_CTA } from '../data/contact-content';
  * Home contact section, part 3 (reference-locked): dark navy closing CTA
  * banner — serif heading, supporting copy and the partnership artwork on
  * the right (dummy image carries a baked-in navy fade on its left edge).
+ * FULL-BLEED like the hero above: edge-to-edge with no side margins, square
+ * top and rounded bottom corners (xxl).
  */
 export const ContactFinalCta: React.FC = () => (
   <View style={styles.banner}>
@@ -30,8 +32,8 @@ const styles = StyleSheet.create({
   banner: {
     height: 176,
     backgroundColor: AdminColors.primaryDark,
-    borderRadius: BorderRadius.xl,
-    marginHorizontal: Spacing.base,
+    borderBottomLeftRadius: BorderRadius.xxl,
+    borderBottomRightRadius: BorderRadius.xxl,
     overflow: 'hidden',
   },
   image: {
