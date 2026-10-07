@@ -63,5 +63,7 @@ export const AppRoutes = {
   ADMIN_DETAILS: 'AdminDetails',
   EDIT_PERSONAL_INFO: 'EditPersonalInfo',
   MY_ID_CARD: 'MyIdCard',
+
+  // About page (organization profile)
   ABOUT: 'About',
 } as const;

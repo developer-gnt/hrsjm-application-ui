@@ -16,6 +16,7 @@ import {
   EventDetailsScreen,
   CreateEventScreen,
 } from '../../features/admin/content/events';
+<<<<<<< HEAD
 import {
   NewsListScreen,
   NewsDetailsScreen,
@@ -53,6 +54,9 @@ import {
   ProfitLossScreen,
   BalanceSheetScreen,
 } from '../../features/admin/reports';
+=======
+import { DonationsScreen } from '../../features/admin/donations';
+>>>>>>> origin/Aman
 import { AboutScreen } from '../../features/about';
 import { MoreStackParamList } from './NavigationTypes';
 

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HRSJM — About (Dev Preview)</title>
+    <script>
+      window.global = window;
+      // Dev-harness shim: AuthLogo.tsx uses a Metro-style require() for the
+      // logo PNG; Vite is ESM-only, so serve the single project asset by URI.
+      window.require = function (path) {
+        if (String(path).endsWith('.png')) {
+          var rel = String(path).replace(/^(\.\.\/|\.\/)+/, '');
+          return { uri: '/src/' + rel };
+        }
+        throw new Error('require shim: unsupported path ' + path);
+      };
+      window.__errors = [];
+      window.addEventListener('error', function (e) {
+        window.__errors.push(String((e.error && e.error.stack) || e.message).slice(0, 700));
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        window.__errors.push('rejection: ' + String((e.reason && e.reason.stack) || e.reason).slice(0, 400));
+      });
+      // React 19 reports render crashes via console.error (the tree unmounts
+      // silently otherwise) — capture them for diagnosis.
+      var _ce = console.error;
+      console.error = function () {
+        try {
+          window.__errors.push(Array.prototype.map.call(arguments, String).join(' ').slice(0, 400));
+        } catch (e) {}
+        return _ce.apply(console, arguments);
+      };
+    </script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #faf7f0;
+      }
+      /* Phone-like viewport: the app fills the window and the ScrollView
+         scrolls internally (same pattern as index.html). */
+      #root {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      /* react-native-web holds <img> at opacity 0 until its onLoad fires,
+         which never happens for browser-cached images — force them visible
+         in this dev preview (native rendering is unaffected). */
+      #root img {
+        opacity: 1 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/about-preview.jsx"></script>
+  </body>
+</html>

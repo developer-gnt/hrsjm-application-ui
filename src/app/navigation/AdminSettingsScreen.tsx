@@ -160,6 +160,13 @@ export const SETTING_SECTIONS: SettingSection[] = [
         description:
           'Configure app name, tagline, maintenance mode and other preferences.',
       },
+      {
+        icon: 'ℹ️',
+        title: 'About HRSJM',
+        description:
+          'Learn about our mission, values, principles, and leadership team.',
+        route: AppRoutes.ABOUT,
+      },
     ],
   },
   {
