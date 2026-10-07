@@ -6,6 +6,7 @@ import { ContactHeader } from '../../contact';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import { AboutHero } from '../components/AboutHero';
 import { AboutWorkGrid } from '../components/AboutWorkGrid';
+import { HumanRightsMonitoringSection } from '../components/HumanRightsMonitoringSection';
 import { AboutFinalCta } from '../components/AboutFinalCta';
 import { ABOUT_CONTENT } from '../data/about-content';
 import type { AboutWorkArea } from '../types/about.types';
@@ -68,6 +69,8 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
             }
           />
         </View>
+
+        <HumanRightsMonitoringSection />
 
         <View style={styles.ctaSection}>
           <AboutFinalCta

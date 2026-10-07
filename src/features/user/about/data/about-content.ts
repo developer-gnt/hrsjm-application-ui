@@ -69,6 +69,40 @@ export const ABOUT_CONTENT: AboutContent = {
       icon: 'heart',
     },
   ],
+  monitorBanner: {
+    title: 'Human-rights\nMonitoring',
+    description:
+      'We track, document and highlight human rights issues to ensure that voices from marginalised communities are heard and addressed.',
+    imageAssetName: 'assets/images/about-hero-community.png',
+  },
+  whatWeDo: {
+    title: 'What We Do',
+    description:
+      'Our team monitors human rights situations on the ground, collects evidence, documents cases and engages with relevant authorities and stakeholders for timely action.',
+    tiles: [
+      { id: 'field-visits', label: 'Field Visits\nand Surveys', icon: 'file-text' },
+      { id: 'case-documentation', label: 'Case\nDocumentation', icon: 'users' },
+      { id: 'reporting-advocacy', label: 'Reporting and\nAdvocacy', icon: 'megaphone' },
+      { id: 'engagement', label: 'Engagement\nwith Authorities', icon: 'scale' },
+    ],
+  },
+  focusAreas: {
+    title: 'Key Focus Areas',
+    tiles: [
+      { id: 'vulnerable-communities', label: 'Vulnerable\nCommunities', icon: 'users' },
+      { id: 'rights-violations', label: 'Rights\nViolations', icon: 'shield-check' },
+      { id: 'policy-recommendations', label: 'Policy\nRecommendations', icon: 'file-text' },
+      { id: 'follow-up-support', label: 'Follow-up\nand Support', icon: 'heart-hands' },
+    ],
+  },
+  impact: {
+    title: 'Impact',
+    stats: [
+      { id: 'cases', value: '2,000+', label: 'Cases Documented', icon: 'briefcase' },
+      { id: 'communities', value: '500+', label: 'Communities Reached', icon: 'users' },
+      { id: 'reports', value: '100+', label: 'Reports & Submissions', icon: 'doc-search' },
+    ],
+  },
   finalCta: {
     headingLine: 'Together for',
     headingAccentLine: 'Real Change',
