@@ -207,14 +207,14 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
     setSelectedDatePreset(presets[nextIdx]);
   };
 
-  // Reusable Top Scrollable Content (KPIs + Action Bar + Mode Tabs)
+  // Reusable Top Scrollable Header
   const renderScrollableHeader = (showSearch = true) => (
     <View style={styles.scrollHeaderContainer}>
-      {/* 2x2 KPI Cards */}
+      {/* 2x2 Executive KPI Grid */}
       <View style={styles.kpiGrid2x2}>
         <View style={styles.kpiCard}>
           <View style={[styles.kpiIconWrap, { backgroundColor: '#EFF6FF' }]}>
-            <Wallet size={15} color="#2563EB" />
+            <Wallet size={15} color="#1B3F8F" />
           </View>
           <Text style={styles.kpiValue} numberOfLines={1}>
             {formatINR(openingBal, { noDecimals: true })}
@@ -230,7 +230,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
           <Text style={[styles.kpiValue, { color: '#16A34A' }]} numberOfLines={1}>
             {formatINR(totalCreditAmt, { noDecimals: true })}
           </Text>
-          <Text style={styles.kpiLabel}>Total Credit Amount</Text>
+          <Text style={styles.kpiLabel}>Total Credit</Text>
           <Text style={styles.trendGreenText}>↑ +{creditCount} credits</Text>
         </View>
 
@@ -241,7 +241,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
           <Text style={[styles.kpiValue, styles.kpiValueExpense]} numberOfLines={1}>
             {formatINR(totalExpenseAmt, { noDecimals: true })}
           </Text>
-          <Text style={styles.kpiLabel}>Total Expense Amount</Text>
+          <Text style={styles.kpiLabel}>Total Expenses</Text>
           <Text style={styles.trendRedText}>↑ +{expenseCount} debits</Text>
         </View>
 
@@ -257,117 +257,151 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
         </View>
       </View>
 
-      {/* Quick Action Bar */}
-      <View style={styles.quickActionBar}>
-        <TouchableOpacity
-          style={styles.actionBtnCredit}
-          onPress={() => {
-            if (onNavigate) onNavigate(AppRoutes.CREATE_RECEIPT_VOUCHER);
-          }}
-          activeOpacity={0.8}
-        >
-          <Plus size={13} color="#FFFFFF" />
-          <Text style={styles.actionBtnCreditText}>Add Credit</Text>
-        </TouchableOpacity>
+      {/* Primary Action Buttons (2 Full-Width Columns + Hub Links) */}
+      <View style={styles.actionsBlock}>
+        <View style={styles.primaryActionsRow}>
+          <TouchableOpacity
+            style={styles.actionBtnCredit}
+            onPress={() => {
+              if (onNavigate) onNavigate(AppRoutes.CREATE_RECEIPT_VOUCHER);
+            }}
+            activeOpacity={0.85}
+          >
+            <Plus size={15} color="#FFFFFF" strokeWidth={2.5} />
+            <Text style={styles.actionBtnCreditText}>Add Credit</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionBtnExpense}
-          onPress={() => {
-            if (onNavigate) onNavigate(AppRoutes.CREATE_EXPENSE_VOUCHER);
-          }}
-          activeOpacity={0.8}
-        >
-          <Plus size={13} color="#FFFFFF" />
-          <Text style={styles.actionBtnExpenseText}>Add Expense</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtnExpense}
+            onPress={() => {
+              if (onNavigate) onNavigate(AppRoutes.CREATE_EXPENSE_VOUCHER);
+            }}
+            activeOpacity={0.85}
+          >
+            <Plus size={15} color="#FFFFFF" strokeWidth={2.5} />
+            <Text style={styles.actionBtnExpenseText}>Add Expense</Text>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={styles.actionBtnOutline}
-          onPress={() => {
-            if (onNavigate) onNavigate(AppRoutes.RECEIPT_VOUCHERS);
-          }}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.actionBtnOutlineText}>Receipts</Text>
-        </TouchableOpacity>
+        <View style={styles.secondaryActionsRow}>
+          <TouchableOpacity
+            style={styles.hubLinkChip}
+            onPress={() => {
+              if (onNavigate) onNavigate(AppRoutes.RECEIPT_VOUCHERS);
+            }}
+            activeOpacity={0.8}
+          >
+            <FileText size={12} color="#1B3F8F" />
+            <Text style={styles.hubLinkText}>Receipts Hub</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionBtnOutline}
-          onPress={() => {
-            if (onNavigate) onNavigate(AppRoutes.EXPENSE_VOUCHERS);
-          }}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.actionBtnOutlineText}>Expenses</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.hubLinkChip}
+            onPress={() => {
+              if (onNavigate) onNavigate(AppRoutes.EXPENSE_VOUCHERS);
+            }}
+            activeOpacity={0.8}
+          >
+            <FileText size={12} color="#DC2626" />
+            <Text style={styles.hubLinkText}>Expenses Hub</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.hubLinkChip}
+            onPress={handleExport}
+            activeOpacity={0.8}
+          >
+            <Download size={12} color="#475569" />
+            <Text style={styles.hubLinkText}>Export</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Mode Navigation Tabs */}
-      <View style={styles.modeTabsRow}>
+      {/* Smooth Horizontally Scrollable Filter Tabs (No Squishing!) */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.modeTabsScroll}
+      >
         <TouchableOpacity
-          style={[styles.modeTabBtn, activeMode === 'PASSBOOK' && styles.modeTabBtnActive]}
+          style={[styles.modeTabPill, activeMode === 'PASSBOOK' && styles.modeTabPillActive]}
           onPress={() => setActiveMode('PASSBOOK')}
           activeOpacity={0.8}
         >
-          <Wallet size={13} color={activeMode === 'PASSBOOK' ? '#FFFFFF' : '#0F2C59'} />
-          <Text style={[styles.modeTabText, activeMode === 'PASSBOOK' && styles.modeTabTextActive]}>
-            Passbook ({totalCount})
+          <Wallet size={13} color={activeMode === 'PASSBOOK' ? '#FFFFFF' : '#1B3F8F'} />
+          <Text style={[styles.modeTabPillText, activeMode === 'PASSBOOK' && styles.modeTabPillTextActive]}>
+            Passbook
           </Text>
+          <View style={[styles.pillBadge, activeMode === 'PASSBOOK' ? styles.pillBadgeActive : styles.pillBadgeInactive]}>
+            <Text style={[styles.pillBadgeText, activeMode === 'PASSBOOK' && styles.pillBadgeTextActive]}>
+              {totalCount}
+            </Text>
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.modeTabBtn, activeMode === 'CREDIT' && styles.modeTabBtnActive]}
+          style={[styles.modeTabPill, activeMode === 'CREDIT' && styles.modeTabPillActive]}
           onPress={() => setActiveMode('CREDIT')}
           activeOpacity={0.8}
         >
           <ArrowDownLeft size={13} color={activeMode === 'CREDIT' ? '#FFFFFF' : '#16A34A'} />
-          <Text style={[styles.modeTabText, activeMode === 'CREDIT' && styles.modeTabTextActive]}>
-            Credit ({creditCount})
+          <Text style={[styles.modeTabPillText, activeMode === 'CREDIT' && styles.modeTabPillTextActive]}>
+            Credits
           </Text>
+          <View style={[styles.pillBadge, activeMode === 'CREDIT' ? styles.pillBadgeActive : styles.pillBadgeInactive]}>
+            <Text style={[styles.pillBadgeText, activeMode === 'CREDIT' && styles.pillBadgeTextActive, { color: activeMode === 'CREDIT' ? '#FFFFFF' : '#16A34A' }]}>
+              {creditCount}
+            </Text>
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.modeTabBtn, activeMode === 'EXPENSE' && styles.modeTabBtnActive]}
+          style={[styles.modeTabPill, activeMode === 'EXPENSE' && styles.modeTabPillActive]}
           onPress={() => setActiveMode('EXPENSE')}
           activeOpacity={0.8}
         >
           <ArrowUpRight size={13} color={activeMode === 'EXPENSE' ? '#FFFFFF' : '#DC2626'} />
-          <Text style={[styles.modeTabText, activeMode === 'EXPENSE' && styles.modeTabTextActive]}>
-            Expense ({expenseCount})
+          <Text style={[styles.modeTabPillText, activeMode === 'EXPENSE' && styles.modeTabPillTextActive]}>
+            Expenses
           </Text>
+          <View style={[styles.pillBadge, activeMode === 'EXPENSE' ? styles.pillBadgeActive : styles.pillBadgeInactive]}>
+            <Text style={[styles.pillBadgeText, activeMode === 'EXPENSE' && styles.pillBadgeTextActive, { color: activeMode === 'EXPENSE' ? '#FFFFFF' : '#DC2626' }]}>
+              {expenseCount}
+            </Text>
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.modeTabBtn, activeMode === 'LEDGER' && styles.modeTabBtnActive]}
+          style={[styles.modeTabPill, activeMode === 'LEDGER' && styles.modeTabPillActive]}
           onPress={() => setActiveMode('LEDGER')}
           activeOpacity={0.8}
         >
           <FileText size={13} color={activeMode === 'LEDGER' ? '#FFFFFF' : '#64748B'} />
-          <Text style={[styles.modeTabText, activeMode === 'LEDGER' && styles.modeTabTextActive]}>
-            Statement
+          <Text style={[styles.modeTabPillText, activeMode === 'LEDGER' && styles.modeTabPillTextActive]}>
+            Statement Breakdown
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.modeTabBtn, activeMode === 'ANALYTICS' && styles.modeTabBtnActive]}
+          style={[styles.modeTabPill, activeMode === 'ANALYTICS' && styles.modeTabPillActive]}
           onPress={() => setActiveMode('ANALYTICS')}
           activeOpacity={0.8}
         >
           <Scale size={13} color={activeMode === 'ANALYTICS' ? '#FFFFFF' : '#64748B'} />
-          <Text style={[styles.modeTabText, activeMode === 'ANALYTICS' && styles.modeTabTextActive]}>
-            Analytics
+          <Text style={[styles.modeTabPillText, activeMode === 'ANALYTICS' && styles.modeTabPillTextActive]}>
+            Analytics & Trends
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
 
-      {/* Clean Single Search Input (Only on Passbook / Credit / Expense tabs) */}
+      {/* Clean Search Input (Only on Passbook / Credit / Expense tabs) */}
       {showSearch && (
         <View style={styles.searchContainer}>
           <View style={styles.searchInputWrap}>
             <Search size={15} color="#94A3B8" />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search by payee, source, voucher #..."
+              placeholder="Search by payee, donor, narration, voucher #..."
               placeholderTextColor="#94A3B8"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -395,7 +429,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         {/* ========================================================================= */}
-        {/* 1. TOP PAGE HEADER & DATE PRESET PILL (Single Unified Date Filter) */}
+        {/* 1. TOP PAGE HEADER & DATE PRESET PILL */}
         {/* ========================================================================= */}
         <View style={styles.pageHeader}>
           <View style={styles.pageHeaderText}>
@@ -416,20 +450,20 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
             </Text>
           </View>
 
-          {/* Single Date Selector Pill */}
+          {/* Single Unified Date Selector Pill */}
           <TouchableOpacity
             style={styles.datePill}
             onPress={cycleDatePreset}
             activeOpacity={0.8}
           >
-            <Calendar size={13} color="#2563EB" />
+            <Calendar size={13} color="#1B3F8F" />
             <Text style={styles.datePillText}>{dateLabel}</Text>
             <ChevronDown size={13} color="#64748B" />
           </TouchableOpacity>
         </View>
 
         {/* ========================================================================= */}
-        {/* 2. PASSBOOK VIEW (ALL / CREDIT / EXPENSE) - SCROLLS AS A SINGLE LIST */}
+        {/* 2. PASSBOOK TRANSACTIONS VIEW (SCROLLS SMOOTHLY AS ONE) */}
         {/* ========================================================================= */}
         {(activeMode === 'PASSBOOK' || activeMode === 'CREDIT' || activeMode === 'EXPENSE') && (
           <FlatList
@@ -562,7 +596,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* 3. STATEMENT / LEDGER BREAKDOWN VIEW (SCROLLABLE) */}
+        {/* 3. STATEMENT BREAKDOWN VIEW (SCROLLABLE) */}
         {/* ========================================================================= */}
         {activeMode === 'LEDGER' && (
           <ScrollView
@@ -933,7 +967,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 10,
-    paddingBottom: 6,
+    paddingBottom: 8,
     backgroundColor: '#F8FAFC',
   },
   pageHeaderText: {
@@ -976,20 +1010,20 @@ const styles = StyleSheet.create({
     color: '#0F2C59',
   },
 
-  // Scroll Header inside FlatList
+  // Scroll Header
   scrollHeaderContainer: {
     paddingBottom: 4,
   },
   flatListContent: {
     paddingHorizontal: 14,
-    paddingBottom: 32,
+    paddingBottom: 36,
   },
   scrollPageContent: {
     paddingHorizontal: 14,
-    paddingBottom: 32,
+    paddingBottom: 36,
   },
 
-  // 2x2 KPI Cards
+  // 2x2 KPI Grid
   kpiGrid2x2: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -998,7 +1032,7 @@ const styles = StyleSheet.create({
   kpiCard: {
     width: '48%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 12,
     marginHorizontal: '1%',
     marginVertical: 4,
@@ -1007,12 +1041,12 @@ const styles = StyleSheet.create({
     ...Shadows.subtle,
   },
   kpiIconWrap: {
-    width: 26,
-    height: 26,
-    borderRadius: 7,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 5,
+    marginBottom: 6,
   },
   kpiValue: {
     fontSize: 17,
@@ -1047,92 +1081,124 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Quick Action Bar
-  quickActionBar: {
+  // Action Buttons Block
+  actionsBlock: {
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  primaryActionsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    gap: 8,
+    gap: 10,
   },
   actionBtnCredit: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#16A34A',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-    gap: 4,
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
     ...Shadows.subtle,
   },
   actionBtnCreditText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   actionBtnExpense: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#DC2626',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-    gap: 4,
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
     ...Shadows.subtle,
   },
   actionBtnExpenseText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#FFFFFF',
   },
-  actionBtnOutline: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#FFFFFF',
+  secondaryActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
   },
-  actionBtnOutlineText: {
+  hubLinkChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingVertical: 6,
+    gap: 5,
+  },
+  hubLinkText: {
     fontSize: 11,
     fontWeight: '600',
     color: '#334155',
   },
 
-  // Mode Navigation Tabs
-  modeTabsRow: {
-    flexDirection: 'row',
-    marginTop: 6,
-    marginBottom: 8,
-    backgroundColor: '#E2E8F0',
-    padding: 3,
-    borderRadius: 10,
+  // Mode Navigation Tabs (Smooth horizontal scrolling pill tabs)
+  modeTabsScroll: {
+    gap: 8,
+    paddingVertical: 8,
   },
-  modeTabBtn: {
-    flex: 1,
+  modeTabPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 7,
-    borderRadius: 7,
-    gap: 3,
-  },
-  modeTabBtnActive: {
-    backgroundColor: '#0F2C59',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 6,
     ...Shadows.subtle,
   },
-  modeTabText: {
-    fontSize: 10.5,
+  modeTabPillActive: {
+    backgroundColor: '#0F2C59',
+    borderColor: '#0F2C59',
+  },
+  modeTabPillText: {
+    fontSize: 11.5,
     fontWeight: '600',
     color: '#475569',
   },
-  modeTabTextActive: {
+  modeTabPillTextActive: {
     color: '#FFFFFF',
     fontWeight: '700',
   },
+  pillBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 10,
+  },
+  pillBadgeInactive: {
+    backgroundColor: '#F1F5F9',
+  },
+  pillBadgeActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  pillBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#475569',
+  },
+  pillBadgeTextActive: {
+    color: '#FFFFFF',
+  },
 
-  // Search Bar (Single, full width)
+  // Search Bar
   searchContainer: {
     marginBottom: 8,
+    marginTop: 2,
   },
   searchInputWrap: {
     flexDirection: 'row',
@@ -1158,9 +1224,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 12,
-    marginBottom: 8,
+    marginBottom: 9,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     ...Shadows.subtle,
@@ -1168,7 +1234,7 @@ const styles = StyleSheet.create({
   dateBlock: {
     width: 44,
     height: 44,
-    borderRadius: 8,
+    borderRadius: 9,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1322,7 +1388,7 @@ const styles = StyleSheet.create({
   },
   summaryTableCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
     marginTop: 6,
     borderWidth: 1,
@@ -1398,7 +1464,7 @@ const styles = StyleSheet.create({
   // Analytics View
   trendCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
     marginTop: 6,
     borderWidth: 1,
