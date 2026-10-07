@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { AppButton } from '../../../core';
+import { AppButton } from '../../../../core';
 import { ABOUT_CONTENT } from '../content/aboutContent';
 import {
   AboutColors,

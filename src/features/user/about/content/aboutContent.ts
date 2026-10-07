@@ -1,5 +1,5 @@
 import type { ImageSourcePropType } from 'react-native';
-import { AppRoutes } from '../../../core/constants/routes';
+import { AppRoutes } from '../../../../core/constants/routes';
 import {
   AppIconComponent,
   Eye,
@@ -10,18 +10,18 @@ import {
   Target,
   Users,
   UsersRound,
-} from '../../../core/components/icons';
+} from '../../../../core/components/icons';
 
 /**
  * Approved page photography, extracted from the user-supplied image usage
  * guide (exact photos, exact sections) and stored as project assets.
  */
-const HERO_BACKGROUND = require('../../../assets/about/hero-bg.png');
-const WHO_WE_ARE_PHOTO = require('../../../assets/about/who-we-are.png');
-const LEADER_1_PHOTO = require('../../../assets/about/leader-1.png');
-const LEADER_2_PHOTO = require('../../../assets/about/leader-2.png');
-const LEADER_3_PHOTO = require('../../../assets/about/leader-3.png');
-const CTA_HANDS_PHOTO = require('../../../assets/about/cta-hands.png');
+const HERO_BACKGROUND = require('../../../../assets/about/hero-bg.png');
+const WHO_WE_ARE_PHOTO = require('../../../../assets/about/who-we-are.png');
+const LEADER_1_PHOTO = require('../../../../assets/about/leader-1.png');
+const LEADER_2_PHOTO = require('../../../../assets/about/leader-2.png');
+const LEADER_3_PHOTO = require('../../../../assets/about/leader-3.png');
+const CTA_HANDS_PHOTO = require('../../../../assets/about/cta-hands.png');
 
 /**
  * ============================================================================

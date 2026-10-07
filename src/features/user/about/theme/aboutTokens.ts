@@ -1,5 +1,5 @@
 import { Platform, StyleSheet, TextStyle, ViewStyle } from 'react-native';
-import { Spacing } from '../../../core/theme/spacing';
+import { Spacing } from '../../../../core/theme/spacing';
 
 /**
  * ============================================================================

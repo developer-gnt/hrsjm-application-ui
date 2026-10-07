@@ -53,7 +53,7 @@ import {
   ProfitLossScreen,
   BalanceSheetScreen,
 } from '../../features/admin/reports';
-import { AboutScreen } from '../../features/about';
+import { AboutScreen } from '../../features/user/about';
 import { MoreStackParamList } from './NavigationTypes';
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();

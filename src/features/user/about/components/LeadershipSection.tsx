@@ -7,8 +7,8 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { Spacing } from '../../../core/theme/spacing';
-import { AppModal } from '../../../core';
+import { Spacing } from '../../../../core/theme/spacing';
+import { AppModal } from '../../../../core';
 import { ABOUT_CONTENT } from '../content/aboutContent';
 import {
   AboutColors,

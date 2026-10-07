@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AboutScreen } from '../src/features/about/screens/AboutScreen';
+import { AboutScreen } from '../src/features/user/about/screens/AboutScreen';
 import { AppModal } from '../src/core';
-import { ABOUT_CONTENT } from '../src/features/about/content/aboutContent';
+import { ABOUT_CONTENT } from '../src/features/user/about/content/aboutContent';
 import { AppRoutes } from '../src/core/constants/routes';
 
 /**

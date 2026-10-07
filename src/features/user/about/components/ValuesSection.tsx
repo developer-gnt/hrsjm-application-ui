@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { Spacing } from '../../../core/theme/spacing';
+import { Spacing } from '../../../../core/theme/spacing';
 import { ABOUT_CONTENT } from '../content/aboutContent';
 import {
   AboutColors,
