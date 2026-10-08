@@ -6,7 +6,7 @@ import { useAuthStore } from '../../features/auth/store/authStore';
 import { AuthNavigator } from './AuthNavigator';
 import { AuthenticatedHomeScreen } from './AuthenticatedHomeScreen';
 import { AdminTabNavigator } from './AdminTabNavigator';
-import { MemberHomeScreen } from '../../features/member/screens/MemberHomeScreen';
+import { MemberTabNavigator } from '../../features/member';
 import { SeekerHomeScreen } from '../../features/seeker/screens/SeekerHomeScreen';
 import { DonorHomeScreen } from '../../features/donor/screens/DonorHomeScreen';
 import { HomeStackParamList } from './NavigationTypes';
@@ -16,9 +16,12 @@ const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const RoleBasedHomeNavigator: React.FC<{ roleType: 'member' | 'seeker' | 'donor' | 'default' }> = ({
   roleType,
 }) => {
+  if (roleType === 'member') {
+    return <MemberTabNavigator />;
+  }
+
   let Component = AuthenticatedHomeScreen;
-  if (roleType === 'member') Component = MemberHomeScreen;
-  else if (roleType === 'seeker') Component = SeekerHomeScreen;
+  if (roleType === 'seeker') Component = SeekerHomeScreen;
   else if (roleType === 'donor') Component = DonorHomeScreen;
 
   return (
