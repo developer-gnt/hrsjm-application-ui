@@ -10,18 +10,60 @@ import {
   BottomTabBarProps,
 } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MemberHomeScreen } from '../screens/MemberHomeScreen';
-import { MemberCausesContainer } from '../screens/MemberCausesContainer';
+import { UserHomeScreen } from '../../user/home/screens/UserHomeScreen';
+import { AboutScreen } from '../../user/about/screens/AboutScreen';
+import { KnowYourRightsScreen } from '../../user/rights/screens/KnowYourRightsScreen';
+import { EventsScreen } from '../../admin/content/events/screens/EventsScreen';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
-import { DonationsScreen } from '../../admin/donations/screens/DonationsScreen';
+import {
+  House,
+  FileText,
+  Scale,
+  Calendar,
+  User,
+  AppIconComponent,
+} from '../../../core/components/icons';
 
 const Tab = createBottomTabNavigator();
 
-const MEMBER_TABS = [
-  { name: 'MemberHome', label: 'Home', icon: '🏠', component: MemberHomeScreen },
-  { name: 'MemberCauses', label: 'Causes', icon: '💛', component: MemberCausesContainer },
-  { name: 'MemberReceipts', label: 'Receipts', icon: '📥', component: DonationsScreen },
-  { name: 'MemberProfile', label: 'Profile', icon: '👤', component: ProfileScreen },
+interface MemberTabItem {
+  name: string;
+  label: string;
+  Icon: AppIconComponent;
+  component: React.ComponentType<any>;
+}
+
+const MEMBER_TABS: MemberTabItem[] = [
+  {
+    name: 'MemberHome',
+    label: 'Home',
+    Icon: House,
+    component: UserHomeScreen,
+  },
+  {
+    name: 'MemberAbout',
+    label: 'About',
+    Icon: FileText,
+    component: AboutScreen,
+  },
+  {
+    name: 'MemberRights',
+    label: 'Rights',
+    Icon: Scale,
+    component: KnowYourRightsScreen,
+  },
+  {
+    name: 'MemberEvents',
+    label: 'Events',
+    Icon: Calendar,
+    component: EventsScreen,
+  },
+  {
+    name: 'MemberProfile',
+    label: 'Profile',
+    Icon: User,
+    component: ProfileScreen,
+  },
 ];
 
 const MemberCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
@@ -37,7 +79,7 @@ const MemberCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) 
     >
       {MEMBER_TABS.map((tabDef, index) => {
         const isFocused = state.index === index;
-        const { name, label, icon } = tabDef;
+        const { name, label, Icon } = tabDef;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -51,6 +93,8 @@ const MemberCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) 
           }
         };
 
+        const iconColor = isFocused ? '#D97706' : '#1B3F8F';
+
         return (
           <TouchableOpacity
             key={name}
@@ -61,8 +105,8 @@ const MemberCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) 
             accessibilityState={{ selected: isFocused }}
             style={styles.tabItem}
           >
-            <View style={[styles.iconPill, isFocused && styles.iconPillActive]}>
-              <Text style={styles.tabIcon}>{icon}</Text>
+            <View style={styles.iconBox}>
+              <Icon size={22} color={iconColor} />
             </View>
             <Text
               style={[
@@ -83,7 +127,7 @@ const MemberCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) 
 export const MemberTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
-      initialRouteName="MemberCauses"
+      initialRouteName="MemberHome"
       tabBar={props => <MemberCustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
@@ -101,52 +145,41 @@ export const MemberTabNavigator: React.FC = () => {
 const styles = StyleSheet.create({
   tabBarContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
-    borderTopColor: '#E2E8F0',
     borderTopWidth: 1,
-    paddingTop: 6,
+    borderTopColor: '#E2E8F0',
+    paddingTop: 8,
+    paddingHorizontal: 8,
     elevation: 8,
     shadowColor: '#0F2860',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 2,
-    minHeight: 50,
+    paddingVertical: 4,
   },
-  iconPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 3,
-    borderRadius: 16,
-    minHeight: 28,
+  iconBox: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconPillActive: {
-    backgroundColor: '#FFF8E6',
-  },
-  tabIcon: {
-    fontSize: 16,
+    height: 26,
+    marginBottom: 3,
   },
   tabLabel: {
-    marginTop: 2,
     fontSize: 11,
-    fontFamily: 'Inter-Medium',
-    lineHeight: 14,
     textAlign: 'center',
   },
   tabLabelActive: {
-    color: '#C9A227',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter-SemiBold',
     fontWeight: '700',
+    color: '#D97706',
   },
   tabLabelInactive: {
-    color: '#94A3B8',
+    fontFamily: 'Inter-Medium',
+    fontWeight: '600',
+    color: '#1B3F8F',
   },
 });
