@@ -5,14 +5,14 @@ import { USER_TABS } from '../data/home-preview-data';
 import type { HomeTab, HomeTabId } from '../types/home.types';
 
 /** Tabs whose User screens already exist; others show the phase notice. */
-const LIVE_TABS: HomeTabId[] = ['home', 'contact', 'rights'];
+const LIVE_TABS: HomeTabId[] = ['home', 'about', 'contact', 'rights'];
 
 interface UserBottomNavigationProps {
   /** Currently selected tab id for the hosting screen. */
   activeTab: HomeTabId;
   /**
-  * Called for live tabs (Home, Rights, Contact) when tapped. Hosts wire these to
-   * their routes (e.g. Home screen: Contact → ContactUsScreen).
+   * Called for live tabs (Home, About, Rights, Contact) when tapped. Hosts
+   * wire these to their routes (e.g. Home screen: Contact → ContactUsScreen).
    */
   onTabPress?: (tab: HomeTab) => void;
 }
@@ -39,7 +39,7 @@ export const UserBottomNavigation: React.FC<UserBottomNavigationProps> = ({
         onTabPress?.(tab);
         return;
       }
-      // About / Events / News: their User screens ship with the
+      // Events / News: their User screens ship with the
       // upcoming navigation phase.
       Alert.alert(
         'Preview navigation',

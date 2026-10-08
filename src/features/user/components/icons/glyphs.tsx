@@ -27,6 +27,13 @@ const search: React.FC<GlyphProps> = () => (
   </G>
 );
 
+const eye: React.FC<GlyphProps> = () => (
+  <G>
+    <Path d="M2.4 12s3.9-7.1 9.6-7.1 9.6 7.1 9.6 7.1-3.9 7.1-9.6 7.1S2.4 12 2.4 12Z" />
+    <Circle cx={12} cy={12} r={2.9} />
+  </G>
+);
+
 const bell: React.FC<GlyphProps> = () => (
   <G>
     <Path d="M6.2 9.4a5.8 5.8 0 0 1 11.6 0c0 4.5 1.8 5.8 1.8 5.8H4.4s1.8-1.3 1.8-5.8Z" />
@@ -308,6 +315,7 @@ export const GLYPHS = {
   clock,
   'doc-search': docSearch,
   email,
+  eye,
   'file-text': fileText,
   'graduation-cap': graduationCap,
   handshake,

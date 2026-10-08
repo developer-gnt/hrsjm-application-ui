@@ -35,6 +35,8 @@ export interface UserHomeScreenProps {
    */
   onOpenContact?: () => void;
   onOpenRights?: () => void;
+  /** Opens the About page (About tab in the shared six-tab navigation). */
+  onOpenAbout?: () => void;
 }
 
 /**
@@ -52,6 +54,7 @@ export interface UserHomeScreenProps {
 export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   onOpenContact,
   onOpenRights,
+  onOpenAbout,
 }) => {
   const showComingSoon = (feature: string) => {
     Alert.alert(feature, `"${feature}" is part of an upcoming Home phase.`);
@@ -62,6 +65,8 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
       onOpenContact?.();
     } else if (tab.id === 'rights') {
       onOpenRights?.();
+    } else if (tab.id === 'about') {
+      onOpenAbout?.();
     }
   };
 

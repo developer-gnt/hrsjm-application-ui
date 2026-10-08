@@ -17,6 +17,8 @@ export interface AboutScreenProps {
   onBack?: () => void;
   /** Navigate to an in-app route (used by the closing CTA). */
   onNavigate?: (target: string) => void;
+  onOpenRights?: () => void;
+  onOpenContact?: () => void;
 }
 
 /**
@@ -82,3 +84,4 @@ const styles = StyleSheet.create({
 });
 
 export default AboutScreen;
+
