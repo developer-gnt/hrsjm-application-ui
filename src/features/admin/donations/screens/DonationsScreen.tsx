@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   View,
   StyleSheet,
+  useWindowDimensions,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useWindowDimensions } from 'react-native';
 import {
   AdminColors,
   BorderRadius,
@@ -81,7 +82,8 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
   onViewReceipt,
 }) => {
   const insets = useSafeAreaInsets();
-  const { width: windowWidth } = useWindowDimensions();
+  const windowDims = useWindowDimensions();
+  const windowWidth = windowDims?.width || Dimensions.get('window')?.width || 375;
 
   // Wide viewports render the compact reference table; narrow phones
   // keep the stacked donation cards.

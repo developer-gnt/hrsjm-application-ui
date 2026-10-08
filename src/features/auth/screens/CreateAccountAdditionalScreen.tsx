@@ -143,6 +143,8 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
     updateRegistrationState({
       accountType: selectedAccountType,
       accountTypeLabel: ACCOUNT_TYPE_LABELS[selectedAccountType] || 'General User',
+      password,
+      confirmPassword,
     });
 
     if (onContinue) {

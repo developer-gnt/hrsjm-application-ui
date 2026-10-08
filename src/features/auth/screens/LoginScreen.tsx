@@ -8,10 +8,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  TextStyle,
+  ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppButton } from '../../../core/components/common/AppButton';
 import { AdminColors } from '../../../core/theme/colors';
 import { Typography } from '../../../core/theme/typography';
 import { Spacing, BorderRadius } from '../../../core/theme/spacing';
@@ -20,7 +20,7 @@ import { ApiError } from '../../../core/api/api-error';
 import { appPreferences } from '../../../core/storage/app-storage';
 import { AuthLogo } from '../components/AuthLogo';
 import { LoginForm } from '../components/LoginForm';
-import { BiometricButton } from '../components/BiometricButton';
+import { GoogleGIcon, ArrowRightIcon, LockOutlineIcon } from '../components/AuthIcons';
 import { useAuthStore } from '../store/authStore';
 import { useBiometrics } from '../hooks/useBiometrics';
 import { LoginFormData } from '../types/auth.schemas';
@@ -48,11 +48,15 @@ const resolveLoginError = (error: unknown): string => {
 };
 
 /**
- * Login screen per the approved design. LoginForm owns the field state and
- * exposes its submit through `submitRef`; the screen renders the gold Login
- * button, OR divider, Google notice and biometric unlock.
+ * Professional, high-end Login Screen:
+ * - Responsive safe area inset header preventing any clipping on notched devices
+ * - Deep royal navy branding band with official bilingual emblem & golden motto
+ * - Modern card container with sleek inputs and vector icons
+ * - Radiant gold primary action button with tactile elevation
+ * - Crisp, high-contrast Google sign-in and biometric unlock options
  */
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const signIn = useAuthStore(state => state.signIn);
   const restoreSession = useAuthStore(state => state.restoreSession);
   const {
@@ -133,11 +137,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         bounces={false}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerBand}>
+        {/* Top Branding Section with safe top padding */}
+        <View
+          style={[
+            styles.headerBand,
+            { paddingTop: Math.max(insets.top, 16) + 12 },
+          ]}
+        >
           <AuthLogo size="lg" variant="light" />
+
           <Text style={styles.headline}>
-            Together for a{'\n'}
+            Together for a{' '}
             <Text style={styles.headlineAccent}>More Just</Text> Society
           </Text>
           <Text style={styles.headlineSub}>
@@ -146,13 +158,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           </Text>
         </View>
 
+        {/* Floating White Login Card */}
         <View style={styles.sheet}>
           <Text style={styles.title}>Login</Text>
           <Text style={styles.subtitle}>
             Welcome back! Please login to your account.
           </Text>
 
-          {formError && <Text style={styles.errorBanner}>{formError}</Text>}
+          {formError && (
+            <View style={styles.errorBannerContainer}>
+              <Text style={styles.errorBannerText}>{formError}</Text>
+            </View>
+          )}
 
           <LoginForm
             loading={submitting}
@@ -161,50 +178,85 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             submitRef={submitRef}
           />
 
-          <AppButton
-            title="Login"
+          {/* Primary Gold Login Button */}
+          <TouchableOpacity
+            style={[styles.loginButton, submitting && styles.loginButtonDisabled]}
             onPress={() => submitRef.current?.()}
-            loading={submitting}
             disabled={submitting}
-            variant="gold"
-            size="lg"
-            icon={<Text style={styles.buttonArrow}>→</Text>}
-            iconPosition="right"
-          />
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Login"
+          >
+            {submitting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <View style={styles.loginButtonContent}>
+                <Text style={styles.loginButtonText}>Login</Text>
+                <View style={styles.arrowIconWrap}>
+                  <ArrowRightIcon size={16} color="#FFFFFF" />
+                </View>
+              </View>
+            )}
+          </TouchableOpacity>
 
+          {/* OR Divider */}
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerBadge}>
+              <Text style={styles.dividerText}>OR</Text>
+            </View>
             <View style={styles.dividerLine} />
           </View>
 
-          <AppButton
-            title="Continue with Google"
+          {/* Google Sign-in Button */}
+          <TouchableOpacity
+            style={styles.googleButton}
             onPress={() =>
               feedback.info(
                 'Coming Soon',
-                'Google sign-in integration will be available in the upcoming release.',
+                'Google sign-in integration will be available in an upcoming release.',
               )
             }
-            variant="outline"
-            size="lg"
-            icon={<Text style={styles.googleGlyph}>G</Text>}
-            borderColor={AdminColors.border}
-          />
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Continue with Google"
+          >
+            <GoogleGIcon size={20} />
+            <Text style={styles.googleButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
 
+          {/* Biometric Unlock */}
           {showBiometricButton && (
-            <BiometricButton
-              biometryLabel={biometryLabel}
+            <TouchableOpacity
+              style={styles.biometricButton}
               onPress={handleBiometricUnlock}
-              loading={biometricBusy}
-            />
+              disabled={biometricBusy}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Unlock with ${biometryLabel}`}
+            >
+              {biometricBusy ? (
+                <ActivityIndicator size="small" color="#0F2860" />
+              ) : (
+                <>
+                  <LockOutlineIcon size={18} color="#0F2860" />
+                  <Text style={styles.biometricButtonText}>
+                    Unlock with {biometryLabel}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
           )}
 
+          {/* Sign Up Link */}
           <View style={styles.signupRow}>
             <Text style={styles.signupPrompt}>Don't have an account? </Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate('RegisterIntro')}
+              onPress={() => navigation.navigate('Register')}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Sign Up"
             >
               <Text style={styles.signupLink}>Sign Up</Text>
             </TouchableOpacity>
@@ -218,97 +270,182 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: AdminColors.headerBg,
+    backgroundColor: '#0F2860',
   },
   scrollContent: {
     flexGrow: 1,
   },
   headerBand: {
-    backgroundColor: AdminColors.headerBg,
+    backgroundColor: '#0F2860',
     alignItems: 'center',
-    paddingTop: Spacing.xxxl,
-    paddingBottom: Spacing.xxl,
-    paddingHorizontal: Spacing.xl,
+    paddingBottom: 28,
+    paddingHorizontal: 20,
   },
   headline: {
-    ...(Typography.screenTitle as TextStyle),
-    color: AdminColors.textOnDark,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
     textAlign: 'center',
-    marginTop: Spacing.lg,
+    marginTop: 18,
+    letterSpacing: 0.3,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
   },
   headlineAccent: {
-    color: AdminColors.accentGold,
+    color: '#F3BA47',
   },
   headlineSub: {
-    ...(Typography.secondary as TextStyle),
-    color: AdminColors.accentGoldLight,
+    fontSize: 13,
+    color: '#E2E8F0',
     textAlign: 'center',
-    marginTop: Spacing.md,
-    maxWidth: 300,
+    marginTop: 10,
+    lineHeight: 18,
+    maxWidth: 320,
+    opacity: 0.9,
   },
   sheet: {
     flex: 1,
-    backgroundColor: AdminColors.background,
-    padding: Spacing.xl,
-    marginTop: Spacing.xl,
-    borderTopLeftRadius: Spacing.xxl,
-    borderTopRightRadius: Spacing.xxl,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 32,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   title: {
-    ...(Typography.screenTitle as TextStyle),
-    color: AdminColors.primaryDark,
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#0F2860',
+    letterSpacing: 0.2,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
   },
   subtitle: {
-    ...(Typography.body as TextStyle),
-    color: AdminColors.textSecondary,
-    marginTop: Spacing.xs,
+    fontSize: 13.5,
+    color: '#64748B',
+    marginTop: 4,
   },
-  errorBanner: {
-    ...(Typography.secondaryMedium as TextStyle),
-    color: AdminColors.error,
-    backgroundColor: AdminColors.errorLight,
-    borderRadius: BorderRadius.base,
-    padding: Spacing.md,
-    marginTop: Spacing.lg,
+  errorBannerContainer: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 14,
   },
-  buttonArrow: {
+  errorBannerText: {
+    fontSize: 13,
+    color: '#DC2626',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  loginButton: {
+    backgroundColor: '#EAA224',
+    borderRadius: 14,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+    shadowColor: '#EAA224',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  loginButtonDisabled: {
+    opacity: 0.65,
+  },
+  loginButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginButtonText: {
     fontSize: 16,
-    color: AdminColors.textOnDark,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.4,
+  },
+  arrowIconWrap: {
+    marginLeft: 8,
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: Spacing.lg,
+    marginVertical: 20,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: AdminColors.border,
+    backgroundColor: '#E2E8F0',
+  },
+  dividerBadge: {
+    paddingHorizontal: 12,
   },
   dividerText: {
-    ...(Typography.secondary as TextStyle),
-    color: AdminColors.textMuted,
-    marginHorizontal: Spacing.md,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
   },
-  googleGlyph: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#4285F4',
-    marginRight: Spacing.sm,
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FAFAFC',
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    borderRadius: 14,
+    height: 50,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  googleButtonText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginLeft: 10,
+  },
+  biometricButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EEF4FF',
+    borderWidth: 1,
+    borderColor: '#D0E1FD',
+    borderRadius: 14,
+    height: 50,
+    marginTop: 12,
+    gap: 8,
+  },
+  biometricButtonText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#0F2860',
   },
   signupRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.lg,
+    alignItems: 'center',
+    marginTop: 26,
+    marginBottom: 8,
   },
   signupPrompt: {
-    ...(Typography.body as TextStyle),
-    color: AdminColors.textSecondary,
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
   },
   signupLink: {
-    ...(Typography.bodyBold as TextStyle),
-    color: AdminColors.primary,
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F2860',
+    textDecorationLine: 'underline',
   },
 });
 
