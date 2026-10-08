@@ -16,18 +16,23 @@ export type AppRoute =
   | { name: 'profile-edit-personal' }
   | { name: 'profile-admin-details' }
   | { name: 'profile-id-card' }
+  | { name: 'membership-applications' }
+  | { name: 'membership-application-details'; applicationId: string }
   | { name: 'create-account' }
   | { name: 'create-account-additional' }
   | { name: 'create-account-verification' }
   | { name: 'create-account-complete' };
 
 const RECEIPT_HASH_PATTERN = /^\/donations\/([^/]+)\/receipt$/;
+const MEMBERSHIP_DETAILS_HASH_PATTERN = /^\/membership-applications\/([^/]+)$/;
 
 const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/profile': { name: 'profile' },
   '/profile/edit/personal': { name: 'profile-edit-personal' },
   '/profile/edit/admin-details': { name: 'profile-admin-details' },
   '/profile/id-card': { name: 'profile-id-card' },
+  '/membership-applications': { name: 'membership-applications' },
+  '/applications': { name: 'membership-applications' },
   '/create-account': { name: 'create-account' },
   '/create-account/additional': { name: 'create-account-additional' },
   '/create-account/verification': { name: 'create-account-verification' },
@@ -42,6 +47,8 @@ const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
   'profile-edit-personal': '#/profile/edit/personal',
   'profile-admin-details': '#/profile/edit/admin-details',
   'profile-id-card': '#/profile/id-card',
+  'membership-applications': '#/membership-applications',
+  'membership-application-details': '#/membership-applications',
   'create-account': '#/create-account',
   'create-account-additional': '#/create-account/additional',
   'create-account-verification': '#/create-account/verification',
@@ -54,7 +61,7 @@ const getWebWindow = (): any =>
 const parseHash = (): AppRoute => {
   const win = getWebWindow();
   if (!win || !win.location) {
-    return { name: 'donations' };
+    return { name: 'membership-applications' };
   }
   const hash = win.location.hash.replace(/^#/, '');
   const profileRoute = PROFILE_HASH_ROUTES[hash];
@@ -65,12 +72,19 @@ const parseHash = (): AppRoute => {
   if (match) {
     return { name: 'receipt', donationId: decodeURIComponent(match[1]) };
   }
-  return { name: 'donations' };
+  const detailsMatch = hash.match(MEMBERSHIP_DETAILS_HASH_PATTERN);
+  if (detailsMatch) {
+    return { name: 'membership-application-details', applicationId: decodeURIComponent(detailsMatch[1]) };
+  }
+  return { name: 'membership-applications' };
 };
 
 const routeToHash = (route: AppRoute): string => {
   if (route.name === 'receipt') {
     return `#/donations/${encodeURIComponent(route.donationId)}/receipt`;
+  }
+  if (route.name === 'membership-application-details') {
+    return `#/membership-applications/${encodeURIComponent(route.applicationId)}`;
   }
   return PROFILE_HASH_BY_ROUTE[route.name];
 };
@@ -90,7 +104,10 @@ if (webWindow && webWindow.addEventListener) {
       next.name !== currentRoute.name ||
       (next.name === 'receipt' &&
         currentRoute.name === 'receipt' &&
-        next.donationId !== currentRoute.donationId)
+        next.donationId !== currentRoute.donationId) ||
+      (next.name === 'membership-application-details' &&
+        currentRoute.name === 'membership-application-details' &&
+        next.applicationId !== currentRoute.applicationId)
     ) {
       currentRoute = next;
       notify();
@@ -149,6 +166,14 @@ export const navigateToProfileIdCard = (): void => {
   navigate({ name: 'profile-id-card' });
 };
 
+export const navigateToMembershipApplications = (): void => {
+  navigate({ name: 'membership-applications' });
+};
+
+export const navigateToMembershipApplicationDetails = (applicationId: string): void => {
+  navigate({ name: 'membership-application-details', applicationId });
+};
+
 export const navigateToCreateAccount = (): void => {
   navigate({ name: 'create-account' });
 };
@@ -164,5 +189,6 @@ export const navigateToCreateAccountVerification = (): void => {
 export const navigateToCreateAccountComplete = (): void => {
   navigate({ name: 'create-account-complete' });
 };
+
 
 

@@ -9,7 +9,9 @@ export {
   navigateToDonations,
   navigateToReceipt,
   navigateToProfile,
+  navigateToMembershipApplications,
   subscribeToRoute,
   getRouteSnapshot,
 } from '../../../core/navigation/appRouter';
 export type { AppRoute } from '../../../core/navigation/appRouter';
+
