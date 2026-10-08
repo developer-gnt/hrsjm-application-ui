@@ -1,9 +1,11 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AdminColors, BorderRadius, Spacing } from '../../../../core/theme';
-import { AppIcon, ImageSlot } from '../../components';
+import { AppIcon } from '../../components';
 import { SectionHeader } from './SectionHeader';
 import { ABOUT_DESCRIPTION } from '../data/home-preview-data';
+
+const ABOUT_PREVIEW_IMAGE = require('../../../../assets/images/about-hero-community.png');
 
 interface AboutSectionProps {
   onMorePress?: () => void;
@@ -11,7 +13,7 @@ interface AboutSectionProps {
 }
 
 /** Reference-locked "About HRSJM": description left, media card with play
- * button right. The intro video poster is a pending asset (ImageSlot). */
+ * button right. */
 export const AboutSection: React.FC<AboutSectionProps> = ({
   onMorePress,
   onMediaPress,
@@ -29,11 +31,11 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
         accessibilityRole="button"
         accessibilityLabel="Play the HRSJM introduction video"
       >
-        <ImageSlot
-          assetName="home/about-intro-video.png"
-          height={92}
-          radius={BorderRadius.lg}
+        <Image
+          source={ABOUT_PREVIEW_IMAGE}
           style={styles.mediaSlot}
+          resizeMode="cover"
+          accessible={false}
         />
         <View style={styles.playBadge}>
           <AppIcon name="play" size={13} color={AdminColors.primaryDark} />
@@ -58,18 +60,22 @@ const styles = StyleSheet.create({
     color: AdminColors.textSecondary,
   },
   media: {
-    width: 124,
+    width: 92,
+    height: 68,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
   },
   mediaSlot: {
     width: '100%',
+    height: '100%',
   },
   playBadge: {
     position: 'absolute',
-    right: 8,
-    bottom: 8,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    right: 6,
+    bottom: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: AdminColors.cardSurface,
     alignItems: 'center',
     justifyContent: 'center',

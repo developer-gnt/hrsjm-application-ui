@@ -17,6 +17,8 @@ export interface AboutScreenProps {
   onBack?: () => void;
   onOpenRights?: () => void;
   onOpenContact?: () => void;
+  onOpenEvents?: () => void;
+  onOpenNews?: () => void;
 }
 
 /**
@@ -29,6 +31,8 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
   onBack,
   onOpenRights,
   onOpenContact,
+  onOpenEvents,
+  onOpenNews,
 }) => {
   const showComingSoon = (feature: string) => {
     // UI PHASE ONLY placeholder for actions that ship with later phases.
@@ -42,6 +46,10 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
       onOpenRights?.();
     } else if (tab.id === 'contact') {
       onOpenContact?.();
+    } else if (tab.id === 'events') {
+      onOpenEvents?.();
+    } else if (tab.id === 'news') {
+      onOpenNews?.();
     }
   };
 

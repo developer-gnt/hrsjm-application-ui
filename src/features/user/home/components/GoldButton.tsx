@@ -7,6 +7,7 @@ interface GoldButtonProps {
   label: string;
   onPress?: () => void;
   textColor?: string;
+  backgroundColor?: string;
   /** Smaller treatment used inside the hero banner (reference mockup). */
   compact?: boolean;
 }
@@ -20,9 +21,10 @@ export const GoldButton: React.FC<GoldButtonProps> = ({
   onPress,
   compact = false,
   textColor = AdminColors.textOnDark,
+  backgroundColor = AdminColors.accentGold,
 }) => (
   <TouchableOpacity
-    style={[styles.button, compact && styles.buttonCompact]}
+    style={[styles.button, compact && styles.buttonCompact, { backgroundColor }]}
     onPress={onPress}
     activeOpacity={0.8}
     accessibilityRole="button"

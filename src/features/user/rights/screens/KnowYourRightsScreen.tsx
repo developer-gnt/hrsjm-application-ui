@@ -55,12 +55,16 @@ export interface KnowYourRightsScreenProps {
   onOpenContact?: () => void;
   /** Opens the About page (About tab in the shared six-tab navigation). */
   onOpenAbout?: () => void;
+  onOpenEvents?: () => void;
+  onOpenNews?: () => void;
 }
 
 export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
   onOpenHome,
   onOpenContact,
   onOpenAbout,
+  onOpenEvents,
+  onOpenNews,
 }) => {
   const insets = useSafeAreaInsets();
   const searchRef = useRef<SearchInputHandle | null>(null);
@@ -77,6 +81,10 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
       onOpenContact?.();
     } else if (tab.id === 'about') {
       onOpenAbout?.();
+    } else if (tab.id === 'events') {
+      onOpenEvents?.();
+    } else if (tab.id === 'news') {
+      onOpenNews?.();
     }
   };
 

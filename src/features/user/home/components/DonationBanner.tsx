@@ -33,6 +33,7 @@ export const DonationBanner: React.FC<DonationBannerProps> = ({ onPress }) => (
         <GoldButton
           label={DONATION_CONTENT.ctaLabel}
           onPress={onPress}
+          compact
           textColor={AdminColors.primaryDark}
         />
       </View>
@@ -43,8 +44,9 @@ export const DonationBanner: React.FC<DonationBannerProps> = ({ onPress }) => (
 const styles = StyleSheet.create({
   banner: {
     width: '100%',
-    aspectRatio: 2.375,
-    borderRadius: BorderRadius.md,
+    aspectRatio: 3.1,
+    borderBottomLeftRadius: BorderRadius.xxl,
+    borderBottomRightRadius: BorderRadius.xxl,
     overflow: 'hidden',
   },
   background: {
@@ -57,25 +59,26 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.sm,
+    width: '72%',
   },
   headline: {
     fontFamily: FontFamilies.serif,
-    fontSize: 19,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 18,
     fontWeight: '700',
     color: AdminColors.textOnDark,
   },
   description: {
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 9,
+    lineHeight: 12,
     color: AdminColors.textOnDark,
     opacity: 0.85,
-    marginTop: Spacing.sm,
-    maxWidth: 250,
+    marginTop: Spacing.xs,
+    maxWidth: 230,
   },
   cta: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.sm,
   },
 });

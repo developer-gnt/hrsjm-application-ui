@@ -36,9 +36,16 @@ export const CategoryIconCard: React.FC<CategoryIconCardProps> = ({
       <View style={styles.iconCircleTint} />
       <AppIcon name={item.icon} size={20} color={AdminColors.primaryDark} />
     </View>
-    <Text style={styles.label}>{item.title}</Text>
+    <Text style={styles.label}>{REFERENCE_LABELS[item.title] ?? item.title}</Text>
   </TouchableOpacity>
 );
+
+const REFERENCE_LABELS: Record<string, string> = {
+  'Human Rights': 'Human\nRights',
+  "Women's Rights": "Women's\nRights",
+  'Right to Education': 'Right to\nEducation',
+  "Children's Rights": "Children's\nRights",
+};
 
 interface CategoryIconRowProps {
   items: RightsCategory[];

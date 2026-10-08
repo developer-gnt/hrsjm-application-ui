@@ -48,8 +48,8 @@ export const NewsCard: React.FC<NewsCardProps> = ({ item, onPress }) => {
       ) : (
         <ImageSlot
           assetName={item.imageAssetName}
-          height={62}
-          width={62}
+          height={48}
+          width={48}
           radius={BorderRadius.md}
         />
       )}
@@ -77,41 +77,41 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: AdminColors.border,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.sm,
+    padding: 5,
   },
   content: {
     flex: 1,
-    marginHorizontal: Spacing.sm,
+    marginHorizontal: 6,
   },
   thumbnail: {
-    width: 62,
-    height: 62,
+    width: 48,
+    height: 48,
     borderRadius: BorderRadius.md,
   },
   category: {
-    fontSize: 9.5,
-    lineHeight: 12,
+    fontSize: 7,
+    lineHeight: 9,
     fontWeight: '700',
     letterSpacing: 0.8,
     color: AdminColors.textMuted,
   },
   title: {
-    fontSize: 13,
-    lineHeight: 17.5,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: '600',
     color: AdminColors.primaryDark,
     marginTop: 2,
   },
   date: {
-    fontSize: 10.5,
-    lineHeight: 14,
+    fontSize: 7,
+    lineHeight: 9,
     color: AdminColors.textMuted,
     marginTop: 3,
   },
   arrow: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: AdminColors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',

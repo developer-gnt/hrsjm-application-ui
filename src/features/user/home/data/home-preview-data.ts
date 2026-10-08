@@ -12,7 +12,6 @@ import type {
   HomeQuickAction,
   HomeRecommendation,
   HomeTab,
-  ImpactStat,
   MemberActivity,
   MemberGreeting,
   MembershipPreview,
@@ -48,12 +47,6 @@ export const WHAT_WE_DO_ITEMS: RightsCategory[] = [
   { id: 'workshops', title: 'Workshops & Training', icon: 'users' },
   { id: 'research', title: 'Research & Education', icon: 'doc-search' },
   { id: 'community', title: 'Community Activities', icon: 'heart-hands' },
-];
-
-export const IMPACT_STATS: ImpactStat[] = [
-  { id: 'members', value: '1,00,079', label: 'Members', icon: 'users' },
-  { id: 'complaints', value: '2,00,000', label: 'Complaints Handled', icon: 'file-text' },
-  { id: 'cases', value: '1,99,800', label: 'Cases Resolved', icon: 'handshake' },
 ];
 
 export const UPCOMING_EVENTS: HomeEvent[] = [
@@ -107,10 +100,34 @@ export const MEMBERSHIP_PREVIEW: MembershipPreview = {
 };
 
 export const MEMBER_ACTIVITIES: MemberActivity[] = [
-  { id: 'complaints', icon: 'file-text', value: '2', label: 'Complaints Submitted', tone: 'green' },
-  { id: 'events', icon: 'calendar', value: '1', label: 'Event Registered', tone: 'blue' },
-  { id: 'membership', icon: 'user', value: 'Active', label: 'Membership', tone: 'amber' },
-  { id: 'certificates', icon: 'medal', value: '3', label: 'Certificates', tone: 'purple' },
+  {
+    id: 'complaints',
+    icon: 'file-text',
+    value: '2',
+    label: 'Complaints Submitted',
+    tone: 'green',
+  },
+  {
+    id: 'events',
+    icon: 'calendar',
+    value: '1',
+    label: 'Event Registered',
+    tone: 'blue',
+  },
+  {
+    id: 'membership',
+    icon: 'user',
+    value: 'Active',
+    label: 'Membership',
+    tone: 'amber',
+  },
+  {
+    id: 'certificates',
+    icon: 'medal',
+    value: '3',
+    label: 'Certificates',
+    tone: 'purple',
+  },
 ];
 
 export const RECOMMENDATIONS: HomeRecommendation[] = [

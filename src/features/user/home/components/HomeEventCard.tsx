@@ -17,8 +17,8 @@ import { AppIcon, ImageSlot } from '../../components';
 import type { HomeEvent } from '../types/home.types';
 
 const EVENT_IMAGES: Record<string, ImageSourcePropType> = {
-  'home/events/rights-workshop.png': require('../../../../assets/images/contact-cta-hands.jpg'),
-  'home/events/legal-camp.png': require('../../../../assets/images/contact-hero-building.jpg'),
+  'home/events/rights-workshop.png': require('../../../../assets/images/about-hero-community.png'),
+  'home/events/legal-camp.png': require('../../../../assets/images/about-hero-community.png'),
   'home/events/youth-convention.png': require('../../../../assets/images/hero-home.webp'),
 };
 
@@ -36,8 +36,8 @@ interface HomeEventCardProps {
 export const HomeEventCard: React.FC<HomeEventCardProps> = ({ event, onPress }) => {
   const { width: windowWidth } = useWindowDimensions();
   const cardWidth = Math.min(
-    232,
-    Math.max(158, (windowWidth - Spacing.base * 2 - Spacing.sm) / 2.2),
+    180,
+    Math.max(120, (windowWidth - Spacing.base * 2 - Spacing.sm) / 2.7),
   );
   const imageSource = EVENT_IMAGES[event.imageAssetName];
 
@@ -98,66 +98,72 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   media: {
-    height: 92,
+    height: 48,
   },
   mediaSlot: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
   },
   dateBadge: {
     position: 'absolute',
-    top: Spacing.sm,
-    left: Spacing.sm,
+    top: Spacing.xs,
+    left: Spacing.xs,
     backgroundColor: AdminColors.cardSurface,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
     alignItems: 'center',
   },
   dateDay: {
-    fontSize: 14,
-    lineHeight: 17,
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: '700',
     color: AdminColors.primaryDark,
   },
   dateMonth: {
-    fontSize: 9,
-    lineHeight: 11,
+    fontSize: 7,
+    lineHeight: 8,
     fontWeight: '600',
     letterSpacing: 0.6,
     color: AdminColors.textSecondary,
   },
   body: {
-    padding: Spacing.sm,
+    padding: 5,
   },
   title: {
-    fontSize: 13,
-    lineHeight: 17.5,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: '600',
     color: AdminColors.primaryDark,
-    minHeight: 35,
+    minHeight: 23,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.sm,
+    marginTop: 4,
   },
   location: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: Spacing.sm,
+    marginRight: 4,
   },
   locationText: {
     flex: 1,
-    fontSize: 10.5,
-    lineHeight: 14,
+    fontSize: 7,
+    lineHeight: 9,
     color: AdminColors.textSecondary,
     marginLeft: 4,
   },
   arrow: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: AdminColors.accentGold,
     alignItems: 'center',
     justifyContent: 'center',

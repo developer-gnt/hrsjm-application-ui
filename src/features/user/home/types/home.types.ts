@@ -19,12 +19,10 @@ export interface RightsCategory {
 /** Shares the card design of RightsCategoryCard (reference-identical). */
 export type WhatWeDoItem = RightsCategory;
 
-export interface ImpactStat {
-  id: string;
-  /** Preformatted value (Indian digit grouping), e.g. '1,00,079'. */
-  value: string;
-  label: string;
-  icon: IconName;
+export interface ImpactStats {
+  members: number;
+  complaintsHandled: number;
+  casesResolved: number;
 }
 
 export interface HomeEvent {

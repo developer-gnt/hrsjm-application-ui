@@ -99,6 +99,30 @@ const calendar: React.FC<GlyphProps> = () => (
   </G>
 );
 
+const clock: React.FC<GlyphProps> = () => (
+  <G>
+    <Circle cx={12} cy={12} r={9} />
+    <Polyline points="12,7 12,12 15.5,14" />
+  </G>
+);
+
+const globe: React.FC<GlyphProps> = () => (
+  <G>
+    <Circle cx={12} cy={12} r={9} />
+    <Path d="M3.5 9h17M3.5 15h17" />
+    <Path d="M12 3c2.1 2.4 3.2 5.4 3.2 9s-1.1 6.6-3.2 9c-2.1-2.4-3.2-5.4-3.2-9S9.9 5.4 12 3Z" />
+  </G>
+);
+
+const lock: React.FC<GlyphProps> = () => (
+  <G>
+    <Rect x={4.5} y={10} width={15} height={11} rx={2} />
+    <Path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    <Circle cx={12} cy={15} r={1} />
+    <Line x1={12} y1={16} x2={12} y2={18} />
+  </G>
+);
+
 const users: React.FC<GlyphProps> = () => (
   <G>
     <Circle cx={9.2} cy={7.8} r={3.4} />
@@ -295,10 +319,24 @@ const send: React.FC<GlyphProps> = () => (
   </G>
 );
 
-const clock: React.FC<GlyphProps> = () => (
+const filter: React.FC<GlyphProps> = () => (
+  <Path d="M4 5h16l-6.4 7.2v5.1L10.4 19v-6.8Z" />
+);
+
+const share: React.FC<GlyphProps> = () => (
   <G>
-    <Circle cx={12} cy={12} r={8.6} />
-    <Polyline points="12,7 12,12 15.4,13.8" />
+    <Circle cx={18} cy={5} r={2.5} />
+    <Circle cx={6} cy={12} r={2.5} />
+    <Circle cx={18} cy={19} r={2.5} />
+    <Line x1={8.2} y1={10.8} x2={15.8} y2={6.3} />
+    <Line x1={8.2} y1={13.2} x2={15.8} y2={17.7} />
+  </G>
+);
+
+const link: React.FC<GlyphProps> = () => (
+  <G>
+    <Path d="M10 13.8a4.2 4.2 0 0 0 6.1.3l3-3a4.3 4.3 0 0 0-6.1-6.1l-1.7 1.7" />
+    <Path d="M14 10.2a4.2 4.2 0 0 0-6.1-.3l-3 3A4.3 4.3 0 0 0 11 19l1.7-1.7" />
   </G>
 );
 
@@ -317,13 +355,17 @@ export const GLYPHS = {
   email,
   eye,
   'file-text': fileText,
+  filter,
   'graduation-cap': graduationCap,
   handshake,
   heart,
+  globe,
   'heart-hands': heartHands,
   home,
   'heart-pulse': heartPulse,
   image,
+  lock,
+  link,
   'map-pin': mapPin,
   medal,
   megaphone,
@@ -337,6 +379,7 @@ export const GLYPHS = {
   scale,
   search,
   send,
+  share,
   'shield-check': shieldCheck,
   user,
   users,

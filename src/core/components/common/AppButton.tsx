@@ -4,6 +4,7 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
+  AccessibilityRole,
   ViewStyle,
   TextStyle,
 } from 'react-native';
@@ -25,6 +26,8 @@ interface AppButtonProps {
   iconPosition?: 'left' | 'right';
   style?: ViewStyle;
   textStyle?: TextStyle;
+  accessibilityLabel?: string;
+  accessibilityRole?: AccessibilityRole;
 }
 
 export const AppButton: React.FC<AppButtonProps> = ({
@@ -38,6 +41,8 @@ export const AppButton: React.FC<AppButtonProps> = ({
   iconPosition = 'left',
   style,
   textStyle,
+  accessibilityLabel,
+  accessibilityRole = 'button',
 }) => {
   const isDisabled = disabled || loading;
 
@@ -136,6 +141,9 @@ export const AppButton: React.FC<AppButtonProps> = ({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityState={{ disabled: isDisabled }}
       style={[
         styles.baseButton,
         getVariantContainerStyle(),
