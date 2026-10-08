@@ -10,16 +10,16 @@ import {
   BottomTabBarProps,
 } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { UserHomeScreen } from '../../user/home/screens/UserHomeScreen';
-import { AboutScreen } from '../../user/about/screens/AboutScreen';
-import { KnowYourRightsScreen } from '../../user/rights/screens/KnowYourRightsScreen';
+import { MemberHomeScreen } from '../screens/MemberHomeScreen';
+import { MemberCausesContainer } from '../screens/MemberCausesContainer';
 import { EventsScreen } from '../../admin/content/events/screens/EventsScreen';
+import { DonationsScreen } from '../../admin/donations/screens/DonationsScreen';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import {
   House,
-  FileText,
-  Scale,
+  Heart,
   Calendar,
+  FileText,
   User,
   AppIconComponent,
 } from '../../../core/components/icons';
@@ -38,25 +38,25 @@ const MEMBER_TABS: MemberTabItem[] = [
     name: 'MemberHome',
     label: 'Home',
     Icon: House,
-    component: UserHomeScreen,
+    component: MemberHomeScreen,
   },
   {
-    name: 'MemberAbout',
-    label: 'About',
-    Icon: FileText,
-    component: AboutScreen,
-  },
-  {
-    name: 'MemberRights',
-    label: 'Rights',
-    Icon: Scale,
-    component: KnowYourRightsScreen,
+    name: 'MemberCauses',
+    label: 'Causes',
+    Icon: Heart,
+    component: MemberCausesContainer,
   },
   {
     name: 'MemberEvents',
     label: 'Events',
     Icon: Calendar,
     component: EventsScreen,
+  },
+  {
+    name: 'MemberReceipts',
+    label: 'Receipts',
+    Icon: FileText,
+    component: DonationsScreen,
   },
   {
     name: 'MemberProfile',
@@ -127,7 +127,7 @@ const MemberCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) 
 export const MemberTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
-      initialRouteName="MemberHome"
+      initialRouteName="MemberCauses"
       tabBar={props => <MemberCustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
