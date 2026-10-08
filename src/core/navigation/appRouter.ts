@@ -21,7 +21,9 @@ export type AppRoute =
   | { name: 'create-account' }
   | { name: 'create-account-additional' }
   | { name: 'create-account-verification' }
-  | { name: 'create-account-complete' };
+  | { name: 'create-account-complete' }
+  | { name: 'become-member' }
+  | { name: 'membership-categories' };
 
 const RECEIPT_HASH_PATTERN = /^\/donations\/([^/]+)\/receipt$/;
 const MEMBERSHIP_DETAILS_HASH_PATTERN = /^\/membership-applications\/([^/]+)$/;
@@ -38,6 +40,11 @@ const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/create-account/verification': { name: 'create-account-verification' },
   '/create-account/complete': { name: 'create-account-complete' },
   '/register': { name: 'create-account' },
+  '/become-member': { name: 'become-member' },
+  '/membership': { name: 'become-member' },
+  '/join': { name: 'become-member' },
+  '/membership-categories': { name: 'membership-categories' },
+  '/categories': { name: 'membership-categories' },
 };
 
 const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
@@ -53,6 +60,8 @@ const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
   'create-account-additional': '#/create-account/additional',
   'create-account-verification': '#/create-account/verification',
   'create-account-complete': '#/create-account/complete',
+  'become-member': '#/become-member',
+  'membership-categories': '#/membership-categories',
 };
 
 const getWebWindow = (): any =>
@@ -188,6 +197,14 @@ export const navigateToCreateAccountVerification = (): void => {
 
 export const navigateToCreateAccountComplete = (): void => {
   navigate({ name: 'create-account-complete' });
+};
+
+export const navigateToBecomeMember = (): void => {
+  navigate({ name: 'become-member' });
+};
+
+export const navigateToMembershipCategories = (): void => {
+  navigate({ name: 'membership-categories' });
 };
 
 

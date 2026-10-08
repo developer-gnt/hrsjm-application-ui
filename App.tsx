@@ -27,6 +27,10 @@ import {
   getRegistrationState,
 } from './src/features/auth';
 import {
+  BecomeMemberScreen,
+  MembershipCategoriesScreen,
+} from './src/features/membership';
+import {
   getRouteSnapshot,
   subscribeToRoute,
   navigateToCreateAccount,
@@ -37,6 +41,8 @@ import {
   navigateToProfile,
   navigateToMembershipApplications,
   navigateToMembershipApplicationDetails,
+  navigateToBecomeMember,
+  navigateToMembershipCategories,
 } from './src/core/navigation/appRouter';
 
 // Temporary app shell: navigation infrastructure is not built yet, so
@@ -180,7 +186,21 @@ function App() {
             key={route.applicationId}
             applicationId={route.applicationId}
             onBack={() => navigateToMembershipApplications()}
-            onStatusPress={() => {}}
+          />
+        );
+      case 'become-member':
+        return (
+          <BecomeMemberScreen
+            key="become-member-screen"
+            onBack={() => navigateToMembershipApplications()}
+            onCtaPress={() => navigateToMembershipCategories()}
+          />
+        );
+      case 'membership-categories':
+        return (
+          <MembershipCategoriesScreen
+            key="membership-categories-screen"
+            onBack={() => navigateToBecomeMember()}
           />
         );
       case 'membership-applications':

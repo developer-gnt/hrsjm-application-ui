@@ -31,6 +31,8 @@ module.exports = {
       'react-native$': 'react-native-web',
       'react-native-share': path.resolve(__dirname, 'web/mocks/react-native-share.js'),
       'react-native-blob-util': path.resolve(__dirname, 'web/mocks/react-native-blob-util.js'),
+      'react-native-image-picker': path.resolve(__dirname, 'web/mocks/react-native-image-picker.js'),
+      '@react-native-documents/picker': path.resolve(__dirname, 'web/mocks/react-native-documents-picker.js'),
     },
     extensions: [
       '.web.js',
