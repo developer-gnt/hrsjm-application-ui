@@ -149,58 +149,55 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
         </Text>
       </View>
 
-      {/* Sleek Executive Mission Impact Card */}
-      <View style={styles.heroImpactCard}>
-        {/* Top Header: Badge & Live Indicator */}
-        <View style={styles.heroTopRow}>
-          <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>HRSJM MISSION IMPACT</Text>
+      {/* Modern 2:2 KPI Impact Grid */}
+      <View style={styles.kpiGridContainer}>
+        {/* Card 1: Active Causes */}
+        <View style={styles.kpiGridCard}>
+          <View style={[styles.kpiIconWrapper, { backgroundColor: '#EEF3FC' }]}>
+            <Text style={styles.kpiGridIcon}>🎯</Text>
           </View>
-          <View style={styles.liveIndicatorPill}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveIndicatorText}>Live</Text>
+          <View style={styles.kpiContentCol}>
+            <Text style={styles.kpiGridValue}>{kpiStats.activeCauses}</Text>
+            <Text style={styles.kpiGridLabel} numberOfLines={1}>Active Causes</Text>
           </View>
         </View>
 
-        {/* Primary Metric: Funds Raised & Target */}
-        <View style={styles.heroMainMetricRow}>
-          <View>
-            <Text style={styles.heroRaisedAmount}>{kpiStats.totalRaisedFormatted}</Text>
-            <Text style={styles.heroRaisedSub}>
-              Raised of <Text style={styles.heroTargetHighlight}>{kpiStats.totalTargetFormatted}</Text> Goal
+        {/* Card 2: Funds Raised */}
+        <View style={styles.kpiGridCard}>
+          <View style={[styles.kpiIconWrapper, { backgroundColor: '#ECFDF5' }]}>
+            <Text style={styles.kpiGridIcon}>💰</Text>
+          </View>
+          <View style={styles.kpiContentCol}>
+            <Text style={[styles.kpiGridValue, { color: '#059669' }]}>
+              {kpiStats.totalRaisedFormatted}
             </Text>
-          </View>
-          <View style={styles.heroPercentBox}>
-            <Text style={styles.heroPercentText}>{kpiStats.percentage}%</Text>
-            <Text style={styles.heroPercentSub}>Funded</Text>
+            <Text style={styles.kpiGridLabel} numberOfLines={1}>Funds Raised</Text>
           </View>
         </View>
 
-        {/* Sleek Golden Progress Bar */}
-        <View style={styles.heroProgressTrack}>
-          <View
-            style={[
-              styles.heroProgressFill,
-              { width: `${Math.max(5, kpiStats.percentage)}%` },
-            ]}
-          />
+        {/* Card 3: Lives Impacted */}
+        <View style={styles.kpiGridCard}>
+          <View style={[styles.kpiIconWrapper, { backgroundColor: '#FFFBEB' }]}>
+            <Text style={styles.kpiGridIcon}>🤝</Text>
+          </View>
+          <View style={styles.kpiContentCol}>
+            <Text style={[styles.kpiGridValue, { color: '#D97706' }]}>
+              {kpiStats.totalBeneficiaries}+
+            </Text>
+            <Text style={styles.kpiGridLabel} numberOfLines={1}>Lives Impacted</Text>
+          </View>
         </View>
 
-        {/* 3-Column Compact Stats Row */}
-        <View style={styles.heroStatsRow}>
-          <View style={styles.heroStatCol}>
-            <Text style={styles.heroStatValue}>{kpiStats.activeCauses}</Text>
-            <Text style={styles.heroStatLabel}>Active Causes</Text>
+        {/* Card 4: Supporters */}
+        <View style={styles.kpiGridCard}>
+          <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEF2F2' }]}>
+            <Text style={styles.kpiGridIcon}>💖</Text>
           </View>
-          <View style={styles.heroStatDivider} />
-          <View style={styles.heroStatCol}>
-            <Text style={styles.heroStatValue}>{kpiStats.totalBeneficiaries}+</Text>
-            <Text style={styles.heroStatLabel}>Beneficiaries</Text>
-          </View>
-          <View style={styles.heroStatDivider} />
-          <View style={styles.heroStatCol}>
-            <Text style={styles.heroStatValue}>{kpiStats.totalDonors}+</Text>
-            <Text style={styles.heroStatLabel}>Supporters</Text>
+          <View style={styles.kpiContentCol}>
+            <Text style={[styles.kpiGridValue, { color: '#DC2626' }]}>
+              {kpiStats.totalDonors}+
+            </Text>
+            <Text style={styles.kpiGridLabel} numberOfLines={1}>Supporters</Text>
           </View>
         </View>
       </View>
@@ -421,145 +418,56 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 2,
   },
-  heroImpactCard: {
-    marginHorizontal: 16,
-    backgroundColor: '#0F2860',
-    borderRadius: 18,
-    padding: 16,
+  kpiGridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    rowGap: 10,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#1E3A8A',
-    shadowColor: '#0F2860',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 4,
   },
-  heroTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  heroBadge: {
-    backgroundColor: 'rgba(201, 162, 39, 0.18)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 162, 39, 0.35)',
-  },
-  heroBadgeText: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#FBBF24',
-    letterSpacing: 0.6,
-  },
-  liveIndicatorPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.4)',
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#34D399',
-  },
-  liveIndicatorText: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 9.5,
-    fontWeight: '700',
-    color: '#34D399',
-  },
-  heroMainMetricRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 10,
-  },
-  heroRaisedAmount: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    lineHeight: 28,
-  },
-  heroRaisedSub: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
-    color: '#94A3B8',
-    marginTop: 1,
-  },
-  heroTargetHighlight: {
-    color: '#FBBF24',
-    fontWeight: '700',
-  },
-  heroPercentBox: {
-    alignItems: 'flex-end',
-  },
-  heroPercentText: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#FBBF24',
-    lineHeight: 24,
-  },
-  heroPercentSub: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 10,
-    color: '#94A3B8',
-  },
-  heroProgressTrack: {
-    height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  heroProgressFill: {
-    height: '100%',
-    backgroundColor: '#F59E0B',
-    borderRadius: 3,
-  },
-  heroStatsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderRadius: 10,
-    paddingVertical: 8,
+  kpiGridCard: {
+    width: '48.4%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  heroStatCol: {
-    flex: 1,
+    borderColor: '#E2E8F0',
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  heroStatValue: {
+  kpiIconWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kpiGridIcon: {
+    fontSize: 16,
+  },
+  kpiContentCol: {
+    flex: 1,
+  },
+  kpiGridValue: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#0F2860',
+    lineHeight: 20,
   },
-  heroStatLabel: {
+  kpiGridLabel: {
     fontFamily: 'Inter-Medium',
-    fontSize: 10.5,
-    color: '#94A3B8',
+    fontSize: 11,
+    color: '#64748B',
     marginTop: 1,
-  },
-  heroStatDivider: {
-    width: 1,
-    height: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   searchBarRow: {
     flexDirection: 'row',
