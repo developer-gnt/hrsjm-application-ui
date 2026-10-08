@@ -41,6 +41,7 @@ export interface UserHomeScreenProps {
   onOpenGetHelp?: () => void;
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
+  onOpenRight?: (rightId: string) => void;
 }
 
 /**
@@ -60,6 +61,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   onOpenGetHelp,
   onOpenEvents,
   onOpenNews,
+  onOpenRight,
 }) => {
   const showComingSoon = (feature: string) => {
     Alert.alert(feature, `"${feature}" is part of an upcoming Home phase.`);
@@ -122,7 +124,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
             />
             <CategoryIconRow
               items={RIGHTS_CATEGORIES}
-              onPressItem={item => showComingSoon(item.title)}
+              onPressItem={item => onOpenRight?.(item.id)}
             />
           </View>
         </View>

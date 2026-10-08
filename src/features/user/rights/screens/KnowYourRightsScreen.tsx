@@ -1,15 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
-  Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  type TextInputInstance,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AdminColors,
   BorderRadius,
@@ -17,46 +16,19 @@ import {
   Shadows,
   Spacing,
 } from '../../../../core/theme';
-import { AppIcon, HrsjmLogoMark } from '../../components';
+import { AppIcon } from '../../components';
+import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeTab } from '../../home/types/home.types';
-import { WomensRightsSection } from '../components/WomensRightsSection';
-
-const RIGHTS_HERO_IMAGE = require('../../../../assets/images/contact-cta-hands.jpg');
-
-interface RightsTopic {
-  id: string;
-  title: string;
-  description: string;
-  icon: 'users' | 'scale' | 'file-text' | 'user' | 'child-care' | 'clock' | 'handshake' | 'graduation-cap' | 'doc-search' | 'megaphone';
-}
-
-interface SearchInputHandle {
-  focus: () => void;
-}
-
-const RIGHTS_TOPICS: RightsTopic[] = [
-  { id: 'human', title: 'Human Rights', description: 'Basic rights and freedoms every human being has.', icon: 'users' },
-  { id: 'civil', title: 'Civil Rights', description: 'Rights related to equal treatment and protection under law.', icon: 'scale' },
-  { id: 'fundamental', title: 'Fundamental Rights', description: 'Constitutional rights guaranteed to every citizen of India.', icon: 'file-text' },
-  { id: 'women', title: "Women's Rights", description: 'Rights, protection and support for women.', icon: 'user' },
-  { id: 'children', title: "Children's Rights", description: 'Rights and welfare of children and young people.', icon: 'child-care' },
-  { id: 'senior', title: 'Senior Citizen Rights', description: 'Rights and schemes for elderly citizens.', icon: 'clock' },
-  { id: 'minority', title: 'Minority Rights', description: 'Rights of religious, linguistic and other minorities.', icon: 'users' },
-  { id: 'labour', title: 'Labour Rights', description: 'Rights and protections for workers.', icon: 'handshake' },
-  { id: 'education', title: 'Right to Education', description: 'Right to free and compulsory education.', icon: 'graduation-cap' },
-  { id: 'information', title: 'Right to Information', description: 'Right to access information from public authorities.', icon: 'doc-search' },
-  { id: 'speech', title: 'Freedom of Speech', description: 'Right to express opinions and ideas freely.', icon: 'megaphone' },
-  { id: 'liberties', title: 'Civil Liberties', description: 'Rights to personal freedom and privacy in daily life.', icon: 'scale' },
-];
+import { searchRights } from '../data/rights-content';
 
 export interface KnowYourRightsScreenProps {
   onOpenHome?: () => void;
   onOpenContact?: () => void;
-  /** Opens the About page (About tab in the shared six-tab navigation). */
   onOpenAbout?: () => void;
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
+  onOpenRight: (rightId: string) => void;
 }
 
 export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
@@ -65,14 +37,11 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
   onOpenAbout,
   onOpenEvents,
   onOpenNews,
+  onOpenRight,
 }) => {
-  const insets = useSafeAreaInsets();
-  const searchRef = useRef<SearchInputHandle | null>(null);
+  const searchRef = useRef<TextInputInstance | null>(null);
   const [query, setQuery] = useState('');
-  const normalizedQuery = query.trim().toLowerCase();
-  const visibleTopics = RIGHTS_TOPICS.filter(topic =>
-    `${topic.title} ${topic.description}`.toLowerCase().includes(normalizedQuery),
-  );
+  const visibleRights = useMemo(() => searchRights(query), [query]);
 
   const handleTabPress = (tab: HomeTab) => {
     if (tab.id === 'home') {
@@ -90,31 +59,11 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, Spacing.sm) }]}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={onOpenHome}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Home"
-          >
-            <AppIcon name="chevron-left" size={22} color={AdminColors.primaryDark} />
-          </TouchableOpacity>
-          <HrsjmLogoMark height={38} />
-          <View style={styles.headerSpacer} />
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => searchRef.current?.focus()}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Focus rights search"
-          >
-            <AppIcon name="search" size={22} color={AdminColors.primaryDark} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
+      <HomeHeader
+        onBack={onOpenHome}
+        onPressSearch={() => searchRef.current?.focus()}
+        onPressNotifications={() => undefined}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -122,27 +71,20 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
-          <View style={styles.heroImageMask} pointerEvents="none">
-            <Image
-              source={RIGHTS_HERO_IMAGE}
-              style={StyleSheet.absoluteFill}
-              resizeMode="cover"
-              accessible={false}
-            />
-          </View>
-          <View style={styles.heroContent}>
-            <Text style={styles.heroTitle}>Know Your</Text>
-            <Text style={styles.heroTitleAccent}>Rights</Text>
+          <View style={styles.heroCopy}>
+            <Text style={styles.heroTitle}>
+              Know Your{'\n'}
+              <Text style={styles.heroTitleAccent}>Rights</Text>
+            </Text>
             <Text style={styles.heroDescription}>
-              Learn about your rights, understand their importance and know how HRSJM supports you.
+              Learn about your rights, understand their importance and know how
+              HRSJM supports you.
             </Text>
           </View>
           <View style={styles.searchBar}>
             <AppIcon name="search" size={17} color={AdminColors.primaryDark} />
             <TextInput
-              ref={input => {
-                searchRef.current = input;
-              }}
+              ref={searchRef}
               value={query}
               onChangeText={setQuery}
               style={styles.searchInput}
@@ -154,39 +96,65 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
           </View>
         </View>
 
-        {visibleTopics.length > 0 ? (
-          <View style={styles.topicGrid}>
-            {visibleTopics.map(topic => (
-              <TouchableOpacity
-                key={topic.id}
-                style={styles.topicCard}
-                onPress={() => Alert.alert(topic.title, topic.description)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={`${topic.title}. ${topic.description}`}
+        <View style={styles.rightsGrid}>
+          {visibleRights.map((right, index) => (
+            <TouchableOpacity
+              key={right.id}
+              style={[
+                styles.rightCard,
+                { backgroundColor: right.color },
+                index === visibleRights.length - 1 && styles.lastCard,
+              ]}
+              onPress={() => onOpenRight(right.id)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${right.title}. ${right.description}`}
+            >
+              <View
+                style={[
+                  styles.iconCircle,
+                  { backgroundColor: right.iconColor },
+                ]}
               >
-                <View style={styles.topicIconCircle}>
-                  <View style={styles.topicIconTint} />
-                  <AppIcon name={topic.icon} size={21} color={AdminColors.primaryDark} />
-                </View>
-                <Text style={styles.topicTitle} numberOfLines={2}>
-                  {topic.title}
-                </Text>
-                <Text style={styles.topicDescription} numberOfLines={3}>
-                  {topic.description}
-                </Text>
-                <View style={styles.topicArrow}>
-                  <AppIcon name="arrow-right" size={11} color={AdminColors.primaryDark} />
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : (
-          <Text style={styles.emptyState}>No rights topics found.</Text>
-        )}
-        {normalizedQuery.length === 0 && <WomensRightsSection />}
-      </ScrollView>
+                <AppIcon
+                  name={right.icon}
+                  size={22}
+                  color={AdminColors.primaryDark}
+                />
+              </View>
+              <Text style={styles.cardTitle} numberOfLines={2}>
+                {right.title}
+              </Text>
+              <Text style={styles.cardDescription} numberOfLines={3}>
+                {right.description}
+              </Text>
+              <View style={styles.cardArrow}>
+                <AppIcon
+                  name="arrow-right"
+                  size={12}
+                  color={AdminColors.primaryDark}
+                />
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
 
+        {visibleRights.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No rights found</Text>
+            <Text style={styles.emptyDescription}>
+              Try another keyword or clear the search.
+            </Text>
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={() => setQuery('')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.clearButtonText}>Clear Search</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+      </ScrollView>
       <UserBottomNavigation activeTab="rights" onTabPress={handleTabPress} />
     </SafeAreaView>
   );
@@ -195,156 +163,149 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: AdminColors.cardSurface,
-  },
-  header: {
-    backgroundColor: AdminColors.cardSurface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AdminColors.border,
-    paddingHorizontal: Spacing.sm,
-    paddingBottom: Spacing.xs,
-  },
-  headerRow: {
-    minHeight: 42,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerButton: {
-    width: 34,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerSpacer: {
-    flex: 1,
+    backgroundColor: AdminColors.background,
   },
   scroll: {
     flex: 1,
+    backgroundColor: AdminColors.background,
   },
   scrollContent: {
-    paddingBottom: Spacing.xl,
+    paddingBottom: Spacing.md,
   },
   hero: {
-    height: 190,
-    marginBottom: Spacing.xl,
-    justifyContent: 'flex-start',
+    height: 180,
+    position: 'relative',
+    justifyContent: 'center',
     backgroundColor: AdminColors.primaryDark,
+    marginBottom: Spacing.md,
   },
-  heroImageMask: {
-    ...StyleSheet.absoluteFill,
-    overflow: 'hidden',
-  },
-  heroContent: {
-    width: '64%',
-    paddingTop: Spacing.lg,
-    paddingLeft: Spacing.lg,
+  heroCopy: {
+    width: '70%',
+    paddingHorizontal: Spacing.base,
+    paddingBottom: Spacing.md,
   },
   heroTitle: {
-    fontFamily: FontFamilies.serif,
-    fontSize: 34,
-    lineHeight: 37,
-    fontWeight: '700',
     color: AdminColors.textOnDark,
+    fontFamily: FontFamilies.serif,
+    fontSize: 32,
+    lineHeight: 35,
+    fontWeight: '700',
   },
   heroTitleAccent: {
-    fontFamily: FontFamilies.serif,
-    fontSize: 34,
-    lineHeight: 37,
-    fontWeight: '700',
     color: AdminColors.accentGold,
   },
   heroDescription: {
-    marginTop: Spacing.sm,
-    fontSize: 12,
-    lineHeight: 17,
+    marginTop: Spacing.xs,
     color: AdminColors.textOnDark,
+    fontSize: 11,
+    lineHeight: 15,
   },
   searchBar: {
     position: 'absolute',
     left: Spacing.base,
     right: Spacing.base,
     bottom: -Spacing.md,
-    height: 38,
+    zIndex: 1,
+    height: 40,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.full,
-    backgroundColor: AdminColors.cardSurface,
     borderWidth: 1,
     borderColor: AdminColors.border,
+    borderRadius: BorderRadius.full,
+    backgroundColor: AdminColors.cardSurface,
     ...Shadows.card,
   },
   searchInput: {
     flex: 1,
     minWidth: 0,
     paddingVertical: 0,
-    fontSize: 11,
     color: AdminColors.primaryDark,
+    fontSize: 10,
   },
-  topicGrid: {
+  rightsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.md,
   },
-  topicCard: {
+  rightCard: {
     width: '31.5%',
-    height: 116,
-    padding: Spacing.sm,
-    alignItems: 'flex-start',
-    backgroundColor: AdminColors.accentGoldLight,
-    borderRadius: BorderRadius.md,
+    minHeight: 106,
+    padding: Spacing.xs,
     borderWidth: 1,
     borderColor: AdminColors.border,
+    borderRadius: BorderRadius.md,
+    position: 'relative',
     ...Shadows.card,
   },
-  topicIconCircle: {
+  lastCard: {
+    marginBottom: Spacing.sm,
+  },
+  iconCircle: {
     width: 32,
     height: 32,
-    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-  },
-  topicIconTint: {
-    ...StyleSheet.absoluteFill,
     borderRadius: 16,
-    backgroundColor: AdminColors.accentGold,
-    opacity: 0.16,
   },
-  topicTitle: {
-    alignSelf: 'stretch',
+  cardTitle: {
     marginTop: Spacing.xs,
-    fontSize: 10,
-    lineHeight: 12,
-    fontWeight: '700',
     color: AdminColors.primaryDark,
-    textAlign: 'left',
+    fontSize: 9.5,
+    lineHeight: 11,
+    fontWeight: '700',
   },
-  topicDescription: {
-    alignSelf: 'stretch',
+  cardDescription: {
     marginTop: 2,
-    paddingRight: Spacing.lg,
-    fontSize: 8.5,
-    lineHeight: 10.5,
+    paddingRight: Spacing.sm,
     color: AdminColors.textSecondary,
+    fontSize: 8,
+    lineHeight: 10,
   },
-  topicArrow: {
+  cardArrow: {
     position: 'absolute',
-    right: Spacing.xs,
-    bottom: Spacing.xs,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: AdminColors.accentGoldLight,
+    right: 4,
+    bottom: 4,
+    width: 18,
+    height: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 9,
+    backgroundColor: 'rgba(255,255,255,0.75)',
   },
   emptyState: {
-    padding: Spacing.xl,
+    alignItems: 'center',
+    margin: Spacing.base,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    backgroundColor: AdminColors.cardSurface,
+  },
+  emptyTitle: {
+    color: AdminColors.primaryDark,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  emptyDescription: {
+    marginTop: Spacing.xs,
     color: AdminColors.textSecondary,
+    fontSize: 12,
     textAlign: 'center',
+  },
+  clearButton: {
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    backgroundColor: AdminColors.primaryLight,
+  },
+  clearButtonText: {
+    color: AdminColors.primaryDark,
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

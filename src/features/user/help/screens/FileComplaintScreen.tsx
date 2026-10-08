@@ -33,21 +33,16 @@ import { AppIcon, HrsjmLogoMark } from '../../components';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeTab } from '../../home/types/home.types';
 import { ComplaintProgress } from '../components/ComplaintProgress';
+import { HelpTopicSelector } from '../components/HelpTopicSelector';
+import type { HelpTopic } from '../data/help-topics';
+import { LocationSelectorModal } from '../../location/components/LocationSelectorModal';
+import {
+  INDIA_LOCATIONS,
+  getFilteredCities,
+  getFilteredStates,
+  type StateLocation,
+} from '../../location/data/india-locations';
 
-const COMPLAINT_TYPES = [
-  'Human Rights Violation',
-  "Women's Rights",
-  'Child Rights',
-  'Labour Rights',
-  'Minority Rights',
-  'Senior Citizen Rights',
-  'Legal Rights',
-  'Discrimination',
-  'Violence / Abuse',
-  'Other',
-] as const;
-
-const LANGUAGE_OPTIONS = ['English', 'Hindi', 'Marathi', 'Other'] as const;
 const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 const SUPPORTED_ATTACHMENT_EXTENSIONS = ['jpg', 'jpeg', 'png', 'pdf'];
 const SUPPORTED_ATTACHMENT_TYPES = [
@@ -66,13 +61,11 @@ const isSupportedAttachment = (file: DocumentPickerResponse) => {
     : false;
 };
 
-type PreferredLanguage = (typeof LANGUAGE_OPTIONS)[number];
-
 type FormState = {
   helpType: string;
+  helpTopicId: string;
   subject: string;
   description: string;
-  preferredLanguage: PreferredLanguage;
   fullName: string;
   mobile: string;
   email: string;
@@ -83,9 +76,9 @@ type FormState = {
 
 const emptyForm: FormState = {
   helpType: '',
+  helpTopicId: '',
   subject: '',
   description: '',
-  preferredLanguage: 'English',
   fullName: '',
   mobile: '',
   email: '',
@@ -116,11 +109,20 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [selectedHelpTopic, setSelectedHelpTopic] = useState<HelpTopic | null>(
+    null,
+  );
+  const [selectedState, setSelectedState] = useState<StateLocation | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [isStateSelectorVisible, setIsStateSelectorVisible] = useState(false);
+  const [isCitySelectorVisible, setIsCitySelectorVisible] = useState(false);
   const [attachments, setAttachments] = useState<DocumentPickerResponse[]>([]);
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isHelpTopicSelectorVisible, setIsHelpTopicSelectorVisible] =
+    useState(false);
 
   const stepLabels = ['Complaint Details', 'Your Details', 'Review & Submit'];
 
@@ -149,6 +151,11 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     }
 
     const onHardwareBackPress = () => {
+      if (isHelpTopicSelectorVisible) {
+        setIsHelpTopicSelectorVisible(false);
+        return true;
+      }
+
       if (step === 1) {
         Alert.alert(
           'Discard complaint?',
@@ -171,7 +178,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     );
 
     return () => subscription.remove();
-  }, [isSubmitted, step, onBack]);
+  }, [isHelpTopicSelectorVisible, isSubmitted, step, onBack]);
 
   const handleTabPress = (tab: HomeTab) => {
     if (tab.id === 'home') {
@@ -197,6 +204,38 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     if (tab.id === 'news') {
       onOpenNews?.();
     }
+  };
+
+  const clearSelectedHelpTopic = () => {
+    setSelectedHelpTopic(null);
+    setForm(prev => ({ ...prev, helpType: '', helpTopicId: '' }));
+    setErrors(prev => ({ ...prev, helpType: undefined }));
+  };
+
+  const handleSelectHelpTopic = (topic: HelpTopic) => {
+    setSelectedHelpTopic(topic);
+    setForm(prev => ({
+      ...prev,
+      helpType: topic.title,
+      helpTopicId: topic.id,
+    }));
+    setErrors(prev => ({ ...prev, helpType: undefined }));
+    setIsHelpTopicSelectorVisible(false);
+  };
+
+  const handleStateSelect = (state: StateLocation) => {
+    setSelectedState(state);
+    setSelectedCity(null);
+    setForm(prev => ({ ...prev, state: state.name, city: '' }));
+    setErrors(prev => ({ ...prev, state: undefined, city: undefined }));
+    setIsStateSelectorVisible(false);
+  };
+
+  const handleCitySelect = (city: string) => {
+    setSelectedCity(city);
+    setForm(prev => ({ ...prev, city }));
+    setErrors(prev => ({ ...prev, city: undefined }));
+    setIsCitySelectorVisible(false);
   };
 
   const updateField = <K extends keyof FormState>(
@@ -236,6 +275,12 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     } else if (!/^\+?[0-9\s-]{8,15}$/.test(form.mobile.trim())) {
       nextErrors.mobile = 'Enter a valid mobile number.';
     }
+    if (!selectedState) {
+      nextErrors.state = 'Please select your state.';
+    }
+    if (!selectedCity) {
+      nextErrors.city = 'Please select your city.';
+    }
     if (form.email.trim()) {
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailPattern.test(form.email.trim())) {
@@ -248,13 +293,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
   };
 
   const openComplaintTypePicker = () => {
-    Alert.alert('Select the type of help', 'Choose an option', [
-      ...COMPLAINT_TYPES.map(option => ({
-        text: option,
-        onPress: () => updateField('helpType', option),
-      })),
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    setIsHelpTopicSelectorVisible(true);
   };
 
   const openAttachmentPicker = async () => {
@@ -322,16 +361,42 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         accessibilityRole="button"
         accessibilityLabel="Select complaint type"
       >
-        <Text
-          style={[styles.selectText, !form.helpType && styles.placeholderText]}
-        >
-          {form.helpType || 'Select an option'}
-        </Text>
-        <AppIcon
-          name="chevron-down"
-          size={18}
-          color={AdminColors.primaryDark}
-        />
+        {selectedHelpTopic ? (
+          <View style={styles.selectedTopicFieldContent}>
+            <View
+              style={[
+                styles.selectedTopicIconWrap,
+                { backgroundColor: selectedHelpTopic.iconBackground },
+              ]}
+            >
+              <AppIcon
+                name={selectedHelpTopic.icon}
+                size={16}
+                color={selectedHelpTopic.iconColor}
+              />
+            </View>
+            <Text style={styles.selectedTopicText}>{selectedHelpTopic.title}</Text>
+            <TouchableOpacity
+              style={styles.clearSelectedTopic}
+              onPress={event => {
+                event.stopPropagation();
+                clearSelectedHelpTopic();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Clear selected help topic"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <AppIcon name="close" size={14} color={AdminColors.primaryDark} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.defaultTopicSelector}>
+            <AppIcon name="search" size={18} color={AdminColors.textMuted} />
+            <Text style={[styles.selectText, styles.placeholderText]}>
+              Search for help...
+            </Text>
+          </View>
+        )}
       </TouchableOpacity>
       {errors.helpType ? (
         <Text style={styles.errorText}>{errors.helpType}</Text>
@@ -462,72 +527,68 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
 
       <View style={styles.twoColumnRow}>
         <View style={styles.columnField}>
-          <AppInput
-            label="City"
-            placeholder="Enter your city"
-            value={form.city}
-            onChangeText={value => updateField('city', value)}
-            accessibilityLabel="City"
-            containerStyle={styles.inputColumn}
-            leftIcon={
-              <AppIcon
-                name="map-pin"
-                size={14}
-                color={AdminColors.primaryDark}
-              />
-            }
-          />
-        </View>
-        <View style={styles.columnField}>
-          <AppInput
-            label="State"
-            placeholder="Select your state"
-            value={form.state}
-            onChangeText={value => updateField('state', value)}
-            accessibilityLabel="State"
-            containerStyle={styles.inputColumn}
-            leftIcon={
-              <AppIcon
-                name="map-pin"
-                size={14}
-                color={AdminColors.primaryDark}
-              />
-            }
-          />
-        </View>
-      </View>
-
-      <Text style={styles.label}>Preferred Language</Text>
-      <View style={styles.languageGroup}>
-        {LANGUAGE_OPTIONS.map(language => (
+          <Text style={styles.locationLabel}>State</Text>
           <TouchableOpacity
-            key={language}
             style={[
-              styles.languageOption,
-              form.preferredLanguage === language &&
-                styles.languageOptionSelected,
+              styles.locationField,
+              errors.state ? styles.fieldError : null,
             ]}
-            onPress={() => updateField('preferredLanguage', language)}
+            onPress={() => setIsStateSelectorVisible(true)}
             activeOpacity={0.8}
-            accessibilityRole="radio"
-            accessibilityLabel={`Preferred language ${language}`}
-            accessibilityState={{
-              selected: form.preferredLanguage === language,
-            }}
+            accessibilityRole="button"
+            accessibilityLabel="Select state"
           >
-            <View style={styles.languageRadioOuter}>
-              <View
+            <View style={styles.locationFieldInner}>
+              <AppIcon name="map-pin" size={16} color={AdminColors.primaryDark} />
+              <Text
                 style={[
-                  styles.languageRadioInner,
-                  form.preferredLanguage === language &&
-                    styles.languageRadioInnerSelected,
+                  styles.locationFieldText,
+                  !selectedState && styles.locationPlaceholder,
                 ]}
-              />
+              >
+                {selectedState ? selectedState.name : 'Select your state'}
+              </Text>
             </View>
-            <Text style={styles.languageText}>{language}</Text>
+            <AppIcon name="chevron-down" size={16} color={AdminColors.primaryDark} />
           </TouchableOpacity>
-        ))}
+        </View>
+
+        <View style={styles.columnField}>
+          <Text style={styles.locationLabel}>City</Text>
+          <TouchableOpacity
+            style={[
+              styles.locationField,
+              !selectedState && styles.locationFieldDisabled,
+              errors.city ? styles.fieldError : null,
+            ]}
+            onPress={() => {
+              if (selectedState) {
+                setIsCitySelectorVisible(true);
+              }
+            }}
+            activeOpacity={selectedState ? 0.8 : 1}
+            accessibilityRole="button"
+            accessibilityLabel="Select city"
+            disabled={!selectedState}
+          >
+            <View style={styles.locationFieldInner}>
+              <AppIcon name="map-pin" size={16} color={AdminColors.primaryDark} />
+              <Text
+                style={[
+                  styles.locationFieldText,
+                  !selectedCity && styles.locationPlaceholder,
+                  !selectedState && styles.locationDisabledText,
+                ]}
+              >
+                {selectedCity || 'Select your city'}
+              </Text>
+            </View>
+            <AppIcon name="chevron-down" size={16} color={AdminColors.primaryDark} />
+          </TouchableOpacity>
+        </View>
       </View>
+      {errors.state ? <Text style={styles.errorText}>{errors.state}</Text> : null}
+      {errors.city ? <Text style={styles.errorText}>{errors.city}</Text> : null}
 
       <View style={styles.doubleButtonRow}>
         <AppButton
@@ -552,6 +613,8 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
       </View>
     </View>
   );
+
+  const cityOptions = selectedState ? getFilteredCities(selectedState, '') : [];
 
   const renderStepThree = () => (
     <View>
@@ -644,10 +707,6 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
           <Text style={styles.summaryValue}>
             {form.state || 'Not provided'}
           </Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Preferred Language</Text>
-          <Text style={styles.summaryValue}>{form.preferredLanguage}</Text>
         </View>
       </View>
 
@@ -791,6 +850,40 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         </ScrollView>
       </KeyboardAvoidingView>
 
+      <HelpTopicSelector
+        visible={isHelpTopicSelectorVisible}
+        selectedTopic={selectedHelpTopic}
+        onSelect={handleSelectHelpTopic}
+        onClose={() => setIsHelpTopicSelectorVisible(false)}
+      />
+
+      <LocationSelectorModal
+        visible={isStateSelectorVisible}
+        title="Select State"
+        options={getFilteredStates('').map(state => state.name)}
+        searchPlaceholder="Search states..."
+        selectedValue={selectedState?.name}
+        onClose={() => setIsStateSelectorVisible(false)}
+        onSelect={value => {
+          const nextState = INDIA_LOCATIONS.find(state => state.name === value) ?? null;
+          if (nextState) {
+            handleStateSelect(nextState);
+          }
+        }}
+      />
+
+      <LocationSelectorModal
+        visible={isCitySelectorVisible}
+        title="Select City"
+        options={selectedState ? getFilteredCities(selectedState, '') : []}
+        searchPlaceholder="Search cities..."
+        selectedValue={selectedCity ?? null}
+        onClose={() => setIsCitySelectorVisible(false)}
+        onSelect={value => {
+          handleCitySelect(value);
+        }}
+      />
+
       <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
     </SafeAreaView>
   );
@@ -878,12 +971,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: AdminColors.border,
+    borderColor: '#D9E4FF',
     borderRadius: BorderRadius.base,
     minHeight: 48,
     paddingHorizontal: Spacing.md,
     backgroundColor: AdminColors.cardSurface,
     marginBottom: Spacing.md,
+  },
+  defaultTopicSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  selectedTopicFieldContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  selectedTopicIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.sm,
+  },
+  selectedTopicText: {
+    flex: 1,
+    color: AdminColors.primaryDark,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  clearSelectedTopic: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: AdminColors.primaryLight,
   },
   selectText: {
     color: AdminColors.textPrimary,
@@ -892,6 +1017,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: AdminColors.textMuted,
+    marginLeft: Spacing.sm,
   },
   fieldError: {
     borderColor: AdminColors.error,
@@ -969,52 +1095,48 @@ const styles = StyleSheet.create({
   columnField: {
     flex: 1,
   },
-  inputColumn: {
-    marginBottom: 0,
-  },
-  languageGroup: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
-  },
-  languageOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: BorderRadius.base,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    backgroundColor: AdminColors.cardSurface,
-  },
-  languageOptionSelected: {
-    borderColor: AdminColors.primaryDark,
-    backgroundColor: AdminColors.primaryLight,
-  },
-  languageRadioOuter: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: AdminColors.primaryDark,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.xs,
-  },
-  languageRadioInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'transparent',
-  },
-  languageRadioInnerSelected: {
-    backgroundColor: AdminColors.primaryDark,
-  },
-  languageText: {
+  locationLabel: {
     color: AdminColors.primaryDark,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+    marginBottom: Spacing.xs,
+  },
+  locationField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: AdminColors.cardSurface,
+    borderWidth: 1,
+    borderColor: '#D9E4FF',
+    borderRadius: BorderRadius.base,
+    minHeight: 48,
+    paddingHorizontal: Spacing.md,
+  },
+  locationFieldDisabled: {
+    backgroundColor: AdminColors.background,
+    borderColor: AdminColors.border,
+    opacity: 0.8,
+  },
+  locationFieldInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  locationFieldText: {
+    color: AdminColors.primaryDark,
+    fontSize: 13,
+    flex: 1,
+    marginLeft: Spacing.sm,
+  },
+  locationPlaceholder: {
+    color: AdminColors.textMuted,
+  },
+  locationDisabledText: {
+    color: AdminColors.textMuted,
+  },
+  inputColumn: {
+    marginBottom: 0,
   },
   reviewCard: {
     backgroundColor: AdminColors.cardSurface,

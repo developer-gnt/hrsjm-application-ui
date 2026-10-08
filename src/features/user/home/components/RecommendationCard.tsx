@@ -15,6 +15,7 @@ import {
 } from '../../../../core/theme';
 import { AppIcon, ImageSlot } from '../../components';
 import type { HomeRecommendation } from '../types/home.types';
+import { HOME_RECOMMENDATION_CARD_HEIGHT } from './homeCarousel.constants';
 
 const RECOMMENDATION_IMAGES: Record<string, ImageSourcePropType> = {
   'home/recommendations/legal-workshop.png': require('../../../../assets/images/contact-cta-hands.jpg'),
@@ -102,6 +103,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
+    height: HOME_RECOMMENDATION_CARD_HEIGHT,
     backgroundColor: AdminColors.cardSurface,
     borderWidth: 1,
     borderColor: AdminColors.border,

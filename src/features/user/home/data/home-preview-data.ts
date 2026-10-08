@@ -36,10 +36,14 @@ export const ABOUT_DESCRIPTION =
   'Human Rights & Social Justice Mission (HRSJM) works for human rights, dignity, equality and social justice through awareness, advocacy, education and community support.';
 
 export const RIGHTS_CATEGORIES: RightsCategory[] = [
-  { id: 'human', title: 'Human Rights', icon: 'scale' },
-  { id: 'women', title: "Women's Rights", icon: 'users' },
-  { id: 'education', title: 'Right to Education', icon: 'graduation-cap' },
-  { id: 'children', title: "Children's Rights", icon: 'child-care' },
+  { id: 'human-rights', title: 'Human Rights', icon: 'scale' },
+  { id: 'womens-rights', title: "Women's Rights", icon: 'users' },
+  {
+    id: 'right-to-education',
+    title: 'Right to Education',
+    icon: 'graduation-cap',
+  },
+  { id: 'childrens-rights', title: "Children's Rights", icon: 'child-care' },
 ];
 
 export const WHAT_WE_DO_ITEMS: RightsCategory[] = [

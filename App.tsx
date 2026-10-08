@@ -48,7 +48,10 @@ import { UserHomeScreen } from './src/features/user/home';
 import { AboutScreen } from './src/features/user/about';
 import { ContactUsScreen } from './src/features/user/contact';
 import { GetHelpScreen, FileComplaintScreen } from './src/features/user/help';
-import { KnowYourRightsScreen as UserKnowYourRightsScreen } from './src/features/user/rights';
+import {
+  KnowYourRightsScreen as UserKnowYourRightsScreen,
+  RightDetailsScreen as UserRightDetailsScreen,
+} from './src/features/user/rights';
 import {
   RegisterForEventScreen,
   UserEventDetailsScreen,
@@ -69,6 +72,13 @@ type AppRoute =
   | { name: 'user-help' }
   | { name: 'file-complaint' }
   | { name: 'user-rights' }
+  | { name: 'user-rights-index' }
+  | {
+      name: 'user-right-details';
+      rightId: string;
+      returnTo: 'user-rights' | 'user-rights-index' | 'user-home';
+      topicsOnly?: boolean;
+    }
   | { name: 'user-events' }
   | { name: 'user-event-details'; event: UserEvent }
   | { name: 'user-event-register'; event: UserEvent }
@@ -134,6 +144,14 @@ function App() {
             onOpenGetHelp={() => setRoute({ name: 'user-help' })}
             onOpenEvents={() => setRoute({ name: 'user-events' })}
             onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenRight={rightId =>
+              setRoute({
+                name: 'user-right-details',
+                rightId,
+                returnTo: 'user-home',
+                topicsOnly: rightId === 'womens-rights',
+              })
+            }
           />
         ) : route.name === 'about' ? (
           <AboutScreen
@@ -174,12 +192,66 @@ function App() {
             onOpenNews={() => setRoute({ name: 'user-news' })}
           />
         ) : route.name === 'user-rights' ? (
+          <UserRightDetailsScreen
+            rightId="womens-rights"
+            onBack={() => setRoute({ name: 'user-home' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenRightsIndex={() => setRoute({ name: 'user-rights-index' })}
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+            onOpenEvents={() => setRoute({ name: 'user-events' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenRight={rightId =>
+              setRoute({
+                name: 'user-right-details',
+                rightId,
+                returnTo: 'user-rights',
+              })
+            }
+            onFileComplaint={() => setRoute({ name: 'file-complaint' })}
+          />
+        ) : route.name === 'user-rights-index' ? (
           <UserKnowYourRightsScreen
             onOpenHome={() => setRoute({ name: 'user-home' })}
             onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenContact={() => setRoute({ name: 'contact' })}
             onOpenEvents={() => setRoute({ name: 'user-events' })}
             onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenRight={rightId =>
+              setRoute({
+                name: 'user-right-details',
+                rightId,
+                returnTo: 'user-rights-index',
+              })
+            }
+          />
+        ) : route.name === 'user-right-details' ? (
+          <UserRightDetailsScreen
+            rightId={route.rightId}
+            onBack={() =>
+              route.returnTo === 'user-rights'
+                ? setRoute({ name: 'user-rights' })
+                : route.returnTo === 'user-rights-index'
+                  ? setRoute({ name: 'user-rights-index' })
+                  : setRoute({ name: 'user-home' })
+            }
+            topicsOnly={route.topicsOnly}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenRightsIndex={() => setRoute({ name: 'user-rights-index' })}
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+            onOpenEvents={() => setRoute({ name: 'user-events' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenRight={rightId =>
+              setRoute({
+                name: 'user-right-details',
+                rightId,
+                returnTo: route.returnTo,
+              })
+            }
+            onFileComplaint={() => setRoute({ name: 'file-complaint' })}
           />
         ) : route.name === 'user-event-details' ? (
           <UserEventDetailsScreen

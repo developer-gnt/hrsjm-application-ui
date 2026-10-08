@@ -312,6 +312,17 @@ const chevronLeft: React.FC<GlyphProps> = () => (
   <Polyline points="14.5,5.5 8,12 14.5,18.5" />
 );
 
+const chevronRight: React.FC<GlyphProps> = () => (
+  <Polyline points="9.5,5.5 16,12 9.5,18.5" />
+);
+
+const close: React.FC<GlyphProps> = () => (
+  <G>
+    <Line x1={5.5} y1={5.5} x2={18.5} y2={18.5} />
+    <Line x1={18.5} y1={5.5} x2={5.5} y2={18.5} />
+  </G>
+);
+
 const send: React.FC<GlyphProps> = () => (
   <G>
     <Line x1={21} y1={3} x2={11.5} y2={12.5} />
@@ -340,6 +351,21 @@ const link: React.FC<GlyphProps> = () => (
   </G>
 );
 
+const download: React.FC<GlyphProps> = () => (
+  <G>
+    <Path d="M12 3.5v11" />
+    <Polyline points="7.5,10.5 12,15 16.5,10.5" />
+    <Path d="M4.5 17.5v2a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-2" />
+  </G>
+);
+
+const quote: React.FC<GlyphProps> = () => (
+  <G>
+    <Path d="M4.5 11.5h5.2v7H3.4v-5.1c0-4.4 1.7-7.1 5.2-8.4v3c-2.2 1.1-3.5 2.2-4.1 3.5Z" />
+    <Path d="M14.3 11.5h5.2v7h-6.3v-5.1c0-4.4 1.7-7.1 5.2-8.4v3c-2.2 1.1-3.5 2.2-4.1 3.5Z" />
+  </G>
+);
+
 export const GLYPHS = {
   'arrow-right': arrowRight,
   bell,
@@ -350,7 +376,10 @@ export const GLYPHS = {
   'chevron-down': chevronDown,
   'chevron-left': chevronLeft,
   'child-care': childCare,
+  'chevron-right': chevronRight,
   clock,
+  close,
+  download,
   'doc-search': docSearch,
   email,
   eye,
@@ -375,6 +404,7 @@ export const GLYPHS = {
   phone,
   play,
   qr: qrCode,
+  quote,
   refresh,
   scale,
   search,

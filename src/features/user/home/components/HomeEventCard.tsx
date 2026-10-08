@@ -91,6 +91,7 @@ export const HomeEventCard: React.FC<HomeEventCardProps> = ({ event, onPress }) 
 
 const styles = StyleSheet.create({
   card: {
+    height: 106,
     backgroundColor: AdminColors.cardSurface,
     borderWidth: 1,
     borderColor: AdminColors.border,
