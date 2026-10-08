@@ -74,8 +74,33 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
     loadCausesData();
   };
 
-  const donationSummary = useMemo(() => {
-    return causesService.getMemberDonationSummary();
+  const kpiStats = useMemo(() => {
+    const totalCauses = causes.length;
+    const activeCauses = causes.filter(c => c.status === 'active').length;
+    const totalTarget = causes.reduce((sum, c) => sum + (c.targetAmount || 0), 0);
+    const totalRaised = causes.reduce((sum, c) => sum + (c.raisedAmount || 0), 0);
+    const totalBeneficiaries = causes.reduce((sum, c) => sum + (c.beneficiariesCount || 0), 0);
+    const totalDonors = causes.reduce((sum, c) => sum + (c.donorCount || 0), 0);
+    const percentage =
+      totalTarget > 0 ? Math.min(100, Math.round((totalRaised / totalTarget) * 100)) : 0;
+
+    const formatLakh = (val: number) => {
+      if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)}Cr`;
+      if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+      return `₹${val.toLocaleString('en-IN')}`;
+    };
+
+    return {
+      totalCauses,
+      activeCauses,
+      totalTarget,
+      totalRaised,
+      totalRaisedFormatted: formatLakh(totalRaised),
+      totalTargetFormatted: formatLakh(totalTarget),
+      totalBeneficiaries: totalBeneficiaries.toLocaleString('en-IN'),
+      totalDonors: totalDonors.toLocaleString('en-IN'),
+      percentage,
+    };
   }, [causes]);
 
   // Filter causes by tab and search
@@ -124,31 +149,94 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
         </Text>
       </View>
 
-      {/* Member Impact Discovery Summary Banner */}
-      <View style={styles.summaryBanner}>
-        <View style={styles.summaryContentRow}>
-          <View style={styles.summaryTextCol}>
-            <Text style={styles.summaryTag}>SUPPORT A CAUSE</Text>
-            <Text style={styles.summaryDesc}>
-              Find verified initiatives supported by HRSJM and contribute to meaningful social impact.
-            </Text>
+      {/* KPI Overview Grid & Mission Metrics */}
+      <View style={styles.kpiContainer}>
+        <View style={styles.kpiHeaderRow}>
+          <Text style={styles.kpiSectionTitle}>MISSION IMPACT METRICS</Text>
+          <View style={styles.liveIndicator}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>Live Impact</Text>
           </View>
         </View>
 
-        {/* Compact Member Stats Counters */}
-        <View style={styles.statsCountersRow}>
-          <View style={styles.miniStatCard}>
-            <Text style={styles.miniStatValue}>
-              {donationSummary.activeCausesCount}
-            </Text>
-            <Text style={styles.miniStatLabel}>Active Causes</Text>
+        {/* 2x2 Grid of KPI Cards */}
+        <View style={styles.kpiGrid}>
+          {/* Card 1: Active Campaigns */}
+          <View style={styles.kpiCard}>
+            <View style={[styles.kpiIconBox, { backgroundColor: '#EEF3FC' }]}>
+              <Text style={styles.kpiIcon}>🎯</Text>
+            </View>
+            <View style={styles.kpiInfo}>
+              <Text style={styles.kpiValue}>{kpiStats.activeCauses}</Text>
+              <Text style={styles.kpiLabel}>Active Causes</Text>
+              <Text style={styles.kpiSub}>of {kpiStats.totalCauses} Total Initiatives</Text>
+            </View>
           </View>
-          <View style={styles.miniStatDivider} />
-          <View style={styles.miniStatCard}>
-            <Text style={styles.miniStatValueGold}>
-              ₹{donationSummary.totalDonated.toLocaleString('en-IN')}
+
+          {/* Card 2: Total Raised */}
+          <View style={styles.kpiCard}>
+            <View style={[styles.kpiIconBox, { backgroundColor: '#ECFDF5' }]}>
+              <Text style={styles.kpiIcon}>💰</Text>
+            </View>
+            <View style={styles.kpiInfo}>
+              <Text style={[styles.kpiValue, { color: '#059669' }]}>
+                {kpiStats.totalRaisedFormatted}
+              </Text>
+              <Text style={styles.kpiLabel}>Funds Raised</Text>
+              <Text style={styles.kpiSub}>{kpiStats.percentage}% of {kpiStats.totalTargetFormatted}</Text>
+            </View>
+          </View>
+
+          {/* Card 3: Lives Impacted */}
+          <View style={styles.kpiCard}>
+            <View style={[styles.kpiIconBox, { backgroundColor: '#FFFBEB' }]}>
+              <Text style={styles.kpiIcon}>🤝</Text>
+            </View>
+            <View style={styles.kpiInfo}>
+              <Text style={[styles.kpiValue, { color: '#D97706' }]}>
+                {kpiStats.totalBeneficiaries}+
+              </Text>
+              <Text style={styles.kpiLabel}>Lives Impacted</Text>
+              <Text style={styles.kpiSub}>Verified Beneficiaries</Text>
+            </View>
+          </View>
+
+          {/* Card 4: Community Donors */}
+          <View style={styles.kpiCard}>
+            <View style={[styles.kpiIconBox, { backgroundColor: '#FEF2F2' }]}>
+              <Text style={styles.kpiIcon}>💖</Text>
+            </View>
+            <View style={styles.kpiInfo}>
+              <Text style={[styles.kpiValue, { color: '#DC2626' }]}>
+                {kpiStats.totalDonors}+
+              </Text>
+              <Text style={styles.kpiLabel}>Total Backers</Text>
+              <Text style={styles.kpiSub}>Community Donors</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Overall Goal Progress Bar */}
+        <View style={styles.kpiProgressWrapper}>
+          <View style={styles.kpiProgressMetaRow}>
+            <Text style={styles.kpiProgressLabel}>Overall Mission Funding Progress</Text>
+            <Text style={styles.kpiProgressPercent}>{kpiStats.percentage}%</Text>
+          </View>
+          <View style={styles.kpiProgressBarTrack}>
+            <View
+              style={[
+                styles.kpiProgressBarFill,
+                { width: `${kpiStats.percentage}%` },
+              ]}
+            />
+          </View>
+          <View style={styles.kpiProgressValuesRow}>
+            <Text style={styles.kpiProgressValueRaised}>
+              Raised: ₹{kpiStats.totalRaised.toLocaleString('en-IN')}
             </Text>
-            <Text style={styles.miniStatLabel}>Your Donations</Text>
+            <Text style={styles.kpiProgressValueTarget}>
+              Target: ₹{kpiStats.totalTarget.toLocaleString('en-IN')}
+            </Text>
           </View>
         </View>
       </View>
@@ -369,7 +457,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 2,
   },
-  summaryBanner: {
+  kpiContainer: {
     marginHorizontal: 16,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -383,64 +471,142 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  summaryContentRow: {
-    marginBottom: 12,
-  },
-  summaryTextCol: {
-    flex: 1,
-  },
-  summaryTag: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#C9A227',
-    letterSpacing: 0.8,
-    marginBottom: 3,
-  },
-  summaryDesc: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 13,
-    color: '#334155',
-    lineHeight: 18,
-  },
-  statsCountersRow: {
+  kpiHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  kpiSectionTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#1B3F8F',
+    letterSpacing: 0.8,
+  },
+  liveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 12,
     borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  liveText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  kpiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: 12,
+  },
+  kpiCard: {
+    width: '48.2%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
     borderColor: '#E2E8F0',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
   },
-  miniStatCard: {
-    flex: 1,
+  kpiIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
-  miniStatValue: {
+  kpiIcon: {
+    fontSize: 16,
+  },
+  kpiInfo: {
+    gap: 1,
+  },
+  kpiValue: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     color: '#0F2860',
     lineHeight: 22,
   },
-  miniStatValueGold: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#C9A227',
-    lineHeight: 22,
-  },
-  miniStatLabel: {
-    fontFamily: 'Inter-Medium',
+  kpiLabel: {
+    fontFamily: 'Inter-SemiBold',
     fontSize: 11,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  kpiSub: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 9.5,
     color: '#64748B',
     marginTop: 1,
   },
-  miniStatDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: '#CBD5E1',
+  kpiProgressWrapper: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 12,
+  },
+  kpiProgressMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  kpiProgressLabel: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0F2860',
+  },
+  kpiProgressPercent: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#C9A227',
+  },
+  kpiProgressBarTrack: {
+    height: 8,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  kpiProgressBarFill: {
+    height: '100%',
+    backgroundColor: '#C9A227',
+    borderRadius: 4,
+  },
+  kpiProgressValuesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  kpiProgressValueRaised: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 10.5,
+    color: '#059669',
+    fontWeight: '600',
+  },
+  kpiProgressValueTarget: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 10.5,
+    color: '#64748B',
   },
   searchBarRow: {
     flexDirection: 'row',
