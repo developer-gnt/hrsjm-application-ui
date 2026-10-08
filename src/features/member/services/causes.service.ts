@@ -149,35 +149,80 @@ class CausesService {
 
   public async getCauses(): Promise<MemberCause[]> {
     try {
-      const res = await apiClient.get<any>('/causes');
-      const data = (res as any)?.data || res;
-      if (Array.isArray(data) && data.length > 0) {
-        return data.map((item: any) => ({
-          id: item.id || `cause-${Math.random()}`,
-          title: item.title || item.name || 'Social Impact Cause',
-          category: item.category || 'General',
-          categoryKey: (item.category?.toLowerCase() || 'education') as any,
-          categoryIcon: item.categoryIcon || '🤝',
-          location: item.location || 'India',
-          imageUrl:
-            item.imageUrl ||
-            item.image ||
-            'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&auto=format&fit=crop&q=80',
-          description: item.description || '',
-          aboutStory: item.aboutStory || item.description || '',
-          targetAmount: Number(item.targetAmount || item.target_amount || 100000),
-          raisedAmount: Number(item.raisedAmount || item.raised_amount || 0),
-          status: item.status?.toLowerCase() === 'closed' ? 'closed' : 'active',
-          beneficiariesCount: Number(item.beneficiariesCount || 100),
-          targetBeneficiaries: item.targetBeneficiaries || 'Community',
-          donorCount: Number(item.donorCount || 10),
-          daysLeft: item.daysLeft || 30,
-          isVerified: true,
-          createdAt: item.createdAt || new Date().toISOString(),
-        }));
+      // 1. Fetch approved assistance requests from backend
+      const res = await apiClient.get<any>('/assistance-requests/approved');
+      const payload = (res as any)?.data || res;
+      const rawList = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.items)
+        ? payload.items
+        : [];
+
+      if (rawList.length > 0) {
+        const mappedBackendCauses: MemberCause[] = rawList.map((item: any) => {
+          const reasonLower = (item.reason || '').toLowerCase();
+          const descLower = (item.description || '').toLowerCase();
+          const text = `${reasonLower} ${descLower}`;
+
+          let categoryKey: any = 'education';
+          let category = 'Education';
+          let categoryIcon = '📚';
+          let defaultImg = 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&auto=format&fit=crop&q=80';
+
+          if (text.includes('med') || text.includes('hosp') || text.includes('surg') || text.includes('health') || text.includes('doctor')) {
+            categoryKey = 'healthcare';
+            category = 'Healthcare';
+            categoryIcon = '🏥';
+            defaultImg = 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=600&auto=format&fit=crop&q=80';
+          } else if (text.includes('food') || text.includes('ration') || text.includes('relief') || text.includes('flood') || text.includes('disaster')) {
+            categoryKey = 'relief';
+            category = 'Relief';
+            categoryIcon = '🍲';
+            defaultImg = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&auto=format&fit=crop&q=80';
+          } else if (text.includes('wom') || text.includes('girl') || text.includes('mother') || text.includes('widow')) {
+            categoryKey = 'women';
+            category = 'Women';
+            categoryIcon = '👩‍🏫';
+            defaultImg = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format&fit=crop&q=80';
+          } else if (text.includes('tree') || text.includes('plant') || text.includes('env') || text.includes('water')) {
+            categoryKey = 'environment';
+            category = 'Environment';
+            categoryIcon = '🌱';
+            defaultImg = 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80';
+          }
+
+          const target = Number(item.requested_amount || 50000);
+          const raised = Number(item.raised_amount || 0);
+
+          return {
+            id: item.id || `aid-${Math.random()}`,
+            title: item.reason || 'Assistance & Social Relief Support',
+            category,
+            categoryKey,
+            categoryIcon,
+            location: 'Mumbai, Maharashtra',
+            imageUrl: defaultImg,
+            description: item.description || `Financial aid and emergency support request submitted by ${item.full_name || 'verified citizen'}.`,
+            aboutStory: item.description || `HRSJM verified assistance request for ${item.full_name || 'applicant'}.\n\nPurpose: ${item.reason || 'Emergency Relief'}\n\nYour contribution goes directly to support this verified case.`,
+            targetAmount: target,
+            raisedAmount: raised,
+            status: item.status === 'CLOSED' ? 'closed' : 'active',
+            beneficiariesCount: 1,
+            targetBeneficiaries: `1 Beneficiary (${item.full_name || 'Family'})`,
+            donorCount: raised > 0 ? Math.ceil(raised / 1000) : 0,
+            daysLeft: 30,
+            isVerified: true,
+            createdAt: item.created_at || new Date().toISOString(),
+          };
+        });
+
+        // Merge backend verified causes with core mission causes, avoiding duplicates
+        const existingIds = new Set(mappedBackendCauses.map(c => c.id));
+        const nonDuplicateVerified = VERIFIED_CAUSES_DATA.filter(c => !existingIds.has(c.id));
+        this.causes = [...mappedBackendCauses, ...nonDuplicateVerified];
       }
     } catch {
-      // Return verified fallback dataset
+      // Fallback to default verified causes
     }
     return [...this.causes];
   }
@@ -207,16 +252,15 @@ class CausesService {
 
     try {
       await apiClient.post('/donations', {
-        cause_id: formData.causeId,
+        cause: formData.causeTitle,
         amount: formData.amount,
         donor_name: formData.donorName || 'Member Donor',
-        pan_number: formData.panNumber,
-        email: formData.email,
-        phone: formData.phone,
-        receipt_requested: formData.need80GReceipt,
+        donor_mobile: formData.phone || '9888880002',
+        donor_email: formData.email || 'member@hrsjm.org',
+        remark: formData.panNumber ? `80G PAN: ${formData.panNumber}` : null,
       });
     } catch {
-      // Handled locally
+      // Backend donation record attempted
     }
 
     const now = new Date();
