@@ -66,6 +66,7 @@ export const AppRoutes = {
   EDIT_PERSONAL_INFO: 'EditPersonalInfo',
   MY_ID_CARD: 'MyIdCard',
 
-  // About page (organization profile)
+  // About & Information pages
   ABOUT: 'About',
+  KNOW_YOUR_RIGHTS: 'KnowYourRights',
 } as const;
