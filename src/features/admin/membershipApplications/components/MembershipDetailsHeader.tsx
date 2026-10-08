@@ -47,7 +47,11 @@ export const MembershipDetailsHeader: React.FC<MembershipDetailsHeaderProps> = (
             style={styles.logoImage}
             resizeMode="contain"
           />
-          <Text style={styles.brandTitle}>HRSJM</Text>
+          <View style={styles.brandTextColumn}>
+            <Text style={styles.brandTitle}>HRSJM</Text>
+            <Text style={styles.brandSubtitleEn}>HUMAN RIGHTS & SOCIAL JUSTICE MISSION</Text>
+            <Text style={styles.brandSubtitleHi}>मानव अधिकार • सामाजिक न्याय</Text>
+          </View>
         </View>
 
         <View style={styles.rightActions}>
@@ -78,7 +82,7 @@ export const MembershipDetailsHeader: React.FC<MembershipDetailsHeaderProps> = (
             <View style={styles.avatarContainer}>
               <Image
                 source={{
-                  uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80',
+                  uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
                 }}
                 style={styles.avatarImage}
               />
@@ -92,7 +96,7 @@ export const MembershipDetailsHeader: React.FC<MembershipDetailsHeaderProps> = (
       <View style={styles.titleSection}>
         <Text style={styles.pageTitle}>Membership Application Details</Text>
         <Text style={styles.pageSubtitle}>
-          Review applicant information, documents and audit history.
+          View complete information and documents submitted by the applicant.
         </Text>
       </View>
     </View>
@@ -131,17 +135,37 @@ const styles = StyleSheet.create({
   centerBrand: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    flex: 1,
+    marginHorizontal: 8,
   },
   logoImage: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
+  },
+  brandTextColumn: {
+    flexDirection: 'column',
+    justifyContent: 'center',
   },
   brandTitle: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '900',
     color: AdminColors.primary,
     letterSpacing: 0.5,
+    lineHeight: 18,
+  },
+  brandSubtitleEn: {
+    fontSize: 5.5,
+    fontWeight: '700',
+    color: '#1E3A8A',
+    letterSpacing: 0.2,
+    marginTop: 1,
+  },
+  brandSubtitleHi: {
+    fontSize: 5.5,
+    fontWeight: '700',
+    color: '#D97706',
+    letterSpacing: 0.2,
   },
   rightActions: {
     flexDirection: 'row',

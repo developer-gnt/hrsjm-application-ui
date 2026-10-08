@@ -6,8 +6,12 @@ import {
   membershipApplicationsStore,
 } from '../src/features/admin/membershipApplications';
 
-describe('Membership Application Status Drop-Up Phase 4 Tests', () => {
-  const renderDetailsScreen = async (applicationId = 'APP20260915001') => {
+describe('Membership Application Status Action Flow Tests', () => {
+  beforeEach(() => {
+    membershipApplicationsStore.updateStatus('APP20260914023', 'under_review');
+  });
+
+  const renderDetailsScreen = async (applicationId = 'APP20260914023') => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
       renderer = ReactTestRenderer.create(
@@ -27,40 +31,48 @@ describe('Membership Application Status Drop-Up Phase 4 Tests', () => {
     return renderer!;
   };
 
-  it('renders "Application Status" button and opens drop-up modal with 3 status options', async () => {
+  it('renders initial Under Review button and clicking it reveals 50/50 Reject and Approve buttons with 100% Back', async () => {
     const renderer = await renderDetailsScreen('APP20260914023');
     const root = renderer.root;
 
-    // Find the bottom Application Status button
-    const statusBtn = root.findByProps({ accessibilityLabel: 'Application Status' });
-    expect(statusBtn).toBeDefined();
+    // Find the bottom Under Review action button
+    const underReviewBtn = root.findByProps({ accessibilityLabel: 'Under Review Action' });
+    expect(underReviewBtn).toBeDefined();
 
-    // Click to open drop-up
+    // Click to expand action area
     await act(async () => {
-      statusBtn.props.onPress();
+      underReviewBtn.props.onPress();
     });
 
-    // Drop-up title and 3 options
-    expect(root.findByProps({ children: 'Update Application Status' })).toBeDefined();
-    expect(root.findByProps({ accessibilityLabel: 'Set status to Under Review' })).toBeDefined();
-    expect(root.findByProps({ accessibilityLabel: 'Set status to Approved' })).toBeDefined();
-    expect(root.findByProps({ accessibilityLabel: 'Set status to Rejected' })).toBeDefined();
+    // 50/50 Reject and Approve buttons are shown
+    expect(root.findByProps({ accessibilityLabel: 'Reject Application' })).toBeDefined();
+    expect(root.findByProps({ accessibilityLabel: 'Approve Application' })).toBeDefined();
+    expect(root.findByProps({ accessibilityLabel: 'Go back to list' })).toBeDefined();
   });
 
-  it('updates application status to Approved when Approved option is selected in drop-up', async () => {
-    const renderer = await renderDetailsScreen('APP20260914023'); // initially under_review
+  it('updates application status to Approved when Approve button is pressed and confirmed in popup', async () => {
+    const renderer = await renderDetailsScreen('APP20260914023');
     const root = renderer.root;
 
-    // Open drop-up
-    const statusBtn = root.findByProps({ accessibilityLabel: 'Application Status' });
+    // Expand action area
+    const underReviewBtn = root.findByProps({ accessibilityLabel: 'Under Review Action' });
     await act(async () => {
-      statusBtn.props.onPress();
+      underReviewBtn.props.onPress();
     });
 
-    // Select "Approved"
-    const approvedOption = root.findByProps({ accessibilityLabel: 'Set status to Approved' });
+    // Press Approve
+    const approveBtn = root.findByProps({ accessibilityLabel: 'Approve Application' });
     await act(async () => {
-      approvedOption.props.onPress();
+      approveBtn.props.onPress();
+    });
+
+    // Confirmation popup appears
+    expect(root.findByProps({ children: 'Confirm Approval' })).toBeDefined();
+
+    // Confirm OK
+    const okBtn = root.findByProps({ accessibilityLabel: 'Confirm Approval' });
+    await act(async () => {
+      okBtn.props.onPress();
     });
 
     // Verify application status updated in store
@@ -68,43 +80,32 @@ describe('Membership Application Status Drop-Up Phase 4 Tests', () => {
     expect(app?.status).toBe('approved');
   });
 
-  it('updates application status to Rejected when Rejected option is selected in drop-up', async () => {
+  it('updates application status to Rejected when Reject button is pressed and confirmed in popup', async () => {
     const renderer = await renderDetailsScreen('APP20260914023');
     const root = renderer.root;
 
-    // Open drop-up
-    const statusBtn = root.findByProps({ accessibilityLabel: 'Application Status' });
+    // Expand action area
+    const underReviewBtn = root.findByProps({ accessibilityLabel: 'Under Review Action' });
     await act(async () => {
-      statusBtn.props.onPress();
+      underReviewBtn.props.onPress();
     });
 
-    // Select "Rejected"
-    const rejectedOption = root.findByProps({ accessibilityLabel: 'Set status to Rejected' });
+    // Press Reject
+    const rejectBtn = root.findByProps({ accessibilityLabel: 'Reject Application' });
     await act(async () => {
-      rejectedOption.props.onPress();
+      rejectBtn.props.onPress();
+    });
+
+    // Confirmation popup appears
+    expect(root.findByProps({ children: 'Confirm Rejection' })).toBeDefined();
+
+    // Confirm OK
+    const okBtn = root.findByProps({ accessibilityLabel: 'Confirm Rejection' });
+    await act(async () => {
+      okBtn.props.onPress();
     });
 
     const app = membershipApplicationsStore.getApplicationById('APP20260914023');
     expect(app?.status).toBe('rejected');
-  });
-
-  it('updates application status to Under Review when Under Review option is selected', async () => {
-    const renderer = await renderDetailsScreen('APP20260914023');
-    const root = renderer.root;
-
-    // Open drop-up
-    const statusBtn = root.findByProps({ accessibilityLabel: 'Application Status' });
-    await act(async () => {
-      statusBtn.props.onPress();
-    });
-
-    // Select "Under Review"
-    const underReviewOption = root.findByProps({ accessibilityLabel: 'Set status to Under Review' });
-    await act(async () => {
-      underReviewOption.props.onPress();
-    });
-
-    const app = membershipApplicationsStore.getApplicationById('APP20260914023');
-    expect(app?.status).toBe('under_review');
   });
 });

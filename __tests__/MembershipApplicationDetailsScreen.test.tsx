@@ -2,9 +2,17 @@ import React from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 import { Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { MembershipApplicationDetailsScreen } from '../src/features/admin/membershipApplications';
+import {
+  MembershipApplicationDetailsScreen,
+  membershipApplicationsStore,
+} from '../src/features/admin/membershipApplications';
 
-describe('MembershipApplicationDetailsScreen Phase 3 Tests', () => {
+describe('MembershipApplicationDetailsScreen Status Flow & Confirmation Tests', () => {
+  beforeEach(() => {
+    // Reset Aman Shaikh to under_review before each test
+    membershipApplicationsStore.updateStatus('APP20260915001', 'under_review');
+  });
+
   const renderDetailsScreen = async (props = {}) => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
@@ -18,7 +26,6 @@ describe('MembershipApplicationDetailsScreen Phase 3 Tests', () => {
           <MembershipApplicationDetailsScreen
             applicationId="APP20260915001"
             onBack={jest.fn()}
-            onStatusPress={jest.fn()}
             {...props}
           />
         </SafeAreaProvider>
@@ -27,102 +34,185 @@ describe('MembershipApplicationDetailsScreen Phase 3 Tests', () => {
     return renderer!;
   };
 
-  it('renders application details header and applicant summary card', async () => {
+  it('renders initial state: Activity Log has only Application Submitted and bottom bar has Under Review button', async () => {
     const renderer = await renderDetailsScreen();
     const root = renderer.root;
 
-    expect(root.findByProps({ children: 'Membership Application Details' })).toBeDefined();
-    expect(root.findAllByProps({ children: 'Aman Shaikh' }).length).toBeGreaterThanOrEqual(1);
-    expect(root.findByProps({ children: 'APP20260915001' })).toBeDefined();
-    expect(root.findAllByProps({ children: 'Individual Membership' }).length).toBeGreaterThanOrEqual(1);
-    expect(root.findAllByProps({ children: 'Approved' }).length).toBeGreaterThanOrEqual(1);
-  });
+    // Bottom bar has Under Review button
+    expect(root.findByProps({ accessibilityLabel: 'Under Review Action' })).toBeDefined();
 
-  it('renders the 3 tabs: Application Details, Documents, and Activity Log', async () => {
-    const renderer = await renderDetailsScreen();
-    const root = renderer.root;
-
-    expect(root.findByProps({ children: 'Application Details' })).toBeDefined();
-    expect(root.findByProps({ children: 'Documents' })).toBeDefined();
-    expect(root.findByProps({ children: 'Activity Log' })).toBeDefined();
-  });
-
-  it('renders personal information fields inside the Application Details tab by default', async () => {
-    const renderer = await renderDetailsScreen();
-    const root = renderer.root;
-
-    expect(root.findByProps({ children: 'Personal & Membership Details' })).toBeDefined();
-    expect(root.findByProps({ children: 'Full Name' })).toBeDefined();
-    expect(root.findByProps({ children: 'Date of Birth' })).toBeDefined();
-    expect(root.findByProps({ children: 'Gender' })).toBeDefined();
-    expect(root.findByProps({ children: "Father's Name" })).toBeDefined();
-    expect(root.findByProps({ children: 'Phone Number' })).toBeDefined();
-    expect(root.findByProps({ children: 'Email Address' })).toBeDefined();
-    expect(root.findByProps({ children: 'Address' })).toBeDefined();
-    expect(root.findByProps({ children: 'Occupation' })).toBeDefined();
-    expect(root.findByProps({ children: 'Membership Type' })).toBeDefined();
-  });
-
-  it('switches to Documents tab and renders submitted documents', async () => {
-    const renderer = await renderDetailsScreen();
-    const root = renderer.root;
-
-    const tabs = root.findAllByProps({ accessibilityRole: 'tab' });
-    const docsTab = tabs.find(tab => {
-      const texts = tab.findAllByType(Text);
-      return texts.some(t => String(t.props.children || '') === 'Documents');
-    });
-    expect(docsTab).toBeDefined();
-
-    await act(async () => {
-      docsTab!.props.onPress();
-    });
-
-    expect(root.findByProps({ children: 'Aadhaar Card' })).toBeDefined();
-    expect(root.findByProps({ children: 'Aadhaar_AmanShaikh.pdf' })).toBeDefined();
-  });
-
-  it('switches to Activity Log tab and renders timeline items', async () => {
-    const renderer = await renderDetailsScreen();
-    const root = renderer.root;
-
+    // Switch to Activity Log tab
     const tabs = root.findAllByProps({ accessibilityRole: 'tab' });
     const activityTab = tabs.find(tab => {
       const texts = tab.findAllByType(Text);
       return texts.some(t => String(t.props.children || '') === 'Activity Log');
     });
-    expect(activityTab).toBeDefined();
 
     await act(async () => {
       activityTab!.props.onPress();
     });
 
-    expect(root.findByProps({ children: 'Application Audit History' })).toBeDefined();
-    expect(root.findByProps({ children: 'Application Approved' })).toBeDefined();
     expect(root.findByProps({ children: 'Application Submitted' })).toBeDefined();
+    expect(root.findAllByProps({ children: 'Application is under review by admin.' }).length).toBe(0);
   });
 
-  it('renders bottom bar with Back button and Application Status action button', async () => {
-    const onBackMock = jest.fn();
-    const renderer = await renderDetailsScreen({ onBack: onBackMock });
-    const root = renderer.root;
-
-    expect(root.findByProps({ children: 'Application Status' })).toBeDefined();
-
-    const backButton = root.findByProps({ accessibilityLabel: 'Go back to list' });
-    expect(backButton).toBeDefined();
-
-    await act(async () => {
-      backButton.props.onPress();
-    });
-
-    expect(onBackMock).toHaveBeenCalled();
-  });
-
-  it('does NOT render a "Download Application PDF" button per requirements', async () => {
+  it('Scenario 1: Click Approve -> Popup appears -> Click Cancel -> Status remains Under Review', async () => {
     const renderer = await renderDetailsScreen();
     const root = renderer.root;
 
-    expect(root.findAllByProps({ children: 'Download Application PDF' }).length).toBe(0);
+    // Click Under Review
+    const underReviewBtn = root.findByProps({ accessibilityLabel: 'Under Review Action' });
+    await act(async () => {
+      underReviewBtn.props.onPress();
+    });
+
+    // Click Approve button
+    const approveBtn = root.findByProps({ accessibilityLabel: 'Approve Application' });
+    await act(async () => {
+      approveBtn.props.onPress();
+    });
+
+    // Confirm Approval modal is visible
+    expect(root.findByProps({ children: 'Confirm Approval' })).toBeDefined();
+    expect(
+      root.findByProps({
+        children: 'After approving the status you cannot change the status. Are you sure you want to approve this application?',
+      })
+    ).toBeDefined();
+
+    // Click Cancel
+    const cancelBtn = root.findByProps({ accessibilityLabel: 'Cancel status change' });
+    await act(async () => {
+      cancelBtn.props.onPress();
+    });
+
+    // Store is still under_review
+    const app = membershipApplicationsStore.getApplicationById('APP20260915001');
+    expect(app?.status).toBe('under_review');
+  });
+
+  it('Scenario 2: Click Approve -> Popup appears -> Click OK -> Status becomes Approved', async () => {
+    const renderer = await renderDetailsScreen();
+    const root = renderer.root;
+
+    // Click Under Review
+    const underReviewBtn = root.findByProps({ accessibilityLabel: 'Under Review Action' });
+    await act(async () => {
+      underReviewBtn.props.onPress();
+    });
+
+    // Click Approve button
+    const approveBtn = root.findByProps({ accessibilityLabel: 'Approve Application' });
+    await act(async () => {
+      approveBtn.props.onPress();
+    });
+
+    // Click OK on modal
+    const okBtn = root.findByProps({ accessibilityLabel: 'Confirm Approval' });
+    await act(async () => {
+      okBtn.props.onPress();
+    });
+
+    // Store is updated to approved
+    const app = membershipApplicationsStore.getApplicationById('APP20260915001');
+    expect(app?.status).toBe('approved');
+
+    // Bottom bar shows Approved
+    expect(root.findAllByProps({ children: 'Approved' }).length).toBeGreaterThanOrEqual(1);
+
+    // Switch to Activity Log tab and verify all 3 statuses exist
+    const tabs = root.findAllByProps({ accessibilityRole: 'tab' });
+    const activityTab = tabs.find(tab => {
+      const texts = tab.findAllByType(Text);
+      return texts.some(t => String(t.props.children || '') === 'Activity Log');
+    });
+
+    await act(async () => {
+      activityTab!.props.onPress();
+    });
+
+    expect(root.findByProps({ children: 'Application Submitted' })).toBeDefined();
+    expect(root.findByProps({ children: 'Application is under review by admin.' })).toBeDefined();
+    expect(root.findByProps({ children: 'Application approved successfully.' })).toBeDefined();
+  });
+
+  it('Scenario 3: Click Reject -> Popup appears -> Click Cancel -> Status remains Under Review', async () => {
+    const renderer = await renderDetailsScreen();
+    const root = renderer.root;
+
+    // Click Under Review
+    const underReviewBtn = root.findByProps({ accessibilityLabel: 'Under Review Action' });
+    await act(async () => {
+      underReviewBtn.props.onPress();
+    });
+
+    // Click Reject button
+    const rejectBtn = root.findByProps({ accessibilityLabel: 'Reject Application' });
+    await act(async () => {
+      rejectBtn.props.onPress();
+    });
+
+    // Confirm Rejection modal is visible
+    expect(root.findByProps({ children: 'Confirm Rejection' })).toBeDefined();
+    expect(
+      root.findByProps({
+        children: 'After rejecting the status you cannot change the status. Are you sure you want to reject this application?',
+      })
+    ).toBeDefined();
+
+    // Click Cancel
+    const cancelBtn = root.findByProps({ accessibilityLabel: 'Cancel status change' });
+    await act(async () => {
+      cancelBtn.props.onPress();
+    });
+
+    // Store is still under_review
+    const app = membershipApplicationsStore.getApplicationById('APP20260915001');
+    expect(app?.status).toBe('under_review');
+  });
+
+  it('Scenario 4: Click Reject -> Popup appears -> Click OK -> Status becomes Rejected', async () => {
+    const renderer = await renderDetailsScreen();
+    const root = renderer.root;
+
+    // Click Under Review
+    const underReviewBtn = root.findByProps({ accessibilityLabel: 'Under Review Action' });
+    await act(async () => {
+      underReviewBtn.props.onPress();
+    });
+
+    // Click Reject button
+    const rejectBtn = root.findByProps({ accessibilityLabel: 'Reject Application' });
+    await act(async () => {
+      rejectBtn.props.onPress();
+    });
+
+    // Click OK on modal
+    const okBtn = root.findByProps({ accessibilityLabel: 'Confirm Rejection' });
+    await act(async () => {
+      okBtn.props.onPress();
+    });
+
+    // Store is updated to rejected
+    const app = membershipApplicationsStore.getApplicationById('APP20260915001');
+    expect(app?.status).toBe('rejected');
+
+    // Bottom bar shows Rejected
+    expect(root.findAllByProps({ children: 'Rejected' }).length).toBeGreaterThanOrEqual(1);
+
+    // Switch to Activity Log tab and verify all 3 statuses exist
+    const tabs = root.findAllByProps({ accessibilityRole: 'tab' });
+    const activityTab = tabs.find(tab => {
+      const texts = tab.findAllByType(Text);
+      return texts.some(t => String(t.props.children || '') === 'Activity Log');
+    });
+
+    await act(async () => {
+      activityTab!.props.onPress();
+    });
+
+    expect(root.findByProps({ children: 'Application Submitted' })).toBeDefined();
+    expect(root.findByProps({ children: 'Application is under review by admin.' })).toBeDefined();
+    expect(root.findByProps({ children: 'Application rejected by admin.' })).toBeDefined();
   });
 });

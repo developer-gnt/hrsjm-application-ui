@@ -19,8 +19,6 @@ interface MembershipApplicationCardProps {
 export const MembershipApplicationCard: React.FC<MembershipApplicationCardProps> = ({
   application,
   onView,
-  onReview,
-  onReconsider,
 }) => {
   const getInitials = (name: string): string => {
     const parts = name.trim().split(/\s+/);
@@ -53,80 +51,15 @@ export const MembershipApplicationCard: React.FC<MembershipApplicationCardProps>
     }
   };
 
-  const renderActionButtons = () => {
-    switch (application.status) {
-      case 'approved':
-        return (
-          <View style={styles.buttonsRow}>
-            <TouchableOpacity
-              style={styles.viewButton}
-              onPress={() => onView?.(application)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={`View ${application.applicantName}`}
-            >
-              <Text style={styles.viewButtonText}>View</Text>
-            </TouchableOpacity>
-          </View>
-        );
-      case 'under_review':
-        return (
-          <View style={styles.buttonsRow}>
-            <TouchableOpacity
-              style={styles.viewButton}
-              onPress={() => onView?.(application)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={`View ${application.applicantName}`}
-            >
-              <Text style={styles.viewButtonText}>View</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.reviewButton}
-              onPress={() => onReview?.(application)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={`Review ${application.applicantName}`}
-            >
-              <Text style={styles.reviewButtonText}>Review</Text>
-            </TouchableOpacity>
-          </View>
-        );
-      case 'rejected':
-        return (
-          <View style={styles.buttonsRow}>
-            <TouchableOpacity
-              style={styles.viewButton}
-              onPress={() => onView?.(application)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={`View ${application.applicantName}`}
-            >
-              <Text style={styles.viewButtonText}>View</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.reconsiderButton}
-              onPress={() => onReconsider?.(application)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={`Reconsider ${application.applicantName}`}
-            >
-              <Text style={styles.reconsiderButtonText}>Reconsider</Text>
-            </TouchableOpacity>
-          </View>
-        );
-    }
-  };
-
   return (
     <TouchableOpacity
       style={styles.card}
-      activeOpacity={0.9}
+      activeOpacity={0.8}
       onPress={() => onView?.(application)}
       accessibilityRole="button"
       accessibilityLabel={`Application of ${application.applicantName}`}
     >
-      <View style={styles.cardHeaderRow}>
+      <View style={styles.cardRow}>
         {/* Left: Avatar */}
         <View style={styles.avatarContainer}>
           {application.avatarUrl ? (
@@ -143,8 +76,8 @@ export const MembershipApplicationCard: React.FC<MembershipApplicationCardProps>
           )}
         </View>
 
-        {/* Middle: Details */}
-        <View style={styles.middleDetails}>
+        {/* Middle-Left: Applicant Information */}
+        <View style={styles.applicantInfo}>
           <Text style={styles.applicantName} numberOfLines={1}>
             {application.applicantName}
           </Text>
@@ -153,21 +86,26 @@ export const MembershipApplicationCard: React.FC<MembershipApplicationCardProps>
           </Text>
           <View style={styles.appIdRow}>
             <Text style={styles.docIcon}>📄</Text>
-            <Text style={styles.applicationId}>{application.applicationId}</Text>
+            <Text style={styles.applicationId} numberOfLines={1}>
+              {application.applicationId}
+            </Text>
           </View>
         </View>
 
-        {/* Right: Status & Chevron */}
-        <View style={styles.rightColumn}>
-          <View style={styles.statusAndChevron}>
-            {renderStatusBadge()}
-            <Text style={styles.chevron}>›</Text>
-          </View>
-          <View style={styles.submissionTimeContainer}>
-            <Text style={styles.submittedLabel}>Submitted on</Text>
-            <Text style={styles.submittedDate}>{application.submittedAt}</Text>
-          </View>
-          {renderActionButtons()}
+        {/* Vertical Divider */}
+        <View style={styles.verticalDivider} />
+
+        {/* Middle-Right: Status & Submission Date/Time */}
+        <View style={styles.statusSection}>
+          <View style={styles.badgeWrapper}>{renderStatusBadge()}</View>
+          <Text style={styles.submittedDate} numberOfLines={1}>
+            {application.submittedAt}
+          </Text>
+        </View>
+
+        {/* Far Right: Right Arrow Chevron */}
+        <View style={styles.arrowContainer}>
+          <Text style={styles.chevron}>›</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -180,32 +118,33 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: '#E8EFF8',
-    padding: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     marginHorizontal: Spacing.base,
-    marginBottom: 12,
+    marginBottom: 10,
     shadowColor: '#0F2860',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 2,
   },
-  cardHeaderRow: {
+  cardRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   avatarContainer: {
-    marginRight: 12,
+    marginRight: 10,
   },
   avatarImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#E2E8F0',
   },
   initialsFallback: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#EEF3FC',
     alignItems: 'center',
     justifyContent: 'center',
@@ -217,30 +156,31 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1E3A8A',
   },
-  middleDetails: {
+  applicantInfo: {
     flex: 1,
     justifyContent: 'center',
-    paddingRight: 6,
+    paddingRight: 4,
   },
   applicantName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
     color: '#0F2860',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   membershipType: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#64748B',
     marginTop: 2,
+    lineHeight: 15,
   },
   appIdRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 3,
     gap: 4,
   },
   docIcon: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#1E3A8A',
   },
   applicationId: {
@@ -248,20 +188,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1E3A8A',
   },
-  rightColumn: {
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    minWidth: 135,
+  verticalDivider: {
+    width: 1,
+    height: 42,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 10,
   },
-  statusAndChevron: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  statusSection: {
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    minWidth: 110,
+    maxWidth: 130,
+  },
+  badgeWrapper: {
+    marginBottom: 4,
   },
   statusBadge: {
-    paddingVertical: 3,
+    paddingVertical: 2,
     paddingHorizontal: 8,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.sm,
   },
   badgeApproved: {
     backgroundColor: '#DCFCE7',
@@ -285,71 +230,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  chevron: {
-    fontSize: 18,
-    color: '#1E3A8A',
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  submissionTimeContainer: {
-    alignItems: 'flex-end',
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  submittedLabel: {
-    fontSize: 10,
-    color: '#94A3B8',
-  },
   submittedDate: {
     fontSize: 10,
     color: '#475569',
     fontWeight: '500',
-    marginTop: 1,
   },
-  buttonsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  viewButton: {
-    backgroundColor: '#EEF3FC',
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
+  arrowContainer: {
+    marginLeft: 6,
     justifyContent: 'center',
-  },
-  viewButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1E3A8A',
-  },
-  reviewButton: {
-    backgroundColor: '#F59E0B',
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: BorderRadius.md,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  reviewButtonText: {
-    fontSize: 12,
+  chevron: {
+    fontSize: 22,
+    color: '#0F2860',
     fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  reconsiderButton: {
-    backgroundColor: '#EEF3FC',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#D8E5F8',
-  },
-  reconsiderButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1E3A8A',
+    lineHeight: 22,
   },
 });
