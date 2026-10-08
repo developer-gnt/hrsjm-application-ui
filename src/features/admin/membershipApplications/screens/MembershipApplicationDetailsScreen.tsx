@@ -15,7 +15,10 @@ import { MembershipDetailsInfoTab } from '../components/MembershipDetailsInfoTab
 import { MembershipDocumentsTab } from '../components/MembershipDocumentsTab';
 import { MembershipActivityLogTab } from '../components/MembershipActivityLogTab';
 import { MembershipDetailsBottomBar } from '../components/MembershipDetailsBottomBar';
-import { MembershipStatusDropUpModal } from '../components/MembershipStatusDropUpModal';
+import {
+  ConfirmationType,
+  MembershipStatusConfirmationModal,
+} from '../components/MembershipStatusConfirmationModal';
 import { membershipApplicationsStore } from '../services/membershipApplicationsStore';
 import { ApplicationStatus, MembershipApplicationItem } from '../types/membershipApplications.types';
 
@@ -24,19 +27,18 @@ export type DetailsTabKey = 'details' | 'documents' | 'activity';
 interface MembershipApplicationDetailsScreenProps {
   applicationId: string;
   onBack: () => void;
-  onStatusPress?: () => void;
   onStatusChange?: (newStatus: ApplicationStatus) => void;
 }
 
 export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationDetailsScreenProps> = ({
   applicationId,
   onBack,
-  onStatusPress,
   onStatusChange,
 }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<DetailsTabKey>('details');
-  const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [underReviewActive, setUnderReviewActive] = useState(false);
+  const [confirmationType, setConfirmationType] = useState<ConfirmationType | null>(null);
 
   const [application, setApplication] = useState<MembershipApplicationItem | undefined>(() =>
     membershipApplicationsStore.getApplicationById(applicationId)
@@ -54,9 +56,39 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
     onStatusChange?.(newStatus);
   };
 
-  const handleOpenStatusModal = () => {
-    setStatusModalVisible(true);
-    onStatusPress?.();
+  const handleUnderReviewPress = () => {
+    if (application?.status === 'under_review') {
+      setUnderReviewActive(true);
+    }
+  };
+
+  const handleApprovePress = () => {
+    // Show confirmation modal
+    if (application?.status === 'under_review') {
+      setConfirmationType('approve');
+    }
+  };
+
+  const handleRejectPress = () => {
+    // Show confirmation modal
+    if (application?.status === 'under_review') {
+      setConfirmationType('reject');
+    }
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmationType === 'approve') {
+      handleSelectStatus('approved');
+      setUnderReviewActive(false);
+    } else if (confirmationType === 'reject') {
+      handleSelectStatus('rejected');
+      setUnderReviewActive(false);
+    }
+    setConfirmationType(null);
+  };
+
+  const handleCloseConfirmation = () => {
+    setConfirmationType(null);
   };
 
   if (!application) {
@@ -89,7 +121,7 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
 
     return (
       <View style={styles.tabsContainer}>
-        {tabs.map(tab => {
+        {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           return (
             <TouchableOpacity
@@ -117,7 +149,12 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
       case 'documents':
         return <MembershipDocumentsTab application={application} />;
       case 'activity':
-        return <MembershipActivityLogTab application={application} />;
+        return (
+          <MembershipActivityLogTab
+            application={application}
+            underReviewActive={underReviewActive}
+          />
+        );
     }
   };
 
@@ -142,15 +179,20 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
 
       <MembershipDetailsBottomBar
         bottomInset={insets.bottom}
+        status={application.status}
+        underReviewActive={underReviewActive}
         onBack={onBack}
-        onStatusPress={handleOpenStatusModal}
+        onUnderReviewPress={handleUnderReviewPress}
+        onApprovePress={handleApprovePress}
+        onRejectPress={handleRejectPress}
       />
 
-      <MembershipStatusDropUpModal
-        visible={statusModalVisible}
-        currentStatus={application.status}
-        onClose={() => setStatusModalVisible(false)}
-        onSelectStatus={handleSelectStatus}
+      {/* Confirmation Modal */}
+      <MembershipStatusConfirmationModal
+        visible={confirmationType !== null}
+        type={confirmationType}
+        onClose={handleCloseConfirmation}
+        onConfirm={handleConfirmAction}
       />
     </View>
   );
@@ -173,7 +215,7 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderRadius: BorderRadius.md,
     backgroundColor: '#EEF3FC',
     alignItems: 'center',
@@ -185,7 +227,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1E3A8A',
+    color: '#0F2860',
   },
   tabTextActive: {
     color: '#FFFFFF',

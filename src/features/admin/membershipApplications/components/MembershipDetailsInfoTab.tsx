@@ -10,42 +10,50 @@ interface MembershipDetailsInfoTabProps {
 interface InfoField {
   label: string;
   value?: string;
-  icon?: string;
 }
 
 export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> = ({
   application,
 }) => {
   const fields: InfoField[] = [
-    { label: 'Full Name', value: application.applicantName, icon: '👤' },
-    { label: 'Date of Birth', value: application.dob || '15 Aug 1995', icon: '📅' },
-    { label: 'Gender', value: application.gender || 'Not specified', icon: '⚧' },
-    { label: "Father's Name", value: application.fatherName || 'Not specified', icon: '👨' },
-    { label: 'Phone Number', value: application.phone || 'Not provided', icon: '📞' },
-    { label: 'Email Address', value: application.email || 'Not provided', icon: '✉️' },
-    { label: 'Address', value: application.address || 'Not specified', icon: '📍' },
-    { label: 'Occupation', value: application.occupation || 'Professional', icon: '💼' },
-    { label: 'Membership Type', value: application.membershipType, icon: '⭐' },
+    { label: 'Full Name', value: application.applicantName },
+    { label: 'Date of Birth', value: application.dob || 'Not specified' },
+    { label: 'Gender', value: application.gender || 'Not specified' },
+    { label: "Father's Name", value: application.fatherName || 'Not specified' },
+    { label: 'Phone Number', value: application.phone || 'Not provided' },
+    { label: 'Email Address', value: application.email || 'Not provided' },
+    { label: 'Address', value: application.address || 'Not specified' },
+    { label: 'Occupation', value: application.occupation || 'Not specified' },
+    { label: 'Membership Type', value: application.membershipType },
   ];
 
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.sectionHeader}>Personal & Membership Details</Text>
+        {/* Card Header with Blue Icon */}
+        <View style={styles.cardHeaderRow}>
+          <View style={styles.headerIconContainer}>
+            <Text style={styles.headerIcon}>👤</Text>
+          </View>
+          <Text style={styles.sectionHeader}>Personal Information</Text>
+        </View>
+
         <View style={styles.divider} />
 
-        {fields.map((field, idx) => (
-          <View
-            key={field.label}
-            style={[styles.row, idx === fields.length - 1 && styles.rowLast]}
-          >
-            <View style={styles.labelColumn}>
-              {field.icon ? <Text style={styles.fieldIcon}>{field.icon}</Text> : null}
-              <Text style={styles.fieldLabel}>{field.label}</Text>
+        {/* Key-Value Table */}
+        <View style={styles.tableContainer}>
+          {fields.map(field => (
+            <View key={field.label} style={styles.tableRow}>
+              <View style={styles.labelCol}>
+                <Text style={styles.labelText}>{field.label}</Text>
+              </View>
+              <Text style={styles.colon}>:</Text>
+              <View style={styles.valueCol}>
+                <Text style={styles.valueText}>{field.value}</Text>
+              </View>
             </View>
-            <Text style={styles.fieldValue}>{field.value}</Text>
-          </View>
-        ))}
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -54,7 +62,7 @@ export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> =
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: Spacing.base,
-    paddingBottom: Spacing.xl,
+    paddingBottom: Spacing.lg,
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -68,6 +76,23 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerIconContainer: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: '#EEF3FC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerIcon: {
+    fontSize: 14,
+    color: '#1E3A8A',
+  },
   sectionHeader: {
     fontSize: 15,
     fontWeight: '800',
@@ -76,37 +101,38 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: '#F1F5F9',
-    marginTop: 10,
-    marginBottom: 6,
+    marginTop: 12,
+    marginBottom: 8,
   },
-  row: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F8FAFC',
+  tableContainer: {
+    paddingVertical: 2,
   },
-  rowLast: {
-    borderBottomWidth: 0,
-    paddingBottom: 4,
-  },
-  labelColumn: {
+  tableRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 3,
+    alignItems: 'flex-start',
+    paddingVertical: 7,
   },
-  fieldIcon: {
-    fontSize: 12,
+  labelCol: {
+    width: 116,
   },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+  labelText: {
+    fontSize: 13,
     color: '#64748B',
+    fontWeight: '500',
   },
-  fieldValue: {
-    fontSize: 14,
+  colon: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '500',
+    marginRight: 10,
+  },
+  valueCol: {
+    flex: 1,
+  },
+  valueText: {
+    fontSize: 13,
     fontWeight: '700',
     color: '#0F2860',
-    lineHeight: 20,
-    paddingLeft: 18,
+    lineHeight: 18,
   },
 });

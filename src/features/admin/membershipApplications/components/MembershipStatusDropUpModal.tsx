@@ -34,20 +34,20 @@ const STATUS_OPTIONS: StatusOptionItem[] = [
     label: 'Under Review',
     subtitle: 'Queue application for document & background check',
     icon: '🕒',
-    bgStyle: { backgroundColor: '#FFF9ED' },
-    iconCircleStyle: { backgroundColor: '#D97706' },
+    bgStyle: { backgroundColor: '#FFFBEB' },
+    iconCircleStyle: { backgroundColor: '#F59E0B' },
     textColor: '#B45309',
-    borderColor: '#FEEFD6',
+    borderColor: '#FDE68A',
   },
   {
     key: 'approved',
     label: 'Approved',
     subtitle: 'Verify applicant credentials and grant membership',
     icon: '✓',
-    bgStyle: { backgroundColor: '#EEFAF4' },
+    bgStyle: { backgroundColor: '#F0FDF4' },
     iconCircleStyle: { backgroundColor: '#10B981' },
     textColor: '#15803D',
-    borderColor: '#DCF5E8',
+    borderColor: '#BBF7D0',
   },
   {
     key: 'rejected',
@@ -57,7 +57,7 @@ const STATUS_OPTIONS: StatusOptionItem[] = [
     bgStyle: { backgroundColor: '#FEF2F2' },
     iconCircleStyle: { backgroundColor: '#EF4444' },
     textColor: '#DC2626',
-    borderColor: '#FDE4E4',
+    borderColor: '#FECACA',
   },
 ];
 
@@ -103,7 +103,7 @@ export const MembershipStatusDropUpModal: React.FC<MembershipStatusDropUpModalPr
 
               {/* Status Options */}
               <View style={styles.optionsList}>
-                {STATUS_OPTIONS.map(opt => {
+                {STATUS_OPTIONS.map((opt) => {
                   const isCurrent = currentStatus === opt.key;
                   return (
                     <TouchableOpacity
@@ -130,7 +130,7 @@ export const MembershipStatusDropUpModal: React.FC<MembershipStatusDropUpModalPr
                           </Text>
                           {isCurrent ? (
                             <View style={[styles.currentBadge, { backgroundColor: opt.textColor }]}>
-                              <Text style={styles.currentBadgeText}>Current</Text>
+                              <Text style={styles.currentBadgeText}>CURRENT</Text>
                             </View>
                           ) : null}
                         </View>
@@ -196,31 +196,31 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     color: '#0F2860',
   },
   closeButton: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderRadius: BorderRadius.full,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeIcon: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#64748B',
   },
   optionsList: {
-    gap: 12,
+    gap: 10,
     marginVertical: Spacing.sm,
   },
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
+    padding: 12,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
     gap: 12,
@@ -229,14 +229,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconSymbol: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '700',
   },
@@ -249,32 +249,32 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   optionLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
   },
   currentBadge: {
-    paddingVertical: 2,
+    paddingVertical: 1.5,
     paddingHorizontal: 6,
     borderRadius: BorderRadius.sm,
   },
   currentBadgeText: {
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FFFFFF',
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   optionSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#64748B',
     marginTop: 2,
   },
   actionChevron: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '600',
   },
   cancelButton: {
-    marginTop: Spacing.sm,
-    paddingVertical: 12,
+    marginTop: Spacing.xs,
+    paddingVertical: 11,
     borderRadius: BorderRadius.md,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cancelButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#475569',
   },

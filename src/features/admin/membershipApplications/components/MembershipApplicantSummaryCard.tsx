@@ -3,7 +3,6 @@ import {
   Image,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { BorderRadius, Spacing } from '../../../../core';
@@ -11,12 +10,10 @@ import { MembershipApplicationItem } from '../types/membershipApplications.types
 
 interface MembershipApplicantSummaryCardProps {
   application: MembershipApplicationItem;
-  onPress?: () => void;
 }
 
 export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummaryCardProps> = ({
   application,
-  onPress,
 }) => {
   const getInitials = (name: string): string => {
     const parts = name.trim().split(/\s+/);
@@ -49,69 +46,81 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
     }
   };
 
-  const CardWrapper = onPress ? TouchableOpacity : View;
-
   return (
-    <CardWrapper
-      style={styles.card}
-      activeOpacity={0.85}
-      onPress={onPress}
-      accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={`Summary of ${application.applicantName}`}
-    >
-      {/* Left: Avatar */}
-      <View style={styles.avatarContainer}>
-        {application.avatarUrl ? (
-          <Image
-            source={{ uri: application.avatarUrl }}
-            style={styles.avatarImage}
-          />
-        ) : (
-          <View style={styles.initialsFallback}>
-            <Text style={styles.initialsText}>
-              {getInitials(application.applicantName)}
-            </Text>
-          </View>
-        )}
-      </View>
+    <View style={styles.card}>
+      <View style={styles.cardRow}>
+        {/* Left: Avatar */}
+        <View style={styles.avatarContainer}>
+          {application.avatarUrl ? (
+            <Image
+              source={{ uri: application.avatarUrl }}
+              style={styles.avatarImage}
+            />
+          ) : (
+            <View style={styles.initialsFallback}>
+              <Text style={styles.initialsText}>
+                {getInitials(application.applicantName)}
+              </Text>
+            </View>
+          )}
+        </View>
 
-      {/* Middle Left: Applicant Name & Info */}
-      <View style={styles.leftInfoColumn}>
-        <Text style={styles.applicantName} numberOfLines={1}>
-          {application.applicantName}
-        </Text>
-        <Text style={styles.membershipType} numberOfLines={1}>
-          {application.membershipType}
-        </Text>
-        <View style={styles.idRow}>
-          <Text style={styles.docIcon}>📄</Text>
-          <Text style={styles.appIdText}>{application.applicationId}</Text>
+        {/* Center: Applicant Information & Contacts */}
+        <View style={styles.mainInfo}>
+          <Text style={styles.applicantName} numberOfLines={1}>
+            {application.applicantName}
+          </Text>
+          <Text style={styles.membershipType} numberOfLines={1}>
+            {application.membershipType}
+          </Text>
+
+          <View style={styles.metaList}>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaIcon}>📄</Text>
+              <Text style={styles.appIdText} numberOfLines={1}>
+                {application.applicationId}
+              </Text>
+            </View>
+
+            {application.phone ? (
+              <View style={styles.metaRow}>
+                <Text style={styles.metaIcon}>📞</Text>
+                <Text style={styles.metaText} numberOfLines={1}>
+                  {application.phone}
+                </Text>
+              </View>
+            ) : null}
+
+            {application.email ? (
+              <View style={styles.metaRow}>
+                <Text style={styles.metaIcon}>✉️</Text>
+                <Text style={styles.metaText} numberOfLines={1}>
+                  {application.email}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        {/* Right: Status, Date & Chevron */}
+        <View style={styles.rightSection}>
+          <View style={styles.topRightRow}>
+            <View style={styles.badgeWrapper}>{renderStatusBadge()}</View>
+            <Text style={styles.chevron}>›</Text>
+          </View>
+
+          <View style={styles.submittedContainer}>
+            <Text style={styles.submittedLabel}>Submitted on</Text>
+            <Text style={styles.submittedDate}>{application.submittedAt}</Text>
+          </View>
         </View>
       </View>
-
-      {/* Vertical Divider */}
-      <View style={styles.verticalDivider} />
-
-      {/* Right Column: Status Badge & Date */}
-      <View style={styles.rightStatusColumn}>
-        {renderStatusBadge()}
-        <Text style={styles.dateText} numberOfLines={1}>
-          {application.submittedAt}
-        </Text>
-      </View>
-
-      {/* Far Right Chevron */}
-      <View style={styles.chevronContainer}>
-        <Text style={styles.chevronIcon}>›</Text>
-      </View>
-    </CardWrapper>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
@@ -127,8 +136,13 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
   avatarContainer: {
-    marginRight: 12,
+    marginRight: 10,
+    marginTop: 2,
   },
   avatarImage: {
     width: 52,
@@ -147,59 +161,64 @@ const styles = StyleSheet.create({
     borderColor: '#D8E5F8',
   },
   initialsText: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: '#1E3A8A',
   },
-  leftInfoColumn: {
+  mainInfo: {
     flex: 1,
-    justifyContent: 'center',
-    paddingRight: 8,
+    paddingRight: 6,
   },
   applicantName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     color: '#0F2860',
-    lineHeight: 21,
+    lineHeight: 20,
   },
   membershipType: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#64748B',
-    marginTop: 2,
+    marginTop: 1,
+    marginBottom: 4,
   },
-  idRow: {
+  metaList: {
+    gap: 2,
+  },
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 5,
     gap: 4,
   },
-  docIcon: {
-    fontSize: 12,
+  metaIcon: {
+    fontSize: 10,
     color: '#1E3A8A',
   },
   appIdText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#1E3A8A',
   },
-  verticalDivider: {
-    width: 1,
-    height: 44,
-    backgroundColor: '#E2E8F0',
-    marginHorizontal: 10,
+  metaText: {
+    fontSize: 11,
+    color: '#334155',
+    fontWeight: '500',
   },
-  rightStatusColumn: {
+  rightSection: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    minWidth: 105,
+    maxWidth: 130,
+  },
+  topRightRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 110,
     gap: 6,
   },
+  badgeWrapper: {},
   statusBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: BorderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 2.5,
+    paddingHorizontal: 8,
+    borderRadius: BorderRadius.sm,
   },
   badgeApproved: {
     backgroundColor: '#DCFCE7',
@@ -223,21 +242,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  dateText: {
-    fontSize: 11,
+  chevron: {
+    fontSize: 18,
+    color: '#0F2860',
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  submittedContainer: {
+    alignItems: 'flex-end',
+    marginTop: 8,
+  },
+  submittedLabel: {
+    fontSize: 9.5,
     color: '#64748B',
+  },
+  submittedDate: {
+    fontSize: 10,
+    color: '#475569',
     fontWeight: '500',
-  },
-  chevronContainer: {
-    marginLeft: 8,
-    paddingRight: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chevronIcon: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#1E3A8A',
-    lineHeight: 22,
+    marginTop: 1,
   },
 });
