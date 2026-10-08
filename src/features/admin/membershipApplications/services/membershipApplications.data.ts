@@ -1,13 +1,18 @@
-import { MembershipApplicationItem, ApplicationStatsData } from '../types/membershipApplications.types';
+import {
+  MembershipApplicationItem,
+  ApplicationStatsData,
+} from '../types/membershipApplications.types';
 
 export const INITIAL_APPLICATION_STATS: ApplicationStatsData = {
-  total: 612,
-  underReview: 124,
-  approved: 342,
-  rejected: 54,
+  total: 0,
+  underReview: 0,
+  approved: 0,
+  rejected: 0,
 };
 
-export const INITIAL_APPLICATIONS: MembershipApplicationItem[] = [
+export const INITIAL_APPLICATIONS: MembershipApplicationItem[] = [];
+
+export const TEST_SEED_APPLICATIONS: MembershipApplicationItem[] = [
   {
     id: 'app-1',
     applicationId: 'APP20260915001',

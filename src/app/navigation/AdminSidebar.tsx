@@ -55,6 +55,7 @@ export const MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
     groupTitle: 'MAIN NAVIGATION',
     items: [
       { id: 'dashboard', icon: '🏠', title: 'Dashboard', target: AppRoutes.ADMIN_DASHBOARD_TAB },
+      { id: 'membership_applications', icon: '📝', title: 'Membership Applications', target: AppRoutes.MEMBERSHIP_APPLICATIONS },
       { id: 'members', icon: '👥', title: 'Members Directory', target: AppRoutes.ADMIN_MEMBERS_TAB },
       { id: 'assistance', icon: '🤝', title: 'Donation Seekers & Aid', target: AppRoutes.ADMIN_APPLICATIONS_TAB },
       { id: 'complaints', icon: '💬', title: 'Support & Complaints', target: AppRoutes.ADMIN_COMPLAINTS_TAB },

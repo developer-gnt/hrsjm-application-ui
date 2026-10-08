@@ -30,6 +30,8 @@ export type AdminTabParamList = {
  */
 export type MoreStackParamList = {
   MoreMenu: undefined;
+  [AppRoutes.MEMBERSHIP_APPLICATIONS]: undefined;
+  [AppRoutes.MEMBERSHIP_APPLICATION_DETAILS]: { applicationId: string };
   [AppRoutes.PAYMENT_VERIFICATION]: undefined;
   [AppRoutes.PAYMENT_DETAILS]: { paymentId: string };
   [AppRoutes.EXPENSE_VOUCHERS]: undefined;

@@ -20,6 +20,8 @@ export const AppRoutes = {
 
   // Admin More / Financial Sub-routes
   MORE_MENU: 'MoreMenu',
+  MEMBERSHIP_APPLICATIONS: 'MembershipApplications',
+  MEMBERSHIP_APPLICATION_DETAILS: 'MembershipApplicationDetails',
   PAYMENT_VERIFICATION: 'PaymentVerification',
   PAYMENT_DETAILS: 'PaymentDetails',
   EXPENSE_VOUCHERS: 'ExpenseVouchers',

@@ -53,6 +53,10 @@ import {
   ProfitLossScreen,
   BalanceSheetScreen,
 } from '../../features/admin/reports';
+import {
+  MembershipApplicationsScreen,
+  MembershipApplicationDetailsScreen,
+} from '../../features/admin/membershipApplications';
 import { AboutScreen } from '../../features/user/about';
 import { MoreStackParamList } from './NavigationTypes';
 
@@ -65,6 +69,44 @@ const Stack = createNativeStackNavigator<MoreStackParamList>();
 export const MoreNavigator: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="MoreMenu" component={MoreMenuScreen} />
+
+    {/* Membership Applications */}
+    <Stack.Screen name={AppRoutes.MEMBERSHIP_APPLICATIONS}>
+      {({ navigation }) => (
+        <MembershipApplicationsScreen
+          onViewApplication={app =>
+            navigation.navigate(AppRoutes.MEMBERSHIP_APPLICATION_DETAILS as any, {
+              applicationId: app.applicationId || app.id,
+            })
+          }
+          onReviewApplication={app =>
+            navigation.navigate(AppRoutes.MEMBERSHIP_APPLICATION_DETAILS as any, {
+              applicationId: app.applicationId || app.id,
+            })
+          }
+          onBottomTabPress={tabKey => {
+            if (tabKey === 'dashboard') {
+              navigation.navigate(AppRoutes.ADMIN_DASHBOARD_TAB as any);
+            } else if (tabKey === 'members') {
+              navigation.navigate(AppRoutes.ADMIN_MEMBERS_TAB as any);
+            } else if (tabKey === 'complaints') {
+              navigation.navigate(AppRoutes.ADMIN_COMPLAINTS_TAB as any);
+            } else if (tabKey === 'more') {
+              navigation.navigate('MoreMenu' as any);
+            }
+          }}
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.MEMBERSHIP_APPLICATION_DETAILS}>
+      {({ route, navigation }) => (
+        <MembershipApplicationDetailsScreen
+          applicationId={(route.params as any)?.applicationId || ''}
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
 
     {/* Payments — Phase 5 (real) */}
     <Stack.Screen

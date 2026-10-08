@@ -24,32 +24,7 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
   const [selectedDoc, setSelectedDoc] = useState<DocumentItemData | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
 
-  const documents: DocumentItemData[] =
-    application.documents && application.documents.length > 0
-      ? application.documents
-      : [
-          {
-            id: 'doc-fallback-1',
-            title: 'Aadhaar Card',
-            fileName: 'aadhaar_card.pdf',
-            fileSize: '251 KB',
-            uploadDate: '14/09/26',
-          },
-          {
-            id: 'doc-fallback-2',
-            title: 'Voter ID',
-            fileName: 'voter_id.jpg',
-            fileSize: '320 KB',
-            uploadDate: '14/09/26',
-          },
-          {
-            id: 'doc-fallback-3',
-            title: 'Other Document (Employment ID)',
-            fileName: 'employee_id.pdf',
-            fileSize: '180 KB',
-            uploadDate: '14/09/26',
-          },
-        ];
+  const documents: DocumentItemData[] = application.documents || [];
 
   const handleOpenDoc = (doc: DocumentItemData) => {
     setSelectedDoc(doc);
@@ -92,37 +67,44 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
 
         <View style={styles.divider} />
 
-        {/* Documents List */}
-        <View style={styles.docList}>
-          {documents.map((doc) => (
-            <View key={doc.id} style={styles.docRow}>
-              {/* File type icon badge */}
-              <View style={styles.iconCol}>{renderFileIcon(doc)}</View>
+        {/* Documents List or Empty State */}
+        {documents.length === 0 ? (
+          <View style={styles.emptyDocsContainer}>
+            <Text style={styles.emptyDocsIcon}>📁</Text>
+            <Text style={styles.emptyDocsText}>No documents attached to this application</Text>
+          </View>
+        ) : (
+          <View style={styles.docList}>
+            {documents.map(doc => (
+              <View key={doc.id} style={styles.docRow}>
+                {/* File type icon badge */}
+                <View style={styles.iconCol}>{renderFileIcon(doc)}</View>
 
-              {/* Title and metadata */}
-              <View style={styles.docDetails}>
-                <Text style={styles.docTitle} numberOfLines={1}>
-                  {doc.title}
-                </Text>
-                <Text style={styles.docMeta} numberOfLines={1}>
-                  {doc.fileName} • {doc.fileSize} • {doc.uploadDate}
-                </Text>
+                {/* Title and metadata */}
+                <View style={styles.docDetails}>
+                  <Text style={styles.docTitle} numberOfLines={1}>
+                    {doc.title}
+                  </Text>
+                  <Text style={styles.docMeta} numberOfLines={1}>
+                    {doc.fileName} • {doc.fileSize} • {doc.uploadDate}
+                  </Text>
+                </View>
+
+                {/* View Button */}
+                <TouchableOpacity
+                  style={styles.viewButton}
+                  onPress={() => handleOpenDoc(doc)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${doc.title}`}
+                >
+                  <Text style={styles.viewEyeIcon}>👁</Text>
+                  <Text style={styles.viewButtonText}>View</Text>
+                </TouchableOpacity>
               </View>
-
-              {/* View Button */}
-              <TouchableOpacity
-                style={styles.viewButton}
-                onPress={() => handleOpenDoc(doc)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel={`View ${doc.title}`}
-              >
-                <Text style={styles.viewEyeIcon}>👁</Text>
-                <Text style={styles.viewButtonText}>View</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Interactive Document Preview Modal */}
@@ -258,5 +240,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#1D4ED8',
+  },
+  emptyDocsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+  },
+  emptyDocsIcon: {
+    fontSize: 28,
+    marginBottom: 8,
+  },
+  emptyDocsText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#64748B',
+    textAlign: 'center',
   },
 });
