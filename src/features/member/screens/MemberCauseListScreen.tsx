@@ -149,94 +149,58 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
         </Text>
       </View>
 
-      {/* KPI Overview Grid & Mission Metrics */}
-      <View style={styles.kpiContainer}>
-        <View style={styles.kpiHeaderRow}>
-          <Text style={styles.kpiSectionTitle}>MISSION IMPACT METRICS</Text>
-          <View style={styles.liveIndicator}>
+      {/* Sleek Executive Mission Impact Card */}
+      <View style={styles.heroImpactCard}>
+        {/* Top Header: Badge & Live Indicator */}
+        <View style={styles.heroTopRow}>
+          <View style={styles.heroBadge}>
+            <Text style={styles.heroBadgeText}>HRSJM MISSION IMPACT</Text>
+          </View>
+          <View style={styles.liveIndicatorPill}>
             <View style={styles.liveDot} />
-            <Text style={styles.liveText}>Live Impact</Text>
+            <Text style={styles.liveIndicatorText}>Live</Text>
           </View>
         </View>
 
-        {/* 2x2 Grid of KPI Cards */}
-        <View style={styles.kpiGrid}>
-          {/* Card 1: Active Campaigns */}
-          <View style={styles.kpiCard}>
-            <View style={[styles.kpiIconBox, { backgroundColor: '#EEF3FC' }]}>
-              <Text style={styles.kpiIcon}>🎯</Text>
-            </View>
-            <View style={styles.kpiInfo}>
-              <Text style={styles.kpiValue}>{kpiStats.activeCauses}</Text>
-              <Text style={styles.kpiLabel}>Active Causes</Text>
-              <Text style={styles.kpiSub}>of {kpiStats.totalCauses} Total Initiatives</Text>
-            </View>
+        {/* Primary Metric: Funds Raised & Target */}
+        <View style={styles.heroMainMetricRow}>
+          <View>
+            <Text style={styles.heroRaisedAmount}>{kpiStats.totalRaisedFormatted}</Text>
+            <Text style={styles.heroRaisedSub}>
+              Raised of <Text style={styles.heroTargetHighlight}>{kpiStats.totalTargetFormatted}</Text> Goal
+            </Text>
           </View>
-
-          {/* Card 2: Total Raised */}
-          <View style={styles.kpiCard}>
-            <View style={[styles.kpiIconBox, { backgroundColor: '#ECFDF5' }]}>
-              <Text style={styles.kpiIcon}>💰</Text>
-            </View>
-            <View style={styles.kpiInfo}>
-              <Text style={[styles.kpiValue, { color: '#059669' }]}>
-                {kpiStats.totalRaisedFormatted}
-              </Text>
-              <Text style={styles.kpiLabel}>Funds Raised</Text>
-              <Text style={styles.kpiSub}>{kpiStats.percentage}% of {kpiStats.totalTargetFormatted}</Text>
-            </View>
-          </View>
-
-          {/* Card 3: Lives Impacted */}
-          <View style={styles.kpiCard}>
-            <View style={[styles.kpiIconBox, { backgroundColor: '#FFFBEB' }]}>
-              <Text style={styles.kpiIcon}>🤝</Text>
-            </View>
-            <View style={styles.kpiInfo}>
-              <Text style={[styles.kpiValue, { color: '#D97706' }]}>
-                {kpiStats.totalBeneficiaries}+
-              </Text>
-              <Text style={styles.kpiLabel}>Lives Impacted</Text>
-              <Text style={styles.kpiSub}>Verified Beneficiaries</Text>
-            </View>
-          </View>
-
-          {/* Card 4: Community Donors */}
-          <View style={styles.kpiCard}>
-            <View style={[styles.kpiIconBox, { backgroundColor: '#FEF2F2' }]}>
-              <Text style={styles.kpiIcon}>💖</Text>
-            </View>
-            <View style={styles.kpiInfo}>
-              <Text style={[styles.kpiValue, { color: '#DC2626' }]}>
-                {kpiStats.totalDonors}+
-              </Text>
-              <Text style={styles.kpiLabel}>Total Backers</Text>
-              <Text style={styles.kpiSub}>Community Donors</Text>
-            </View>
+          <View style={styles.heroPercentBox}>
+            <Text style={styles.heroPercentText}>{kpiStats.percentage}%</Text>
+            <Text style={styles.heroPercentSub}>Funded</Text>
           </View>
         </View>
 
-        {/* Overall Goal Progress Bar */}
-        <View style={styles.kpiProgressWrapper}>
-          <View style={styles.kpiProgressMetaRow}>
-            <Text style={styles.kpiProgressLabel}>Overall Mission Funding Progress</Text>
-            <Text style={styles.kpiProgressPercent}>{kpiStats.percentage}%</Text>
+        {/* Sleek Golden Progress Bar */}
+        <View style={styles.heroProgressTrack}>
+          <View
+            style={[
+              styles.heroProgressFill,
+              { width: `${Math.max(5, kpiStats.percentage)}%` },
+            ]}
+          />
+        </View>
+
+        {/* 3-Column Compact Stats Row */}
+        <View style={styles.heroStatsRow}>
+          <View style={styles.heroStatCol}>
+            <Text style={styles.heroStatValue}>{kpiStats.activeCauses}</Text>
+            <Text style={styles.heroStatLabel}>Active Causes</Text>
           </View>
-          <View style={styles.kpiProgressBarTrack}>
-            <View
-              style={[
-                styles.kpiProgressBarFill,
-                { width: `${kpiStats.percentage}%` },
-              ]}
-            />
+          <View style={styles.heroStatDivider} />
+          <View style={styles.heroStatCol}>
+            <Text style={styles.heroStatValue}>{kpiStats.totalBeneficiaries}+</Text>
+            <Text style={styles.heroStatLabel}>Beneficiaries</Text>
           </View>
-          <View style={styles.kpiProgressValuesRow}>
-            <Text style={styles.kpiProgressValueRaised}>
-              Raised: ₹{kpiStats.totalRaised.toLocaleString('en-IN')}
-            </Text>
-            <Text style={styles.kpiProgressValueTarget}>
-              Target: ₹{kpiStats.totalTarget.toLocaleString('en-IN')}
-            </Text>
+          <View style={styles.heroStatDivider} />
+          <View style={styles.heroStatCol}>
+            <Text style={styles.heroStatValue}>{kpiStats.totalDonors}+</Text>
+            <Text style={styles.heroStatLabel}>Supporters</Text>
           </View>
         </View>
       </View>
@@ -457,156 +421,145 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 2,
   },
-  kpiContainer: {
+  heroImpactCard: {
     marginHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: '#0F2860',
+    borderRadius: 18,
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#1E3A8A',
     shadowColor: '#0F2860',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  kpiHeaderRow: {
+  heroTopRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  kpiSectionTitle: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#1B3F8F',
-    letterSpacing: 0.8,
-  },
-  liveIndicator: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#ECFDF5',
+    marginBottom: 10,
+  },
+  heroBadge: {
+    backgroundColor: 'rgba(201, 162, 39, 0.18)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: 'rgba(201, 162, 39, 0.35)',
+  },
+  heroBadgeText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FBBF24',
+    letterSpacing: 0.6,
+  },
+  liveIndicatorPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
   },
   liveDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#10B981',
+    backgroundColor: '#34D399',
   },
-  liveText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#065F46',
-  },
-  kpiGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 10,
-    marginBottom: 12,
-  },
-  kpiCard: {
-    width: '48.2%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  kpiIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  kpiIcon: {
-    fontSize: 16,
-  },
-  kpiInfo: {
-    gap: 1,
-  },
-  kpiValue: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#0F2860',
-    lineHeight: 22,
-  },
-  kpiLabel: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#334155',
-  },
-  kpiSub: {
-    fontFamily: 'Inter-Regular',
+  liveIndicatorText: {
+    fontFamily: 'Inter-Bold',
     fontSize: 9.5,
-    color: '#64748B',
+    fontWeight: '700',
+    color: '#34D399',
+  },
+  heroMainMetricRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 10,
+  },
+  heroRaisedAmount: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    lineHeight: 28,
+  },
+  heroRaisedSub: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: '#94A3B8',
     marginTop: 1,
   },
-  kpiProgressWrapper: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 12,
-  },
-  kpiProgressMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  kpiProgressLabel: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 11,
+  heroTargetHighlight: {
+    color: '#FBBF24',
     fontWeight: '700',
-    color: '#0F2860',
   },
-  kpiProgressPercent: {
+  heroPercentBox: {
+    alignItems: 'flex-end',
+  },
+  heroPercentText: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 12,
+    fontSize: 20,
     fontWeight: '800',
-    color: '#C9A227',
+    color: '#FBBF24',
+    lineHeight: 24,
   },
-  kpiProgressBarTrack: {
-    height: 8,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 4,
+  heroPercentSub: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 10,
+    color: '#94A3B8',
+  },
+  heroProgressTrack: {
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 6,
+    marginBottom: 12,
   },
-  kpiProgressBarFill: {
+  heroProgressFill: {
     height: '100%',
-    backgroundColor: '#C9A227',
-    borderRadius: 4,
+    backgroundColor: '#F59E0B',
+    borderRadius: 3,
   },
-  kpiProgressValuesRow: {
+  heroStatsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  kpiProgressValueRaised: {
+  heroStatCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  heroStatValue: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  heroStatLabel: {
     fontFamily: 'Inter-Medium',
     fontSize: 10.5,
-    color: '#059669',
-    fontWeight: '600',
+    color: '#94A3B8',
+    marginTop: 1,
   },
-  kpiProgressValueTarget: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 10.5,
-    color: '#64748B',
+  heroStatDivider: {
+    width: 1,
+    height: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   searchBarRow: {
     flexDirection: 'row',
