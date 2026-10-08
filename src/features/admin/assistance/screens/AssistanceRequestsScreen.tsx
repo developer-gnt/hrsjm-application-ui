@@ -33,7 +33,7 @@ import type {
   CreateAssistanceRequestPayload,
   UpdateAssistanceStatusBody,
 } from '../types/assistance.types';
-import { AppEmptyState, AppErrorState } from '../../../../core';
+import { AppEmptyState, AppErrorState, AppPagination } from '../../../../core';
 
 export function AssistanceRequestsScreen() {
   const { width } = useWindowDimensions();
@@ -67,6 +67,17 @@ export function AssistanceRequestsScreen() {
   const [selectedRequest, setSelectedRequest] = useState<AssistanceRequest | null>(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedItems = React.useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredItems.slice(startIndex, startIndex + pageSize);
+  }, [filteredItems, page, pageSize]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [activeTab, searchQuery, filterState]);
 
 
   const [feedbackConfig, setFeedbackConfig] = useState<{
@@ -164,7 +175,7 @@ export function AssistanceRequestsScreen() {
 
       <FlatList
         style={styles.list}
-        data={filteredItems}
+        data={paginatedItems}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <SeekerRowCard
@@ -303,6 +314,18 @@ export function AssistanceRequestsScreen() {
               onAction={clearFilters}
             />
           )
+        }
+        ListFooterComponent={
+          filteredItems.length > 0 ? (
+            <AppPagination
+              currentPage={page}
+              totalItems={filteredItems.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="seekers"
+            />
+          ) : undefined
         }
         contentContainerStyle={styles.listContent}
       />

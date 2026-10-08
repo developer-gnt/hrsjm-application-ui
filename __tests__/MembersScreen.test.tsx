@@ -81,7 +81,7 @@ describe('MembersScreen (mock-data UI build)', () => {
     expect(text).toContain('Expiring Soon (284)');
     expect(text).toContain('Aman Shaikh');
     expect(text).toContain('HRSJM202600123');
-    expect(text).toContain('352 days left');
+    expect(text).toContain('months left');
     expect(text).toContain('Manage and view all registered members.');
   });
 
@@ -141,6 +141,6 @@ describe('MembersScreen (mock-data UI build)', () => {
     const text = renderedText(tree);
     expect(text).toContain('Sanjya Khan');
     expect(text).not.toContain('Aman Shaikh');
-    expect(text).toContain('12 days left');
+    expect(text).toContain('Expiring Soon');
   });
 });

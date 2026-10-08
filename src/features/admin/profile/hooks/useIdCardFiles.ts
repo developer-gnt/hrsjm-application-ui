@@ -20,11 +20,6 @@ interface UseIdCardFilesOptions {
 export const useIdCardFiles = ({ onMessage, profile }: UseIdCardFilesOptions) => {
   const [busyAction, setBusyAction] = useState<IdCardAction>(null);
 
-  // Background prewarm queue
-  if (profile) {
-    prewarmIdCardPdf(profile).catch(() => undefined);
-  }
-
   const download = useCallback(
     async (targetProfile: AdminProfile) => {
       if (busyAction) return;

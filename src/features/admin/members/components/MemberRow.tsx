@@ -1,5 +1,5 @@
-import React, { memo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { memo, useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { BrandColors, StatusTones } from '../../../../core/theme/colors';
 import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
 import { Typography } from '../../../../core/theme/typography';
@@ -8,7 +8,7 @@ import { PressableScale } from '../../../../core/components/common/PressableScal
 import { EllipsisVertical } from '../../../../core/components/icons';
 import { formatDate } from '../../../../core/utils/date';
 import { Member } from '../types';
-import { getDaysRemaining, getValidityTone } from '../utils/members.utils';
+import { formatRemainingValidity } from '../utils/members.utils';
 import { Avatar } from './Avatar';
 import { MemberStatusBadge } from './MemberStatusBadge';
 
@@ -25,18 +25,42 @@ interface MemberRowProps {
 
 const AVATAR_SIZE = 40;
 
-const renderValidityText = (member: Member) => {
-  const daysRemaining = getDaysRemaining(member.validTill);
-  const tone = getValidityTone(daysRemaining);
+const ValidityAnimatedText: React.FC<{ validTill?: string }> = ({ validTill }) => {
+  const { text, tone } = formatRemainingValidity(validTill);
   const toneColor = StatusTones[tone].text;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const translateYAnim = useRef(new Animated.Value(2)).current;
 
-  if (daysRemaining <= 0) {
-    return <Text style={[styles.daysText, { color: toneColor }]}>Expired</Text>;
-  }
+  useEffect(() => {
+    fadeAnim.setValue(0);
+    translateYAnim.setValue(2);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 320,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateYAnim, {
+        toValue: 0,
+        duration: 320,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [text]);
+
   return (
-    <Text style={[styles.daysText, { color: toneColor }]}>
-      {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left
-    </Text>
+    <Animated.View
+      style={{
+        opacity: fadeAnim,
+        transform: [{ translateY: translateYAnim }],
+      }}
+    >
+      <Text style={[styles.daysText, { color: toneColor }]} numberOfLines={1}>
+        {text}
+      </Text>
+    </Animated.View>
   );
 };
 
@@ -121,7 +145,7 @@ const MemberRowComponent: React.FC<MemberRowProps> = ({
             <Text style={styles.validDate} numberOfLines={1}>
               {formatDate(member.validTill)}
             </Text>
-            {renderValidityText(member)}
+            <ValidityAnimatedText validTill={member.validTill} />
           </View>
 
           <View style={styles.statusColumn}>
@@ -196,7 +220,7 @@ const MemberRowComponent: React.FC<MemberRowProps> = ({
           <View style={styles.narrowValidityRow}>
             <Text style={styles.meta}>Valid till {formatDate(member.validTill)}</Text>
             <Text style={styles.dotSeparator}>·</Text>
-            {renderValidityText(member)}
+            <ValidityAnimatedText validTill={member.validTill} />
           </View>
         </View>
       </View>

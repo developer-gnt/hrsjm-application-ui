@@ -109,6 +109,9 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
       } else if (onNavigate) {
         onNavigate('MyProfile');
       }
+    } catch (err: any) {
+      const errMsg = err?.message || 'Failed to update personal info.';
+      setErrors({ phone: errMsg });
     } finally {
       setIsSaving(false);
     }

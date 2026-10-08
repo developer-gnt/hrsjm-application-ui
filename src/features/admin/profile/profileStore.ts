@@ -30,7 +30,7 @@ interface ProfileStore {
   consumeStagedMessage: () => string | null;
 }
 
-const formatDateStr = (dateStr?: string | Date | null, fallback = '15 Sep 2026'): string => {
+const formatDateStr = (dateStr?: string | Date | null, fallback = ''): string => {
   if (!dateStr) return fallback;
   try {
     const d = new Date(dateStr);
@@ -54,7 +54,6 @@ const mapBackendRole = (roles?: Array<{ name: string }>): string => {
 
 const generateAutoMemberId = (userId?: string, seq = 1): string => {
   if (!userId) return 'HRSJM-00001';
-  // Extract digits from uuid or fallback
   const digits = userId.replace(/\D/g, '');
   if (digits.length >= 5) {
     return `HRSJM-${digits.slice(-5)}`;
@@ -71,38 +70,38 @@ const getInitialProfile = (): AdminProfile => {
   if (user) {
     const isUserAdmin = user.roles?.some((r: any) => r.name?.toUpperCase() === 'ADMIN');
     const adminId = isUserAdmin
-      ? `ADMIN${user.id ? user.id.replace(/\D/g, '').slice(-3).padStart(3, '0') || '201' : '201'}`
+      ? `ADMIN${user.id ? user.id.replace(/\D/g, '').slice(-3).padStart(3, '0') || '001' : '001'}`
       : generateAutoMemberId(user.id, 1);
     return {
-      fullName: user.full_name || 'Member',
-      accountName: user.full_name || 'User',
-      email: user.email || 'admin@hrsjm.org',
-      phone: user.mobile_number || '—',
+      fullName: user.full_name || '',
+      accountName: user.full_name || '',
+      email: user.email || '',
+      phone: user.mobile_number || '',
       avatar: user.avatar || null,
       role: mapBackendRole(user.roles),
       accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
       membershipType: isUserAdmin ? 'Executive Member' : 'Individual Member',
       memberId: adminId,
       adminId,
-      dateOfBirth: '12 Mar 2002',
-      memberSince: formatDateStr(user.created_at, '15 Sep 2026'),
-      validTill: '15 Sep 2027',
+      dateOfBirth: '',
+      memberSince: formatDateStr(user.created_at, ''),
+      validTill: '',
     };
   }
   return {
-    accountName: 'Admin User',
-    adminId: 'ADMIN201',
-    fullName: 'Mubasshir Farooqui',
-    email: 'admin@hrsjm.org',
-    phone: '8850248290',
+    accountName: '',
+    adminId: '',
+    fullName: '',
+    email: '',
+    phone: '',
     avatar: null,
     role: 'Admin',
     accountStatus: 'Active',
     membershipType: 'Executive Member',
-    memberId: 'ADMIN201',
-    dateOfBirth: '12 Mar 2002',
-    memberSince: '15 Sep 2026',
-    validTill: '15 Sep 2027',
+    memberId: '',
+    dateOfBirth: '',
+    memberSince: '',
+    validTill: '',
   };
 };
 
@@ -117,10 +116,10 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       // 1. Fetch fresh authenticated user profile from /auth/me to always stay synced with DB
       let user: any = null;
       try {
-        const res = await apiClient.get<any>(ApiRoutes.AUTH.ME);
+        const res: any = await apiClient.get<any>(ApiRoutes.AUTH.ME);
         user = res?.data || res;
         if (user && user.id) {
-          useAuthStore.setState({ user });
+          useAuthStore.setState({ user: { ...useAuthStore.getState().user, ...user } });
         }
       } catch {
         user = useAuthStore.getState().user;
@@ -154,7 +153,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
 
       const memberSince = formatDateStr(
         membershipData?.start_date || user.created_at,
-        '15 Sep 2026',
+        '',
       );
       const defaultValidDate = new Date();
       defaultValidDate.setFullYear(defaultValidDate.getFullYear() + 1);
@@ -164,17 +163,17 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       );
 
       const dynamicProfile: AdminProfile = {
-        fullName: user.full_name || 'Member',
-        accountName: user.full_name || 'User',
+        fullName: user.full_name || '',
+        accountName: user.full_name || '',
         email: user.email || '—',
-        phone: user.mobile_number || '—',
+        phone: user.mobile_number || user.phone || '—',
         avatar: user.avatar || get().profile.avatar || null,
         role,
         accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
         membershipType: membershipData?.category?.name || (isUserAdmin ? 'Executive Member' : 'Individual Member'),
         memberId,
         adminId,
-        dateOfBirth: (membershipData?.application_data as any)?.personal_details?.dob || '—',
+        dateOfBirth: (membershipData?.application_data as any)?.personal_details?.dob || '',
         memberSince,
         validTill,
       };
@@ -187,29 +186,33 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
 
   updatePersonalInfo: async input => {
     // 1. Persist to backend /auth/me
-    try {
-      const updatedUser = await apiClient.patch<any>(ApiRoutes.AUTH.ME, {
-        full_name: input.fullName,
-        email: input.email,
-        mobile_number: input.phone,
-        phone: input.phone,
-      });
+    const res: any = await apiClient.patch<any>(ApiRoutes.AUTH.ME, {
+      full_name: input.fullName,
+      email: input.email,
+      mobile_number: input.phone,
+      phone: input.phone,
+    });
 
-      // 2. Sync useAuthStore with updated user
-      const currentUser = useAuthStore.getState().user;
-      if (currentUser) {
-        useAuthStore.setState({
-          user: {
-            ...currentUser,
-            full_name: input.fullName,
-            email: input.email,
-            mobile_number: input.phone,
-            ...(updatedUser?.data || updatedUser || {}),
-          },
-        });
-      }
-    } catch (err) {
-      console.warn('Backend profile update notice:', err);
+    const userData = res?.data || res;
+
+    // 2. Sync useAuthStore with updated user (safely preserving roles)
+    const currentUser = useAuthStore.getState().user;
+    const roles =
+      userData?.roles && Array.isArray(userData.roles) && userData.roles.length > 0
+        ? userData.roles
+        : currentUser?.roles || [];
+
+    if (currentUser || userData) {
+      useAuthStore.setState({
+        user: {
+          ...currentUser,
+          ...(typeof userData === 'object' && userData ? userData : {}),
+          full_name: input.fullName,
+          email: input.email,
+          mobile_number: input.phone,
+          roles,
+        },
+      });
     }
 
     set(state => ({

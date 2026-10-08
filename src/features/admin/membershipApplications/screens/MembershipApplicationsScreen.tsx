@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppEmptyState } from '../../../../core';
+import { AppEmptyState, AppPagination } from '../../../../core';
 import { MembershipApplicationsHeader } from '../components/MembershipApplicationsHeader';
 import { MembershipStatsCards } from '../components/MembershipStatsCards';
 import { MembershipSearchBar } from '../components/MembershipSearchBar';
@@ -38,6 +38,8 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   const [activeTab, setActiveTab] = useState<StatusTabKey>('all');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     status: 'all',
     membershipType: 'All Types',
@@ -56,6 +58,11 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     });
     return unsubscribe;
   }, []);
+
+  // Reset to page 1 on filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeTab, filterOptions]);
 
   // When top tab is selected, sync with filter options
   const handleSelectTab = (tab: StatusTabKey) => {
@@ -138,6 +145,11 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     });
   }, [applications, activeTab, filterOptions, searchQuery]);
 
+  const paginatedApplications = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredApplications.slice(startIndex, startIndex + pageSize);
+  }, [filteredApplications, page, pageSize]);
+
   const renderHeader = () => (
     <View style={styles.headerArea}>
       <MembershipStatsCards stats={stats} />
@@ -183,10 +195,22 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
       />
 
       <FlatList
-        data={filteredApplications}
+        data={paginatedApplications}
         keyExtractor={item => item.id}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmptyState}
+        ListFooterComponent={
+          filteredApplications.length > 0 ? (
+            <AppPagination
+              currentPage={page}
+              totalItems={filteredApplications.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="applications"
+            />
+          ) : undefined
+        }
         renderItem={({ item }) => (
           <MembershipApplicationCard
             application={item}

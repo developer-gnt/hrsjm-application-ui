@@ -31,8 +31,9 @@ import { useDebouncedValue } from '../../../../core/hooks/useDebouncedValue';
 import { AdminColors, BrandColors, Spacing, Typography, BorderRadius } from '../../../../core/theme';
 import { formatINR } from '../../../../core/utils';
 import { AppRoutes } from '../../../../core/constants/routes';
-import { useExpenses, useExpenseStats } from '../hooks/useExpenses';
+import { useExpensesPaginated, useExpenseStats } from '../hooks/useExpenses';
 import { ExpenseVoucherCard } from '../components/ExpenseVoucherCard';
+import { AppPagination } from '../../../../core/components';
 import type { VoucherStatus, PaymentMethod } from '../../accounting/types/accounting.types';
 import type { MoreStackParamList } from '../../../../app/navigation/NavigationTypes';
 
@@ -62,6 +63,8 @@ export const ExpenseVouchersScreen: React.FC<ExpenseVouchersScreenProps> = ({
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [methodFilter, setMethodFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const debouncedSearch = useDebouncedValue(search);
 
   const status: VoucherStatus | undefined =
@@ -71,13 +74,15 @@ export const ExpenseVouchersScreen: React.FC<ExpenseVouchersScreenProps> = ({
     methodFilter === 'ALL' ? undefined : (methodFilter as PaymentMethod);
 
   const stats = useExpenseStats();
-  const expensesQuery = useExpenses({
+  const expensesQuery = useExpensesPaginated({
     status,
     payment_method: paymentMethod,
     search: debouncedSearch || undefined,
+    page,
+    limit: pageSize,
   });
-  const vouchers = expensesQuery.data?.pages.flatMap(page => page.items) ?? [];
-  const totalCount = expensesQuery.data?.pages[0]?.meta.total ?? 0;
+  const vouchers = expensesQuery.data?.items ?? [];
+  const totalCount = expensesQuery.data?.meta.total ?? 0;
 
   const refresh = useCallback(async () => {
     await Promise.all([expensesQuery.refetch(), stats.refetch()]);
@@ -237,15 +242,16 @@ export const ExpenseVouchersScreen: React.FC<ExpenseVouchersScreenProps> = ({
             colors={[BrandColors.navy]}
           />
         }
-        onEndReachedThreshold={0.4}
-        onEndReached={() => {
-          if (expensesQuery.hasNextPage && !expensesQuery.isFetchingNextPage) {
-            void expensesQuery.fetchNextPage();
-          }
-        }}
         ListFooterComponent={
-          expensesQuery.isFetchingNextPage ? (
-            <AppLoader size="small" message="Loading more…" />
+          totalCount > 0 ? (
+            <AppPagination
+              currentPage={page}
+              totalItems={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="expenses"
+            />
           ) : undefined
         }
         ListEmptyComponent={

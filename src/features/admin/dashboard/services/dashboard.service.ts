@@ -7,9 +7,12 @@ import type {
 } from '../types/dashboard.types';
 
 /** GET /admin/dashboard — all dashboard KPIs, breakdowns and feeds in one call. */
-export const getAdminDashboard = async (): Promise<AdminDashboardResponse> => {
+export const getAdminDashboard = async (
+  params?: { month?: string; growthMonths?: number },
+): Promise<AdminDashboardResponse> => {
   const response = await apiClient.get<AdminDashboardResponse>(
     ApiRoutes.ADMIN.DASHBOARD,
+    { params },
   );
   return response.data;
 };

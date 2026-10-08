@@ -33,18 +33,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
 
-  const fullName = user?.full_name || 'Aman Shaikh';
-  const role = user?.roles?.[0]?.name || 'SUPER_ADMIN';
-  const email = user?.email || 'admin@hrsjm.org';
-  const phone = user?.mobile_number || '+91 98765 43210';
-  const status = user?.status || 'ACTIVE';
+  const fullName = user?.full_name || 'Admin User';
+  const role = user?.roles?.[0]?.name || 'Admin';
+  const email = user?.email || '—';
+  const phone = user?.mobile_number || '—';
+  const status = user?.status || 'Active';
   const joinedDate = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('en-GB', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
       })
-    : '15 Jan 2026';
+    : '—';
 
   return (
     <Modal

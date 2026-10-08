@@ -19,6 +19,7 @@ import {
   AppButton,
   AppEmptyState,
   AppErrorState,
+  AppPagination,
   SkeletonCard,
   formatDate,
   feedback,
@@ -168,6 +169,18 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
     donations,
     previewRefreshCount,
   ]);
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedRows = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return rows.slice(startIndex, startIndex + pageSize);
+  }, [rows, page, pageSize]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [search, status, activeTab, dateRange]);
 
   // Tab counts
   const tabCounts = useMemo(() => {
@@ -442,7 +455,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
 
       <FlatList
         style={styles.list}
-        data={rows}
+        data={paginatedRows}
         keyExtractor={item => item.id}
         renderItem={({ item }) =>
           isWide ? (
@@ -467,13 +480,15 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
         ListHeaderComponent={renderHeader()}
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={
-          isFetchingNextPage && !previewMode ? (
-            <View style={styles.footerLoader}>
-              <ActivityIndicator
-                size="small"
-                color={AdminColors.primary}
-              />
-            </View>
+          rows.length > 0 ? (
+            <AppPagination
+              currentPage={page}
+              totalItems={rows.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="donations"
+            />
           ) : undefined
         }
         refreshControl={

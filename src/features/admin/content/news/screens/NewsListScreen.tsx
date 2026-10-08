@@ -18,6 +18,7 @@ import {
   AppButton,
   AppEmptyState,
   AppErrorState,
+  AppPagination,
   AppSearchBar,
   SkeletonCard,
   feedback,
@@ -127,6 +128,18 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
 
   const hasActiveFilters =
     searchQuery.trim() !== '' || activeStatus !== 'ALL' || activeCategory !== null;
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedNews = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredNews.slice(startIndex, startIndex + pageSize);
+  }, [filteredNews, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeStatus, activeCategory]);
 
   const handleApplyFilters = (filters: NewsFilterState) => {
     setActiveStatus(filters.status);
@@ -253,9 +266,21 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <FlatList
-          data={uiState === 'loading' ? [] : filteredNews}
+          data={uiState === 'loading' ? [] : paginatedNews}
           keyExtractor={item => item.id}
           ListHeaderComponent={renderListHeader}
+          ListFooterComponent={
+            filteredNews.length > 0 ? (
+              <AppPagination
+                currentPage={page}
+                totalItems={filteredNews.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemLabel="news"
+              />
+            ) : undefined
+          }
           renderItem={({ item }) => (
             <NewsCard news={item} onPress={handleNewsPress} onMorePress={handleNewsMenu} />
           )}

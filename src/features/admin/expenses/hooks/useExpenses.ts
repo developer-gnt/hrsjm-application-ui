@@ -22,6 +22,13 @@ export const useExpenses = (params: Omit<ListVouchersParams, 'page' | 'limit'>) 
     },
   });
 
+export const useExpensesPaginated = (params: ListVouchersParams) =>
+  useQuery({
+    queryKey: ['expense-entries', 'paginated', params],
+    queryFn: () => expensesService.list(params),
+    staleTime: 15_000,
+  });
+
 export const useExpenseStats = () =>
   useQuery({
     queryKey: EXPENSES_QUERY_KEYS.stats,

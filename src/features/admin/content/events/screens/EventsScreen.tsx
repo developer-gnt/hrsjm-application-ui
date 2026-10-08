@@ -19,6 +19,7 @@ import {
   AppButton,
   AppEmptyState,
   AppErrorState,
+  AppPagination,
   AppSearchBar,
   SkeletonCard,
 } from '../../../../../core/components';
@@ -171,6 +172,18 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
       return haystack.includes(query);
     });
   }, [events, searchQuery, activeStatus, activeCategory]);
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredEvents.slice(startIndex, startIndex + pageSize);
+  }, [filteredEvents, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeStatus, activeCategory]);
 
   const hasActiveFilters =
     searchQuery.trim() !== '' || activeStatus !== 'ALL' || activeCategory !== null;
@@ -336,9 +349,21 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <FlatList
-          data={isLoading && !data ? [] : filteredEvents}
+          data={isLoading && !data ? [] : paginatedEvents}
           keyExtractor={item => item.id}
           ListHeaderComponent={renderListHeader}
+          ListFooterComponent={
+            filteredEvents.length > 0 ? (
+              <AppPagination
+                currentPage={page}
+                totalItems={filteredEvents.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemLabel="events"
+              />
+            ) : undefined
+          }
           renderItem={({ item }) => (
             <EventCard event={item} onPress={handleEventPress} onMorePress={handleEventMenu} />
           )}

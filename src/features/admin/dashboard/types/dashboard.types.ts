@@ -7,7 +7,13 @@
  */
 export interface AdminDashboardResponse {
   users: { total: number; thisMonth: number; prevMonth: number };
-  memberships: { total: number; active: number; pending: number };
+  memberships: {
+    total: number;
+    active: number;
+    pending: number;
+    thisMonth?: number;
+    prevMonth?: number;
+  };
   renewals: { total: number; pending: number; collectedAmount: number };
   assistance: {
     total: number;
@@ -20,6 +26,12 @@ export interface AdminDashboardResponse {
     open: number;
     thisMonth: number;
     prevMonth: number;
+  };
+  events?: {
+    total: number;
+    upcoming: number;
+    thisMonth?: number;
+    prevMonth?: number;
   };
   donations: {
     total: number;
