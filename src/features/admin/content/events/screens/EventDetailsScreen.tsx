@@ -4,6 +4,7 @@ import {
   BackHandler,
   Image,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -132,6 +133,8 @@ interface EventDetailsScreenProps {
   onBack: () => void;
   /** Opens the Edit Event screen for this event. */
   onEdit?: () => void;
+  /** Whether the current viewer can manage/edit the event (admin) or only view/participate (member). */
+  canManage?: boolean;
 }
 
 /**
@@ -146,8 +149,10 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
   event,
   onBack,
   onEdit,
+  canManage = true,
 }) => {
   const [coverFailed, setCoverFailed] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
 
   // Android hardware back returns to the Events list (no-op on iOS).
   useEffect(() => {
@@ -189,6 +194,33 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
       actionName,
       'This is a UI placeholder. Actual functionality will be connected in a later phase after backend integration.',
     );
+  };
+
+  const handleMemberRegister = () => {
+    if (isRegistered) {
+      Alert.alert(
+        'Already Registered',
+        `You have already registered for "${event.title}". You will receive updates prior to the event schedule.`,
+      );
+      return;
+    }
+    setIsRegistered(true);
+    Alert.alert(
+      'Registration Confirmed',
+      `Thank you for registering for "${event.title}". We look forward to your participation!`,
+      [{ text: 'OK' }],
+    );
+  };
+
+  const handleShareEvent = async () => {
+    try {
+      await Share.share({
+        title: event.title,
+        message: `Join "${event.title}" on ${formatDate(event.startAt)} at ${event.location || 'HRSJM'}. Organized by ${event.organizer || 'HRSJM'}.`,
+      });
+    } catch {
+      // ignore
+    }
   };
 
   return (
@@ -325,53 +357,81 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
             </View>
           </View>
 
-          {/* Actions — UI placeholders only (spec section 11) */}
-          <Text style={styles.sectionHeader}>Actions</Text>
-          <View style={styles.actionsRow}>
-            <AppButton
-              title="Edit Event"
-              variant="outline"
-              size="sm"
-              onPress={onEdit ?? (() => handlePlaceholderAction('Edit Event'))}
-              icon={<Text style={styles.actionIcon}>✏️</Text>}
-              style={styles.actionButton}
-            />
-            <AppButton
-              title="Publish Event"
-              variant="primary"
-              size="sm"
-              onPress={() => handlePlaceholderAction('Publish Event')}
-              icon={<Text style={styles.actionIcon}>📣</Text>}
-              style={styles.actionButton}
-            />
-          </View>
-          <View style={styles.actionsRow}>
-            <AppButton
-              title="Unpublish Event"
-              variant="outline"
-              size="sm"
-              onPress={() => handlePlaceholderAction('Unpublish Event')}
-              icon={<Text style={styles.actionIcon}>🚫</Text>}
-              style={styles.dangerActionButton}
-              textStyle={styles.dangerOutlineText}
-            />
-            <AppButton
-              title="Delete Event"
-              variant="outline"
-              size="sm"
-              onPress={() => handlePlaceholderAction('Delete Event')}
-              icon={<Text style={styles.actionIcon}>🗑️</Text>}
-              style={styles.dangerActionButton}
-              textStyle={styles.dangerOutlineText}
-            />
-          </View>
-          <View style={styles.placeholderNote}>
-            <Text style={styles.placeholderIcon}>ⓘ</Text>
-            <Text style={styles.placeholderText}>
-              Publish, unpublish and delete are UI placeholders. They will be
-              connected in a later phase after backend integration.
-            </Text>
-          </View>
+          {/* Actions */}
+          {canManage ? (
+            <>
+              <Text style={styles.sectionHeader}>Actions</Text>
+              <View style={styles.actionsRow}>
+                <AppButton
+                  title="Edit Event"
+                  variant="outline"
+                  size="sm"
+                  onPress={onEdit ?? (() => handlePlaceholderAction('Edit Event'))}
+                  icon={<Text style={styles.actionIcon}>✏️</Text>}
+                  style={styles.actionButton}
+                />
+                <AppButton
+                  title="Publish Event"
+                  variant="primary"
+                  size="sm"
+                  onPress={() => handlePlaceholderAction('Publish Event')}
+                  icon={<Text style={styles.actionIcon}>📣</Text>}
+                  style={styles.actionButton}
+                />
+              </View>
+              <View style={styles.actionsRow}>
+                <AppButton
+                  title="Unpublish Event"
+                  variant="outline"
+                  size="sm"
+                  onPress={() => handlePlaceholderAction('Unpublish Event')}
+                  icon={<Text style={styles.actionIcon}>🚫</Text>}
+                  style={styles.dangerActionButton}
+                  textStyle={styles.dangerOutlineText}
+                />
+                <AppButton
+                  title="Delete Event"
+                  variant="outline"
+                  size="sm"
+                  onPress={() => handlePlaceholderAction('Delete Event')}
+                  icon={<Text style={styles.actionIcon}>🗑️</Text>}
+                  style={styles.dangerActionButton}
+                  textStyle={styles.dangerOutlineText}
+                />
+              </View>
+              <View style={styles.placeholderNote}>
+                <Text style={styles.placeholderIcon}>ⓘ</Text>
+                <Text style={styles.placeholderText}>
+                  Publish, unpublish and delete are UI placeholders. They will be
+                  connected in a later phase after backend integration.
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.sectionHeader}>Participation</Text>
+              <View style={styles.actionsRow}>
+                {event.status === 'UPCOMING' ? (
+                  <AppButton
+                    title={isRegistered ? 'Registered ✓' : 'Register for Event'}
+                    variant={isRegistered ? 'outline' : 'primary'}
+                    size="sm"
+                    onPress={handleMemberRegister}
+                    icon={<Text style={styles.actionIcon}>{isRegistered ? '✓' : '📝'}</Text>}
+                    style={styles.actionButton}
+                  />
+                ) : null}
+                <AppButton
+                  title="Share Event"
+                  variant="outline"
+                  size="sm"
+                  onPress={handleShareEvent}
+                  icon={<Text style={styles.actionIcon}>🔗</Text>}
+                  style={styles.actionButton}
+                />
+              </View>
+            </>
+          )}
         </ScrollView>
       </SafeAreaView>
     </View>

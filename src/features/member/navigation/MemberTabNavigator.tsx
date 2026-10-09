@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MemberHomeScreen } from '../screens/MemberHomeScreen';
 import { MemberCausesContainer } from '../screens/MemberCausesContainer';
-import { EventsScreen } from '../../admin/content/events/screens/EventsScreen';
+import { MemberEventsContainer } from '../screens/MemberEventsContainer';
 import { DonationsScreen } from '../../admin/donations/screens/DonationsScreen';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import {
@@ -50,7 +50,7 @@ const MEMBER_TABS: MemberTabItem[] = [
     name: 'MemberEvents',
     label: 'Events',
     Icon: Calendar,
-    component: EventsScreen,
+    component: MemberEventsContainer,
   },
   {
     name: 'MemberReceipts',
