@@ -33,6 +33,12 @@ import {
   MembershipDetailsScreen,
 } from './src/features/membership';
 import {
+  SupportTicketsScreen,
+  CreateSupportTicketScreen,
+  ReviewSupportTicketScreen,
+  TicketSubmittedScreen,
+} from './src/features/support';
+import {
   getRouteSnapshot,
   subscribeToRoute,
   navigateToCreateAccount,
@@ -40,6 +46,7 @@ import {
   navigateToCreateAccountVerification,
   navigateToCreateAccountComplete,
   navigateToDashboard,
+  navigateToDonations,
   navigateToProfile,
   navigateToMembershipApplications,
   navigateToMembershipApplicationDetails,
@@ -47,6 +54,10 @@ import {
   navigateToMembershipCategories,
   navigateToMembershipDetails,
   navigateToRenewMembership,
+  navigateToSupportTickets,
+  navigateToCreateSupportTicket,
+  navigateToReviewSupportTicket,
+  navigateToTicketSubmitted,
 } from './src/core/navigation/appRouter';
 
 // Temporary app shell: navigation infrastructure is not built yet, so
@@ -232,6 +243,98 @@ function App() {
             onProfilePress={() => navigateToProfile()}
           />
         );
+      case 'support-tickets':
+        return (
+          <SupportTicketsScreen
+            key="support-tickets-screen"
+            onCreateTicketPress={() => navigateToCreateSupportTicket()}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'donations') navigateToDonations();
+              else if (tabKey === 'support') navigateToSupportTickets();
+            }}
+            onProfilePress={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
+      case 'create-support-ticket':
+        return (
+          <CreateSupportTicketScreen
+            key="create-support-ticket-screen"
+            onBack={() => navigateToSupportTickets()}
+            onCancel={() => navigateToSupportTickets()}
+            onNext={() => navigateToReviewSupportTicket()}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'donations') navigateToDonations();
+              else if (tabKey === 'support') navigateToSupportTickets();
+            }}
+            onProfilePress={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
+      case 'review-support-ticket':
+        return (
+          <ReviewSupportTicketScreen
+            key="review-support-ticket-screen"
+            onBack={() => navigateToCreateSupportTicket()}
+            onEdit={() => navigateToCreateSupportTicket()}
+            onSubmitSuccess={(ticket) => navigateToTicketSubmitted(ticket.id)}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'donations') navigateToDonations();
+              else if (tabKey === 'support') navigateToSupportTickets();
+            }}
+            onProfilePress={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
+      case 'ticket-submitted':
+        return (
+          <TicketSubmittedScreen
+            key={route.ticketId || 'ticket-submitted'}
+            ticketId={route.ticketId}
+            onViewAllTickets={() => navigateToSupportTickets()}
+            onCreateAnotherTicket={() => navigateToCreateSupportTicket()}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'donations') navigateToDonations();
+              else if (tabKey === 'support') navigateToSupportTickets();
+            }}
+            onProfilePress={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
+      case 'support-ticket-details':
+        return (
+          <SupportTicketsScreen
+            key={`support-tickets-${route.ticketId}`}
+            initialTicketId={route.ticketId}
+            onCreateTicketPress={() => navigateToCreateSupportTicket()}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'donations') navigateToDonations();
+              else if (tabKey === 'support') navigateToSupportTickets();
+            }}
+            onProfilePress={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
       case 'membership-applications':
       default:
         return (
@@ -243,6 +346,7 @@ function App() {
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
               else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'complaints') navigateToSupportTickets();
               else if (tabKey === 'more') navigateToProfile();
             }}
             onSignupPress={() => navigateToCreateAccount()}

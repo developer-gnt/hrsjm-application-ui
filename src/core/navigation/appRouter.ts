@@ -25,10 +25,17 @@ export type AppRoute =
   | { name: 'become-member' }
   | { name: 'membership-categories' }
   | { name: 'renew-membership' }
-  | { name: 'membership-details' };
+  | { name: 'membership-details' }
+  | { name: 'support-tickets' }
+  | { name: 'create-support-ticket' }
+  | { name: 'review-support-ticket' }
+  | { name: 'ticket-submitted'; ticketId: string }
+  | { name: 'support-ticket-details'; ticketId: string };
 
 const RECEIPT_HASH_PATTERN = /^\/donations\/([^/]+)\/receipt$/;
 const MEMBERSHIP_DETAILS_HASH_PATTERN = /^\/membership-applications\/([^/]+)$/;
+const TICKET_SUBMITTED_HASH_PATTERN = /^\/support\/submitted\/([^/]+)$/;
+const TICKET_DETAILS_HASH_PATTERN = /^\/support\/tickets\/([^/]+)$/;
 
 const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/profile': { name: 'profile' },
@@ -53,6 +60,10 @@ const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/membership-details': { name: 'membership-details' },
   '/membership/details': { name: 'membership-details' },
   '/member-details': { name: 'membership-details' },
+  '/support': { name: 'support-tickets' },
+  '/support-tickets': { name: 'support-tickets' },
+  '/support/create': { name: 'create-support-ticket' },
+  '/support/review': { name: 'review-support-ticket' },
 };
 
 const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
@@ -72,6 +83,11 @@ const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
   'membership-categories': '#/membership-categories',
   'renew-membership': '#/renew-membership',
   'membership-details': '#/membership-details',
+  'support-tickets': '#/support',
+  'create-support-ticket': '#/support/create',
+  'review-support-ticket': '#/support/review',
+  'ticket-submitted': '#/support',
+  'support-ticket-details': '#/support',
 };
 
 const getWebWindow = (): any =>
@@ -95,6 +111,14 @@ const parseHash = (): AppRoute => {
   if (detailsMatch) {
     return { name: 'membership-application-details', applicationId: decodeURIComponent(detailsMatch[1]) };
   }
+  const submittedMatch = hash.match(TICKET_SUBMITTED_HASH_PATTERN);
+  if (submittedMatch) {
+    return { name: 'ticket-submitted', ticketId: decodeURIComponent(submittedMatch[1]) };
+  }
+  const ticketMatch = hash.match(TICKET_DETAILS_HASH_PATTERN);
+  if (ticketMatch) {
+    return { name: 'support-ticket-details', ticketId: decodeURIComponent(ticketMatch[1]) };
+  }
   return { name: 'membership-applications' };
 };
 
@@ -104,6 +128,12 @@ const routeToHash = (route: AppRoute): string => {
   }
   if (route.name === 'membership-application-details') {
     return `#/membership-applications/${encodeURIComponent(route.applicationId)}`;
+  }
+  if (route.name === 'ticket-submitted') {
+    return `#/support/submitted/${encodeURIComponent(route.ticketId)}`;
+  }
+  if (route.name === 'support-ticket-details') {
+    return `#/support/tickets/${encodeURIComponent(route.ticketId)}`;
   }
   return PROFILE_HASH_BY_ROUTE[route.name];
 };
@@ -126,7 +156,13 @@ if (webWindow && webWindow.addEventListener) {
         next.donationId !== currentRoute.donationId) ||
       (next.name === 'membership-application-details' &&
         currentRoute.name === 'membership-application-details' &&
-        next.applicationId !== currentRoute.applicationId)
+        next.applicationId !== currentRoute.applicationId) ||
+      (next.name === 'ticket-submitted' &&
+        currentRoute.name === 'ticket-submitted' &&
+        next.ticketId !== currentRoute.ticketId) ||
+      (next.name === 'support-ticket-details' &&
+        currentRoute.name === 'support-ticket-details' &&
+        next.ticketId !== currentRoute.ticketId)
     ) {
       currentRoute = next;
       notify();
@@ -224,6 +260,27 @@ export const navigateToRenewMembership = (): void => {
 export const navigateToMembershipDetails = (): void => {
   navigate({ name: 'membership-details' });
 };
+
+export const navigateToSupportTickets = (): void => {
+  navigate({ name: 'support-tickets' });
+};
+
+export const navigateToCreateSupportTicket = (): void => {
+  navigate({ name: 'create-support-ticket' });
+};
+
+export const navigateToReviewSupportTicket = (): void => {
+  navigate({ name: 'review-support-ticket' });
+};
+
+export const navigateToTicketSubmitted = (ticketId: string): void => {
+  navigate({ name: 'ticket-submitted', ticketId });
+};
+
+export const navigateToSupportTicketDetails = (ticketId: string): void => {
+  navigate({ name: 'support-ticket-details', ticketId });
+};
+
 
 
 
