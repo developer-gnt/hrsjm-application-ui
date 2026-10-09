@@ -17,6 +17,7 @@ import type {
   MembershipPreview,
   RightsCategory,
 } from '../types/home.types';
+import type { WhatWeDoHomeItem } from '../../what-we-do';
 
 export const GUEST_QUICK_ACTIONS: HomeQuickAction[] = [
   { id: 'join', label: 'Join HRSJM', icon: 'users', emphasized: true },
@@ -46,11 +47,27 @@ export const RIGHTS_CATEGORIES: RightsCategory[] = [
   { id: 'childrens-rights', title: "Children's Rights", icon: 'child-care' },
 ];
 
-export const WHAT_WE_DO_ITEMS: RightsCategory[] = [
-  { id: 'awareness', title: 'Awareness Campaigns', icon: 'megaphone' },
-  { id: 'workshops', title: 'Workshops & Training', icon: 'users' },
-  { id: 'research', title: 'Research & Education', icon: 'doc-search' },
-  { id: 'community', title: 'Community Activities', icon: 'heart-hands' },
+export const WHAT_WE_DO_ITEMS: WhatWeDoHomeItem[] = [
+  {
+    id: 'awareness-campaigns',
+    title: 'Awareness Campaigns',
+    icon: 'megaphone',
+  },
+  {
+    id: 'workshops-training',
+    title: 'Workshops & Training',
+    icon: 'users',
+  },
+  {
+    id: 'research-education',
+    title: 'Research & Education',
+    icon: 'doc-search',
+  },
+  {
+    id: 'community-activities',
+    title: 'Community Activities',
+    icon: 'heart-hands',
+  },
 ];
 
 export const UPCOMING_EVENTS: HomeEvent[] = [

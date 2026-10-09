@@ -64,10 +64,13 @@ import {
 } from './src/features/user/news';
 import type { UserNewsArticle } from './src/features/user/news';
 import { showAdminShellPreviewNotice } from './src/features/admin/content/events/preview/AdminShellTabBar';
+import { WhatWeDoDetailScreen } from './src/features/user/what-we-do';
+import type { WhatWeDoId } from './src/features/user/what-we-do';
 
 type AppRoute =
   | { name: 'user-home' }
   | { name: 'about' }
+  | { name: 'what-we-do-detail'; contentId: WhatWeDoId }
   | { name: 'contact' }
   | { name: 'user-help' }
   | { name: 'file-complaint' }
@@ -144,6 +147,9 @@ function App() {
             onOpenGetHelp={() => setRoute({ name: 'user-help' })}
             onOpenEvents={() => setRoute({ name: 'user-events' })}
             onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenWhatWeDo={contentId =>
+              setRoute({ name: 'what-we-do-detail', contentId })
+            }
             onOpenRight={rightId =>
               setRoute({
                 name: 'user-right-details',
@@ -152,6 +158,18 @@ function App() {
                 topicsOnly: rightId === 'womens-rights',
               })
             }
+          />
+        ) : route.name === 'what-we-do-detail' ? (
+          <WhatWeDoDetailScreen
+            contentId={route.contentId}
+            onBack={() => setRoute({ name: 'user-home' })}
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenRightsIndex={() => setRoute({ name: 'user-rights-index' })}
+            onOpenEvents={() => setRoute({ name: 'user-events' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
           />
         ) : route.name === 'about' ? (
           <AboutScreen

@@ -27,6 +27,7 @@ import {
 } from '../data/home-preview-data';
 import { getImpactStats } from '../data/impact-stats-provider';
 import type { HomeTab } from '../types/home.types';
+import type { WhatWeDoId } from '../../what-we-do';
 
 export interface UserHomeScreenProps {
   /**
@@ -42,6 +43,7 @@ export interface UserHomeScreenProps {
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
   onOpenRight?: (rightId: string) => void;
+  onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
 }
 
 /**
@@ -62,6 +64,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   onOpenEvents,
   onOpenNews,
   onOpenRight,
+  onOpenWhatWeDo,
 }) => {
   const showComingSoon = (feature: string) => {
     Alert.alert(feature, `"${feature}" is part of an upcoming Home phase.`);
@@ -138,7 +141,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
             />
             <CategoryIconRow
               items={WHAT_WE_DO_ITEMS}
-              onPressItem={item => showComingSoon(item.title)}
+              onPressItem={item => onOpenWhatWeDo?.(item.id)}
             />
           </View>
         </View>

@@ -140,6 +140,12 @@ const graduationCap: React.FC<GlyphProps> = () => (
   </G>
 );
 
+const bulb: React.FC<GlyphProps> = () => (
+  <G>
+    <Path d="M9 18h6M10 21h4M8.4 14.8a6.4 6.4 0 1 1 7.2 0c-.8.6-1.2 1.3-1.3 2.2h-4.6c-.1-.9-.5-1.6-1.3-2.2Z" />
+  </G>
+);
+
 const megaphone: React.FC<GlyphProps> = () => (
   <G>
     <Path d="M4.6 10.7 15 5.4v13.2L4.6 13.3a1.4 1.4 0 0 1-.8-1.3 1.4 1.4 0 0 1 .8-1.3Z" />
@@ -162,6 +168,13 @@ const heartHands: React.FC<GlyphProps> = () => (
     <Path d="M12 12.6c-2.4-1.6-4.4-3-4.4-5.2A2.8 2.8 0 0 1 12 5.8a2.8 2.8 0 0 1 4.4 1.6c0 2.2-2 3.6-4.4 5.2Z" />
     <Path d="M3.8 14.2c.3 3.4 3.8 5.6 8.2 5.6s7.9-2.2 8.2-5.6" />
     <Path d="M3.8 14.2V11M20.2 14.2V11" />
+  </G>
+);
+
+const ear: React.FC<GlyphProps> = () => (
+  <G>
+    <Path d="M19 9a7 7 0 0 0-14 0c0 2.6 1.2 4 2.5 5.5 1.2 1.4 2.3 2.7 2.3 4.5a2.2 2.2 0 0 0 4.4 0v-.5" />
+    <Path d="M10 9a2 2 0 0 1 4 0c0 1.3-.7 1.8-1.5 2.6-.8.7-1.5 1.4-1.5 2.7" />
   </G>
 );
 
@@ -370,6 +383,7 @@ export const GLYPHS = {
   'arrow-right': arrowRight,
   bell,
   'book-open': bookOpen,
+  bulb,
   briefcase,
   check,
   calendar,
@@ -381,6 +395,7 @@ export const GLYPHS = {
   close,
   download,
   'doc-search': docSearch,
+  ear,
   email,
   eye,
   'file-text': fileText,

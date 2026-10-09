@@ -8,8 +8,9 @@ interface HomeHeaderProps {
   onBack?: () => void;
   onPressSearch?: () => void;
   onPressNotifications?: () => void;
-  /** Red unread dot on the bell (member surfaces only). */
+  /** Unread dot on the bell. */
   showNotificationDot?: boolean;
+  notificationDotColor?: string;
 }
 
 /**
@@ -26,6 +27,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onPressSearch,
   onPressNotifications,
   showNotificationDot = false,
+  notificationDotColor = AdminColors.statusInactive,
 }) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -74,7 +76,11 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           }
         >
           <AppIcon name="bell" size={22} color={AdminColors.primaryDark} />
-          {showNotificationDot && <View style={styles.unreadDot} />}
+          {showNotificationDot && (
+            <View
+              style={[styles.unreadDot, { backgroundColor: notificationDotColor }]}
+            />
+          )}
         </TouchableOpacity>
       </View>
     </View>

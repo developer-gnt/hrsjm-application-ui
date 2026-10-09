@@ -47,16 +47,16 @@ const REFERENCE_LABELS: Record<string, string> = {
   "Children's Rights": "Children's\nRights",
 };
 
-interface CategoryIconRowProps {
-  items: RightsCategory[];
-  onPressItem?: (item: RightsCategory) => void;
+interface CategoryIconRowProps<Item extends RightsCategory> {
+  items: Item[];
+  onPressItem?: (item: Item) => void;
 }
 
 /** Four-across responsive grid row (reference layout, no carousel). */
-export const CategoryIconRow: React.FC<CategoryIconRowProps> = ({
+export const CategoryIconRow = <Item extends RightsCategory,>({
   items,
   onPressItem,
-}) => (
+}: CategoryIconRowProps<Item>) => (
   <View style={styles.row}>
     {items.map(item => (
       <CategoryIconCard

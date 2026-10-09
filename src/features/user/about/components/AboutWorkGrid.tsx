@@ -35,7 +35,11 @@ export const AboutWorkGrid: React.FC<AboutWorkGridProps> = ({
             <AboutWorkCard
               key={area.id}
               area={area}
-              onPress={() => onPressArea?.(area)}
+              onPress={
+                area.id === 'monitoring' && onPressArea
+                  ? () => onPressArea(area)
+                  : undefined
+              }
             />
           ))}
         </View>

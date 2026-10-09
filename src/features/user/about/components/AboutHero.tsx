@@ -13,18 +13,15 @@ import {
   Spacing,
 } from '../../../../core/theme';
 import AboutHeroSource from '../../../../assets/images/about-hero-community.png';
+import type { AboutContent } from '../types/about.types';
 
-/**
- * Reference-locked About hero: FULL-BLEED (edge-to-edge under the header,
- * rounded bottom corners only) — the deep-navy community artwork (HRSJM
- * volunteer among villagers — the supplied text-free HD image) as the
- * background with the serif "What / HRSJM Does" headline and supporting
- * copy on the left. The artwork's own navy left zone keeps the white/gold
- * text legible, so no extra overlay is applied.
- */
-export const AboutHero: React.FC = () => {
+interface AboutHeroProps {
+  content: AboutContent['hero'];
+}
+
+export const AboutHero: React.FC<AboutHeroProps> = ({ content }) => {
   const { width } = useWindowDimensions();
-  const height = Math.round(Math.min(220, Math.max(170, width * 0.42)));
+  const height = Math.round(Math.min(170, Math.max(130, width * 0.36)));
 
   return (
     <View style={[styles.container, { height }]}>
@@ -32,15 +29,19 @@ export const AboutHero: React.FC = () => {
         source={AboutHeroSource}
         style={styles.image}
         resizeMode="cover"
+        accessible={false}
       />
-
+      <View style={styles.overlay} />
       <View style={styles.content}>
-        <Text style={styles.titleLight}>What</Text>
-        <Text style={styles.titleAccent}>HRSJM Does</Text>
-        <Text style={styles.description}>
-          We work on multiple fronts to protect human rights, promote social
-          justice and support marginalised communities across India.
+        <View style={styles.eyebrowRow}>
+          <Text style={styles.eyebrow}>{content.eyebrow}</Text>
+          <View style={styles.eyebrowLine} />
+        </View>
+        <Text style={styles.title}>
+          {content.titleLine}{' '}
+          <Text style={styles.titleAccent}>{content.titleAccentLine}</Text>
         </Text>
+        <Text style={styles.description}>{content.description}</Text>
       </View>
     </View>
   );
@@ -54,43 +55,56 @@ const styles = StyleSheet.create({
     backgroundColor: AdminColors.primaryDark,
   },
   image: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFill,
     width: '100%',
     height: '100%',
   },
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(6, 39, 77, 0.18)',
+  },
   content: {
     position: 'absolute',
-    left: 0,
     top: 0,
     bottom: 0,
-    width: '62%',
+    left: 0,
+    width: '65%',
     justifyContent: 'center',
-    paddingLeft: Spacing.base,
-    paddingRight: Spacing.sm,
+    paddingHorizontal: Spacing.base,
   },
-  titleLight: {
-    fontFamily: FontFamilies.serif,
-    fontSize: 34,
-    lineHeight: 40,
-    fontWeight: '700',
+  eyebrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  eyebrow: {
+    color: AdminColors.accentGold,
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  eyebrowLine: {
+    width: 34,
+    height: 2,
+    backgroundColor: AdminColors.accentGold,
+  },
+  title: {
     color: AdminColors.textOnDark,
+    fontFamily: FontFamilies.serif,
+    fontSize: 23,
+    lineHeight: 28,
+    fontWeight: '700',
   },
   titleAccent: {
-    fontFamily: FontFamilies.serif,
-    fontSize: 34,
-    lineHeight: 40,
-    fontWeight: '700',
     color: AdminColors.accentGold,
   },
   description: {
-    fontSize: 11.5,
-    lineHeight: 16,
-    color: AdminColors.textOnDark,
+    maxWidth: 245,
     marginTop: Spacing.sm,
-    maxWidth: 210,
+    color: AdminColors.textOnDark,
+    fontSize: 11,
+    lineHeight: 15,
   },
 });

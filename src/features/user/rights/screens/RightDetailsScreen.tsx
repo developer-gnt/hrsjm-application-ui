@@ -191,17 +191,24 @@ const CompactCard: React.FC<{
     <IconBubble
       name={item.icon}
       tint={item.iconColor ?? '#E9F0FF'}
-    size={
-      variant === 'support'
-        ? 26
-        : variant === 'help'
+      size={
+        variant === 'support'
           ? 26
-          : variant === 'resource'
-            ? 30
-            : 34
-    }
+          : variant === 'help'
+            ? 26
+            : variant === 'resource'
+              ? 30
+              : 34
+      }
     />
-    <View style={styles.compactCardCopy}>
+    <View
+      style={[
+        styles.compactCardCopy,
+        (variant === 'support' || variant === 'help') &&
+          styles.compactCardStackedCopy,
+        variant === 'protection' && styles.protectionCardCopy,
+      ]}
+    >
       <Text
         style={[
           styles.cardTitle,
@@ -729,13 +736,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.xs,
     marginTop: Spacing.xs,
+    paddingBottom: 2,
   },
   tab: {
     flex: 1,
-    minHeight: 34,
+    minHeight: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 2,
+    paddingHorizontal: 6,
     borderRadius: BorderRadius.md,
     backgroundColor: '#F2F4F8',
   },
@@ -747,8 +755,8 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: AdminColors.primaryDark,
-    fontSize: 8.5,
-    lineHeight: 11,
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: '700',
     textAlign: 'center',
   },
@@ -863,15 +871,15 @@ const styles = StyleSheet.create({
   },
   topicTitle: {
     color: AdminColors.primaryDark,
-    fontSize: 9,
-    lineHeight: 11,
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: '700',
   },
   topicDescription: {
     marginTop: 1,
     color: AdminColors.textSecondary,
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 9,
+    lineHeight: 11,
   },
   keyAreaGrid: {
     flexDirection: 'row',
@@ -884,8 +892,8 @@ const styles = StyleSheet.create({
     width: '32%',
     minHeight: 98,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    alignItems: 'flex-start',
+    gap: 6,
     padding: 5,
     borderRadius: BorderRadius.md,
     position: 'relative',
@@ -898,29 +906,31 @@ const styles = StyleSheet.create({
   infoCardCopy: {
     flex: 1,
     paddingRight: 2,
-    paddingBottom: 14,
+    paddingBottom: 20,
+    justifyContent: 'flex-start',
   },
   cardTitle: {
     color: AdminColors.primaryDark,
-    fontSize: 8.5,
-    lineHeight: 10,
+    fontSize: 11,
+    lineHeight: 13.5,
     fontWeight: '700',
+    textAlign: 'left',
   },
   cardDescription: {
     marginTop: 2,
     color: AdminColors.textSecondary,
-    fontSize: 7,
-    lineHeight: 9,
+    fontSize: 8.5,
+    lineHeight: 11,
   },
   cardArrow: {
     position: 'absolute',
-    right: 4,
-    bottom: 4,
-    width: 20,
-    height: 20,
+    right: 6,
+    bottom: 6,
+    width: 18,
+    height: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
+    borderRadius: 9,
     backgroundColor: 'rgba(255,255,255,0.85)',
   },
   frameworkCard: {
@@ -959,11 +969,11 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
   },
   compactCard: {
-    minHeight: 54,
+    minHeight: 60,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 4,
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
     paddingVertical: Spacing.xs,
     borderWidth: 1,
     borderColor: '#E7EBF2',
@@ -972,17 +982,40 @@ const styles = StyleSheet.create({
   },
   compactCardCopy: {
     flex: 1,
-    paddingRight: 7,
-    paddingBottom: 14,
+    minWidth: 0,
+    paddingRight: 14,
+    justifyContent: 'center',
+  },
+  compactCardStackedCopy: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minHeight: 0,
+    paddingHorizontal: 0,
+    paddingRight: 0,
+    paddingBottom: 16,
+    justifyContent: 'flex-start',
+  },
+  protectionCardCopy: {
+    width: '100%',
+    alignSelf: 'stretch',
+    minHeight: 0,
+    paddingRight: 0,
+    paddingBottom: 18,
+    justifyContent: 'flex-start',
   },
   supportCard: {
     width: '24%',
-    minHeight: 66,
+    minHeight: 88,
+    flexDirection: 'column',
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 4,
+    paddingHorizontal: 4,
   },
   supportTitle: {
-    fontSize: 7.2,
-    lineHeight: 9,
+    fontSize: 9.5,
+    lineHeight: 12,
+    textAlign: 'center',
   },
   resourceGrid: {
     flexDirection: 'row',
@@ -992,7 +1025,7 @@ const styles = StyleSheet.create({
   },
   resourceCard: {
     width: '32%',
-    minHeight: 66,
+    minHeight: 70,
   },
   relatedGrid: {
     flexDirection: 'row',
@@ -1002,7 +1035,7 @@ const styles = StyleSheet.create({
   },
   relatedCard: {
     width: '32%',
-    minHeight: 58,
+    minHeight: 62,
   },
   protectionGrid: {
     flexDirection: 'row',
@@ -1012,7 +1045,7 @@ const styles = StyleSheet.create({
   },
   protectionCard: {
     width: '24%',
-    minHeight: 112,
+    minHeight: 118,
     flexDirection: 'column',
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
@@ -1026,31 +1059,39 @@ const styles = StyleSheet.create({
   },
   helpCard: {
     width: '24%',
-    minHeight: 84,
+    minHeight: 104,
+    flexDirection: 'column',
     alignItems: 'center',
-    padding: 3,
+    justifyContent: 'flex-start',
+    gap: 4,
+    padding: 4,
   },
   helpTitle: {
-    fontSize: 7.3,
-    lineHeight: 9,
+    fontSize: 9.5,
+    lineHeight: 11.5,
+    textAlign: 'center',
   },
   helpDescription: {
-    fontSize: 6.4,
-    lineHeight: 8,
+    fontSize: 7.5,
+    lineHeight: 10,
+    textAlign: 'center',
   },
   protectionDescription: {
-    fontSize: 6.7,
-    lineHeight: 8.2,
+    fontSize: 8,
+    lineHeight: 10,
   },
   ctaCard: {
-    minHeight: 82,
+    alignSelf: 'stretch',
+    minHeight: 170,
     flexDirection: 'row',
     alignItems: 'center',
     overflow: 'hidden',
     marginTop: Spacing.md,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    marginHorizontal: -Spacing.base,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.md,
+    borderTopLeftRadius: BorderRadius.lg,
+    borderTopRightRadius: BorderRadius.lg,
     backgroundColor: AdminColors.primaryDark,
     position: 'relative',
     ...Shadows.card,
@@ -1065,40 +1106,42 @@ const styles = StyleSheet.create({
   },
   ctaCopy: {
     flex: 1,
-    paddingRight: Spacing.xs,
+    paddingRight: Spacing.md,
     zIndex: 1,
   },
   ctaTitle: {
     color: AdminColors.textOnDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: 22,
+    lineHeight: 27,
     fontWeight: '700',
   },
   ctaTitleAccent: {
     color: AdminColors.accentGold,
   },
   ctaDescription: {
-    marginTop: 3,
+    marginTop: Spacing.xs,
     color: AdminColors.textOnDark,
-    fontSize: 9.5,
-    lineHeight: 13,
+    fontSize: 12,
+    lineHeight: 17,
     opacity: 0.9,
   },
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
     backgroundColor: AdminColors.accentGold,
     zIndex: 1,
+    minWidth: 138,
   },
   ctaButtonText: {
     color: AdminColors.primaryDark,
-    fontSize: 9,
-    lineHeight: 12,
+    fontSize: 11,
+    lineHeight: 15,
     fontWeight: '700',
   },
   genericDetails: {

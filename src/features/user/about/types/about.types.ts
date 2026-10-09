@@ -1,73 +1,58 @@
 import type { IconName } from '../../components/icons';
 
-/** One work-area card in the About 3x3 grid. */
 export interface AboutWorkArea {
   id: string;
-  /** Title as rendered (may contain the reference's manual line break). */
   title: string;
   description: string;
   icon: IconName;
 }
 
-/** Small labelled tile in the What We Do / Key Focus Areas rows. */
-export interface AboutTile {
+export interface AboutPrinciple {
   id: string;
-  /** Label as rendered (may contain the reference's manual line break). */
-  label: string;
+  title: string;
+  description: string;
   icon: IconName;
 }
 
-/** One statistic in the Impact row. */
+export interface AboutApproachStep {
+  id: string;
+  title: string;
+  description: string;
+  icon: IconName;
+}
+
 export interface AboutImpactStat {
   id: string;
-  /** Preformatted value, e.g. '2,000+'. */
   value: string;
   label: string;
   icon: IconName;
 }
 
-/** Title + optional description + a 4-column row of labelled tiles. */
-export interface AboutInfoBlock {
-  title: string;
-  description?: string;
-  tiles: AboutTile[];
-}
-
-/** Title + a 3-column row of impact statistics. */
-export interface AboutImpactBlock {
-  title: string;
-  stats: AboutImpactStat[];
-}
-
-/**
- * Static content model for the About page (UI phase — no backend endpoint
- * is invented; content becomes dynamic in the integration phase).
- */
 export interface AboutContent {
   hero: {
+    eyebrow: string;
     titleLine: string;
     titleAccentLine: string;
     description: string;
-    /** Bundled hero asset under src/assets/images (documentation only). */
     imageAssetName: string;
   };
+  principles: AboutPrinciple[];
   workAreas: AboutWorkArea[];
-  /** Full-bleed monitor banner between the grid and What We Do. */
-  monitorBanner: {
+  approach: {
     title: string;
     description: string;
-    /** Bundled banner asset under src/assets/images (documentation only). */
-    imageAssetName: string;
+    steps: AboutApproachStep[];
   };
-  whatWeDo: AboutInfoBlock;
-  focusAreas: AboutInfoBlock;
-  impact: AboutImpactBlock;
+  impact: {
+    title: string;
+    description: string;
+    stats: AboutImpactStat[];
+  };
   finalCta: {
     headingLine: string;
     headingAccentLine: string;
     supporting: string;
     buttonLabel: string;
-    /** Bundled CTA asset under src/assets/images (documentation only). */
     imageAssetName: string;
   };
 }

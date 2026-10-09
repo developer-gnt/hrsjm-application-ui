@@ -71,13 +71,14 @@ const styles = StyleSheet.create({
   },
   playBadge: {
     position: 'absolute',
-    right: 6,
-    bottom: 6,
+    left: '50%',
+    top: '50%',
     width: 24,
     height: 24,
     borderRadius: 12,
     backgroundColor: AdminColors.cardSurface,
     alignItems: 'center',
     justifyContent: 'center',
+    transform: [{ translateX: -12 }, { translateY: -12 }],
   },
 });
