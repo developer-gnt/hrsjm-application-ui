@@ -103,6 +103,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   // Net banking & Wallets
   const [selectedBank, setSelectedBank] = useState<string>('HDFC Bank');
   const [selectedWallet, setSelectedWallet] = useState<string>('Paytm Wallet');
+  const [simulationMode, setSimulationMode] = useState<'success' | 'failure'>('success');
 
   // Processing timeline step (0 to 5)
   const [processingStep, setProcessingStep] = useState<number>(0);
@@ -279,40 +280,51 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
     setTimeout(() => setProcessingStep(4), 2400);
 
     setTimeout(async () => {
-      let upiAppLabel = 'Google Pay';
-      if (selectedUpiApp === 'phonepe') upiAppLabel = 'PhonePe';
-      else if (selectedUpiApp === 'paytm') upiAppLabel = 'Paytm';
-      else if (selectedUpiApp === 'bhim') upiAppLabel = 'BHIM UPI';
+      try {
+        let upiAppLabel = 'Google Pay';
+        if (selectedUpiApp === 'phonepe') upiAppLabel = 'PhonePe';
+        else if (selectedUpiApp === 'paytm') upiAppLabel = 'Paytm';
+        else if (selectedUpiApp === 'bhim') upiAppLabel = 'BHIM UPI';
 
-      const result = await globalPaymentService.executePayment(
-        {
-          ...payload,
-          amount: activeAmount,
-          donorName,
-          donorMobile,
-          donorEmail,
-          panNumber: need80G ? panNumber.toUpperCase() : undefined,
-          need80GReceipt: need80G,
-        },
-        paymentMethod,
-        {
-          upiId,
-          selectedUpiApp: upiAppLabel,
-          cardNumber,
-          cardHolderName: cardHolder,
-          bankName: selectedBank,
-        },
-      );
+        const result = await globalPaymentService.executePayment(
+          {
+            ...payload,
+            amount: activeAmount,
+            donorName,
+            donorMobile,
+            donorEmail,
+            panNumber: need80G ? panNumber.toUpperCase() : undefined,
+            need80GReceipt: need80G,
+          },
+          paymentMethod,
+          {
+            upiId,
+            selectedUpiApp: upiAppLabel,
+            cardNumber,
+            cardHolderName: cardHolder,
+            bankName: selectedBank,
+            walletName: selectedWallet,
+            simulationMode,
+          },
+        );
 
-      // Record donation in causesService so all cause statistics reflect immediately
-      if (payload.purpose === 'donation') {
-        causesService.recordDonation(payload.entityId || payload.title, activeAmount, result.paymentId);
+        // Record donation in causesService so all cause statistics reflect immediately
+        if (payload.purpose === 'donation') {
+          causesService.recordDonation(payload.entityId || payload.title, activeAmount, result.paymentId);
+        }
+
+        setReceiptResult(result);
+        setStage('success');
+        onSuccess?.(result);
+      } catch (error: any) {
+        setStage('checkout');
+        Alert.alert(
+          'Payment Declined (Sandbox)',
+          error?.message || 'Payment simulation resulted in bank decline.',
+          [{ text: 'Try Again' }],
+        );
       }
-
-      setReceiptResult(result);
-      setStage('success');
-      onSuccess?.(result);
-    }, 3200);
+    }, 2800);
   };
 
   const handleShareReceipt = async () => {
@@ -598,6 +610,74 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total Payable</Text>
             <Text style={styles.totalValue}>₹{activeAmount.toLocaleString('en-IN')}</Text>
+          </View>
+        </View>
+
+        {/* Sandbox Test Mode Gateway Bar */}
+        <View style={styles.sandboxBar}>
+          <View style={styles.sandboxHeaderRow}>
+            <View style={styles.sandboxPill}>
+              <Text style={styles.sandboxPillText}>⚡ Sandbox PG Mock API</Text>
+            </View>
+            <View style={styles.simToggleRow}>
+              <TouchableOpacity
+                style={[
+                  styles.simToggleBtn,
+                  simulationMode === 'success' && styles.simToggleBtnActive,
+                ]}
+                onPress={() => setSimulationMode('success')}
+              >
+                <Text
+                  style={[
+                    styles.simToggleText,
+                    simulationMode === 'success' && styles.simToggleTextActive,
+                  ]}
+                >
+                  ✓ Test Success
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.simToggleBtn,
+                  simulationMode === 'failure' && styles.simToggleBtnFailActive,
+                ]}
+                onPress={() => setSimulationMode('failure')}
+              >
+                <Text
+                  style={[
+                    styles.simToggleText,
+                    simulationMode === 'failure' && styles.simToggleTextFailActive,
+                  ]}
+                >
+                  ✕ Simulate Decline
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.quickFillRow}>
+            <Text style={styles.quickFillLabel}>1-Tap Fill:</Text>
+            <TouchableOpacity
+              style={styles.quickFillChip}
+              onPress={() => {
+                setPaymentMethod('upi');
+                setSelectedUpiApp('bhim');
+                setUpiId('success@upi');
+              }}
+            >
+              <Text style={styles.quickFillChipText}>BHIM (success@upi)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickFillChip}
+              onPress={() => {
+                setPaymentMethod('card');
+                setCardNumber('4111 2222 3333 4444');
+                setCardExpiry('12/28');
+                setCardCvv('123');
+              }}
+            >
+              <Text style={styles.quickFillChipText}>Visa Test Card</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -1184,6 +1264,12 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
               <Text style={styles.receiptMetaLabel}>Payment Method</Text>
               <Text style={styles.receiptMetaValue}>{receiptResult.paymentMethod}</Text>
             </View>
+            {receiptResult.bankReferenceNo ? (
+              <View style={styles.receiptMetaRow}>
+                <Text style={styles.receiptMetaLabel}>Gateway UTR / Ref</Text>
+                <Text style={styles.receiptMetaValue} numberOfLines={1}>{receiptResult.bankReferenceNo}</Text>
+              </View>
+            ) : null}
             <View style={styles.receiptMetaRow}>
               <Text style={styles.receiptMetaLabel}>Status</Text>
               <View style={styles.completedBadge}>
@@ -1762,6 +1848,91 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     color: '#0F2860',
+  },
+
+  /* Sandbox Test Mode Bar */
+  sandboxBar: {
+    backgroundColor: '#F0F9FF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    padding: 10,
+    marginBottom: 16,
+  },
+  sandboxHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  sandboxPill: {
+    backgroundColor: '#E0F2FE',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  sandboxPillText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0284C7',
+  },
+  simToggleRow: {
+    flexDirection: 'row',
+    backgroundColor: '#E2E8F0',
+    borderRadius: 8,
+    padding: 2,
+    gap: 4,
+  },
+  simToggleBtn: {
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    borderRadius: 6,
+  },
+  simToggleBtnActive: {
+    backgroundColor: '#16A34A',
+  },
+  simToggleBtnFailActive: {
+    backgroundColor: '#DC2626',
+  },
+  simToggleText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '600',
+  },
+  simToggleTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  simToggleTextFailActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  quickFillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  quickFillLabel: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11,
+    color: '#64748B',
+  },
+  quickFillChip: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#BAE6FD',
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  quickFillChipText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11,
+    color: '#0369A1',
+    fontWeight: '600',
   },
 
   /* Choose Payment Method */

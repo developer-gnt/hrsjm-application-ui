@@ -4,10 +4,11 @@ import {
   PaymentReceiptDetails,
   PaymentMethodType,
 } from '../types/payment.types';
+import { mockGatewayService } from './mock-gateway.service';
 
 export class GlobalPaymentService {
   /**
-   * Processes the checkout transaction and posts records to backend
+   * Processes the checkout transaction using Mock Gateway API and records to backend
    */
   public async executePayment(
     payload: PaymentPayload,
@@ -18,6 +19,8 @@ export class GlobalPaymentService {
       cardNumber?: string;
       cardHolderName?: string;
       bankName?: string;
+      walletName?: string;
+      simulationMode?: 'success' | 'failure';
     },
   ): Promise<PaymentReceiptDetails> {
     const now = new Date();
@@ -32,8 +35,31 @@ export class GlobalPaymentService {
       hour12: true,
     });
 
-    const paymentId = `PAY${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${Math.floor(1000 + Math.random() * 9000)}`;
-    const orderId = `DON${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${Math.floor(1000 + Math.random() * 9000)}`;
+    // 1. Create order on mock gateway
+    const order = await mockGatewayService.createOrder(payload);
+
+    // 2. Process gateway charge
+    const charge = await mockGatewayService.processCharge({
+      order_id: order.order_id,
+      amount: payload.amount,
+      payment_method: paymentMethodType,
+      upi_id: methodDetails.upiId,
+      upi_app: methodDetails.selectedUpiApp,
+      card_number: methodDetails.cardNumber,
+      card_holder: methodDetails.cardHolderName,
+      bank_name: methodDetails.bankName,
+      wallet_name: methodDetails.walletName,
+      simulation_mode: methodDetails.simulationMode,
+    });
+
+    if (charge.status === 'failed') {
+      throw new Error(
+        charge.error_description || 'Payment was declined by the simulated bank server.',
+      );
+    }
+
+    const paymentId = charge.payment_id;
+    const orderId = charge.order_id;
     const receiptNumber = `HRSJM-REC-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
 
     let methodLabel = 'UPI';
@@ -47,7 +73,7 @@ export class GlobalPaymentService {
     } else if (paymentMethodType === 'netbanking') {
       methodLabel = `Net Banking (${methodDetails.bankName || 'HDFC Bank'})`;
     } else if (paymentMethodType === 'wallet') {
-      methodLabel = `Wallet (Paytm / Amazon Pay)`;
+      methodLabel = `Wallet (${methodDetails.walletName || 'Paytm'})`;
     }
 
     try {
@@ -60,8 +86,8 @@ export class GlobalPaymentService {
           donor_mobile: payload.donorMobile || undefined,
           donor_email: payload.donorEmail || undefined,
           remark: payload.panNumber
-            ? `80G PAN: ${payload.panNumber} | Cause ID: ${payload.entityId || 'N/A'}`
-            : `Payment ID: ${paymentId} | Cause ID: ${payload.entityId || 'N/A'}`,
+            ? `80G PAN: ${payload.panNumber} | Gateway Ref: ${charge.bank_reference_no} | Payment ID: ${paymentId}`
+            : `Payment ID: ${paymentId} | Gateway Ref: ${charge.bank_reference_no} | Cause ID: ${payload.entityId || 'N/A'}`,
         });
       }
     } catch {
@@ -92,6 +118,9 @@ export class GlobalPaymentService {
       panNumber: payload.panNumber,
       is80GEligible: Boolean(payload.panNumber && payload.need80GReceipt),
       receiptNumber,
+      bankReferenceNo: charge.bank_reference_no,
+      authCode: charge.auth_code,
+      gatewaySignature: charge.gateway_signature,
     };
   }
 }

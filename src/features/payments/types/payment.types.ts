@@ -51,4 +51,7 @@ export interface PaymentReceiptDetails {
   panNumber?: string;
   is80GEligible: boolean;
   receiptNumber: string;
+  bankReferenceNo?: string;
+  authCode?: string;
+  gatewaySignature?: string;
 }
