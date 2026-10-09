@@ -1,0 +1,51 @@
+export type PaymentPurposeType =
+  | 'donation'
+  | 'membership'
+  | 'assistance_fee'
+  | 'general';
+
+export type PaymentMethodType = 'upi' | 'card' | 'netbanking' | 'wallet';
+
+export type UPIAppType = 'gpay' | 'phonepe' | 'paytm' | 'bhim';
+
+export interface PaymentPayload {
+  purpose: PaymentPurposeType;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  category?: string;
+  location?: string;
+  amount: number;
+  entityId?: string;
+  donorName?: string;
+  donorEmail?: string;
+  donorMobile?: string;
+  panNumber?: string;
+  need80GReceipt?: boolean;
+}
+
+export interface PaymentReceiptDetails {
+  paymentId: string;
+  orderId: string;
+  donationId?: string;
+  amount: number;
+  platformFee: number;
+  taxCharges: number;
+  totalPayable: number;
+  date: string;
+  time: string;
+  paymentMethod: string;
+  paymentMethodType: PaymentMethodType;
+  status: 'Completed' | 'Pending' | 'Failed';
+  purpose: PaymentPurposeType;
+  title: string;
+  category?: string;
+  location?: string;
+  imageUrl?: string;
+  donorName: string;
+  donorEmail?: string;
+  donorMobile?: string;
+  panNumber?: string;
+  is80GEligible: boolean;
+  receiptNumber: string;
+}

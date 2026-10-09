@@ -12,8 +12,17 @@ export const MemberCausesContainer: React.FC = () => {
       <MemberCauseDetailsScreen
         cause={selectedCause}
         onBack={() => setSelectedCause(null)}
-        onDonationSuccess={() => {
-          // Keep detail updated or return
+        onDonationSuccess={(donatedAmount) => {
+          setSelectedCause(prev => {
+            if (!prev) return null;
+            const updatedRaised = prev.raisedAmount + donatedAmount;
+            return {
+              ...prev,
+              raisedAmount: updatedRaised,
+              donorCount: prev.donorCount + 1,
+              status: updatedRaised >= prev.targetAmount ? 'closed' : prev.status,
+            };
+          });
         }}
       />
     );
@@ -22,9 +31,6 @@ export const MemberCausesContainer: React.FC = () => {
   return (
     <MemberCauseListScreen
       onViewCauseDetails={cause => setSelectedCause(cause)}
-      onDonateCause={cause => {
-        // Handled by card / list modal
-      }}
     />
   );
 };

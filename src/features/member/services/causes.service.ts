@@ -146,6 +146,8 @@ class CausesService {
   private causes: MemberCause[] = [...VERIFIED_CAUSES_DATA];
   private totalDonatedByMember = 4500; // Simulated member's personal donation baseline
   private myDonationsCount = 3;
+  private recordedDonationsMap: Record<string, { raisedAmount: number; donorCount: number }> = {};
+  private processedTransactions = new Set<string>();
 
   public async getCauses(): Promise<MemberCause[]> {
     try {
@@ -192,7 +194,13 @@ class CausesService {
           }
 
           const target = Number(item.requested_amount || 50000);
-          const raised = Number(item.raised_amount || 0);
+          const rawRaised = Number(item.raised_amount || 0);
+
+          const idKey = (item.id || '').toLowerCase().trim();
+          const titleKey = (item.reason || '').toLowerCase().trim();
+          const recorded = this.recordedDonationsMap[idKey] || this.recordedDonationsMap[titleKey] || { raisedAmount: 0, donorCount: 0 };
+          const raised = rawRaised + recorded.raisedAmount;
+          const donorCount = (rawRaised > 0 ? Math.ceil(rawRaised / 1000) : 0) + recorded.donorCount;
 
           return {
             id: item.id || `aid-${Math.random()}`,
@@ -206,10 +214,10 @@ class CausesService {
             aboutStory: item.description || `HRSJM verified assistance request for ${item.full_name || 'applicant'}.\n\nPurpose: ${item.reason || 'Emergency Relief'}\n\nYour contribution goes directly to support this verified case.`,
             targetAmount: target,
             raisedAmount: raised,
-            status: item.status === 'CLOSED' ? 'closed' : 'active',
+            status: item.status === 'CLOSED' || raised >= target ? 'closed' : 'active',
             beneficiariesCount: 1,
             targetBeneficiaries: `1 Beneficiary (${item.full_name || 'Family'})`,
-            donorCount: raised > 0 ? Math.ceil(raised / 1000) : 0,
+            donorCount,
             daysLeft: 30,
             isVerified: true,
             createdAt: item.created_at || new Date().toISOString(),
@@ -218,11 +226,51 @@ class CausesService {
 
         // Merge backend verified causes with core mission causes, avoiding duplicates
         const existingIds = new Set(mappedBackendCauses.map(c => c.id));
-        const nonDuplicateVerified = VERIFIED_CAUSES_DATA.filter(c => !existingIds.has(c.id));
+        const nonDuplicateVerified = VERIFIED_CAUSES_DATA.map(c => {
+          const idKey = c.id.toLowerCase().trim();
+          const titleKey = c.title.toLowerCase().trim();
+          const recorded = this.recordedDonationsMap[idKey] || this.recordedDonationsMap[titleKey] || { raisedAmount: 0, donorCount: 0 };
+          const raised = c.raisedAmount + recorded.raisedAmount;
+          const donors = c.donorCount + recorded.donorCount;
+          return {
+            ...c,
+            raisedAmount: raised,
+            donorCount: donors,
+            status: (raised >= c.targetAmount ? 'closed' : c.status) as any,
+          };
+        }).filter(c => !existingIds.has(c.id));
+
         this.causes = [...mappedBackendCauses, ...nonDuplicateVerified];
+      } else {
+        this.causes = VERIFIED_CAUSES_DATA.map(c => {
+          const idKey = c.id.toLowerCase().trim();
+          const titleKey = c.title.toLowerCase().trim();
+          const recorded = this.recordedDonationsMap[idKey] || this.recordedDonationsMap[titleKey] || { raisedAmount: 0, donorCount: 0 };
+          const raised = c.raisedAmount + recorded.raisedAmount;
+          const donors = c.donorCount + recorded.donorCount;
+          return {
+            ...c,
+            raisedAmount: raised,
+            donorCount: donors,
+            status: (raised >= c.targetAmount ? 'closed' : c.status) as any,
+          };
+        });
       }
     } catch {
-      // Fallback to default verified causes
+      // Fallback to default verified causes merged with recorded donations
+      this.causes = VERIFIED_CAUSES_DATA.map(c => {
+        const idKey = c.id.toLowerCase().trim();
+        const titleKey = c.title.toLowerCase().trim();
+        const recorded = this.recordedDonationsMap[idKey] || this.recordedDonationsMap[titleKey] || { raisedAmount: 0, donorCount: 0 };
+        const raised = c.raisedAmount + recorded.raisedAmount;
+        const donors = c.donorCount + recorded.donorCount;
+        return {
+          ...c,
+          raisedAmount: raised,
+          donorCount: donors,
+          status: (raised >= c.targetAmount ? 'closed' : c.status) as any,
+        };
+      });
     }
     return [...this.causes];
   }
@@ -238,6 +286,42 @@ class CausesService {
       totalDonated: this.totalDonatedByMember,
       donationsCount: this.myDonationsCount,
     };
+  }
+
+  public recordDonation(causeIdOrTitle?: string, amount: number = 0, transactionId?: string): void {
+    if (!causeIdOrTitle || amount <= 0) return;
+    if (transactionId) {
+      if (this.processedTransactions.has(transactionId)) return;
+      this.processedTransactions.add(transactionId);
+    }
+
+    const cleanInput = causeIdOrTitle.toLowerCase().trim();
+    const match = this.causes.find(
+      c => c.id.toLowerCase().trim() === cleanInput || c.title.toLowerCase().trim() === cleanInput,
+    );
+
+    const keysToUpdate = new Set<string>();
+    keysToUpdate.add(cleanInput);
+    if (match) {
+      keysToUpdate.add(match.id.toLowerCase().trim());
+      keysToUpdate.add(match.title.toLowerCase().trim());
+      match.raisedAmount += amount;
+      match.donorCount += 1;
+      if (match.raisedAmount >= match.targetAmount) {
+        match.status = 'closed';
+      }
+    }
+
+    keysToUpdate.forEach(k => {
+      const existing = this.recordedDonationsMap[k] || { raisedAmount: 0, donorCount: 0 };
+      this.recordedDonationsMap[k] = {
+        raisedAmount: existing.raisedAmount + amount,
+        donorCount: existing.donorCount + 1,
+      };
+    });
+
+    this.totalDonatedByMember += amount;
+    this.myDonationsCount += 1;
   }
 
   public async processDonation(formData: DonationFormData): Promise<DonationReceiptResult> {

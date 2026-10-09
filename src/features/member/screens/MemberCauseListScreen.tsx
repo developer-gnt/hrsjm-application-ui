@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MemberHeader } from '../components/MemberHeader';
 import { CauseCard } from '../components/CauseCard';
-import { MemberDonationModal } from '../components/MemberDonationModal';
+import { GlobalPaymentModal, PaymentPayload } from '../../payments';
 import { MemberCause, CauseCategoryKey } from '../types/causes.types';
 import { causesService } from '../services/causes.service';
 
@@ -132,11 +132,8 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
   }, [causes, activeTab, searchQuery]);
 
   const handleDonatePress = (cause: MemberCause) => {
-    if (onDonateCause) {
-      onDonateCause(cause);
-    } else {
-      setSelectedCauseForDonation(cause);
-    }
+    setSelectedCauseForDonation(cause);
+    onDonateCause?.(cause);
   };
 
   const renderHeaderComponent = () => (
@@ -376,12 +373,50 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
         />
       )}
 
-      {/* Donation Modal Sheet */}
-      <MemberDonationModal
+      {/* Global Payment Gateway Modal */}
+      <GlobalPaymentModal
         visible={Boolean(selectedCauseForDonation)}
-        cause={selectedCauseForDonation}
+        payload={
+          selectedCauseForDonation
+            ? {
+                purpose: 'donation',
+                title: selectedCauseForDonation.title,
+                category: selectedCauseForDonation.category,
+                location: selectedCauseForDonation.location,
+                imageUrl: selectedCauseForDonation.imageUrl,
+                amount: 2000,
+                entityId: selectedCauseForDonation.id,
+              }
+            : null
+        }
         onClose={() => setSelectedCauseForDonation(null)}
-        onSuccess={() => {
+        onSuccess={(receipt) => {
+          const donatedAmount = receipt?.amount || 2000;
+          if (selectedCauseForDonation) {
+            causesService.recordDonation(
+              selectedCauseForDonation.id || selectedCauseForDonation.title,
+              donatedAmount,
+              receipt?.paymentId,
+            );
+            // Instantly reflect in local cause state
+            setCauses(prevCauses =>
+              prevCauses.map(c => {
+                if (
+                  c.id === selectedCauseForDonation.id ||
+                  c.title.toLowerCase().trim() === selectedCauseForDonation.title.toLowerCase().trim()
+                ) {
+                  const updatedRaised = c.raisedAmount + donatedAmount;
+                  return {
+                    ...c,
+                    raisedAmount: updatedRaised,
+                    donorCount: c.donorCount + 1,
+                    status: updatedRaised >= c.targetAmount ? 'closed' : c.status,
+                  };
+                }
+                return c;
+              }),
+            );
+          }
           loadCausesData();
         }}
       />

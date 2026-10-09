@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Image,
   ScrollView,
@@ -10,12 +10,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MemberCause } from '../types/causes.types';
-import { MemberDonationModal } from '../components/MemberDonationModal';
+import { causesService } from '../services/causes.service';
+import { GlobalPaymentModal } from '../../payments';
 
 interface MemberCauseDetailsScreenProps {
   cause: MemberCause;
   onBack: () => void;
-  onDonationSuccess?: () => void;
+  onDonationSuccess?: (donatedAmount: number) => void;
 }
 
 export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> = ({
@@ -24,19 +25,24 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
   onDonationSuccess,
 }) => {
   const insets = useSafeAreaInsets();
+  const [currentCause, setCurrentCause] = useState<MemberCause>(cause);
   const [donationModalVisible, setDonationModalVisible] = useState(false);
+
+  useEffect(() => {
+    setCurrentCause(cause);
+  }, [cause]);
 
   const percentRaised = Math.min(
     100,
-    Math.round((cause.raisedAmount / (cause.targetAmount || 1)) * 100),
+    Math.round((currentCause.raisedAmount / (currentCause.targetAmount || 1)) * 100),
   );
-  const remainingAmount = Math.max(0, cause.targetAmount - cause.raisedAmount);
+  const remainingAmount = Math.max(0, currentCause.targetAmount - currentCause.raisedAmount);
 
   const formatRupee = (val: number) => {
     return '₹' + Number(val).toLocaleString('en-IN');
   };
 
-  const isCompleted = cause.status === 'closed' || percentRaised >= 100;
+  const isCompleted = currentCause.status === 'closed' || percentRaised >= 100;
 
   return (
     <View style={styles.screenContainer}>
@@ -52,7 +58,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
         {/* Hero Image Banner */}
         <View style={styles.heroWrapper}>
           <Image
-            source={{ uri: cause.imageUrl }}
+            source={{ uri: currentCause.imageUrl }}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -88,12 +94,12 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
         <View style={styles.headerCard}>
           <View style={styles.categoryRow}>
             <Text style={styles.categoryTag}>
-              {cause.categoryIcon} {cause.category}
+              {currentCause.categoryIcon} {currentCause.category}
             </Text>
-            <Text style={styles.locationTag}>📍 {cause.location}</Text>
+            <Text style={styles.locationTag}>📍 {currentCause.location}</Text>
           </View>
 
-          <Text style={styles.causeMainTitle}>{cause.title}</Text>
+          <Text style={styles.causeMainTitle}>{currentCause.title}</Text>
 
           {/* Verified NGO Shield */}
           <View style={styles.verifiedRow}>
@@ -111,10 +117,10 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
           <View style={styles.fundAmountsRow}>
             <View>
               <Text style={styles.fundRaisedBig}>
-                {formatRupee(cause.raisedAmount)}
+                {formatRupee(currentCause.raisedAmount)}
               </Text>
               <Text style={styles.fundSubtitle}>
-                Raised of {formatRupee(cause.targetAmount)}
+                Raised of {formatRupee(currentCause.targetAmount)}
               </Text>
             </View>
 
@@ -136,10 +142,10 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
 
           <View style={styles.donorInfoRow}>
             <Text style={styles.donorMetaText}>
-              👥 <Text style={styles.donorBold}>{cause.donorCount}</Text> generous donors
+              👥 <Text style={styles.donorBold}>{currentCause.donorCount}</Text> generous donors
             </Text>
             <Text style={styles.donorMetaText}>
-              ⏳ <Text style={styles.donorBold}>{cause.daysLeft ?? 30}</Text> days remaining
+              ⏳ <Text style={styles.donorBold}>{currentCause.daysLeft ?? 30}</Text> days remaining
             </Text>
           </View>
         </View>
@@ -154,7 +160,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
                 <Text style={styles.impactEmoji}>👥</Text>
               </View>
               <Text style={styles.impactValue}>
-                {cause.beneficiariesCount.toLocaleString('en-IN')}
+                {currentCause.beneficiariesCount.toLocaleString('en-IN')}
               </Text>
               <Text style={styles.impactLabel}>Beneficiaries</Text>
             </View>
@@ -163,7 +169,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
               <View style={styles.impactIconBubble}>
                 <Text style={styles.impactEmoji}>🎯</Text>
               </View>
-              <Text style={styles.impactValue}>{cause.targetBeneficiaries}</Text>
+              <Text style={styles.impactValue}>{currentCause.targetBeneficiaries}</Text>
               <Text style={styles.impactLabel}>Target Group</Text>
             </View>
 
@@ -172,7 +178,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
                 <Text style={styles.impactEmoji}>💰</Text>
               </View>
               <Text style={styles.impactValue}>
-                {formatRupee(cause.raisedAmount)}
+                {formatRupee(currentCause.raisedAmount)}
               </Text>
               <Text style={styles.impactLabel}>Amount Raised</Text>
             </View>
@@ -192,7 +198,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
         {/* About this Cause Story */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionHeading}>About this Cause</Text>
-          <Text style={styles.storyText}>{cause.aboutStory}</Text>
+          <Text style={styles.storyText}>{currentCause.aboutStory}</Text>
         </View>
 
         {/* Trust & Transparency Badge */}
@@ -216,10 +222,10 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
       >
         <View style={styles.bottomBarInfo}>
           <Text style={styles.bottomBarRaisedText}>
-            {formatRupee(cause.raisedAmount)}
+            {formatRupee(currentCause.raisedAmount)}
           </Text>
           <Text style={styles.bottomBarGoalText}>
-            of {formatRupee(cause.targetAmount)} goal
+            of {formatRupee(currentCause.targetAmount)} goal
           </Text>
         </View>
 
@@ -228,7 +234,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
           onPress={() => setDonationModalVisible(true)}
           activeOpacity={0.85}
           accessibilityRole="button"
-          accessibilityLabel={`Donate to ${cause.title}`}
+          accessibilityLabel={`Donate to ${currentCause.title}`}
         >
           <Text style={styles.donateCtaIcon}>💛</Text>
           <Text style={styles.donateCtaText}>
@@ -237,12 +243,35 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
         </TouchableOpacity>
       </View>
 
-      {/* Donation Modal Sheet */}
-      <MemberDonationModal
+      {/* Global Payment Gateway Modal */}
+      <GlobalPaymentModal
         visible={donationModalVisible}
-        cause={cause}
+        payload={{
+          purpose: 'donation',
+          title: currentCause.title,
+          category: currentCause.category,
+          location: currentCause.location,
+          imageUrl: currentCause.imageUrl,
+          amount: 2000,
+          entityId: currentCause.id,
+        }}
         onClose={() => setDonationModalVisible(false)}
-        onSuccess={() => onDonationSuccess?.()}
+        onSuccess={(receipt) => {
+          const donated = receipt?.amount || 2000;
+          causesService.recordDonation(currentCause.id, donated, receipt?.paymentId);
+          setCurrentCause(prev => {
+            const updatedRaised = prev.raisedAmount + donated;
+            const updatedCount = prev.donorCount + 1;
+            return {
+              ...prev,
+              raisedAmount: updatedRaised,
+              donorCount: updatedCount,
+              status: updatedRaised >= prev.targetAmount ? 'closed' : prev.status,
+            };
+          });
+          onDonationSuccess?.(donated);
+        }}
+        onNavigateHome={onBack}
       />
     </View>
   );
