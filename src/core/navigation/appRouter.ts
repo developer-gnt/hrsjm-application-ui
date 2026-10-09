@@ -23,7 +23,9 @@ export type AppRoute =
   | { name: 'create-account-verification' }
   | { name: 'create-account-complete' }
   | { name: 'become-member' }
-  | { name: 'membership-categories' };
+  | { name: 'membership-categories' }
+  | { name: 'renew-membership' }
+  | { name: 'membership-details' };
 
 const RECEIPT_HASH_PATTERN = /^\/donations\/([^/]+)\/receipt$/;
 const MEMBERSHIP_DETAILS_HASH_PATTERN = /^\/membership-applications\/([^/]+)$/;
@@ -45,6 +47,12 @@ const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/join': { name: 'become-member' },
   '/membership-categories': { name: 'membership-categories' },
   '/categories': { name: 'membership-categories' },
+  '/renew-membership': { name: 'renew-membership' },
+  '/renew': { name: 'renew-membership' },
+  '/renewal': { name: 'renew-membership' },
+  '/membership-details': { name: 'membership-details' },
+  '/membership/details': { name: 'membership-details' },
+  '/member-details': { name: 'membership-details' },
 };
 
 const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
@@ -62,6 +70,8 @@ const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
   'create-account-complete': '#/create-account/complete',
   'become-member': '#/become-member',
   'membership-categories': '#/membership-categories',
+  'renew-membership': '#/renew-membership',
+  'membership-details': '#/membership-details',
 };
 
 const getWebWindow = (): any =>
@@ -206,6 +216,15 @@ export const navigateToBecomeMember = (): void => {
 export const navigateToMembershipCategories = (): void => {
   navigate({ name: 'membership-categories' });
 };
+
+export const navigateToRenewMembership = (): void => {
+  navigate({ name: 'renew-membership' });
+};
+
+export const navigateToMembershipDetails = (): void => {
+  navigate({ name: 'membership-details' });
+};
+
 
 
 

@@ -864,5 +864,341 @@ export const VerificationShieldIcon: React.FC<IconProps> = ({ size = 20, color =
   </Container>
 );
 
+// Warning Exclamation Circle Icon
+export const WarningExclamationIcon: React.FC<IconProps> = ({ size = 20, color = '#EA580C' }) => (
+  <View
+    style={{
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      backgroundColor: color,
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    {/* Exclamation stem */}
+    <View
+      style={{
+        width: 2.2,
+        height: size * 0.4,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 1.1,
+        marginBottom: 2,
+      }}
+    />
+    {/* Exclamation dot */}
+    <View
+      style={{
+        width: 2.2,
+        height: 2.2,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 1.1,
+      }}
+    />
+  </View>
+);
 
+// Solid Community Group Icon
+export const SolidCommunityIcon: React.FC<IconProps> = ({ size = 22, color = '#1E40AF' }) => (
+  <Container size={size}>
+    {/* Center person */}
+    <View
+      style={{
+        width: size * 0.36,
+        height: size * 0.36,
+        borderRadius: size * 0.18,
+        backgroundColor: color,
+        position: 'absolute',
+        top: size * 0.08,
+      }}
+    />
+    <View
+      style={{
+        width: size * 0.54,
+        height: size * 0.28,
+        borderTopLeftRadius: size * 0.2,
+        borderTopRightRadius: size * 0.2,
+        backgroundColor: color,
+        position: 'absolute',
+        bottom: size * 0.08,
+      }}
+    />
+    {/* Left person */}
+    <View
+      style={{
+        width: size * 0.26,
+        height: size * 0.26,
+        borderRadius: size * 0.13,
+        backgroundColor: color,
+        opacity: 0.8,
+        position: 'absolute',
+        top: size * 0.16,
+        left: size * 0.04,
+      }}
+    />
+    <View
+      style={{
+        width: size * 0.36,
+        height: size * 0.22,
+        borderTopLeftRadius: size * 0.14,
+        backgroundColor: color,
+        opacity: 0.8,
+        position: 'absolute',
+        bottom: size * 0.06,
+        left: 0,
+      }}
+    />
+    {/* Right person */}
+    <View
+      style={{
+        width: size * 0.26,
+        height: size * 0.26,
+        borderRadius: size * 0.13,
+        backgroundColor: color,
+        opacity: 0.8,
+        position: 'absolute',
+        top: size * 0.16,
+        right: size * 0.04,
+      }}
+    />
+    <View
+      style={{
+        width: size * 0.36,
+        height: size * 0.22,
+        borderTopRightRadius: size * 0.14,
+        backgroundColor: color,
+        opacity: 0.8,
+        position: 'absolute',
+        bottom: size * 0.06,
+        right: 0,
+      }}
+    />
+  </Container>
+);
+
+// Green Seal / Rosette Success Badge Icon
+export const GreenSealRosetteIcon: React.FC<IconProps> = ({ size = 26, color = '#16A34A' }) => (
+  <Container size={size}>
+    {/* Ribbon Tails behind */}
+    <View
+      style={{
+        flexDirection: 'row',
+        position: 'absolute',
+        bottom: size * 0.04,
+        gap: size * 0.12,
+      }}
+    >
+      <View
+        style={{
+          width: size * 0.22,
+          height: size * 0.36,
+          backgroundColor: color,
+          transform: [{ rotate: '20deg' }],
+          borderBottomRightRadius: 3,
+        }}
+      />
+      <View
+        style={{
+          width: size * 0.22,
+          height: size * 0.36,
+          backgroundColor: color,
+          transform: [{ rotate: '-20deg' }],
+          borderBottomLeftRadius: 3,
+        }}
+      />
+    </View>
+
+    {/* Rosette Serrated / Circle Badge */}
+    <View
+      style={{
+        width: size * 0.68,
+        height: size * 0.68,
+        borderRadius: size * 0.34,
+        backgroundColor: color,
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'absolute',
+        top: size * 0.04,
+        borderWidth: 1.5,
+        borderColor: '#DCFCE7',
+      }}
+    >
+      {/* Checkmark inside */}
+      <View
+        style={{
+          width: size * 0.2,
+          height: size * 0.32,
+          borderBottomWidth: 2,
+          borderRightWidth: 2,
+          borderColor: '#FFFFFF',
+          transform: [{ rotate: '45deg' }],
+          marginTop: -size * 0.06,
+        }}
+      />
+    </View>
+  </Container>
+);
+
+// Note / Policy Document Icon
+export const NoteDocumentIcon: React.FC<IconProps> = ({ size = 20, color = '#7C3AED' }) => (
+  <Container size={size}>
+    {/* Page base */}
+    <View
+      style={{
+        width: size * 0.68,
+        height: size * 0.82,
+        borderRadius: 3,
+        backgroundColor: color,
+        padding: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {/* Horizontal text lines */}
+      <View style={{ width: size * 0.44, height: 1.6, backgroundColor: '#FFFFFF', borderRadius: 1, marginBottom: 2.5 }} />
+      <View style={{ width: size * 0.44, height: 1.6, backgroundColor: '#FFFFFF', borderRadius: 1, marginBottom: 2.5 }} />
+      <View style={{ width: size * 0.3, height: 1.6, backgroundColor: '#FFFFFF', borderRadius: 1, alignSelf: 'flex-start', marginLeft: size * 0.08 }} />
+    </View>
+  </Container>
+);
+
+// State Unit Building / Monument Icon
+export const BuildingStateIcon: React.FC<IconProps> = ({ size = 20, color = '#059669' }) => (
+  <Container size={size}>
+    {/* Dome / Roof */}
+    <View
+      style={{
+        width: 0,
+        height: 0,
+        borderLeftWidth: size * 0.32,
+        borderRightWidth: size * 0.32,
+        borderBottomWidth: size * 0.18,
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+        borderBottomColor: color,
+        position: 'absolute',
+        top: size * 0.12,
+      }}
+    />
+    {/* Pillars */}
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: size * 0.52,
+        position: 'absolute',
+        top: size * 0.36,
+      }}
+    >
+      <View style={{ width: 1.6, height: size * 0.32, backgroundColor: color }} />
+      <View style={{ width: 1.6, height: size * 0.32, backgroundColor: color }} />
+      <View style={{ width: 1.6, height: size * 0.32, backgroundColor: color }} />
+    </View>
+    {/* Base Plinth */}
+    <View
+      style={{
+        width: size * 0.64,
+        height: 2,
+        backgroundColor: color,
+        position: 'absolute',
+        bottom: size * 0.12,
+        borderRadius: 1,
+      }}
+    />
+  </Container>
+);
+
+// Website / Globe Grid Icon
+export const WebsiteGlobeIcon: React.FC<IconProps> = ({ size = 22, color = '#1E40AF' }) => (
+  <Container size={size}>
+    {/* Outer circle */}
+    <View
+      style={{
+        width: size * 0.78,
+        height: size * 0.78,
+        borderRadius: (size * 0.78) / 2,
+        borderWidth: 1.6,
+        borderColor: color,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {/* Vertical oval latitude */}
+      <View
+        style={{
+          width: size * 0.38,
+          height: size * 0.78,
+          borderRadius: (size * 0.38) / 2,
+          borderWidth: 1.2,
+          borderColor: color,
+        }}
+      />
+      {/* Horizontal equator line */}
+      <View
+        style={{
+          position: 'absolute',
+          width: size * 0.78,
+          height: 1.2,
+          backgroundColor: color,
+        }}
+      />
+    </View>
+  </Container>
+);
+
+// WhatsApp / Chat Phone Icon
+export const WhatsAppChatIcon: React.FC<IconProps> = ({ size = 22, color = '#16A34A' }) => (
+  <View
+    style={{
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      backgroundColor: color,
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    {/* White Chat Speech Bubble */}
+    <View
+      style={{
+        width: size * 0.62,
+        height: size * 0.54,
+        borderRadius: 3.5,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {/* Phone receiver outline inside */}
+      <View
+        style={{
+          width: size * 0.32,
+          height: size * 0.26,
+          borderLeftWidth: 1.8,
+          borderBottomWidth: 1.8,
+          borderColor: color,
+          borderBottomLeftRadius: 3,
+          transform: [{ rotate: '15deg' }],
+        }}
+      />
+    </View>
+  </View>
+);
+
+// Contact Chevron Right Icon
+export const ContactChevronRightIcon: React.FC<IconProps> = ({ size = 16, color = '#1E40AF' }) => (
+  <Container size={size}>
+    <View
+      style={{
+        width: size * 0.42,
+        height: size * 0.42,
+        borderTopWidth: 2,
+        borderRightWidth: 2,
+        borderColor: color,
+        transform: [{ rotate: '45deg' }],
+        marginLeft: -size * 0.1,
+      }}
+    />
+  </Container>
+);
 

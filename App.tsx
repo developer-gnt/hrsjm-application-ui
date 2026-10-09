@@ -29,6 +29,8 @@ import {
 import {
   BecomeMemberScreen,
   MembershipCategoriesScreen,
+  RenewMembershipScreen,
+  MembershipDetailsScreen,
 } from './src/features/membership';
 import {
   getRouteSnapshot,
@@ -43,6 +45,8 @@ import {
   navigateToMembershipApplicationDetails,
   navigateToBecomeMember,
   navigateToMembershipCategories,
+  navigateToMembershipDetails,
+  navigateToRenewMembership,
 } from './src/core/navigation/appRouter';
 
 // Temporary app shell: navigation infrastructure is not built yet, so
@@ -167,7 +171,22 @@ function App() {
               }
             }}
             onGoToDashboard={() => navigateToMembershipApplications()}
-            onViewProfile={() => navigateToProfile()}
+            onViewProfile={() => {
+              const currentState = getRegistrationState();
+              if (currentState.accountType === 'member') {
+                navigateToMembershipDetails();
+              } else {
+                navigateToProfile();
+              }
+            }}
+          />
+        );
+      case 'membership-details':
+        return (
+          <MembershipDetailsScreen
+            key="membership-details-screen"
+            onBack={() => navigateToProfile()}
+            onRenewPress={() => navigateToRenewMembership()}
           />
         );
       case 'receipt':
@@ -201,6 +220,16 @@ function App() {
           <MembershipCategoriesScreen
             key="membership-categories-screen"
             onBack={() => navigateToBecomeMember()}
+          />
+        );
+      case 'renew-membership':
+        return (
+          <RenewMembershipScreen
+            key="renew-membership-screen"
+            onBack={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+            onProfilePress={() => navigateToProfile()}
           />
         );
       case 'membership-applications':

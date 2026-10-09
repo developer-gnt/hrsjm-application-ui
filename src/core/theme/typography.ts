@@ -79,3 +79,8 @@ export const Typography = {
     lineHeight: 14,
   } as TextStyle,
 } as const;
+
+export const FontFamily = {
+  sans: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+};
+
