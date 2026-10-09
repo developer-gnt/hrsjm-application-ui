@@ -6,17 +6,17 @@ const GPAY_LOGO = require('../../../assets/logo/gpay_brand.png');
 const PHONEPE_LOGO = require('../../../assets/logo/phonepe_brand.png');
 const PAYTM_LOGO = require('../../../assets/logo/paytm_brand.png');
 const UPI_LOGO = require('../../../assets/logo/upi_brand.png');
+const BHIM_LOGO = require('../../../assets/logo/bhim_brand.png');
 
 /**
- * Official BHIM Tri-Color Chevron Logo
+ * Official BHIM Tri-Color Logo
  */
 export const BhimFlagLogo: React.FC<{ size?: number }> = ({ size = 26 }) => (
-  <Svg width={size * 0.85} height={size} viewBox="0 0 24 28" fill="none">
-    {/* Left/Upper Saffron Polygon */}
-    <Polygon points="8,2 20,13 13,13 2,2" fill="#F58220" />
-    {/* Right/Lower Green Polygon */}
-    <Polygon points="13,11 24,22 17,22 6,11" fill="#008752" />
-  </Svg>
+  <Image
+    source={BHIM_LOGO}
+    style={{ width: size * 1.6, height: size }}
+    resizeMode="contain"
+  />
 );
 
 /**
@@ -78,16 +78,23 @@ export const PaytmAppLogo: React.FC<{ size?: number; height?: number }> = ({
 };
 
 /**
- * Screenshot 1: BHIM App Icon (Vibrant orange & green triangles)
+ * BHIM App Icon
  */
-export const BhimAppLogo: React.FC<{ size?: number }> = ({ size = 32 }) => (
-  <Svg width={size * 0.85} height={size} viewBox="0 0 24 28" fill="none">
-    {/* Left/Top Orange Triangle */}
-    <Polygon points="8,2 20,13 13,13 2,2" fill="#F58220" />
-    {/* Right/Bottom Green Triangle */}
-    <Polygon points="13,11 24,22 17,22 6,11" fill="#008752" />
-  </Svg>
-);
+export const BhimAppLogo: React.FC<{ size?: number; height?: number; width?: number }> = ({
+  size = 32,
+  height,
+  width,
+}) => {
+  const actualHeight = height || size;
+  const actualWidth = width || actualHeight * 1.5;
+  return (
+    <Image
+      source={BHIM_LOGO}
+      style={{ width: actualWidth, height: actualHeight }}
+      resizeMode="contain"
+    />
+  );
+};
 
 /**
  * Google 4-Color Logo + Text (for inline use)
@@ -136,8 +143,11 @@ export const PaytmBrandLogo: React.FC<{ height?: number }> = ({ height = 18 }) =
  */
 export const BhimBrandLogo: React.FC<{ height?: number }> = ({ height = 20 }) => (
   <View style={styles.brandRow}>
-    <BhimAppLogo size={height * 1.1} />
-    <Text style={styles.bhimText}>BHIM</Text>
+    <Image
+      source={BHIM_LOGO}
+      style={{ width: height * 2.4, height }}
+      resizeMode="contain"
+    />
   </View>
 );
 

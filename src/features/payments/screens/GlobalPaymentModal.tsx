@@ -776,7 +776,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
                       selectedUpiApp === 'bhim' && styles.upiAppBoxActive,
                     ]}
                   >
-                    <BhimAppLogo size={30} />
+                    <BhimAppLogo size={24} width={44} />
                   </View>
                   <Text
                     style={[
