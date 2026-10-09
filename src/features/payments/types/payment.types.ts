@@ -8,6 +8,14 @@ export type PaymentMethodType = 'upi' | 'card' | 'netbanking' | 'wallet';
 
 export type UPIAppType = 'gpay' | 'phonepe' | 'paytm' | 'bhim';
 
+export type PaymentStage =
+  | 'amount_selection'
+  | 'checkout'
+  | 'processing'
+  | 'reconciling'
+  | 'success'
+  | 'failed';
+
 export interface PaymentPayload {
   purpose: PaymentPurposeType;
   title: string;
@@ -25,6 +33,38 @@ export interface PaymentPayload {
   targetAmount?: number;
   raisedAmount?: number;
   maxAllowedAmount?: number;
+}
+
+export interface CashfreeOrderSession {
+  order_id: string;
+  payment_session_id: string;
+  cf_order_id?: string | number;
+  order_status?: string;
+  amount: number;
+  currency: string;
+  purpose: 'donation' | 'membership';
+  reference_id: string;
+}
+
+export interface CashfreeVerifyResponse {
+  status: 'SUCCESS' | 'PENDING';
+  message?: string;
+  order_id: string;
+  payment?: {
+    id: string;
+    amount: number;
+    payment_status: string;
+    gateway_order_id?: string;
+    gateway_payment_id?: string;
+    [key: string]: unknown;
+  };
+  receipt?: {
+    id: string;
+    receipt_number: string;
+    receipt_date?: string;
+    [key: string]: unknown;
+  };
+  attempts_count?: number;
 }
 
 export interface PaymentReceiptDetails {
