@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -34,7 +35,15 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
 
-  const [selectedAmount, setSelectedAmount] = useState<number>(1000);
+  const maxAllowedAmount = cause
+    ? Math.max(0, cause.targetAmount - cause.raisedAmount)
+    : undefined;
+
+  const defaultInitialAmt = maxAllowedAmount !== undefined && maxAllowedAmount > 0
+    ? Math.min(1000, maxAllowedAmount)
+    : 1000;
+
+  const [selectedAmount, setSelectedAmount] = useState<number>(defaultInitialAmt);
   const [customAmount, setCustomAmount] = useState<string>('');
   const [isCustom, setIsCustom] = useState<boolean>(false);
   const [panNumber, setPanNumber] = useState<string>('');
@@ -48,7 +57,28 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
 
   const currentAmount = isCustom ? Number(customAmount) || 0 : selectedAmount;
 
+  const showExcessAmountAlert = (maxNeeded: number) => {
+    Alert.alert(
+      'Thank You for Your Support',
+      `Thank you for your support! We just need only ₹${maxNeeded.toLocaleString('en-IN')}.`,
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setSelectedAmount(maxNeeded);
+            setIsCustom(false);
+            setCustomAmount('');
+          },
+        },
+      ],
+    );
+  };
+
   const handleSelectPreset = (amount: number) => {
+    if (maxAllowedAmount !== undefined && maxAllowedAmount > 0 && amount > maxAllowedAmount) {
+      showExcessAmountAlert(maxAllowedAmount);
+      return;
+    }
     setSelectedAmount(amount);
     setIsCustom(false);
     setCustomAmount('');
@@ -59,7 +89,23 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
   };
 
   const handleSubmitDonation = async () => {
-    if (currentAmount < 50) {
+    if (maxAllowedAmount !== undefined && maxAllowedAmount <= 0) {
+      Alert.alert(
+        'Goal Reached',
+        `Thank you for your support! This cause has already achieved its total goal of ₹${cause.targetAmount.toLocaleString('en-IN')}.`,
+        [{ text: 'OK', onPress: onClose }],
+      );
+      return;
+    }
+
+    if (maxAllowedAmount !== undefined && maxAllowedAmount > 0 && currentAmount > maxAllowedAmount) {
+      showExcessAmountAlert(maxAllowedAmount);
+      return;
+    }
+
+    const minRequired = maxAllowedAmount !== undefined && maxAllowedAmount < 50 ? maxAllowedAmount : 50;
+    if (currentAmount < minRequired) {
+      Alert.alert('Invalid Amount', `Please enter a contribution amount of at least ₹${minRequired}.`);
       return;
     }
 

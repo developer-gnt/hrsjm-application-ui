@@ -141,9 +141,9 @@ export const CauseCard: React.FC<CauseCardProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`Donate to ${cause.title}`}
           >
-            <Text style={styles.donateHeartIcon}>💛</Text>
+            <Text style={styles.donateHeartIcon}>{isCompleted ? '✅' : '💛'}</Text>
             <Text style={styles.donateBtnText}>
-              {isCompleted ? 'Support' : 'Donate'}
+              {isCompleted ? 'Goal Reached' : 'Donate'}
             </Text>
           </TouchableOpacity>
         </View>

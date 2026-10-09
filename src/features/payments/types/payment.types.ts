@@ -22,6 +22,9 @@ export interface PaymentPayload {
   donorMobile?: string;
   panNumber?: string;
   need80GReceipt?: boolean;
+  targetAmount?: number;
+  raisedAmount?: number;
+  maxAllowedAmount?: number;
 }
 
 export interface PaymentReceiptDetails {

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   FlatList,
   RefreshControl,
   ScrollView,
@@ -132,6 +133,14 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
   }, [causes, activeTab, searchQuery]);
 
   const handleDonatePress = (cause: MemberCause) => {
+    const isCompleted = cause.status === 'closed' || cause.raisedAmount >= cause.targetAmount;
+    if (isCompleted) {
+      Alert.alert(
+        'Goal Already Reached',
+        `Thank you for your generous support! "${cause.title}" has already met its 100% collection goal of ₹${cause.targetAmount.toLocaleString('en-IN')}.`,
+      );
+      return;
+    }
     setSelectedCauseForDonation(cause);
     onDonateCause?.(cause);
   };
@@ -384,8 +393,22 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
                 category: selectedCauseForDonation.category,
                 location: selectedCauseForDonation.location,
                 imageUrl: selectedCauseForDonation.imageUrl,
-                amount: 2000,
+                amount: Math.min(
+                  2000,
+                  Math.max(
+                    50,
+                    selectedCauseForDonation.targetAmount - selectedCauseForDonation.raisedAmount > 0
+                      ? selectedCauseForDonation.targetAmount - selectedCauseForDonation.raisedAmount
+                      : 2000,
+                  ),
+                ),
                 entityId: selectedCauseForDonation.id,
+                targetAmount: selectedCauseForDonation.targetAmount,
+                raisedAmount: selectedCauseForDonation.raisedAmount,
+                maxAllowedAmount: Math.max(
+                  0,
+                  selectedCauseForDonation.targetAmount - selectedCauseForDonation.raisedAmount,
+                ),
               }
             : null
         }
@@ -405,7 +428,7 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
                   c.id === selectedCauseForDonation.id ||
                   c.title.toLowerCase().trim() === selectedCauseForDonation.title.toLowerCase().trim()
                 ) {
-                  const updatedRaised = c.raisedAmount + donatedAmount;
+                  const updatedRaised = Math.min(c.targetAmount, c.raisedAmount + donatedAmount);
                   return {
                     ...c,
                     raisedAmount: updatedRaised,

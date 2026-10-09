@@ -114,6 +114,29 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   // Track modal open transitions to prevent re-renders from resetting the stage
   const prevVisibleRef = useRef<boolean>(false);
 
+  const maxAllowedAmount = payload?.maxAllowedAmount !== undefined
+    ? payload.maxAllowedAmount
+    : payload?.targetAmount !== undefined && payload?.raisedAmount !== undefined
+    ? Math.max(0, payload.targetAmount - payload.raisedAmount)
+    : undefined;
+
+  const showExcessAmountAlert = (maxNeeded: number) => {
+    Alert.alert(
+      'Thank You for Your Support',
+      `Thank you for your support! We just need only ₹${maxNeeded.toLocaleString('en-IN')}.`,
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setActiveAmount(maxNeeded);
+            setIsCustomAmount(false);
+            setCustomAmountText(String(maxNeeded));
+          },
+        },
+      ],
+    );
+  };
+
   // Sync state when modal is opened
   useEffect(() => {
     const justOpened = visible && !prevVisibleRef.current;
@@ -125,10 +148,29 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       setReceiptResult(null);
       setIsCustomAmount(false);
 
-      if (payload?.amount) {
-        setActiveAmount(payload.amount);
-        setCustomAmountText(String(payload.amount));
+      const maxLimit = payload?.maxAllowedAmount !== undefined
+        ? payload.maxAllowedAmount
+        : payload?.targetAmount !== undefined && payload?.raisedAmount !== undefined
+        ? Math.max(0, payload.targetAmount - payload.raisedAmount)
+        : undefined;
+
+      if (maxLimit !== undefined && maxLimit <= 0) {
+        Alert.alert(
+          'Goal Reached',
+          `Thank you for your generous support! This cause has already met its full collection goal of ₹${(payload?.targetAmount || 0).toLocaleString('en-IN')}.`,
+          [{ text: 'OK', onPress: onClose }],
+        );
+        return;
       }
+
+      const initialAmt = payload?.amount || 2000;
+      const resolvedAmt = (maxLimit !== undefined && maxLimit > 0)
+        ? Math.min(initialAmt, maxLimit)
+        : initialAmt;
+
+      setActiveAmount(resolvedAmt);
+      setCustomAmountText(String(resolvedAmt));
+
       const resolvedName = payload?.donorName || user?.full_name || 'Donor';
       const resolvedMobile = payload?.donorMobile || user?.mobile_number || '';
       const resolvedEmail = payload?.donorEmail || user?.email || '';
@@ -152,7 +194,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
         : 'user@upi';
       setUpiId(dynamicUpi);
     }
-  }, [visible, payload, user]);
+  }, [visible, payload, user, onClose]);
 
   // Handle processing spinner
   useEffect(() => {
@@ -177,6 +219,10 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   });
 
   const handleSelectPreset = (amount: number) => {
+    if (maxAllowedAmount !== undefined && maxAllowedAmount > 0 && amount > maxAllowedAmount) {
+      showExcessAmountAlert(maxAllowedAmount);
+      return;
+    }
     setActiveAmount(amount);
     setIsCustomAmount(false);
     setCustomAmountText(String(amount));
@@ -194,9 +240,20 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
     }
   };
 
+  const handleCustomBlur = () => {
+    if (maxAllowedAmount !== undefined && maxAllowedAmount > 0 && activeAmount > maxAllowedAmount) {
+      showExcessAmountAlert(maxAllowedAmount);
+    }
+  };
+
   const handleProceedToCheckout = () => {
-    if (activeAmount < 50) {
-      Alert.alert('Invalid Amount', 'Please enter a contribution amount of at least ₹50.');
+    if (maxAllowedAmount !== undefined && maxAllowedAmount > 0 && activeAmount > maxAllowedAmount) {
+      showExcessAmountAlert(maxAllowedAmount);
+      return;
+    }
+    const minRequired = maxAllowedAmount !== undefined && maxAllowedAmount < 50 ? maxAllowedAmount : 50;
+    if (activeAmount < minRequired) {
+      Alert.alert('Invalid Amount', `Please enter a contribution amount of at least ₹${minRequired}.`);
       return;
     }
     if (need80G && panNumber.trim().length < 10) {
@@ -351,6 +408,16 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
             Choose a quick preset or type a custom amount:
           </Text>
 
+          {maxAllowedAmount !== undefined && maxAllowedAmount > 0 && (
+            <View style={styles.remainingGoalBanner}>
+              <Text style={styles.remainingGoalEmoji}>🎯</Text>
+              <Text style={styles.remainingGoalText}>
+                Remaining goal needed:{' '}
+                <Text style={styles.remainingGoalBold}>₹{maxAllowedAmount.toLocaleString('en-IN')}</Text>
+              </Text>
+            </View>
+          )}
+
           {/* Preset Buttons Grid */}
           <View style={styles.presetGrid}>
             {PRESET_AMOUNTS.map(amt => {
@@ -393,6 +460,8 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
               keyboardType="number-pad"
               value={customAmountText}
               onChangeText={handleCustomAmountChange}
+              onBlur={handleCustomBlur}
+              onEndEditing={handleCustomBlur}
             />
             {activeAmount > 0 && (
               <View style={styles.activeAmountIndicator}>
@@ -1417,6 +1486,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     marginBottom: 12,
+  },
+  remainingGoalBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+    gap: 6,
+  },
+  remainingGoalEmoji: {
+    fontSize: 14,
+  },
+  remainingGoalText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: '#1E40AF',
+  },
+  remainingGoalBold: {
+    fontFamily: 'Inter-Bold',
+    fontWeight: '700',
+    color: '#1B3F8F',
   },
   presetGrid: {
     flexDirection: 'row',

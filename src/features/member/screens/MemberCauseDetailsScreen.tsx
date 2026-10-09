@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Alert,
   Image,
   ScrollView,
   StatusBar,
@@ -231,14 +232,23 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
 
         <TouchableOpacity
           style={[styles.donateCtaBtn, isCompleted && styles.donateCtaBtnCompleted]}
-          onPress={() => setDonationModalVisible(true)}
+          onPress={() => {
+            if (isCompleted) {
+              Alert.alert(
+                'Goal Already Reached',
+                `Thank you for your generous support! "${currentCause.title}" has already achieved its full goal of ₹${currentCause.targetAmount.toLocaleString('en-IN')}.`,
+              );
+              return;
+            }
+            setDonationModalVisible(true);
+          }}
           activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel={`Donate to ${currentCause.title}`}
         >
           <Text style={styles.donateCtaIcon}>💛</Text>
           <Text style={styles.donateCtaText}>
-            {isCompleted ? 'Contribute More' : 'Donate Now'}
+            {isCompleted ? 'Goal Reached' : 'Donate Now'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -252,15 +262,26 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
           category: currentCause.category,
           location: currentCause.location,
           imageUrl: currentCause.imageUrl,
-          amount: 2000,
+          amount: Math.min(
+            2000,
+            Math.max(
+              50,
+              currentCause.targetAmount - currentCause.raisedAmount > 0
+                ? currentCause.targetAmount - currentCause.raisedAmount
+                : 2000,
+            ),
+          ),
           entityId: currentCause.id,
+          targetAmount: currentCause.targetAmount,
+          raisedAmount: currentCause.raisedAmount,
+          maxAllowedAmount: Math.max(0, currentCause.targetAmount - currentCause.raisedAmount),
         }}
         onClose={() => setDonationModalVisible(false)}
         onSuccess={(receipt) => {
           const donated = receipt?.amount || 2000;
           causesService.recordDonation(currentCause.id, donated, receipt?.paymentId);
           setCurrentCause(prev => {
-            const updatedRaised = prev.raisedAmount + donated;
+            const updatedRaised = Math.min(prev.targetAmount, prev.raisedAmount + donated);
             const updatedCount = prev.donorCount + 1;
             return {
               ...prev,

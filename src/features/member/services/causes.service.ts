@@ -199,7 +199,7 @@ class CausesService {
           const idKey = (item.id || '').toLowerCase().trim();
           const titleKey = (item.reason || '').toLowerCase().trim();
           const recorded = this.recordedDonationsMap[idKey] || this.recordedDonationsMap[titleKey] || { raisedAmount: 0, donorCount: 0 };
-          const raised = rawRaised + recorded.raisedAmount;
+          const raised = Math.min(target, rawRaised + recorded.raisedAmount);
           const donorCount = (rawRaised > 0 ? Math.ceil(rawRaised / 1000) : 0) + recorded.donorCount;
 
           return {
@@ -230,7 +230,7 @@ class CausesService {
           const idKey = c.id.toLowerCase().trim();
           const titleKey = c.title.toLowerCase().trim();
           const recorded = this.recordedDonationsMap[idKey] || this.recordedDonationsMap[titleKey] || { raisedAmount: 0, donorCount: 0 };
-          const raised = c.raisedAmount + recorded.raisedAmount;
+          const raised = Math.min(c.targetAmount, c.raisedAmount + recorded.raisedAmount);
           const donors = c.donorCount + recorded.donorCount;
           return {
             ...c,
@@ -246,7 +246,7 @@ class CausesService {
           const idKey = c.id.toLowerCase().trim();
           const titleKey = c.title.toLowerCase().trim();
           const recorded = this.recordedDonationsMap[idKey] || this.recordedDonationsMap[titleKey] || { raisedAmount: 0, donorCount: 0 };
-          const raised = c.raisedAmount + recorded.raisedAmount;
+          const raised = Math.min(c.targetAmount, c.raisedAmount + recorded.raisedAmount);
           const donors = c.donorCount + recorded.donorCount;
           return {
             ...c,
@@ -262,7 +262,7 @@ class CausesService {
         const idKey = c.id.toLowerCase().trim();
         const titleKey = c.title.toLowerCase().trim();
         const recorded = this.recordedDonationsMap[idKey] || this.recordedDonationsMap[titleKey] || { raisedAmount: 0, donorCount: 0 };
-        const raised = c.raisedAmount + recorded.raisedAmount;
+        const raised = Math.min(c.targetAmount, c.raisedAmount + recorded.raisedAmount);
         const donors = c.donorCount + recorded.donorCount;
         return {
           ...c,
@@ -305,7 +305,9 @@ class CausesService {
     if (match) {
       keysToUpdate.add(match.id.toLowerCase().trim());
       keysToUpdate.add(match.title.toLowerCase().trim());
-      match.raisedAmount += amount;
+      const maxAllowed = Math.max(0, match.targetAmount - match.raisedAmount);
+      const effectiveAmount = maxAllowed > 0 ? Math.min(amount, maxAllowed) : 0;
+      match.raisedAmount = Math.min(match.targetAmount, match.raisedAmount + effectiveAmount);
       match.donorCount += 1;
       if (match.raisedAmount >= match.targetAmount) {
         match.status = 'closed';
@@ -327,8 +329,13 @@ class CausesService {
   public async processDonation(formData: DonationFormData): Promise<DonationReceiptResult> {
     const cause = this.getCauseById(formData.causeId);
     if (cause) {
-      cause.raisedAmount += formData.amount;
+      const maxAllowed = Math.max(0, cause.targetAmount - cause.raisedAmount);
+      const effectiveAmount = maxAllowed > 0 ? Math.min(formData.amount, maxAllowed) : 0;
+      cause.raisedAmount = Math.min(cause.targetAmount, cause.raisedAmount + effectiveAmount);
       cause.donorCount += 1;
+      if (cause.raisedAmount >= cause.targetAmount) {
+        cause.status = 'closed';
+      }
     }
 
     this.totalDonatedByMember += formData.amount;

@@ -15,7 +15,7 @@ export const MemberCausesContainer: React.FC = () => {
         onDonationSuccess={(donatedAmount) => {
           setSelectedCause(prev => {
             if (!prev) return null;
-            const updatedRaised = prev.raisedAmount + donatedAmount;
+            const updatedRaised = Math.min(prev.targetAmount, prev.raisedAmount + donatedAmount);
             return {
               ...prev,
               raisedAmount: updatedRaised,
