@@ -11,13 +11,12 @@ import { SectionHeader } from '../components/SectionHeader';
 import { ImpactSection } from '../components/ImpactSection';
 import { HomeEventCard } from '../components/HomeEventCard';
 import { NewsCard } from '../components/NewsCard';
-import { DonationBanner } from '../components/DonationBanner';
 import { ActivitiesRow } from '../components/ActivityCard';
 import { RecommendationCard } from '../components/RecommendationCard';
+import { DonationBanner } from '../components/DonationBanner';
 import { UserBottomNavigation } from '../components/UserBottomNavigation';
 import {
   GUEST_QUICK_ACTIONS,
-  IMPACT_STATS,
   LATEST_NEWS,
   LATEST_UPDATES,
   MEMBER_ACTIVITIES,
@@ -26,6 +25,7 @@ import {
   UPCOMING_EVENTS,
   WHAT_WE_DO_ITEMS,
 } from '../data/home-preview-data';
+import { getImpactStats } from '../data/impact-stats-provider';
 import type { HomeTab } from '../types/home.types';
 
 export interface UserHomeScreenProps {
@@ -39,6 +39,11 @@ export interface UserHomeScreenProps {
   onOpenAbout?: () => void;
   /** Hides the built-in preview bottom bar when hosted in a tab navigator. */
   hideBottomNav?: boolean;
+  /** Opens the Get Help flow from the existing Home quick action card. */
+  onOpenGetHelp?: () => void;
+  onOpenEvents?: () => void;
+  onOpenNews?: () => void;
+  onOpenRight?: (rightId: string) => void;
 }
 
 export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
@@ -46,6 +51,10 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   onOpenRights,
   onOpenAbout,
   hideBottomNav = true,
+  onOpenGetHelp,
+  onOpenEvents,
+  onOpenNews,
+  onOpenRight,
 }) => {
   const showComingSoon = (feature: string) => {
     Alert.alert(feature, `"${feature}" is part of an upcoming Home phase.`);
@@ -58,6 +67,10 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
       onOpenRights?.();
     } else if (tab.id === 'about') {
       onOpenAbout?.();
+    } else if (tab.id === 'events') {
+      onOpenEvents?.();
+    } else if (tab.id === 'news') {
+      onOpenNews?.();
     }
   };
 
@@ -75,11 +88,101 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
       >
         <HeroBanner onCtaPress={() => showComingSoon('Join the Movement')} />
 
-        <View style={styles.section}>
+        <View style={styles.quickActionsSection}>
           <QuickActionsRow
             actions={GUEST_QUICK_ACTIONS}
-            onPressAction={action => showComingSoon(action.label)}
+            onPressAction={action => {
+              if (action.id === 'complaint') {
+                onOpenGetHelp?.();
+                return;
+              }
+              showComingSoon(action.label);
+            }}
           />
+        </View>
+
+        <View style={styles.section}>
+          <AboutSection
+            onMorePress={() => onOpenAbout?.()}
+            onMediaPress={() => showComingSoon('Introduction video')}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionInset}>
+            <SectionHeader
+              title="Know Your Rights"
+              linkLabel="View All"
+              onLinkPress={() => onOpenRights?.()}
+            />
+            <CategoryIconRow
+              items={RIGHTS_CATEGORIES}
+              onPressItem={item => onOpenRight?.(item.id)}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionInset}>
+            <SectionHeader
+              title="What HRSJM Does"
+              linkLabel="View All"
+              onLinkPress={() => onOpenAbout?.()}
+            />
+            <CategoryIconRow
+              items={WHAT_WE_DO_ITEMS}
+              onPressItem={item => showComingSoon(item.title)}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <ImpactSection
+            stats={getImpactStats()}
+            onDetailsPress={() => onOpenAbout?.()}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionInset}>
+            <SectionHeader
+              title="Upcoming Events"
+              linkLabel="View All"
+              onLinkPress={() => onOpenEvents?.()}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.carousel}
+            >
+              {UPCOMING_EVENTS.map(event => (
+                <HomeEventCard
+                  key={event.id}
+                  event={event}
+                  onPress={() => onOpenEvents?.()}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionInset}>
+            <SectionHeader
+              title="Latest News"
+              linkLabel="View All"
+              onLinkPress={() => onOpenNews?.()}
+            />
+            <View style={styles.updatesList}>
+              {LATEST_NEWS.map(item => (
+                <NewsCard
+                  key={item.id}
+                  item={item}
+                  onPress={() => onOpenNews?.()}
+                />
+              ))}
+            </View>
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -120,95 +223,11 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
         </View>
 
         <View style={styles.section}>
-          <AboutSection
-            onMorePress={() => showComingSoon('About HRSJM')}
-            onMediaPress={() => showComingSoon('Introduction video')}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionInset}>
-            <SectionHeader
-              title="Know Your Rights"
-              linkLabel="View All"
-              onLinkPress={() => showComingSoon('Know Your Rights')}
-            />
-            <CategoryIconRow
-              items={RIGHTS_CATEGORIES}
-              onPressItem={item => showComingSoon(item.title)}
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionInset}>
-            <SectionHeader
-              title="What HRSJM Does"
-              linkLabel="View All"
-              onLinkPress={() => showComingSoon('What HRSJM Does')}
-            />
-            <CategoryIconRow
-              items={WHAT_WE_DO_ITEMS}
-              onPressItem={item => showComingSoon(item.title)}
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <ImpactSection
-            stats={IMPACT_STATS}
-            onDetailsPress={() => showComingSoon('Our Impact')}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionInset}>
-            <SectionHeader
-              title="Upcoming Events"
-              linkLabel="View All"
-              onLinkPress={() => showComingSoon('Upcoming Events')}
-            />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.carousel}
-            >
-              {UPCOMING_EVENTS.map(event => (
-                <HomeEventCard
-                  key={event.id}
-                  event={event}
-                  onPress={() => showComingSoon(event.title)}
-                />
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionInset}>
-            <SectionHeader
-              title="Latest News"
-              linkLabel="View All"
-              onLinkPress={() => showComingSoon('Latest News')}
-            />
-            <View style={styles.updatesList}>
-              {LATEST_NEWS.map(item => (
-                <NewsCard
-                  key={item.id}
-                  item={item}
-                  onPress={() => showComingSoon(item.title)}
-                />
-              ))}
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
           <View style={styles.sectionInset}>
             <SectionHeader
               title="Latest Updates"
               linkLabel="View All"
-              onLinkPress={() => showComingSoon('Latest Updates')}
+              onLinkPress={() => onOpenNews?.()}
             />
             <View style={styles.updatesList}>
               {LATEST_UPDATES.map(item => (
@@ -222,7 +241,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
           </View>
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.donationSection}>
           <DonationBanner onPress={() => showComingSoon('Make a Donation')} />
         </View>
       </ScrollView>
@@ -246,7 +265,13 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
   },
   section: {
+    marginTop: Spacing.sm,
+  },
+  donationSection: {
     marginTop: Spacing.lg,
+  },
+  quickActionsSection: {
+    marginTop: Spacing.sm,
   },
   sectionInset: {
     paddingHorizontal: Spacing.base,

@@ -5,6 +5,7 @@ import { AdminColors, Spacing } from '../../../../core/theme';
 import { AppIcon, HrsjmLogoMark } from '../../components';
 
 interface HomeHeaderProps {
+  onBack?: () => void;
   onPressSearch?: () => void;
   onPressNotifications?: () => void;
   /** Red unread dot on the bell (member surfaces only). */
@@ -21,6 +22,7 @@ interface HomeHeaderProps {
  * header) — no iOS-specific status-bar handling is reproduced.
  */
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
+  onBack,
   onPressSearch,
   onPressNotifications,
   showNotificationDot = false,
@@ -35,6 +37,17 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
       style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.sm) }]}
     >
       <View style={styles.content}>
+        {onBack ? (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <AppIcon name="chevron-left" size={20} color={AdminColors.primaryDark} />
+          </TouchableOpacity>
+        ) : null}
         <HrsjmLogoMark height={logoHeight} />
 
         <View style={styles.spacer} />
@@ -80,6 +93,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 48,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: AdminColors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.xs,
   },
   spacer: {
     flex: 1,

@@ -28,14 +28,24 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
       accessibilityRole="button"
       accessibilityLabel={action.label}
     >
-      <AppIcon
-        name={action.icon}
-        size={24}
-        strokeWidth={1.7}
-        color={emphasized ? AdminColors.textOnDark : AdminColors.primaryDark}
-      />
+      <View style={[styles.iconCircle, emphasized && styles.iconCircleEmphasized]}>
+        <AppIcon
+          name={action.icon}
+          size={18}
+          strokeWidth={1.7}
+          color={AdminColors.accentGold}
+        />
+      </View>
       <Text style={[styles.label, emphasized && styles.labelEmphasized]}>
-        {action.label}
+        {action.id === 'join'
+          ? 'Join\nHRSJM'
+          : action.id === 'complaint'
+            ? 'File a\nComplaint'
+            : action.id === 'donate'
+              ? 'Donate\nNow'
+              : action.id === 'renew'
+                ? 'Renew\nMembership'
+                : action.label}
       </Text>
     </TouchableOpacity>
   );
@@ -72,10 +82,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Spacing.lg,
+    paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.xs,
-    borderRadius: BorderRadius.lg + 2,
-    minHeight: 96,
+    borderRadius: BorderRadius.md,
+    minHeight: 68,
   },
   cardLight: {
     backgroundColor: AdminColors.accentGoldLight,
@@ -85,13 +95,24 @@ const styles = StyleSheet.create({
   cardEmphasized: {
     backgroundColor: AdminColors.primaryDark,
   },
+  iconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(201, 162, 39, 0.14)',
+  },
+  iconCircleEmphasized: {
+    backgroundColor: 'rgba(201, 162, 39, 0.14)',
+  },
   label: {
-    fontSize: 11.5,
-    lineHeight: 15,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: '600',
     color: AdminColors.primaryDark,
     textAlign: 'center',
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xs,
   },
   labelEmphasized: {
     color: AdminColors.textOnDark,

@@ -19,6 +19,8 @@ export interface AboutScreenProps {
   onNavigate?: (target: string) => void;
   onOpenRights?: () => void;
   onOpenContact?: () => void;
+  onOpenEvents?: () => void;
+  onOpenNews?: () => void;
 }
 
 /**

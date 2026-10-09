@@ -164,7 +164,13 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onCtaPress }) => {
               <Text style={styles.supporting}>{slide.supporting}</Text>
 
               <View style={styles.cta}>
-                <GoldButton label="Join the Movement" compact onPress={onCtaPress} />
+                <GoldButton
+                  label="Join the Movement"
+                  compact
+                  onPress={onCtaPress}
+                  textColor={AdminColors.primaryDark}
+                  backgroundColor="#F2B94B"
+                />
               </View>
             </View>
 
