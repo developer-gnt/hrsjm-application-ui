@@ -53,7 +53,7 @@ export interface GlobalPaymentModalProps {
   onViewHistory?: () => void;
 }
 
-type PaymentStage = 'amount_selection' | 'checkout' | 'processing' | 'success';
+type PaymentStage = 'amount_selection' | 'checkout' | 'processing' | 'success' | 'failed';
 
 const PRESET_AMOUNTS = [500, 1000, 2000, 5000];
 
@@ -108,6 +108,11 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   // Processing timeline step (0 to 5)
   const [processingStep, setProcessingStep] = useState<number>(0);
   const [receiptResult, setReceiptResult] = useState<PaymentReceiptDetails | null>(null);
+  const [failureError, setFailureError] = useState<{
+    code: string;
+    message: string;
+    reason?: string;
+  } | null>(null);
 
   // Spinner animation for Processing stage
   const spinAnim = useRef(new Animated.Value(0)).current;
@@ -317,12 +322,14 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
         setStage('success');
         onSuccess?.(result);
       } catch (error: any) {
-        setStage('checkout');
-        Alert.alert(
-          'Payment Declined (Sandbox)',
-          error?.message || 'Payment simulation resulted in bank decline.',
-          [{ text: 'Try Again' }],
-        );
+        setFailureError({
+          code: 'PAYMENT_DECLINED',
+          message: error?.message || 'Payment was declined by the simulated bank server / issuer.',
+          reason: simulationMode === 'failure'
+            ? 'Simulated bank decline triggered via Sandbox controls.'
+            : 'Payment network declined transaction authorization.',
+        });
+        setStage('failed');
       }
     }, 2800);
   };
@@ -613,70 +620,84 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           </View>
         </View>
 
-        {/* Sandbox Test Mode Gateway Bar */}
-        <View style={styles.sandboxBar}>
+        {/* Professional Sandbox Simulator Card */}
+        <View style={styles.sandboxCard}>
           <View style={styles.sandboxHeaderRow}>
-            <View style={styles.sandboxPill}>
-              <Text style={styles.sandboxPillText}>⚡ Sandbox PG Mock API</Text>
+            <View style={styles.sandboxBadge}>
+              <View style={styles.sandboxActiveDot} />
+              <Text style={styles.sandboxBadgeText}>TEST ENVIRONMENT</Text>
             </View>
-            <View style={styles.simToggleRow}>
+            <Text style={styles.sandboxGatewaySub}>HRSJM Gateway Simulator</Text>
+          </View>
+
+          <View style={styles.sandboxControlSection}>
+            <Text style={styles.sandboxSectionTitle}>Simulated Bank Response</Text>
+            <View style={styles.sandboxSegmentContainer}>
               <TouchableOpacity
                 style={[
-                  styles.simToggleBtn,
-                  simulationMode === 'success' && styles.simToggleBtnActive,
+                  styles.segmentOptionBtn,
+                  simulationMode === 'success' && styles.segmentOptionSuccess,
                 ]}
                 onPress={() => setSimulationMode('success')}
+                activeOpacity={0.8}
               >
                 <Text
                   style={[
-                    styles.simToggleText,
-                    simulationMode === 'success' && styles.simToggleTextActive,
+                    styles.segmentOptionText,
+                    simulationMode === 'success' && styles.segmentOptionTextActive,
                   ]}
                 >
-                  ✓ Test Success
+                  ✓ Approve (HTTP 200)
                 </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[
-                  styles.simToggleBtn,
-                  simulationMode === 'failure' && styles.simToggleBtnFailActive,
+                  styles.segmentOptionBtn,
+                  simulationMode === 'failure' && styles.segmentOptionFail,
                 ]}
                 onPress={() => setSimulationMode('failure')}
+                activeOpacity={0.8}
               >
                 <Text
                   style={[
-                    styles.simToggleText,
-                    simulationMode === 'failure' && styles.simToggleTextFailActive,
+                    styles.segmentOptionText,
+                    simulationMode === 'failure' && styles.segmentOptionTextActive,
                   ]}
                 >
-                  ✕ Simulate Decline
+                  ✕ Decline (HTTP 402)
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          <View style={styles.quickFillRow}>
-            <Text style={styles.quickFillLabel}>1-Tap Fill:</Text>
+          <View style={styles.sandboxQuickFillRow}>
+            <Text style={styles.sandboxQuickFillLabel}>Quick Test:</Text>
             <TouchableOpacity
-              style={styles.quickFillChip}
+              style={styles.sandboxChip}
               onPress={() => {
                 setPaymentMethod('upi');
                 setSelectedUpiApp('bhim');
                 setUpiId('success@upi');
+                setSimulationMode('success');
               }}
+              activeOpacity={0.7}
             >
-              <Text style={styles.quickFillChipText}>BHIM (success@upi)</Text>
+              <Text style={styles.sandboxChipText}>⚡ BHIM (success@upi)</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
-              style={styles.quickFillChip}
+              style={styles.sandboxChip}
               onPress={() => {
                 setPaymentMethod('card');
                 setCardNumber('4111 2222 3333 4444');
                 setCardExpiry('12/28');
                 setCardCvv('123');
+                setSimulationMode('success');
               }}
+              activeOpacity={0.7}
             >
-              <Text style={styles.quickFillChipText}>Visa Test Card</Text>
+              <Text style={styles.sandboxChipText}>💳 Visa 4111</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1357,6 +1378,155 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
     );
   };
 
+  // ============================================================================
+  // STAGE 5: PAYMENT FAILED / DECLINED STAGE
+  // ============================================================================
+  const renderFailedStage = () => {
+    return (
+      <View style={styles.stageContainer}>
+        {/* Top Header */}
+        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
+          <View style={styles.headerLogoContainer}>
+            <Image source={HRSJM_EMBLEM} style={styles.headerEmblem} resizeMode="contain" />
+            <View style={styles.headerTextCol}>
+              <Text style={styles.headerBrandTitle}>HRSJM</Text>
+              <Text style={styles.headerHindiSub}>मानव अधिकार • सामाजिक न्याय</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.headerCloseCircleBtn}
+            onPress={onClose}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel="Close payment failure"
+          >
+            <Text style={styles.headerCloseIcon}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom, 20) + 120 },
+          ]}
+        >
+          {/* Failure Aura Badge */}
+          <View style={styles.failedAuraBox}>
+            <View style={styles.failedCircleOuter}>
+              <View style={styles.failedCircleInner}>
+                <Text style={styles.failedCrossIcon}>✕</Text>
+              </View>
+            </View>
+          </View>
+
+          <Text style={styles.failedHeading}>Payment Unsuccessful</Text>
+          <Text style={styles.failedSubheading}>
+            {failureError?.message || 'Payment was declined by the simulated bank server / card issuer.'}
+          </Text>
+
+          {/* Failed Amount Card */}
+          <View style={styles.failedAmountCard}>
+            <Text style={styles.failedAmountNumber}>
+              ₹{activeAmount.toLocaleString('en-IN')}
+            </Text>
+            <Text style={styles.failedAmountCaption}>
+              No money has been debited from your account.
+            </Text>
+          </View>
+
+          {/* Transaction Metadata Card */}
+          <View style={styles.receiptMetaCard}>
+            <View style={styles.receiptMetaRow}>
+              <Text style={styles.receiptMetaLabel}>Payment Status</Text>
+              <View style={styles.failedBadge}>
+                <Text style={styles.failedBadgeText}>Declined</Text>
+              </View>
+            </View>
+            <View style={styles.receiptMetaRow}>
+              <Text style={styles.receiptMetaLabel}>Payment Method</Text>
+              <Text style={styles.receiptMetaValue}>
+                {paymentMethod === 'upi'
+                  ? `UPI (${selectedUpiApp.toUpperCase()})`
+                  : paymentMethod === 'card'
+                  ? 'Debit / Credit Card'
+                  : paymentMethod === 'netbanking'
+                  ? selectedBank
+                  : selectedWallet}
+              </Text>
+            </View>
+            <View style={styles.receiptMetaRow}>
+              <Text style={styles.receiptMetaLabel}>Decline Code</Text>
+              <Text style={styles.receiptMetaValue}>SIM_GATEWAY_DECLINE_402</Text>
+            </View>
+            <View style={styles.receiptMetaRow}>
+              <Text style={styles.receiptMetaLabel}>Reason</Text>
+              <Text style={styles.receiptMetaValue} numberOfLines={2}>
+                {failureError?.reason || 'Bank issuer declined test authorization.'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Security Reassurance Card */}
+          <View style={styles.secureReassureCard}>
+            <Text style={styles.secureReassureIcon}>🛡️</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.secureReassureTitle}>Zero Account Risk</Text>
+              <Text style={styles.secureReassureBody}>
+                Your money is completely safe. No charges were made to your bank account or card.
+              </Text>
+            </View>
+          </View>
+
+          {/* Simulator Quick Resolution Helper Card */}
+          <View style={styles.simulatorHelperCard}>
+            <View style={styles.simulatorHelperHeader}>
+              <Text style={styles.simulatorHelperTag}>⚡ DEVELOPER SANDBOX HINT</Text>
+            </View>
+            <Text style={styles.simulatorHelperText}>
+              This transaction declined because the simulator was set to <Text style={{ fontWeight: '700', color: '#B91C1C' }}>✕ Decline (HTTP 402)</Text>.
+            </Text>
+            <TouchableOpacity
+              style={styles.simulatorHelperBtn}
+              onPress={() => {
+                setSimulationMode('success');
+                setStage('checkout');
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.simulatorHelperBtnText}>Switch to "Approve (200)" & Retry →</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        {/* Sticky Bottom Actions */}
+        <View
+          style={[
+            styles.bottomActionBar,
+            { paddingBottom: Math.max(insets.bottom, 14) + 6 },
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.primaryRetryBtn}
+            onPress={() => setStage('checkout')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryRetryBtnText}>Try Again</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.viewHistoryLinkBtn}
+            onPress={onClose}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.viewHistoryLinkText}>Cancel & Exit</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <Modal
       visible={visible}
@@ -1369,6 +1539,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       {stage === 'checkout' && renderCheckoutStage()}
       {stage === 'processing' && renderProcessingStage()}
       {stage === 'success' && renderSuccessStage()}
+      {stage === 'failed' && renderFailedStage()}
     </Modal>
   );
 };
@@ -1850,88 +2021,132 @@ const styles = StyleSheet.create({
     color: '#0F2860',
   },
 
-  /* Sandbox Test Mode Bar */
-  sandboxBar: {
-    backgroundColor: '#F0F9FF',
-    borderRadius: 12,
+  /* Professional Sandbox Simulator Card */
+  sandboxCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#BAE6FD',
-    padding: 10,
-    marginBottom: 16,
+    borderColor: '#E2E8F0',
+    padding: 12,
+    marginBottom: 18,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   sandboxHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  sandboxPill: {
-    backgroundColor: '#E0F2FE',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  sandboxPillText: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#0284C7',
-  },
-  simToggleRow: {
-    flexDirection: 'row',
-    backgroundColor: '#E2E8F0',
-    borderRadius: 8,
-    padding: 2,
-    gap: 4,
-  },
-  simToggleBtn: {
-    paddingVertical: 3,
-    paddingHorizontal: 7,
-    borderRadius: 6,
-  },
-  simToggleBtnActive: {
-    backgroundColor: '#16A34A',
-  },
-  simToggleBtnFailActive: {
-    backgroundColor: '#DC2626',
-  },
-  simToggleText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 11,
-    color: '#475569',
-    fontWeight: '600',
-  },
-  simToggleTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  simToggleTextFailActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  quickFillRow: {
+  sandboxBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    flexWrap: 'wrap',
-  },
-  quickFillLabel: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 11,
-    color: '#64748B',
-  },
-  quickFillChip: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#BAE6FD',
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
     borderWidth: 1,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
+    gap: 5,
   },
-  quickFillChipText: {
+  sandboxActiveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#2563EB',
+  },
+  sandboxBadgeText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#1D4ED8',
+    letterSpacing: 0.4,
+  },
+  sandboxGatewaySub: {
     fontFamily: 'Inter-Medium',
     fontSize: 11,
-    color: '#0369A1',
+    color: '#64748B',
+  },
+  sandboxControlSection: {
+    marginBottom: 10,
+  },
+  sandboxSectionTitle: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11,
+    color: '#475569',
+    marginBottom: 6,
+  },
+  sandboxSegmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#E2E8F0',
+    borderRadius: 9,
+    padding: 3,
+    gap: 4,
+  },
+  segmentOptionBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    paddingHorizontal: 8,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentOptionSuccess: {
+    backgroundColor: '#16A34A',
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  segmentOptionFail: {
+    backgroundColor: '#DC2626',
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  segmentOptionText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11.5,
+    color: '#475569',
+    fontWeight: '600',
+  },
+  segmentOptionTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontFamily: 'Inter-Bold',
+  },
+  sandboxQuickFillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  sandboxQuickFillLabel: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11,
+    color: '#64748B',
+  },
+  sandboxChip: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+  },
+  sandboxChipText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 11,
+    color: '#0F2860',
     fontWeight: '600',
   },
 
@@ -2614,5 +2829,164 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#1B3F8F',
     fontWeight: '700',
+  },
+
+  /* Payment Failed Stage */
+  failedAuraBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 18,
+  },
+  failedCircleOuter: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 6,
+    borderColor: '#FEF2F2',
+  },
+  failedCircleInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  failedCrossIcon: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  failedHeading: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F2454',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  failedSubheading: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 13.5,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 19,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  failedAmountCard: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  failedAmountNumber: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#B91C1C',
+  },
+  failedAmountCaption: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: '#991B1B',
+    marginTop: 4,
+  },
+  failedBadge: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  failedBadgeText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 11,
+    color: '#B91C1C',
+    fontWeight: '700',
+  },
+  secureReassureCard: {
+    flexDirection: 'row',
+    backgroundColor: '#F0FDF4',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    padding: 12,
+    marginBottom: 14,
+    gap: 10,
+    alignItems: 'center',
+  },
+  secureReassureIcon: {
+    fontSize: 22,
+  },
+  secureReassureTitle: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#166534',
+    marginBottom: 2,
+  },
+  secureReassureBody: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 11.5,
+    color: '#15803D',
+    lineHeight: 16,
+  },
+  simulatorHelperCard: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    padding: 14,
+    marginBottom: 16,
+  },
+  simulatorHelperHeader: {
+    marginBottom: 6,
+  },
+  simulatorHelperTag: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#1D4ED8',
+    letterSpacing: 0.5,
+  },
+  simulatorHelperText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#1E3A8A',
+    lineHeight: 17,
+    marginBottom: 10,
+  },
+  simulatorHelperBtn: {
+    backgroundColor: '#1E40AF',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  simulatorHelperBtnText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  primaryRetryBtn: {
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: '#1B3F8F',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  primaryRetryBtnText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
