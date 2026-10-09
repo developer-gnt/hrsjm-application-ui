@@ -15,6 +15,22 @@ import TicketDetailsScreen from '../../features/admin/support/screens/TicketDeta
 import TicketChatScreen from '../../features/admin/support/screens/TicketChatScreen';
 import NotificationsScreen from '../../features/admin/notifications/screens/NotificationsScreen';
 import ProfileSettingsScreen from '../../features/admin/settings/screens/ProfileSettingsScreen';
+import DonationHistoryScreen from '../../features/donations/screens/DonationHistoryScreen';
+import DonationDetailScreen from '../../features/donations/screens/DonationDetailScreen';
+import ReceiptDetailScreen from '../../features/receipts/screens/ReceiptDetailScreen';
+import ReceiptPdfPreviewScreen from '../../features/receipts/screens/ReceiptPdfPreviewScreen';
+import ReceiptsListScreen from '../../features/receipts/screens/ReceiptsListScreen';
+import { MembershipProvider } from '../../features/membership/context/MembershipContext';
+import MembershipLandingScreen from '../../features/membership/screens/MembershipLandingScreen';
+import MembershipIntroScreen from '../../features/membership/screens/MembershipIntroScreen';
+import MembershipStep1Screen from '../../features/membership/screens/MembershipStep1Screen';
+import MembershipStep2Screen from '../../features/membership/screens/MembershipStep2Screen';
+import MembershipStep3Screen from '../../features/membership/screens/MembershipStep3Screen';
+import MembershipSubmittedScreen from '../../features/membership/screens/MembershipSubmittedScreen';
+import MyApplicationScreen from '../../features/membership/screens/MyApplicationScreen';
+import ApplicationDetailsScreen from '../../features/membership/screens/ApplicationDetailsScreen';
+import ApplicationApprovedScreen from '../../features/membership/screens/ApplicationApprovedScreen';
+import ApplicationRejectedScreen from '../../features/membership/screens/ApplicationRejectedScreen';
 import type {
   AppStackParamList,
   AuthStackParamList,
@@ -33,18 +49,17 @@ function AuthNavigator() {
   );
 }
 
-// Bottom tabs per the approved design. Dashboard, Members and Applications
-// belong to modules scheduled for later phases - the tabs render a clearly
-// labelled placeholder until those screens are built.
+// Bottom tabs per the approved design: Dashboard, Members, Applications,
+// Donations, Complaints, More.
 function AdminTabs() {
   return (
     <Tabs.Navigator
-      tabBar={AdminBottomTabs}
+      tabBar={(props) => <AdminBottomTabs {...props} />}
       screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="DashboardTab" component={ModulePlaceholderScreen} />
-      <Tabs.Screen name="MembersTab" component={ModulePlaceholderScreen} />
+      <Tabs.Screen name="MembersTab" component={MembershipStep1Screen} />
       <Tabs.Screen name="ApplicationsTab" component={ModulePlaceholderScreen} />
-      <Tabs.Screen name="DonationSeekersTab" component={AssistanceRequestsScreen} />
+      <Tabs.Screen name="DonationSeekersTab" component={DonationHistoryScreen} />
       <Tabs.Screen name="ComplaintsTab" component={SupportTicketsScreen} />
       <Tabs.Screen name="MoreTab" component={ProfileSettingsScreen} />
     </Tabs.Navigator>
@@ -53,14 +68,30 @@ function AdminTabs() {
 
 function AppNavigator() {
   return (
-    <AppStack.Navigator screenOptions={{ headerShown: false }}>
-      <AppStack.Screen name="Tabs" component={AdminTabs} />
-      <AppStack.Screen name="AssistanceDetails" component={AssistanceDetailsScreen} />
-      <AppStack.Screen name="AssistanceDocuments" component={AssistanceDocumentsScreen} />
-      <AppStack.Screen name="TicketDetails" component={TicketDetailsScreen} />
-      <AppStack.Screen name="TicketChat" component={TicketChatScreen} />
-      <AppStack.Screen name="Notifications" component={NotificationsScreen} />
-    </AppStack.Navigator>
+    <MembershipProvider>
+      <AppStack.Navigator screenOptions={{ headerShown: false }}>
+        <AppStack.Screen name="Tabs" component={AdminTabs} />
+        <AppStack.Screen name="DonationDetail" component={DonationDetailScreen} />
+        <AppStack.Screen name="ReceiptsList" component={ReceiptsListScreen} />
+        <AppStack.Screen name="ReceiptDetail" component={ReceiptDetailScreen} />
+        <AppStack.Screen name="ReceiptPdfPreview" component={ReceiptPdfPreviewScreen} />
+        <AppStack.Screen name="AssistanceDetails" component={AssistanceDetailsScreen} />
+        <AppStack.Screen name="AssistanceDocuments" component={AssistanceDocumentsScreen} />
+        <AppStack.Screen name="TicketDetails" component={TicketDetailsScreen} />
+        <AppStack.Screen name="TicketChat" component={TicketChatScreen} />
+        <AppStack.Screen name="Notifications" component={NotificationsScreen} />
+        {/* Membership Journey Routes */}
+        <AppStack.Screen name="MembershipIntro" component={MembershipIntroScreen} />
+        <AppStack.Screen name="MembershipStep1Personal" component={MembershipStep1Screen} />
+        <AppStack.Screen name="MembershipStep2Address" component={MembershipStep2Screen} />
+        <AppStack.Screen name="MembershipStep3Documents" component={MembershipStep3Screen} />
+        <AppStack.Screen name="MembershipSubmitted" component={MembershipSubmittedScreen} />
+        <AppStack.Screen name="MyApplication" component={MyApplicationScreen} />
+        <AppStack.Screen name="ApplicationDetails" component={ApplicationDetailsScreen} />
+        <AppStack.Screen name="ApplicationApproved" component={ApplicationApprovedScreen} />
+        <AppStack.Screen name="ApplicationRejected" component={ApplicationRejectedScreen} />
+      </AppStack.Navigator>
+    </MembershipProvider>
   );
 }
 

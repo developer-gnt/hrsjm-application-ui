@@ -17,7 +17,7 @@ const TAB_ITEMS: TabItem[] = [
   { key: 'DashboardTab', label: 'Dashboard', icon: 'home' },
   { key: 'MembersTab', label: 'Members', icon: 'users' },
   { key: 'ApplicationsTab', label: 'Applications', icon: 'file-text' },
-  { key: 'DonationSeekersTab', label: 'Donation Seekers', icon: 'heart' },
+  { key: 'DonationSeekersTab', label: 'Donations', icon: 'heart' },
   { key: 'ComplaintsTab', label: 'Complaints', icon: 'message-circle' },
   { key: 'MoreTab', label: 'More', icon: 'grid' },
 ];

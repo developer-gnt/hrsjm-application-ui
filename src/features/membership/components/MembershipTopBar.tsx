@@ -2,20 +2,23 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, spacing } from '../../theme/theme';
-import type { AppStackParamList, TabsParamList } from '../../navigation/types';
-import { useAuth } from '../../auth/AuthContext';
-import { AppLogo } from '../common/AppLogo';
-import { Icon } from '../common/Icon';
-import { AppBottomSheet } from '../common/AppBottomSheet';
-import { AppButton } from '../common/AppButton';
-import { useUnreadCount } from '../../../features/admin/notifications/hooks/useUnreadCount';
+import { colors, spacing } from '../../../core/theme/theme';
+import type { AppStackParamList, TabsParamList } from '../../../core/navigation/types';
+import { useAuth } from '../../../core/auth/AuthContext';
+import { AppLogo } from '../../../core/components/common/AppLogo';
+import { Icon } from '../../../core/components/common/Icon';
+import { AppBottomSheet } from '../../../core/components/common/AppBottomSheet';
+import { AppButton } from '../../../core/components/common/AppButton';
+import { useUnreadCount } from '../../admin/notifications/hooks/useUnreadCount';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
-// Application top bar per the approved design: hamburger, HRSJM logo,
-// notification bell with unread badge, profile avatar.
-export function AdminTopBar() {
+interface MembershipTopBarProps {
+  showBack?: boolean;
+  onBackPress?: () => void;
+}
+
+export function MembershipTopBar({ showBack = false, onBackPress }: MembershipTopBarProps) {
   const navigation = useNavigation<NavigationProp>();
   const { user, signOut } = useAuth();
   const unreadCount = useUnreadCount();
@@ -24,6 +27,16 @@ export function AdminTopBar() {
   const switchTab = (screen: keyof TabsParamList) => {
     setMenuVisible(false);
     navigation.navigate('Tabs', { screen });
+  };
+
+  const handleBack = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('Tabs', { screen: 'MembersTab' });
+    }
   };
 
   const initials = (user?.full_name ?? '?')
@@ -36,13 +49,24 @@ export function AdminTopBar() {
 
   return (
     <View style={styles.bar}>
-      <TouchableOpacity
-        onPress={() => setMenuVisible(true)}
-        accessibilityRole="button"
-        accessibilityLabel="Open menu"
-        style={styles.menuButton}>
-        <Icon name="menu" size={22} color={colors.textPrimary} strokeWidth={2.1} />
-      </TouchableOpacity>
+      {showBack ? (
+        <TouchableOpacity
+          onPress={handleBack}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          style={styles.actionButton}>
+          <Icon name="chevron-left" size={22} color={colors.textPrimary} strokeWidth={2.4} />
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          onPress={() => setMenuVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Open menu"
+          style={styles.actionButton}>
+          <Icon name="menu" size={22} color={colors.textPrimary} strokeWidth={2.1} />
+        </TouchableOpacity>
+      )}
 
       <View style={styles.logoWrap}>
         <AppLogo size={42} />
@@ -72,23 +96,53 @@ export function AdminTopBar() {
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initials || '?'}</Text>
           </View>
-          <Icon name="chevron-down" size={16} color={colors.textPrimary} strokeWidth={2.2} />
         </TouchableOpacity>
       </View>
 
       <AppBottomSheet visible={menuVisible} title="Menu" onClose={() => setMenuVisible(false)}>
         <View style={styles.menuList}>
-          <AppButton title="Donations" onPress={() => switchTab('DonationSeekersTab')} variant="secondary" fullWidth />
-          <AppButton title="Receipts List" onPress={() => {
-            setMenuVisible(false);
-            navigation.navigate('ReceiptsList');
-          }} variant="secondary" fullWidth />
-          <AppButton title="Complaints" onPress={() => switchTab('ComplaintsTab')} variant="secondary" fullWidth />
-          <AppButton title="Profile & Settings" onPress={() => switchTab('MoreTab')} variant="secondary" fullWidth />
-          <AppButton title="Log Out" variant="danger" fullWidth onPress={() => {
-            setMenuVisible(false);
-            signOut().catch(() => undefined);
-          }} />
+          <AppButton
+            title="Membership"
+            onPress={() => switchTab('MembersTab')}
+            variant="secondary"
+            fullWidth
+          />
+          <AppButton
+            title="Donations"
+            onPress={() => switchTab('DonationSeekersTab')}
+            variant="secondary"
+            fullWidth
+          />
+          <AppButton
+            title="Receipts List"
+            onPress={() => {
+              setMenuVisible(false);
+              navigation.navigate('ReceiptsList');
+            }}
+            variant="secondary"
+            fullWidth
+          />
+          <AppButton
+            title="Complaints"
+            onPress={() => switchTab('ComplaintsTab')}
+            variant="secondary"
+            fullWidth
+          />
+          <AppButton
+            title="Profile & Settings"
+            onPress={() => switchTab('MoreTab')}
+            variant="secondary"
+            fullWidth
+          />
+          <AppButton
+            title="Log Out"
+            variant="danger"
+            fullWidth
+            onPress={() => {
+              setMenuVisible(false);
+              signOut().catch(() => undefined);
+            }}
+          />
         </View>
       </AppBottomSheet>
     </View>
@@ -105,10 +159,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.divider,
   },
-  menuButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#F1F3F8',
     alignItems: 'center',
     justifyContent: 'center',
@@ -149,17 +203,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 2,
   },
   avatarText: {
     color: colors.white,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   menuList: {
@@ -167,4 +220,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AdminTopBar;
+export default MembershipTopBar;
