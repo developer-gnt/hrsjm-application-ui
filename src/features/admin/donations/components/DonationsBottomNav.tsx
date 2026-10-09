@@ -7,19 +7,13 @@ import {
   BorderRadius,
 } from '../../../../core';
 
-interface DonationsBottomNavProps {
-  bottomInset: number;
-  activeKey?: string;
-  onTabPress?: (key: string) => void;
-}
-
-interface NavItem {
+export interface NavItem {
   key: string;
   label: string;
   icon: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
+export const ADMIN_NAV_ITEMS: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', icon: '🏠' },
   { key: 'members', label: 'Members', icon: '👥' },
   { key: 'applications', label: 'Applications', icon: '📄' },
@@ -27,6 +21,22 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'donations', label: 'Donations', icon: '💼' },
   { key: 'more', label: 'More', icon: '▦' },
 ];
+
+export const MEMBER_NAV_ITEMS: NavItem[] = [
+  { key: 'home', label: 'Home', icon: '🏠' },
+  { key: 'rights', label: 'Know Your Rights', icon: '📖' },
+  { key: 'complaints', label: 'Complaints', icon: '📄' },
+  { key: 'events', label: 'Events', icon: '📅' },
+  { key: 'news', label: 'News', icon: '📰' },
+  { key: 'profile', label: 'Profile', icon: '👤' },
+];
+
+export interface DonationsBottomNavProps {
+  bottomInset: number;
+  activeKey?: string;
+  onTabPress?: (key: string) => void;
+  items?: NavItem[];
+}
 
 /**
  * UI-phase admin bottom navigation with Donations active (gold
@@ -36,6 +46,7 @@ export const DonationsBottomNav: React.FC<DonationsBottomNavProps> = ({
   bottomInset,
   activeKey = 'donations',
   onTabPress,
+  items = ADMIN_NAV_ITEMS,
 }) => {
   return (
     <View
@@ -44,7 +55,7 @@ export const DonationsBottomNav: React.FC<DonationsBottomNavProps> = ({
         { paddingBottom: bottomInset + Spacing.xs },
       ]}
     >
-      {NAV_ITEMS.map(item => {
+      {items.map(item => {
         const active = item.key === activeKey;
         return (
           <TouchableOpacity

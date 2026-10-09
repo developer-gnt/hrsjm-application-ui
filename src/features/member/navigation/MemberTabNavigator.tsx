@@ -16,6 +16,10 @@ import { MemberEventsContainer } from '../screens/MemberEventsContainer';
 import { DonationsScreen } from '../../admin/donations/screens/DonationsScreen';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import {
+  MembershipDetailsScreen,
+  RenewMembershipScreen,
+} from '../../membership';
+import {
   House,
   Heart,
   Calendar,
@@ -138,6 +142,28 @@ export const MemberTabNavigator: React.FC = () => {
           component={tab.component}
         />
       ))}
+      <Tab.Screen
+        name="MembershipDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <MembershipDetailsScreen
+            onBack={navigation.goBack}
+            onRenewPress={() => navigation.navigate('RenewMembership')}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="RenewMembership"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <RenewMembershipScreen
+            onBack={navigation.goBack}
+            onProfilePress={() => navigation.navigate('MemberProfile')}
+          />
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 };

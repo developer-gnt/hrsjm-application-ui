@@ -76,6 +76,8 @@ export type MoreStackParamList = {
   [AppRoutes.EDIT_PERSONAL_INFO]: undefined;
   [AppRoutes.MY_ID_CARD]: undefined;
   [AppRoutes.ABOUT]: undefined;
+  [AppRoutes.MEMBERSHIP_DETAILS]: undefined;
+  [AppRoutes.RENEW_MEMBERSHIP]: undefined;
 };
 
 /** Placeholder stack for non-admin authenticated users until their role

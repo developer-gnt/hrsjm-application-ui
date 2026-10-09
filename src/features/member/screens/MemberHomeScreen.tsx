@@ -39,7 +39,11 @@ export const MemberHomeScreen: React.FC = () => {
         ]}
       >
         {/* Member Digital Identity Card (Gold & Navy Premium Card) */}
-        <View style={styles.membershipCard}>
+        <TouchableOpacity
+          style={styles.membershipCard}
+          activeOpacity={0.88}
+          onPress={() => navigation.navigate('MembershipDetails')}
+        >
           <View style={styles.cardHeaderRow}>
             <Image source={HRSJM_EMBLEM} style={styles.cardEmblem} resizeMode="contain" />
             <View style={styles.cardOrgCol}>
@@ -76,7 +80,11 @@ export const MemberHomeScreen: React.FC = () => {
               <Text style={styles.cardMetaValue}>VERIFIED 🛡️</Text>
             </View>
           </View>
-        </View>
+
+          <View style={styles.cardViewMoreRow}>
+            <Text style={styles.cardViewMoreText}>View Membership Details & Renewal →</Text>
+          </View>
+        </TouchableOpacity>
 
         {/* Quick Actions Grid */}
         <View style={styles.sectionArea}>
@@ -277,6 +285,20 @@ const styles = StyleSheet.create({
     width: 1,
     height: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  cardViewMoreRow: {
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+  },
+  cardViewMoreText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FBBF24',
+    letterSpacing: 0.3,
   },
   sectionArea: {
     gap: 10,

@@ -69,4 +69,8 @@ export const AppRoutes = {
   // About & Information pages
   ABOUT: 'About',
   KNOW_YOUR_RIGHTS: 'KnowYourRights',
+
+  // Membership & Renewal
+  MEMBERSHIP_DETAILS: 'MembershipDetails',
+  RENEW_MEMBERSHIP: 'RenewMembership',
 } as const;

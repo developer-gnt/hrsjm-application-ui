@@ -58,6 +58,10 @@ import {
   MembershipApplicationDetailsScreen,
 } from '../../features/admin/membershipApplications';
 import { AboutScreen } from '../../features/user/about';
+import {
+  MembershipDetailsScreen,
+  RenewMembershipScreen,
+} from '../../features/membership';
 import { MoreStackParamList } from './NavigationTypes';
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();
@@ -572,6 +576,29 @@ export const MoreNavigator: React.FC = () => (
       name={AppRoutes.TICKET_CHAT}
       component={TicketChatScreen as any}
     />
+
+    {/* Membership Details & Renewal */}
+    <Stack.Screen name={AppRoutes.MEMBERSHIP_DETAILS}>
+      {({ navigation }) => (
+        <MembershipDetailsScreen
+          onBack={navigation.goBack}
+          onRenewPress={() =>
+            navigation.navigate(AppRoutes.RENEW_MEMBERSHIP as any)
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.RENEW_MEMBERSHIP}>
+      {({ navigation }) => (
+        <RenewMembershipScreen
+          onBack={navigation.goBack}
+          onProfilePress={() =>
+            navigation.navigate(AppRoutes.MY_PROFILE as any)
+          }
+        />
+      )}
+    </Stack.Screen>
   </Stack.Navigator>
 );
 
