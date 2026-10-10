@@ -20,6 +20,17 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
 }) => {
   const emphasized = action.emphasized === true;
 
+  const label =
+    action.id === 'join'
+      ? 'Join\nHRSJM'
+      : action.id === 'complaint'
+        ? 'File a\nComplaint'
+        : action.id === 'donate'
+          ? 'Donate\nNow'
+          : action.id === 'renew'
+            ? 'Renew\nMembership'
+            : action.label;
+
   return (
     <TouchableOpacity
       style={[styles.card, emphasized ? styles.cardEmphasized : styles.cardLight]}
@@ -28,24 +39,16 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
       accessibilityRole="button"
       accessibilityLabel={action.label}
     >
-      <View style={[styles.iconCircle, emphasized && styles.iconCircleEmphasized]}>
+      <View style={styles.iconContainer}>
         <AppIcon
           name={action.icon}
-          size={18}
-          strokeWidth={1.7}
-          color={AdminColors.accentGold}
+          size={22}
+          strokeWidth={1.8}
+          color={emphasized ? '#EAA532' : '#0B2F5B'}
         />
       </View>
       <Text style={[styles.label, emphasized && styles.labelEmphasized]}>
-        {action.id === 'join'
-          ? 'Join\nHRSJM'
-          : action.id === 'complaint'
-            ? 'File a\nComplaint'
-            : action.id === 'donate'
-              ? 'Donate\nNow'
-              : action.id === 'renew'
-              ? 'I Want to\nBecome a\nMember'
-                : action.label}
+        {label}
       </Text>
     </TouchableOpacity>
   );
@@ -76,45 +79,52 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     paddingHorizontal: Spacing.base,
-    gap: Spacing.sm,
+    gap: 8,
   },
   card: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.xs,
-    borderRadius: BorderRadius.md,
-    minHeight: 68,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 14,
+    minHeight: 84,
   },
   cardLight: {
-    backgroundColor: AdminColors.accentGoldLight,
+    backgroundColor: '#FCFBF7',
     borderWidth: 1,
-    borderColor: AdminColors.border,
+    borderColor: '#E8E4DA',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   cardEmphasized: {
-    backgroundColor: AdminColors.primaryDark,
+    backgroundColor: '#082245',
+    borderWidth: 1,
+    borderColor: '#082245',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  iconCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+  iconContainer: {
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(201, 162, 39, 0.14)',
-  },
-  iconCircleEmphasized: {
-    backgroundColor: 'rgba(201, 162, 39, 0.14)',
   },
   label: {
-    fontSize: 9,
-    lineHeight: 11,
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: '600',
-    color: AdminColors.primaryDark,
+    color: '#0B2F5B',
     textAlign: 'center',
-    marginTop: Spacing.xs,
+    marginTop: 6,
   },
   labelEmphasized: {
-    color: AdminColors.textOnDark,
+    color: '#FFFFFF',
   },
 });

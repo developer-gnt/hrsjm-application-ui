@@ -322,7 +322,7 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
 
         <View style={styles.searchRow}>
           <View style={styles.searchBox}>
-            <AppIcon name="search" size={18} color={AdminColors.primaryDark} />
+            <AppIcon name="search" size={20} color={AdminColors.primaryDark} />
             <TextInput
               ref={input => {
                 searchRef.current = input;
@@ -346,7 +346,7 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
           >
             <AppIcon
               name="filter"
-              size={19}
+              size={20}
               color={AdminColors.primaryDark}
             />
           </TouchableOpacity>
@@ -385,13 +385,13 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
                   {event.title}
                 </Text>
                 <View style={styles.eventMeta}>
-                  <AppIcon name="calendar" size={12} color={AdminColors.textSecondary} />
+                  <AppIcon name="calendar" size={14} color={AdminColors.textSecondary} />
                   <Text style={styles.eventMetaText} numberOfLines={1}>
                     {event.date}  |  {event.time}
                   </Text>
                 </View>
                 <View style={styles.eventMeta}>
-                  <AppIcon name="map-pin" size={12} color={AdminColors.textSecondary} />
+                  <AppIcon name="map-pin" size={14} color={AdminColors.textSecondary} />
                   <Text style={styles.eventMetaText} numberOfLines={1}>
                     {event.location}
                   </Text>
@@ -406,7 +406,7 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
                 </View>
               </View>
               <View style={styles.eventArrow}>
-                <AppIcon name="arrow-right" size={16} color={AdminColors.textOnDark} />
+                <AppIcon name="arrow-right" size={15} color={AdminColors.textOnDark} />
               </View>
             </TouchableOpacity>
           ))}
@@ -547,14 +547,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(6, 29, 64, 0.28)',
   },
   heroCopy: {
-    width: '63%',
+    width: '68%',
     paddingLeft: Spacing.md,
   },
   heroTitle: {
     color: AdminColors.textOnDark,
     fontFamily: FontFamilies.serif,
     fontSize: 27,
-    lineHeight: 30,
+    lineHeight: 31,
     fontWeight: '700',
   },
   heroTitleAccent: {
@@ -562,21 +562,22 @@ const styles = StyleSheet.create({
   },
   heroDescription: {
     color: AdminColors.textOnDark,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 18,
     marginTop: Spacing.xs,
   },
   categoryRow: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    gap: Spacing.xs,
+    gap: 8,
   },
   categoryChip: {
     borderRadius: BorderRadius.full,
     backgroundColor: AdminColors.primaryLight,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    minHeight: 30,
+    paddingHorizontal: 15,
+    paddingVertical: 7,
+    minHeight: 36,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   categoryChipSelected: {
@@ -584,8 +585,9 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     color: AdminColors.primaryDark,
-    fontSize: 10,
+    fontSize: 13.5,
     fontWeight: '600',
+    lineHeight: 18,
   },
   categoryTextSelected: {
     color: AdminColors.primaryDark,
@@ -599,14 +601,14 @@ const styles = StyleSheet.create({
   },
   searchBox: {
     flex: 1,
-    height: 40,
+    height: 46,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: AdminColors.border,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.base,
     backgroundColor: AdminColors.cardSurface,
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: Spacing.md,
   },
   searchInput: {
     flex: 1,
@@ -614,14 +616,15 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     paddingHorizontal: Spacing.sm,
     color: AdminColors.textPrimary,
-    fontSize: 11,
+    fontSize: 14,
+    lineHeight: 18,
   },
   filterButton: {
-    width: 40,
-    height: 40,
+    width: 46,
+    height: 46,
     borderWidth: 1,
     borderColor: AdminColors.border,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.base,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: AdminColors.cardSurface,
@@ -641,31 +644,35 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 18,
+    fontSize: 19.5,
+    lineHeight: 25,
     fontWeight: '700',
   },
   viewAll: {
     color: AdminColors.primaryDark,
-    fontSize: 10,
+    fontSize: 13.5,
+    lineHeight: 18,
     fontWeight: '700',
   },
   eventList: {
     paddingHorizontal: Spacing.md,
-    gap: Spacing.sm,
+    gap: 11,
   },
   eventCard: {
-    minHeight: 100,
+    minHeight: 114,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: AdminColors.cardSurface,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.xs,
+    borderRadius: 14,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 29, 64, 0.06)',
     ...Shadows.card,
   },
   eventImageWrap: {
-    width: 96,
-    height: 86,
-    borderRadius: BorderRadius.sm,
+    width: 102,
+    height: 98,
+    borderRadius: 10,
     overflow: 'hidden',
     backgroundColor: AdminColors.primaryLight,
   },
@@ -675,86 +682,92 @@ const styles = StyleSheet.create({
   },
   dateBadge: {
     position: 'absolute',
-    top: Spacing.xs,
-    left: Spacing.xs,
-    minWidth: 31,
-    backgroundColor: AdminColors.cardSurface,
-    borderRadius: BorderRadius.xs,
+    top: 6,
+    left: 6,
+    minWidth: 36,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 6,
     alignItems: 'center',
-    paddingVertical: 2,
-    paddingHorizontal: 3,
+    paddingVertical: 3,
+    paddingHorizontal: 5,
+    elevation: 2,
   },
   dateDay: {
     color: AdminColors.primaryDark,
-    fontSize: 12,
-    lineHeight: 14,
+    fontSize: 16,
+    lineHeight: 18,
     fontWeight: '800',
   },
   dateMonth: {
     color: AdminColors.primaryDark,
-    fontSize: 7,
-    lineHeight: 9,
+    fontSize: 9.5,
+    lineHeight: 11,
     fontWeight: '700',
+    textTransform: 'uppercase',
   },
   eventContent: {
     flex: 1,
     minWidth: 0,
     alignSelf: 'stretch',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.xs,
+    paddingLeft: 10,
+    paddingRight: 6,
+    paddingVertical: 2,
   },
   eventTitle: {
     color: AdminColors.primaryDark,
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 14.5,
+    lineHeight: 19,
     fontWeight: '700',
-    marginBottom: 3,
+    marginBottom: 4,
   },
   eventMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 5,
     marginTop: 2,
   },
   eventMetaText: {
     flex: 1,
     minWidth: 0,
     color: AdminColors.textSecondary,
-    fontSize: 8.5,
-    lineHeight: 11,
+    fontSize: 11.5,
+    lineHeight: 15,
+    fontWeight: '500',
   },
   tagRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
-    marginTop: 4,
+    gap: 6,
+    marginTop: 6,
   },
   eventTag: {
     overflow: 'hidden',
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    fontSize: 8,
+    borderRadius: 6,
+    paddingHorizontal: 7.5,
+    paddingVertical: 3,
+    fontSize: 10.5,
+    lineHeight: 13,
     fontWeight: '600',
   },
   secondaryTag: {
-    maxWidth: 108,
     backgroundColor: AdminColors.accentGoldLight,
     color: '#8A5A00',
   },
   eventArrow: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: AdminColors.accentGold,
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 2,
     marginRight: 2,
   },
   emptyText: {
     color: AdminColors.textSecondary,
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 14,
     paddingVertical: Spacing.xxl,
   },
   modalBackdrop: {
@@ -783,13 +796,15 @@ const styles = StyleSheet.create({
   sheetTitle: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 21,
+    fontSize: 22,
+    lineHeight: 26,
     fontWeight: '700',
     marginBottom: Spacing.sm,
   },
   filterLabel: {
     color: AdminColors.textPrimary,
-    fontSize: 13,
+    fontSize: 14.5,
+    lineHeight: 18,
     fontWeight: '700',
     marginTop: Spacing.sm,
     marginBottom: Spacing.xs,
@@ -797,15 +812,15 @@ const styles = StyleSheet.create({
   optionWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
   },
   filterOption: {
     borderWidth: 1,
     borderColor: AdminColors.border,
     backgroundColor: AdminColors.cardSurface,
     borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    marginRight: Spacing.xs,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     marginBottom: Spacing.xs,
   },
   filterOptionSelected: {
@@ -814,8 +829,8 @@ const styles = StyleSheet.create({
   },
   filterOptionText: {
     color: AdminColors.textSecondary,
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 13.5,
+    lineHeight: 18,
   },
   filterOptionTextSelected: {
     color: AdminColors.primaryDark,
@@ -825,7 +840,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
   },
   clearSheetButton: {
     paddingVertical: Spacing.md,
@@ -834,17 +849,17 @@ const styles = StyleSheet.create({
   clearSheetText: {
     color: AdminColors.primary,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 14,
   },
   applyButton: {
     backgroundColor: AdminColors.accentGold,
     borderRadius: BorderRadius.base,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingVertical: 12,
   },
   applyText: {
     color: AdminColors.primaryDark,
-    fontSize: 13,
+    fontSize: 14.5,
     fontWeight: '700',
   },
 });

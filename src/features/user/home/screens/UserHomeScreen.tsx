@@ -130,7 +130,15 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
         }}
         ref={scrollRef}
       >
-        <HeroBanner onCtaPress={() => showComingSoon('Join the Movement')} />
+        <HeroBanner
+          onCtaPress={() => {
+            if (onOpenActionPage) {
+              onOpenActionPage('join');
+            } else {
+              showComingSoon('Join the Movement');
+            }
+          }}
+        />
 
         <View style={styles.quickActionsSection}>
           <QuickActionsRow

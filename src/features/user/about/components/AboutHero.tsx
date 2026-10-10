@@ -21,7 +21,7 @@ interface AboutHeroProps {
 
 export const AboutHero: React.FC<AboutHeroProps> = ({ content }) => {
   const { width } = useWindowDimensions();
-  const height = Math.round(Math.min(170, Math.max(130, width * 0.36)));
+  const height = Math.round(Math.min(196, Math.max(160, width * 0.45)));
 
   return (
     <View style={[styles.container, { height }]}>
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     left: 0,
-    width: '65%',
+    width: '66%',
     justifyContent: 'center',
     paddingHorizontal: Spacing.base,
   },
@@ -80,31 +80,31 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     color: AdminColors.accentGold,
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: '800',
     letterSpacing: 0.6,
   },
   eyebrowLine: {
-    width: 34,
+    width: 30,
     height: 2,
     backgroundColor: AdminColors.accentGold,
   },
   title: {
     color: AdminColors.textOnDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 23,
-    lineHeight: 28,
+    fontSize: 27,
+    lineHeight: 32,
     fontWeight: '700',
   },
   titleAccent: {
     color: AdminColors.accentGold,
   },
   description: {
-    maxWidth: 245,
-    marginTop: Spacing.sm,
+    maxWidth: 260,
+    marginTop: Spacing.xs,
     color: AdminColors.textOnDark,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 18.5,
   },
 });

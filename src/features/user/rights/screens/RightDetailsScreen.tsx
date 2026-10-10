@@ -9,6 +9,8 @@ import {
   View,
   type LayoutChangeEvent,
   type ScrollViewInstance,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -48,7 +50,7 @@ const TABS: { id: SectionId; label: string }[] = [
   { id: 'work', label: "HRSJM's Work" },
 ];
 
-const HERO_HEIGHT = 196;
+const HERO_HEIGHT = 204;
 
 const notifyComingSoon = (title: string) => {
   Alert.alert(title, 'More information is coming soon.');
@@ -98,8 +100,8 @@ const IconBubble: React.FC<{
   </View>
 );
 
-const CardArrow: React.FC = () => (
-  <View style={styles.cardArrow}>
+const CardArrow: React.FC<{ style?: StyleProp<ViewStyle> }> = ({ style }) => (
+  <View style={[styles.cardArrow, style]}>
     <AppIcon name="arrow-right" size={12} color={AdminColors.primaryDark} />
   </View>
 );
@@ -120,18 +122,20 @@ const InfoCard: React.FC<{
       item.description ? `${item.title}. ${item.description}` : item.title
     }
   >
-    <IconBubble name={item.icon} tint={item.iconColor} size={36} />
+    <View style={styles.cardHeaderRow}>
+      <IconBubble name={item.icon} tint={item.iconColor} size={36} />
+      <CardArrow />
+    </View>
     <View style={styles.infoCardCopy}>
       <Text style={styles.cardTitle} numberOfLines={2}>
         {item.title}
       </Text>
       {item.description ? (
-        <Text style={styles.cardDescription} numberOfLines={4}>
+        <Text style={styles.cardDescription} numberOfLines={3}>
           {item.description}
         </Text>
       ) : null}
     </View>
-    <CardArrow />
   </TouchableOpacity>
 );
 
@@ -148,7 +152,7 @@ const TopicRow: React.FC<{
       item.description ? `${item.title}. ${item.description}` : item.title
     }
   >
-    <IconBubble name={item.icon} tint="#EEF4FF" size={28} />
+    <IconBubble name={item.icon} tint="#EEF4FF" size={32} />
     <View style={styles.topicCopy}>
       <Text style={styles.topicTitle}>{item.title}</Text>
       {item.description ? (
@@ -157,7 +161,7 @@ const TopicRow: React.FC<{
     </View>
     <AppIcon
       name="arrow-right"
-      size={12}
+      size={14}
       color={AdminColors.primaryDark}
     />
   </TouchableOpacity>
@@ -167,75 +171,73 @@ const CompactCard: React.FC<{
   item: RightsContentCard;
   onPress: () => void;
   variant: 'support' | 'resource' | 'related' | 'protection' | 'help';
-}> = ({ item, onPress, variant }) => (
-  <TouchableOpacity
-    style={[
-      styles.compactCard,
-    {
-      support: styles.supportCard,
-      resource: styles.resourceCard,
-      related: styles.relatedCard,
-      protection: styles.protectionCard,
-      help: styles.helpCard,
-    }[variant],
-      { backgroundColor: item.color ?? '#FFFFFF' },
-    ]}
-    onPress={onPress}
-    activeOpacity={0.8}
-    accessibilityRole="button"
-    accessibilityLabel={
-      item.description ? `${item.title}. ${item.description}` : item.title
-    }
-  >
-    <IconBubble
-      name={item.icon}
-      tint={item.iconColor ?? '#E9F0FF'}
-      size={
-        variant === 'support'
-          ? 26
-          : variant === 'help'
-            ? 26
-            : variant === 'resource'
-              ? 30
-              : 34
-      }
-    />
-    <View
+}> = ({ item, onPress, variant }) => {
+  const isTripleCol = variant === 'resource' || variant === 'related';
+  const iconSize = isTripleCol ? 32 : 36;
+  const bubbleTint =
+    item.iconColor ??
+    (variant === 'help'
+      ? '#EEF4FF'
+      : variant === 'resource'
+        ? '#E9F0FF'
+        : '#FCEFC9');
+
+  return (
+    <TouchableOpacity
       style={[
-        styles.compactCardCopy,
-        (variant === 'support' || variant === 'help') &&
-          styles.compactCardStackedCopy,
-        variant === 'protection' && styles.protectionCardCopy,
+        styles.compactCard,
+        {
+          support: styles.supportCard,
+          resource: styles.resourceCard,
+          related: styles.relatedCard,
+          protection: styles.protectionCard,
+          help: styles.helpCard,
+        }[variant],
+        { backgroundColor: item.color ?? '#FFFFFF' },
       ]}
+      onPress={onPress}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={
+        item.description ? `${item.title}. ${item.description}` : item.title
+      }
     >
-      <Text
-        style={[
-          styles.cardTitle,
-          variant === 'support' && styles.supportTitle,
-          variant === 'help' && styles.helpTitle,
-        ]}
-        numberOfLines={
-          variant === 'support' || variant === 'resource' ? 3 : 2
-        }
-      >
-        {item.title}
-      </Text>
-      {item.description ? (
+      <View style={styles.cardHeaderRow}>
+        <IconBubble
+          name={item.icon}
+          tint={bubbleTint}
+          size={iconSize}
+        />
+        <CardArrow />
+      </View>
+      <View style={styles.compactCardCopy}>
         <Text
           style={[
-            styles.cardDescription,
-            variant === 'help' && styles.helpDescription,
-            variant === 'protection' && styles.protectionDescription,
+            styles.cardTitle,
+            isTripleCol && styles.resourceTitle,
+            variant === 'support' && styles.supportTitle,
+            variant === 'help' && styles.helpTitle,
           ]}
-          numberOfLines={variant === 'protection' ? 4 : 3}
+          numberOfLines={isTripleCol ? 3 : 2}
         >
-          {item.description}
+          {item.title}
         </Text>
-      ) : null}
-    </View>
-    <CardArrow />
-  </TouchableOpacity>
-);
+        {item.description ? (
+          <Text
+            style={[
+              styles.cardDescription,
+              variant === 'help' && styles.helpDescription,
+              variant === 'protection' && styles.protectionDescription,
+            ]}
+            numberOfLines={variant === 'protection' ? 3 : 2}
+          >
+            {item.description}
+          </Text>
+        ) : null}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const RightsDetailsContentView: React.FC<{
   content: RightDetailsContent;
@@ -404,12 +406,12 @@ const RightsDetailsContentView: React.FC<{
                   />
                 )}
               </View>
-              <IconBubble name="file-text" size={40} />
+              <IconBubble name="file-text" size={36} />
               <View style={styles.frameworkCopy}>
-                <Text style={styles.cardTitle}>
+                <Text style={styles.frameworkTitle}>
                   {content.legalFramework.title}
                 </Text>
-                <Text style={styles.cardDescription}>
+                <Text style={styles.frameworkDescription}>
                   {content.legalFramework.description}
                 </Text>
               </View>
@@ -667,7 +669,7 @@ const styles = StyleSheet.create({
     backgroundColor: AdminColors.cardSurface,
   },
   scrollContent: {
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.lg,
   },
   hero: {
     height: HERO_HEIGHT,
@@ -690,26 +692,27 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: Spacing.md,
     left: Spacing.base,
-    width: '49%',
+    width: '54%',
   },
   heroBadge: {
     alignSelf: 'flex-start',
     marginBottom: Spacing.xs,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: BorderRadius.sm,
     overflow: 'hidden',
     backgroundColor: AdminColors.accentGoldLight,
     color: AdminColors.primaryDark,
-    fontSize: 9,
-    lineHeight: 12,
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: '800',
+    letterSpacing: 0.5,
   },
   heroTitle: {
     color: AdminColors.textOnDark,
     fontFamily: FontFamilies.serif,
     fontSize: 29,
-    lineHeight: 32,
+    lineHeight: 33,
     fontWeight: '700',
   },
   heroTitleAccent: {
@@ -718,8 +721,8 @@ const styles = StyleSheet.create({
   heroDescription: {
     marginTop: Spacing.xs,
     color: AdminColors.textOnDark,
-    fontSize: 10.5,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 18.5,
   },
   content: {
     paddingHorizontal: Spacing.base,
@@ -728,13 +731,13 @@ const styles = StyleSheet.create({
   tabs: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
+    gap: 6,
+    marginTop: Spacing.sm,
     paddingBottom: 2,
   },
   tab: {
     flex: 1,
-    minHeight: 38,
+    minHeight: 40,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
@@ -749,8 +752,8 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: AdminColors.primaryDark,
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 13,
+    lineHeight: 16,
     fontWeight: '700',
     textAlign: 'center',
   },
@@ -758,56 +761,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: Spacing.sm,
+    marginTop: Spacing.md,
   },
   sectionTitle: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 19,
-    lineHeight: 23,
+    fontSize: 20,
+    lineHeight: 25,
     fontWeight: '700',
   },
   overviewTitle: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.md,
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 19,
-    lineHeight: 23,
+    fontSize: 20,
+    lineHeight: 25,
     fontWeight: '700',
   },
   titleUnderline: {
-    width: 28,
-    height: 2,
-    marginTop: 2,
+    width: 32,
+    height: 2.5,
+    marginTop: 3,
     backgroundColor: AdminColors.accentGold,
+    borderRadius: 1,
   },
   overviewDescription: {
-    marginTop: Spacing.xs,
+    marginTop: Spacing.sm,
     color: AdminColors.textSecondary,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 13.5,
+    lineHeight: 19.5,
   },
   viewAll: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    paddingVertical: 4,
   },
   viewAllLabel: {
     color: AdminColors.primaryDark,
-    fontSize: 10,
+    fontSize: 13.5,
     fontWeight: '700',
   },
   quoteCard: {
-    minHeight: 48,
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     overflow: 'hidden',
-    marginTop: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    marginTop: Spacing.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: BorderRadius.md,
     backgroundColor: '#FFF8E8',
     position: 'relative',
+    borderWidth: 1,
+    borderColor: '#FCE9B8',
   },
   quoteCopy: {
     flex: 1,
@@ -817,13 +824,13 @@ const styles = StyleSheet.create({
   quoteText: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 18.5,
     fontStyle: 'italic',
     fontWeight: '600',
   },
   quoteUnderline: {
-    width: 36,
+    width: 40,
     height: 2,
     marginTop: 4,
     backgroundColor: AdminColors.accentGold,
@@ -832,28 +839,29 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 2,
     bottom: -8,
-    opacity: 0.3,
+    opacity: 0.25,
   },
   sectionIntro: {
-    marginTop: 1,
+    marginTop: 4,
+    marginBottom: 2,
     color: AdminColors.textSecondary,
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 13,
+    lineHeight: 18,
   },
   topicSection: {
-    marginTop: Spacing.xs,
+    marginTop: Spacing.sm,
   },
   topicList: {
     gap: Spacing.xs,
     marginTop: Spacing.xs,
   },
   topicRow: {
-    minHeight: 38,
+    minHeight: 46,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderWidth: 1,
     borderColor: '#E7EBF2',
     borderRadius: BorderRadius.md,
@@ -865,32 +873,37 @@ const styles = StyleSheet.create({
   },
   topicTitle: {
     color: AdminColors.primaryDark,
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 13.5,
+    lineHeight: 17.5,
     fontWeight: '700',
   },
   topicDescription: {
-    marginTop: 1,
+    marginTop: 2,
     color: AdminColors.textSecondary,
-    fontSize: 9,
-    lineHeight: 11,
+    fontSize: 12,
+    lineHeight: 15.5,
   },
   keyAreaGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: Spacing.xs,
-    marginTop: Spacing.xs,
+    rowGap: 12,
+    marginTop: Spacing.sm,
   },
   infoCard: {
-    width: '32%',
-    minHeight: 98,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 6,
-    padding: 5,
+    width: '48.5%',
+    minHeight: 124,
+    padding: 12,
     borderRadius: BorderRadius.md,
-    position: 'relative',
+    borderWidth: 1,
+    borderColor: 'rgba(7, 31, 76, 0.06)',
+    justifyContent: 'flex-start',
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
   },
   iconBubble: {
     flexShrink: 0,
@@ -899,49 +912,46 @@ const styles = StyleSheet.create({
   },
   infoCardCopy: {
     flex: 1,
-    paddingRight: 2,
-    paddingBottom: 20,
     justifyContent: 'flex-start',
   },
   cardTitle: {
     color: AdminColors.primaryDark,
-    fontSize: 11,
-    lineHeight: 13.5,
+    fontSize: 14,
+    lineHeight: 18,
     fontWeight: '700',
     textAlign: 'left',
   },
   cardDescription: {
-    marginTop: 2,
+    marginTop: 4,
     color: AdminColors.textSecondary,
-    fontSize: 8.5,
-    lineHeight: 11,
+    fontSize: 12,
+    lineHeight: 16.5,
   },
   cardArrow: {
-    position: 'absolute',
-    right: 6,
-    bottom: 6,
-    width: 18,
-    height: 18,
+    width: 22,
+    height: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 9,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   frameworkCard: {
-    minHeight: 82,
+    minHeight: 96,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
-    overflow: 'hidden',
-    marginTop: Spacing.xs,
-    padding: Spacing.xs,
+    gap: 10,
+    marginTop: Spacing.sm,
+    padding: 10,
     borderRadius: BorderRadius.md,
     backgroundColor: '#F2F4F8',
-    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   frameworkImage: {
-    width: '36%',
-    height: 70,
+    width: 80,
+    height: 74,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -954,136 +964,129 @@ const styles = StyleSheet.create({
   },
   frameworkCopy: {
     flex: 1,
-    paddingRight: 16,
+    justifyContent: 'center',
+    paddingRight: 4,
+  },
+  frameworkTitle: {
+    color: AdminColors.primaryDark,
+    fontSize: 14.5,
+    lineHeight: 19,
+    fontWeight: '700',
+  },
+  frameworkDescription: {
+    marginTop: 3,
+    color: AdminColors.textSecondary,
+    fontSize: 12,
+    lineHeight: 16.5,
   },
   supportGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
+    rowGap: 10,
+    marginTop: Spacing.sm,
   },
   compactCard: {
-    minHeight: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
     borderColor: '#E7EBF2',
-    borderRadius: BorderRadius.md,
-    position: 'relative',
+    justifyContent: 'flex-start',
   },
   compactCardCopy: {
     flex: 1,
-    minWidth: 0,
-    paddingRight: 14,
-    justifyContent: 'center',
-  },
-  compactCardStackedCopy: {
     width: '100%',
-    alignSelf: 'stretch',
-    minHeight: 0,
-    paddingHorizontal: 0,
-    paddingRight: 0,
-    paddingBottom: 16,
-    justifyContent: 'flex-start',
-  },
-  protectionCardCopy: {
-    width: '100%',
-    alignSelf: 'stretch',
-    minHeight: 0,
-    paddingRight: 0,
-    paddingBottom: 18,
     justifyContent: 'flex-start',
   },
   supportCard: {
-    width: '24%',
-    minHeight: 88,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 4,
-    paddingHorizontal: 4,
+    width: '48.5%',
+    minHeight: 104,
+    padding: 12,
   },
   supportTitle: {
-    fontSize: 9.5,
-    lineHeight: 12,
-    textAlign: 'center',
+    fontSize: 13.5,
+    lineHeight: 17.5,
+    fontWeight: '700',
+    textAlign: 'left',
   },
   resourceGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
+    gap: 8,
+    marginTop: Spacing.sm,
   },
   resourceCard: {
-    width: '32%',
-    minHeight: 70,
+    width: '31.5%',
+    minHeight: 96,
+    padding: 10,
+  },
+  resourceTitle: {
+    fontSize: 12.5,
+    lineHeight: 16,
+    fontWeight: '700',
+    textAlign: 'left',
   },
   relatedGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
+    gap: 8,
+    marginTop: Spacing.sm,
   },
   relatedCard: {
-    width: '32%',
-    minHeight: 62,
+    width: '31.5%',
+    minHeight: 96,
+    padding: 10,
   },
   protectionGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
+    rowGap: 12,
+    marginTop: Spacing.sm,
   },
   protectionCard: {
-    width: '24%',
-    minHeight: 118,
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
-    padding: Spacing.xs,
+    width: '48.5%',
+    minHeight: 124,
+    padding: 12,
+  },
+  protectionDescription: {
+    fontSize: 12,
+    lineHeight: 16.5,
   },
   helpGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
+    rowGap: 12,
+    marginTop: Spacing.sm,
   },
   helpCard: {
-    width: '24%',
-    minHeight: 104,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 4,
-    padding: 4,
+    width: '48.5%',
+    minHeight: 116,
+    padding: 12,
   },
   helpTitle: {
-    fontSize: 9.5,
-    lineHeight: 11.5,
-    textAlign: 'center',
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '700',
+    textAlign: 'left',
   },
   helpDescription: {
-    fontSize: 7.5,
-    lineHeight: 10,
-    textAlign: 'center',
-  },
-  protectionDescription: {
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: 'left',
   },
   ctaCard: {
     alignSelf: 'stretch',
-    minHeight: 170,
+    minHeight: 180,
     flexDirection: 'row',
     alignItems: 'center',
     overflow: 'hidden',
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
     marginHorizontal: -Spacing.base,
+    marginBottom: -Spacing.md,
     paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.xl + 8,
     borderTopLeftRadius: BorderRadius.lg,
     borderTopRightRadius: BorderRadius.lg,
     backgroundColor: AdminColors.primaryDark,
@@ -1100,7 +1103,7 @@ const styles = StyleSheet.create({
   },
   ctaCopy: {
     flex: 1,
-    paddingRight: Spacing.md,
+    paddingRight: Spacing.sm,
     zIndex: 1,
   },
   ctaTitle: {
@@ -1114,35 +1117,35 @@ const styles = StyleSheet.create({
     color: AdminColors.accentGold,
   },
   ctaDescription: {
-    marginTop: Spacing.xs,
+    marginTop: 6,
     color: AdminColors.textOnDark,
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 13.5,
+    lineHeight: 19,
     opacity: 0.9,
   },
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderRadius: BorderRadius.md,
     backgroundColor: AdminColors.accentGold,
     zIndex: 1,
-    minWidth: 138,
+    minWidth: 144,
   },
   ctaButtonText: {
     color: AdminColors.primaryDark,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 13.5,
+    lineHeight: 17,
     fontWeight: '700',
   },
   genericDetails: {
     paddingBottom: Spacing.xl,
   },
   genericHero: {
-    minHeight: 196,
+    minHeight: 204,
     justifyContent: 'center',
     backgroundColor: AdminColors.primaryDark,
     paddingHorizontal: Spacing.base,
@@ -1159,7 +1162,7 @@ const styles = StyleSheet.create({
     color: AdminColors.textSecondary,
     backgroundColor: AdminColors.background,
     borderRadius: BorderRadius.md,
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

@@ -53,21 +53,17 @@ const SLIDES = [
 ];
 
 const LOOP_SLIDES = [SLIDES[SLIDES.length - 1], ...SLIDES, SLIDES[0]];
-const DOT_COUNT = SLIDES.length;
+const DOT_COUNT = 5;
 
 /**
  * Reference-locked hero: the official navy/gold artwork (portrait of the
  * girl with paint splashes) as the full-bleed background, serif headline
  * with the gold final line, supporting copy, compact gold CTA, carousel
  * dots and the diagonal script overlay on the right.
- *
- * The artwork's aspect ratio (~1.75) nearly matches the banner's responsive
- * height (0.58 x width), so `cover` keeps the girl on the right and the
- * navy text zone on the left at reference phone widths.
  */
 export const HeroBanner: React.FC<HeroBannerProps> = ({ onCtaPress }) => {
   const { width } = useWindowDimensions();
-  const height = Math.round(Math.min(252, Math.max(208, width * 0.58)));
+  const height = Math.round(Math.min(295, Math.max(250, width * 0.68)));
   const trackOffset = useRef(new Animated.Value(-width)).current;
   const trackPosition = useRef(1);
   const transitioning = useRef(false);
@@ -79,7 +75,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onCtaPress }) => {
     }
 
     const targetPosition = trackPosition.current + direction;
-    const targetIndex = (targetPosition - 1 + DOT_COUNT) % DOT_COUNT;
+    const targetIndex = (targetPosition - 1 + SLIDES.length) % SLIDES.length;
     trackPosition.current = targetPosition;
     transitioning.current = true;
     setActiveIndex(targetIndex);
@@ -91,9 +87,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onCtaPress }) => {
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (finished && targetPosition === 0) {
-        trackPosition.current = DOT_COUNT;
-        trackOffset.setValue(-DOT_COUNT * width);
-      } else if (finished && targetPosition === DOT_COUNT + 1) {
+        trackPosition.current = SLIDES.length;
+        trackOffset.setValue(-SLIDES.length * width);
+      } else if (finished && targetPosition === SLIDES.length + 1) {
         trackPosition.current = 1;
         trackOffset.setValue(-width);
       }
@@ -168,8 +164,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onCtaPress }) => {
                   label="Join the Movement"
                   compact
                   onPress={onCtaPress}
-                  textColor={AdminColors.primaryDark}
-                  backgroundColor="#F2B94B"
+                  textColor="#082245"
+                  backgroundColor="#EAA532"
                 />
               </View>
             </View>
@@ -202,9 +198,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onCtaPress }) => {
 const styles = StyleSheet.create({
   container: {
     overflow: 'hidden',
-    borderBottomLeftRadius: BorderRadius.xxl,
-    borderBottomRightRadius: BorderRadius.xxl,
-    backgroundColor: AdminColors.primaryDark,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+    backgroundColor: '#082245',
   },
   track: {
     flexDirection: 'row',
@@ -221,33 +217,34 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   content: {
-    width: '62%',
+    width: '63%',
     paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.lg,
+    paddingTop: 18,
   },
   headline: {
     fontFamily: FontFamilies.serif,
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 21,
+    lineHeight: 27,
     fontWeight: '700',
     color: AdminColors.textOnDark,
   },
   headlineGold: {
-    color: AdminColors.accentGold,
+    color: '#EAA532',
   },
   supporting: {
-    fontSize: 10.5,
-    lineHeight: 15,
+    fontSize: 11,
+    lineHeight: 15.5,
     color: AdminColors.textOnDark,
-    marginTop: Spacing.sm,
-    maxWidth: 210,
+    marginTop: 8,
+    maxWidth: 220,
+    opacity: 0.95,
   },
   cta: {
-    marginTop: Spacing.md,
+    marginTop: 14,
   },
   script: {
     position: 'absolute',
-    right: 6,
+    right: 8,
     bottom: 34,
     fontFamily: Platform.select({ ios: 'Snell Roundhand', default: 'cursive' }),
     fontStyle: 'italic',
@@ -256,23 +253,28 @@ const styles = StyleSheet.create({
     color: AdminColors.textOnDark,
     textAlign: 'right',
     transform: [{ rotate: '-63deg' }],
+    opacity: 0.9,
   },
   dots: {
     position: 'absolute',
-    bottom: Spacing.sm + 2,
-    left: Spacing.base,
+    bottom: 14,
+    left: 20,
     flexDirection: 'row',
-    gap: 5,
+    alignItems: 'center',
+    gap: 6,
   },
   dot: {
-    width: 5,
-    height: 5,
+    width: 6,
+    height: 6,
     borderRadius: 3,
-    backgroundColor: AdminColors.textOnDark,
-    opacity: 0.5,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.45,
   },
   dotActive: {
-    backgroundColor: AdminColors.accentGold,
+    backgroundColor: '#EAA532',
     opacity: 1,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

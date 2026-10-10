@@ -48,8 +48,12 @@ export const AboutWhoWeAreSection: React.FC<AboutWhoWeAreSectionProps> = ({
                   color={AdminColors.primaryDark}
                 />
               </View>
-              <Text style={styles.principleTitle}>{item.title}</Text>
-              <Text style={styles.principleDescription}>{item.description}</Text>
+              <Text style={styles.principleTitle} numberOfLines={2}>
+                {item.title}
+              </Text>
+              <Text style={styles.principleDescription} numberOfLines={2}>
+                {item.description}
+              </Text>
             </View>
           ))}
         </View>
@@ -63,16 +67,17 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   accentLine: {
-    width: 24,
-    height: 2,
+    width: 28,
+    height: 2.5,
     marginBottom: 4,
     backgroundColor: AdminColors.accentGold,
+    borderRadius: 1,
   },
   title: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 20,
-    lineHeight: 25,
+    fontSize: 22,
+    lineHeight: 27,
     fontWeight: '700',
   },
   content: {
@@ -86,8 +91,8 @@ const styles = StyleSheet.create({
   description: {
     flex: 1,
     color: AdminColors.textSecondary,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 13.5,
+    lineHeight: 19.5,
   },
   columnDescription: {
     flex: 0.9,
@@ -102,14 +107,15 @@ const styles = StyleSheet.create({
   },
   stackedPrinciples: {
     flex: 0,
-    marginTop: Spacing.sm,
+    marginTop: Spacing.md,
   },
   principleCard: {
     flex: 1,
     minWidth: 0,
+    minHeight: 132,
     alignItems: 'center',
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: Spacing.md,
+    paddingHorizontal: 4,
+    paddingVertical: 10,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: AdminColors.border,
@@ -125,19 +131,19 @@ const styles = StyleSheet.create({
     backgroundColor: AdminColors.accentGoldLight,
   },
   principleTitle: {
-    marginTop: 4,
+    marginTop: 6,
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 11.5,
-    lineHeight: 14,
+    fontSize: 12.5,
+    lineHeight: 16,
     fontWeight: '700',
     textAlign: 'center',
   },
   principleDescription: {
-    marginTop: 3,
+    marginTop: 4,
     color: AdminColors.textSecondary,
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 11,
+    lineHeight: 14.5,
     textAlign: 'center',
   },
 });

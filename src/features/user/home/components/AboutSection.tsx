@@ -5,7 +5,7 @@ import { AppIcon } from '../../components';
 import { SectionHeader } from './SectionHeader';
 import { ABOUT_DESCRIPTION } from '../data/home-preview-data';
 
-const ABOUT_PREVIEW_IMAGE = require('../../../../assets/images/about-hero-community.png');
+const ABOUT_PREVIEW_IMAGE = require('../../../../assets/images/about-hero-rally.jpg');
 
 interface AboutSectionProps {
   onMorePress?: () => void;
@@ -38,7 +38,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
           accessible={false}
         />
         <View style={styles.playBadge}>
-          <AppIcon name="play" size={13} color={AdminColors.primaryDark} />
+          <AppIcon name="play" size={12} color="#0B2F5B" />
         </View>
       </TouchableOpacity>
     </View>
@@ -51,19 +51,21 @@ const styles = StyleSheet.create({
   },
   body: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.md,
   },
   description: {
     flex: 1,
-    fontSize: 12.5,
-    lineHeight: 19,
-    color: AdminColors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#4B5563',
   },
   media: {
-    width: 92,
-    height: 68,
-    borderRadius: BorderRadius.md,
+    width: 98,
+    height: 72,
+    borderRadius: 12,
     overflow: 'hidden',
+    backgroundColor: '#E5E7EB',
   },
   mediaSlot: {
     width: '100%',
@@ -73,12 +75,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: '50%',
     top: '50%',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: AdminColors.cardSurface,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    transform: [{ translateX: -12 }, { translateY: -12 }],
+    transform: [{ translateX: -13 }, { translateY: -13 }],
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });

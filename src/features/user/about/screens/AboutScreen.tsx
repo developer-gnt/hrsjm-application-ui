@@ -18,9 +18,11 @@ import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeTab } from '../../home/types/home.types';
 import { AboutApproachSection } from '../components/AboutApproachSection';
+import { AboutCoreValuesSection } from '../components/AboutCoreValuesSection';
 import { AboutFinalCta } from '../components/AboutFinalCta';
 import { AboutHero } from '../components/AboutHero';
 import { AboutImpactSection } from '../components/AboutImpactSection';
+import { AboutVisionMissionSection } from '../components/AboutVisionMissionSection';
 import { AboutWhoWeAreSection } from '../components/AboutWhoWeAreSection';
 import { AboutWorkGrid } from '../components/AboutWorkGrid';
 import { HumanRightsMonitoringSection } from '../components/HumanRightsMonitoringSection';
@@ -43,6 +45,7 @@ const SectionHeading: React.FC<{
 }> = ({ title, subtitle }) => (
   <View style={styles.sectionHeadingRow}>
     <View style={styles.sectionHeading}>
+      <View style={styles.titleUnderline} />
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
     {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
@@ -133,6 +136,10 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
         </View>
 
         <View style={styles.section}>
+          <AboutVisionMissionSection />
+        </View>
+
+        <View style={styles.section}>
           <SectionHeading
             title="What We Do"
             subtitle="Nine key areas of action"
@@ -143,7 +150,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
           />
         </View>
 
-        <View style={styles.fullWidthBannerSection}>
+        <View style={styles.section}>
           <HumanRightsMonitoringSection onLayout={handleMonitoringLayout} />
         </View>
 
@@ -152,10 +159,14 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
         </View>
 
         <View style={styles.section}>
+          <AboutCoreValuesSection />
+        </View>
+
+        <View style={styles.section}>
           <AboutImpactSection content={ABOUT_CONTENT.impact} />
         </View>
 
-        <View style={styles.fullWidthBannerSection}>
+        <View style={styles.ctaSection}>
           <AboutFinalCta
             content={ABOUT_CONTENT.finalCta}
             onPress={() => showComingSoon(ABOUT_CONTENT.finalCta.buttonLabel)}
@@ -177,11 +188,15 @@ const styles = StyleSheet.create({
     backgroundColor: AdminColors.background,
   },
   scrollContent: {
-    paddingBottom: Spacing.lg,
+    paddingBottom: Spacing.xl,
   },
   section: {
     marginTop: Spacing.lg,
     marginHorizontal: Spacing.base,
+  },
+  ctaSection: {
+    marginTop: Spacing.xl + 4,
+    width: '100%',
   },
   sectionHeadingRow: {
     alignItems: 'flex-start',
@@ -190,20 +205,24 @@ const styles = StyleSheet.create({
   sectionHeading: {
     flexShrink: 0,
   },
+  titleUnderline: {
+    width: 28,
+    height: 2.5,
+    marginBottom: 4,
+    backgroundColor: AdminColors.accentGold,
+    borderRadius: 1,
+  },
   sectionTitle: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 22,
+    lineHeight: 27,
     fontWeight: '700',
   },
   sectionSubtitle: {
-    marginTop: 4,
+    marginTop: 3,
     color: AdminColors.textSecondary,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  fullWidthBannerSection: {
-    marginTop: Spacing.lg,
+    fontSize: 13,
+    lineHeight: 17,
   },
 });

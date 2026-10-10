@@ -8,47 +8,32 @@ interface AboutWorkGridProps {
   onPressArea?: (area: AboutWorkArea) => void;
 }
 
-/** Cards per grid row (3-column reference grid — never a carousel). */
-const WORK_AREAS_PER_ROW = 3;
-
-/**
- * The About work-area grid: static 3x3 layout (rows of three equal-width
- * cards), fully visible on the Pixel 7 — no horizontal scrolling. Card
- * height is content-driven (no forced minimum): within each row cards
- * stretch to the tallest sibling, matching the compact reference density.
- */
 export const AboutWorkGrid: React.FC<AboutWorkGridProps> = ({
   areas,
   onPressArea,
 }) => {
-  const rows: AboutWorkArea[][] = [];
-  for (let index = 0; index < areas.length; index += WORK_AREAS_PER_ROW) {
-    rows.push(areas.slice(index, index + WORK_AREAS_PER_ROW));
-  }
-
   return (
     <View style={styles.grid}>
-      {rows.map(row => (
-        <View key={row[0].id} style={styles.row}>
-          {row.map(area => (
-            <AboutWorkCard
-              key={area.id}
-              area={area}
-              onPress={onPressArea ? () => onPressArea(area) : undefined}
-            />
-          ))}
-        </View>
-      ))}
+      {areas.map((area, index) => {
+        const isLastOdd = index === areas.length - 1 && areas.length % 2 === 1;
+        return (
+          <AboutWorkCard
+            key={area.id}
+            area={area}
+            fullWidth={isLastOdd}
+            onPress={onPressArea ? () => onPressArea(area) : undefined}
+          />
+        );
+      })}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   grid: {
-    gap: 12,
-  },
-  row: {
     flexDirection: 'row',
-    gap: 12,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 12,
   },
 });

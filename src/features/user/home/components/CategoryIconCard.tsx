@@ -33,8 +33,7 @@ export const CategoryIconCard: React.FC<CategoryIconCardProps> = ({
     accessibilityLabel={item.title}
   >
     <View style={styles.iconCircle}>
-      <View style={styles.iconCircleTint} />
-      <AppIcon name={item.icon} size={20} color={AdminColors.primaryDark} />
+      <AppIcon name={item.icon} size={20} color="#0B2F5B" />
     </View>
     <Text style={styles.label}>{REFERENCE_LABELS[item.title] ?? item.title}</Text>
   </TouchableOpacity>
@@ -45,6 +44,11 @@ const REFERENCE_LABELS: Record<string, string> = {
   "Women's Rights": "Women's\nRights",
   'Right to Education': 'Right to\nEducation',
   "Children's Rights": "Children's\nRights",
+  'Awareness Campaigns': 'Awareness\nCampaigns',
+  'Workshops & Training': 'Workshops\n& Training',
+  'Research & Education': 'Research &\nEducation',
+  'Research & Rights Education': 'Research &\nEducation',
+  'Community Activities': 'Community\nActivities',
 };
 
 interface CategoryIconRowProps<Item extends RightsCategory> {
@@ -72,44 +76,39 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    gap: Spacing.sm,
+    gap: 8,
   },
   card: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: Spacing.xs + 2,
+    justifyContent: 'center',
+    paddingVertical: 10,
     paddingHorizontal: 2,
-    borderRadius: BorderRadius.md,
-    backgroundColor: AdminColors.accentGoldLight,
+    borderRadius: 14,
+    minHeight: 84,
+    backgroundColor: '#FCFBF7',
     borderWidth: 1,
-    borderColor: AdminColors.border,
-    ...Shadows.card,
+    borderColor: '#E8E4DA',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   iconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FEF3DE',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Pale-gold backdrop rendered as a sibling tint layer so the navy icon
-  // above it keeps full opacity.
-  iconCircleTint: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 17,
-    backgroundColor: AdminColors.accentGold,
-    opacity: 0.16,
-  },
   label: {
     fontSize: 10.5,
-    lineHeight: 13,
+    lineHeight: 13.5,
     fontWeight: '600',
-    color: AdminColors.primaryDark,
+    color: '#0B2F5B',
     textAlign: 'center',
-    marginTop: Spacing.xs,
+    marginTop: 6,
   },
 });

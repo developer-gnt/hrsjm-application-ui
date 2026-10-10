@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import {
   AdminColors,
@@ -46,55 +45,46 @@ interface HumanRightsMonitoringSectionProps {
 export const HumanRightsMonitoringSection: React.FC<
   HumanRightsMonitoringSectionProps
 > = ({ onLayout }) => {
-  const { width } = useWindowDimensions();
-  const sideBySide = width >= 380;
-
   return (
-    <View
-      style={[styles.panel, !sideBySide && styles.stackedPanel]}
-      onLayout={onLayout}
-    >
-      <View
-        style={[
-          styles.imageFrame,
-          sideBySide ? styles.sideImageFrame : styles.stackedImageFrame,
-        ]}
-      >
-        <Image
-          source={MONITORING_IMAGE}
-          style={[
-            styles.image,
-            sideBySide ? styles.sideImage : styles.stackedImage,
-          ]}
-          resizeMode="cover"
-          accessible={false}
-        />
-      </View>
-      <View style={styles.copy}>
-        <View style={styles.eyebrowRow}>
-          <View style={styles.eyebrowLine} />
-          <Text style={styles.eyebrow}>ON THE GROUND</Text>
+    <View style={styles.panel} onLayout={onLayout}>
+      <View style={styles.topRow}>
+        <View style={styles.imageFrame}>
+          <Image
+            source={MONITORING_IMAGE}
+            style={styles.image}
+            resizeMode="cover"
+            accessible={false}
+          />
         </View>
-        <Text style={styles.title}>Human-rights Monitoring</Text>
-        <Text style={styles.description}>
-          We track, document and highlight human-rights issues to ensure that
-          the voices of marginalised communities are heard and addressed.
-        </Text>
-        <View style={styles.features}>
-          {FEATURES.map(feature => (
-            <View key={feature.id} style={styles.featureCard}>
+        <View style={styles.copy}>
+          <View style={styles.eyebrowRow}>
+            <View style={styles.eyebrowLine} />
+            <Text style={styles.eyebrow}>ON THE GROUND</Text>
+          </View>
+          <Text style={styles.title}>Human-rights Monitoring</Text>
+          <Text style={styles.description}>
+            We track, document and highlight human-rights issues to ensure that
+            the voices of marginalised communities are heard and addressed.
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.features}>
+        {FEATURES.map(feature => (
+          <View key={feature.id} style={styles.featureCard}>
+            <View style={styles.featureIconBubble}>
               <AppIcon
                 name={feature.icon}
-                size={17}
-                color={AdminColors.accentGold}
+                size={18}
+                color={AdminColors.primaryDark}
               />
-              <Text style={styles.featureTitle}>{feature.title}</Text>
-              <Text style={styles.featureDescription}>
-                {feature.description}
-              </Text>
             </View>
-          ))}
-        </View>
+            <Text style={styles.featureTitle}>{feature.title}</Text>
+            <Text style={styles.featureDescription}>
+              {feature.description}
+            </Text>
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -102,55 +92,38 @@ export const HumanRightsMonitoringSection: React.FC<
 
 const styles = StyleSheet.create({
   panel: {
-    minHeight: 188,
-    flexDirection: 'row',
-    overflow: 'hidden',
+    padding: Spacing.sm + 4,
     borderRadius: BorderRadius.lg,
     backgroundColor: AdminColors.accentGoldLight,
+    borderWidth: 1,
+    borderColor: '#FBE8B3',
     ...Shadows.card,
   },
-  stackedPanel: {
-    flexDirection: 'column',
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   imageFrame: {
+    width: 90,
+    height: 90,
+    borderRadius: BorderRadius.md,
     overflow: 'hidden',
     backgroundColor: AdminColors.primaryDark,
   },
-  sideImageFrame: {
-    width: '39%',
-    minHeight: 188,
-    alignSelf: 'stretch',
-  },
-  stackedImageFrame: {
-    width: '100%',
-    height: 150,
-  },
   image: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-  },
-  sideImage: {
-    left: '-140%',
-    width: '300%',
-    height: '100%',
-  },
-  stackedImage: {
-    left: 0,
     width: '100%',
     height: '100%',
   },
   copy: {
     flex: 1,
     justifyContent: 'center',
-    padding: Spacing.sm,
-    minWidth: 0,
   },
   eyebrowRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
-    marginBottom: 3,
+    marginBottom: 2,
   },
   eyebrowLine: {
     width: 18,
@@ -159,52 +132,62 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     color: AdminColors.primaryDark,
-    fontSize: 9,
-    lineHeight: 11,
+    fontSize: 10.5,
+    lineHeight: 13,
     fontWeight: '800',
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
   title: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 16,
-    lineHeight: 19,
+    fontSize: 17,
+    lineHeight: 21,
     fontWeight: '700',
   },
   description: {
     marginTop: 3,
     color: AdminColors.textSecondary,
-    fontSize: 8.5,
-    lineHeight: 11,
+    fontSize: 12,
+    lineHeight: 16.5,
   },
   features: {
     flexDirection: 'row',
-    gap: Spacing.xs,
-    marginTop: Spacing.sm,
+    gap: 8,
+    marginTop: 12,
   },
   featureCard: {
     flex: 1,
     minWidth: 0,
     alignItems: 'center',
-    paddingHorizontal: 3,
-    paddingVertical: Spacing.xs,
+    paddingHorizontal: 6,
+    paddingVertical: 10,
     borderRadius: BorderRadius.md,
     backgroundColor: '#FFF0C8',
+    borderWidth: 1,
+    borderColor: '#FBE5A5',
+  },
+  featureIconBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FBE8B3',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   featureTitle: {
-    marginTop: 3,
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 12,
+    lineHeight: 15,
     fontWeight: '700',
     textAlign: 'center',
   },
   featureDescription: {
     marginTop: 2,
     color: AdminColors.textSecondary,
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 11,
+    lineHeight: 14.5,
     textAlign: 'center',
   },
 });

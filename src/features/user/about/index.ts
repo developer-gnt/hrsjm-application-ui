@@ -13,6 +13,8 @@ export { AboutWorkGrid } from './components/AboutWorkGrid';
 export { AboutApproachSection } from './components/AboutApproachSection';
 export { AboutImpactSection } from './components/AboutImpactSection';
 export { HumanRightsMonitoringSection } from './components/HumanRightsMonitoringSection';
+export { AboutVisionMissionSection } from './components/AboutVisionMissionSection';
+export { AboutCoreValuesSection } from './components/AboutCoreValuesSection';
 export { AboutFinalCta } from './components/AboutFinalCta';
 export { ABOUT_CONTENT } from './data/about-content';
 export type {

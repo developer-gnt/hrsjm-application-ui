@@ -1,5 +1,11 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import {
   AdminColors,
   BorderRadius,
@@ -16,48 +22,58 @@ interface AboutFinalCtaProps {
   onPress?: () => void;
 }
 
-/**
- * Final About CTA with the bundled solidarity image on the right and
- * existing shared gold action button.
- */
 export const AboutFinalCta: React.FC<AboutFinalCtaProps> = ({
   content,
   onPress,
-}) => (
-  <View style={styles.banner}>
-    <Image
-      source={ContactCtaHandsSource}
-      style={styles.image}
-      resizeMode="cover"
-      accessible={false}
-    />
-    <View style={styles.overlay} />
+}) => {
+  const { width } = useWindowDimensions();
+  const height = Math.round(Math.min(215, Math.max(185, width * 0.48)));
 
-    <View style={styles.content}>
-      <Text style={styles.headingLight}>{content.headingLine}</Text>
-      <Text style={styles.headingAccent}>{content.headingAccentLine}</Text>
+  return (
+    <View style={[styles.banner, { height }]}>
+      <Image
+        source={ContactCtaHandsSource}
+        style={styles.image}
+        resizeMode="cover"
+        accessible={false}
+      />
+      <View style={styles.overlay} />
 
-      <Text style={styles.supporting}>{content.supporting}</Text>
+      <View style={styles.content}>
+        <View style={styles.eyebrowRow}>
+          <Text style={styles.eyebrow}>GET INVOLVED</Text>
+          <View style={styles.eyebrowLine} />
+        </View>
 
-      <View style={styles.button}>
-        <GoldButton
-          label={content.buttonLabel}
-          compact
-          textColor={AdminColors.primaryDark}
-          onPress={onPress}
-        />
+        <Text style={styles.title}>
+          {content.headingLine}{' '}
+          <Text style={styles.titleAccent}>{content.headingAccentLine}</Text>
+        </Text>
+
+        <Text style={styles.supporting}>{content.supporting}</Text>
+
+        <View style={styles.button}>
+          <GoldButton
+            label={content.buttonLabel}
+            compact
+            textColor={AdminColors.primaryDark}
+            onPress={onPress}
+          />
+        </View>
       </View>
     </View>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   banner: {
-    minHeight: 132,
     width: '100%',
-    borderRadius: BorderRadius.xl,
-    backgroundColor: AdminColors.primaryDark,
     overflow: 'hidden',
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    borderBottomLeftRadius: BorderRadius.xl,
+    borderBottomRightRadius: BorderRadius.xl,
+    backgroundColor: AdminColors.primaryDark,
     ...Shadows.card,
   },
   image: {
@@ -65,42 +81,61 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     bottom: 0,
-    width: '58%',
+    width: '62%',
     height: '100%',
-    opacity: 0.75,
+    opacity: 0.72,
   },
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(6, 39, 77, 0.22)',
+    backgroundColor: 'rgba(6, 39, 77, 0.36)',
   },
   content: {
-    width: '72%',
-    paddingVertical: Spacing.md,
-    paddingLeft: Spacing.base,
-    paddingRight: Spacing.md,
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: '74%',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.base,
     zIndex: 1,
   },
-  headingLight: {
+  eyebrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: 4,
+  },
+  eyebrow: {
+    color: AdminColors.accentGold,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  eyebrowLine: {
+    width: 26,
+    height: 2,
+    backgroundColor: AdminColors.accentGold,
+  },
+  title: {
     fontFamily: FontFamilies.serif,
-    fontSize: 19,
-    lineHeight: 23,
+    fontSize: 25,
+    lineHeight: 30,
     fontWeight: '700',
     color: AdminColors.textOnDark,
   },
-  headingAccent: {
-    fontFamily: FontFamilies.serif,
-    fontSize: 19,
-    lineHeight: 23,
-    fontWeight: '700',
+  titleAccent: {
     color: AdminColors.accentGold,
   },
   supporting: {
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 13,
+    lineHeight: 18,
     color: AdminColors.textOnDark,
-    marginTop: Spacing.xs,
+    marginTop: 6,
+    opacity: 0.95,
   },
   button: {
     marginTop: Spacing.md,
+    alignSelf: 'flex-start',
   },
 });

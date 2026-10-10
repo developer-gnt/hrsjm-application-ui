@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   AdminColors,
   BorderRadius,
@@ -22,9 +17,6 @@ interface AboutApproachSectionProps {
 export const AboutApproachSection: React.FC<AboutApproachSectionProps> = ({
   content,
 }) => {
-  const { width } = useWindowDimensions();
-  const twoRows = width < 500;
-
   return (
     <View style={styles.panel}>
       <View style={styles.headingRow}>
@@ -34,30 +26,21 @@ export const AboutApproachSection: React.FC<AboutApproachSectionProps> = ({
         </View>
         <Text style={styles.subtitle}>{content.description}</Text>
       </View>
-      <View style={[styles.steps, twoRows && styles.twoRows]}>
-        {content.steps.map((step, index) => (
-          <React.Fragment key={step.id}>
-            {index > 0 && !twoRows ? (
+      <View style={styles.steps}>
+        {content.steps.map(step => (
+          <View key={step.id} style={styles.step}>
+            <View style={styles.iconCircle}>
               <AppIcon
-                name="arrow-right"
-                size={14}
-                color={AdminColors.textSecondary}
+                name={step.icon}
+                size={20}
+                color={AdminColors.primaryDark}
               />
-            ) : null}
-            <View style={[styles.step, twoRows && styles.twoRowStep]}>
-              <View style={styles.iconCircle}>
-                <AppIcon
-                  name={step.icon}
-                  size={22}
-                  color={AdminColors.primaryDark}
-                />
-              </View>
-              <View style={styles.copy}>
-                <Text style={styles.stepTitle}>{step.title}</Text>
-                <Text style={styles.stepDescription}>{step.description}</Text>
-              </View>
             </View>
-          </React.Fragment>
+            <View style={styles.copy}>
+              <Text style={styles.stepTitle}>{step.title}</Text>
+              <Text style={styles.stepDescription}>{step.description}</Text>
+            </View>
+          </View>
         ))}
       </View>
     </View>
@@ -66,7 +49,7 @@ export const AboutApproachSection: React.FC<AboutApproachSectionProps> = ({
 
 const styles = StyleSheet.create({
   panel: {
-    padding: Spacing.sm,
+    padding: Spacing.sm + 4,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: AdminColors.border,
@@ -78,62 +61,53 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     gap: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
   heading: {
     flexShrink: 0,
   },
   accentLine: {
-    width: 24,
-    height: 2,
+    width: 28,
+    height: 2.5,
     marginBottom: 4,
     backgroundColor: AdminColors.accentGold,
+    borderRadius: 1,
   },
   title: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: 20,
+    lineHeight: 25,
     fontWeight: '700',
   },
   subtitle: {
     flex: 1,
     paddingBottom: 2,
     color: AdminColors.textSecondary,
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 12.5,
+    lineHeight: 16,
     textAlign: 'right',
   },
   steps: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.xs,
-    marginTop: Spacing.sm,
-  },
-  twoRows: {
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
-    rowGap: Spacing.md,
+    justifyContent: 'space-between',
+    rowGap: 14,
+    marginTop: Spacing.xs,
   },
   step: {
-    flex: 1,
-    minWidth: 0,
+    width: '48.5%',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  twoRowStep: {
-    flexBasis: '47%',
-    flexGrow: 0,
+    gap: 10,
   },
   iconCircle: {
-    width: 32,
-    height: 32,
+    width: 38,
+    height: 38,
     flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    borderRadius: 19,
     backgroundColor: AdminColors.accentGoldLight,
   },
   copy: {
@@ -142,14 +116,14 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     color: AdminColors.primaryDark,
-    fontSize: 10.5,
-    lineHeight: 12,
+    fontSize: 14,
+    lineHeight: 18,
     fontWeight: '700',
   },
   stepDescription: {
     marginTop: 2,
     color: AdminColors.textSecondary,
-    fontSize: 9,
-    lineHeight: 11,
+    fontSize: 12,
+    lineHeight: 15.5,
   },
 });
