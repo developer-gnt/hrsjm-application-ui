@@ -1,4 +1,14 @@
 import type { UserEvent } from '../../events/data/user-events';
+import type { MemberMembershipRecord } from '../types/member-dashboard.types';
+
+export const MOCK_ACTIVE_MEMBERSHIP: MemberMembershipRecord = {
+  status: 'active',
+  category: 'Individual Member',
+  memberName: 'Amaan Shaikh',
+  memberId: 'HRSJM202600123',
+  joinedDate: '15 Sep 2026',
+  validUntil: '15 Sep 2027',
+};
 
 const MONTHS: Record<string, number> = {
   jan: 0,

@@ -4,7 +4,7 @@ import { USER_EVENTS } from '../../events/data/user-events';
 describe('getUpcomingMemberEvents', () => {
   it('returns existing events on or after today in date order', () => {
     expect(
-      getUpcomingMemberEvents(USER_EVENTS, new Date(2026, 9, 25)).map(event => event.id),
+      getUpcomingMemberEvents(USER_EVENTS, new Date(2026, 9, 18)).map(event => event.id),
     ).toEqual([
       'legal-awareness-workshop',
       'womens-rights-program',

@@ -4,7 +4,10 @@ export { MemberDashboardDetailsScreen } from './screens/MemberDashboardDetailsSc
 export type { MemberDashboardDetailsScreenProps } from './screens/MemberDashboardDetailsScreen';
 export { MemberDashboardDetailsContent } from './screens/MemberDashboardDetailsScreen';
 export type { MemberDashboardDetailsContentProps } from './screens/MemberDashboardDetailsScreen';
-export { getUpcomingMemberEvents } from './data/member-dashboard';
+export {
+  getUpcomingMemberEvents,
+  MOCK_ACTIVE_MEMBERSHIP,
+} from './data/member-dashboard';
 export type {
   MemberDashboardTab,
   MemberMembershipRecord,

@@ -21,11 +21,13 @@ import type { UserEvent } from '../../events/data/user-events';
 import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeTab } from '../../home/types/home.types';
-import { getUpcomingMemberEvents } from '../data/member-dashboard';
-import { MemberDashboardDetailsContent } from './MemberDashboardDetailsScreen';
+import {
+  getUpcomingMemberEvents,
+  MOCK_ACTIVE_MEMBERSHIP,
+} from '../data/member-dashboard';
 import type { MemberMembershipRecord } from '../types/member-dashboard.types';
 
-const MEMBER_HERO_IMAGE = require('../../../../assets/images/about-hero-community.png');
+const MEMBER_HERO_IMAGE = require('../../../../assets/images/member-hero-rally.jpg');
 
 interface QuickAction {
   title: string;
@@ -34,7 +36,7 @@ interface QuickAction {
 }
 
 export interface MemberHomeDashboardScreenProps {
-  membership: MemberMembershipRecord | null;
+  membership?: MemberMembershipRecord | null;
   onBack: () => void;
   onOpenMembershipInfo: () => void;
   onOpenMembershipDetails: () => void;
@@ -66,7 +68,7 @@ const SectionHeading: React.FC<{
         style={styles.headingLink}
       >
         <Text style={styles.headingLinkText}>{linkLabel}</Text>
-        <AppIcon name="arrow-right" size={15} color={AdminColors.accentGold} />
+        <AppIcon name="arrow-right" size={13} color={AdminColors.primaryDark} />
       </Pressable>
     ) : null}
   </View>
@@ -80,35 +82,47 @@ const EventCard: React.FC<{
   event: UserEvent;
   onPress: () => void;
 }> = ({ event, onPress }) => (
-  <Pressable
-    style={styles.eventCard}
-    onPress={onPress}
-    accessibilityRole="button"
-    accessibilityLabel={`Open event: ${event.title}, ${event.date}`}
-  >
+  <View style={styles.eventCard}>
     <View style={styles.eventMedia}>
-      <Image source={event.image} style={styles.eventImage} resizeMode="cover" />
+      <Image
+        source={event.image}
+        style={styles.eventImage}
+        resizeMode="cover"
+      />
       <View style={styles.eventDateBadge}>
-        <Text style={styles.eventDateBadgeText}>{event.date}</Text>
+        <Text style={styles.eventDayText}>{event.day || '18'}</Text>
+        <Text style={styles.eventMonthText}>{event.month || 'Oct'}</Text>
       </View>
     </View>
     <View style={styles.eventBody}>
-      <Text style={styles.eventCategory}>{event.category}</Text>
+      <View style={styles.eventTagsRow}>
+        <View style={styles.tagWorkshop}>
+          <Text style={styles.tagWorkshopText}>{event.category || 'Workshop'}</Text>
+        </View>
+        <View style={styles.tagInPerson}>
+          <Text style={styles.tagInPersonText}>In Person</Text>
+        </View>
+      </View>
       <Text style={styles.eventTitle} numberOfLines={2}>
         {event.title}
       </Text>
       <View style={styles.eventLocation}>
-        <AppIcon name="map-pin" size={14} color={AdminColors.textSecondary} />
+        <AppIcon name="map-pin" size={13} color="#64748B" />
         <Text style={styles.eventLocationText} numberOfLines={1}>
           {event.location}
         </Text>
       </View>
-      <View style={styles.eventAction}>
-        <Text style={styles.eventActionText}>View Event</Text>
-        <AppIcon name="arrow-right" size={13} color={AdminColors.primaryDark} />
-      </View>
+      <Pressable
+        style={styles.registerButton}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Register for ${event.title}`}
+      >
+        <Text style={styles.registerButtonText}>Register Now</Text>
+        <AppIcon name="arrow-right" size={12} color={AdminColors.primaryDark} />
+      </Pressable>
     </View>
-  </Pressable>
+  </View>
 );
 
 export const MemberHomeDashboardScreen: React.FC<
@@ -129,29 +143,23 @@ export const MemberHomeDashboardScreen: React.FC<
   onOpenNews,
   onOpenContact,
 }) => {
+  const currentMembership = membership ?? MOCK_ACTIVE_MEMBERSHIP;
   const upcomingEvents = useMemo(
     () => getUpcomingMemberEvents(USER_EVENTS, new Date()).slice(0, 4),
     [],
   );
   const quickActions: QuickAction[] = [
-    { title: 'Know Your Rights', icon: 'scale', onPress: onOpenRights },
+    { title: 'Know Your Rights', icon: 'book-open', onPress: onOpenRights },
     { title: 'File a Complaint', icon: 'file-text', onPress: onOpenComplaint },
     { title: 'Events', icon: 'calendar', onPress: onOpenEvents },
-    { title: 'Resources', icon: 'book-open', onPress: onOpenRights },
+    { title: 'Resources', icon: 'download', onPress: onOpenRights },
   ];
-  const statusLabel = membership
-    ? {
-        active: 'Active Member',
-        pending: 'Application Pending',
-        inactive: 'Inactive Membership',
-      }[membership.status]
-    : 'Membership status unavailable';
-  const statusColor =
-    membership?.status === 'active'
-      ? AdminColors.statusActive
-      : membership?.status === 'pending'
-        ? AdminColors.statusPending
-        : AdminColors.textSecondary;
+  const impactMetrics = [
+    { value: '3', label: 'Events\nAttended', icon: 'users' as const },
+    { value: '2', label: 'Causes\nSupported', icon: 'heart' as const },
+    { value: '1', label: 'Complaint\nSubmitted', icon: 'file-text' as const },
+    { value: '12', label: 'Hours\nVolunteered', icon: 'clock' as const },
+  ];
 
   const handleTabPress = (tab: HomeTab) => {
     if (tab.id === 'home') onOpenHome();
@@ -181,204 +189,142 @@ export const MemberHomeDashboardScreen: React.FC<
           <View style={styles.heroCopy}>
             <Text style={styles.heroGreeting}>Welcome,</Text>
             <Text style={styles.heroName} numberOfLines={1}>
-              Amaan Shaikh
+              {currentMembership.memberName || 'Amaan Shaikh'}
             </Text>
             <Text style={styles.heroDescription}>
-              {membership?.status === 'active'
-                ? 'Thank you for being a valued member of HRSJM. Together, we work for a fairer, more just and equal society.'
-                : 'Join HRSJM. Together, we work for a fairer, more just and equal society.'}
+              Thank you for being a valued member of HRSJM. Together, we work for a fairer, more just and equal society.
             </Text>
-            {membership?.joinedDate ? (
-              <View style={styles.memberSince}>
-                <AppIcon
-                  name="calendar"
-                  size={13}
-                  color={AdminColors.textOnDark}
-                />
-                <Text style={styles.memberSinceText}>
-                  Member Since  |  {membership.joinedDate}
-                </Text>
-              </View>
-            ) : null}
+            <View style={styles.memberSince}>
+              <AppIcon
+                name="calendar"
+                size={14}
+                color="#FFFFFF"
+              />
+              <Text style={styles.memberSinceText}>
+                Member Since  |  {currentMembership.joinedDate || 'Sep 2026'}
+              </Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <DashboardCard>
-            <View style={styles.statusTop}>
-              <View style={styles.statusIcon}>
-                <AppIcon
-                  name="user"
-                  size={22}
-                  color={AdminColors.primaryDark}
-                />
+        <View style={styles.sheetContainer}>
+          {/* Active Member Status Card */}
+          <View style={styles.membershipStatusCard}>
+            <View style={styles.membershipStatusLeft}>
+              <View style={styles.starBadge}>
+                <AppIcon name="star" size={20} color="#FFFFFF" filled />
               </View>
-              <View style={styles.statusCopy}>
-                <Text style={styles.cardEyebrow}>MEMBERSHIP</Text>
+              <View style={styles.statusTextGroup}>
                 <Text style={styles.statusTitle}>
-                  {membership ? statusLabel : 'Become a Member'}
+                  {currentMembership.status === 'active' ? 'Active Member' : 'Member'}
                 </Text>
-                <Text style={styles.bodyText}>
-                  {membership
-                    ? membership.category
-                    : 'Explore membership information and the application process.'}
+                <Text style={styles.statusCategory}>
+                  {currentMembership.category || 'Individual Member'}
                 </Text>
               </View>
-              <Pressable
-                style={styles.membershipAction}
-                onPress={membership ? onOpenMembershipDetails : onOpenMembershipInfo}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  membership ? 'View membership' : 'Explore membership information'
-                }
-              >
-                <Text style={styles.membershipActionText}>
-                  {membership ? 'View Membership' : 'Explore Membership'}
-                </Text>
-                <AppIcon
-                  name="arrow-right"
-                  size={15}
-                  color={AdminColors.primaryDark}
-                />
-              </Pressable>
             </View>
-            {!membership ? (
-              <View style={styles.statusNote}>
-                <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-                <Text style={styles.availabilityNote}>
-                  Membership status has not been verified.
-                </Text>
-                <Pressable
-                  onPress={onOpenMembershipDetails}
-                  accessibilityRole="button"
-                  accessibilityLabel="View membership details"
-                  hitSlop={8}
-                >
-                  <AppIcon
-                    name="chevron-right"
-                    size={17}
-                    color={AdminColors.textSecondary}
-                  />
-                </Pressable>
-              </View>
-            ) : (
-              <View style={styles.memberFacts}>
-                {membership.memberId ? (
-                  <Text style={styles.memberMeta}>
-                    Member ID: {membership.memberId}
-                  </Text>
-                ) : null}
-                {membership.joinedDate ? (
-                  <Text style={styles.memberMeta}>
-                    Member since {membership.joinedDate}
-                  </Text>
-                ) : null}
-              </View>
-            )}
-          </DashboardCard>
-        </View>
 
-        <View style={styles.section}>
-          <SectionHeading title="Quick Actions" />
-          <View style={styles.quickGrid}>
+            <Pressable
+              style={styles.viewMembershipButton}
+              onPress={onOpenMembershipDetails}
+              accessibilityRole="button"
+              accessibilityLabel="View Membership"
+            >
+              <Text style={styles.viewMembershipText}>View Membership</Text>
+              <AppIcon
+                name="arrow-right"
+                size={13}
+                color={AdminColors.primaryDark}
+              />
+            </Pressable>
+          </View>
+
+          {/* Quick Actions (4 in a row) */}
+          <View style={styles.quickActionsRow}>
             {quickActions.map(action => (
               <Pressable
                 key={action.title}
-                style={styles.quickCard}
+                style={styles.quickActionCard}
                 onPress={action.onPress}
                 accessibilityRole="button"
                 accessibilityLabel={action.title}
               >
-                <View style={styles.quickIcon}>
+                <View style={styles.quickActionIconCircle}>
                   <AppIcon
                     name={action.icon}
-                    size={21}
+                    size={22}
                     color={AdminColors.primaryDark}
                   />
                 </View>
-                <Text style={styles.quickTitle} numberOfLines={2}>
+                <Text style={styles.quickActionLabel} numberOfLines={2}>
                   {action.title}
                 </Text>
               </Pressable>
             ))}
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <DashboardCard>
+          {/* Your Impact Card */}
+          <View style={styles.impactCard}>
             <Text style={styles.impactTitle}>Your Impact</Text>
-            <View style={styles.metrics}>
-              {[
-                { label: 'Events Attended', icon: 'users' as const },
-                { label: 'Causes Supported', icon: 'heart' as const },
-                { label: 'Complaint Submitted', icon: 'file-text' as const },
-                { label: 'Hours Volunteered', icon: 'clock' as const },
-              ].map(({ label, icon }) => (
-                <View key={label} style={styles.metric}>
-                  <View style={styles.metricIcon}>
+            <View style={styles.impactMetricsRow}>
+              {impactMetrics.map(item => (
+                <View key={item.label} style={styles.impactMetricCol}>
+                  <View style={styles.impactIconCircle}>
                     <AppIcon
-                      name={icon}
-                      size={15}
+                      name={item.icon}
+                      size={20}
                       color={AdminColors.primaryDark}
                     />
                   </View>
-                  <Text style={styles.metricValue}>—</Text>
-                  <Text style={styles.metricLabel}>{label}</Text>
+                  <Text style={styles.impactValue}>{item.value}</Text>
+                  <Text style={styles.impactLabel} numberOfLines={2}>
+                    {item.label}
+                  </Text>
                 </View>
               ))}
             </View>
-          </DashboardCard>
-        </View>
+          </View>
+          {/* Upcoming Events */}
+          <View style={styles.upcomingSection}>
+            <SectionHeading
+              title="Upcoming Events"
+              linkLabel="View All"
+              onLinkPress={onOpenEvents}
+            />
+            {upcomingEvents.length > 0 ? (
+              <View style={styles.eventList}>
+                {upcomingEvents.slice(0, 1).map(event => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    onPress={() => onOpenEvent(event)}
+                  />
+                ))}
+              </View>
+            ) : (
+              <DashboardCard>
+                <Text style={styles.bodyText}>No upcoming events are available.</Text>
+              </DashboardCard>
+            )}
+          </View>
 
-        <View style={styles.section}>
-          <SectionHeading
-            title="Upcoming Events"
-            linkLabel="View All"
-            onLinkPress={onOpenEvents}
-          />
-          {upcomingEvents.length > 0 ? (
-            <View style={styles.eventList}>
-              {upcomingEvents.map(event => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  onPress={() => onOpenEvent(event)}
-                />
-              ))}
-            </View>
-          ) : (
-            <DashboardCard>
-              <Text style={styles.bodyText}>No upcoming events are available.</Text>
-            </DashboardCard>
-          )}
-        </View>
-
-        <MemberDashboardDetailsContent
-          membership={membership}
-          onOpenMembershipInfo={onOpenMembershipInfo}
-          onOpenComplaint={onOpenComplaint}
-          onOpenDonation={onOpenDonation}
-          onOpenEvents={onOpenEvents}
-          onOpenRights={onOpenRights}
-          onOpenRight={onOpenRight}
-          onOpenEvent={onOpenEvent}
-        />
-
-        <View style={[styles.section, styles.recommendations]}>
-          <RecommendationCard
-            icon="book-open"
-            title="Continue Learning"
-            description="Explore rights education and guidance available in HRSJM."
-            action="Browse Resources"
-            onPress={onOpenRights}
-          />
-          <RecommendationCard
-            icon="heart"
-            title="Make a Difference"
-            description="Learn about ways to support HRSJM’s work."
-            action="Donate Now"
-            onPress={onOpenDonation}
-          />
+          {/* Recommendations Row */}
+          <View style={styles.recommendationsRow}>
+            <RecommendationCard
+              icon="book-open"
+              title="Continue Learning"
+              description="Explore articles, guides and legal resources."
+              action="Browse Resources"
+              onPress={onOpenRights}
+            />
+            <RecommendationCard
+              icon="heart"
+              title="Make a Difference"
+              description="Support our programs through donation."
+              action="Donate Now"
+              onPress={onOpenDonation}
+            />
+          </View>
         </View>
       </ScrollView>
       <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
@@ -394,19 +340,22 @@ const RecommendationCard: React.FC<{
   onPress: () => void;
 }> = ({ icon, title, description, action, onPress }) => (
   <View style={styles.recommendationCard}>
-    <View style={styles.recommendationIcon}>
-      <AppIcon name={icon} size={21} color={AdminColors.primaryDark} />
+    <View style={styles.recommendationHeader}>
+      <View style={styles.recommendationIcon}>
+        <AppIcon name={icon} size={18} color={AdminColors.primaryDark} />
+      </View>
+      <Text style={styles.recommendationTitle}>{title}</Text>
     </View>
-    <Text style={styles.recommendationTitle}>{title}</Text>
-    <Text style={styles.bodyText}>{description}</Text>
+    <Text style={styles.recommendationDescription}>{description}</Text>
     <Pressable
       style={styles.recommendationAction}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={action}
+      hitSlop={6}
     >
       <Text style={styles.recommendationActionText}>{action}</Text>
-      <AppIcon name="arrow-right" size={15} color={AdminColors.primaryDark} />
+      <AppIcon name="arrow-right" size={12} color="#0284C7" />
     </Pressable>
   </View>
 );
@@ -416,72 +365,235 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: Spacing.xl },
   hero: {
-    height: 150,
+    height: 224,
     overflow: 'hidden',
-    backgroundColor: AdminColors.primaryDark,
-    borderBottomLeftRadius: BorderRadius.xl,
-    borderBottomRightRadius: BorderRadius.xl,
+    backgroundColor: '#041A35',
   },
-  heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
+  heroImage: {
+    ...StyleSheet.absoluteFill,
+    width: '100%',
+    height: '100%',
+  },
   heroOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(6, 39, 77, 0.62)',
+    backgroundColor: 'rgba(4, 26, 53, 0.4)',
   },
   heroCopy: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    paddingHorizontal: 20,
+    paddingTop: Spacing.xs,
+    paddingBottom: 28,
   },
   heroGreeting: {
-    color: AdminColors.textOnDark,
-    fontFamily: FontFamilies.serif,
-    fontSize: 17,
+    color: '#FFFFFF',
+    fontSize: 18,
     fontWeight: '600',
-    lineHeight: 21,
+    lineHeight: 23,
   },
   heroName: {
-    maxWidth: '75%',
-    color: '#E8B83F',
+    color: '#E5A93C',
     fontFamily: FontFamilies.serif,
-    fontSize: 22,
+    fontSize: 27,
     fontWeight: '700',
-    lineHeight: 27,
+    lineHeight: 33,
+    marginTop: 2,
+    marginBottom: 6,
   },
   heroDescription: {
-    maxWidth: '68%',
-    marginTop: 2,
-    color: AdminColors.textOnDark,
-    fontSize: 10,
-    lineHeight: 14,
+    maxWidth: '72%',
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    lineHeight: 18,
+    opacity: 0.95,
   },
   memberSince: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 5,
-    gap: 5,
+    marginTop: 10,
+    gap: 8,
   },
   memberSinceText: {
-    color: AdminColors.textOnDark,
-    fontSize: 9,
-    lineHeight: 12,
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '500',
+    opacity: 0.95,
   },
-  section: { marginTop: Spacing.md, paddingHorizontal: Spacing.base },
-  sectionHeading: {
-    minHeight: 30,
+  sheetContainer: {
+    backgroundColor: AdminColors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: -20,
+    paddingTop: 16,
+    paddingHorizontal: Spacing.base,
+  },
+  membershipStatusCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#E8EDF5',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
+    ...Shadows.card,
+  },
+  membershipStatusLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  starBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EAA532',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  statusTextGroup: {
+    justifyContent: 'center',
+  },
+  statusTitle: {
+    color: AdminColors.primaryDark,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  statusCategory: {
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  viewMembershipButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    gap: 6,
+  },
+  viewMembershipText: {
+    color: AdminColors.primaryDark,
+    fontSize: 12.5,
+    fontWeight: '600',
+  },
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 14,
+  },
+  quickActionCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#E8EDF5',
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 102,
+    ...Shadows.card,
+  },
+  quickActionIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickActionLabel: {
+    marginTop: 10,
+    color: AdminColors.primaryDark,
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  impactCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#E8EDF5',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 18,
+    marginTop: 14,
+    ...Shadows.card,
+  },
+  impactTitle: {
+    color: AdminColors.primaryDark,
+    fontFamily: FontFamilies.serif,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  impactMetricsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  impactMetricCol: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 2,
+  },
+  impactIconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  impactValue: {
+    color: AdminColors.primaryDark,
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  impactLabel: {
+    color: '#64748B',
+    fontSize: 11,
+    lineHeight: 14,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  upcomingSection: {
+    marginTop: 18,
+  },
+  sectionHeading: {
+    minHeight: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   sectionTitle: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 21,
+    fontSize: 19,
     fontWeight: '700',
   },
-  headingLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headingLinkText: { color: AdminColors.primaryDark, fontSize: 13, fontWeight: '600' },
+  headingLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headingLinkText: {
+    color: AdminColors.primaryDark,
+    fontSize: 13,
+    fontWeight: '600',
+  },
   card: {
     padding: Spacing.sm,
     backgroundColor: AdminColors.cardSurface,
@@ -490,249 +602,181 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     ...Shadows.card,
   },
-  statusTop: { flexDirection: 'row', alignItems: 'center' },
-  statusIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: AdminColors.accentGoldLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.sm,
-  },
-  statusCopy: { flex: 1, marginRight: Spacing.xs },
-  cardEyebrow: {
+  bodyText: {
     color: AdminColors.textSecondary,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  statusTitle: {
-    color: AdminColors.primaryDark,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  bodyText: { color: AdminColors.textSecondary, fontSize: 11, lineHeight: 15 },
-  memberMeta: { marginTop: 4, color: AdminColors.textSecondary, fontSize: 12 },
-  availabilityNote: {
-    marginTop: Spacing.sm,
-    color: AdminColors.textMuted,
     fontSize: 11,
-    lineHeight: 16,
+    lineHeight: 15,
   },
-  membershipAction: {
-    minHeight: 42,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingHorizontal: Spacing.sm,
-    backgroundColor: AdminColors.background,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    borderRadius: BorderRadius.md,
+  eventList: {
+    gap: 12,
   },
-  membershipActionText: {
-    color: AdminColors.primaryDark,
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  statusNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.xs,
-    paddingTop: Spacing.xs,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: AdminColors.border,
-  },
-  memberFacts: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    marginTop: Spacing.xs,
-  },
-  statusDot: { width: 7, height: 7, borderRadius: 4, marginRight: 6 },
-  quickGrid: { flexDirection: 'row', gap: Spacing.xs },
-  quickCard: {
-    flex: 1,
-    minHeight: 82,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-    paddingVertical: Spacing.xs,
-    backgroundColor: AdminColors.cardSurface,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    borderRadius: BorderRadius.md,
-  },
-  quickIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: AdminColors.accentGoldLight,
-  },
-  quickTitle: {
-    marginTop: Spacing.xs,
-    color: AdminColors.primaryDark,
-    fontSize: 9,
-    fontWeight: '600',
-    lineHeight: 12,
-    textAlign: 'center',
-  },
-  impactTitle: {
-    marginBottom: 2,
-    color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  metrics: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  metric: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 1,
-    paddingTop: 1,
-  },
-  metricIcon: {
-    width: 26,
-    height: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 1,
-    borderRadius: 13,
-    backgroundColor: AdminColors.accentGoldLight,
-  },
-  metricValue: {
-    color: AdminColors.primaryDark,
-    fontSize: 14,
-    lineHeight: 17,
-    fontWeight: '700',
-  },
-  metricLabel: {
-    width: '100%',
-    marginTop: 1,
-    color: AdminColors.textSecondary,
-    fontSize: 8,
-    lineHeight: 10,
-    textAlign: 'center',
-  },
-  eventList: { gap: Spacing.sm },
   eventCard: {
-    minHeight: 128,
-    flexDirection: 'row',
-    backgroundColor: AdminColors.cardSurface,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: AdminColors.border,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
+    borderColor: '#EDF2F7',
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
     ...Shadows.card,
   },
   eventMedia: {
-    width: 112,
-    height: 128,
-    backgroundColor: AdminColors.primaryLight,
+    width: 124,
+    height: 114,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: '#041A35',
   },
   eventImage: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
     width: '100%',
     height: '100%',
   },
   eventDateBadge: {
     position: 'absolute',
-    top: 6,
-    left: 6,
-    maxWidth: 96,
-    paddingHorizontal: 6,
+    top: 8,
+    left: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: AdminColors.cardSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 42,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  eventDateBadgeText: {
-    color: AdminColors.primaryDark,
-    fontSize: 9,
+  eventDayText: {
+    color: '#0A2540',
+    fontSize: 16,
     fontWeight: '700',
+    lineHeight: 18,
   },
-  eventBody: { flex: 1, justifyContent: 'center', padding: Spacing.sm },
-  eventCategory: {
-    alignSelf: 'flex-start',
+  eventMonthText: {
+    color: '#475569',
+    fontSize: 10.5,
+    fontWeight: '600',
+    lineHeight: 13,
+  },
+  eventBody: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'space-between',
+    minHeight: 114,
+  },
+  eventTagsRow: {
+    flexDirection: 'row',
+    gap: 6,
     marginBottom: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    color: AdminColors.primaryDark,
-    backgroundColor: AdminColors.accentGoldLight,
-    borderRadius: BorderRadius.xs,
-    fontSize: 9,
-    fontWeight: '700',
+  },
+  tagWorkshop: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 9,
+    paddingVertical: 2.5,
+    borderRadius: 12,
+  },
+  tagWorkshopText: {
+    color: '#92400E',
+    fontSize: 10.5,
+    fontWeight: '600',
+  },
+  tagInPerson: {
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 9,
+    paddingVertical: 2.5,
+    borderRadius: 12,
+  },
+  tagInPersonText: {
+    color: '#0284C7',
+    fontSize: 10.5,
+    fontWeight: '600',
   },
   eventTitle: {
+    color: '#0A2540',
+    fontSize: 13.5,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  eventLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+    gap: 4,
+  },
+  eventLocationText: {
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  registerButton: {
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EAA532',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
     marginTop: 4,
+    gap: 5,
+  },
+  registerButtonText: {
     color: AdminColors.primaryDark,
-    fontSize: 12,
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  recommendationsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  recommendationCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#EDF2F7',
+    padding: 12,
+    justifyContent: 'space-between',
+    minHeight: 128,
+    ...Shadows.card,
+  },
+  recommendationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  recommendationIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recommendationTitle: {
+    flex: 1,
+    color: AdminColors.primaryDark,
+    fontSize: 12.5,
     fontWeight: '700',
     lineHeight: 16,
   },
-  eventLocation: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.xs },
-  eventLocationText: {
-    flex: 1,
-    marginLeft: 4,
-    color: AdminColors.textSecondary,
-    fontSize: 9,
-  },
-  eventAction: {
-    minHeight: 28,
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 4,
-    marginTop: Spacing.xs,
-  },
-  eventActionText: { color: AdminColors.primaryDark, fontSize: 10, fontWeight: '700' },
-  recommendations: { flexDirection: 'row', gap: Spacing.sm },
-  recommendationCard: {
-    flex: 1,
-    minHeight: 162,
-    padding: Spacing.sm,
-    backgroundColor: AdminColors.cardSurface,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    borderRadius: BorderRadius.lg,
-    ...Shadows.card,
-  },
-  recommendationIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: AdminColors.accentGoldLight,
-  },
-  recommendationTitle: {
-    marginTop: Spacing.sm,
-    marginBottom: 3,
-    color: AdminColors.primaryDark,
-    fontSize: 11,
-    fontWeight: '700',
+  recommendationDescription: {
+    color: '#64748B',
+    fontSize: 10.5,
     lineHeight: 14,
+    marginTop: 6,
   },
   recommendationAction: {
-    minHeight: 40,
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    marginTop: Spacing.xs,
+    gap: 4,
+    marginTop: 10,
   },
   recommendationActionText: {
-    color: AdminColors.primaryDark,
-    fontSize: 12,
+    color: '#0284C7',
+    fontSize: 11.5,
     fontWeight: '700',
   },
 });

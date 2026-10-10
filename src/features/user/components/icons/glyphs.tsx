@@ -90,13 +90,27 @@ const scale: React.FC<GlyphProps> = () => (
   </G>
 );
 
-const calendar: React.FC<GlyphProps> = () => (
+const calendar: React.FC<GlyphProps> = ({ color }) => (
   <G>
     <Rect x={4} y={5.2} width={16} height={15.2} rx={1.8} />
     <Line x1={4} y1={10} x2={20} y2={10} />
     <Line x1={8.4} y1={2.8} x2={8.4} y2={6.8} />
     <Line x1={15.6} y1={2.8} x2={15.6} y2={6.8} />
+    <Circle cx={8} cy={13.2} r={0.9} fill={color} stroke="none" />
+    <Circle cx={12} cy={13.2} r={0.9} fill={color} stroke="none" />
+    <Circle cx={16} cy={13.2} r={0.9} fill={color} stroke="none" />
+    <Circle cx={8} cy={16.7} r={0.9} fill={color} stroke="none" />
+    <Circle cx={12} cy={16.7} r={0.9} fill={color} stroke="none" />
+    <Circle cx={16} cy={16.7} r={0.9} fill={color} stroke="none" />
   </G>
+);
+
+const star: React.FC<GlyphProps> = ({ color, filled }) => (
+  <Polygon
+    points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+    fill={filled ? color : color}
+    stroke={color}
+  />
 );
 
 const clock: React.FC<GlyphProps> = () => (
@@ -372,6 +386,22 @@ const download: React.FC<GlyphProps> = () => (
   </G>
 );
 
+const bookmark: React.FC<GlyphProps> = () => (
+  <G>
+    <Path d="M6 3.5h12a1 1 0 0 1 1 1v16.5l-7-3.8-7 3.8V4.5a1 1 0 0 1 1-1Z" />
+  </G>
+);
+
+const idCard: React.FC<GlyphProps> = () => (
+  <G>
+    <Rect x={3} y={4.5} width={18} height={15} rx={2} />
+    <Circle cx={8} cy={10} r={1.8} />
+    <Path d="M5.5 15.5a2.5 2.5 0 0 1 5 0" />
+    <Line x1={13} y1={9.5} x2={18} y2={9.5} />
+    <Line x1={13} y1={13.5} x2={16.5} y2={13.5} />
+  </G>
+);
+
 const quote: React.FC<GlyphProps> = () => (
   <G>
     <Path d="M4.5 11.5h5.2v7H3.4v-5.1c0-4.4 1.7-7.1 5.2-8.4v3c-2.2 1.1-3.5 2.2-4.1 3.5Z" />
@@ -382,6 +412,7 @@ const quote: React.FC<GlyphProps> = () => (
 export const GLYPHS = {
   'arrow-right': arrowRight,
   bell,
+  bookmark,
   'book-open': bookOpen,
   bulb,
   briefcase,
@@ -407,6 +438,7 @@ export const GLYPHS = {
   'heart-hands': heartHands,
   home,
   'heart-pulse': heartPulse,
+  'id-card': idCard,
   image,
   lock,
   link,
@@ -426,6 +458,7 @@ export const GLYPHS = {
   send,
   share,
   'shield-check': shieldCheck,
+  star,
   user,
   users,
 } as const;

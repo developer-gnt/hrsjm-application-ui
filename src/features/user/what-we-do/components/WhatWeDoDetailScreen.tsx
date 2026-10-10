@@ -30,7 +30,6 @@ export interface WhatWeDoDetailScreenProps {
   onOpenHome?: () => void;
   onOpenAbout?: () => void;
   onOpenRights?: () => void;
-  onOpenRightsIndex?: () => void;
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
   onOpenContact?: () => void;
@@ -46,7 +45,6 @@ export const WhatWeDoDetailScreen: React.FC<WhatWeDoDetailScreenProps> = ({
   onOpenHome,
   onOpenAbout,
   onOpenRights,
-  onOpenRightsIndex,
   onOpenEvents,
   onOpenNews,
   onOpenContact,
@@ -73,11 +71,7 @@ export const WhatWeDoDetailScreen: React.FC<WhatWeDoDetailScreenProps> = ({
 
   const handleCtaPress = () => {
     if (content.ctaDestination === 'rights') {
-      if (onOpenRightsIndex) {
-        onOpenRightsIndex();
-      } else {
-        onOpenRights?.();
-      }
+      onOpenRights?.();
     } else {
       onOpenContact?.();
     }

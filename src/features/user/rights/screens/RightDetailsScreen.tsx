@@ -32,7 +32,6 @@ export interface RightDetailsScreenProps {
   topicsOnly?: boolean;
   onBack: () => void;
   onOpenRights: () => void;
-  onOpenRightsIndex: () => void;
   onOpenHome?: () => void;
   onOpenAbout?: () => void;
   onOpenContact?: () => void;
@@ -244,7 +243,6 @@ const RightsDetailsContentView: React.FC<{
   scrollTo: (id: SectionId) => void;
   setSectionLayout: (id: SectionId, event: LayoutChangeEvent) => void;
   activeSection: SectionId;
-  onOpenRightsIndex: () => void;
   onOpenRight: (rightId: string) => void;
   onFileComplaint: () => void;
   onOpenContact: () => void;
@@ -254,7 +252,6 @@ const RightsDetailsContentView: React.FC<{
   scrollTo,
   setSectionLayout,
   activeSection,
-  onOpenRightsIndex,
   onOpenRight,
   onFileComplaint,
   onOpenContact,
@@ -536,12 +533,12 @@ const RightsDetailsContentView: React.FC<{
             </View>
             <TouchableOpacity
               style={styles.ctaButton}
-              onPress={onOpenRightsIndex}
+              onPress={onFileComplaint}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Explore more rights"
+              accessibilityLabel="File a complaint"
             >
-              <Text style={styles.ctaButtonText}>Explore More Rights</Text>
+              <Text style={styles.ctaButtonText}>File a Complaint</Text>
               <AppIcon name="arrow-right" size={13} color={AdminColors.primaryDark} />
             </TouchableOpacity>
           </View>
@@ -556,7 +553,6 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
   topicsOnly = false,
   onBack,
   onOpenRights,
-  onOpenRightsIndex,
   onOpenHome,
   onOpenAbout,
   onOpenContact,
@@ -611,7 +607,6 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
         onBack={onBack}
-        onPressSearch={onOpenRightsIndex}
         onPressNotifications={() => undefined}
       />
       <ScrollView
@@ -627,7 +622,6 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
             scrollTo={scrollTo}
             setSectionLayout={setSectionLayout}
             activeSection={activeSection}
-            onOpenRightsIndex={onOpenRightsIndex}
             onOpenRight={onOpenRight ?? onOpenRights}
             onFileComplaint={onFileComplaint ?? (() => notifyComingSoon('File a Complaint'))}
             onOpenContact={onOpenContact ?? (() => notifyComingSoon('Contact HRSJM'))}

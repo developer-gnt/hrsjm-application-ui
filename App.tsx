@@ -48,10 +48,7 @@ import { UserHomeScreen } from './src/features/user/home';
 import { AboutScreen } from './src/features/user/about';
 import { ContactUsScreen } from './src/features/user/contact';
 import { GetHelpScreen, FileComplaintScreen } from './src/features/user/help';
-import {
-  KnowYourRightsScreen as UserKnowYourRightsScreen,
-  RightDetailsScreen as UserRightDetailsScreen,
-} from './src/features/user/rights';
+import { RightDetailsScreen as UserRightDetailsScreen } from './src/features/user/rights';
 import {
   RegisterForEventScreen,
   UserEventDetailsScreen,
@@ -75,6 +72,7 @@ import { HeaderActionsProvider } from './src/features/user/components/HeaderActi
 import {
   MemberDashboardDetailsScreen,
   MemberHomeDashboardScreen,
+  MOCK_ACTIVE_MEMBERSHIP,
 } from './src/features/user/member-dashboard';
 
 type AppRoute =
@@ -94,13 +92,11 @@ type AppRoute =
   | { name: 'user-help' }
   | { name: 'file-complaint' }
   | { name: 'user-rights' }
-  | { name: 'user-rights-index' }
   | {
       name: 'user-right-details';
       rightId: string;
       returnTo:
         | 'user-rights'
-        | 'user-rights-index'
         | 'user-home'
         | 'user-search'
         | 'member-dashboard';
@@ -284,7 +280,7 @@ function App() {
           />
         ) : route.name === 'member-dashboard' ? (
           <MemberHomeDashboardScreen
-            membership={null}
+            membership={MOCK_ACTIVE_MEMBERSHIP}
             onBack={() => setRoute({ name: 'user-home' })}
             onOpenMembershipInfo={() =>
               setRoute({
@@ -301,7 +297,7 @@ function App() {
                 returnTo: 'member-dashboard',
               })
             }
-            onOpenRights={() => setRoute({ name: 'user-rights-index' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
             onOpenComplaint={() => setRoute({ name: 'user-help' })}
             onOpenEvents={() =>
               setRoute({ name: 'user-events', returnTo: 'member-dashboard' })
@@ -327,7 +323,7 @@ function App() {
           />
         ) : route.name === 'member-details' ? (
           <MemberDashboardDetailsScreen
-            membership={null}
+            membership={MOCK_ACTIVE_MEMBERSHIP}
             onBack={() => setRoute({ name: 'member-dashboard' })}
             onOpenMembershipInfo={() =>
               setRoute({
@@ -347,12 +343,12 @@ function App() {
             onOpenEvents={() =>
               setRoute({ name: 'user-events', returnTo: 'member-details' })
             }
-            onOpenRights={() => setRoute({ name: 'user-rights-index' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
             onOpenRight={rightId =>
               setRoute({
                 name: 'user-right-details',
                 rightId,
-                returnTo: 'user-rights-index',
+                returnTo: 'user-rights',
               })
             }
             onOpenEvent={event =>
@@ -382,7 +378,6 @@ function App() {
             onOpenHome={() => setRoute({ name: 'user-home' })}
             onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenRights={() => setRoute({ name: 'user-rights' })}
-            onOpenRightsIndex={() => setRoute({ name: 'user-rights-index' })}
             onOpenEvents={() => setRoute({ name: 'user-events' })}
             onOpenNews={() => setRoute({ name: 'user-news' })}
             onOpenContact={() => setRoute({ name: 'contact' })}
@@ -454,7 +449,6 @@ function App() {
             rightId="womens-rights"
             onBack={() => setRoute({ name: 'user-home' })}
             onOpenRights={() => setRoute({ name: 'user-rights' })}
-            onOpenRightsIndex={() => setRoute({ name: 'user-rights-index' })}
             onOpenHome={() => setRoute({ name: 'user-home' })}
             onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenContact={() => setRoute({ name: 'contact' })}
@@ -469,38 +463,20 @@ function App() {
             }
             onFileComplaint={() => setRoute({ name: 'file-complaint' })}
           />
-        ) : route.name === 'user-rights-index' ? (
-          <UserKnowYourRightsScreen
-            onOpenHome={() => setRoute({ name: 'user-home' })}
-            onOpenAbout={() => setRoute({ name: 'about' })}
-            onOpenContact={() => setRoute({ name: 'contact' })}
-            onOpenEvents={() => setRoute({ name: 'user-events' })}
-            onOpenNews={() => setRoute({ name: 'user-news' })}
-            onOpenRight={rightId =>
-              setRoute({
-                name: 'user-right-details',
-                rightId,
-                returnTo: 'user-rights-index',
-              })
-            }
-          />
         ) : route.name === 'user-right-details' ? (
           <UserRightDetailsScreen
             rightId={route.rightId}
             onBack={() =>
               route.returnTo === 'user-rights'
                 ? setRoute({ name: 'user-rights' })
-                : route.returnTo === 'user-rights-index'
-                  ? setRoute({ name: 'user-rights-index' })
-                  : route.returnTo === 'user-search'
-                    ? setRoute({ name: 'user-search' })
-                    : route.returnTo === 'member-dashboard'
-                      ? setRoute({ name: 'member-dashboard' })
-                    : setRoute({ name: 'user-home' })
+                : route.returnTo === 'user-search'
+                  ? setRoute({ name: 'user-search' })
+                  : route.returnTo === 'member-dashboard'
+                    ? setRoute({ name: 'member-dashboard' })
+                  : setRoute({ name: 'user-home' })
             }
             topicsOnly={route.topicsOnly}
             onOpenRights={() => setRoute({ name: 'user-rights' })}
-            onOpenRightsIndex={() => setRoute({ name: 'user-rights-index' })}
             onOpenHome={() => setRoute({ name: 'user-home' })}
             onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenContact={() => setRoute({ name: 'contact' })}
