@@ -688,6 +688,14 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.base,
     alignItems: 'center',
   },
+  bottomNavHost: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    elevation: 10,
+  },
 });
 
 export default DonationsScreen;

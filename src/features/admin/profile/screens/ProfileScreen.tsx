@@ -308,7 +308,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             // Already on profile
           } else {
             setToastMessage({
-              type: 'info',
+              variant: 'info',
               message: `${key.replace('_', ' ').replace(/^\w/, c => c.toUpperCase())} tab`,
             });
           }

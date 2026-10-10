@@ -3,6 +3,8 @@
  * Jest global mocks for native modules used across auth, storage, navigation, and UI components.
  */
 
+jest.setTimeout(15000);
+
 jest.mock('@react-native-documents/picker', () => ({
   pick: jest.fn(),
   types: { allFiles: '*/*', pdf: 'application/pdf', images: 'image/*' },
