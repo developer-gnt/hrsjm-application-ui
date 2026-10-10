@@ -26,6 +26,7 @@ import { AboutWorkGrid } from '../components/AboutWorkGrid';
 import { HumanRightsMonitoringSection } from '../components/HumanRightsMonitoringSection';
 import { ABOUT_CONTENT } from '../data/about-content';
 import type { AboutWorkArea } from '../types/about.types';
+import type { WhatWeDoId } from '../../what-we-do';
 
 export interface AboutScreenProps {
   onBack?: () => void;
@@ -33,6 +34,7 @@ export interface AboutScreenProps {
   onOpenContact?: () => void;
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
+  onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
 }
 
 const SectionHeading: React.FC<{
@@ -41,7 +43,6 @@ const SectionHeading: React.FC<{
 }> = ({ title, subtitle }) => (
   <View style={styles.sectionHeadingRow}>
     <View style={styles.sectionHeading}>
-      <View style={styles.accentLine} />
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
     {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
@@ -54,6 +55,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
   onOpenContact,
   onOpenEvents,
   onOpenNews,
+  onOpenWhatWeDo,
 }) => {
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const monitoringOffset = useRef(0);
@@ -73,6 +75,29 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
       onOpenEvents?.();
     } else if (tab.id === 'news') {
       onOpenNews?.();
+    }
+  };
+
+  const handleAreaPress = (area: AboutWorkArea) => {
+    if (area.id === 'monitoring') {
+      scrollToMonitoring();
+      return;
+    }
+
+    const pageIdMap: Record<string, WhatWeDoId> = {
+      awareness: 'awareness-campaigns',
+      workshops: 'workshops-training',
+      community: 'community-activities',
+      leadership: 'leadership-development',
+      advocacy: 'advocacy-awareness',
+      research: 'research-rights-education',
+      legal: 'legal-rights-awareness',
+      other: 'other-work-areas',
+    };
+
+    const pageId = pageIdMap[area.id];
+    if (pageId) {
+      onOpenWhatWeDo?.(pageId);
     }
   };
 
@@ -114,11 +139,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
           />
           <AboutWorkGrid
             areas={ABOUT_CONTENT.workAreas}
-            onPressArea={(area: AboutWorkArea) => {
-              if (area.id === 'monitoring') {
-                scrollToMonitoring();
-              }
-            }}
+            onPressArea={handleAreaPress}
           />
         </View>
 
@@ -163,35 +184,24 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.base,
   },
   sectionHeadingRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
+    alignItems: 'flex-start',
     marginBottom: Spacing.sm,
   },
   sectionHeading: {
     flexShrink: 0,
   },
-  accentLine: {
-    width: 24,
-    height: 2,
-    marginBottom: 4,
-    backgroundColor: AdminColors.accentGold,
-  },
   sectionTitle: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 20,
-    lineHeight: 25,
+    fontSize: 28,
+    lineHeight: 34,
     fontWeight: '700',
   },
   sectionSubtitle: {
-    flex: 1,
-    paddingBottom: 3,
+    marginTop: 4,
     color: AdminColors.textSecondary,
-    fontSize: 8.5,
-    lineHeight: 11,
-    textAlign: 'right',
+    fontSize: 12,
+    lineHeight: 16,
   },
   fullWidthBannerSection: {
     marginTop: Spacing.lg,

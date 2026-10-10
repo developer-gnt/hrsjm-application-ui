@@ -23,13 +23,13 @@ export const GUEST_QUICK_ACTIONS: HomeQuickAction[] = [
   { id: 'join', label: 'Join HRSJM', icon: 'users', emphasized: true },
   { id: 'complaint', label: 'File a Complaint', icon: 'file-text' },
   { id: 'donate', label: 'Donate Now', icon: 'heart' },
-  { id: 'renew', label: 'Renew Membership', icon: 'refresh' },
+  { id: 'renew', label: 'I Want to Become a Member', icon: 'refresh' },
 ];
 
 export const MEMBER_QUICK_ACTIONS: HomeQuickAction[] = [
   { id: 'complaint', label: 'File a Complaint', icon: 'file-text' },
   { id: 'donate', label: 'Donate Now', icon: 'heart' },
-  { id: 'renew', label: 'Renew Membership', icon: 'refresh' },
+  { id: 'renew', label: 'I Want to Become a Member', icon: 'refresh' },
   { id: 'events', label: 'Events & Activities', icon: 'calendar' },
 ];
 
@@ -59,8 +59,8 @@ export const WHAT_WE_DO_ITEMS: WhatWeDoHomeItem[] = [
     icon: 'users',
   },
   {
-    id: 'research-education',
-    title: 'Research & Education',
+    id: 'research-rights-education',
+    title: 'Research & Rights Education',
     icon: 'doc-search',
   },
   {

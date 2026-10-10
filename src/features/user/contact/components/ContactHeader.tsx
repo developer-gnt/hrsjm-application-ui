@@ -3,10 +3,12 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdminColors, Spacing } from '../../../../core/theme';
 import { AppIcon, HrsjmLogoMark } from '../../components';
+import { useHeaderActions } from '../../components/HeaderActionsContext';
 
 interface ContactHeaderProps {
   onBack?: () => void;
   onPressSearch?: () => void;
+  onPressNotifications?: () => void;
 }
 
 /**
@@ -18,8 +20,10 @@ interface ContactHeaderProps {
 export const ContactHeader: React.FC<ContactHeaderProps> = ({
   onBack,
   onPressSearch,
+  onPressNotifications,
 }) => {
   const insets = useSafeAreaInsets();
+  const headerActions = useHeaderActions();
 
   return (
     <View
@@ -41,12 +45,24 @@ export const ContactHeader: React.FC<ContactHeaderProps> = ({
 
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={onPressSearch}
+        onPress={headerActions.onOpenSearch ?? onPressSearch}
         activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel="Search"
       >
         <AppIcon name="search" size={22} color={AdminColors.primaryDark} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.actionButton}
+        onPress={headerActions.onOpenNotifications ?? onPressNotifications}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="Notifications"
+      >
+        <AppIcon name="bell" size={22} color={AdminColors.primaryDark} />
+        {headerActions.hasUnreadNotifications ? (
+          <View style={styles.unreadDot} />
+        ) : null}
       </TouchableOpacity>
     </View>
   );
@@ -80,5 +96,16 @@ const styles = StyleSheet.create({
     height: 34,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  unreadDot: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: AdminColors.accentGold,
+    borderWidth: 1.5,
+    borderColor: AdminColors.cardSurface,
   },
 });

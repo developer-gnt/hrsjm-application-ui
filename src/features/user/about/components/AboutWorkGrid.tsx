@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Spacing } from '../../../../core/theme';
 import { AboutWorkCard } from './AboutWorkCard';
 import type { AboutWorkArea } from '../types/about.types';
 
@@ -35,11 +34,7 @@ export const AboutWorkGrid: React.FC<AboutWorkGridProps> = ({
             <AboutWorkCard
               key={area.id}
               area={area}
-              onPress={
-                area.id === 'monitoring' && onPressArea
-                  ? () => onPressArea(area)
-                  : undefined
-              }
+              onPress={onPressArea ? () => onPressArea(area) : undefined}
             />
           ))}
         </View>
@@ -50,11 +45,10 @@ export const AboutWorkGrid: React.FC<AboutWorkGridProps> = ({
 
 const styles = StyleSheet.create({
   grid: {
-    paddingHorizontal: Spacing.sm,
-    gap: Spacing.sm,
+    gap: 12,
   },
   row: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    gap: 12,
   },
 });

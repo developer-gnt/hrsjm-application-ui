@@ -13,7 +13,7 @@
  * preview routes below remain available in code (reachable by switching the
  * initial route while the real navigation is pending).
  */
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
 import {
@@ -66,11 +66,30 @@ import type { UserNewsArticle } from './src/features/user/news';
 import { showAdminShellPreviewNotice } from './src/features/admin/content/events/preview/AdminShellTabBar';
 import { WhatWeDoDetailScreen } from './src/features/user/what-we-do';
 import type { WhatWeDoId } from './src/features/user/what-we-do';
+import { UserActionPageScreen } from './src/features/user/action-pages';
+import type { ActionPageId } from './src/features/user/action-pages';
+import { SearchScreen } from './src/features/user/search';
+import type { GlobalSearchResult } from './src/features/user/search';
+import { NotificationsScreen } from './src/features/user/notifications';
+import { HeaderActionsProvider } from './src/features/user/components/HeaderActionsContext';
+import {
+  MemberDashboardDetailsScreen,
+  MemberHomeDashboardScreen,
+} from './src/features/user/member-dashboard';
 
 type AppRoute =
   | { name: 'user-home' }
-  | { name: 'about' }
-  | { name: 'what-we-do-detail'; contentId: WhatWeDoId }
+  | { name: 'about'; returnTo?: 'user-home' | 'user-search' }
+  | { name: 'what-we-do-detail'; contentId: WhatWeDoId; returnTo: 'home' | 'about' | 'search' }
+  | {
+      name: 'user-action-page';
+      pageId: ActionPageId;
+      returnTo: 'user-home' | 'member-dashboard' | 'member-details';
+    }
+  | { name: 'member-dashboard' }
+  | { name: 'member-details' }
+  | { name: 'user-search' }
+  | { name: 'user-notifications' }
   | { name: 'contact' }
   | { name: 'user-help' }
   | { name: 'file-complaint' }
@@ -79,14 +98,32 @@ type AppRoute =
   | {
       name: 'user-right-details';
       rightId: string;
-      returnTo: 'user-rights' | 'user-rights-index' | 'user-home';
+      returnTo:
+        | 'user-rights'
+        | 'user-rights-index'
+        | 'user-home'
+        | 'user-search'
+        | 'member-dashboard';
       topicsOnly?: boolean;
     }
-  | { name: 'user-events' }
-  | { name: 'user-event-details'; event: UserEvent }
-  | { name: 'user-event-register'; event: UserEvent }
+  | {
+      name: 'user-events';
+      returnTo?: 'user-home' | 'member-dashboard' | 'member-details';
+    }
+  | {
+      name: 'user-event-details';
+      event: UserEvent;
+      returnTo?: 'user-events' | 'user-search' | 'member-dashboard' | 'member-details';
+      eventsReturnTo?: 'user-home' | 'member-dashboard' | 'member-details';
+    }
+  | {
+      name: 'user-event-register';
+      event: UserEvent;
+      returnTo?: 'user-events' | 'user-search' | 'member-dashboard' | 'member-details';
+      eventsReturnTo?: 'user-home' | 'member-dashboard' | 'member-details';
+    }
   | { name: 'user-news' }
-  | { name: 'user-news-details'; article: UserNewsArticle }
+  | { name: 'user-news-details'; article: UserNewsArticle; returnTo?: 'user-news' | 'user-search' }
   | { name: 'list' }
   | { name: 'details'; event: EventListItem }
   | { name: 'create' }
@@ -111,6 +148,49 @@ function App() {
   // Boots into the Home screen. The About, Contact and User Rights pages are
   // standalone screens reachable from the shared six-tab bottom navigation.
   const [route, setRoute] = useState<AppRoute>(INITIAL_ROUTE);
+  const homeScrollOffset = useRef(0);
+  const routeBeforeHeaderDestination = useRef<AppRoute>(INITIAL_ROUTE);
+  const searchQuery = useRef('');
+
+  const openSearch = () => {
+    routeBeforeHeaderDestination.current = route;
+    setRoute({ name: 'user-search' });
+  };
+
+  const openNotifications = () => {
+    routeBeforeHeaderDestination.current = route;
+    setRoute({ name: 'user-notifications' });
+  };
+
+  const handleSearchResult = (result: GlobalSearchResult) => {
+    if (result.kind === 'event') {
+      setRoute({
+        name: 'user-event-details',
+        event: result.event,
+        returnTo: 'user-search',
+      });
+    } else if (result.kind === 'news') {
+      setRoute({
+        name: 'user-news-details',
+        article: result.article,
+        returnTo: 'user-search',
+      });
+    } else if (result.kind === 'right') {
+      setRoute({
+        name: 'user-right-details',
+        rightId: result.rightId,
+        returnTo: 'user-search',
+      });
+    } else if (result.kind === 'work-area') {
+      setRoute({
+        name: 'what-we-do-detail',
+        contentId: result.contentId,
+        returnTo: 'search',
+      });
+    } else {
+      setRoute({ name: 'about', returnTo: 'user-search' });
+    }
+  };
 
   // TEMPORARY preview-shell tab routing shared by the content screens: the
   // host switches to the matching list route; unhandled tabs show the shell's
@@ -138,9 +218,20 @@ function App() {
 
   return (
       <SafeAreaProvider>
+        <HeaderActionsProvider
+          value={{
+            onOpenSearch: openSearch,
+            onOpenNotifications: openNotifications,
+            hasUnreadNotifications: false,
+          }}
+        >
         <StatusBar barStyle="dark-content" />
         {route.name === 'user-home' ? (
           <UserHomeScreen
+            initialScrollOffset={homeScrollOffset.current}
+            onScrollOffsetChange={offset => {
+              homeScrollOffset.current = offset;
+            }}
             onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenContact={() => setRoute({ name: 'contact' })}
             onOpenRights={() => setRoute({ name: 'user-rights' })}
@@ -148,7 +239,12 @@ function App() {
             onOpenEvents={() => setRoute({ name: 'user-events' })}
             onOpenNews={() => setRoute({ name: 'user-news' })}
             onOpenWhatWeDo={contentId =>
-              setRoute({ name: 'what-we-do-detail', contentId })
+              setRoute({ name: 'what-we-do-detail', contentId, returnTo: 'home' })
+            }
+            onOpenActionPage={pageId =>
+              pageId === 'membership'
+                ? setRoute({ name: 'member-dashboard' })
+                : setRoute({ name: 'user-action-page', pageId, returnTo: 'user-home' })
             }
             onOpenRight={rightId =>
               setRoute({
@@ -159,10 +255,130 @@ function App() {
               })
             }
           />
+        ) : route.name === 'user-search' ? (
+          <SearchScreen
+            onBack={() => setRoute(routeBeforeHeaderDestination.current)}
+            onSelectResult={handleSearchResult}
+            initialQuery={searchQuery.current}
+            onQueryChange={query => {
+              searchQuery.current = query;
+            }}
+            onOpenNotifications={openNotifications}
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenEvents={() => setRoute({ name: 'user-events' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+          />
+        ) : route.name === 'user-notifications' ? (
+          <NotificationsScreen
+            onBack={() => setRoute(routeBeforeHeaderDestination.current)}
+            onOpenSearch={openSearch}
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenEvents={() => setRoute({ name: 'user-events' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+          />
+        ) : route.name === 'member-dashboard' ? (
+          <MemberHomeDashboardScreen
+            membership={null}
+            onBack={() => setRoute({ name: 'user-home' })}
+            onOpenMembershipInfo={() =>
+              setRoute({
+                name: 'user-action-page',
+                pageId: 'membership',
+                returnTo: 'member-dashboard',
+              })
+            }
+            onOpenMembershipDetails={() => setRoute({ name: 'member-details' })}
+            onOpenRight={rightId =>
+              setRoute({
+                name: 'user-right-details',
+                rightId,
+                returnTo: 'member-dashboard',
+              })
+            }
+            onOpenRights={() => setRoute({ name: 'user-rights-index' })}
+            onOpenComplaint={() => setRoute({ name: 'user-help' })}
+            onOpenEvents={() =>
+              setRoute({ name: 'user-events', returnTo: 'member-dashboard' })
+            }
+            onOpenEvent={event =>
+              setRoute({
+                name: 'user-event-details',
+                event,
+                returnTo: 'member-dashboard',
+              })
+            }
+            onOpenDonation={() =>
+              setRoute({
+                name: 'user-action-page',
+                pageId: 'donate',
+                returnTo: 'member-dashboard',
+              })
+            }
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+          />
+        ) : route.name === 'member-details' ? (
+          <MemberDashboardDetailsScreen
+            membership={null}
+            onBack={() => setRoute({ name: 'member-dashboard' })}
+            onOpenMembershipInfo={() =>
+              setRoute({
+                name: 'user-action-page',
+                pageId: 'membership',
+                returnTo: 'member-details',
+              })
+            }
+            onOpenComplaint={() => setRoute({ name: 'user-help' })}
+            onOpenDonation={() =>
+              setRoute({
+                name: 'user-action-page',
+                pageId: 'donate',
+                returnTo: 'member-details',
+              })
+            }
+            onOpenEvents={() =>
+              setRoute({ name: 'user-events', returnTo: 'member-details' })
+            }
+            onOpenRights={() => setRoute({ name: 'user-rights-index' })}
+            onOpenRight={rightId =>
+              setRoute({
+                name: 'user-right-details',
+                rightId,
+                returnTo: 'user-rights-index',
+              })
+            }
+            onOpenEvent={event =>
+              setRoute({
+                name: 'user-event-details',
+                event,
+                returnTo: 'member-details',
+              })
+            }
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+          />
         ) : route.name === 'what-we-do-detail' ? (
           <WhatWeDoDetailScreen
             contentId={route.contentId}
-            onBack={() => setRoute({ name: 'user-home' })}
+            onBack={() =>
+              setRoute(
+                route.returnTo === 'about'
+                  ? ({ name: 'about' } as const)
+                  : route.returnTo === 'search'
+                    ? ({ name: 'user-search' } as const)
+                    : ({ name: 'user-home' } as const),
+              )
+            }
             onOpenHome={() => setRoute({ name: 'user-home' })}
             onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenRights={() => setRoute({ name: 'user-rights' })}
@@ -171,13 +387,37 @@ function App() {
             onOpenNews={() => setRoute({ name: 'user-news' })}
             onOpenContact={() => setRoute({ name: 'contact' })}
           />
+        ) : route.name === 'user-action-page' ? (
+          <UserActionPageScreen
+            pageId={route.pageId}
+            onBack={() =>
+              route.returnTo === 'member-dashboard'
+                ? setRoute({ name: 'member-dashboard' })
+                : route.returnTo === 'member-details'
+                  ? setRoute({ name: 'member-details' })
+                  : setRoute({ name: 'user-home' })
+            }
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenEvents={() => setRoute({ name: 'user-events' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+          />
         ) : route.name === 'about' ? (
           <AboutScreen
-            onBack={() => setRoute({ name: 'user-home' })}
+            onBack={() =>
+              route.returnTo === 'user-search'
+                ? setRoute({ name: 'user-search' })
+                : setRoute({ name: 'user-home' })
+            }
             onOpenRights={() => setRoute({ name: 'user-rights' })}
             onOpenContact={() => setRoute({ name: 'contact' })}
             onOpenEvents={() => setRoute({ name: 'user-events' })}
             onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenWhatWeDo={contentId =>
+              setRoute({ name: 'what-we-do-detail', contentId, returnTo: 'about' })
+            }
           />
         ) : route.name === 'contact' ? (
           <ContactUsScreen
@@ -252,7 +492,11 @@ function App() {
                 ? setRoute({ name: 'user-rights' })
                 : route.returnTo === 'user-rights-index'
                   ? setRoute({ name: 'user-rights-index' })
-                  : setRoute({ name: 'user-home' })
+                  : route.returnTo === 'user-search'
+                    ? setRoute({ name: 'user-search' })
+                    : route.returnTo === 'member-dashboard'
+                      ? setRoute({ name: 'member-dashboard' })
+                    : setRoute({ name: 'user-home' })
             }
             topicsOnly={route.topicsOnly}
             onOpenRights={() => setRoute({ name: 'user-rights' })}
@@ -274,14 +518,50 @@ function App() {
         ) : route.name === 'user-event-details' ? (
           <UserEventDetailsScreen
             event={route.event}
-            onBack={() => setRoute({ name: 'user-events' })}
-            onRegister={() => setRoute({ name: 'user-event-register', event: route.event })}
+            onBack={() =>
+              route.returnTo === 'user-search'
+                ? setRoute({ name: 'user-search' })
+                : route.returnTo === 'member-dashboard'
+                  ? setRoute({ name: 'member-dashboard' })
+                  : route.returnTo === 'member-details'
+                    ? setRoute({ name: 'member-details' })
+                  : setRoute({
+                      name: 'user-events',
+                      returnTo: route.eventsReturnTo,
+                    })
+            }
+            onRegister={() =>
+              setRoute({
+                name: 'user-event-register',
+                event: route.event,
+                returnTo: route.returnTo,
+                eventsReturnTo: route.eventsReturnTo,
+              })
+            }
           />
         ) : route.name === 'user-event-register' ? (
           <RegisterForEventScreen
             event={route.event}
-            onBack={() => setRoute({ name: 'user-event-details', event: route.event })}
-            onBackToEvents={() => setRoute({ name: 'user-events' })}
+            onBack={() =>
+              setRoute({
+                name: 'user-event-details',
+                event: route.event,
+                returnTo: route.returnTo,
+                eventsReturnTo: route.eventsReturnTo,
+              })
+            }
+            onBackToEvents={() =>
+              route.returnTo === 'user-search'
+                ? setRoute({ name: 'user-search' })
+                : route.returnTo === 'member-dashboard'
+                  ? setRoute({ name: 'member-dashboard' })
+                  : route.returnTo === 'member-details'
+                    ? setRoute({ name: 'member-details' })
+                  : setRoute({
+                      name: 'user-events',
+                      returnTo: route.eventsReturnTo,
+                    })
+            }
             onOpenHome={() => setRoute({ name: 'user-home' })}
             onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenRights={() => setRoute({ name: 'user-rights' })}
@@ -290,8 +570,21 @@ function App() {
           />
         ) : route.name === 'user-events' ? (
           <UserEventsScreen
-            onBack={() => setRoute({ name: 'user-home' })}
-            onOpenEvent={event => setRoute({ name: 'user-event-details', event })}
+            onBack={() =>
+              route.returnTo === 'member-dashboard'
+                ? setRoute({ name: 'member-dashboard' })
+                : route.returnTo === 'member-details'
+                  ? setRoute({ name: 'member-details' })
+                  : setRoute({ name: 'user-home' })
+            }
+            onOpenEvent={event =>
+              setRoute({
+                name: 'user-event-details',
+                event,
+                returnTo: 'user-events',
+                eventsReturnTo: route.returnTo,
+              })
+            }
             onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenRights={() => setRoute({ name: 'user-rights' })}
             onOpenContact={() => setRoute({ name: 'contact' })}
@@ -300,8 +593,14 @@ function App() {
         ) : route.name === 'user-news-details' ? (
           <UserNewsDetailsScreen
             article={route.article}
-            onBack={() => setRoute({ name: 'user-news' })}
-            onOpenArticle={article => setRoute({ name: 'user-news-details', article })}
+            onBack={() =>
+              route.returnTo === 'user-search'
+                ? setRoute({ name: 'user-search' })
+                : setRoute({ name: 'user-news' })
+            }
+            onOpenArticle={article =>
+              setRoute({ name: 'user-news-details', article })
+            }
             onOpenHome={() => setRoute({ name: 'user-home' })}
             onOpenAbout={() => setRoute({ name: 'about' })}
             onOpenRights={() => setRoute({ name: 'user-rights' })}
@@ -411,6 +710,7 @@ function App() {
           onTabPress={handleContentTabPress}
         />
       )}
+      </HeaderActionsProvider>
     </SafeAreaProvider>
   );
 }

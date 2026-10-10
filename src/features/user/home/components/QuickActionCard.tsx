@@ -44,7 +44,7 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
             : action.id === 'donate'
               ? 'Donate\nNow'
               : action.id === 'renew'
-                ? 'Renew\nMembership'
+              ? 'I Want to\nBecome a\nMember'
                 : action.label}
       </Text>
     </TouchableOpacity>

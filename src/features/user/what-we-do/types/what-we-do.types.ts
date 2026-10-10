@@ -2,10 +2,15 @@ import type { ImageSourcePropType } from 'react-native';
 import type { IconName } from '../../components/icons';
 
 export const WHAT_WE_DO_IDS = [
+  'human-rights-monitoring',
   'awareness-campaigns',
   'workshops-training',
-  'research-education',
   'community-activities',
+  'leadership-development',
+  'advocacy-awareness',
+  'research-rights-education',
+  'legal-rights-awareness',
+  'other-work-areas',
 ] as const;
 
 export type WhatWeDoId = (typeof WHAT_WE_DO_IDS)[number];

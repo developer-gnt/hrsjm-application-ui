@@ -2,9 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   AdminColors,
-  BorderRadius,
   Shadows,
-  Spacing,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import type { AboutWorkArea } from '../types/about.types';
@@ -26,18 +24,13 @@ export const AboutWorkCard: React.FC<AboutWorkCardProps> = ({
     accessibilityLabel={`${area.title.replace(/\n/g, ' ')} — ${area.description}`}
   >
     <View style={styles.iconCircle}>
-      <AppIcon name={area.icon} size={21} color={AdminColors.primaryDark} />
+      <AppIcon name={area.icon} size={22} color={AdminColors.primaryDark} />
     </View>
-    <View style={styles.copy}>
-      <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
-        {area.title}
-      </Text>
-      <Text style={styles.description} numberOfLines={4} ellipsizeMode="tail">
-        {area.description}
-      </Text>
-    </View>
+    <Text style={styles.title} numberOfLines={3} ellipsizeMode="tail">
+      {area.title}
+    </Text>
     <View style={styles.arrowButton}>
-      <AppIcon name="arrow-right" size={11} color={AdminColors.primaryDark} />
+      <AppIcon name="arrow-right" size={12} color={AdminColors.textOnDark} />
     </View>
   </Pressable>
 );
@@ -45,54 +38,47 @@ export const AboutWorkCard: React.FC<AboutWorkCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    minHeight: 84,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.xs,
-    padding: 6,
-    paddingBottom: 23,
-    backgroundColor: AdminColors.cardSurface,
-    borderRadius: BorderRadius.lg,
+    minHeight: 120,
+    paddingHorizontal: 10,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: '#EEF4FF',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: AdminColors.border,
+    borderColor: '#D7E3F7',
     ...Shadows.card,
+    justifyContent: 'space-between',
   },
   pressed: {
     opacity: 0.82,
   },
   iconCircle: {
-    width: 32,
-    height: 32,
-    flexShrink: 0,
-    borderRadius: 16,
-    backgroundColor: AdminColors.accentGoldLight,
+    width: 38,
+    height: 38,
+    marginBottom: 10,
+    borderRadius: 19,
+    backgroundColor: '#F9EEC7',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  copy: {
-    flex: 1,
-    minWidth: 0,
+    borderWidth: 1,
+    borderColor: '#E7D69C',
   },
   title: {
-    fontSize: 9.5,
-    lineHeight: 11.5,
+    maxWidth: '78%',
+    fontSize: 13,
+    lineHeight: 16,
     fontWeight: '700',
     color: AdminColors.primaryDark,
-  },
-  description: {
-    fontSize: 8.5,
-    lineHeight: 11,
-    color: AdminColors.textSecondary,
-    marginTop: 3,
+    letterSpacing: -0.15,
   },
   arrowButton: {
     position: 'absolute',
-    right: Spacing.xs,
-    bottom: Spacing.xs,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: AdminColors.accentGoldLight,
+    right: 10,
+    bottom: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: AdminColors.primaryDark,
     alignItems: 'center',
     justifyContent: 'center',
   },

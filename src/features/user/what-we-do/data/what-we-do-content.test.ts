@@ -2,13 +2,18 @@ import { WHAT_WE_DO_CONTENT } from './what-we-do-content';
 import { WHAT_WE_DO_IDS } from '../types/what-we-do.types';
 
 describe('What HRSJM Does page content', () => {
-  it('provides the four stable page IDs and their matching titles', () => {
+  it('provides the nine stable page IDs and their matching titles', () => {
     expect(Object.keys(WHAT_WE_DO_CONTENT)).toEqual(WHAT_WE_DO_IDS);
     expect(WHAT_WE_DO_IDS.map(id => WHAT_WE_DO_CONTENT[id].title)).toEqual([
+      'Human-rights Monitoring',
       'Awareness Campaigns',
       'Workshops & Training',
-      'Research & Education',
       'Community Activities',
+      'Leadership Development',
+      'Advocacy & Awareness',
+      'Research & Rights Education',
+      'Legal Rights Awareness',
+      'Other Work Areas',
     ]);
   });
 
