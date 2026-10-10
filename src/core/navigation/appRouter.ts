@@ -30,12 +30,21 @@ export type AppRoute =
   | { name: 'create-support-ticket' }
   | { name: 'review-support-ticket' }
   | { name: 'ticket-submitted'; ticketId: string }
-  | { name: 'support-ticket-details'; ticketId: string };
+  | { name: 'support-ticket-details'; ticketId: string }
+  | { name: 'users' }
+  | { name: 'users-add' }
+  | { name: 'users-details'; userId: string }
+  | { name: 'users-edit'; userId: string }
+  | { name: 'users-verification'; userId: string }
+  | { name: 'users-filter' };
 
 const RECEIPT_HASH_PATTERN = /^\/donations\/([^/]+)\/receipt$/;
 const MEMBERSHIP_DETAILS_HASH_PATTERN = /^\/membership-applications\/([^/]+)$/;
 const TICKET_SUBMITTED_HASH_PATTERN = /^\/support\/submitted\/([^/]+)$/;
 const TICKET_DETAILS_HASH_PATTERN = /^\/support\/tickets\/([^/]+)$/;
+const USERS_EDIT_HASH_PATTERN = /^\/users\/([^/]+)\/edit$/;
+const USERS_VERIFY_HASH_PATTERN = /^\/users\/([^/]+)\/verification$/;
+const USERS_DETAILS_HASH_PATTERN = /^\/users\/([^/]+)$/;
 
 const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/profile': { name: 'profile' },
@@ -64,6 +73,9 @@ const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/support-tickets': { name: 'support-tickets' },
   '/support/create': { name: 'create-support-ticket' },
   '/support/review': { name: 'review-support-ticket' },
+  '/users': { name: 'users' },
+  '/users/add': { name: 'users-add' },
+  '/users/filter': { name: 'users-filter' },
 };
 
 const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
@@ -88,6 +100,12 @@ const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
   'review-support-ticket': '#/support/review',
   'ticket-submitted': '#/support',
   'support-ticket-details': '#/support',
+  users: '#/users',
+  'users-add': '#/users/add',
+  'users-details': '#/users',
+  'users-edit': '#/users',
+  'users-verification': '#/users',
+  'users-filter': '#/users/filter',
 };
 
 const getWebWindow = (): any =>
@@ -119,6 +137,18 @@ const parseHash = (): AppRoute => {
   if (ticketMatch) {
     return { name: 'support-ticket-details', ticketId: decodeURIComponent(ticketMatch[1]) };
   }
+  const usersEditMatch = hash.match(USERS_EDIT_HASH_PATTERN);
+  if (usersEditMatch) {
+    return { name: 'users-edit', userId: decodeURIComponent(usersEditMatch[1]) };
+  }
+  const usersVerifyMatch = hash.match(USERS_VERIFY_HASH_PATTERN);
+  if (usersVerifyMatch) {
+    return { name: 'users-verification', userId: decodeURIComponent(usersVerifyMatch[1]) };
+  }
+  const usersDetailsMatch = hash.match(USERS_DETAILS_HASH_PATTERN);
+  if (usersDetailsMatch) {
+    return { name: 'users-details', userId: decodeURIComponent(usersDetailsMatch[1]) };
+  }
   return { name: 'membership-applications' };
 };
 
@@ -134,6 +164,15 @@ const routeToHash = (route: AppRoute): string => {
   }
   if (route.name === 'support-ticket-details') {
     return `#/support/tickets/${encodeURIComponent(route.ticketId)}`;
+  }
+  if (route.name === 'users-details') {
+    return `#/users/${encodeURIComponent(route.userId)}`;
+  }
+  if (route.name === 'users-edit') {
+    return `#/users/${encodeURIComponent(route.userId)}/edit`;
+  }
+  if (route.name === 'users-verification') {
+    return `#/users/${encodeURIComponent(route.userId)}/verification`;
   }
   return PROFILE_HASH_BY_ROUTE[route.name];
 };
@@ -162,7 +201,16 @@ if (webWindow && webWindow.addEventListener) {
         next.ticketId !== currentRoute.ticketId) ||
       (next.name === 'support-ticket-details' &&
         currentRoute.name === 'support-ticket-details' &&
-        next.ticketId !== currentRoute.ticketId)
+        next.ticketId !== currentRoute.ticketId) ||
+      (next.name === 'users-details' &&
+        currentRoute.name === 'users-details' &&
+        next.userId !== currentRoute.userId) ||
+      (next.name === 'users-edit' &&
+        currentRoute.name === 'users-edit' &&
+        next.userId !== currentRoute.userId) ||
+      (next.name === 'users-verification' &&
+        currentRoute.name === 'users-verification' &&
+        next.userId !== currentRoute.userId)
     ) {
       currentRoute = next;
       notify();
@@ -280,6 +328,31 @@ export const navigateToTicketSubmitted = (ticketId: string): void => {
 export const navigateToSupportTicketDetails = (ticketId: string): void => {
   navigate({ name: 'support-ticket-details', ticketId });
 };
+
+export const navigateToUsers = (): void => {
+  navigate({ name: 'users' });
+};
+
+export const navigateToUserAdd = (): void => {
+  navigate({ name: 'users-add' });
+};
+
+export const navigateToUserDetails = (userId: string): void => {
+  navigate({ name: 'users-details', userId });
+};
+
+export const navigateToUserEdit = (userId: string): void => {
+  navigate({ name: 'users-edit', userId });
+};
+
+export const navigateToUserVerification = (userId: string): void => {
+  navigate({ name: 'users-verification', userId });
+};
+
+export const navigateToUserFilter = (): void => {
+  navigate({ name: 'users-filter' });
+};
+
 
 
 

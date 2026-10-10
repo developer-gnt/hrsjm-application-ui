@@ -450,7 +450,7 @@ export const DonationsScreen: React.FC = () => {
             />
           )
         }
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={renderHeader()}
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={
           isFetchingNextPage && !previewMode ? (

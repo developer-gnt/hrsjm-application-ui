@@ -27,6 +27,7 @@ import {
   subscribeRegistrationState,
   RegistrationState,
 } from '../state/registrationState';
+import { usersStore } from '../../admin/users/services/usersStore';
 
 interface StepItem {
   number: number;
@@ -74,6 +75,13 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
     ...storeState,
     ...(propData || {}),
   };
+
+  // Automatically register user in dynamic usersStore if not already registered
+  React.useEffect(() => {
+    if (regData.fullName && (regData.email || regData.phone)) {
+      usersStore.registerUserFromRegistration(regData);
+    }
+  }, [regData.fullName, regData.email, regData.phone, regData.accountType]);
 
   // Determine if this account type requires verification
   const isGeneralUser = regData.accountType === 'general';

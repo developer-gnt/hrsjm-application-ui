@@ -39,6 +39,14 @@ import {
   TicketSubmittedScreen,
 } from './src/features/support';
 import {
+  UsersListScreen,
+  AddUserScreen,
+  UserDetailsScreen,
+  EditUserScreen,
+  UserVerificationScreen,
+  usersStore,
+} from './src/features/admin/users';
+import {
   getRouteSnapshot,
   subscribeToRoute,
   navigateToCreateAccount,
@@ -58,6 +66,12 @@ import {
   navigateToCreateSupportTicket,
   navigateToReviewSupportTicket,
   navigateToTicketSubmitted,
+  navigateToUsers,
+  navigateToUserAdd,
+  navigateToUserDetails,
+  navigateToUserEdit,
+  navigateToUserVerification,
+  navigateToUserFilter,
 } from './src/core/navigation/appRouter';
 
 // Temporary app shell: navigation infrastructure is not built yet, so
@@ -117,6 +131,12 @@ function App() {
                 accountTypeLabel: labelMap[accountType] || 'General User',
               });
               if (accountType === 'general') {
+                const currentState = getRegistrationState();
+                usersStore.registerUserFromRegistration({
+                  ...currentState,
+                  accountType: 'general',
+                  accountTypeLabel: 'General User',
+                });
                 navigateToCreateAccountComplete();
               } else {
                 navigateToCreateAccountVerification();
@@ -164,6 +184,14 @@ function App() {
                 });
                 membershipApplicationsStore.addApplication(newApp);
               }
+
+              usersStore.registerUserFromRegistration({
+                ...currentState,
+                selectedDocTitle: docTitle,
+                uploadedFileName: uploadedFile.name,
+                uploadedFileSize: uploadedFile.formattedSize,
+                uploadedFileUri: uploadedFile.uri,
+              });
 
               navigateToCreateAccountComplete();
             }}
@@ -335,6 +363,131 @@ function App() {
             onNotificationsPress={() => navigateToMembershipApplications()}
           />
         );
+      case 'users':
+        return (
+          <UsersListScreen
+            key="users-list-screen"
+            onAddUserPress={() => navigateToUserAdd()}
+            onSignUpPress={() => navigateToCreateAccount()}
+            onFilterPress={() => navigateToUserFilter()}
+            onUserPress={(user) => navigateToUserDetails(user.id)}
+            onEditUserPress={(user) => navigateToUserEdit(user.id)}
+            onVerifyUserPress={(user) => navigateToUserVerification(user.id)}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'donations') navigateToDonations();
+              else if (tabKey === 'users') navigateToUsers();
+              else if (tabKey === 'more') navigateToProfile();
+            }}
+            onProfilePress={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
+      case 'users-add':
+        return (
+          <AddUserScreen
+            key="users-add-screen"
+            onBack={() => navigateToUsers()}
+            onSuccess={() => navigateToUsers()}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'donations') navigateToDonations();
+              else if (tabKey === 'users') navigateToUsers();
+              else if (tabKey === 'more') navigateToProfile();
+            }}
+            onProfilePress={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
+      case 'users-details':
+        return (
+          <UserDetailsScreen
+            key={`users-details-${route.userId || 'unknown'}`}
+            userId={route.userId}
+            onBack={() => navigateToUsers()}
+            onEditPress={(u) => navigateToUserEdit(u.id)}
+            onVerifyPress={(u) => navigateToUserVerification(u.id)}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'donations') navigateToDonations();
+              else if (tabKey === 'users') navigateToUsers();
+              else if (tabKey === 'more') navigateToProfile();
+            }}
+            onProfilePress={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
+      case 'users-edit':
+        return (
+          <EditUserScreen
+            key={`users-edit-${route.userId || 'unknown'}`}
+            userId={route.userId}
+            onBack={() => (route.userId ? navigateToUserDetails(route.userId) : navigateToUsers())}
+            onSuccess={() => (route.userId ? navigateToUserDetails(route.userId) : navigateToUsers())}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'donations') navigateToDonations();
+              else if (tabKey === 'users') navigateToUsers();
+              else if (tabKey === 'more') navigateToProfile();
+            }}
+            onProfilePress={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
+      case 'users-verification':
+        return (
+          <UserVerificationScreen
+            key={`users-verification-${route.userId || 'unknown'}`}
+            userId={route.userId}
+            onBack={() => (route.userId ? navigateToUserDetails(route.userId) : navigateToUsers())}
+            onSuccess={() => (route.userId ? navigateToUserDetails(route.userId) : navigateToUsers())}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'donations') navigateToDonations();
+              else if (tabKey === 'users') navigateToUsers();
+              else if (tabKey === 'more') navigateToProfile();
+            }}
+            onProfilePress={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
+      case 'users-filter':
+        return (
+          <UsersListScreen
+            key="users-filter-screen"
+            onAddUserPress={() => navigateToUserAdd()}
+            onSignUpPress={() => navigateToCreateAccount()}
+            onUserPress={(user) => navigateToUserDetails(user.id)}
+            onEditUserPress={(user) => navigateToUserEdit(user.id)}
+            onVerifyUserPress={(user) => navigateToUserVerification(user.id)}
+            onBottomTabPress={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'donations') navigateToDonations();
+              else if (tabKey === 'users') navigateToUsers();
+              else if (tabKey === 'more') navigateToProfile();
+            }}
+            onProfilePress={() => navigateToProfile()}
+            onMenuPress={() => navigateToMembershipApplications()}
+            onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
       case 'membership-applications':
       default:
         return (
@@ -347,6 +500,7 @@ function App() {
               if (tabKey === 'dashboard') navigateToDashboard();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'complaints') navigateToSupportTickets();
+              else if (tabKey === 'users') navigateToUsers();
               else if (tabKey === 'more') navigateToProfile();
             }}
             onSignupPress={() => navigateToCreateAccount()}
