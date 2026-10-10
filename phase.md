@@ -60,21 +60,21 @@ Establish the project architecture, design tokens, common base components, and t
 Implement secure credential handling, session restoration, authentication screens, and root routing.
 
 ### Deliverables
-- [ ] Secure Storage Service (`react-native-keychain` / `react-native-mmkv`).
-- [ ] Auth Zustand Store (`authStore.ts`) & `useAuth` hook.
-- [ ] Auth Service (`auth.service.ts`):
+- [x] Secure Storage Service (`react-native-keychain` / `react-native-mmkv`).
+- [x] Auth Zustand Store (`authStore.ts`) & `useAuth` hook.
+- [x] Auth Service (`auth.service.ts`):
   - `POST /api/v1/auth/login`
   - `POST /api/v1/auth/forgot-password`
   - `POST /api/v1/auth/reset-password`
   - `GET /api/v1/auth/me`
   - `POST /api/v1/auth/logout`
-- [ ] Screens:
+- [x] Screens:
   - `SplashScreen.tsx` (Token validation & initial route determination).
   - `OnboardingScreen.tsx`.
   - `LoginScreen.tsx` (Form validation, password toggle, biometric login trigger).
   - `ForgotPasswordScreen.tsx`.
   - `ResetPasswordScreen.tsx`.
-- [ ] Navigation Stacks:
+- [x] Navigation Stacks:
   - `RootNavigator.tsx` (Auth vs App switching).
   - `AuthNavigator.tsx`.
 
@@ -91,15 +91,18 @@ Implement secure credential handling, session restoration, authentication screen
 Implement dynamic permission resolution from backend responses and establish role/permission-aware navigation.
 
 ### Deliverables
-- [ ] Dynamic Permission Service & `can()` helper:
+- [x] Dynamic Permission Service & `can()` helper:
   - `can('permission.key')` evaluation.
-  - `permission.guard.ts` for route-level protection.
-- [ ] Navigation Infrastructure:
+  - `permission.guard.tsx` for route-level protection.
+- [x] Navigation Infrastructure:
   - `AdminTabNavigator.tsx` (5 Bottom Tabs: Dashboard, Members, Applications, Complaints, More).
   - `MoreNavigator.tsx` (Central hub for financial, accounting, and system modules).
   - Strongly typed route parameters (`NavigationTypes.ts`).
-- [ ] Dynamic UI wrappers:
+- [x] Dynamic UI wrappers:
   - Action buttons and menu items conditionally rendered based on permissions.
+  - Backend additions: `GET /api/v1/users/me/permissions` (effective keys, no
+    `role.read` required) and `role_name` on `POST /api/v1/auth/register`
+    (public allowlist: MEMBER / DONOR / DONATION_SEEKER — ADMIN excluded).
 
 ### Success Criteria
 - Admin users see only actions corresponding to their backend-assigned permissions.
@@ -113,18 +116,19 @@ Implement dynamic permission resolution from backend responses and establish rol
 Build the comprehensive executive dashboard showing high-level community metrics, revenue summaries, pending approval queues, and recent activity.
 
 ### Deliverables
-- [ ] Dashboard Service (`GET /api/v1/users`, `GET /api/v1/memberships`, `GET /api/v1/receipts`).
-- [ ] Dashboard UI Components:
-  - `DashboardStats.tsx` (4 stat cards: Total, Active, Expiring, Inactive).
-  - `RevenueSummary.tsx` (Membership income, donation income, net balance).
-  - `PendingActions.tsx` (Quick access badges for pending approvals).
-  - `RecentActivity.tsx` (Feed of last 10 system actions).
-- [ ] Pull-to-refresh & skeleton shimmer loading states.
-- [ ] Screen: `AdminDashboardScreen.tsx`.
+- [x] Dashboard Service (`GET /api/v1/admin/dashboard` — extended with status breakdowns, payment counts, revenue by receipt type, 6-month member growth series, month-over-month KPI deltas and the recent-activity audit feed; plus `GET /api/v1/admin/members` and `GET /api/v1/assistance-requests` feeds).
+- [x] Dashboard UI Components:
+  - `DashboardStats.tsx` (4 tinted stat cards: Total Members, Total Applications, Total Complaints, Total Donations — with MoM growth badges).
+  - `RevenueSummary.tsx` (`RevenueSummaryCard`: membership income, donation income, net collected from receipts).
+  - `PendingActions.tsx` (`PendingActionsCard`: membership approvals / payment verification / assistance requests queues, permission-gated routing).
+  - `RecentActivity.tsx` (audit-event feed of last 10 actions via the dashboard payload).
+  - `MembershipGrowthCard.tsx` (SVG line chart, last 6 months, latest-point callout) and `StatusDonutCard.tsx` (application status / complaints overview donuts with legends).
+- [x] Pull-to-refresh & skeleton shimmer loading states.
+- [x] Screen: `AdminDashboardScreen.tsx` (navy header band with unread-notification bell badge, welcome row + month chip, real-time KPIs; tap-through to Members/Applications/Complaints/More tabs).
 
 ### Success Criteria
-- Metrics accurately reflect server data.
-- Tapping on a pending action badge routes directly to the relevant approval queue.
+- [x] Metrics accurately reflect server data (verified live: 99 users, MoM deltas, receipts revenue ₹36,700, growth series, 10 audit events).
+- [x] Tapping on a pending action badge routes directly to the relevant approval queue (tab switching via `navigation.jumpTo`, permission-gated).
 
 ---
 

@@ -12,7 +12,6 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import {
   ChevronLeftIcon,
@@ -184,24 +183,32 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
     }
 
     try {
-      const results = await pick({
-        type: [types.pdf, types.images],
-        allowMultiSelection: false,
-      });
+      const docPickerMod: any = await import('@react-native-documents/picker' as any).catch(() => null);
+      const picker = docPickerMod?.pick ? docPickerMod : docPickerMod?.default;
+      if (picker?.pick) {
+        const results = await picker.pick({
+          type: [picker.types?.pdf, picker.types?.images].filter(Boolean),
+          allowMultiSelection: false,
+        });
 
-      if (results && results.length > 0) {
-        const picked = results[0];
-        const fileName = picked.name || `${getDocPrefix()}_document.pdf`;
-        const sizeBytes = picked.size ?? 250 * 1024;
-        const mimeType = picked.type || 'application/pdf';
-        validateAndDeliverFile(fileName, sizeBytes, mimeType, picked.uri);
+        if (results && results.length > 0) {
+          const picked = results[0];
+          const fileName = picked.name || `${getDocPrefix()}_document.pdf`;
+          const sizeBytes = picked.size ?? 250 * 1024;
+          const mimeType = picked.type || 'application/pdf';
+          validateAndDeliverFile(fileName, sizeBytes, mimeType, picked.uri);
+        }
+      } else {
+        // Fallback to gallery if documents picker is unavailable on this build
+        await handleChooseFromGallery();
       }
     } catch (err: any) {
-      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
+      if (err?.code === 'OPERATION_CANCELED' || err?.message?.includes('cancel')) {
         // User cancelled, return safely without error
         return;
       }
       console.warn('DocumentPicker Error:', err);
+      await handleChooseFromGallery();
     }
   };
 

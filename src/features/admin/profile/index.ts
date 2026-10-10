@@ -2,7 +2,9 @@
  * Admin profile feature — My Profile flow (profile page, personal
  * information edit, admin details edit, My ID Card page).
  */
-export { default as ProfileScreen } from './screens/ProfileScreen';
-export { default as EditPersonalInfoScreen } from './screens/EditPersonalInfoScreen';
-export { default as AdminDetailsScreen } from './screens/AdminDetailsScreen';
-export { default as MyIdCardScreen } from './screens/MyIdCardScreen';
+export { ProfileScreen, default as ProfileScreenDefault } from './screens/ProfileScreen';
+export { EditPersonalInfoScreen, default as EditPersonalInfoScreenDefault } from './screens/EditPersonalInfoScreen';
+export { AdminDetailsScreen, default as AdminDetailsScreenDefault } from './screens/AdminDetailsScreen';
+export { MyIdCardScreen, default as MyIdCardScreenDefault } from './screens/MyIdCardScreen';
+export * from './types/profile.types';
+export * from './profileStore';

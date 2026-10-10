@@ -26,9 +26,9 @@ import {
 } from '../../../../core';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppBadge } from '../../../../core/components/common/AppBadge';
-import { DonationsTopBar } from '../../donations/components/DonationsTopBar';
-import { DonationsBottomNav } from '../../donations/components/DonationsBottomNav';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
+import { DonationsBottomNav } from '../../donations/components/DonationsBottomNav';
 import {
   navigateToProfileEditPersonal,
   navigateToProfileAdminDetails,
@@ -38,7 +38,8 @@ import {
 } from '../../../../core/navigation/appRouter';
 import { ProfileSectionCard } from '../components/ProfileSectionCard';
 import { ProfileInfoRow } from '../components/ProfileInfoRow';
-import { ProfileToast } from '../components/ProfileToast';
+import { ProfileToast, ToastState } from '../components/ProfileToast';
+import { AvatarPickerModal } from '../components/AvatarPickerModal';
 import { MyIdCard } from '../components/MyIdCard';
 import {
   PersonIcon,
@@ -52,47 +53,93 @@ import {
 } from '../components/ProfileIcons';
 import { useIdCardFiles } from '../hooks/useIdCardFiles';
 
-export const ProfileScreen: React.FC = () => {
+export interface ProfileScreenProps {
+  onBack?: () => void;
+  onNavigate?: (target: string) => void;
+  onEditPersonal?: () => void;
+  onEditAdminDetails?: () => void;
+  onViewIdCard?: () => void;
+}
+
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({
+  onBack,
+  onNavigate,
+  onEditPersonal,
+  onEditAdminDetails,
+  onViewIdCard,
+}) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const profile = useProfileStore(state => state.profile);
+  const updateAvatar = useProfileStore(state => state.updateAvatar);
   const consumeStagedMessage = useProfileStore(
     state => state.consumeStagedMessage,
   );
 
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | ToastState | null>(null);
   const { download, busyAction } = useIdCardFiles({
     onMessage: setToastMessage,
+    profile,
   });
 
-  // Toast auto-dismiss (same 3.5s cadence as the Donations screen).
+  const fetchProfile = useProfileStore(state => state.fetchProfile);
+
   useEffect(() => {
-    if (!toastMessage) {
-      return undefined;
-    }
-    const timer = setTimeout(() => setToastMessage(null), 3500);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const handleSelectAvatar = async (url: string | null) => {
+    await updateAvatar(url);
+    setToastMessage({
+      message: 'Profile photo updated successfully.',
+      variant: 'success',
+    });
+  };
 
   // Edit screens stage success messages here before navigating back.
   useEffect(() => {
     const staged = consumeStagedMessage();
     if (staged) {
-      setToastMessage(staged);
+      setToastMessage({ message: staged, variant: 'success' });
     }
   }, [consumeStagedMessage]);
+
+  const handleEditPersonal = () => {
+    if (onEditPersonal) {
+      onEditPersonal();
+    } else if (onNavigate) {
+      onNavigate('EditPersonalInfo');
+    }
+  };
+
+  const handleEditAdminDetails = () => {
+    if (onEditAdminDetails) {
+      onEditAdminDetails();
+    } else if (onNavigate) {
+      onNavigate('AdminDetails');
+    }
+  };
+
+  const handleViewIdCard = () => {
+    if (onViewIdCard) {
+      onViewIdCard();
+    } else if (onNavigate) {
+      onNavigate('MyIdCard');
+    }
+  };
 
   // Inline ID card keeps the reference proportions on narrow screens.
   const cardWidth = Math.min(windowWidth - 2 * Spacing.lg - 2 * Spacing.md, 340);
 
   return (
     <View style={styles.screen}>
-      {/* Existing HRSJM admin header */}
-      <DonationsTopBar
-        paddingTop={insets.top}
-        onMenuPress={() => setToastMessage('Menu')}
-        onBellPress={() => setToastMessage('You have 3 notifications')}
-        onProfilePress={() => setToastMessage('Admin Profile')}
+      {/* Unified HRSJM Admin Header */}
+      <AdminHeader
+        title="My Profile"
+        showBack={Boolean(onBack)}
+        onBack={onBack}
+        onNavigate={onNavigate}
       />
 
       <ScrollView
@@ -106,9 +153,25 @@ export const ProfileScreen: React.FC = () => {
           Manage your personal information and account settings.
         </Text>
 
-        {/* Admin summary card */}
+        {/* Admin summary card with Avatar Pencil Edit */}
         <View style={[styles.summaryCard, { marginTop: Spacing.base }]}>
-          <AppAvatar name={profile.accountName} size={46} />
+          <TouchableOpacity
+            style={styles.avatarTouchable}
+            onPress={() => setAvatarPickerVisible(true)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
+          >
+            <AppAvatar
+              name={profile.accountName}
+              imageUrl={profile.avatar}
+              size={50}
+            />
+            <View style={styles.pencilBadge}>
+              <Text style={styles.pencilIcon}>✏️</Text>
+            </View>
+          </TouchableOpacity>
+
           <View style={styles.summaryIdentity}>
             <Text style={styles.summaryName} numberOfLines={1}>
               {profile.accountName}
@@ -122,7 +185,7 @@ export const ProfileScreen: React.FC = () => {
           </View>
           <TouchableOpacity
             style={styles.myIdButton}
-            onPress={navigateToProfileIdCard}
+            onPress={handleViewIdCard}
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel="Open My ID Card"
@@ -138,7 +201,7 @@ export const ProfileScreen: React.FC = () => {
           icon={<PersonIcon size={18} />}
           title="Personal Information"
           backgroundColor={AdminColors.primaryLight}
-          onEdit={navigateToProfileEditPersonal}
+          onEdit={handleEditPersonal}
           style={styles.sectionGap}
         >
           <ProfileInfoRow
@@ -164,18 +227,13 @@ export const ProfileScreen: React.FC = () => {
           icon={<BuildingIcon size={18} />}
           title="Admin Details"
           backgroundColor={AdminColors.primaryLight}
-          onEdit={navigateToProfileAdminDetails}
+          onEdit={handleEditAdminDetails}
           style={styles.sectionGap}
         >
           <ProfileInfoRow
             icon={<BuildingIcon size={16} color={AdminColors.textSecondary} />}
             label="Role"
             value={profile.role}
-          />
-          <ProfileInfoRow
-            icon={<PersonIcon size={16} color={AdminColors.textSecondary} />}
-            label="Department"
-            value={profile.department}
           />
           <ProfileInfoRow
             icon={<BadgeCheckIcon size={16} />}
@@ -203,7 +261,7 @@ export const ProfileScreen: React.FC = () => {
 
           <TouchableOpacity
             activeOpacity={0.9}
-            onPress={navigateToProfileIdCard}
+            onPress={handleViewIdCard}
             accessibilityRole="button"
             accessibilityLabel="Open the full My ID Card page"
             style={styles.idCardWrap}
@@ -213,10 +271,8 @@ export const ProfileScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Download action — pinned directly above the bottom navigation
-          (matching the reference); content padding keeps it clear of
-          the cards while scrolling. */}
-      <View style={styles.downloadPanel}>
+      {/* Download action — pinned directly above bottom */}
+      <View style={[styles.downloadPanel, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <AppButton
           title={
             busyAction === 'download' ? 'Generating PDF...' : 'Download ID Card'
@@ -231,6 +287,14 @@ export const ProfileScreen: React.FC = () => {
         />
       </View>
 
+      {/* Avatar Picker Modal */}
+      <AvatarPickerModal
+        visible={avatarPickerVisible}
+        currentAvatarUrl={profile.avatar}
+        onClose={() => setAvatarPickerVisible(false)}
+        onSelectAvatar={handleSelectAvatar}
+      />
+
       {/* Existing HRSJM bottom navigation */}
       <DonationsBottomNav
         bottomInset={insets.bottom}
@@ -243,17 +307,21 @@ export const ProfileScreen: React.FC = () => {
           } else if (key === 'more') {
             // Already on profile
           } else {
-            setToastMessage(
-              `${key.replace('_', ' ').replace(/^\w/, c => c.toUpperCase())} tab`,
-            );
+            setToastMessage({
+              type: 'info',
+              message: `${key.replace('_', ' ').replace(/^\w/, c => c.toUpperCase())} tab`,
+            });
           }
         }}
       />
 
-      {/* Floating toast (preparing-to-share + generic messages) */}
+      {/* Floating toast */}
       {toastMessage ? (
         <View style={[styles.toastHost, { top: insets.top + 70 }]}>
-          <ProfileToast message={toastMessage} />
+          <ProfileToast
+            message={toastMessage}
+            onDismiss={() => setToastMessage(null)}
+          />
         </View>
       ) : null}
     </View>
@@ -295,6 +363,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     ...Shadows.card,
+  },
+  avatarTouchable: {
+    position: 'relative',
+  },
+  pencilBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#0F172A',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  pencilIcon: {
+    fontSize: 9.5,
+    lineHeight: 11,
   },
   summaryIdentity: {
     flex: 1,

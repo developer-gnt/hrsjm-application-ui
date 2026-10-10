@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   ImageBackground,
   StyleSheet,
   Text,
@@ -9,10 +10,10 @@ import {
 import { AdminColors } from '../../../../core';
 import { AdminProfile } from '../types/profile.types';
 import { QrCode } from './QrCode';
-import { CrestLogo } from './ProfileIcons';
 
-// Background asset — official HRSJM background image
+// Official HRSJM assets
 const ID_CARD_BG = require('../../../../assets/id_card_bg.png');
+const OFFICIAL_LOGO = require('../../../../assets/logo/logo.png');
 
 interface MyIdCardProps {
   profile: AdminProfile;
@@ -22,36 +23,34 @@ interface MyIdCardProps {
 }
 
 export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => {
-  // Reference ratio: card is approximately 1.58:1 (w:h)
-  const height = width * 0.635;
-  const borderRadius = width * 0.04;
+  // Exact aspect ratio of physical standard ID card (w: 85.6mm, h: 54mm ≈ 1.585)
+  const height = width / 1.585;
+  const radius = width * 0.04;
 
-  // Header geometry matching REFERENCE IMAGE 2
-  const headerHeight = height * 0.33;
-  const headerShapeWidth = width * 0.76;
-  const headerCurveRadius = width * 0.25;
-  const goldLineWidth = Math.max(2.5, width * 0.007);
+  // Sizing tokens scaled to width
+  const padH = width * 0.045;
+  const padV = height * 0.05;
 
-  // Padding
-  const padH = width * 0.04;
-  const padV = height * 0.035;
+  // Header cream shape with curve
+  const headerWidth = width * 0.72;
+  const headerHeight = height * 0.32;
+  const headerCurveRadius = width * 0.055;
+  const goldLineWidth = Math.max(1.5, width * 0.005);
 
-  // Crest logo size — sized to fit vertically in header
-  const crestSize = headerHeight * 0.74;
-
-  // Typography scales
-  const brandSize = Math.max(13, width * 0.062);
+  const crestSize = width * 0.11;
+  const brandSize = Math.max(11, width * 0.038);
   const subtitleSize = Math.max(6, width * 0.021);
-  const hindiSize = Math.max(6.5, width * 0.023);
-  const nameSize = Math.max(14, width * 0.062);
-  const memberTypeSize = Math.max(10, width * 0.038);
-  const infoLabelSize = Math.max(7, width * 0.027);
-  const infoValueSize = Math.max(7, width * 0.027);
-  const badgeFontSize = Math.max(8, width * 0.028);
-  const tapToViewSize = Math.max(7, width * 0.024);
+  const hindiSize = Math.max(7, width * 0.024);
 
-  // QR code size
-  const qrSize = height * 0.40;
+  const badgeFontSize = Math.max(7.5, width * 0.025);
+
+  const nameSize = Math.max(13, width * 0.044);
+  const memberTypeSize = Math.max(8.5, width * 0.027);
+  const infoLabelSize = Math.max(7.5, width * 0.024);
+  const infoValueSize = Math.max(8, width * 0.025);
+
+  const qrSize = width * 0.18;
+  const tapToViewSize = Math.max(6.5, width * 0.02);
 
   return (
     <View
@@ -60,24 +59,23 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
         {
           width,
           height,
-          borderRadius,
+          borderRadius: radius,
         },
         style,
       ]}
     >
-      {/* ── CARD FULL BACKGROUND: official navy background image ──────── */}
       <ImageBackground
         source={ID_CARD_BG}
         style={styles.fullBg}
-        imageStyle={styles.fullBgImage}
+        imageStyle={[styles.fullBgImage, { borderRadius: radius }]}
         resizeMode="cover"
       >
-        {/* ── TOP CREAM HEADER AREA WITH GOLD CURVE ───────────────────── */}
+        {/* ── HEADER CREAM SHAPE (Gold curve border) ────────────────── */}
         <View
           style={[
             styles.headerCreamShape,
             {
-              width: headerShapeWidth,
+              width: headerWidth,
               height: headerHeight,
               borderBottomRightRadius: headerCurveRadius,
               borderBottomWidth: goldLineWidth,
@@ -96,8 +94,15 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
               },
             ]}
           >
-            {/* Crest Logo */}
-            <CrestLogo size={crestSize} />
+            {/* Official HRSJM Brand Logo (Golden Shield & Dove) */}
+            <Image
+              source={OFFICIAL_LOGO}
+              style={{
+                width: crestSize * 1.15,
+                height: crestSize * 1.15,
+              }}
+              resizeMode="contain"
+            />
 
             {/* Identity Text */}
             <View style={[styles.headerIdentity, { marginLeft: width * 0.022 }]}>
@@ -155,6 +160,28 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
             },
           ]}
         >
+          {/* Optional Member Photo / Avatar */}
+          {profile.avatar ? (
+            <View
+              style={[
+                styles.avatarBox,
+                {
+                  width: width * 0.165,
+                  height: width * 0.195,
+                  borderRadius: width * 0.02,
+                  marginRight: width * 0.025,
+                  borderWidth: Math.max(1, width * 0.004),
+                },
+              ]}
+            >
+              <Image
+                source={{ uri: profile.avatar }}
+                style={styles.avatarPhoto}
+                resizeMode="cover"
+              />
+            </View>
+          ) : null}
+
           {/* Left Column: Name, Type, Info Rows */}
           <View style={styles.bodyLeft}>
             {/* Member Name */}
@@ -332,6 +359,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  avatarBox: {
+    borderColor: '#CAA048',
+    backgroundColor: '#0A2550',
+    overflow: 'hidden',
+  },
+  avatarPhoto: {
+    width: '100%',
+    height: '100%',
   },
   bodyLeft: {
     flex: 1,

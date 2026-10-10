@@ -1,7 +1,7 @@
 import React from 'react';
-import { StatusBar, useColorScheme, View, StyleSheet } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { StatusBar, useColorScheme, View, StyleSheet, Platform } from 'react-native';
+import { AppProviders } from './src/app/providers/AppProviders';
+import { RootNavigator } from './src/app/navigation/RootNavigator';
 import {
   DonationsScreen,
   ReceiptDetailsPage,
@@ -74,18 +74,8 @@ import {
   navigateToUserFilter,
 } from './src/core/navigation/appRouter';
 
-// Temporary app shell: navigation infrastructure is not built yet, so
-// screens are hosted directly and switched by the lightweight hash
-// router (`#/create-account`, `#/create-account/additional`, `#/create-account/verification`, etc.)
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 30_000,
-    },
-  },
-});
+// Lightweight hash router preview shell on web (`#/create-account`, `#/users`, etc.),
+// delegating to RootNavigator on native platforms.
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -510,12 +500,14 @@ function App() {
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+    <AppProviders>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      {Platform.OS === 'web' ? (
         <View style={styles.container}>{renderRoute()}</View>
-      </SafeAreaProvider>
-    </QueryClientProvider>
+      ) : (
+        <RootNavigator />
+      )}
+    </AppProviders>
   );
 }
 

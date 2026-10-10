@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   RefreshControl,
   Text,
@@ -21,6 +20,7 @@ import {
   AppErrorState,
   SkeletonCard,
   formatDate,
+  feedback,
 } from '../../../../core';
 import {
   useDonations,
@@ -43,12 +43,13 @@ import { DonationSearch } from '../components/DonationSearch';
 import { DonationFilters } from '../components/DonationFilters';
 import { DonationCard } from '../components/DonationCard';
 import { DonationSummary } from '../components/DonationSummary';
-import { DonationsTopBar } from '../components/DonationsTopBar';
-import { DonationsBottomNav } from '../components/DonationsBottomNav';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { DonationsDateSelector } from '../components/DonationsDateSelector';
 import { DateRangePickerModal } from '../components/DateRangePickerModal';
 import { AddDonationModal } from '../components/AddDonationModal';
+import { DonationReceiptModal } from '../components/DonationReceiptModal';
 import { DonationDetailsModal } from '../components/DonationDetailsModal';
+import { DonationsBottomNav } from '../components/DonationsBottomNav';
 import {
   navigateToReceipt,
   navigateToProfile,
@@ -72,7 +73,19 @@ interface TabItem {
   count: number;
 }
 
-export const DonationsScreen: React.FC = () => {
+export interface DonationsScreenProps {
+  onBack?: () => void;
+  showBack?: boolean;
+  onNavigate?: (target: string) => void;
+  onViewReceipt?: (donationId: string) => void;
+}
+
+export const DonationsScreen: React.FC<DonationsScreenProps> = ({
+  onBack,
+  showBack,
+  onNavigate,
+  onViewReceipt,
+}) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
 
@@ -96,6 +109,9 @@ export const DonationsScreen: React.FC = () => {
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [receiptModalVisible, setReceiptModalVisible] = useState(false);
+  const [selectedRowForReceipt, setSelectedRowForReceipt] =
+    useState<DonationRowModel | null>(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [selectedRowForDetails, setSelectedRowForDetails] =
     useState<DonationRowModel | null>(null);
@@ -212,10 +228,13 @@ export const DonationsScreen: React.FC = () => {
     setActiveTab(key);
   };
 
-  // Opens the Receipt Details page for the selected donation (replaces
-  // the old receipt popup).
   const handleViewReceipt = (row: DonationRowModel) => {
-    navigateToReceipt(row.id);
+    if (onViewReceipt) {
+      onViewReceipt(row.id);
+    } else {
+      setSelectedRowForReceipt(row);
+      setReceiptModalVisible(true);
+    }
   };
 
   const handleViewDetails = (row: DonationRowModel) => {
@@ -224,33 +243,34 @@ export const DonationsScreen: React.FC = () => {
   };
 
   const handleRefund = (row: DonationRowModel) => {
-    Alert.alert(
-      'Confirm Refund',
-      `Are you sure you want to refund ₹${row.amount.toLocaleString(
+    feedback.confirm({
+      title: 'Confirm Refund',
+      message: `Are you sure you want to refund ₹${row.amount.toLocaleString(
         'en-IN',
       )} to ${row.donorName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Refund',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              if (!previewMode) {
-                await refundDonationMutation.mutateAsync({
-                  id: row.id,
-                  reason: 'Admin initiated refund from Donations screen',
-                });
-              }
-              showToast(`Refund processed for ${row.donorName}.`);
-              handleRefresh();
-            } catch {
-              showToast('Unable to complete refund. Please try again.');
-            }
-          },
-        },
-      ],
-    );
+      confirmText: 'Refund',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          if (!previewMode) {
+            await refundDonationMutation.mutateAsync({
+              id: row.id,
+              reason: 'Admin initiated refund from Donations screen',
+            });
+          }
+          feedback.success(
+            'Refund Processed',
+            `Refund of ₹${row.amount.toLocaleString('en-IN')} for ${row.donorName} completed.`,
+          );
+          handleRefresh();
+        } catch {
+          feedback.error(
+            'Refund Failed',
+            'Unable to complete refund. Please try again.',
+          );
+        }
+      },
+    });
   };
 
   const handleAddDonation = async (input: CreateDonationInput) => {
@@ -411,14 +431,12 @@ export const DonationsScreen: React.FC = () => {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.topBarHost}>
-        <DonationsTopBar
-          paddingTop={insets.top}
-          onMenuPress={() => showToast('Menu')}
-          onBellPress={() => showToast('You have 3 notifications')}
-          onProfilePress={navigateToProfile}
-        />
-      </View>
+      <AdminHeader
+        showBack={Boolean(onBack || showBack)}
+        onBack={onBack}
+        onNavigate={onNavigate}
+        unreadCount={3}
+      />
 
       {toastMessage && (
         <View style={[styles.toastContainer, { top: insets.top + 70 }]}>
@@ -479,8 +497,7 @@ export const DonationsScreen: React.FC = () => {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: insets.top + 81,
-            paddingBottom: insets.bottom + 79,
+            paddingBottom: insets.bottom + Spacing.xl,
           },
         ]}
       />
@@ -496,13 +513,10 @@ export const DonationsScreen: React.FC = () => {
               navigateToMembershipApplications();
             } else if (key === 'more') {
               navigateToProfile();
-            } else {
-              showToast(`${key.replace('_', ' ').toUpperCase()} tab`);
             }
           }}
         />
       </View>
-
       <DonationFilters
         visible={filtersVisible}
         selectedStatus={status}
@@ -532,6 +546,15 @@ export const DonationsScreen: React.FC = () => {
         isSubmitting={createDonationMutation.isPending}
       />
 
+      <DonationReceiptModal
+        visible={receiptModalVisible}
+        row={selectedRowForReceipt}
+        onClose={() => {
+          setReceiptModalVisible(false);
+          setSelectedRowForReceipt(null);
+        }}
+      />
+
       <DonationDetailsModal
         visible={detailsModalVisible}
         row={selectedRowForDetails}
@@ -550,22 +573,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: AdminColors.background,
-  },
-  topBarHost: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    elevation: 10,
-  },
-  bottomNavHost: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    elevation: 10,
   },
   toastContainer: {
     position: 'absolute',

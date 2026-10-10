@@ -1,7 +1,7 @@
 /**
- * Admin Details edit screen — Role / Department / Account Status
- * bottom-sheet selects. Saves to the local profile store (UI phase)
- * and stages the success toast for the profile screen.
+ * Admin Details edit screen — Role & Account Status selects.
+ * In edit mode, we have only 4 roles: Admin, Donar Seeker, User, Member.
+ * Department field has been removed as per specification.
  */
 import React, { useState } from 'react';
 import {
@@ -18,27 +18,17 @@ import {
   Typography,
   Shadows,
 } from '../../../../core';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppButton } from '../../../../core/components/common/AppButton';
-import { DonationsTopBar } from '../../donations/components/DonationsTopBar';
 import { useProfileStore } from '../profileStore';
-import { navigateToProfile } from '../../../../core/navigation/appRouter';
 import { AdminDetailsInput, AccountStatus } from '../types/profile.types';
 import { AppSelect } from '../components/AppSelect';
 
 const ROLE_OPTIONS = [
-  'Administrator',
-  'Super Admin',
-  'Manager',
-  'Coordinator',
-  'Volunteer',
-];
-
-const DEPARTMENT_OPTIONS = [
-  'Management',
-  'Human Resources',
-  'Finance',
-  'Operations',
-  'Outreach',
+  'Admin',
+  'Donar Seeker',
+  'User',
+  'Member',
 ];
 
 const ACCOUNT_STATUS_OPTIONS: AccountStatus[] = [
@@ -47,39 +37,59 @@ const ACCOUNT_STATUS_OPTIONS: AccountStatus[] = [
   'Suspended',
 ];
 
-export const AdminDetailsScreen: React.FC = () => {
+export interface AdminDetailsScreenProps {
+  onBack?: () => void;
+  onNavigate?: (target: string) => void;
+  onSaved?: () => void;
+}
+
+export const AdminDetailsScreen: React.FC<AdminDetailsScreenProps> = ({
+  onBack,
+  onNavigate,
+  onSaved,
+}) => {
   const insets = useSafeAreaInsets();
   const profile = useProfileStore(state => state.profile);
   const updateAdminDetails = useProfileStore(state => state.updateAdminDetails);
   const stageMessage = useProfileStore(state => state.stageMessage);
 
   const [form, setForm] = useState<AdminDetailsInput>({
-    role: profile.role,
-    department: profile.department,
+    role: ROLE_OPTIONS.includes(profile.role) ? profile.role : 'Admin',
     accountStatus: profile.accountStatus,
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Local state only — the API service will be added later without
-      // touching this screen.
-      updateAdminDetails(form);
+      await updateAdminDetails(form);
       stageMessage('Admin details updated successfully.');
-      navigateToProfile();
+      if (onSaved) {
+        onSaved();
+      } else if (onNavigate) {
+        onNavigate('MyProfile');
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    navigateToProfile();
+    if (onBack) {
+      onBack();
+    } else if (onNavigate) {
+      onNavigate('MyProfile');
+    }
   };
 
   return (
     <View style={styles.screen}>
-      <DonationsTopBar paddingTop={insets.top} />
+      <AdminHeader
+        title="Admin Details"
+        showBack={true}
+        onBack={handleCancel}
+        onNavigate={onNavigate}
+      />
 
       <ScrollView
         style={styles.flex}
@@ -98,15 +108,6 @@ export const AdminDetailsScreen: React.FC = () => {
             value={form.role}
             options={ROLE_OPTIONS}
             onSelect={value => setForm(prev => ({ ...prev, role: value }))}
-          />
-
-          <AppSelect
-            label="Department"
-            value={form.department}
-            options={DEPARTMENT_OPTIONS}
-            onSelect={value =>
-              setForm(prev => ({ ...prev, department: value }))
-            }
           />
 
           <AppSelect
@@ -176,14 +177,6 @@ const styles = StyleSheet.create({
     borderColor: AdminColors.border,
     padding: Spacing.base,
     ...Shadows.card,
-  },
-  selectIconRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  selectIcon: {
-    marginRight: Spacing.sm,
-    paddingBottom: Spacing.md + 14,
   },
   actionsRow: {
     flexDirection: 'row',

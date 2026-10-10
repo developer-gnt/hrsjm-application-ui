@@ -22,9 +22,8 @@ import {
 } from '../../../../core';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppInput } from '../../../../core/components/common/AppInput';
-import { DonationsTopBar } from '../../donations/components/DonationsTopBar';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
-import { navigateToProfile } from '../../../../core/navigation/appRouter';
 import { PersonalInfoInput } from '../types/profile.types';
 import { PersonIcon, MailIcon, PhoneIcon } from '../components/ProfileIcons';
 
@@ -40,7 +39,17 @@ interface FormErrors {
   phone?: string;
 }
 
-export const EditPersonalInfoScreen: React.FC = () => {
+export interface EditPersonalInfoScreenProps {
+  onBack?: () => void;
+  onNavigate?: (target: string) => void;
+  onSaved?: () => void;
+}
+
+export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
+  onBack,
+  onNavigate,
+  onSaved,
+}) => {
   const insets = useSafeAreaInsets();
   const profile = useProfileStore(state => state.profile);
   const updatePersonalInfo = useProfileStore(
@@ -89,27 +98,38 @@ export const EditPersonalInfoScreen: React.FC = () => {
 
     setIsSaving(true);
     try {
-      // Local state only — the API service will be added later without
-      // touching this screen.
-      updatePersonalInfo({
+      await updatePersonalInfo({
         fullName: form.fullName.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
       });
       stageMessage('Profile updated successfully.');
-      navigateToProfile();
+      if (onSaved) {
+        onSaved();
+      } else if (onNavigate) {
+        onNavigate('MyProfile');
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    navigateToProfile();
+    if (onBack) {
+      onBack();
+    } else if (onNavigate) {
+      onNavigate('MyProfile');
+    }
   };
 
   return (
     <View style={styles.screen}>
-      <DonationsTopBar paddingTop={insets.top} />
+      <AdminHeader
+        title="Edit Personal Info"
+        showBack={true}
+        onBack={handleCancel}
+        onNavigate={onNavigate}
+      />
 
       <KeyboardAvoidingView
         style={styles.flex}

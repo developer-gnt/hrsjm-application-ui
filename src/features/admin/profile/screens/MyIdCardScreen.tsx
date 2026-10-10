@@ -23,11 +23,10 @@ import {
 } from '../../../../core';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppBadge } from '../../../../core/components/common/AppBadge';
-import { DonationsTopBar } from '../../donations/components/DonationsTopBar';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
-import { navigateToProfile } from '../../../../core/navigation/appRouter';
 import { MyIdCard } from '../components/MyIdCard';
-import { ProfileToast } from '../components/ProfileToast';
+import { ProfileToast, ToastState } from '../components/ProfileToast';
 import {
   DownloadIcon,
   ShareIcon,
@@ -35,30 +34,50 @@ import {
 } from '../components/ProfileIcons';
 import { useIdCardFiles } from '../hooks/useIdCardFiles';
 
-export const MyIdCardScreen: React.FC = () => {
+export interface MyIdCardScreenProps {
+  onBack?: () => void;
+  onNavigate?: (target: string) => void;
+}
+
+export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
+  onBack,
+  onNavigate,
+}) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const profile = useProfileStore(state => state.profile);
 
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | ToastState | null>(null);
   const { download, share, busyAction } = useIdCardFiles({
     onMessage: setToastMessage,
+    profile,
   });
 
+  const fetchProfile = useProfileStore(state => state.fetchProfile);
+
   useEffect(() => {
-    if (!toastMessage) {
-      return undefined;
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (onNavigate) {
+      onNavigate('MyProfile');
     }
-    const timer = setTimeout(() => setToastMessage(null), 3500);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
+  };
 
   // Large preview card, capped so it stays elegant on tablets/web.
   const cardWidth = Math.min(windowWidth - 2 * Spacing.lg, 360);
 
   return (
     <View style={styles.screen}>
-      <DonationsTopBar paddingTop={insets.top} />
+      <AdminHeader
+        title="My ID Card"
+        showBack={true}
+        onBack={handleBack}
+        onNavigate={onNavigate}
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -68,7 +87,7 @@ export const MyIdCardScreen: React.FC = () => {
         {/* Back + title */}
         <TouchableOpacity
           style={styles.backButton}
-          onPress={navigateToProfile}
+          onPress={handleBack}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="Back to My Profile"
@@ -148,7 +167,10 @@ export const MyIdCardScreen: React.FC = () => {
 
       {toastMessage ? (
         <View style={[styles.toastHost, { top: insets.top + 70 }]}>
-          <ProfileToast message={toastMessage} />
+          <ProfileToast
+            message={toastMessage}
+            onDismiss={() => setToastMessage(null)}
+          />
         </View>
       ) : null}
     </View>

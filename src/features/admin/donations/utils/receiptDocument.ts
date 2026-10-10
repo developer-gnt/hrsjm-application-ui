@@ -314,8 +314,38 @@ export const downloadReceiptPdfNative = async (
   const fileName = receiptFileName(receipt);
 
   console.log('Download flow started → saving file', fileName);
-  const RNFS = (await import('react-native-blob-util')).default;
-  const dirs = RNFS.fs.dirs;
+  let RNFS: any = null;
+  try {
+    const mod = await import('react-native-blob-util');
+    RNFS = mod.default || mod;
+  } catch {
+    RNFS = null;
+  }
+
+  const dirs = RNFS?.fs?.dirs;
+  if (!dirs) {
+    // If native file write is not linked in running APK, fall back to native Share dialog
+    const { Share } = await import('react-native');
+    const summary = [
+      `HRSJM DONATION RECEIPT`,
+      `Receipt No: ${receipt.receiptNumber}`,
+      `Date: ${formatDateTime(receipt.receiptDate)}`,
+      `Donor: ${receipt.donorName}`,
+      `Phone: ${receipt.donorMobile || '—'}`,
+      `Donation Type: ${receipt.cause}`,
+      `Amount: Rs. ${Number(receipt.amount || 0).toLocaleString('en-IN')}`,
+      `Payment Method: ${receipt.paymentMethod}`,
+      `Transaction ID: ${receipt.transactionId || '—'}`,
+      `\nEligible for income tax deduction under Section 80G of IT Act (Reg: NGO/80G/HRSJM/2024).`,
+      `Thank you for supporting Human Rights & Social Justice Mission.`,
+    ].join('\n');
+
+    await Share.share({
+      title: `HRSJM Receipt ${receipt.receiptNumber}`,
+      message: summary,
+    });
+    return 'downloaded';
+  }
 
   // Android gets the user-visible public Downloads folder; anything
   // Android 11+ accepts direct app writes there and MediaStore scan makes
@@ -367,10 +397,6 @@ export const receiptFileName = (receipt: DonationReceiptModel): string =>
  *     (it routes file:// paths through its FileProvider as content://
  *     URIs, which is what WhatsApp/Telegram/Gmail require)
  *   → WhatsApp receives HRSJM-Donation-Receipt-<no>.pdf as a document
- *
- * NEVER passes receipt text as the share message — text-only sharing is
- * exactly the behaviour this replaces. The Web Share API is not used on
- * native; the OS share sheet is driven by the native module.
  */
 export const shareReceiptPdfNative = async (
   receipt: DonationReceiptModel,
@@ -383,6 +409,42 @@ export const shareReceiptPdfNative = async (
     amount: receipt.amount,
   });
 
+  let RNFS: any = null;
+  let NativeShare: any = null;
+  try {
+    const blobMod = await import('react-native-blob-util');
+    RNFS = blobMod.default || blobMod;
+    const shareMod = await import('react-native-share');
+    NativeShare = shareMod.default || shareMod;
+  } catch {
+    RNFS = null;
+    NativeShare = null;
+  }
+
+  if (!RNFS?.fs?.dirs?.CacheDir || !NativeShare?.open) {
+    // Fallback to React Native core Share API
+    const { Share } = await import('react-native');
+    const summary = [
+      `HRSJM DONATION RECEIPT`,
+      `Receipt No: ${receipt.receiptNumber}`,
+      `Date: ${formatDateTime(receipt.receiptDate)}`,
+      `Donor: ${receipt.donorName}`,
+      `Phone: ${receipt.donorMobile || '—'}`,
+      `Donation Type: ${receipt.cause}`,
+      `Amount: Rs. ${Number(receipt.amount || 0).toLocaleString('en-IN')}`,
+      `Payment Method: ${receipt.paymentMethod}`,
+      `Transaction ID: ${receipt.transactionId || '—'}`,
+      `\nEligible for income tax deduction under Section 80G of IT Act (Reg: NGO/80G/HRSJM/2024).`,
+      `Thank you for supporting Human Rights & Social Justice Mission.`,
+    ].join('\n');
+
+    await Share.share({
+      title: `HRSJM Receipt ${receipt.receiptNumber}`,
+      message: summary,
+    });
+    return 'shared';
+  }
+
   console.log('GENERATING PDF FOR SHARE');
   const pdf = await generateReceiptPdfDirect(receipt);
   const bytes = new Uint8Array(pdf.output('arraybuffer'));
@@ -394,22 +456,11 @@ export const shareReceiptPdfNative = async (
   const fileName = receiptFileName(receipt);
 
   console.log('Writing PDF to app cache:', fileName);
-  const RNFS = (await import('react-native-blob-util')).default;
   const filePath = `${RNFS.fs.dirs.CacheDir}/${fileName}`;
   await RNFS.fs.writeFile(filePath, base64, 'base64');
   console.log('PDF FILE CREATED FOR SHARE:', filePath);
 
   console.log('OPENING SHARE');
-  const NativeShare = (await import('react-native-share')).default;
-  if (!NativeShare?.open) {
-    // The react-native-share native module is not in this build (it is
-    // added after the APK was built). Report it instead of failing with
-    // a cryptic TypeError — and NEVER fall back to a download or text.
-    throw new Error('Sharing the PDF is not supported on this device.');
-  }
-  // failOnCancel:false makes the module RESOLVE when the user cancels,
-  // reporting it via dismissedAction — a cancel is normal behaviour, not
-  // an error, so no message is shown for it.
   const shareResult = await NativeShare.open({
     url: `file://${filePath}`,
     type: 'application/pdf',

@@ -25,8 +25,7 @@ import { DonationReceiptModel } from '../types/donations.types';
 import { donationsService } from '../services/donations.service';
 import { getPreviewReceipt } from '../services/donations.preview';
 import { donationStatusPresentation } from '../components/DonationStatusBadge';
-import { DonationsTopBar } from '../components/DonationsTopBar';
-import { navigateToDonations, navigateToProfile } from '../navigation';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import {
   buildReceiptHtml,
   downloadReceiptPDF,
@@ -39,9 +38,11 @@ import {
   shareReceiptPdfNative,
 } from '../utils/receiptDocument';
 
-interface ReceiptDetailsPageProps {
+export interface ReceiptDetailsPageProps {
   /** Donation whose receipt should be rendered (from the route). */
   donationId: string;
+  onBack?: () => void;
+  onNavigate?: (target: string) => void;
 }
 
 const formatAmount = (amount: number): string =>
@@ -86,6 +87,8 @@ const PrintIcon: React.FC<{ color: string }> = ({ color }) => (
  */
 export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
   donationId,
+  onBack,
+  onNavigate,
 }) => {
   const [receipt, setReceipt] = useState<DonationReceiptModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -168,7 +171,7 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
     : [];
 
   const handleBack = () => {
-    navigateToDonations();
+    onBack?.();
   };
 
   const getReceiptFileName = (): string =>
@@ -221,9 +224,9 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
         }
         // 'shared' (iOS save-to-files via share sheet) and 'cancelled' are silent.
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Receipt download error:', error);
-      setActionMessage('Unable to download the receipt PDF. Please try again.');
+      setActionMessage(error?.message || 'Unable to download the receipt PDF. Please try again.');
     } finally {
       setPendingAction(null);
     }
@@ -301,9 +304,7 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
     } catch (error: any) {
       console.error('Share Receipt error:', error);
       setActionMessage(
-        error?.message === 'Sharing the PDF is not supported on this device.'
-          ? error.message
-          : 'Unable to share the receipt PDF. Please try again.',
+        error?.message || 'Unable to share the receipt. Please try again.',
       );
     } finally {
       setPendingAction(null);
@@ -402,12 +403,11 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
 
   return (
     <View style={styles.screen}>
-      {/* Shared HRSJM admin header (same top bar as the Donations screen) */}
-      <DonationsTopBar
-        paddingTop={insets.top}
-        onMenuPress={() => setActionMessage('Menu')}
-        onBellPress={() => setActionMessage('You have 3 notifications')}
-        onProfilePress={navigateToProfile}
+      <AdminHeader
+        showBack={Boolean(onBack)}
+        onBack={handleBack}
+        onNavigate={onNavigate}
+        unreadCount={3}
       />
       <ScrollView
         style={styles.scroll}
