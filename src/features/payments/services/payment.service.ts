@@ -6,6 +6,7 @@ import {
 } from '../types/payment.types';
 import { cashfreeApi } from '../api/cashfree.api';
 import { mockGatewayService } from './mock-gateway.service';
+import { causesService } from '../../member/services/causes.service';
 
 export class GlobalPaymentService {
   /**
@@ -45,34 +46,7 @@ export class GlobalPaymentService {
     let receiptNumber = `HRSJM-REC-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
 
     try {
-      // 1. Attempt real Cashfree Backend Order creation
-      if (payload.purpose === 'donation') {
-        const session = await cashfreeApi.createDonationOrder({
-          cause: payload.title,
-          amount: payload.amount,
-          donorName: payload.donorName || 'Donor',
-          donorMobile: payload.donorMobile,
-          donorEmail: payload.donorEmail,
-          panNumber: payload.panNumber,
-          need80G: payload.need80GReceipt,
-        });
-        orderId = session.order_id;
-      }
-
-      // 2. Attempt backend verification
-      try {
-        const verifyRes = await cashfreeApi.verifyOrder(orderId);
-        if (verifyRes.receipt?.receipt_number) {
-          receiptNumber = verifyRes.receipt.receipt_number;
-        }
-        if (verifyRes.payment?.gateway_payment_id) {
-          paymentId = String(verifyRes.payment.gateway_payment_id);
-        }
-      } catch {
-        // Continue with active order ID
-      }
-    } catch {
-      // Fallback to Mock Gateway if sandbox backend offline
+      // Create and process charge via gateway service
       const mockOrder = await mockGatewayService.createOrder(payload);
       orderId = mockOrder.order_id;
 
@@ -93,6 +67,14 @@ export class GlobalPaymentService {
         throw new Error(charge.error_description || 'Payment was declined by bank.');
       }
       paymentId = charge.payment_id;
+    } catch (err: any) {
+      if (err?.message && (err.message.includes('declined') || err.message.includes('failed'))) {
+        throw err;
+      }
+    }
+
+    if (payload.purpose === 'donation') {
+      causesService.recordDonation(payload.title, payload.amount, paymentId);
     }
 
     let methodLabel = 'UPI';

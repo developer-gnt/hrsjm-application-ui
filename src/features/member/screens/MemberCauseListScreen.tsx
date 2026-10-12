@@ -188,7 +188,7 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
           </View>
           <View style={styles.kpiContentCol}>
             <Text style={[styles.kpiGridValue, { color: '#D97706' }]}>
-              {kpiStats.totalBeneficiaries}+
+              {kpiStats.totalBeneficiaries}
             </Text>
             <Text style={styles.kpiGridLabel} numberOfLines={1}>Lives Impacted</Text>
           </View>
@@ -201,7 +201,7 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
           </View>
           <View style={styles.kpiContentCol}>
             <Text style={[styles.kpiGridValue, { color: '#DC2626' }]}>
-              {kpiStats.totalDonors}+
+              {kpiStats.totalDonors}
             </Text>
             <Text style={styles.kpiGridLabel} numberOfLines={1}>Supporters</Text>
           </View>

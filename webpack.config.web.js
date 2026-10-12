@@ -21,7 +21,7 @@ module.exports = {
     proxy: [
       {
         context: '/api',
-        target: 'http://localhost:5000',
+        target: 'http://127.0.0.1:3000',
         changeOrigin: true,
       },
     ],
@@ -33,6 +33,11 @@ module.exports = {
       'react-native-blob-util': path.resolve(__dirname, 'web/mocks/react-native-blob-util.js'),
       'react-native-image-picker': path.resolve(__dirname, 'web/mocks/react-native-image-picker.js'),
       '@react-native-documents/picker': path.resolve(__dirname, 'web/mocks/react-native-documents-picker.js'),
+      'react-native-cashfree-pg-sdk': path.resolve(__dirname, 'web/mocks/react-native-cashfree-pg-sdk.js'),
+      'react-native-mmkv': path.resolve(__dirname, 'web/mocks/react-native-mmkv.js'),
+      'react-native-keychain': path.resolve(__dirname, 'web/mocks/react-native-keychain.js'),
+      'react-native-biometrics': path.resolve(__dirname, 'web/mocks/react-native-biometrics.js'),
+      '@react-native/assets-registry/registry': path.resolve(__dirname, 'web/mocks/assetsRegistry.js'),
     },
     extensions: [
       '.web.js',
@@ -47,6 +52,12 @@ module.exports = {
   },
   module: {
     rules: [
+      {
+        test: /\.m?js$/,
+        resolve: {
+          fullySpecified: false,
+        },
+      },
       {
         test: /\.(t|j)sx?$/,
         exclude: /node_modules(?!.*react-native-web)/,
