@@ -1,88 +1,162 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AdminColors, BorderRadius, Shadows } from '../../../../core/theme';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  AdminColors,
+  BorderRadius,
+  Shadows,
+  Spacing,
+} from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import type { AboutWorkArea } from '../types/about.types';
 
 interface AboutWorkCardProps {
   area: AboutWorkArea;
   onPress?: () => void;
+  fullWidth?: boolean;
 }
 
-/**
- * One work-area card of the About 3x3 grid (reference-locked, compact):
- * pale-gold circular icon container, navy title, muted blue-gray
- * description and the small gold arrow button pinned bottom-right.
- * Height is content-driven with descriptions capped at 3 lines, so every
- * row matches the compact height of the first row (long copy ellipsizes;
- * the full text stays in the accessibility label).
- */
 export const AboutWorkCard: React.FC<AboutWorkCardProps> = ({
   area,
   onPress,
-}) => (
-  <TouchableOpacity
-    style={styles.card}
-    onPress={onPress}
-    activeOpacity={0.85}
-    accessibilityRole="button"
-    accessibilityLabel={`${area.title.replace(/\n/g, ' ')} — ${area.description}`}
-  >
-    <View style={styles.iconCircle}>
-      <AppIcon name={area.icon} size={18} color={AdminColors.primaryDark} />
-    </View>
+  fullWidth = false,
+}) => {
+  const cleanTitle = area.title.replace(/\n/g, ' ');
 
-    <Text style={styles.title}>{area.title}</Text>
+  if (fullWidth) {
+    return (
+      <Pressable
+        style={({ pressed }) => [
+          styles.fullCard,
+          pressed && onPress && styles.pressed,
+        ]}
+        onPress={onPress}
+        disabled={!onPress}
+        accessibilityRole={onPress ? 'button' : undefined}
+        accessibilityLabel={`${cleanTitle} — ${area.description}`}
+      >
+        <View style={styles.iconCircle}>
+          <AppIcon name={area.icon} size={22} color={AdminColors.primaryDark} />
+        </View>
+        <View style={styles.fullCopy}>
+          <Text style={styles.title} numberOfLines={1}>
+            {cleanTitle}
+          </Text>
+          {area.description ? (
+            <Text style={styles.description} numberOfLines={2}>
+              {area.description}
+            </Text>
+          ) : null}
+        </View>
+        <View style={styles.arrowButton}>
+          <AppIcon name="arrow-right" size={13} color={AdminColors.textOnDark} />
+        </View>
+      </Pressable>
+    );
+  }
 
-    <Text style={styles.description} numberOfLines={3} ellipsizeMode="tail">
-      {area.description}
-    </Text>
-
-    <View style={styles.arrowButton}>
-      <AppIcon name="arrow-right" size={11} color={AdminColors.primaryDark} />
-    </View>
-  </TouchableOpacity>
-);
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        pressed && onPress && styles.pressed,
+      ]}
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={`${cleanTitle} — ${area.description}`}
+    >
+      <View style={styles.cardHeaderRow}>
+        <View style={styles.iconCircle}>
+          <AppIcon name={area.icon} size={22} color={AdminColors.primaryDark} />
+        </View>
+        <View style={styles.arrowButton}>
+          <AppIcon name="arrow-right" size={13} color={AdminColors.textOnDark} />
+        </View>
+      </View>
+      <View style={styles.copy}>
+        <Text style={styles.title} numberOfLines={2}>
+          {cleanTitle}
+        </Text>
+        {area.description ? (
+          <Text style={styles.description} numberOfLines={2}>
+            {area.description}
+          </Text>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+};
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
-    backgroundColor: AdminColors.cardSurface,
+    width: '48.5%',
+    minHeight: 126,
+    padding: 12,
+    backgroundColor: '#EEF4FF',
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: AdminColors.border,
-    padding: 10,
+    borderColor: '#D7E3F7',
+    ...Shadows.card,
+    justifyContent: 'flex-start',
+  },
+  fullCard: {
+    width: '100%',
+    minHeight: 76,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#EEF4FF',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#D7E3F7',
     ...Shadows.card,
   },
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: AdminColors.accentGoldLight,
+  pressed: {
+    opacity: 0.82,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F9EEC7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E7D69C',
+  },
+  copy: {
+    flex: 1,
+    justifyContent: 'flex-start',
+  },
+  fullCopy: {
+    flex: 1,
     justifyContent: 'center',
   },
   title: {
-    fontSize: 12.5,
-    lineHeight: 15,
+    fontSize: 14,
+    lineHeight: 18,
     fontWeight: '700',
     color: AdminColors.primaryDark,
-    marginTop: 6,
   },
   description: {
-    fontSize: 10,
-    lineHeight: 13.5,
-    color: AdminColors.textSecondary,
     marginTop: 4,
-    marginBottom: 6,
+    fontSize: 12,
+    lineHeight: 16,
+    color: AdminColors.textSecondary,
   },
   arrowButton: {
-    alignSelf: 'flex-end',
-    marginTop: 'auto',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: AdminColors.accentGoldLight,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: AdminColors.primaryDark,
     alignItems: 'center',
     justifyContent: 'center',
   },

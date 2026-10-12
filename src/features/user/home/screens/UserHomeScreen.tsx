@@ -1,5 +1,11 @@
-import React from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useRef } from 'react';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  View,
+  type ScrollViewInstance,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdminColors, Spacing } from '../../../../core/theme';
 import { HomeHeader } from '../components/HomeHeader';
@@ -27,6 +33,9 @@ import {
 } from '../data/home-preview-data';
 import { getImpactStats } from '../data/impact-stats-provider';
 import type { HomeTab } from '../types/home.types';
+import type { WhatWeDoId } from '../../what-we-do';
+import type { ActionPageId } from '../../action-pages';
+import { getHomeActionDestination } from '../utils/home-action-destination';
 
 export interface UserHomeScreenProps {
   /**
@@ -44,6 +53,10 @@ export interface UserHomeScreenProps {
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
   onOpenRight?: (rightId: string) => void;
+  onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
+  onOpenActionPage?: (pageId: ActionPageId) => void;
+  initialScrollOffset?: number;
+  onScrollOffsetChange?: (offset: number) => void;
 }
 
 export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
@@ -55,7 +68,13 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   onOpenEvents,
   onOpenNews,
   onOpenRight,
+  onOpenWhatWeDo,
+  onOpenActionPage,
+  initialScrollOffset = 0,
+  onScrollOffsetChange,
 }) => {
+  const hasRestoredScroll = useRef(false);
+  const scrollRef = useRef<ScrollViewInstance | null>(null);
   const showComingSoon = (feature: string) => {
     Alert.alert(feature, `"${feature}" is part of an upcoming Home phase.`);
   };
@@ -85,13 +104,44 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={event =>
+          onScrollOffsetChange?.(event.nativeEvent.contentOffset.y)
+        }
+        scrollEventThrottle={16}
+        onContentSizeChange={() => {
+          if (!hasRestoredScroll.current && initialScrollOffset > 0) {
+            hasRestoredScroll.current = true;
+            // The content height is available now, so this also restores offsets
+            // near the bottom reliably after returning from a destination page.
+            requestAnimationFrame(() => {
+              scrollRef.current?.scrollTo({
+                y: initialScrollOffset,
+                animated: false,
+              });
+            });
+          }
+        }}
+        ref={scrollRef}
       >
-        <HeroBanner onCtaPress={() => showComingSoon('Join the Movement')} />
+        <HeroBanner
+          onCtaPress={() => {
+            if (onOpenActionPage) {
+              onOpenActionPage('join');
+            } else {
+              showComingSoon('Join the Movement');
+            }
+          }}
+        />
 
         <View style={styles.quickActionsSection}>
           <QuickActionsRow
             actions={GUEST_QUICK_ACTIONS}
             onPressAction={action => {
+              const destination = getHomeActionDestination(action.id);
+              if (destination) {
+                onOpenActionPage?.(destination);
+                return;
+              }
               if (action.id === 'complaint') {
                 onOpenGetHelp?.();
                 return;
@@ -131,7 +181,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
             />
             <CategoryIconRow
               items={WHAT_WE_DO_ITEMS}
-              onPressItem={item => showComingSoon(item.title)}
+              onPressItem={item => onOpenWhatWeDo?.(item.id)}
             />
           </View>
         </View>
@@ -242,7 +292,9 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
         </View>
 
         <View style={styles.donationSection}>
-          <DonationBanner onPress={() => showComingSoon('Make a Donation')} />
+          <DonationBanner
+            onPress={() => onOpenActionPage?.('donate')}
+          />
         </View>
       </ScrollView>
 

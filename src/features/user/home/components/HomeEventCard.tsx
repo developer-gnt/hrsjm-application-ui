@@ -37,7 +37,7 @@ export const HomeEventCard: React.FC<HomeEventCardProps> = ({ event, onPress }) 
   const { width: windowWidth } = useWindowDimensions();
   const cardWidth = Math.min(
     180,
-    Math.max(120, (windowWidth - Spacing.base * 2 - Spacing.sm) / 2.7),
+    Math.max(132, (windowWidth - Spacing.base * 2 - Spacing.sm) / 2.3),
   );
   const imageSource = EVENT_IMAGES[event.imageAssetName];
 
@@ -91,7 +91,7 @@ export const HomeEventCard: React.FC<HomeEventCardProps> = ({ event, onPress }) 
 
 const styles = StyleSheet.create({
   card: {
-    height: 106,
+    height: 122,
     backgroundColor: AdminColors.cardSurface,
     borderWidth: 1,
     borderColor: AdminColors.border,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   media: {
-    height: 48,
+    height: 58,
   },
   mediaSlot: {
     position: 'absolute',
@@ -137,11 +137,11 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   title: {
-    fontSize: 9,
-    lineHeight: 11,
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: '600',
     color: AdminColors.primaryDark,
-    minHeight: 23,
+    minHeight: 25,
   },
   footer: {
     flexDirection: 'row',

@@ -1,6 +1,7 @@
 import type { ImageSourcePropType } from 'react-native';
 
 const EVENT_PHOTO = require('../../../../assets/images/about-hero-community.png');
+const EVENT_LEGAL_PHOTO = require('../../../../assets/images/event-legal-awareness.jpg');
 
 export type UserEventCategory = 'Workshop' | 'Awareness' | 'Community' | 'Education';
 
@@ -23,12 +24,12 @@ export interface UserEvent {
 export const USER_EVENTS: UserEvent[] = [
   {
     id: 'legal-awareness-workshop',
-    title: 'Legal Awareness Workshop on Citizen Rights',
+    title: 'Legal Awareness Workshop for Citizens',
     category: 'Workshop',
     tag: 'Legal Awareness',
-    day: '25',
-    month: 'OCT',
-    date: '25 Oct 2026',
+    day: '18',
+    month: 'Oct',
+    date: '18 Oct 2026',
     time: '10:00 AM – 1:00 PM',
     location: 'Mumbai, Maharashtra',
     venue: 'HRSJM Community Hall',
@@ -41,7 +42,7 @@ export const USER_EVENTS: UserEvent[] = [
       'Real-life Case Studies',
       'Q&A with Experts',
     ],
-    image: EVENT_PHOTO,
+    image: EVENT_LEGAL_PHOTO,
   },
   {
     id: 'womens-rights-program',

@@ -3,13 +3,17 @@ import { StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdminColors, Spacing } from '../../../../core/theme';
 import { AppIcon, HrsjmLogoMark } from '../../components';
+import { useHeaderActions } from '../../components/HeaderActionsContext';
 
 interface HomeHeaderProps {
   onBack?: () => void;
   onPressSearch?: () => void;
   onPressNotifications?: () => void;
-  /** Red unread dot on the bell (member surfaces only). */
+  /** Unread dot on the bell. */
   showNotificationDot?: boolean;
+  notificationDotColor?: string;
+  /** Lets a dedicated search page use the header search button to focus its input. */
+  preferLocalActions?: boolean;
 }
 
 /**
@@ -26,9 +30,19 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onPressSearch,
   onPressNotifications,
   showNotificationDot = false,
+  notificationDotColor = AdminColors.statusInactive,
+  preferLocalActions = false,
 }) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const headerActions = useHeaderActions();
+  const searchHandler = preferLocalActions
+    ? onPressSearch ?? headerActions.onOpenSearch
+    : headerActions.onOpenSearch ?? onPressSearch;
+  const notificationsHandler =
+    headerActions.onOpenNotifications ?? onPressNotifications;
+  const hasUnreadNotifications =
+    headerActions.hasUnreadNotifications ?? showNotificationDot;
   // Keep the full lockup + both actions visible on narrow phones.
   const logoHeight = width < 350 ? 40 : 48;
 
@@ -54,7 +68,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={onPressSearch}
+          onPress={searchHandler}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="Search"
@@ -64,17 +78,28 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={onPressNotifications}
+          onPress={notificationsHandler}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={
-            showNotificationDot
+            hasUnreadNotifications
               ? 'Notifications, unread updates available'
               : 'Notifications'
           }
         >
           <AppIcon name="bell" size={22} color={AdminColors.primaryDark} />
-          {showNotificationDot && <View style={styles.unreadDot} />}
+          {hasUnreadNotifications && (
+            <View
+              style={[
+                styles.unreadDot,
+                {
+                  backgroundColor: headerActions.hasUnreadNotifications
+                    ? AdminColors.accentGold
+                    : notificationDotColor,
+                },
+              ]}
+            />
+          )}
         </TouchableOpacity>
       </View>
     </View>

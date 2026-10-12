@@ -1,17 +1,34 @@
 import type { AboutContent } from '../types/about.types';
 
-/**
- * Reference-locked About page content ("What HRSJM Does"). Preview-static
- * until the backend integration phase; icons use the shared User glyph set.
- */
 export const ABOUT_CONTENT: AboutContent = {
   hero: {
-    titleLine: 'What',
-    titleAccentLine: 'HRSJM Does',
+    eyebrow: 'OUR PURPOSE',
+    titleLine: 'About',
+    titleAccentLine: 'HRSJM',
     description:
-      'We work on multiple fronts to protect human rights, promote social justice and support marginalised communities across India.',
+      'Advancing human rights, dignity and social justice for every community.',
     imageAssetName: 'assets/images/about-hero-community.png',
   },
+  principles: [
+    {
+      id: 'dignity',
+      title: 'Human Dignity',
+      description: 'Every individual matters.',
+      icon: 'users',
+    },
+    {
+      id: 'equality',
+      title: 'Equal Rights',
+      description: 'Fair opportunities for all.',
+      icon: 'scale',
+    },
+    {
+      id: 'justice',
+      title: 'Social Justice',
+      description: 'Stronger, more inclusive communities.',
+      icon: 'heart-hands',
+    },
+  ],
   workAreas: [
     {
       id: 'monitoring',
@@ -27,8 +44,8 @@ export const ABOUT_CONTENT: AboutContent = {
     },
     {
       id: 'workshops',
-      title: 'Workshops\nand Training',
-      description: 'Conduct programs to build knowledge and skills.',
+      title: 'Workshops &\nTraining',
+      description: 'Build knowledge and skills for stronger communities.',
       icon: 'users',
     },
     {
@@ -45,62 +62,81 @@ export const ABOUT_CONTENT: AboutContent = {
     },
     {
       id: 'advocacy',
-      title: 'Advocacy and\nAwareness Work',
-      description: 'Engage with authorities and stakeholders.',
-      icon: 'handshake',
+      title: 'Advocacy &\nAwareness',
+      description: 'Engage with institutions and stakeholders.',
+      icon: 'megaphone',
     },
     {
       id: 'research',
-      title: 'Research and\nRights Education',
+      title: 'Research &\nRights Education',
       description: 'Research, publish and educate on human rights.',
       icon: 'doc-search',
     },
     {
       id: 'legal',
-      title: 'Legal / Right-\nAwareness Work',
-      description: 'Provide legal support and awareness on rights and remedies.',
+      title: 'Legal Rights\nAwareness',
+      description: 'Provide information and guidance on legal rights and support.',
       icon: 'scale',
     },
     {
       id: 'other',
       title: 'Other Work Areas',
-      description:
-        'Education, healthcare, women & child welfare, senior citizens, minority, tribal and labour-related activities.',
+      description: 'Education, healthcare, women and child welfare, and more.',
       icon: 'heart',
     },
   ],
-  monitorBanner: {
-    title: 'Human-rights\nMonitoring',
-    description:
-      'We track, document and highlight human rights issues to ensure that voices from marginalised communities are heard and addressed.',
-    imageAssetName: 'assets/images/about-hero-community.png',
-  },
-  whatWeDo: {
-    title: 'What We Do',
-    description:
-      'Our team monitors human rights situations on the ground, collects evidence, documents cases and engages with relevant authorities and stakeholders for timely action.',
-    tiles: [
-      { id: 'field-visits', label: 'Field Visits\nand Surveys', icon: 'file-text' },
-      { id: 'case-documentation', label: 'Case\nDocumentation', icon: 'users' },
-      { id: 'reporting-advocacy', label: 'Reporting and\nAdvocacy', icon: 'megaphone' },
-      { id: 'engagement', label: 'Engagement\nwith Authorities', icon: 'scale' },
-    ],
-  },
-  focusAreas: {
-    title: 'Key Focus Areas',
-    tiles: [
-      { id: 'vulnerable-communities', label: 'Vulnerable\nCommunities', icon: 'users' },
-      { id: 'rights-violations', label: 'Rights\nViolations', icon: 'shield-check' },
-      { id: 'policy-recommendations', label: 'Policy\nRecommendations', icon: 'file-text' },
-      { id: 'follow-up-support', label: 'Follow-up\nand Support', icon: 'heart-hands' },
+  approach: {
+    title: 'Our Approach',
+    description: 'A people-centred and collaborative process',
+    steps: [
+      {
+        id: 'listen',
+        title: 'Listen',
+        description: "Understand people's concerns.",
+        icon: 'ear',
+      },
+      {
+        id: 'document',
+        title: 'Document',
+        description: 'Gather facts and evidence.',
+        icon: 'file-text',
+      },
+      {
+        id: 'support',
+        title: 'Support',
+        description: 'Provide guidance and connect resources.',
+        icon: 'heart-hands',
+      },
+      {
+        id: 'advocate',
+        title: 'Advocate',
+        description: 'Engage stakeholders for real change.',
+        icon: 'megaphone',
+      },
     ],
   },
   impact: {
-    title: 'Impact',
+    title: 'Our Impact',
+    description: 'Building stronger, fairer and more inclusive communities',
     stats: [
-      { id: 'cases', value: '2,000+', label: 'Cases Documented', icon: 'briefcase' },
-      { id: 'communities', value: '500+', label: 'Communities Reached', icon: 'users' },
-      { id: 'reports', value: '100+', label: 'Reports & Submissions', icon: 'doc-search' },
+      {
+        id: 'communities',
+        value: '—',
+        label: 'Communities Reached',
+        icon: 'users',
+      },
+      {
+        id: 'people',
+        value: '—',
+        label: 'People Supported',
+        icon: 'users',
+      },
+      {
+        id: 'rights-issues',
+        value: '—',
+        label: 'Rights Issues Documented',
+        icon: 'file-text',
+      },
     ],
   },
   finalCta: {

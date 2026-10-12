@@ -408,7 +408,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
-          <AppIcon name="search" size={19} color={AdminColors.primaryDark} />
+          <AppIcon name="search" size={20} color={AdminColors.primaryDark} />
           <TextInput
             ref={input => {
               searchRef.current = input;
@@ -606,12 +606,13 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.md,
   },
   hero: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.sm,
+    borderRadius: BorderRadius.md,
     overflow: 'hidden',
     backgroundColor: AdminColors.primaryDark,
   },
   heroSlide: {
-    height: 178,
+    height: 176,
     justifyContent: 'center',
     overflow: 'hidden',
   },
@@ -625,13 +626,13 @@ const styles = StyleSheet.create({
   heroCopy: {
     width: '74%',
     paddingHorizontal: Spacing.base,
-    paddingBottom: Spacing.base,
+    paddingBottom: Spacing.md,
   },
   heroTitle: {
     color: AdminColors.textOnDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 28,
+    lineHeight: 33,
     fontWeight: '700',
   },
   heroAccent: {
@@ -640,7 +641,7 @@ const styles = StyleSheet.create({
   heroDescription: {
     color: AdminColors.textOnDark,
     fontSize: 13,
-    lineHeight: 19,
+    lineHeight: 18.5,
     marginTop: Spacing.xs,
   },
   pagination: {
@@ -664,40 +665,41 @@ const styles = StyleSheet.create({
   },
   categoryRow: {
     paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    gap: 8,
     alignItems: 'center',
   },
   categoryChip: {
-    backgroundColor: AdminColors.cardSurface,
-    borderColor: AdminColors.border,
-    borderWidth: 1,
+    backgroundColor: AdminColors.primaryLight,
     borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    marginRight: Spacing.xs,
+    paddingHorizontal: 15,
+    paddingVertical: 7,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   categoryChipSelected: {
     backgroundColor: AdminColors.accentGold,
-    borderColor: AdminColors.accentGold,
   },
   categoryText: {
     color: AdminColors.primaryDark,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13.5,
+    lineHeight: 18,
     fontWeight: '600',
   },
   categoryTextSelected: {
     color: AdminColors.primaryDark,
+    fontWeight: '700',
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.base,
-    marginTop: Spacing.sm,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.xs,
   },
   searchBox: {
-    minHeight: 46,
+    height: 46,
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -712,13 +714,14 @@ const styles = StyleSheet.create({
     minWidth: 0,
     color: AdminColors.textPrimary,
     fontSize: 14,
+    lineHeight: 18,
     paddingVertical: 0,
     paddingHorizontal: Spacing.sm,
   },
   clearSearch: {
     color: AdminColors.primary,
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
     paddingLeft: Spacing.xs,
   },
   filterButton: {
@@ -738,7 +741,8 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     marginHorizontal: Spacing.base,
-    marginTop: Spacing.lg,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
   },
   emptyState: {
     alignItems: 'center',
@@ -755,7 +759,7 @@ const styles = StyleSheet.create({
   emptyDescription: {
     color: AdminColors.textSecondary,
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 13.5,
     lineHeight: 19,
     marginTop: Spacing.xs,
   },
@@ -768,7 +772,7 @@ const styles = StyleSheet.create({
   },
   clearFiltersText: {
     color: AdminColors.primaryDark,
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '700',
   },
   modalBackdrop: {
@@ -801,13 +805,14 @@ const styles = StyleSheet.create({
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
     fontSize: 22,
-    lineHeight: 28,
+    lineHeight: 26,
     fontWeight: '700',
-    marginBottom: Spacing.base,
+    marginBottom: Spacing.sm,
   },
   filterLabel: {
     color: AdminColors.textPrimary,
-    fontSize: 14,
+    fontSize: 14.5,
+    lineHeight: 18,
     fontWeight: '700',
     marginTop: Spacing.sm,
     marginBottom: Spacing.xs,
@@ -815,15 +820,15 @@ const styles = StyleSheet.create({
   optionWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
   },
   filterOption: {
     borderWidth: 1,
     borderColor: AdminColors.border,
     backgroundColor: AdminColors.cardSurface,
     borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    marginRight: Spacing.xs,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     marginBottom: Spacing.xs,
   },
   filterOptionSelected: {
@@ -832,8 +837,8 @@ const styles = StyleSheet.create({
   },
   filterOptionText: {
     color: AdminColors.textSecondary,
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 13.5,
+    lineHeight: 18,
   },
   filterOptionTextSelected: {
     color: AdminColors.primaryDark,
@@ -852,17 +857,17 @@ const styles = StyleSheet.create({
   clearSheetText: {
     color: AdminColors.primary,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 14,
   },
   applyButton: {
     backgroundColor: AdminColors.accentGold,
     borderRadius: BorderRadius.base,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingVertical: 12,
   },
   applyText: {
     color: AdminColors.primaryDark,
-    fontSize: 13,
+    fontSize: 14.5,
     fontWeight: '700',
   },
 });

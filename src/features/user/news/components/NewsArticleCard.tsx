@@ -35,13 +35,13 @@ export const NewsArticleCard: React.FC<NewsArticleCardProps> = ({
         <Text style={styles.excerpt} numberOfLines={2}>{article.excerpt}</Text>
       ) : null}
       <View style={styles.footer}>
-        <AppIcon name="calendar" size={13} color={AdminColors.textSecondary} />
+        <AppIcon name="calendar" size={13.5} color={AdminColors.textSecondary} />
         <Text style={styles.date}>{article.date}</Text>
       </View>
     </View>
     {!compact ? (
       <View style={styles.arrow}>
-        <AppIcon name="arrow-right" size={16} color={AdminColors.primaryDark} />
+        <AppIcon name="arrow-right" size={15} color={AdminColors.textOnDark} />
       </View>
     ) : null}
   </TouchableOpacity>
@@ -49,28 +49,29 @@ export const NewsArticleCard: React.FC<NewsArticleCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
+    minHeight: 114,
     flexDirection: 'row',
-    alignItems: 'stretch',
+    alignItems: 'center',
     backgroundColor: AdminColors.cardSurface,
-    borderColor: AdminColors.border,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: BorderRadius.xl,
-    marginBottom: Spacing.sm,
+    borderColor: 'rgba(6, 29, 64, 0.06)',
+    borderWidth: 1,
+    borderRadius: 14,
+    marginBottom: 12,
     marginHorizontal: Spacing.base,
-    padding: Spacing.xs,
-    overflow: 'hidden',
+    padding: 8,
     ...Shadows.card,
   },
   compactCard: {
+    minHeight: 0,
     flexDirection: 'column',
     width: 220,
     marginRight: Spacing.md,
-    padding: Spacing.xs,
+    padding: 8,
   },
   image: {
-    width: '34%',
-    height: 118,
-    borderRadius: BorderRadius.md,
+    width: 102,
+    height: 98,
+    borderRadius: 10,
     backgroundColor: AdminColors.primaryLight,
   },
   compactImage: {
@@ -81,55 +82,59 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     minWidth: 0,
+    alignSelf: 'stretch',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    paddingLeft: 10,
+    paddingRight: 6,
+    paddingVertical: 2,
   },
   category: {
     alignSelf: 'flex-start',
-    maxWidth: '100%',
-    borderRadius: BorderRadius.sm,
+    overflow: 'hidden',
+    borderRadius: 6,
     backgroundColor: AdminColors.accentGoldLight,
-    color: AdminColors.primaryDark,
-    fontSize: 10,
+    color: '#8A5A00',
+    fontSize: 10.5,
     fontWeight: '600',
-    lineHeight: 14,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: 2,
-    marginBottom: 3,
+    lineHeight: 13,
+    paddingHorizontal: 7.5,
+    paddingVertical: 3,
+    marginBottom: 4,
   },
   title: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: '700',
-    lineHeight: 18,
+    lineHeight: 19,
+    marginBottom: 3,
   },
   excerpt: {
     color: AdminColors.textSecondary,
-    fontSize: 11,
-    lineHeight: 15,
-    marginTop: 3,
+    fontSize: 11.5,
+    lineHeight: 15.5,
+    marginTop: 1,
+    marginBottom: 3,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    gap: 5,
+    marginTop: 2,
   },
   date: {
     color: AdminColors.textSecondary,
-    fontSize: 10,
-    lineHeight: 14,
-    marginLeft: 4,
+    fontSize: 11.5,
+    lineHeight: 15,
+    fontWeight: '500',
   },
   arrow: {
-    alignSelf: 'center',
-    width: 32,
-    height: 32,
-    borderRadius: BorderRadius.full,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: AdminColors.accentGold,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: AdminColors.accentGold,
-    marginHorizontal: Spacing.xs,
+    marginLeft: 2,
+    marginRight: 2,
   },
 });

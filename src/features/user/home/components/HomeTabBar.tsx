@@ -38,7 +38,10 @@ export const HomeTabBar: React.FC<HomeTabBarProps> = ({
         return (
           <TouchableOpacity
             key={tab.id}
-            style={styles.tab}
+            style={[
+              styles.tab,
+              isActive && tab.id === 'about' && styles.activeAboutTab,
+            ]}
             onPress={() => onTabPress?.(tab)}
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
@@ -74,6 +77,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: 2,
+  },
+  activeAboutTab: {
+    marginHorizontal: 3,
+    borderRadius: 8,
+    backgroundColor: AdminColors.accentGoldLight,
   },
   label: {
     fontSize: 10,

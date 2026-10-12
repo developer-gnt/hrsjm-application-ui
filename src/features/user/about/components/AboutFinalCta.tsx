@@ -1,9 +1,16 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import {
   AdminColors,
   BorderRadius,
   FontFamilies,
+  Shadows,
   Spacing,
 } from '../../../../core/theme';
 import { GoldButton } from '../../home/components/GoldButton';
@@ -15,86 +22,120 @@ interface AboutFinalCtaProps {
   onPress?: () => void;
 }
 
-/**
- * Closing CTA (reference-locked): FULL-BLEED like the hero — edge-to-edge
- * with no side margins, square top and rounded bottom corners (hero
- * treatment). Deep navy with the community artwork toward the right, the
- * serif heading with the gold accent line, supporting copy and the gold
- * action button with a right-arrow icon (dark navy text). Copy comes from
- * the About content model. Reuses the CTA image already shipped with the
- * Contact page.
- */
 export const AboutFinalCta: React.FC<AboutFinalCtaProps> = ({
   content,
   onPress,
-}) => (
-  <View style={styles.banner}>
-    <Image
-      source={ContactCtaHandsSource}
-      style={styles.image}
-      resizeMode="cover"
-    />
+}) => {
+  const { width } = useWindowDimensions();
+  const height = Math.round(Math.min(215, Math.max(185, width * 0.48)));
 
-    <View style={styles.content}>
-      <Text style={styles.headingLight}>{content.headingLine}</Text>
-      <Text style={styles.headingAccent}>{content.headingAccentLine}</Text>
+  return (
+    <View style={[styles.banner, { height }]}>
+      <Image
+        source={ContactCtaHandsSource}
+        style={styles.image}
+        resizeMode="cover"
+        accessible={false}
+      />
+      <View style={styles.overlay} />
 
-      <Text style={styles.supporting}>{content.supporting}</Text>
+      <View style={styles.content}>
+        <View style={styles.eyebrowRow}>
+          <Text style={styles.eyebrow}>GET INVOLVED</Text>
+          <View style={styles.eyebrowLine} />
+        </View>
 
-      <View style={styles.button}>
-        <GoldButton
-          label={content.buttonLabel}
-          compact
-          textColor={AdminColors.primaryDark}
-          onPress={onPress}
-        />
+        <Text style={styles.title}>
+          {content.headingLine}{' '}
+          <Text style={styles.titleAccent}>{content.headingAccentLine}</Text>
+        </Text>
+
+        <Text style={styles.supporting}>{content.supporting}</Text>
+
+        <View style={styles.button}>
+          <GoldButton
+            label={content.buttonLabel}
+            compact
+            textColor={AdminColors.primaryDark}
+            onPress={onPress}
+          />
+        </View>
       </View>
     </View>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   banner: {
+    width: '100%',
+    overflow: 'hidden',
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
     borderBottomLeftRadius: BorderRadius.xl,
     borderBottomRightRadius: BorderRadius.xl,
     backgroundColor: AdminColors.primaryDark,
-    overflow: 'hidden',
+    ...Shadows.card,
   },
   image: {
     position: 'absolute',
     top: 0,
     right: 0,
     bottom: 0,
-    width: '56%',
+    width: '62%',
     height: '100%',
+    opacity: 0.72,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(6, 39, 77, 0.36)',
   },
   content: {
-    width: '60%',
-    paddingVertical: Spacing.lg,
-    paddingLeft: Spacing.base,
-    paddingRight: Spacing.lg,
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: '74%',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.base,
+    zIndex: 1,
   },
-  headingLight: {
+  eyebrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: 4,
+  },
+  eyebrow: {
+    color: AdminColors.accentGold,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  eyebrowLine: {
+    width: 26,
+    height: 2,
+    backgroundColor: AdminColors.accentGold,
+  },
+  title: {
     fontFamily: FontFamilies.serif,
-    fontSize: 21,
-    lineHeight: 27,
+    fontSize: 25,
+    lineHeight: 30,
     fontWeight: '700',
     color: AdminColors.textOnDark,
   },
-  headingAccent: {
-    fontFamily: FontFamilies.serif,
-    fontSize: 21,
-    lineHeight: 27,
-    fontWeight: '700',
+  titleAccent: {
     color: AdminColors.accentGold,
   },
   supporting: {
-    fontSize: 10.5,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 18,
     color: AdminColors.textOnDark,
-    marginTop: Spacing.xs,
+    marginTop: 6,
+    opacity: 0.95,
   },
   button: {
     marginTop: Spacing.md,
+    alignSelf: 'flex-start',
   },
 });

@@ -84,13 +84,15 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
             <Text style={styles.coverDateMonth}>{event.month} 2026</Text>
           </View>
           <View style={styles.statusBadge}>
-            <AppIcon name="calendar" size={12} color={AdminColors.primaryDark} />
+            <AppIcon name="calendar" size={14} color={AdminColors.primaryDark} />
             <Text style={styles.statusText}>Upcoming</Text>
           </View>
         </View>
 
         <View style={styles.detailCard}>
-          <Text style={styles.categoryPill}>{event.category}</Text>
+          <View style={styles.pillContainer}>
+            <Text style={styles.categoryPill}>{event.category}</Text>
+          </View>
           <Text style={styles.eventTitle}>{event.title}</Text>
           <Text style={styles.description}>{event.description}</Text>
 
@@ -127,7 +129,7 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
           <View style={styles.featureRow}>
             {EVENT_FEATURES.map(feature => (
               <View key={feature.label} style={styles.featureItem}>
-                <AppIcon name={feature.icon} size={19} color={AdminColors.primaryDark} />
+                <AppIcon name={feature.icon} size={20} color={AdminColors.primaryDark} />
                 <Text style={styles.featureLabel}>{feature.label}</Text>
               </View>
             ))}
@@ -145,7 +147,7 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
             {event.topics.map(topic => (
               <View key={topic} style={styles.topicRow}>
                 <View style={styles.topicCheck}>
-                  <AppIcon name="check" size={10} color={AdminColors.textOnDark} />
+                  <AppIcon name="check" size={10} color="#FFFFFF" strokeWidth={2.4} />
                 </View>
                 <Text style={styles.topicText}>{topic}</Text>
               </View>
@@ -163,7 +165,7 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
           accessibilityLabel="Register for Event"
         >
           <Text style={styles.registerText}>Register for Event</Text>
-          <AppIcon name="arrow-right" size={18} color={AdminColors.primaryDark} />
+          <AppIcon name="arrow-right" size={18} color="#082245" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -190,9 +192,9 @@ const styles = StyleSheet.create({
     borderBottomColor: AdminColors.border,
   },
   headerButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: AdminColors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -200,14 +202,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '700',
   },
   scrollContent: {
     paddingBottom: Spacing.md,
   },
   coverWrap: {
-    height: 178,
+    height: 200,
     backgroundColor: AdminColors.primaryDark,
     position: 'relative',
   },
@@ -223,24 +225,26 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: Spacing.md,
     top: Spacing.md,
-    minWidth: 45,
+    minWidth: 52,
     alignItems: 'center',
-    paddingVertical: Spacing.xs,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     borderRadius: BorderRadius.sm,
     backgroundColor: AdminColors.cardSurface,
     ...Shadows.card,
   },
   coverDateDay: {
     color: AdminColors.primaryDark,
-    fontSize: 20,
-    lineHeight: 22,
+    fontSize: 22,
+    lineHeight: 25,
     fontWeight: '800',
   },
   coverDateMonth: {
     color: AdminColors.primaryDark,
-    fontSize: 7,
-    lineHeight: 10,
+    fontSize: 10.5,
+    lineHeight: 14,
     fontWeight: '700',
+    marginTop: 1,
   },
   statusBadge: {
     position: 'absolute',
@@ -248,177 +252,188 @@ const styles = StyleSheet.create({
     top: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: 5,
     backgroundColor: AdminColors.cardSurface,
     borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    ...Shadows.card,
   },
   statusText: {
     color: AdminColors.primaryDark,
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: '700',
   },
   detailCard: {
     marginTop: -14,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.base,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.lg,
     backgroundColor: AdminColors.cardSurface,
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
   },
+  pillContainer: {
+    flexDirection: 'row',
+  },
   categoryPill: {
-    alignSelf: 'flex-start',
     overflow: 'hidden',
     borderRadius: BorderRadius.full,
     backgroundColor: AdminColors.accentGoldLight,
     color: AdminColors.primaryDark,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    fontSize: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    fontSize: 11.5,
     fontWeight: '700',
   },
   eventTitle: {
-    marginTop: Spacing.xs,
+    marginTop: Spacing.sm,
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
     fontSize: 23,
-    lineHeight: 25,
+    lineHeight: 29,
     fontWeight: '700',
   },
   description: {
-    color: AdminColors.textSecondary,
-    fontSize: 11,
-    lineHeight: 15,
-    marginTop: Spacing.xs,
+    color: '#4B5563',
+    fontSize: 13.5,
+    lineHeight: 20,
+    marginTop: Spacing.xs + 2,
   },
   infoRow: {
     flexDirection: 'row',
-    marginTop: Spacing.md,
-    paddingVertical: Spacing.sm,
+    marginTop: Spacing.md + 2,
+    paddingVertical: Spacing.md,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: AdminColors.border,
+    borderColor: '#EAE6DC',
   },
   infoCell: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: Spacing.xs,
+    gap: Spacing.sm,
     minWidth: 0,
   },
   infoIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: AdminColors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 2,
   },
   infoCopy: {
     flex: 1,
     minWidth: 0,
   },
   infoLabel: {
-    color: AdminColors.textSecondary,
-    fontSize: 9,
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '500',
     marginBottom: 2,
   },
   infoValue: {
     color: AdminColors.primaryDark,
-    fontSize: 9,
-    lineHeight: 13,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: '600',
   },
   infoDivider: {
     width: 1,
-    backgroundColor: AdminColors.border,
-    marginHorizontal: Spacing.xs,
+    backgroundColor: '#EAE6DC',
+    marginHorizontal: Spacing.sm,
   },
   mapLink: {
-    color: '#2D66A0',
-    fontSize: 8,
+    color: '#2563EB',
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: 3,
   },
   featureRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: Spacing.xs,
-    marginTop: Spacing.md,
+    gap: 8,
+    marginTop: Spacing.md + 2,
   },
   featureItem: {
     flex: 1,
-    minHeight: 56,
+    minHeight: 68,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: AdminColors.border,
-    borderRadius: BorderRadius.sm,
-    paddingVertical: Spacing.xs,
-    gap: 3,
+    borderColor: '#E8E4DA',
+    borderRadius: 10,
+    backgroundColor: '#FCFBF7',
+    paddingVertical: 8,
+    paddingHorizontal: 2,
+    gap: 4,
   },
   featureLabel: {
     color: AdminColors.primaryDark,
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: '600',
     textAlign: 'center',
   },
   section: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
   },
   sectionTitle: {
     color: AdminColors.primaryDark,
     fontFamily: FontFamilies.serif,
-    fontSize: 16,
+    fontSize: 18,
+    lineHeight: 23,
     fontWeight: '700',
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.xs + 2,
   },
   bodyText: {
-    color: AdminColors.textSecondary,
-    fontSize: 10,
-    lineHeight: 14,
+    color: '#4B5563',
+    fontSize: 13.5,
+    lineHeight: 20,
   },
   topicRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-    gap: Spacing.xs,
+    marginTop: 8,
+    gap: 10,
   },
   topicCheck: {
-    width: 13,
-    height: 13,
-    borderRadius: 7,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: AdminColors.accentGold,
     alignItems: 'center',
     justifyContent: 'center',
   },
   topicText: {
-    color: AdminColors.textSecondary,
-    fontSize: 9,
-    lineHeight: 12,
+    color: '#374151',
+    fontSize: 13.5,
+    lineHeight: 19,
+    fontWeight: '500',
+    flex: 1,
   },
   footer: {
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.base,
     paddingTop: Spacing.sm,
     backgroundColor: AdminColors.cardSurface,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: AdminColors.border,
   },
   registerButton: {
-    height: 42,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    borderRadius: 12,
     backgroundColor: AdminColors.accentGold,
   },
   registerText: {
-    color: AdminColors.primaryDark,
-    fontSize: 12,
-    fontWeight: '800',
+    color: '#082245',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
