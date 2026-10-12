@@ -28,7 +28,6 @@ import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppBadge } from '../../../../core/components/common/AppBadge';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
-import { DonationsBottomNav } from '../../donations/components/DonationsBottomNav';
 import {
   navigateToProfileEditPersonal,
   navigateToProfileAdminDetails,
@@ -292,26 +291,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         currentAvatarUrl={profile.avatar}
         onClose={() => setAvatarPickerVisible(false)}
         onSelectAvatar={handleSelectAvatar}
-      />
-
-      {/* Existing HRSJM bottom navigation */}
-      <DonationsBottomNav
-        bottomInset={insets.bottom}
-        activeKey="profile"
-        onTabPress={key => {
-          if (key === 'donations' || key === 'dashboard') {
-            navigateToDonations();
-          } else if (key === 'applications') {
-            navigateToMembershipApplications();
-          } else if (key === 'more') {
-            // Already on profile
-          } else {
-            setToastMessage({
-              variant: 'info',
-              message: `${key.replace('_', ' ').replace(/^\w/, c => c.toUpperCase())} tab`,
-            });
-          }
-        }}
       />
 
       {/* Floating toast */}

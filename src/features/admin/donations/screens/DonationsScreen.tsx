@@ -51,7 +51,6 @@ import { DateRangePickerModal } from '../components/DateRangePickerModal';
 import { AddDonationModal } from '../components/AddDonationModal';
 import { DonationReceiptModal } from '../components/DonationReceiptModal';
 import { DonationDetailsModal } from '../components/DonationDetailsModal';
-import { DonationsBottomNav } from '../components/DonationsBottomNav';
 import {
   navigateToReceipt,
   navigateToProfile,
@@ -519,21 +518,6 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
         ]}
       />
 
-      <View style={styles.bottomNavHost}>
-        <DonationsBottomNav
-          bottomInset={insets.bottom}
-          activeKey="donations"
-          onTabPress={key => {
-            if (key === 'donations') {
-              handleRefresh();
-            } else if (key === 'applications') {
-              navigateToMembershipApplications();
-            } else if (key === 'more') {
-              navigateToProfile();
-            }
-          }}
-        />
-      </View>
       <DonationFilters
         visible={filtersVisible}
         selectedStatus={status}
