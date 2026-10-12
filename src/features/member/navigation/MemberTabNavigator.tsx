@@ -23,6 +23,8 @@ import {
   MemberHomeDashboardScreen,
   MemberDashboardDetailsScreen,
 } from '../dashboard';
+import { RightDetailsScreen } from '../../user/rights';
+import { FileComplaintScreen } from '../../user/help';
 import {
   House,
   Heart,
@@ -48,8 +50,9 @@ const MemberHomeScreenComponent: React.FC<any> = ({ navigation }) => {
       showBottomNav={false}
       onOpenMembershipInfo={() => navigation.navigate('MembershipDetails')}
       onOpenMembershipDetails={() => navigation.navigate('MemberDashboardDetails')}
-      onOpenRights={() => navigation.navigate('MemberCauses')}
-      onOpenComplaint={() => navigation.navigate('MemberProfile')}
+      onOpenRights={() => navigation.navigate('MemberRights')}
+      onOpenResources={() => navigation.navigate('MemberRights')}
+      onOpenComplaint={() => navigation.navigate('MemberComplaint')}
       onOpenEvents={() => navigation.navigate('MemberEvents')}
       onOpenEvent={() => navigation.navigate('MemberEvents')}
       onOpenDonation={() => navigation.navigate('MemberCauses')}
@@ -216,18 +219,53 @@ export const MemberTabNavigator: React.FC = () => {
       >
         {({ navigation }) => (
           <MemberDashboardDetailsScreen
+            showBottomNav={false}
             onBack={navigation.goBack}
             onOpenMembershipInfo={() => navigation.navigate('MembershipDetails')}
-            onOpenComplaint={() => navigation.navigate('MemberProfile')}
+            onOpenComplaint={() => navigation.navigate('MemberComplaint')}
             onOpenDonation={() => navigation.navigate('MemberCauses')}
-            onOpenRight={() => {}}
-            onOpenRights={() => {}}
+            onOpenRight={(rightId) => navigation.navigate('MemberRights', { rightId })}
+            onOpenRights={() => navigation.navigate('MemberRights')}
             onOpenEvents={() => navigation.navigate('MemberEvents')}
             onOpenEvent={() => navigation.navigate('MemberEvents')}
             onOpenHome={() => navigation.navigate('MemberHome')}
-            onOpenAbout={() => {}}
-            onOpenNews={() => {}}
+            onOpenAbout={() => navigation.navigate('MemberProfile')}
+            onOpenNews={() => navigation.navigate('MemberEvents')}
             onOpenContact={() => navigation.navigate('MemberProfile')}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="MemberComplaint"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <FileComplaintScreen
+            onBack={navigation.goBack}
+            onOpenHome={() => navigation.navigate('MemberHome')}
+            onOpenEvents={() => navigation.navigate('MemberEvents')}
+            onOpenRights={() => navigation.navigate('MemberRights')}
+            onOpenAbout={() => navigation.navigate('MemberProfile')}
+            onOpenContact={() => navigation.navigate('MemberProfile')}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="MemberRights"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <RightDetailsScreen
+            rightId={route?.params?.rightId || 'human-rights'}
+            showBottomNav={false}
+            onBack={navigation.goBack}
+            onOpenRights={() => navigation.navigate('MemberRights')}
+            onFileComplaint={() => navigation.navigate('MemberComplaint')}
+            onOpenEvents={() => navigation.navigate('MemberEvents')}
+            onOpenHome={() => navigation.navigate('MemberHome')}
+            onOpenAbout={() => navigation.navigate('MemberProfile')}
+            onOpenContact={() => navigation.navigate('MemberProfile')}
+            onOpenRight={(id) => navigation.navigate('MemberRights', { rightId: id })}
           />
         )}
       </Tab.Screen>

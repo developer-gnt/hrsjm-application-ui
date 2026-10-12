@@ -59,6 +59,7 @@ export interface MemberDashboardDetailsScreenProps
   onOpenAbout?: () => void;
   onOpenNews?: () => void;
   onOpenContact?: () => void;
+  showBottomNav?: boolean;
 }
 
 const EmptyPanel: React.FC<{ title: string; description: string }> = ({
@@ -90,6 +91,7 @@ export const MemberDashboardDetailsScreen: React.FC<
   onOpenAbout,
   onOpenNews,
   onOpenContact,
+  showBottomNav = false,
 }) => {
   const handleTabPress = (tab: HomeTab) => {
     if (tab.id === 'home') onOpenHome?.();
@@ -119,7 +121,9 @@ export const MemberDashboardDetailsScreen: React.FC<
           onOpenEvent={onOpenEvent}
         />
       </ScrollView>
-      <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      {showBottomNav && (
+        <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      )}
     </SafeAreaView>
   );
 };

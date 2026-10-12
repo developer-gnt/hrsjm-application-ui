@@ -52,6 +52,7 @@ export interface MemberHomeDashboardScreenProps {
   onOpenAbout?: () => void;
   onOpenNews?: () => void;
   onOpenContact?: () => void;
+  onOpenResources?: () => void;
   showBottomNav?: boolean;
   useAdminHeader?: boolean;
 }
@@ -86,7 +87,12 @@ const EventCard: React.FC<{
   event: UserEvent;
   onPress: () => void;
 }> = ({ event, onPress }) => (
-  <View style={styles.eventCard}>
+  <Pressable
+    style={styles.eventCard}
+    onPress={onPress}
+    accessibilityRole="button"
+    accessibilityLabel={`Event: ${event.title}`}
+  >
     <View style={styles.eventMedia}>
       <Image
         source={event.image}
@@ -126,7 +132,7 @@ const EventCard: React.FC<{
         <AppIcon name="arrow-right" size={12} color={AdminColors.primaryDark} />
       </Pressable>
     </View>
-  </View>
+  </Pressable>
 );
 
 export const MemberHomeDashboardScreen: React.FC<
@@ -146,6 +152,7 @@ export const MemberHomeDashboardScreen: React.FC<
   onOpenAbout,
   onOpenNews,
   onOpenContact,
+  onOpenResources,
   showBottomNav = false,
   useAdminHeader = true,
 }) => {
@@ -167,13 +174,13 @@ export const MemberHomeDashboardScreen: React.FC<
     { title: 'Know Your Rights', icon: 'book-open', onPress: onOpenRights || (() => undefined) },
     { title: 'File a Complaint', icon: 'file-text', onPress: onOpenComplaint || (() => undefined) },
     { title: 'Events', icon: 'calendar', onPress: onOpenEvents || (() => undefined) },
-    { title: 'Resources', icon: 'download', onPress: onOpenRights || (() => undefined) },
+    { title: 'Resources', icon: 'download', onPress: onOpenResources || onOpenRights || (() => undefined) },
   ];
   const impactMetrics = [
-    { value: '3', label: 'Events\nAttended', icon: 'users' as const },
-    { value: '2', label: 'Causes\nSupported', icon: 'heart' as const },
-    { value: '1', label: 'Complaint\nSubmitted', icon: 'file-text' as const },
-    { value: '12', label: 'Hours\nVolunteered', icon: 'clock' as const },
+    { value: '3', label: 'Events\nAttended', icon: 'users' as const, onPress: onOpenEvents },
+    { value: '2', label: 'Causes\nSupported', icon: 'heart' as const, onPress: onOpenDonation },
+    { value: '1', label: 'Complaint\nSubmitted', icon: 'file-text' as const, onPress: onOpenComplaint },
+    { value: '12', label: 'Hours\nVolunteered', icon: 'clock' as const, onPress: onOpenEvents },
   ];
 
   const handleTabPress = (tab: HomeTab) => {
@@ -228,7 +235,12 @@ export const MemberHomeDashboardScreen: React.FC<
 
         <View style={styles.sheetContainer}>
           {/* Active Member Status Card */}
-          <View style={styles.membershipStatusCard}>
+          <Pressable
+            style={styles.membershipStatusCard}
+            onPress={onOpenMembershipDetails || (() => undefined)}
+            accessibilityRole="button"
+            accessibilityLabel="View Membership Details"
+          >
             <View style={styles.membershipStatusLeft}>
               <View style={styles.starBadge}>
                 <AppIcon name="star" size={20} color="#FFFFFF" filled />
@@ -243,20 +255,15 @@ export const MemberHomeDashboardScreen: React.FC<
               </View>
             </View>
 
-            <Pressable
-              style={styles.viewMembershipButton}
-              onPress={onOpenMembershipDetails || (() => undefined)}
-              accessibilityRole="button"
-              accessibilityLabel="View Membership"
-            >
+            <View style={styles.viewMembershipButton}>
               <Text style={styles.viewMembershipText}>View Membership</Text>
               <AppIcon
                 name="arrow-right"
                 size={13}
                 color={AdminColors.primaryDark}
               />
-            </Pressable>
-          </View>
+            </View>
+          </Pressable>
 
           {/* Quick Actions (4 in a row) */}
           <View style={styles.quickActionsRow}>
@@ -287,7 +294,13 @@ export const MemberHomeDashboardScreen: React.FC<
             <Text style={styles.impactTitle}>Your Impact</Text>
             <View style={styles.impactMetricsRow}>
               {impactMetrics.map(item => (
-                <View key={item.label} style={styles.impactMetricCol}>
+                <Pressable
+                  key={item.label}
+                  style={styles.impactMetricCol}
+                  onPress={item.onPress || (() => undefined)}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.label}
+                >
                   <View style={styles.impactIconCircle}>
                     <AppIcon
                       name={item.icon}
@@ -299,7 +312,7 @@ export const MemberHomeDashboardScreen: React.FC<
                   <Text style={styles.impactLabel} numberOfLines={2}>
                     {item.label}
                   </Text>
-                </View>
+                </Pressable>
               ))}
             </View>
           </View>
@@ -334,7 +347,7 @@ export const MemberHomeDashboardScreen: React.FC<
               title="Continue Learning"
               description="Explore articles, guides and legal resources."
               action="Browse Resources"
-              onPress={onOpenRights || (() => undefined)}
+              onPress={onOpenResources || onOpenRights || (() => undefined)}
             />
             <RecommendationCard
               icon="heart"
@@ -360,7 +373,12 @@ const RecommendationCard: React.FC<{
   action: string;
   onPress: () => void;
 }> = ({ icon, title, description, action, onPress }) => (
-  <View style={styles.recommendationCard}>
+  <Pressable
+    style={styles.recommendationCard}
+    onPress={onPress}
+    accessibilityRole="button"
+    accessibilityLabel={title}
+  >
     <View style={styles.recommendationHeader}>
       <View style={styles.recommendationIcon}>
         <AppIcon name={icon} size={18} color={AdminColors.primaryDark} />
@@ -368,17 +386,11 @@ const RecommendationCard: React.FC<{
       <Text style={styles.recommendationTitle}>{title}</Text>
     </View>
     <Text style={styles.recommendationDescription}>{description}</Text>
-    <Pressable
-      style={styles.recommendationAction}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={action}
-      hitSlop={6}
-    >
+    <View style={styles.recommendationAction}>
       <Text style={styles.recommendationActionText}>{action}</Text>
       <AppIcon name="arrow-right" size={12} color="#0284C7" />
-    </Pressable>
-  </View>
+    </View>
+  </Pressable>
 );
 
 const styles = StyleSheet.create({

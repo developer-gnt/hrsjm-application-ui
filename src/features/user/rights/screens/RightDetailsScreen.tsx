@@ -41,6 +41,7 @@ export interface RightDetailsScreenProps {
   onOpenNews?: () => void;
   onOpenRight?: (rightId: string) => void;
   onFileComplaint?: () => void;
+  showBottomNav?: boolean;
 }
 
 const TABS: { id: SectionId; label: string }[] = [
@@ -562,6 +563,7 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
   onOpenNews,
   onOpenRight,
   onFileComplaint,
+  showBottomNav = false,
 }) => {
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const sectionOffsets = useRef<Record<SectionId, number>>({
@@ -654,7 +656,9 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
           </View>
         )}
       </ScrollView>
-      <UserBottomNavigation activeTab="rights" onTabPress={handleTabPress} />
+      {showBottomNav && (
+        <UserBottomNavigation activeTab="rights" onTabPress={handleTabPress} />
+      )}
     </SafeAreaView>
   );
 };

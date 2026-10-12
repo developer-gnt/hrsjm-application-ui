@@ -51,6 +51,7 @@ interface MembershipDetailsScreenProps {
   onBenefitItemPress?: (benefit: BenefitItem) => void;
   onDocumentItemPress?: (doc: DocumentItem) => void;
   initialData?: Partial<MembershipDetailsData>;
+  showBottomNav?: boolean;
 }
 
 export const MembershipDetailsScreen: React.FC<MembershipDetailsScreenProps> = ({
@@ -64,6 +65,7 @@ export const MembershipDetailsScreen: React.FC<MembershipDetailsScreenProps> = (
   onBenefitItemPress,
   onDocumentItemPress,
   initialData,
+  showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
