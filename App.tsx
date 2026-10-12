@@ -19,6 +19,7 @@ import {
   membershipApplicationsStore,
   createApplicationFromRegistration,
 } from './src/features/admin/membershipApplications';
+import { MembersScreen } from './src/features/admin/members';
 import {
   CreateAccountScreen,
   CreateAccountAdditionalScreen,
@@ -57,6 +58,7 @@ import {
   navigateToDashboard,
   navigateToDonations,
   navigateToProfile,
+  navigateToMembers,
   navigateToMembershipApplications,
   navigateToMembershipApplicationDetails,
   navigateToBecomeMember,
@@ -269,7 +271,7 @@ function App() {
             onCreateTicketPress={() => navigateToCreateSupportTicket()}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
-              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'donations') navigateToDonations();
               else if (tabKey === 'support') navigateToSupportTickets();
@@ -288,7 +290,7 @@ function App() {
             onNext={() => navigateToReviewSupportTicket()}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
-              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'donations') navigateToDonations();
               else if (tabKey === 'support') navigateToSupportTickets();
@@ -307,7 +309,7 @@ function App() {
             onSubmitSuccess={(ticket) => navigateToTicketSubmitted(ticket.id)}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
-              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'donations') navigateToDonations();
               else if (tabKey === 'support') navigateToSupportTickets();
@@ -326,7 +328,7 @@ function App() {
             onCreateAnotherTicket={() => navigateToCreateSupportTicket()}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
-              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'donations') navigateToDonations();
               else if (tabKey === 'support') navigateToSupportTickets();
@@ -344,7 +346,7 @@ function App() {
             onCreateTicketPress={() => navigateToCreateSupportTicket()}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
-              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'donations') navigateToDonations();
               else if (tabKey === 'support') navigateToSupportTickets();
@@ -366,7 +368,7 @@ function App() {
             onVerifyUserPress={(user) => navigateToUserVerification(user.id)}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
-              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'donations') navigateToDonations();
               else if (tabKey === 'users') navigateToUsers();
@@ -385,7 +387,7 @@ function App() {
             onSuccess={() => navigateToUsers()}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
-              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'donations') navigateToDonations();
               else if (tabKey === 'users') navigateToUsers();
@@ -406,7 +408,7 @@ function App() {
             onVerifyPress={(u) => navigateToUserVerification(u.id)}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
-              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'donations') navigateToDonations();
               else if (tabKey === 'users') navigateToUsers();
@@ -426,7 +428,7 @@ function App() {
             onSuccess={() => (route.userId ? navigateToUserDetails(route.userId) : navigateToUsers())}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
-              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'donations') navigateToDonations();
               else if (tabKey === 'users') navigateToUsers();
@@ -446,7 +448,7 @@ function App() {
             onSuccess={() => (route.userId ? navigateToUserDetails(route.userId) : navigateToUsers())}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
-              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'donations') navigateToDonations();
               else if (tabKey === 'users') navigateToUsers();
@@ -468,7 +470,7 @@ function App() {
             onVerifyUserPress={(user) => navigateToUserVerification(user.id)}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
-              else if (tabKey === 'members') navigateToMembershipApplications();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'donations') navigateToDonations();
               else if (tabKey === 'users') navigateToUsers();
@@ -477,6 +479,21 @@ function App() {
             onProfilePress={() => navigateToProfile()}
             onMenuPress={() => navigateToMembershipApplications()}
             onNotificationsPress={() => navigateToMembershipApplications()}
+          />
+        );
+      case 'members':
+        return (
+          <MembersScreen
+            key="members-screen"
+            showBottomNav
+            onViewApplications={() => navigateToMembershipApplications()}
+            onNavigate={(tabKey) => {
+              if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembers();
+              else if (tabKey === 'applications') navigateToMembershipApplications();
+              else if (tabKey === 'complaints') navigateToSupportTickets();
+              else if (tabKey === 'more') navigateToProfile();
+            }}
           />
         );
       case 'membership-applications':
@@ -489,6 +506,7 @@ function App() {
             }}
             onBottomTabPress={(tabKey) => {
               if (tabKey === 'dashboard') navigateToDashboard();
+              else if (tabKey === 'members') navigateToMembers();
               else if (tabKey === 'applications') navigateToMembershipApplications();
               else if (tabKey === 'complaints') navigateToSupportTickets();
               else if (tabKey === 'users') navigateToUsers();

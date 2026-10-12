@@ -18,6 +18,9 @@ export const AppRoutes = {
   ADMIN_COMPLAINTS_TAB: 'AdminComplaintsTab',
   ADMIN_MORE_TAB: 'AdminMoreTab',
 
+  // Admin Members & Directory Sub-routes
+  MEMBERS_DIRECTORY: 'MembersDirectory',
+
   // Admin More / Financial Sub-routes
   MORE_MENU: 'MoreMenu',
   MEMBERSHIP_APPLICATIONS: 'MembershipApplications',

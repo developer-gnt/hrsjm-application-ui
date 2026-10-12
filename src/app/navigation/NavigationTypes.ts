@@ -24,6 +24,16 @@ export type AdminTabParamList = {
 };
 
 /**
+ * Stack behind the Members tab — includes the Member Directory,
+ * Membership Applications list, and Application Details review.
+ */
+export type MembersStackParamList = {
+  [AppRoutes.MEMBERS_DIRECTORY]: undefined;
+  [AppRoutes.MEMBERSHIP_APPLICATIONS]: undefined;
+  [AppRoutes.MEMBERSHIP_APPLICATION_DETAILS]: { applicationId: string };
+};
+
+/**
  * Stack behind the More tab — the hub for financial, accounting and system
  * modules (Mubasshir's modules) plus shared module placeholders. Detail
  * routes gain id params in their implementing phases (5+).

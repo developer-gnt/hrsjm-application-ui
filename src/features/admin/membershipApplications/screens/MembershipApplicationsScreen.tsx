@@ -27,6 +27,7 @@ interface MembershipApplicationsScreenProps {
   onReconsiderApplication?: (application: MembershipApplicationItem) => void;
   onBottomTabPress?: (tabKey: string) => void;
   onSignupPress?: () => void;
+  showBottomNav?: boolean;
 }
 
 export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreenProps> = ({
@@ -35,9 +36,34 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   onReconsiderApplication,
   onBottomTabPress,
   onSignupPress,
+  showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+
+  const handleBottomTabPress = (tabKey: string) => {
+    if (onBottomTabPress) {
+      onBottomTabPress(tabKey);
+      return;
+    }
+    if (navigation?.navigate) {
+      if (tabKey === 'dashboard') navigation.navigate(AppRoutes.ADMIN_DASHBOARD_TAB);
+      else if (tabKey === 'members') navigation.navigate(AppRoutes.MEMBERS_DIRECTORY);
+      else if (tabKey === 'applications') navigation.navigate(AppRoutes.MEMBERSHIP_APPLICATIONS);
+      else if (tabKey === 'complaints') navigation.navigate(AppRoutes.ADMIN_COMPLAINTS_TAB);
+      else if (tabKey === 'more') navigation.navigate(AppRoutes.ADMIN_MORE_TAB);
+    }
+  };
+
+  const handleViewApplication = (app: MembershipApplicationItem) => {
+    if (onViewApplication) {
+      onViewApplication(app);
+    } else if (navigation?.navigate) {
+      navigation.navigate(AppRoutes.MEMBERSHIP_APPLICATION_DETAILS, {
+        applicationId: app.applicationId || app.id,
+      });
+    }
+  };
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<StatusTabKey>('all');
@@ -245,8 +271,8 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
         renderItem={({ item }) => (
           <MembershipApplicationCard
             application={item}
-            onView={onViewApplication}
-            onReview={onReviewApplication || onViewApplication}
+            onView={handleViewApplication}
+            onReview={onReviewApplication || handleViewApplication}
             onReconsider={handleReconsider}
           />
         )}
@@ -270,11 +296,13 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
         onReset={handleResetFilters}
       />
 
-      <MembershipApplicationsBottomNav
-        bottomInset={insets.bottom}
-        activeKey="applications"
-        onTabPress={onBottomTabPress}
-      />
+      {(showBottomNav || Boolean(onBottomTabPress)) && (
+        <MembershipApplicationsBottomNav
+          bottomInset={insets.bottom}
+          activeKey="applications"
+          onTabPress={handleBottomTabPress}
+        />
+      )}
 
       <AdminSidebar
         visible={sidebarVisible}

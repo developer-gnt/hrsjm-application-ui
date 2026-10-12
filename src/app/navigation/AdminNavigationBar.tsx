@@ -16,9 +16,9 @@ import { useCanAny } from '../../core/permissions/can';
 import { usePermissionStore } from '../../core/permissions/permission.store';
 import { AppRoutes } from '../../core/constants/routes';
 import { MoreNavigator } from './MoreNavigator';
+import { MembersNavigator } from './MembersNavigator';
 import { ModulePlaceholderScreen } from './ModulePlaceholderScreen';
 import { AdminDashboardScreen } from '../../features/admin/dashboard';
-import { MembersScreen } from '../../features/admin/members/screens/MembersScreen';
 import { AssistanceRequestsScreen } from '../../features/admin/assistance';
 import { ComplaintsNavigator } from './ComplaintsNavigator';
 import { AdminTabParamList } from './NavigationTypes';
@@ -72,7 +72,7 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
     label: 'Members',
     Icon: UsersRound,
     icon: '👥',
-    component: MembersScreen,
+    component: MembersNavigator,
   },
   {
     name: AppRoutes.ADMIN_APPLICATIONS_TAB,

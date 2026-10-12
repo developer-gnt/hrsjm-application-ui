@@ -24,6 +24,7 @@ export { AdminSettingsScreen, MoreMenuScreen, SETTING_SECTIONS } from './AdminSe
 export type { SettingItem, SettingSection, AdminSettingsScreenProps } from './AdminSettingsScreen';
 
 export { MoreNavigator } from './MoreNavigator';
+export { MembersNavigator } from './MembersNavigator';
 export { RootNavigator } from './RootNavigator';
 export { AuthNavigator } from './AuthNavigator';
 export { ModulePlaceholderScreen } from './ModulePlaceholderScreen';

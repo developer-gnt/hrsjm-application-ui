@@ -9,6 +9,8 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { AppRoutes } from '../../../../core/constants/routes';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppBottomNavigation } from '../../../../core/components/common/AppBottomNavigation';
 import { AppPagination } from '../../../../core/components';
@@ -69,6 +71,7 @@ interface MembersScreenProps {
   previewState?: MembersPreviewState;
   showBottomNav?: boolean;
   onNavigate?: (target: string) => void;
+  onViewApplications?: () => void;
 }
 
 /**
@@ -80,9 +83,36 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   previewState,
   showBottomNav = false,
   onNavigate,
+  onViewApplications,
 }) => {
+  const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_LAYOUT_BREAKPOINT;
+
+  const handleViewApplications = useCallback(() => {
+    if (onViewApplications) {
+      onViewApplications();
+    } else if (navigation?.navigate) {
+      navigation.navigate(AppRoutes.MEMBERSHIP_APPLICATIONS);
+    }
+  }, [onViewApplications, navigation]);
+
+  const handleBottomNavPress = useCallback(
+    (key: string) => {
+      if (onNavigate) {
+        onNavigate(key);
+        return;
+      }
+      if (navigation?.navigate) {
+        if (key === 'dashboard') navigation.navigate(AppRoutes.ADMIN_DASHBOARD_TAB);
+        else if (key === 'members') navigation.navigate(AppRoutes.MEMBERS_DIRECTORY);
+        else if (key === 'applications') navigation.navigate(AppRoutes.ADMIN_APPLICATIONS_TAB);
+        else if (key === 'complaints') navigation.navigate(AppRoutes.ADMIN_COMPLAINTS_TAB);
+        else if (key === 'more') navigation.navigate(AppRoutes.ADMIN_MORE_TAB);
+      }
+    },
+    [onNavigate, navigation]
+  );
 
   const effectiveState: MembersPreviewState = previewState ?? 'default';
   const members = useMembers(effectiveState);
@@ -351,7 +381,10 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   const listHeader = (
     <View>
       <View>
-        <MembersPageHeader onAddMember={() => setAddModalVisible(true)} />
+        <MembersPageHeader
+          onAddMember={() => setAddModalVisible(true)}
+          onViewApplications={handleViewApplications}
+        />
         <View style={styles.sectionGap}>
           <MemberStats stats={members.stats} loading={members.isLoading} />
         </View>
@@ -453,7 +486,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
         <AppBottomNavigation
           items={BOTTOM_NAV_ITEMS}
           activeKey="members"
-          onItemPress={onNavigate}
+          onItemPress={handleBottomNavPress}
         />
       )}
 

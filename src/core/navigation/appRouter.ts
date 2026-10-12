@@ -16,6 +16,7 @@ export type AppRoute =
   | { name: 'profile-edit-personal' }
   | { name: 'profile-admin-details' }
   | { name: 'profile-id-card' }
+  | { name: 'members' }
   | { name: 'membership-applications' }
   | { name: 'membership-application-details'; applicationId: string }
   | { name: 'create-account' }
@@ -51,6 +52,9 @@ const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/profile/edit/personal': { name: 'profile-edit-personal' },
   '/profile/edit/admin-details': { name: 'profile-admin-details' },
   '/profile/id-card': { name: 'profile-id-card' },
+  '/members': { name: 'members' },
+  '/member-admin': { name: 'members' },
+  '/admin/members': { name: 'members' },
   '/membership-applications': { name: 'membership-applications' },
   '/applications': { name: 'membership-applications' },
   '/create-account': { name: 'create-account' },
@@ -85,6 +89,7 @@ const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
   'profile-edit-personal': '#/profile/edit/personal',
   'profile-admin-details': '#/profile/edit/admin-details',
   'profile-id-card': '#/profile/id-card',
+  members: '#/members',
   'membership-applications': '#/membership-applications',
   'membership-application-details': '#/membership-applications',
   'create-account': '#/create-account',
@@ -267,6 +272,10 @@ export const navigateToProfileAdminDetails = (): void => {
 
 export const navigateToProfileIdCard = (): void => {
   navigate({ name: 'profile-id-card' });
+};
+
+export const navigateToMembers = (): void => {
+  navigate({ name: 'members' });
 };
 
 export const navigateToMembershipApplications = (): void => {
