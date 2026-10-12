@@ -1,5 +1,6 @@
 import React from 'react';
 import { StatusBar, useColorScheme, View, StyleSheet, Platform } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import { AppProviders } from './src/app/providers/AppProviders';
 import { RootNavigator } from './src/app/navigation/RootNavigator';
 import {
@@ -503,7 +504,9 @@ function App() {
     <AppProviders>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       {Platform.OS === 'web' ? (
-        <View style={styles.container}>{renderRoute()}</View>
+        <NavigationContainer>
+          <View style={styles.container}>{renderRoute()}</View>
+        </NavigationContainer>
       ) : (
         <RootNavigator />
       )}
