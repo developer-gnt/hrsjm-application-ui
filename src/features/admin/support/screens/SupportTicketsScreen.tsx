@@ -28,7 +28,7 @@ import { TicketStatsRow } from '../components/TicketStats';
 import { CreateTicketModal } from '../components/CreateTicketModal';
 import { TICKET_TABS } from '../support.utils';
 import { useSupportTickets } from '../hooks/useSupportTickets';
-import { AppEmptyState, AppErrorState } from '../../../../core';
+import { AppEmptyState, AppErrorState, AppPagination } from '../../../../core';
 
 type TabProps = BottomTabScreenProps<TabsParamList, 'ComplaintsTab'>;
 type NavProp = CompositeNavigationProp<
@@ -61,6 +61,18 @@ export function SupportTicketsScreen() {
 
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedItems = React.useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredItems.slice(startIndex, startIndex + pageSize);
+  }, [filteredItems, page, pageSize]);
+
+  // Reset to page 1 on filter/tab changes
+  React.useEffect(() => {
+    setPage(1);
+  }, [activeTab, searchQuery, filterState]);
 
   if (!can(user, 'support.manage')) {
     return (
@@ -100,7 +112,7 @@ export function SupportTicketsScreen() {
 
       <FlatList
         style={styles.list}
-        data={filteredItems}
+        data={paginatedItems}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <TicketCard
@@ -232,7 +244,16 @@ export function SupportTicketsScreen() {
           )
         }
         ListFooterComponent={
-          loadingMore ? <Text style={styles.loadingMore}>Loading more…</Text> : undefined
+          filteredItems.length > 0 ? (
+            <AppPagination
+              currentPage={page}
+              totalItems={filteredItems.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="tickets"
+            />
+          ) : undefined
         }
         contentContainerStyle={styles.listContent}
       />

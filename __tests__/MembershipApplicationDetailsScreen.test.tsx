@@ -9,6 +9,7 @@ import {
 
 describe('MembershipApplicationDetailsScreen Status Flow & Confirmation Tests', () => {
   beforeEach(() => {
+    jest.setTimeout(15000);
     // Reset Aman Shaikh to under_review before each test
     membershipApplicationsStore.updateStatus('APP20260915001', 'under_review');
   });

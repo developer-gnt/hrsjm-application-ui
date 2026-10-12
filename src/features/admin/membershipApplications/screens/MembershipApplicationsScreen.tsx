@@ -7,7 +7,10 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppEmptyState } from '../../../../core';
+import { useNavigation } from '@react-navigation/native';
+import { AppEmptyState, AppPagination } from '../../../../core';
+import { AppRoutes } from '../../../../core/constants/routes';
+import { AdminSidebar } from '../../../../app/navigation/AdminSidebar';
 import { MembershipApplicationsHeader } from '../components/MembershipApplicationsHeader';
 import { MembershipStatsCards } from '../components/MembershipStatsCards';
 import { MembershipSearchBar } from '../components/MembershipSearchBar';
@@ -34,10 +37,14 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   onSignupPress,
 }) => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<StatusTabKey>('all');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     status: 'all',
     membershipType: 'All Types',
@@ -50,12 +57,18 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   const [stats, setStats] = useState(() => membershipApplicationsStore.getStats());
 
   useEffect(() => {
+    membershipApplicationsStore.fetchApplications();
     const unsubscribe = membershipApplicationsStore.subscribe(() => {
       setApplications(membershipApplicationsStore.getApplications());
       setStats(membershipApplicationsStore.getStats());
     });
     return unsubscribe;
   }, []);
+
+  // Reset to page 1 on filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeTab, filterOptions]);
 
   // When top tab is selected, sync with filter options
   const handleSelectTab = (tab: StatusTabKey) => {
@@ -79,17 +92,17 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     });
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setApplications(membershipApplicationsStore.getApplications());
-      setStats(membershipApplicationsStore.getStats());
+    try {
+      await membershipApplicationsStore.fetchApplications();
+    } finally {
       setIsRefreshing(false);
-    }, 400);
+    }
   };
 
-  const handleReconsider = (app: MembershipApplicationItem) => {
-    membershipApplicationsStore.updateStatus(app.id, 'under_review');
+  const handleReconsider = async (app: MembershipApplicationItem) => {
+    await membershipApplicationsStore.updateStatus(app.id, 'under_review');
     if (onReconsiderApplication) {
       onReconsiderApplication(app);
     }
@@ -138,6 +151,11 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     });
   }, [applications, activeTab, filterOptions, searchQuery]);
 
+  const paginatedApplications = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredApplications.slice(startIndex, startIndex + pageSize);
+  }, [filteredApplications, page, pageSize]);
+
   const renderHeader = () => (
     <View style={styles.headerArea}>
       <MembershipStatsCards stats={stats} />
@@ -171,22 +189,59 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     />
   );
 
+  const handleSidebarNavigate = (target: string) => {
+    setSidebarVisible(false);
+    if (navigation?.navigate) {
+      if (
+        target === AppRoutes.ADMIN_DASHBOARD_TAB ||
+        target === AppRoutes.ADMIN_MEMBERS_TAB ||
+        target === AppRoutes.ADMIN_APPLICATIONS_TAB ||
+        target === AppRoutes.ADMIN_COMPLAINTS_TAB ||
+        target === AppRoutes.ADMIN_MORE_TAB
+      ) {
+        navigation.navigate(target);
+      } else {
+        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: target });
+      }
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <MembershipApplicationsHeader
         paddingTop={insets.top}
-        onMenuPress={() => {}}
-        onNotificationsPress={() => {}}
-        onProfilePress={() => {}}
+        onMenuPress={() => setSidebarVisible(true)}
+        onNotificationsPress={() => {
+          if (navigation?.navigate) {
+            navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS });
+          }
+        }}
+        onProfilePress={() => {
+          if (navigation?.navigate) {
+            navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
+          }
+        }}
         onSignupPress={onSignupPress}
       />
 
       <FlatList
-        data={filteredApplications}
+        data={paginatedApplications}
         keyExtractor={item => item.id}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmptyState}
+        ListFooterComponent={
+          filteredApplications.length > 0 ? (
+            <AppPagination
+              currentPage={page}
+              totalItems={filteredApplications.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="applications"
+            />
+          ) : undefined
+        }
         renderItem={({ item }) => (
           <MembershipApplicationCard
             application={item}
@@ -219,6 +274,12 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
         bottomInset={insets.bottom}
         activeKey="applications"
         onTabPress={onBottomTabPress}
+      />
+
+      <AdminSidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        onNavigate={handleSidebarNavigate}
       />
     </View>
   );

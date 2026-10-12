@@ -1,83 +1,231 @@
-import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Spacing } from '../../../../core/theme/spacing';
-import { AboutColors } from '../theme';
-import { AboutHeader } from '../components/AboutHeader';
-import { AboutHeroSection } from '../components/AboutHeroSection';
-import { WhoWeAreSection } from '../components/WhoWeAreSection';
-import { BeliefSection } from '../components/BeliefSection';
-import { MissionVisionSection } from '../components/MissionVisionSection';
-import { ValuesSection } from '../components/ValuesSection';
-import { LeadershipSection } from '../components/LeadershipSection';
-import { ClosingCtaSection } from '../components/ClosingCtaSection';
+import React, { useRef } from 'react';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type LayoutChangeEvent,
+  type ScrollViewInstance,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  AdminColors,
+  FontFamilies,
+  Spacing,
+} from '../../../../core/theme';
+import { HomeHeader } from '../../home/components/HomeHeader';
+import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
+import type { HomeTab } from '../../home/types/home.types';
+import { AboutApproachSection } from '../components/AboutApproachSection';
+import { AboutCoreValuesSection } from '../components/AboutCoreValuesSection';
+import { AboutFinalCta } from '../components/AboutFinalCta';
+import { AboutHero } from '../components/AboutHero';
+import { AboutImpactSection } from '../components/AboutImpactSection';
+import { AboutVisionMissionSection } from '../components/AboutVisionMissionSection';
+import { AboutWhoWeAreSection } from '../components/AboutWhoWeAreSection';
+import { AboutWorkGrid } from '../components/AboutWorkGrid';
+import { HumanRightsMonitoringSection } from '../components/HumanRightsMonitoringSection';
+import { ABOUT_CONTENT } from '../data/about-content';
+import type { AboutWorkArea } from '../types/about.types';
+import type { WhatWeDoId } from '../../what-we-do';
 
 export interface AboutScreenProps {
-  /** Called by the header back button (wired to navigation.goBack by MoreNavigator). */
   onBack?: () => void;
   /** Navigate to an in-app route (used by the closing CTA). */
   onNavigate?: (target: string) => void;
+  onOpenRights?: () => void;
+  onOpenContact?: () => void;
+  onOpenEvents?: () => void;
+  onOpenNews?: () => void;
+  onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
 }
 
-/**
- * ============================================================================
- * ABOUT HRSJM SCREEN
- * ============================================================================
- *
- * Organization profile page (spec Phases 3–10, corrected against the
- * high-resolution approved reference). Sections compose exclusively from the
- * About design tokens (../theme) and the approved copy in
- * ../content/aboutContent:
- *
- *   AboutHeader (page-specific: chevron + serif title) — Phase 3
- *   AboutHeroSection                                   — Phase 4
- *   WhoWeAreSection                                    — Phase 5
- *   BeliefSection                                      — Phase 6
- *   MissionVisionSection                               — Phase 7
- *   ValuesSection                                      — Phase 8
- *   LeadershipSection                                  — Phase 9
- *   ClosingCtaSection (gold button → Donations route)  — Phase 10
- *
- * Layout relationship guaranteeing no content ever sits beneath the header:
- * the header is an in-flow flex sibling ABOVE the ScrollView (never
- * position:fixed), so the scroll area starts strictly below it.
- */
+const SectionHeading: React.FC<{
+  title: string;
+  subtitle?: string;
+}> = ({ title, subtitle }) => (
+  <View style={styles.sectionHeadingRow}>
+    <View style={styles.sectionHeading}>
+      <View style={styles.titleUnderline} />
+      <Text style={styles.sectionTitle}>{title}</Text>
+    </View>
+    {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
+  </View>
+);
+
 export const AboutScreen: React.FC<AboutScreenProps> = ({
   onBack,
   onNavigate,
+  onOpenRights,
+  onOpenContact,
+  onOpenEvents,
+  onOpenNews,
+  onOpenWhatWeDo,
 }) => {
-  const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollViewInstance | null>(null);
+  const monitoringOffset = useRef(0);
+
+  const showComingSoon = (feature: string) => {
+    Alert.alert(feature, `"${feature}" is part of an upcoming phase.`);
+  };
+
+  const handleTabPress = (tab: HomeTab) => {
+    if (tab.id === 'home') {
+      onBack?.();
+    } else if (tab.id === 'rights') {
+      onOpenRights?.();
+    } else if (tab.id === 'contact') {
+      onOpenContact?.();
+    } else if (tab.id === 'events') {
+      onOpenEvents?.();
+    } else if (tab.id === 'news') {
+      onOpenNews?.();
+    }
+  };
+
+  const handleAreaPress = (area: AboutWorkArea) => {
+    if (area.id === 'monitoring') {
+      scrollToMonitoring();
+      return;
+    }
+
+    const pageIdMap: Record<string, WhatWeDoId> = {
+      awareness: 'awareness-campaigns',
+      workshops: 'workshops-training',
+      community: 'community-activities',
+      leadership: 'leadership-development',
+      advocacy: 'advocacy-awareness',
+      research: 'research-rights-education',
+      legal: 'legal-rights-awareness',
+      other: 'other-work-areas',
+    };
+
+    const pageId = pageIdMap[area.id];
+    if (pageId) {
+      onOpenWhatWeDo?.(pageId);
+    }
+  };
+
+  const handleMonitoringLayout = (event: LayoutChangeEvent) => {
+    monitoringOffset.current = event.nativeEvent.layout.y;
+  };
+
+  const scrollToMonitoring = () => {
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, monitoringOffset.current - Spacing.sm),
+      animated: true,
+    });
+  };
 
   return (
-    <View style={styles.screen}>
-      <AboutHeader onBack={onBack} />
-
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+      <HomeHeader
+        showNotificationDot
+        notificationDotColor={AdminColors.accentGold}
+        onPressSearch={() => onNavigate?.('search') || showComingSoon('Search')}
+        onPressNotifications={() => onNavigate?.('notifications') || showComingSoon('Notifications')}
+      />
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + Spacing.base },
-        ]}
+        ref={scrollRef}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <AboutHeroSection />
-        <WhoWeAreSection />
-        <BeliefSection />
-        <MissionVisionSection />
-        <ValuesSection />
-        <LeadershipSection />
-        <ClosingCtaSection onNavigate={onNavigate} />
+        <AboutHero content={ABOUT_CONTENT.hero} />
+
+        <View style={styles.section}>
+          <AboutWhoWeAreSection principles={ABOUT_CONTENT.principles} />
+        </View>
+
+        <View style={styles.section}>
+          <AboutVisionMissionSection />
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeading
+            title="What We Do"
+            subtitle="Nine key areas of action"
+          />
+          <AboutWorkGrid
+            areas={ABOUT_CONTENT.workAreas}
+            onPressArea={handleAreaPress}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <HumanRightsMonitoringSection onLayout={handleMonitoringLayout} />
+        </View>
+
+        <View style={styles.section}>
+          <AboutApproachSection content={ABOUT_CONTENT.approach} />
+        </View>
+
+        <View style={styles.section}>
+          <AboutCoreValuesSection />
+        </View>
+
+        <View style={styles.section}>
+          <AboutImpactSection content={ABOUT_CONTENT.impact} />
+        </View>
+
+        <View style={styles.ctaSection}>
+          <AboutFinalCta
+            content={ABOUT_CONTENT.finalCta}
+            onPress={() => onNavigate?.('donations') || showComingSoon(ABOUT_CONTENT.finalCta.buttonLabel)}
+          />
+        </View>
       </ScrollView>
-    </View>
+      <UserBottomNavigation activeTab="about" onTabPress={handleTabPress} />
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: {
+  safeArea: {
     flex: 1,
-    backgroundColor: AboutColors.offWhite,
+    backgroundColor: AdminColors.background,
+  },
+  scroll: {
+    flex: 1,
   },
   scrollContent: {
-    paddingBottom: Spacing.base,
+    paddingBottom: Spacing.xl,
+  },
+  section: {
+    marginTop: Spacing.lg,
+    marginHorizontal: Spacing.base,
+  },
+  ctaSection: {
+    marginTop: Spacing.xl + 4,
+    width: '100%',
+  },
+  sectionHeadingRow: {
+    alignItems: 'flex-start',
+    marginBottom: Spacing.sm,
+  },
+  sectionHeading: {
+    flexShrink: 0,
+  },
+  titleUnderline: {
+    width: 28,
+    height: 2.5,
+    marginBottom: 4,
+    backgroundColor: AdminColors.accentGold,
+    borderRadius: 1,
+  },
+  sectionTitle: {
+    color: AdminColors.primaryDark,
+    fontFamily: FontFamilies.serif,
+    fontSize: 22,
+    lineHeight: 27,
+    fontWeight: '700',
+  },
+  sectionSubtitle: {
+    marginTop: 3,
+    color: AdminColors.textSecondary,
+    fontSize: 13,
+    lineHeight: 17,
   },
 });
 

@@ -29,6 +29,13 @@ export const useReceipts = (params: Omit<ListReceiptsParams, 'page' | 'limit'>) 
     },
   });
 
+export const useReceiptsPaginated = (params: ListReceiptsParams) =>
+  useQuery({
+    queryKey: ['receipt-entries', 'paginated', params],
+    queryFn: () => receiptEntriesService.list(params),
+    staleTime: 15_000,
+  });
+
 export const useReceiptStats = () =>
   useQuery({
     queryKey: RECEIPTS_QUERY_KEYS.stats,

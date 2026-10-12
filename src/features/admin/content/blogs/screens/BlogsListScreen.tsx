@@ -18,6 +18,7 @@ import {
   AppButton,
   AppEmptyState,
   AppErrorState,
+  AppPagination,
   AppSearchBar,
   SkeletonCard,
   feedback,
@@ -164,6 +165,18 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
 
   const hasActiveFilters =
     searchQuery.trim() !== '' || activeStatus !== 'ALL' || activeCategory !== null || activeDateRange !== 'ANY';
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedBlogs = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredBlogs.slice(startIndex, startIndex + pageSize);
+  }, [filteredBlogs, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeStatus, activeCategory, activeDateRange]);
 
   const handleApplyFilters = (filters: BlogFilterState) => {
     setActiveStatus(filters.status);
@@ -326,9 +339,21 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <FlatList
-          data={uiState === 'loading' ? [] : filteredBlogs}
+          data={uiState === 'loading' ? [] : paginatedBlogs}
           keyExtractor={item => item.id}
           ListHeaderComponent={renderListHeader}
+          ListFooterComponent={
+            filteredBlogs.length > 0 ? (
+              <AppPagination
+                currentPage={page}
+                totalItems={filteredBlogs.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemLabel="blogs"
+              />
+            ) : undefined
+          }
           renderItem={({ item }) => (
             <BlogCard
               blog={item}

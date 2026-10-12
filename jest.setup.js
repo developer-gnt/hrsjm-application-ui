@@ -147,3 +147,4 @@ jest.mock('./src/core/components/feedback/SkeletonCard', () => {
     SkeletonCard: props => React.createElement(View, props),
   };
 });
+

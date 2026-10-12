@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Modal,
   RefreshControl,
@@ -39,29 +39,34 @@ import { RecentApplicationsCard } from '../components/RecentApplicationsCard';
 
 const MORE_TAB = 'AdminMoreTab' as const;
 
-const MONTH_OPTIONS = [
-  'Oct 2026',
-  'Sep 2026',
-  'Aug 2026',
-  'Jul 2026',
-  'Jun 2026',
-  'May 2026',
-  'Apr 2026',
-];
+/** Generates dynamic rolling 12-month options (newest first). */
+const generateMonthOptions = (): Array<{ label: string; value: string }> => {
+  const options: Array<{ label: string; value: string }> = [];
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const label = d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    options.push({ label, value });
+  }
+  return options;
+};
 
 export const AdminDashboardScreen: React.FC<{
   navigation: BottomTabNavigationProp<Record<string, object | undefined>>;
 }> = ({ navigation }) => {
-  const dashboardQuery = useDashboard();
+  const monthOptions = useMemo(() => generateMonthOptions(), []);
+  const [selectedMonthOption, setSelectedMonthOption] = useState(monthOptions[0]);
+  const [selectedRangeMonths, setSelectedRangeMonths] = useState(6);
+  const [monthPickerVisible, setMonthPickerVisible] = useState(false);
+
+  const dashboardQuery = useDashboard(selectedMonthOption.value, selectedRangeMonths);
   const recentMembersQuery = useRecentMembers();
   const recentApplicationsQuery = useRecentApplications();
   const unreadQuery = useUnreadNotifications();
   const eventsQuery = useEvents();
   const refresh = useDashboardRefresh();
   const [refreshing, setRefreshing] = useState(false);
-  const currentMonthLabel = new Date().toLocaleString('en-US', { month: 'short', year: 'numeric' });
-  const [selectedMonth, setSelectedMonth] = useState(currentMonthLabel || 'Oct 2026');
-  const [monthPickerVisible, setMonthPickerVisible] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -104,7 +109,7 @@ export const AdminDashboardScreen: React.FC<{
       : 'Something went wrong while loading the dashboard. Please try again.';
     return (
       <View style={styles.container}>
-        <DashboardHeader unreadCount={3} onNavigate={handleDrawerNavigate} />
+        <DashboardHeader unreadCount={unreadQuery.data ?? 0} onNavigate={handleDrawerNavigate} />
         <AppErrorState message={message} onRetry={handleRefresh} />
       </View>
     );
@@ -113,7 +118,7 @@ export const AdminDashboardScreen: React.FC<{
   if (isLoading || !dashboard) {
     return (
       <View style={styles.container}>
-        <DashboardHeader unreadCount={3} onNavigate={handleDrawerNavigate} />
+        <DashboardHeader unreadCount={unreadQuery.data ?? 0} onNavigate={handleDrawerNavigate} />
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
@@ -160,8 +165,8 @@ export const AdminDashboardScreen: React.FC<{
   const growthPoints = toGrowthChartPoints(dashboard.memberGrowth);
   const latestPoint = growthPoints[growthPoints.length - 1];
 
-  const totalMembers = dashboard.users?.total ?? 0;
-  const membersThisMonth = dashboard.users?.thisMonth ?? 0;
+  const totalMembers = dashboard.memberships?.total ?? dashboard.users?.total ?? 0;
+  const membersThisMonth = dashboard.memberships?.thisMonth ?? dashboard.users?.thisMonth ?? 0;
 
   const totalApplications = dashboard.assistance?.total ?? 0;
   const applicationsThisMonth = dashboard.assistance?.thisMonth ?? 0;
@@ -170,13 +175,14 @@ export const AdminDashboardScreen: React.FC<{
   const complaintsThisMonth = dashboard.tickets?.thisMonth ?? 0;
 
   const eventsStats = eventsQuery.data?.stats;
-  const totalEvents = eventsStats?.total ?? eventsQuery.data?.events.length ?? 0;
-  const upcomingEvents = eventsStats?.upcoming ?? 0;
+  const totalEvents = dashboard.events?.total ?? eventsStats?.total ?? eventsQuery.data?.events.length ?? 0;
+  const upcomingEvents = dashboard.events?.upcoming ?? eventsStats?.upcoming ?? 0;
+  const eventsThisMonth = dashboard.events?.thisMonth ?? 0;
 
   return (
     <View style={styles.container}>
       <DashboardHeader
-        unreadCount={unreadQuery.data ?? 3}
+        unreadCount={unreadQuery.data ?? 0}
         onNavigate={handleDrawerNavigate}
       />
 
@@ -204,7 +210,7 @@ export const AdminDashboardScreen: React.FC<{
               activeOpacity={0.7}
             >
               <Text style={styles.calendarIcon}>📅</Text>
-              <Text style={styles.monthText}>{selectedMonth}</Text>
+              <Text style={styles.monthText}>{selectedMonthOption.label}</Text>
               <Text style={styles.dropdownChevron}>▾</Text>
             </TouchableOpacity>
           </View>
@@ -243,49 +249,18 @@ export const AdminDashboardScreen: React.FC<{
             Icon={Calendar}
             title="Total Events"
             value={totalEvents}
-            note={upcomingEvents > 0 ? `${upcomingEvents} upcoming` : `${totalEvents} active`}
+            note={upcomingEvents > 0 ? `${upcomingEvents} upcoming` : `+${eventsThisMonth} this month`}
             tone="gold"
             onPress={() => handleDrawerNavigate('Events')}
           />
         </View>
 
-        {/* Quick Module Actions Bar */}
-        <View style={styles.quickActionsContainer}>
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            activeOpacity={0.7}
-            onPress={() => handleDrawerNavigate('Donations')}
-          >
-            <View style={styles.quickActionIconWrap}>
-              <Text style={styles.quickActionIcon}>🎁</Text>
-            </View>
-            <View style={styles.quickActionTextCol}>
-              <Text style={styles.quickActionTitle}>Donations</Text>
-              <Text style={styles.quickActionSubtitle}>View Records & Receipts</Text>
-            </View>
-            <Text style={styles.quickActionChevron}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            activeOpacity={0.7}
-            onPress={() => handleDrawerNavigate('Events')}
-          >
-            <View style={[styles.quickActionIconWrap, { backgroundColor: '#F3E8FF' }]}>
-              <Text style={styles.quickActionIcon}>📅</Text>
-            </View>
-            <View style={styles.quickActionTextCol}>
-              <Text style={styles.quickActionTitle}>Events</Text>
-              <Text style={styles.quickActionSubtitle}>Manage Programs & Meets</Text>
-            </View>
-            <Text style={styles.quickActionChevron}>›</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Membership Growth Line Chart */}
         <MembershipGrowthCard
           points={growthPoints}
-          latestLabel={latestPoint ? `${latestPoint.label} 2026` : selectedMonth}
+          latestLabel={latestPoint ? `${latestPoint.label} 2026` : selectedMonthOption.label}
+          selectedRangeMonths={selectedRangeMonths}
+          onRangeMonthsChange={setSelectedRangeMonths}
         />
 
         {/* 2 Donut Charts Side-by-Side */}
@@ -338,18 +313,18 @@ export const AdminDashboardScreen: React.FC<{
             </View>
 
             <View style={styles.monthList}>
-              {MONTH_OPTIONS.map(month => {
-                const isSelected = selectedMonth === month;
+              {monthOptions.map((option: { label: string; value: string }) => {
+                const isSelected = selectedMonthOption.value === option.value;
                 return (
                   <TouchableOpacity
-                    key={month}
+                    key={option.value}
                     style={[
                       styles.monthOption,
                       isSelected && styles.monthOptionActive,
                     ]}
                     activeOpacity={0.7}
                     onPress={() => {
-                      setSelectedMonth(month);
+                      setSelectedMonthOption(option);
                       setMonthPickerVisible(false);
                     }}
                   >
@@ -359,7 +334,7 @@ export const AdminDashboardScreen: React.FC<{
                         isSelected && styles.monthOptionTextActive,
                       ]}
                     >
-                      {month}
+                      {option.label}
                     </Text>
                     {isSelected ? (
                       <Text style={styles.monthCheck}>✓</Text>

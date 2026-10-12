@@ -30,8 +30,9 @@ import { useDebouncedValue } from '../../../../core/hooks/useDebouncedValue';
 import { AdminColors, BrandColors, Spacing, Typography, BorderRadius } from '../../../../core/theme';
 import { formatINR } from '../../../../core/utils';
 import { AppRoutes } from '../../../../core/constants/routes';
-import { useReceipts, useReceiptStats } from '../hooks/useReceipts';
+import { useReceiptsPaginated, useReceiptStats } from '../hooks/useReceipts';
 import { ReceiptVoucherCard } from '../components/ReceiptVoucherCard';
+import { AppPagination } from '../../../../core/components';
 import type { VoucherStatus, PaymentMethod } from '../../accounting/types/accounting.types';
 import type { MoreStackParamList } from '../../../../app/navigation/NavigationTypes';
 
@@ -61,6 +62,8 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [methodFilter, setMethodFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const debouncedSearch = useDebouncedValue(search);
 
   const status: VoucherStatus | undefined =
@@ -70,12 +73,15 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
     methodFilter === 'ALL' ? undefined : (methodFilter as PaymentMethod);
 
   const stats = useReceiptStats();
-  const receiptsQuery = useReceipts({
+  const receiptsQuery = useReceiptsPaginated({
     status,
     payment_method: paymentMethod,
     search: debouncedSearch || undefined,
+    page,
+    limit: pageSize,
   });
-  const vouchers = receiptsQuery.data?.pages.flatMap(page => page.items) ?? [];
+  const vouchers = receiptsQuery.data?.items ?? [];
+  const totalCount = receiptsQuery.data?.meta?.total ?? 0;
 
   const refresh = useCallback(async () => {
     await Promise.all([receiptsQuery.refetch(), stats.refetch()]);
@@ -235,15 +241,16 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
             colors={[BrandColors.navy]}
           />
         }
-        onEndReachedThreshold={0.4}
-        onEndReached={() => {
-          if (receiptsQuery.hasNextPage && !receiptsQuery.isFetchingNextPage) {
-            void receiptsQuery.fetchNextPage();
-          }
-        }}
         ListFooterComponent={
-          receiptsQuery.isFetchingNextPage ? (
-            <AppLoader size="small" message="Loading more…" />
+          totalCount > 0 ? (
+            <AppPagination
+              currentPage={page}
+              totalItems={totalCount}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="receipts"
+            />
           ) : undefined
         }
         ListEmptyComponent={

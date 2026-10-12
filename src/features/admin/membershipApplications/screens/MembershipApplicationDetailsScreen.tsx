@@ -45,14 +45,17 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
   );
 
   useEffect(() => {
+    if (applicationId) {
+      membershipApplicationsStore.fetchApplicationById(applicationId);
+    }
     const unsubscribe = membershipApplicationsStore.subscribe(() => {
       setApplication(membershipApplicationsStore.getApplicationById(applicationId));
     });
     return unsubscribe;
   }, [applicationId]);
 
-  const handleSelectStatus = (newStatus: ApplicationStatus) => {
-    membershipApplicationsStore.updateStatus(applicationId, newStatus);
+  const handleSelectStatus = async (newStatus: ApplicationStatus) => {
+    await membershipApplicationsStore.updateStatus(applicationId, newStatus);
     onStatusChange?.(newStatus);
   };
 

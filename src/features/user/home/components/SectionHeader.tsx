@@ -68,9 +68,9 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.sm,
   },
   linkLabel: {
-    fontSize: 12.5,
-    lineHeight: 16,
-    fontWeight: '600',
+    fontSize: 13.5,
+    lineHeight: 18,
+    fontWeight: '700',
     color: AdminColors.primaryDark,
     marginRight: 4,
   },

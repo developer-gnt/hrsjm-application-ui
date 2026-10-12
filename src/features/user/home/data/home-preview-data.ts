@@ -12,12 +12,12 @@ import type {
   HomeQuickAction,
   HomeRecommendation,
   HomeTab,
-  ImpactStat,
   MemberActivity,
   MemberGreeting,
   MembershipPreview,
   RightsCategory,
 } from '../types/home.types';
+import type { WhatWeDoHomeItem } from '../../what-we-do';
 
 export const GUEST_QUICK_ACTIONS: HomeQuickAction[] = [
   { id: 'join', label: 'Join HRSJM', icon: 'users', emphasized: true },
@@ -37,23 +37,37 @@ export const ABOUT_DESCRIPTION =
   'Human Rights & Social Justice Mission (HRSJM) works for human rights, dignity, equality and social justice through awareness, advocacy, education and community support.';
 
 export const RIGHTS_CATEGORIES: RightsCategory[] = [
-  { id: 'human', title: 'Human Rights', icon: 'scale' },
-  { id: 'women', title: "Women's Rights", icon: 'users' },
-  { id: 'education', title: 'Right to Education', icon: 'graduation-cap' },
-  { id: 'children', title: "Children's Rights", icon: 'child-care' },
+  { id: 'human-rights', title: 'Human Rights', icon: 'scale' },
+  { id: 'womens-rights', title: "Women's Rights", icon: 'users' },
+  {
+    id: 'right-to-education',
+    title: 'Right to Education',
+    icon: 'graduation-cap',
+  },
+  { id: 'childrens-rights', title: "Children's Rights", icon: 'child-care' },
 ];
 
-export const WHAT_WE_DO_ITEMS: RightsCategory[] = [
-  { id: 'awareness', title: 'Awareness Campaigns', icon: 'megaphone' },
-  { id: 'workshops', title: 'Workshops & Training', icon: 'users' },
-  { id: 'research', title: 'Research & Education', icon: 'doc-search' },
-  { id: 'community', title: 'Community Activities', icon: 'heart-hands' },
-];
-
-export const IMPACT_STATS: ImpactStat[] = [
-  { id: 'members', value: '1,00,079', label: 'Members', icon: 'users' },
-  { id: 'complaints', value: '2,00,000', label: 'Complaints Handled', icon: 'file-text' },
-  { id: 'cases', value: '1,99,800', label: 'Cases Resolved', icon: 'handshake' },
+export const WHAT_WE_DO_ITEMS: WhatWeDoHomeItem[] = [
+  {
+    id: 'awareness-campaigns',
+    title: 'Awareness Campaigns',
+    icon: 'megaphone',
+  },
+  {
+    id: 'workshops-training',
+    title: 'Workshops & Training',
+    icon: 'users',
+  },
+  {
+    id: 'research-rights-education',
+    title: 'Research & Education',
+    icon: 'doc-search',
+  },
+  {
+    id: 'community-activities',
+    title: 'Community Activities',
+    icon: 'heart-hands',
+  },
 ];
 
 export const UPCOMING_EVENTS: HomeEvent[] = [
@@ -107,10 +121,34 @@ export const MEMBERSHIP_PREVIEW: MembershipPreview = {
 };
 
 export const MEMBER_ACTIVITIES: MemberActivity[] = [
-  { id: 'complaints', icon: 'file-text', value: '2', label: 'Complaints Submitted', tone: 'green' },
-  { id: 'events', icon: 'calendar', value: '1', label: 'Event Registered', tone: 'blue' },
-  { id: 'membership', icon: 'user', value: 'Active', label: 'Membership', tone: 'amber' },
-  { id: 'certificates', icon: 'medal', value: '3', label: 'Certificates', tone: 'purple' },
+  {
+    id: 'complaints',
+    icon: 'file-text',
+    value: '2',
+    label: 'Complaints Submitted',
+    tone: 'green',
+  },
+  {
+    id: 'events',
+    icon: 'calendar',
+    value: '1',
+    label: 'Event Registered',
+    tone: 'blue',
+  },
+  {
+    id: 'membership',
+    icon: 'user',
+    value: 'Active',
+    label: 'Membership',
+    tone: 'amber',
+  },
+  {
+    id: 'certificates',
+    icon: 'medal',
+    value: '3',
+    label: 'Certificates',
+    tone: 'purple',
+  },
 ];
 
 export const RECOMMENDATIONS: HomeRecommendation[] = [

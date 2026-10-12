@@ -1,18 +1,21 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import {
-  AdminColors,
-  FontFamilies,
-  Spacing,
-} from '../../../../core/theme';
+import { AdminColors, FontFamilies, Spacing } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { SectionHeader } from './SectionHeader';
-import type { ImpactStat } from '../types/home.types';
+import type { ImpactStats } from '../types/home.types';
+import { formatImpactNumber } from '../utils/format-impact-number';
 
 interface ImpactSectionProps {
-  stats: ImpactStat[];
+  stats: ImpactStats;
   onDetailsPress?: () => void;
 }
+
+const IMPACT_METRICS = [
+  { key: 'members', label: 'Members', icon: 'users' },
+  { key: 'complaintsHandled', label: 'Complaints Handled', icon: 'file-text' },
+  { key: 'casesResolved', label: 'Cases Resolved', icon: 'handshake' },
+] as const;
 
 /**
  * Reference-locked "Our Impact": full-bleed navy band, serif white heading,
@@ -23,18 +26,27 @@ export const ImpactSection: React.FC<ImpactSectionProps> = ({
   onDetailsPress,
 }) => (
   <View style={styles.section}>
-    <SectionHeader title="Our Impact" linkLabel="View Details" onLinkPress={onDetailsPress} light />
+    <SectionHeader
+      title="Our Impact"
+      linkLabel="View Details"
+      onLinkPress={onDetailsPress}
+      light
+    />
 
     <View style={styles.statsRow}>
-      {stats.map((stat, index) => (
-        <React.Fragment key={stat.id}>
-          {index > 0 && <View style={styles.divider} />}
-          <View style={styles.stat}>
-            <AppIcon name={stat.icon} size={24} color={AdminColors.accentGold} strokeWidth={1.7} />
-            <Text style={styles.value}>{stat.value}</Text>
-            <Text style={styles.label}>{stat.label}</Text>
-          </View>
-        </React.Fragment>
+      {IMPACT_METRICS.map(metric => (
+        <View key={metric.key} style={styles.stat}>
+          <AppIcon
+            name={metric.icon}
+            size={24}
+            color="#EAA532"
+            strokeWidth={1.8}
+          />
+          <Text style={styles.value}>
+            {formatImpactNumber(stats[metric.key])}
+          </Text>
+          <Text style={styles.label}>{metric.label}</Text>
+        </View>
       ))}
     </View>
   </View>
@@ -42,41 +54,38 @@ export const ImpactSection: React.FC<ImpactSectionProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: AdminColors.primaryDark,
-    paddingVertical: Spacing.lg,
+    backgroundColor: '#06274D',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.xl,
     paddingHorizontal: Spacing.base,
   },
   statsRow: {
     flexDirection: 'row',
-    alignItems: 'stretch',
-    marginTop: Spacing.xs,
-  },
-  divider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: AdminColors.textOnDark,
-    opacity: 0.25,
-    marginVertical: Spacing.xs,
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginTop: Spacing.sm,
   },
   stat: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: Spacing.xs,
+    paddingHorizontal: 2,
   },
   value: {
     fontFamily: FontFamilies.serif,
     fontSize: 20,
     lineHeight: 26,
     fontWeight: '700',
-    color: AdminColors.textOnDark,
-    marginTop: Spacing.sm,
+    color: '#FFFFFF',
+    marginTop: 8,
     textAlign: 'center',
   },
   label: {
-    fontSize: 10.5,
+    fontSize: 11,
     lineHeight: 14,
-    color: AdminColors.textOnDark,
-    opacity: 0.85,
-    marginTop: 2,
+    color: 'rgba(255, 255, 255, 0.82)',
+    marginTop: 3,
     textAlign: 'center',
   },
 });

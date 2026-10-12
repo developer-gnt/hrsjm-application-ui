@@ -24,6 +24,12 @@ export interface ContactUsScreenProps {
   /** Returns to the previous User screen (temporary router back navigation). */
   onBack?: () => void;
   onOpenRights?: () => void;
+  /** Opens the About page (About tab in the shared six-tab navigation). */
+  onOpenAbout?: () => void;
+  /** Opens the Get Help flow. */
+  onOpenGetHelp?: () => void;
+  onOpenEvents?: () => void;
+  onOpenNews?: () => void;
 }
 
 /**
@@ -37,6 +43,10 @@ export interface ContactUsScreenProps {
 export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
   onBack,
   onOpenRights,
+  onOpenAbout,
+  onOpenGetHelp,
+  onOpenEvents,
+  onOpenNews,
 }) => {
   const showComingSoon = (feature: string) => {
     // UI PHASE ONLY placeholder for actions that ship with later phases.
@@ -65,7 +75,13 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
           <View style={styles.actionsSection}>
             <ContactActionsRow
               actions={CONTACT_ACTIONS}
-              onPressAction={action => showComingSoon(action.title)}
+              onPressAction={action => {
+                if (action.id === 'help') {
+                  onOpenGetHelp?.();
+                  return;
+                }
+                showComingSoon(action.title);
+              }}
             />
           </View>
 
@@ -99,6 +115,12 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
             onBack?.();
           } else if (tab.id === 'rights') {
             onOpenRights?.();
+          } else if (tab.id === 'about') {
+            onOpenAbout?.();
+          } else if (tab.id === 'events') {
+            onOpenEvents?.();
+          } else if (tab.id === 'news') {
+            onOpenNews?.();
           }
         }}
       />

@@ -127,7 +127,18 @@ export const useLedger = ({ accountId, fromDate, toDate }: UseLedgerParams): Use
           });
         }
 
-        // Date Filter
+        // Calculate Opening Balance from transactions strictly prior to fromDate
+        let openingBalance = 0;
+        if (fromDate) {
+          rawList.forEach((t) => {
+            const d = t.entry_date ? t.entry_date.slice(0, 10) : '';
+            if (d && d < fromDate) {
+              openingBalance += (Number(t.credit) || 0) - (Number(t.debit) || 0);
+            }
+          });
+        }
+
+        // Date Filter for current period
         let filtered = rawList;
         if (fromDate) {
           filtered = filtered.filter((t) => {
@@ -149,7 +160,7 @@ export const useLedger = ({ accountId, fromDate, toDate }: UseLedgerParams): Use
           return da - db;
         });
 
-        let running = 0;
+        let running = openingBalance;
         let totalCredit = 0;
         let totalDebit = 0;
 
@@ -173,7 +184,7 @@ export const useLedger = ({ accountId, fromDate, toDate }: UseLedgerParams): Use
         setTransactions(displayList);
         setAccount(null);
         setSummary({
-          opening_balance: 0,
+          opening_balance: openingBalance,
           total_debit: totalDebit,
           total_credit: totalCredit,
           closing_balance: running,

@@ -10,16 +10,20 @@ import { ApiRoutes } from '../../../../core/constants/api-routes';
 import { ApiError } from '../../../../core/api/api-error';
 
 export const DASHBOARD_QUERY_KEYS = {
-  dashboard: ['admin', 'dashboard'] as const,
+  dashboard: (month?: string, growthMonths?: number) =>
+    ['admin', 'dashboard', month, growthMonths] as const,
   recentMembers: ['admin', 'recent-members'] as const,
   recentApplications: ['admin', 'recent-applications'] as const,
 };
 
 /** Dashboard KPIs, breakdowns, growth series and recent-activity feed. */
-export const useDashboard = () =>
+export const useDashboard = (month?: string, growthMonths?: number) =>
   useQuery({
-    queryKey: DASHBOARD_QUERY_KEYS.dashboard,
-    queryFn: getAdminDashboard,
+    queryKey: DASHBOARD_QUERY_KEYS.dashboard(month, growthMonths),
+    queryFn: () =>
+      getAdminDashboard(
+        month || growthMonths ? { month, growthMonths } : undefined,
+      ),
     staleTime: 30_000,
   });
 
@@ -58,7 +62,7 @@ export const useDashboardRefresh = () => {
   const queryClient = useQueryClient();
   return useCallback(async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEYS.dashboard }),
+      queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] }),
       queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEYS.recentMembers }),
       queryClient.invalidateQueries({
         queryKey: DASHBOARD_QUERY_KEYS.recentApplications,

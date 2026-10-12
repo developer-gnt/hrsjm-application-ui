@@ -16,7 +16,10 @@ export { QuickActionCard, QuickActionsRow } from './components/QuickActionCard';
 export { SectionHeader } from './components/SectionHeader';
 export { GoldButton } from './components/GoldButton';
 export { AboutSection } from './components/AboutSection';
-export { CategoryIconCard, CategoryIconRow } from './components/CategoryIconCard';
+export {
+  CategoryIconCard,
+  CategoryIconRow,
+} from './components/CategoryIconCard';
 export { ImpactSection } from './components/ImpactSection';
 export { HomeEventCard } from './components/HomeEventCard';
 export { NewsCard } from './components/NewsCard';
@@ -33,7 +36,7 @@ export type {
   HomeQuickAction,
   RightsCategory,
   WhatWeDoItem,
-  ImpactStat,
+  ImpactStats,
   HomeEvent,
   HomeNewsItem,
   MemberActivity,

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Modal,
@@ -26,7 +27,7 @@ import Svg, {
   Text as SvgText,
 } from 'react-native-svg';
 import { AdminColors, BorderRadius, Shadows, Spacing } from '../../../../core/theme';
-import { AppEmptyState } from '../../../../core/components';
+import { AppEmptyState, AppPagination } from '../../../../core/components';
 import {
   ArrowDownLeft,
   ArrowUp,
@@ -50,6 +51,11 @@ import { formatINR } from '../../../../core/utils/currency';
 import { useLedger } from '../hooks/useLedger';
 import type { AccountTreeNode, LedgerTransaction } from '../types/accounting.types';
 import { AppRoutes } from '../../../../core/constants/routes';
+import {
+  PassbookMonthPickerModal,
+  PassbookPeriodSelection,
+} from '../components/PassbookMonthPickerModal';
+import { exportPassbookPdf } from '../services/passbookPdfExport';
 
 interface ChartOfAccountsScreenProps {
   onBack?: () => void;
@@ -59,7 +65,6 @@ interface ChartOfAccountsScreenProps {
 
 type MainMode = 'PASSBOOK' | 'CREDIT' | 'EXPENSE' | 'LEDGER' | 'ANALYTICS';
 type DimensionTab = 'Date Wise' | 'Category Wise' | 'Member Wise' | 'Support Type';
-type DatePresetKey = 'ALL_TIME' | 'THIS_MONTH' | 'LAST_MONTH' | 'THIS_QUARTER' | 'THIS_FY';
 
 export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
   onBack,
@@ -69,35 +74,28 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
   const [activeMode, setActiveMode] = useState<MainMode>('PASSBOOK');
   const [activeDimensionTab, setActiveDimensionTab] = useState<DimensionTab>('Date Wise');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDatePreset, setSelectedDatePreset] = useState<DatePresetKey>('ALL_TIME');
+  const [monthPickerVisible, setMonthPickerVisible] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [selectedTx, setSelectedTx] = useState<LedgerTransaction | null>(null);
 
-  const { fromDate, toDate, dateLabel } = useMemo(() => {
+  // Initialize with current month
+  const [selectedPeriod, setSelectedPeriod] = useState<{
+    label: string;
+    fromDate?: string;
+    toDate?: string;
+  }>(() => {
     const now = new Date();
-    if (selectedDatePreset === 'ALL_TIME') {
-      return { fromDate: undefined, toDate: undefined, dateLabel: 'All Records' };
-    } else if (selectedDatePreset === 'THIS_MONTH') {
-      const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return { fromDate: from, toDate: to, dateLabel: `${monthNames[now.getMonth()]} ${now.getFullYear()}` };
-    } else if (selectedDatePreset === 'LAST_MONTH') {
-      const from = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
-      const to = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
-      return { fromDate: from, toDate: to, dateLabel: 'Last Month' };
-    } else if (selectedDatePreset === 'THIS_QUARTER') {
-      const from = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString().split('T')[0];
-      const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-      return { fromDate: from, toDate: to, dateLabel: 'This Quarter' };
-    } else {
-      const currentYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
-      return {
-        fromDate: `${currentYear}-04-01`,
-        toDate: `${currentYear + 1}-03-31`,
-        dateLabel: `FY ${currentYear}-${(currentYear + 1).toString().slice(-2)}`,
-      };
-    }
-  }, [selectedDatePreset]);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    return {
+      label: `${monthNames[now.getMonth()]} ${now.getFullYear()}`,
+      fromDate: from,
+      toDate: to,
+    };
+  });
+
+  const { fromDate, toDate, label: dateLabel } = selectedPeriod;
 
   const {
     transactions,
@@ -134,6 +132,14 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
 
     return list;
   }, [transactions, activeMode, searchQuery]);
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedTransactions = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredTransactions.slice(startIndex, startIndex + pageSize);
+  }, [filteredTransactions, page, pageSize]);
 
   // Counts
   const totalCount = transactions.length;
@@ -174,8 +180,22 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
     });
   }, [transactions, closingBal]);
 
-  const handleExport = () => {
-    Alert.alert('Export Statement', 'Passbook statement exported successfully as PDF/Excel.');
+  const handleExport = async () => {
+    if (isExporting) return;
+    try {
+      setIsExporting(true);
+      await exportPassbookPdf({
+        periodLabel: dateLabel || 'Passbook Statement',
+        fromDate,
+        toDate,
+        summary,
+        transactions,
+      });
+    } catch (err: any) {
+      Alert.alert('Export Failed', err?.message || 'Could not generate PDF statement');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleOpenVoucher = (tx: LedgerTransaction) => {
@@ -189,18 +209,6 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
     }
   };
 
-  const cycleDatePreset = () => {
-    const presets: DatePresetKey[] = [
-      'ALL_TIME',
-      'THIS_MONTH',
-      'LAST_MONTH',
-      'THIS_QUARTER',
-      'THIS_FY',
-    ];
-    const nextIdx = (presets.indexOf(selectedDatePreset) + 1) % presets.length;
-    setSelectedDatePreset(presets[nextIdx]);
-  };
-
   const formatAsOnDate = (dateStr?: string, defaultFallback: string = 'Current period') => {
     if (!dateStr) return defaultFallback;
     const d = new Date(dateStr);
@@ -210,7 +218,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
     return `As on ${day} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
   };
 
-  const openingDateText = fromDate ? formatAsOnDate(fromDate) : 'As on 01 Sep 2026';
+  const openingDateText = fromDate ? formatAsOnDate(fromDate) : 'Start of Records';
   const closingDateText = toDate ? formatAsOnDate(toDate) : formatAsOnDate(new Date().toISOString());
 
   // Reusable Top Scrollable Header
@@ -325,10 +333,15 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
           <TouchableOpacity
             style={styles.hubLinkChip}
             onPress={handleExport}
+            disabled={isExporting}
             activeOpacity={0.8}
           >
-            <Download size={12} color="#475569" />
-            <Text style={styles.hubLinkText}>Export</Text>
+            {isExporting ? (
+              <ActivityIndicator size={12} color="#475569" />
+            ) : (
+              <Download size={12} color="#475569" />
+            )}
+            <Text style={styles.hubLinkText}>{isExporting ? 'Exporting...' : 'Export'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -469,7 +482,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
           {/* Single Unified Date Selector Pill */}
           <TouchableOpacity
             style={styles.datePill}
-            onPress={cycleDatePreset}
+            onPress={() => setMonthPickerVisible(true)}
             activeOpacity={0.8}
           >
             <Calendar size={13} color="#1B3F8F" />
@@ -483,11 +496,23 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
         {/* ========================================================================= */}
         {(activeMode === 'PASSBOOK' || activeMode === 'CREDIT' || activeMode === 'EXPENSE') && (
           <FlatList
-            data={filteredTransactions}
+            data={paginatedTransactions}
             keyExtractor={(item) => `${item.entry_id}-${item.id}`}
             contentContainerStyle={styles.flatListContent}
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={renderScrollableHeader(true)}
+            ListFooterComponent={
+              filteredTransactions.length > 0 ? (
+                <AppPagination
+                  currentPage={page}
+                  totalItems={filteredTransactions.length}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  itemLabel="transactions"
+                />
+              ) : undefined
+            }
             renderItem={({ item }) => {
               const isCredit = (item.credit || 0) > 0;
               const amt = isCredit ? item.credit : item.debit;
@@ -677,10 +702,15 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
                 <TouchableOpacity
                   style={styles.exportBtn}
                   onPress={handleExport}
+                  disabled={isExporting}
                   activeOpacity={0.8}
                 >
-                  <Download size={13} color="#0F2C59" />
-                  <Text style={styles.exportBtnText}>Export</Text>
+                  {isExporting ? (
+                    <ActivityIndicator size={12} color="#0F2C59" />
+                  ) : (
+                    <Download size={13} color="#0F2C59" />
+                  )}
+                  <Text style={styles.exportBtnText}>{isExporting ? 'Exporting...' : 'Export'}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -974,6 +1004,20 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
             </View>
           </View>
         </Modal>
+
+        {/* Month / Calendar Filter Modal */}
+        <PassbookMonthPickerModal
+          visible={monthPickerVisible}
+          onClose={() => setMonthPickerVisible(false)}
+          selectedLabel={dateLabel}
+          onSelectPeriod={(selection: PassbookPeriodSelection) => {
+            setSelectedPeriod({
+              label: selection.label,
+              fromDate: selection.fromDate,
+              toDate: selection.toDate,
+            });
+          }}
+        />
       </SafeAreaView>
     </View>
   );

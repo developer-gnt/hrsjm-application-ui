@@ -22,6 +22,20 @@ export type AppStackParamList = {
   TicketDetails: { ticketId: string };
   TicketChat: { ticketId: string; subject: string };
   Notifications: undefined;
+  DonationDetail: { donationId: string };
+  ReceiptsList: undefined;
+  ReceiptDetail: { receiptNo: string; fromScreen?: 'DonationHistory' | 'ReceiptsList' | 'DonationDetail' };
+  ReceiptPdfPreview: { receiptNo: string; fromScreen?: 'DonationHistory' | 'ReceiptsList' | 'DonationDetail' };
+  // Membership journey routes
+  MembershipIntro: undefined;
+  MembershipStep1Personal: undefined;
+  MembershipStep2Address: undefined;
+  MembershipStep3Documents: undefined;
+  MembershipSubmitted: { applicationId: string };
+  MyApplication: undefined;
+  ApplicationDetails: { applicationId?: string };
+  ApplicationApproved: { applicationId?: string };
+  ApplicationRejected: { applicationId?: string };
 };
 
 export type RootStackParamList = {

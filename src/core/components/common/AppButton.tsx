@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   StyleProp,
+  AccessibilityRole,
   ViewStyle,
   TextStyle,
 } from 'react-native';
@@ -24,7 +25,7 @@ export interface AppButtonProps {
   disabled?: boolean;
   fullWidth?: boolean;
   accessibilityLabel?: string;
-  accessibilityRole?: any;
+  accessibilityRole?: AccessibilityRole;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
   /** Optional border color override (used by variant 'outline'). */
@@ -166,6 +167,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
       activeOpacity={0.8}
       accessibilityRole={accessibilityRole || 'button'}
       accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityState={{ disabled: isDisabled }}
       style={[
         styles.baseButton,
         getVariantContainerStyle(),

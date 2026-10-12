@@ -27,6 +27,8 @@ export interface RegistrationState {
   dob: string;
   accountType: string;
   accountTypeLabel: string;
+  password?: string;
+  confirmPassword?: string;
   selectedDocId: DocumentTypeOption;
   documents: UploadedDocItem[];
   // Legacy single-doc backward compatibility fields:
@@ -45,6 +47,8 @@ const DEFAULT_REGISTRATION_STATE: RegistrationState = {
   dob: '',
   accountType: 'general',
   accountTypeLabel: 'General User',
+  password: '',
+  confirmPassword: '',
   selectedDocId: 'aadhaar',
   documents: [],
   selectedDocTitle: 'Aadhaar Card',

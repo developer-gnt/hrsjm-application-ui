@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppBottomNavigation } from '../../../../core/components/common/AppBottomNavigation';
+import { AppPagination } from '../../../../core/components';
 import {
   AppFeedbackModal,
   FeedbackTone,
@@ -93,6 +94,18 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editMember, setEditMember] = useState<Member | null>(null);
   const [viewMember, setViewMember] = useState<Member | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedMembers = React.useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return members.filteredMembers.slice(startIndex, startIndex + pageSize);
+  }, [members.filteredMembers, page, pageSize]);
+
+  // Reset to page 1 on search or tab changes
+  React.useEffect(() => {
+    setPage(1);
+  }, [members.searchQuery, members.activeTab, members.sortOption]);
 
   // Professional Feedback Modal State
   const [feedback, setFeedback] = useState<{
@@ -401,7 +414,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
       <AdminHeader unreadCount={3} onNavigate={onNavigate} />
 
       <FlatList
-        data={members.isLoading || members.hasError ? [] : members.filteredMembers}
+        data={members.isLoading || members.hasError ? [] : paginatedMembers}
         keyExtractor={item => item.id}
         renderItem={renderMemberRow}
         ListHeaderComponent={listHeader}
@@ -410,6 +423,15 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
             <View>
               <MembersLoadingState />
             </View>
+          ) : members.filteredMembers.length > 0 ? (
+            <AppPagination
+              currentPage={page}
+              totalItems={members.filteredMembers.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="members"
+            />
           ) : undefined
         }
         refreshControl={

@@ -50,11 +50,12 @@ export interface DrawerMenuItem {
   badge?: string;
 }
 
-export const MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
+export const ADMIN_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
   {
     groupTitle: 'MAIN NAVIGATION',
     items: [
       { id: 'dashboard', icon: '🏠', title: 'Dashboard', target: AppRoutes.ADMIN_DASHBOARD_TAB },
+      { id: 'membership_applications', icon: '📝', title: 'Membership Applications', target: AppRoutes.MEMBERSHIP_APPLICATIONS },
       { id: 'members', icon: '👥', title: 'Members Directory', target: AppRoutes.ADMIN_MEMBERS_TAB },
       { id: 'assistance', icon: '🤝', title: 'Donation Seekers & Aid', target: AppRoutes.ADMIN_APPLICATIONS_TAB },
       { id: 'complaints', icon: '💬', title: 'Support & Complaints', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
@@ -89,6 +90,77 @@ export const MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
     ],
   },
 ];
+
+export const MEMBER_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
+  {
+    groupTitle: 'MEMBER SERVICES',
+    items: [
+      { id: 'member_home', icon: '🏠', title: 'Member Dashboard', target: 'MemberHome' },
+      { id: 'member_causes', icon: '💛', title: 'Social Causes & Aid', target: 'MemberCauses' },
+      { id: 'member_events', icon: '📅', title: 'Upcoming Events & Drives', target: 'MemberEvents' },
+      { id: 'member_receipts', icon: '📥', title: 'My Donations & 80G Receipts', target: 'MemberReceipts' },
+      { id: 'complaints', icon: '💬', title: 'Help & Support Desk', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
+    ],
+  },
+  {
+    groupTitle: 'COMMUNITY & IMPACT',
+    items: [
+      { id: 'about', icon: '📖', title: 'About HRSJM Mission', target: AppRoutes.ABOUT },
+      { id: 'rights', icon: '⚖️', title: 'Know Your Rights', target: AppRoutes.KNOW_YOUR_RIGHTS },
+      { id: 'news', icon: '📰', title: 'News & Press Releases', target: AppRoutes.NEWS },
+      { id: 'blogs', icon: '✍️', title: 'Articles & Blogs', target: AppRoutes.BLOGS },
+    ],
+  },
+  {
+    groupTitle: 'MEMBERSHIP & ACCOUNT',
+    items: [
+      { id: 'profile', icon: '🪪', title: 'Digital ID Card & Profile', target: AppRoutes.MY_PROFILE },
+      { id: 'notifications', icon: '🔔', title: 'Notifications', target: AppRoutes.NOTIFICATIONS },
+      { id: 'settings', icon: '⚙️', title: 'Settings & Security', target: AppRoutes.SETTINGS },
+    ],
+  },
+];
+
+export const DONOR_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
+  {
+    groupTitle: 'DONOR SERVICES',
+    items: [
+      { id: 'donor_home', icon: '🏠', title: 'Donor Dashboard', target: 'DonorHome' },
+      { id: 'donor_causes', icon: '💛', title: 'Discover Causes', target: 'DonorCauses' },
+      { id: 'donor_receipts', icon: '📥', title: 'Tax Exemption Receipts (80G)', target: 'DonorReceipts' },
+      { id: 'complaints', icon: '💬', title: 'Support & Inquiries', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
+    ],
+  },
+  {
+    groupTitle: 'COMMUNITY & UPDATES',
+    items: [
+      { id: 'about', icon: '📖', title: 'About HRSJM', target: AppRoutes.ABOUT },
+      { id: 'news', icon: '📰', title: 'News & Impact Stories', target: AppRoutes.NEWS },
+      { id: 'profile', icon: '👤', title: 'Donor Profile', target: AppRoutes.MY_PROFILE },
+    ],
+  },
+];
+
+export const SEEKER_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
+  {
+    groupTitle: 'AID & ASSISTANCE',
+    items: [
+      { id: 'seeker_home', icon: '🏠', title: 'Seeker Dashboard', target: 'SeekerHome' },
+      { id: 'seeker_apply', icon: '📝', title: 'Apply for Assistance', target: 'SeekerApply' },
+      { id: 'seeker_status', icon: '🔍', title: 'My Aid Requests Status', target: 'SeekerStatus' },
+      { id: 'complaints', icon: '💬', title: 'Support & Grievances', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
+    ],
+  },
+  {
+    groupTitle: 'RESOURCES',
+    items: [
+      { id: 'rights', icon: '⚖️', title: 'Know Your Legal Rights', target: AppRoutes.KNOW_YOUR_RIGHTS },
+      { id: 'profile', icon: '👤', title: 'My Profile', target: AppRoutes.MY_PROFILE },
+    ],
+  },
+];
+
+export const MENU_GROUPS = ADMIN_MENU_GROUPS;
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   visible,
@@ -151,6 +223,25 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   if (!visible) return null;
 
+  const userRole = user?.roles?.[0]?.name?.toUpperCase() || 'MEMBER';
+  const isAdmin = user?.roles?.some(r => r.name === 'ADMIN') ?? false;
+
+  const activeMenuGroups = isAdmin
+    ? ADMIN_MENU_GROUPS
+    : userRole === 'DONOR'
+    ? DONOR_MENU_GROUPS
+    : userRole === 'DONATION_SEEKER'
+    ? SEEKER_MENU_GROUPS
+    : MEMBER_MENU_GROUPS;
+
+  const appRoleLabel = isAdmin
+    ? 'Admin'
+    : userRole === 'DONOR'
+    ? 'Donor'
+    : userRole === 'DONATION_SEEKER'
+    ? 'Seeker'
+    : 'Member';
+
   return (
     <Modal
       visible={visible}
@@ -207,10 +298,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <Image source={{ uri: avatarUrl }} style={styles.userAvatar} />
               <View style={styles.userInfo}>
                 <Text style={styles.userName} numberOfLines={1}>
-                  {user?.full_name || 'Admin User'}
+                  {user?.full_name || `${appRoleLabel} User`}
                 </Text>
                 <Text style={styles.userRole}>
-                  {(user?.roles?.[0]?.name || 'SUPER_ADMIN').replace(/_/g, ' ')}
+                  {(user?.roles?.[0]?.name || appRoleLabel).replace(/_/g, ' ')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -222,7 +313,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {MENU_GROUPS.map((group, groupIdx) => (
+            {activeMenuGroups.map((group, groupIdx) => (
               <View key={group.groupTitle} style={styles.menuGroup}>
                 <Text style={styles.groupHeaderTitle}>{group.groupTitle}</Text>
 
@@ -241,7 +332,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   </TouchableOpacity>
                 ))}
 
-                {groupIdx < MENU_GROUPS.length - 1 && (
+                {groupIdx < activeMenuGroups.length - 1 && (
                   <View style={styles.groupDivider} />
                 )}
               </View>
@@ -258,7 +349,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <Text style={styles.signOutIcon}>🚪</Text>
               <Text style={styles.signOutText}>Sign Out</Text>
             </TouchableOpacity>
-            <Text style={styles.versionText}>HRSJM Admin Mobile v1.0.0</Text>
+            <Text style={styles.versionText}>HRSJM {appRoleLabel} Mobile v1.0.0</Text>
           </View>
         </Animated.View>
       </View>

@@ -136,7 +136,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     <View style={styles.screen}>
       {/* Unified HRSJM Admin Header */}
       <AdminHeader
-        title="My Profile"
         showBack={Boolean(onBack)}
         onBack={onBack}
         onNavigate={onNavigate}

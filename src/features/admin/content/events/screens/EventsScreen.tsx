@@ -3,6 +3,7 @@ import {
   Alert,
   FlatList,
   RefreshControl,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -19,17 +20,20 @@ import {
   AppButton,
   AppEmptyState,
   AppErrorState,
+  AppPagination,
   AppSearchBar,
   SkeletonCard,
 } from '../../../../../core/components';
 import { formatDate } from '../../../../../core/utils';
 import { useNavigation } from '@react-navigation/native';
+import { useAuthStore } from '../../../../auth/store/authStore';
 import { EventCard, EventListHeader } from '../components/EventCard';
 import { EventFilters } from '../components/EventFilters';
 import { EventSummaryStats } from '../components/EventSummaryStats';
 import { AdminHeader } from '../../../../../app/navigation';
 import { useEvents, useRefreshEvents } from '../hooks/useEvents';
 import { SAMPLE_EVENTS, SAMPLE_EVENT_CATEGORIES } from '../data/sample-events';
+import { EventDetailsScreen } from './EventDetailsScreen';
 import type {
   EventListItem,
   EventStatusFilter,
@@ -64,7 +68,8 @@ const EmptyStateView: React.FC<{
   hasActiveFilters: boolean;
   onClearFilters: () => void;
   onAddEvent: () => void;
-}> = ({ hasActiveFilters, onClearFilters, onAddEvent }) => (
+  allowCreate?: boolean;
+}> = ({ hasActiveFilters, onClearFilters, onAddEvent, allowCreate = true }) => (
   <View style={styles.emptyContainer}>
     {hasActiveFilters ? (
       <AppEmptyState
@@ -79,8 +84,8 @@ const EmptyStateView: React.FC<{
         icon="📅"
         title="No Events Found"
         description="There are no events to display yet."
-        actionTitle="Add Event"
-        onAction={onAddEvent}
+        actionTitle={allowCreate ? 'Add Event' : undefined}
+        onAction={allowCreate ? onAddEvent : undefined}
       />
     )}
   </View>
@@ -88,27 +93,38 @@ const EmptyStateView: React.FC<{
 
 interface EventsScreenProps {
   /**
-   * TEMPORARY (UI-only phase): called when the user taps View on an event row.
-   * When not provided, a placeholder alert is shown instead. Real navigation
-   * will replace this with the shared admin navigation architecture.
+   * Called when the user taps View on an event row.
+   * When not provided, opens EventDetailsScreen internally.
    */
   onViewEvent?: (event: EventListItem) => void;
   /**
-   * TEMPORARY (UI-only phase): called when the user taps "+ Add Event".
-   * When not provided, a placeholder alert is shown instead.
+   * Called when the user taps "+ Add Event".
    */
   onAddEvent?: () => void;
   /**
-   * TEMPORARY (UI-only phase): called when a bottom tab is pressed on the
-   * preview shell (e.g. jumping to News/Blogs/Rights). When not provided, the
-   * shell shows its preview notice (original behavior). Real navigation
-   * replaces this.
+   * Called when a bottom tab is pressed on the preview shell.
    */
   onTabPress?: (tab: string) => void;
+  /**
+   * Whether to display the create event action button. Defaults to true for admin, false for members.
+   */
+  canCreate?: boolean;
 }
 
-export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEvent, onTabPress }) => {
+export const EventsScreen: React.FC<EventsScreenProps> = ({
+  onViewEvent,
+  onAddEvent,
+  onTabPress,
+  canCreate,
+}) => {
   const navigation = useNavigation<any>();
+  const user = useAuthStore(state => state.user);
+  const isAdmin = user?.roles?.some(r =>
+    ['admin', 'superadmin', 'super_admin'].includes(r.name.toLowerCase()),
+  );
+  const allowCreate = canCreate !== undefined ? canCreate : Boolean(isAdmin);
+
+  const [internalSelectedEvent, setInternalSelectedEvent] = useState<EventListItem | null>(null);
   const [uiState, setUiState] = useState<EventsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,6 +188,18 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
     });
   }, [events, searchQuery, activeStatus, activeCategory]);
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredEvents.slice(startIndex, startIndex + pageSize);
+  }, [filteredEvents, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeStatus, activeCategory]);
+
   const hasActiveFilters =
     searchQuery.trim() !== '' || activeStatus !== 'ALL' || activeCategory !== null;
 
@@ -201,13 +229,27 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
       onViewEvent(event);
       return;
     }
-    Alert.alert(
-      event.title,
-      'The Event Details screen will be implemented in the next phase of the Events module.',
-    );
+    setInternalSelectedEvent(event);
   };
 
   const handleEventMenu = (event: EventListItem) => {
+    if (!allowCreate) {
+      Alert.alert(event.title, undefined, [
+        { text: 'View Details', onPress: () => handleEventPress(event) },
+        {
+          text: 'Share',
+          onPress: () => {
+            Share.share({
+              title: event.title,
+              message: `Join "${event.title}" on ${formatDate(event.startAt)} at ${event.location || 'HRSJM'}.`,
+            }).catch(() => {});
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+      return;
+    }
+
     Alert.alert(event.title, undefined, [
       { text: 'View Details', onPress: () => handleEventPress(event) },
       {
@@ -261,6 +303,16 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
     }
   };
 
+  if (internalSelectedEvent) {
+    return (
+      <EventDetailsScreen
+        event={internalSelectedEvent}
+        onBack={() => setInternalSelectedEvent(null)}
+        canManage={allowCreate}
+      />
+    );
+  }
+
   const renderListHeader = () => (
     <View>
       {/* Page header: title/subtitle + Add Event */}
@@ -273,17 +325,21 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
             minimumFontScale={0.8}
             numberOfLines={1}
           >
-            Manage and view all events and activities.
+            {allowCreate
+              ? 'Manage and view all events and activities.'
+              : 'View and participate in all events and activities.'}
           </Text>
         </View>
-        <AppButton
-          title="Add Event"
-          size="sm"
-          onPress={handleAddEvent}
-          icon={<Text style={styles.addIcon}>+</Text>}
-          textStyle={styles.addButtonText}
-          style={styles.addButton}
-        />
+        {allowCreate && (
+          <AppButton
+            title="Add Event"
+            size="sm"
+            onPress={handleAddEvent}
+            icon={<Text style={styles.addIcon}>+</Text>}
+            textStyle={styles.addButtonText}
+            style={styles.addButton}
+          />
+        )}
       </View>
 
       <View style={styles.statsSection}>
@@ -336,9 +392,21 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <FlatList
-          data={isLoading && !data ? [] : filteredEvents}
+          data={isLoading && !data ? [] : paginatedEvents}
           keyExtractor={item => item.id}
           ListHeaderComponent={renderListHeader}
+          ListFooterComponent={
+            filteredEvents.length > 0 ? (
+              <AppPagination
+                currentPage={page}
+                totalItems={filteredEvents.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemLabel="events"
+              />
+            ) : undefined
+          }
           renderItem={({ item }) => (
             <EventCard event={item} onPress={handleEventPress} onMorePress={handleEventMenu} />
           )}
@@ -357,6 +425,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
                 hasActiveFilters={hasActiveFilters}
                 onClearFilters={clearFilters}
                 onAddEvent={handleAddEvent}
+                allowCreate={allowCreate}
               />
             )
           }

@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "web": "webpack serve --config webpack.config.web.js"
+    "web": "webpack serve --config webpack.config.web.js",
+    "build:web": "webpack --config webpack.config.web.js --mode production"
   },
   "dependencies": {
     "@react-native-documents/picker": "^12.0.2",
@@ -29,6 +30,8 @@
     "react-native": "0.87.1",
     "react-native-biometrics": "^3.0.1",
     "react-native-blob-util": "^0.25.1",
+    "react-native-cashfree-pg-sdk": "^2.5.0",
+    "react-native-document-picker": "^9.3.1",
     "react-native-image-picker": "^8.2.1",
     "react-native-keychain": "^10.0.0",
     "react-native-mmkv": "^4.3.2",

@@ -51,14 +51,7 @@ describe('Donations Functionality Tests', () => {
   const renderWithProviders = (ui: React.ReactElement) => {
     return ReactTestRenderer.create(
       <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider
-          initialMetrics={{
-            frame: { x: 0, y: 0, width: 390, height: 844 },
-            insets: { top: 47, left: 0, right: 0, bottom: 34 },
-          }}
-        >
-          {ui}
-        </SafeAreaProvider>
+        <SafeAreaProvider initialMetrics={initialMetrics}>{ui}</SafeAreaProvider>
       </QueryClientProvider>,
     );
   };

@@ -69,6 +69,13 @@ export const SETTING_SECTIONS: SettingSection[] = [
     iconColor: '#D97706',
     items: [
       {
+        icon: '📝',
+        title: 'Membership Applications',
+        description:
+          'Review, verify, and approve new member registration applications.',
+        route: AppRoutes.MEMBERSHIP_APPLICATIONS,
+      },
+      {
         icon: '🎁',
         title: 'Donations Management',
         description:

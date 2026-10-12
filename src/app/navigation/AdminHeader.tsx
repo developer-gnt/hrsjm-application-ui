@@ -334,7 +334,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 {user?.full_name || 'Admin User'}
               </Text>
               <Text style={styles.dropdownEmail} numberOfLines={1}>
-                {user?.email || 'admin@hrsjm.org'}
+                {user?.email || '—'}
               </Text>
             </View>
 

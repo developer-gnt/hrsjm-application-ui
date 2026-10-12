@@ -33,6 +33,7 @@ export interface AssistanceRequest {
   age?: number;
   city?: string;
   raised_amount?: number;
+  donor_count?: number;
 }
 
 export interface AssistanceListData {

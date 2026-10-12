@@ -20,6 +20,8 @@ export const AppRoutes = {
 
   // Admin More / Financial Sub-routes
   MORE_MENU: 'MoreMenu',
+  MEMBERSHIP_APPLICATIONS: 'MembershipApplications',
+  MEMBERSHIP_APPLICATION_DETAILS: 'MembershipApplicationDetails',
   PAYMENT_VERIFICATION: 'PaymentVerification',
   PAYMENT_DETAILS: 'PaymentDetails',
   EXPENSE_VOUCHERS: 'ExpenseVouchers',
@@ -64,6 +66,11 @@ export const AppRoutes = {
   EDIT_PERSONAL_INFO: 'EditPersonalInfo',
   MY_ID_CARD: 'MyIdCard',
 
-  // About page (organization profile)
+  // About & Information pages
   ABOUT: 'About',
+  KNOW_YOUR_RIGHTS: 'KnowYourRights',
+
+  // Membership & Renewal
+  MEMBERSHIP_DETAILS: 'MembershipDetails',
+  RENEW_MEMBERSHIP: 'RenewMembership',
 } as const;

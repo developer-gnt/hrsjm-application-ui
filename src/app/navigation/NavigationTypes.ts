@@ -30,6 +30,8 @@ export type AdminTabParamList = {
  */
 export type MoreStackParamList = {
   MoreMenu: undefined;
+  [AppRoutes.MEMBERSHIP_APPLICATIONS]: undefined;
+  [AppRoutes.MEMBERSHIP_APPLICATION_DETAILS]: { applicationId: string };
   [AppRoutes.PAYMENT_VERIFICATION]: undefined;
   [AppRoutes.PAYMENT_DETAILS]: { paymentId: string };
   [AppRoutes.EXPENSE_VOUCHERS]: undefined;
@@ -74,6 +76,8 @@ export type MoreStackParamList = {
   [AppRoutes.EDIT_PERSONAL_INFO]: undefined;
   [AppRoutes.MY_ID_CARD]: undefined;
   [AppRoutes.ABOUT]: undefined;
+  [AppRoutes.MEMBERSHIP_DETAILS]: undefined;
+  [AppRoutes.RENEW_MEMBERSHIP]: undefined;
 };
 
 /** Placeholder stack for non-admin authenticated users until their role

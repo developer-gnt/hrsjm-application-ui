@@ -18,6 +18,8 @@ interface EventTagInputProps {
   onChange: (tags: string[]) => void;
   error?: string;
   maxTags?: number;
+  placeholder?: string;
+  helperText?: string;
 }
 
 /** Tags input: enter to add, tap a chip's ✕ to remove (local UI only). */
@@ -26,6 +28,8 @@ export const EventTagInput: React.FC<EventTagInputProps> = ({
   onChange,
   error,
   maxTags = 6,
+  placeholder = 'Add tags and press enter',
+  helperText = 'Add relevant tags to help people find this content',
 }) => {
   const [draft, setDraft] = useState('');
 
@@ -51,12 +55,12 @@ export const EventTagInput: React.FC<EventTagInputProps> = ({
           onChangeText={setDraft}
           onSubmitEditing={addTag}
           onBlur={addTag}
-          placeholder="Add tags and press enter"
+          placeholder={placeholder}
           placeholderTextColor={AdminColors.textMuted}
           style={styles.input}
           returnKeyType="done"
           blurOnSubmit={false}
-          accessibilityLabel="Add tags and press enter"
+          accessibilityLabel={placeholder}
         />
       </View>
 
@@ -78,9 +82,9 @@ export const EventTagInput: React.FC<EventTagInputProps> = ({
             </View>
           ))}
         </View>
-      ) : (
-        <Text style={styles.helperText}>Add relevant tags to help people find this event</Text>
-      )}
+      ) : helperText ? (
+        <Text style={styles.helperText}>{helperText}</Text>
+      ) : null}
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
