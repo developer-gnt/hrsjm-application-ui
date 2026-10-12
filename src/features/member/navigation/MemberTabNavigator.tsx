@@ -20,6 +20,10 @@ import {
   RenewMembershipScreen,
 } from '../../membership';
 import {
+  MemberHomeDashboardScreen,
+  MemberDashboardDetailsScreen,
+} from '../dashboard';
+import {
   House,
   Heart,
   Calendar,
@@ -161,6 +165,49 @@ export const MemberTabNavigator: React.FC = () => {
           <RenewMembershipScreen
             onBack={navigation.goBack}
             onProfilePress={() => navigation.navigate('MemberProfile')}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="MemberDashboard"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <MemberHomeDashboardScreen
+            onBack={navigation.goBack}
+            onOpenMembershipInfo={() => navigation.navigate('MembershipDetails')}
+            onOpenMembershipDetails={() => navigation.navigate('MemberDashboardDetails')}
+            onOpenRight={() => {}}
+            onOpenRights={() => {}}
+            onOpenComplaint={() => navigation.navigate('MemberProfile')}
+            onOpenEvents={() => navigation.navigate('MemberEvents')}
+            onOpenEvent={() => navigation.navigate('MemberEvents')}
+            onOpenDonation={() => navigation.navigate('MemberCauses')}
+            onOpenHome={() => navigation.navigate('MemberHome')}
+            onOpenAbout={() => {}}
+            onOpenNews={() => {}}
+            onOpenContact={() => navigation.navigate('MemberProfile')}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="MemberDashboardDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <MemberDashboardDetailsScreen
+            onBack={navigation.goBack}
+            onOpenMembershipInfo={() => navigation.navigate('MembershipDetails')}
+            onOpenComplaint={() => navigation.navigate('MemberProfile')}
+            onOpenDonation={() => navigation.navigate('MemberCauses')}
+            onOpenRight={() => {}}
+            onOpenRights={() => {}}
+            onOpenEvents={() => navigation.navigate('MemberEvents')}
+            onOpenEvent={() => navigation.navigate('MemberEvents')}
+            onOpenHome={() => navigation.navigate('MemberHome')}
+            onOpenAbout={() => {}}
+            onOpenNews={() => {}}
+            onOpenContact={() => navigation.navigate('MemberProfile')}
           />
         )}
       </Tab.Screen>

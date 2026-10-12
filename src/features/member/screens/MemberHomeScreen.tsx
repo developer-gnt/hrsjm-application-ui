@@ -137,6 +137,18 @@ export const MemberHomeScreen: React.FC = () => {
               <Text style={styles.shortcutTitle}>My ID Card</Text>
               <Text style={styles.shortcutSub}>Digital credentials & cert</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.shortcutCard}
+              onPress={() => navigation.navigate('MemberDashboard')}
+              activeOpacity={0.75}
+            >
+              <View style={[styles.shortcutIconBox, { backgroundColor: '#F0FDF4' }]}>
+                <Text style={styles.shortcutIcon}>📊</Text>
+              </View>
+              <Text style={styles.shortcutTitle}>Community Dashboard</Text>
+              <Text style={styles.shortcutSub}>Stats, learning & feed</Text>
+            </TouchableOpacity>
           </View>
         </View>
 

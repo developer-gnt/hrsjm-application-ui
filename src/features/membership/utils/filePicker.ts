@@ -4,10 +4,13 @@ import {
   launchImageLibrary,
   type ImagePickerResponse,
 } from 'react-native-image-picker';
-import DocumentPicker, {
+import {
+  pick,
   types as docTypes,
+  isErrorWithCode,
+  errorCodes,
   type DocumentPickerResponse,
-} from 'react-native-document-picker';
+} from '@react-native-documents/picker';
 
 /**
  * Request camera permission on Android
@@ -122,21 +125,21 @@ export async function choosePhotoFromNativeGallery(): Promise<PickedMediaResult 
  */
 export async function pickNativeDocument(): Promise<PickedMediaResult | null> {
   try {
-    const res = await DocumentPicker.pickSingle({
-      type: [docTypes.pdf, docTypes.images],
-      copyTo: 'cachesDirectory',
+    const results = await pick({
+      type: [docTypes.images, docTypes.pdf],
     });
 
+    const res = results[0];
     if (!res || !res.uri) return null;
 
     return {
-      uri: res.fileCopyUri || res.uri,
+      uri: res.uri,
       fileName: res.name || `document_${Date.now()}.pdf`,
       fileSize: formatFileSize(res.size ?? undefined),
       type: res.type ?? undefined,
     };
   } catch (err: any) {
-    if (DocumentPicker.isCancel(err)) {
+    if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
       // User cancelled
       return null;
     }
