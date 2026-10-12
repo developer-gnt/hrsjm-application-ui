@@ -9,3 +9,4 @@ export * from './types/causes.types';
 export * from './services/causes.service';
 export * from './navigation/MemberTabNavigator';
 export * from './dashboard';
+export * from './rights';

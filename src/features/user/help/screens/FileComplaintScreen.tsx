@@ -95,6 +95,7 @@ export interface FileComplaintScreenProps {
   onOpenContact?: () => void;
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
+  showBottomNav?: boolean;
 }
 
 export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
@@ -105,6 +106,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
   onOpenContact,
   onOpenEvents,
   onOpenNews,
+  showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -882,7 +884,9 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         }}
       />
 
-      <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      {showBottomNav && (
+        <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      )}
     </SafeAreaView>
   );
 };

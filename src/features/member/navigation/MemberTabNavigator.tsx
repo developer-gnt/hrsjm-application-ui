@@ -23,7 +23,7 @@ import {
   MemberHomeDashboardScreen,
   MemberDashboardDetailsScreen,
 } from '../dashboard';
-import { RightDetailsScreen } from '../../user/rights';
+import { RightDetailsScreen } from '../rights';
 import { FileComplaintScreen } from '../../user/help';
 import {
   House,
