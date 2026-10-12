@@ -39,8 +39,8 @@ export interface DonationsBottomNavProps {
 }
 
 /**
- * UI-phase admin bottom navigation with Donations active (gold
- * treatment per the approved reference).
+ * UI-phase bottom navigation with active tab styling
+ * (gold treatment per the approved reference).
  */
 export const DonationsBottomNav: React.FC<DonationsBottomNavProps> = ({
   bottomInset,
