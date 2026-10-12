@@ -518,16 +518,26 @@ function App() {
     }
   };
 
-  return (
-    <AppProviders>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      {Platform.OS === 'web' ? (
+  const isIsolatedDevPreview =
+    Platform.OS === 'web' &&
+    typeof window !== 'undefined' &&
+    window.location.hash.startsWith('#/dev/');
+
+  if (isIsolatedDevPreview) {
+    return (
+      <AppProviders>
+        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         <NavigationContainer>
           <View style={styles.container}>{renderRoute()}</View>
         </NavigationContainer>
-      ) : (
-        <RootNavigator />
-      )}
+      </AppProviders>
+    );
+  }
+
+  return (
+    <AppProviders>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <RootNavigator />
     </AppProviders>
   );
 }
