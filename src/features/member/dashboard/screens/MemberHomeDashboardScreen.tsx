@@ -20,6 +20,8 @@ import { USER_EVENTS } from '../../../user/events/data/user-events';
 import type { UserEvent } from '../../../user/events/data/user-events';
 import { HomeHeader } from '../../../user/home/components/HomeHeader';
 import { UserBottomNavigation } from '../../../user/home/components/UserBottomNavigation';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
+import { useAuthStore } from '../../../auth/store/authStore';
 import type { HomeTab } from '../../../user/home/types/home.types';
 import {
   getUpcomingMemberEvents,
@@ -37,19 +39,21 @@ interface QuickAction {
 
 export interface MemberHomeDashboardScreenProps {
   membership?: MemberMembershipRecord | null;
-  onBack: () => void;
-  onOpenMembershipInfo: () => void;
-  onOpenMembershipDetails: () => void;
-  onOpenRight: (rightId: string) => void;
-  onOpenRights: () => void;
-  onOpenComplaint: () => void;
-  onOpenEvents: () => void;
-  onOpenEvent: (event: UserEvent) => void;
-  onOpenDonation: () => void;
-  onOpenHome: () => void;
-  onOpenAbout: () => void;
-  onOpenNews: () => void;
-  onOpenContact: () => void;
+  onBack?: () => void;
+  onOpenMembershipInfo?: () => void;
+  onOpenMembershipDetails?: () => void;
+  onOpenRight?: (rightId: string) => void;
+  onOpenRights?: () => void;
+  onOpenComplaint?: () => void;
+  onOpenEvents?: () => void;
+  onOpenEvent?: (event: UserEvent) => void;
+  onOpenDonation?: () => void;
+  onOpenHome?: () => void;
+  onOpenAbout?: () => void;
+  onOpenNews?: () => void;
+  onOpenContact?: () => void;
+  showBottomNav?: boolean;
+  useAdminHeader?: boolean;
 }
 
 const SectionHeading: React.FC<{
@@ -142,17 +146,28 @@ export const MemberHomeDashboardScreen: React.FC<
   onOpenAbout,
   onOpenNews,
   onOpenContact,
+  showBottomNav = false,
+  useAdminHeader = true,
 }) => {
-  const currentMembership = membership ?? MOCK_ACTIVE_MEMBERSHIP;
+  const user = useAuthStore(state => state.user);
+  const currentMembership: MemberMembershipRecord = {
+    ...MOCK_ACTIVE_MEMBERSHIP,
+    memberName: user?.full_name || (membership?.memberName ?? MOCK_ACTIVE_MEMBERSHIP.memberName),
+    memberId: (user as any)?.member_id || (user as any)?.custom_id || (membership?.memberId ?? MOCK_ACTIVE_MEMBERSHIP.memberId),
+    status: membership?.status ?? MOCK_ACTIVE_MEMBERSHIP.status,
+    category: membership?.category ?? MOCK_ACTIVE_MEMBERSHIP.category,
+    joinedDate: membership?.joinedDate ?? MOCK_ACTIVE_MEMBERSHIP.joinedDate,
+    validUntil: membership?.validUntil ?? MOCK_ACTIVE_MEMBERSHIP.validUntil,
+  };
   const upcomingEvents = useMemo(
     () => getUpcomingMemberEvents(USER_EVENTS, new Date()).slice(0, 4),
     [],
   );
   const quickActions: QuickAction[] = [
-    { title: 'Know Your Rights', icon: 'book-open', onPress: onOpenRights },
-    { title: 'File a Complaint', icon: 'file-text', onPress: onOpenComplaint },
-    { title: 'Events', icon: 'calendar', onPress: onOpenEvents },
-    { title: 'Resources', icon: 'download', onPress: onOpenRights },
+    { title: 'Know Your Rights', icon: 'book-open', onPress: onOpenRights || (() => undefined) },
+    { title: 'File a Complaint', icon: 'file-text', onPress: onOpenComplaint || (() => undefined) },
+    { title: 'Events', icon: 'calendar', onPress: onOpenEvents || (() => undefined) },
+    { title: 'Resources', icon: 'download', onPress: onOpenRights || (() => undefined) },
   ];
   const impactMetrics = [
     { value: '3', label: 'Events\nAttended', icon: 'users' as const },
@@ -162,17 +177,21 @@ export const MemberHomeDashboardScreen: React.FC<
   ];
 
   const handleTabPress = (tab: HomeTab) => {
-    if (tab.id === 'home') onOpenHome();
-    else if (tab.id === 'about') onOpenAbout();
-    else if (tab.id === 'rights') onOpenRights();
-    else if (tab.id === 'events') onOpenEvents();
-    else if (tab.id === 'news') onOpenNews();
-    else if (tab.id === 'contact') onOpenContact();
+    if (tab.id === 'home') onOpenHome?.();
+    else if (tab.id === 'about') onOpenAbout?.();
+    else if (tab.id === 'rights') onOpenRights?.();
+    else if (tab.id === 'events') onOpenEvents?.();
+    else if (tab.id === 'news') onOpenNews?.();
+    else if (tab.id === 'contact') onOpenContact?.();
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <HomeHeader onBack={onBack} />
+    <View style={styles.safeArea}>
+      {useAdminHeader ? (
+        <AdminHeader unreadCount={1} />
+      ) : (
+        <HomeHeader onBack={onBack} />
+      )}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -226,7 +245,7 @@ export const MemberHomeDashboardScreen: React.FC<
 
             <Pressable
               style={styles.viewMembershipButton}
-              onPress={onOpenMembershipDetails}
+              onPress={onOpenMembershipDetails || (() => undefined)}
               accessibilityRole="button"
               accessibilityLabel="View Membership"
             >
@@ -297,7 +316,7 @@ export const MemberHomeDashboardScreen: React.FC<
                   <EventCard
                     key={event.id}
                     event={event}
-                    onPress={() => onOpenEvent(event)}
+                    onPress={() => onOpenEvent?.(event)}
                   />
                 ))}
               </View>
@@ -315,20 +334,22 @@ export const MemberHomeDashboardScreen: React.FC<
               title="Continue Learning"
               description="Explore articles, guides and legal resources."
               action="Browse Resources"
-              onPress={onOpenRights}
+              onPress={onOpenRights || (() => undefined)}
             />
             <RecommendationCard
               icon="heart"
               title="Make a Difference"
               description="Support our programs through donation."
               action="Donate Now"
-              onPress={onOpenDonation}
+              onPress={onOpenDonation || (() => undefined)}
             />
           </View>
         </View>
       </ScrollView>
-      <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
-    </SafeAreaView>
+      {showBottomNav && (
+        <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      )}
+    </View>
   );
 };
 

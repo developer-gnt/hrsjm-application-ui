@@ -41,12 +41,32 @@ interface MemberTabItem {
   component: React.ComponentType<any>;
 }
 
+const MemberHomeScreenComponent: React.FC<any> = ({ navigation }) => {
+  return (
+    <MemberHomeDashboardScreen
+      useAdminHeader
+      showBottomNav={false}
+      onOpenMembershipInfo={() => navigation.navigate('MembershipDetails')}
+      onOpenMembershipDetails={() => navigation.navigate('MemberDashboardDetails')}
+      onOpenRights={() => navigation.navigate('MemberCauses')}
+      onOpenComplaint={() => navigation.navigate('MemberProfile')}
+      onOpenEvents={() => navigation.navigate('MemberEvents')}
+      onOpenEvent={() => navigation.navigate('MemberEvents')}
+      onOpenDonation={() => navigation.navigate('MemberCauses')}
+      onOpenHome={() => navigation.navigate('MemberHome')}
+      onOpenAbout={() => navigation.navigate('MemberProfile')}
+      onOpenNews={() => navigation.navigate('MemberEvents')}
+      onOpenContact={() => navigation.navigate('MemberProfile')}
+    />
+  );
+};
+
 const MEMBER_TABS: MemberTabItem[] = [
   {
     name: 'MemberHome',
     label: 'Home',
     Icon: House,
-    component: MemberHomeScreen,
+    component: MemberHomeScreenComponent,
   },
   {
     name: 'MemberCauses',
@@ -135,7 +155,7 @@ const MemberCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) 
 export const MemberTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
-      initialRouteName="MemberCauses"
+      initialRouteName="MemberHome"
       tabBar={props => <MemberCustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
