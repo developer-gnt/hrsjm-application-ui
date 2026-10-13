@@ -518,10 +518,11 @@ function App() {
     }
   };
 
+  const browserWindow =
+    typeof globalThis !== 'undefined' ? (globalThis as any).window : undefined;
   const isIsolatedDevPreview =
     Platform.OS === 'web' &&
-    typeof window !== 'undefined' &&
-    window.location.hash.startsWith('#/dev/');
+    Boolean(browserWindow?.location?.hash?.startsWith('#/dev/'));
 
   if (isIsolatedDevPreview) {
     return (
