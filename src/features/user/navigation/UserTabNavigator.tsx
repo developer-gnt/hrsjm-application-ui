@@ -28,6 +28,8 @@ import { RightDetailsScreen } from '../rights/screens/RightDetailsScreen';
 import { FileComplaintScreen } from '../help/screens/FileComplaintScreen';
 import { NotificationsScreen } from '../../admin/notifications';
 import { ProfileSettingsScreen } from '../../admin/settings';
+import { UserActionPageScreen } from '../action-pages/screens/UserActionPageScreen';
+import { WhatWeDoDetailScreen } from '../what-we-do/components/WhatWeDoDetailScreen';
 
 import {
   House,
@@ -60,13 +62,8 @@ const UserHomeScreenComponent: React.FC<any> = ({ navigation }) => {
       onOpenNews={() => navigation.navigate('UserNews')}
       onOpenGetHelp={() => navigation.navigate('FileComplaint')}
       onOpenRight={(rightId) => navigation.navigate('RightDetails', { rightId })}
-      onOpenActionPage={(pageId) => {
-        if (pageId === 'join' || pageId === 'membership') {
-          navigation.navigate('UserAbout');
-        } else if (pageId === 'donate') {
-          navigation.navigate('UserAbout');
-        }
-      }}
+      onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail', { contentId })}
+      onOpenActionPage={(pageId) => navigation.navigate('UserActionPage', { pageId })}
     />
   );
 };
@@ -80,6 +77,14 @@ const UserAboutScreenComponent: React.FC<any> = ({ navigation }) => {
       onOpenContact={() => navigation.navigate('ContactUs')}
       onOpenEvents={() => navigation.navigate('UserEvents')}
       onOpenNews={() => navigation.navigate('UserNews')}
+      onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail', { contentId })}
+      onNavigate={(target) => {
+        if (target === 'donations') {
+          navigation.navigate('UserActionPage', { pageId: 'donate' });
+        } else {
+          navigation.navigate(target);
+        }
+      }}
     />
   );
 };
@@ -403,10 +408,40 @@ export const UserTabNavigator: React.FC = () => {
       />
 
       <Tab.Screen
-        name="ProfileSettings"
+        name="UserActionPage"
         options={{ tabBarButton: () => null }}
-        component={ProfileSettingsScreen}
-      />
+      >
+        {({ navigation, route }: any) => (
+          <UserActionPageScreen
+            pageId={route.params?.pageId || 'join'}
+            onBack={navigation.goBack}
+            onOpenHome={() => navigation.navigate('UserHome')}
+            onOpenAbout={() => navigation.navigate('UserAbout')}
+            onOpenRights={() => navigation.navigate('UserRights')}
+            onOpenEvents={() => navigation.navigate('UserEvents')}
+            onOpenNews={() => navigation.navigate('UserNews')}
+            onOpenContact={() => navigation.navigate('ContactUs')}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="WhatWeDoDetail"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <WhatWeDoDetailScreen
+            contentId={route.params?.contentId || 'awareness-campaigns'}
+            onBack={navigation.goBack}
+            onOpenHome={() => navigation.navigate('UserHome')}
+            onOpenAbout={() => navigation.navigate('UserAbout')}
+            onOpenRights={() => navigation.navigate('UserRights')}
+            onOpenEvents={() => navigation.navigate('UserEvents')}
+            onOpenNews={() => navigation.navigate('UserNews')}
+            onOpenContact={() => navigation.navigate('ContactUs')}
+          />
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 };
