@@ -1,5 +1,5 @@
 export type DonationStatus = 'Completed' | 'Pending' | 'Failed';
-export type ReceiptType = 'Donation' | 'Membership';
+export type ReceiptType = 'Donation' | 'Membership' | 'Renewal';
 
 export interface DonationRecord {
   id: string;
@@ -27,7 +27,7 @@ export interface DonationRecord {
 }
 
 export type DonationFilterTab = 'ALL' | 'Completed' | 'Pending' | 'Failed';
-export type ReceiptFilterTab = 'ALL' | 'Membership' | 'Donation';
+export type ReceiptFilterTab = 'ALL' | 'Membership' | 'Renewal' | 'Donation';
 
 export interface DonationFilterState {
   status: 'ALL' | DonationStatus;

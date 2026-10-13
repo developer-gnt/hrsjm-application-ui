@@ -17,8 +17,14 @@ import {
   Typography,
 } from '../../../../../core/theme';
 import { AppAvatar, AppEmptyState, AppLoader } from '../../../../../core/components';
-import { RightsCategoryChip, RIGHTS_STATUS_TONES, RIGHTS_STATUS_LABELS, formatRightsViews } from '../components/RightsCard';
+import {
+  RightsCategoryChip,
+  RIGHTS_STATUS_TONES,
+  RIGHTS_STATUS_LABELS,
+  formatRightsViews,
+} from '../components/RightsCard';
 import { RightsDetailsActionMenu } from '../components/RightsDetailsActionMenu';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
 import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
 import type { RightsArticle } from '../types/rights.types';
@@ -37,6 +43,7 @@ interface RightArticleDetailsScreenProps {
    * preview notice.
    */
   onTabPress?: (tab: string) => void;
+  showBottomNav?: boolean;
   /**
    * Called when Edit is chosen. When not provided, a placeholder alert is
    * shown instead (the Edit Rights screen does not exist yet).
@@ -64,6 +71,7 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
   onTabPress,
   onEdit,
   loading = false,
+  showBottomNav = false,
 }) => {
   const [coverFailed, setCoverFailed] = useState(false);
   const [actionMenuVisible, setActionMenuVisible] = useState(false);
@@ -122,7 +130,7 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
   if (loading) {
     return (
       <View style={styles.root}>
-        <AdminShellHeader leading="back" onBack={onBack} />
+        <AdminHeader showBack onBack={onBack} title="Article Details" />
         <AppLoader fullScreen message="Loading article..." />
       </View>
     );
@@ -131,7 +139,7 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
   if (!article) {
     return (
       <View style={styles.root}>
-        <AdminShellHeader leading="back" onBack={onBack} />
+        <AdminHeader showBack onBack={onBack} title="Article Details" />
         <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
           <AppEmptyState
             icon="⚖️"
@@ -152,8 +160,7 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
 
   return (
     <View style={styles.root}>
-      {/* TEMPORARY preview shell: real global header is owned by the app-level architecture. */}
-      <AdminShellHeader leading="back" onBack={onBack} />
+      <AdminHeader showBack onBack={onBack} title="Article Details" />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <ScrollView
@@ -274,8 +281,9 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
         </ScrollView>
       </SafeAreaView>
 
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar activeTab="rights" onTabPress={handleShellTabPress} />
+      {showBottomNav ? (
+        <AdminShellTabBar activeTab="rights" onTabPress={handleShellTabPress} />
+      ) : null}
 
       <RightsDetailsActionMenu
         visible={actionMenuVisible}

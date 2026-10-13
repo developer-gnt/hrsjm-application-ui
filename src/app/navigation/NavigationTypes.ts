@@ -86,6 +86,7 @@ export type MoreStackParamList = {
   [AppRoutes.EDIT_PERSONAL_INFO]: undefined;
   [AppRoutes.MY_ID_CARD]: undefined;
   [AppRoutes.ABOUT]: undefined;
+  [AppRoutes.KNOW_YOUR_RIGHTS]: undefined;
   [AppRoutes.MEMBERSHIP_DETAILS]: undefined;
   [AppRoutes.RENEW_MEMBERSHIP]: undefined;
 };

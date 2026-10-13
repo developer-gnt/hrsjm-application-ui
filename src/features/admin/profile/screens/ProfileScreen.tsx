@@ -35,11 +35,15 @@ import {
   navigateToMembershipApplications,
   navigateToDonations,
 } from '../../../../core/navigation/appRouter';
+import { useNavigation } from '@react-navigation/native';
 import { ProfileSectionCard } from '../components/ProfileSectionCard';
 import { ProfileInfoRow } from '../components/ProfileInfoRow';
 import { ProfileToast, ToastState } from '../components/ProfileToast';
 import { AvatarPickerModal } from '../components/AvatarPickerModal';
+import { ChangePasswordModal } from '../components/ChangePasswordModal';
+import { EditPersonalInfoModal } from '../components/EditPersonalInfoModal';
 import { MyIdCard } from '../components/MyIdCard';
+import { Lock, KeyRound, Calendar } from '../../../../core/components/icons';
 import {
   PersonIcon,
   MailIcon,
@@ -58,6 +62,7 @@ export interface ProfileScreenProps {
   onEditPersonal?: () => void;
   onEditAdminDetails?: () => void;
   onViewIdCard?: () => void;
+  onViewMembershipDetails?: () => void;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
@@ -66,16 +71,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onEditPersonal,
   onEditAdminDetails,
   onViewIdCard,
+  onViewMembershipDetails,
 }) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const profile = useProfileStore(state => state.profile);
   const updateAvatar = useProfileStore(state => state.updateAvatar);
+  const stagedMessage = useProfileStore(state => state.stagedMessage);
   const consumeStagedMessage = useProfileStore(
     state => state.consumeStagedMessage,
   );
 
+  const navigation = useNavigation<any>();
   const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
+  const [changePasswordVisible, setChangePasswordVisible] = useState(false);
+  const [editPersonalVisible, setEditPersonalVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | ToastState | null>(null);
   const { download, busyAction } = useIdCardFiles({
     onMessage: setToastMessage,
@@ -98,17 +108,19 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   // Edit screens stage success messages here before navigating back.
   useEffect(() => {
-    const staged = consumeStagedMessage();
-    if (staged) {
-      setToastMessage({ message: staged, variant: 'success' });
+    if (stagedMessage) {
+      const staged = consumeStagedMessage();
+      if (staged) {
+        setToastMessage({ message: staged, variant: 'success' });
+      }
     }
-  }, [consumeStagedMessage]);
+  }, [stagedMessage, consumeStagedMessage]);
 
   const handleEditPersonal = () => {
     if (onEditPersonal) {
       onEditPersonal();
-    } else if (onNavigate) {
-      onNavigate('EditPersonalInfo');
+    } else {
+      setEditPersonalVisible(true);
     }
   };
 
@@ -117,6 +129,28 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       onEditAdminDetails();
     } else if (onNavigate) {
       onNavigate('AdminDetails');
+    } else if (navigation?.navigate) {
+      try {
+        navigation.navigate('AdminDetails');
+      } catch {
+        // no-op
+      }
+    }
+  };
+
+  const isMember = (profile.role || '').toLowerCase() === 'member';
+
+  const handleMemberDetailsAction = () => {
+    if (onViewMembershipDetails) {
+      onViewMembershipDetails();
+    } else if (onNavigate) {
+      onNavigate('MembershipDetails');
+    } else if (navigation?.navigate) {
+      try {
+        navigation.navigate('MembershipDetails');
+      } catch {
+        // no-op
+      }
     }
   };
 
@@ -125,6 +159,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       onViewIdCard();
     } else if (onNavigate) {
       onNavigate('MyIdCard');
+    } else if (navigation?.navigate) {
+      try {
+        navigation.navigate('MyIdCard');
+      } catch {
+        // no-op
+      }
     }
   };
 
@@ -216,39 +256,132 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             icon={<PhoneIcon size={16} color={AdminColors.textSecondary} />}
             label="Phone Number"
             value={profile.phone}
+          />
+          <ProfileInfoRow
+            icon={<Calendar size={16} color={AdminColors.textSecondary} />}
+            label="Date of Birth"
+            value={profile.dateOfBirth || 'Not provided'}
             divider={false}
           />
         </ProfileSectionCard>
 
-        {/* Admin details */}
+        {/* Security & Password */}
         <ProfileSectionCard
-          icon={<BuildingIcon size={18} />}
-          title="Admin Details"
+          icon={<Lock size={18} color={AdminColors.primary} />}
+          title="Security & Password"
           backgroundColor={AdminColors.primaryLight}
-          onEdit={handleEditAdminDetails}
+          onEdit={() => setChangePasswordVisible(true)}
+          editLabel="Change"
           style={styles.sectionGap}
         >
-          <ProfileInfoRow
-            icon={<BuildingIcon size={16} color={AdminColors.textSecondary} />}
-            label="Role"
-            value={profile.role}
-          />
-          <ProfileInfoRow
-            icon={<BadgeCheckIcon size={16} />}
-            label="Account Status"
-            value={profile.accountStatus}
-            divider={false}
-            trailing={
-              <AppBadge
-                label={profile.accountStatus}
-                status={
-                  profile.accountStatus === 'Active' ? 'ACTIVE' : 'INACTIVE'
-                }
-                textStyle={{ textTransform: 'none' }}
-              />
-            }
-          />
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setChangePasswordVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Change password"
+          >
+            <ProfileInfoRow
+              icon={<KeyRound size={16} color={AdminColors.textSecondary} />}
+              label="Password"
+              value="••••••••••••"
+              divider={false}
+              showValueWithTrailing={true}
+              trailing={
+                <View style={styles.changePasswordTag}>
+                  <Text style={styles.changePasswordTagText}>Change</Text>
+                </View>
+              }
+            />
+          </TouchableOpacity>
         </ProfileSectionCard>
+
+        {/* Member details or Admin details based on logged-in role */}
+        {isMember ? (
+          <ProfileSectionCard
+            icon={<IdCardIcon size={18} color={AdminColors.primary} />}
+            title="Member Details"
+            backgroundColor={AdminColors.primaryLight}
+            onEdit={handleMemberDetailsAction}
+            editLabel="View"
+            style={styles.sectionGap}
+          >
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={handleMemberDetailsAction}
+              accessibilityRole="button"
+              accessibilityLabel="Open Member Details Page"
+            >
+              <ProfileInfoRow
+                icon={<BuildingIcon size={16} color={AdminColors.textSecondary} />}
+                label="Membership Type"
+                value={profile.membershipType || 'Individual Member'}
+              />
+              <ProfileInfoRow
+                icon={<IdCardIcon size={16} color={AdminColors.textSecondary} />}
+                label="Member ID"
+                value={profile.memberId || profile.adminId}
+              />
+              {profile.memberSince ? (
+                <ProfileInfoRow
+                  icon={<BuildingIcon size={16} color={AdminColors.textSecondary} />}
+                  label="Member Since"
+                  value={profile.memberSince}
+                />
+              ) : null}
+              {profile.validTill ? (
+                <ProfileInfoRow
+                  icon={<BuildingIcon size={16} color={AdminColors.textSecondary} />}
+                  label="Valid Until"
+                  value={profile.validTill}
+                />
+              ) : null}
+              <ProfileInfoRow
+                icon={<BadgeCheckIcon size={16} />}
+                label="Account Status"
+                value={profile.accountStatus}
+                divider={false}
+                trailing={
+                  <AppBadge
+                    label={profile.accountStatus}
+                    status={
+                      profile.accountStatus === 'Active' ? 'ACTIVE' : 'INACTIVE'
+                    }
+                    textStyle={{ textTransform: 'none' }}
+                  />
+                }
+              />
+            </TouchableOpacity>
+          </ProfileSectionCard>
+        ) : (
+          <ProfileSectionCard
+            icon={<BuildingIcon size={18} />}
+            title="Admin Details"
+            backgroundColor={AdminColors.primaryLight}
+            onEdit={handleEditAdminDetails}
+            style={styles.sectionGap}
+          >
+            <ProfileInfoRow
+              icon={<BuildingIcon size={16} color={AdminColors.textSecondary} />}
+              label="Role"
+              value={profile.role}
+            />
+            <ProfileInfoRow
+              icon={<BadgeCheckIcon size={16} />}
+              label="Account Status"
+              value={profile.accountStatus}
+              divider={false}
+              trailing={
+                <AppBadge
+                  label={profile.accountStatus}
+                  status={
+                    profile.accountStatus === 'Active' ? 'ACTIVE' : 'INACTIVE'
+                  }
+                  textStyle={{ textTransform: 'none' }}
+                />
+              }
+            />
+          </ProfileSectionCard>
+        )}
 
         {/* My ID Card section — inline preview of the actual card */}
         <View style={[styles.sectionGap, styles.idCardSection]}>
@@ -291,6 +424,32 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         currentAvatarUrl={profile.avatar}
         onClose={() => setAvatarPickerVisible(false)}
         onSelectAvatar={handleSelectAvatar}
+      />
+
+      {/* Edit Personal Info Modal */}
+      <EditPersonalInfoModal
+        visible={editPersonalVisible}
+        onClose={() => setEditPersonalVisible(false)}
+        onSuccess={() => {
+          setEditPersonalVisible(false);
+          setToastMessage({
+            message: 'Personal information updated successfully.',
+            variant: 'success',
+          });
+        }}
+      />
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        visible={changePasswordVisible}
+        onClose={() => setChangePasswordVisible(false)}
+        onSuccess={() => {
+          setChangePasswordVisible(false);
+          setToastMessage({
+            message: 'Password changed successfully.',
+            variant: 'success',
+          });
+        }}
       />
 
       {/* Floating toast */}
@@ -449,8 +608,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    zIndex: 99,
-    elevation: 20,
+    zIndex: 9999,
+    elevation: 99,
+  },
+  changePasswordTag: {
+    backgroundColor: AdminColors.primaryLight,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: AdminColors.primary,
+  },
+  changePasswordTagText: {
+    ...Typography.bodyBold,
+    fontSize: 12,
+    color: AdminColors.primary,
   },
 });
 

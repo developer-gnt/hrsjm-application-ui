@@ -211,7 +211,12 @@ export const MemberHomeDashboardScreen: React.FC<
 
         <View style={styles.sheetContainer}>
           {/* Active Member Status Card */}
-          <View style={styles.membershipStatusCard}>
+          <Pressable
+            style={styles.membershipStatusCard}
+            onPress={onOpenMembershipDetails || onOpenMembershipInfo || (() => undefined)}
+            accessibilityRole="button"
+            accessibilityLabel="View Membership Details"
+          >
             <View style={styles.membershipStatusLeft}>
               <View style={styles.starBadge}>
                 <AppIcon name="star" size={18} color="#FFFFFF" filled />
@@ -236,7 +241,7 @@ export const MemberHomeDashboardScreen: React.FC<
 
             <Pressable
               style={styles.viewMembershipButton}
-              onPress={onOpenMembershipDetails}
+              onPress={onOpenMembershipDetails || onOpenMembershipInfo}
               accessibilityRole="button"
               accessibilityLabel="View Membership"
             >
@@ -249,7 +254,7 @@ export const MemberHomeDashboardScreen: React.FC<
                 color={AdminColors.primaryDark}
               />
             </Pressable>
-          </View>
+          </Pressable>
 
           {/* Quick Actions (4 in a row) */}
           <View style={styles.quickActionsRow}>

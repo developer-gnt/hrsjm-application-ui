@@ -8,6 +8,58 @@ export function formatCurrency(value: string | number): string {
   return `₹${amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 }
 
+/**
+ * Converts a numeric amount to Indian Rupee representation in words.
+ * Example: 5000 -> "Five Thousand Rupees Only"
+ * Example: 1500 -> "One Thousand Five Hundred Rupees Only"
+ */
+export function amountToWords(amount: number | string | null | undefined): string {
+  if (amount === null || amount === undefined) return '';
+  const num = Math.floor(Math.abs(Number(amount)));
+  if (isNaN(num) || num === 0) return 'Zero Rupees Only';
+
+  const ones = [
+    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+    'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+    'Seventeen', 'Eighteen', 'Nineteen'
+  ];
+  const tens = [
+    '', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'
+  ];
+
+  function convertTwoDigits(n: number): string {
+    if (n < 20) return ones[n];
+    const unit = n % 10;
+    return tens[Math.floor(n / 10)] + (unit ? ' ' + ones[unit] : '');
+  }
+
+  function convertThreeDigits(n: number): string {
+    const hundred = Math.floor(n / 100);
+    const rest = n % 100;
+    let str = '';
+    if (hundred) {
+      str += ones[hundred] + ' Hundred';
+    }
+    if (rest) {
+      str += (str ? ' ' : '') + convertTwoDigits(rest);
+    }
+    return str;
+  }
+
+  let words = '';
+  const crore = Math.floor(num / 10000000);
+  const lakh = Math.floor((num % 10000000) / 100000);
+  const thousand = Math.floor((num % 100000) / 1000);
+  const hundred = num % 1000;
+
+  if (crore) words += convertTwoDigits(crore) + ' Crore ';
+  if (lakh) words += convertTwoDigits(lakh) + ' Lakh ';
+  if (thousand) words += convertThreeDigits(thousand) + ' Thousand ';
+  if (hundred) words += convertThreeDigits(hundred);
+
+  return words.trim() + ' Rupees Only';
+}
+
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) {
     return '—';

@@ -4,11 +4,11 @@ import {
   subscribeRegistrationState,
   RegistrationState,
 } from '../../auth/state/registrationState';
-import { useAuthStore } from '../../auth/store/authStore';
 import {
   membershipApplicationsStore,
 } from '../../admin/membershipApplications/services/membershipApplicationsStore';
 import { MembershipApplicationItem, ApplicationStatus } from '../../admin/membershipApplications/types/membershipApplications.types';
+import { useProfileStore } from '../../admin/profile/profileStore';
 
 export type DisplayMembershipStatus = 'Active' | 'Under Review' | 'Rejected' | 'Inactive';
 
@@ -44,7 +44,8 @@ export const useMembershipDetailsData = (
     getRegistrationState,
     getRegistrationState
   );
-  const user = useAuthStore(state => state.user);
+  const profile = useProfileStore(state => state.profile);
+  const authUser = useAuthStore(state => state.user);
 
   const [applications, setApplications] = useState<MembershipApplicationItem[]>(() =>
     membershipApplicationsStore.getApplications()
@@ -59,34 +60,64 @@ export const useMembershipDetailsData = (
 
   // Find most recent application matching registered user or created via registration
   const latestApp =
-    regState.email || regState.fullName || user?.email || user?.full_name
+    profile?.email || authUser?.email || regState.email || profile?.fullName || authUser?.full_name || regState.fullName
       ? applications.find(
           app =>
+            (profile?.email && app.email?.toLowerCase() === profile.email.toLowerCase()) ||
+            (authUser?.email && app.email?.toLowerCase() === authUser.email.toLowerCase()) ||
             (regState.email && app.email?.toLowerCase() === regState.email.toLowerCase()) ||
-            (regState.fullName && app.applicantName?.toLowerCase() === regState.fullName.toLowerCase()) ||
-            (user?.email && app.email?.toLowerCase() === user.email.toLowerCase()) ||
-            (user?.full_name && app.applicantName?.toLowerCase() === user.full_name.toLowerCase())
+            (profile?.fullName && app.applicantName?.toLowerCase() === profile.fullName.toLowerCase()) ||
+            (authUser?.full_name && app.applicantName?.toLowerCase() === authUser.full_name.toLowerCase()) ||
+            (regState.fullName && app.applicantName?.toLowerCase() === regState.fullName.toLowerCase())
         )
       : applications.find(app => app.id.startsWith('app-reg-'));
 
   // Check if member data exists
   const candidateName =
+    initialOverride?.fullName ||
+    profile?.fullName?.trim() ||
+    authUser?.full_name?.trim() ||
     regState.fullName?.trim() ||
     latestApp?.applicantName?.trim() ||
-    user?.full_name?.trim() ||
     '';
-  const hasData = candidateName.length > 0 || Boolean(user);
+  const hasData = Boolean(
+    candidateName.length > 0 ||
+    profile?.memberId ||
+    authUser?.id ||
+    Boolean(latestApp)
+  );
 
-  const fullName = candidateName || user?.full_name || 'HRSJM Member';
-  const email = regState.email?.trim() || latestApp?.email || user?.email || '';
-  const phone = regState.phone?.trim() || latestApp?.phone || user?.mobile_number || '';
-  const dob = regState.dob?.trim() || latestApp?.dob || '';
+  const fullName = candidateName || (authUser ? 'HRSJM Member' : 'Member');
+  const email =
+    initialOverride?.email ||
+    profile?.email?.trim() ||
+    authUser?.email?.trim() ||
+    regState.email?.trim() ||
+    latestApp?.email ||
+    '';
+  const phone =
+    initialOverride?.phone ||
+    profile?.phone?.trim() ||
+    authUser?.mobile_number?.trim() ||
+    regState.phone?.trim() ||
+    latestApp?.phone ||
+    '';
+  const dob =
+    initialOverride?.dob ||
+    profile?.dateOfBirth ||
+    (profile as any)?.dob ||
+    (authUser as any)?.dob ||
+    regState.dob?.trim() ||
+    latestApp?.dob ||
+    '';
 
   // Membership type
   const rawType =
+    initialOverride?.membershipType ||
+    profile?.membershipType ||
+    (authUser as any)?.membership_category ||
     regState.accountTypeLabel ||
     latestApp?.membershipType ||
-    (user as any)?.membership_category ||
     'Individual Member';
   let membershipType = 'Individual Member';
   if (
@@ -105,7 +136,18 @@ export const useMembershipDetailsData = (
   let status: DisplayMembershipStatus = 'Active';
   let statusRaw: string = 'approved';
 
-  if (latestApp) {
+  if (profile?.accountStatus) {
+    if (profile.accountStatus === 'Active') {
+      status = 'Active';
+      statusRaw = 'approved';
+    } else if (profile.accountStatus === 'Inactive') {
+      status = 'Inactive';
+      statusRaw = 'inactive';
+    } else {
+      status = 'Under Review';
+      statusRaw = 'pending';
+    }
+  } else if (latestApp) {
     statusRaw = latestApp.status;
     if (latestApp.status === 'approved') {
       status = 'Active';
@@ -114,42 +156,63 @@ export const useMembershipDetailsData = (
     } else {
       status = 'Under Review';
     }
-  } else if (regState.accountType === 'member' || Boolean(user)) {
+  } else if (regState.accountType === 'member' || Boolean(authUser)) {
     status = 'Active';
     statusRaw = 'approved';
   }
 
   // Member ID
   const memberId =
-    (user as any)?.member_id ||
-    (user as any)?.custom_id ||
+    initialOverride?.memberId ||
+    profile?.memberId ||
+    profile?.adminId ||
+    (authUser as any)?.member_id ||
+    (authUser as any)?.custom_id ||
     latestApp?.applicationId ||
     (latestApp?.id && !latestApp.id.startsWith('app-reg-') ? latestApp.id : '') ||
     (status === 'Active' ? 'HRSJM-MEM-2026-0842' : 'HRSJM-PENDING');
 
   // Dates
-  let joinDate = '15 Sep 2026';
-  let validTill = '15 Sep 2027';
+  let joinDate = profile?.memberSince || '';
+  let validTill = profile?.validTill || '';
 
-  if (latestApp?.submittedAt) {
-    const parts = latestApp.submittedAt.split(',');
-    joinDate = parts[0].trim();
-  } else {
-    joinDate = formatDateDisplay(new Date());
+  if (!joinDate) {
+    if (latestApp?.submittedAt) {
+      const parts = latestApp.submittedAt.split(',');
+      joinDate = parts[0].trim();
+    } else {
+      joinDate = formatDateDisplay(new Date());
+    }
   }
 
-  if (status === 'Active') {
-    // 1 year from join date
-    const joinDateObj = new Date(latestApp?.submittedDate || Date.now());
-    if (!isNaN(joinDateObj.getTime())) {
-      const expiry = new Date(joinDateObj);
-      expiry.setFullYear(expiry.getFullYear() + 1);
-      validTill = formatDateDisplay(expiry);
+  if (!validTill) {
+    if (status === 'Active') {
+      const joinDateObj = new Date(latestApp?.submittedDate || Date.now());
+      if (!isNaN(joinDateObj.getTime())) {
+        const expiry = new Date(joinDateObj);
+        expiry.setFullYear(expiry.getFullYear() + 1);
+        validTill = formatDateDisplay(expiry);
+      } else {
+        validTill = '13 Oct 2027';
+      }
     } else {
-      validTill = '15 Sep 2027';
+      validTill = 'Pending Approval';
     }
-  } else {
-    validTill = 'Pending Approval';
+  }
+
+  let daysRemaining = '—';
+  if (status === 'Active') {
+    try {
+      const validDate = new Date(validTill);
+      if (!isNaN(validDate.getTime())) {
+        const diffDays = Math.ceil((validDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        daysRemaining = diffDays > 0 ? `${diffDays} Days` : 'Expired';
+      } else {
+        daysRemaining = '365 Days';
+      }
+    } catch {
+      daysRemaining = '365 Days';
+    }
   }
 
   const derived: MembershipDetailsData = {
@@ -165,7 +228,7 @@ export const useMembershipDetailsData = (
     status,
     statusRaw,
     totalDuration: '1 Year',
-    daysRemaining: status === 'Active' ? '352 Days' : '—',
+    daysRemaining,
     ...initialOverride,
   };
 

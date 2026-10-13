@@ -305,7 +305,6 @@ export const MembershipDetailsScreen: React.FC<MembershipDetailsScreenProps> = (
           )}
         </ScrollView>
 
-        {/* Phase 1: Bottom Navigation */}
         {showBottomNav ? (
           <DonationsBottomNav
             bottomInset={insets.bottom}

@@ -36,7 +36,22 @@ const STATUS_CONFIG: Record<
 
 export function ReceiptCard({ item, onPress }: ReceiptCardProps) {
   const statusMeta = STATUS_CONFIG[item.status] || STATUS_CONFIG.Completed;
+  const isRenewal = item.type === 'Renewal';
   const isMembership = item.type === 'Membership';
+
+  const title = isRenewal
+    ? 'Renewal Receipt'
+    : isMembership
+    ? 'Membership Receipt'
+    : 'Donation Receipt';
+
+  const iconName = isRenewal ? 'refresh-cw' : isMembership ? 'person' : 'heart';
+  const iconColor = isRenewal ? '#0D9488' : isMembership ? colors.primary : colors.accentGold;
+  const iconWrapStyle = isRenewal
+    ? styles.iconWrapRenewal
+    : isMembership
+    ? styles.iconWrapMembership
+    : styles.iconWrapDonation;
 
   return (
     <TouchableOpacity
@@ -46,23 +61,19 @@ export function ReceiptCard({ item, onPress }: ReceiptCardProps) {
       accessibilityLabel={`${item.type} receipt ${item.receiptNo}, ${formatCurrency(item.amount)}, status ${item.status}`}
       style={styles.card}>
       {/* Type Icon Indicator */}
-      <View
-        style={[
-          styles.iconWrap,
-          isMembership ? styles.iconWrapMembership : styles.iconWrapDonation,
-        ]}>
+      <View style={[styles.iconWrap, iconWrapStyle]}>
         <Icon
-          name={isMembership ? 'person' : 'heart'}
-          size={24}
-          color={isMembership ? colors.primary : colors.accentGold}
-          strokeWidth={2}
+          name={iconName}
+          size={22}
+          color={iconColor}
+          strokeWidth={2.2}
         />
       </View>
 
       {/* Document Information */}
       <View style={styles.contentWrap}>
         <Text style={styles.title} numberOfLines={1}>
-          {isMembership ? 'Membership Receipt' : 'Donation Receipt'}
+          {title}
         </Text>
         <Text style={styles.receiptNo} numberOfLines={1}>
           Receipt No. {item.receiptNo}
@@ -111,6 +122,9 @@ const styles = StyleSheet.create({
   },
   iconWrapMembership: {
     backgroundColor: colors.primaryLight,
+  },
+  iconWrapRenewal: {
+    backgroundColor: '#CCFBF1',
   },
   iconWrapDonation: {
     backgroundColor: colors.goldSoft,

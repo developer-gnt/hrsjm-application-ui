@@ -173,7 +173,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         membershipType: membershipData?.category?.name || (isUserAdmin ? 'Executive Member' : 'Individual Member'),
         memberId,
         adminId,
-        dateOfBirth: (membershipData?.application_data as any)?.personal_details?.dob || '',
+        dateOfBirth: (user as any)?.dob || (membershipData?.application_data as any)?.personal_details?.dob || '',
         memberSince,
         validTill,
       };
@@ -185,13 +185,23 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   },
 
   updatePersonalInfo: async input => {
+    const cleanEmail = (input.email || '').trim().toLowerCase();
+    const cleanPhone = (input.phone || '').replace(/\D/g, '').slice(-10);
+    const dob = (input.dob || input.dateOfBirth || '').trim();
+
+    const patchPayload: Record<string, any> = {
+      full_name: input.fullName.trim(),
+      email: cleanEmail,
+      mobile_number: cleanPhone,
+      phone: cleanPhone,
+    };
+    if (dob) {
+      patchPayload.dob = dob;
+      patchPayload.dateOfBirth = dob;
+    }
+
     // 1. Persist to backend /auth/me
-    const res: any = await apiClient.patch<any>(ApiRoutes.AUTH.ME, {
-      full_name: input.fullName,
-      email: input.email,
-      mobile_number: input.phone,
-      phone: input.phone,
-    });
+    const res: any = await apiClient.patch<any>(ApiRoutes.AUTH.ME, patchPayload);
 
     const userData = res?.data || res;
 
@@ -207,9 +217,10 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         user: {
           ...currentUser,
           ...(typeof userData === 'object' && userData ? userData : {}),
-          full_name: input.fullName,
-          email: input.email,
-          mobile_number: input.phone,
+          full_name: input.fullName.trim(),
+          email: cleanEmail,
+          mobile_number: cleanPhone,
+          dob: dob || (currentUser as any)?.dob,
           roles,
         },
       });
@@ -218,10 +229,11 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     set(state => ({
       profile: {
         ...state.profile,
-        fullName: input.fullName,
-        accountName: input.fullName,
-        email: input.email,
-        phone: input.phone,
+        fullName: input.fullName.trim(),
+        accountName: input.fullName.trim(),
+        email: cleanEmail,
+        phone: cleanPhone,
+        dateOfBirth: dob || state.profile.dateOfBirth,
       },
     }));
   },

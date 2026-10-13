@@ -58,6 +58,7 @@ import {
   MembershipApplicationDetailsScreen,
 } from '../../features/admin/membershipApplications';
 import { AboutScreen } from '../../features/user/about';
+import { KnowYourRightsScreen } from '../../features/admin/content/rights';
 import {
   MembershipDetailsScreen,
   RenewMembershipScreen,
@@ -358,9 +359,14 @@ export const MoreNavigator: React.FC = () => (
           onViewIdCard={() =>
             navigation.navigate(AppRoutes.MY_ID_CARD as any)
           }
+          onViewMembershipDetails={() =>
+            navigation.navigate(AppRoutes.MEMBERSHIP_DETAILS as any)
+          }
           onNavigate={(target: string) => {
             if (target === 'AdminMoreTab') {
               navigation.navigate('MoreMenu' as any);
+            } else if (target === 'MembershipDetails') {
+              navigation.navigate(AppRoutes.MEMBERSHIP_DETAILS as any);
             } else {
               navigation.navigate(target as any);
             }
@@ -430,6 +436,11 @@ export const MoreNavigator: React.FC = () => (
           }}
         />
       )}
+    </Stack.Screen>
+
+    {/* Know Your Rights */}
+    <Stack.Screen name={AppRoutes.KNOW_YOUR_RIGHTS}>
+      {() => <KnowYourRightsScreen />}
     </Stack.Screen>
 
     {/* Notifications — Real merged NotificationsScreen */}

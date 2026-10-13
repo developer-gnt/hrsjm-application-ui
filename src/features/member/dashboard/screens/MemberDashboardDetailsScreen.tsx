@@ -16,15 +16,13 @@ import {
   Spacing,
 } from '../../../../core/theme';
 import { AppIcon } from '../../../user/components';
-import { USER_EVENTS, type UserEvent } from '../../../user/events/data/user-events';
 import { RIGHTS_INDEX } from '../../../user/rights/data/rights-content';
 import type { HomeTab } from '../../../user/home/types/home.types';
 import { HomeHeader } from '../../../user/home/components/HomeHeader';
 import { UserBottomNavigation } from '../../../user/home/components/UserBottomNavigation';
-import {
-  getUpcomingMemberEvents,
-  MOCK_ACTIVE_MEMBERSHIP,
-} from '../data/member-dashboard';
+import { MOCK_ACTIVE_MEMBERSHIP } from '../data/member-dashboard';
+import { getEventsList } from '../../../admin/content/events/services/events.service';
+import type { EventListItem } from '../../../admin/content/events/types/events.types';
 import type {
   MemberDashboardTab,
   MemberMembershipRecord,
@@ -50,7 +48,7 @@ export interface MemberDashboardDetailsContentProps {
   onOpenEvents?: () => void;
   onOpenRights?: () => void;
   onOpenRight?: (rightId: string) => void;
-  onOpenEvent?: (event: UserEvent) => void;
+  onOpenEvent?: (event: EventListItem) => void;
 }
 
 export interface MemberDashboardDetailsScreenProps
@@ -421,7 +419,7 @@ export const MemberDashboardDetailsContent: React.FC<
               {/* Card 2: Event */}
               <Pressable
                 style={styles.recommendedCard}
-                onPress={() => onOpenEvent?.(USER_EVENTS[0])}
+                onPress={onOpenEvents}
                 accessibilityRole="button"
                 accessibilityLabel="Community Legal Awareness Drive event"
               >
@@ -541,13 +539,42 @@ export const MemberDashboardDetailsContent: React.FC<
 
 const RecommendedContent: React.FC<{
   onOpenRight: (rightId: string) => void;
-  onOpenEvent?: (event: UserEvent) => void;
+  onOpenEvent?: (event: EventListItem) => void;
   expanded?: boolean;
 }> = ({ onOpenRight, onOpenEvent, expanded = false }) => {
   const rights = RIGHTS_INDEX.slice(0, expanded ? RIGHTS_INDEX.length : 3);
-  const events = onOpenEvent
-    ? getUpcomingMemberEvents(USER_EVENTS, new Date()).slice(0, 2)
-    : [];
+  const [dbEvents, setDbEvents] = useState<EventListItem[]>([]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    getEventsList({ limit: 10 })
+      .then(res => {
+        if (isMounted) setDbEvents(res.events || []);
+      })
+      .catch(() => {
+        if (isMounted) setDbEvents([]);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const upcomingEvents = React.useMemo(() => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    return dbEvents
+      .filter(event => {
+        if (!event.startAt) return false;
+        const startTime = new Date(event.startAt).getTime();
+        if (isNaN(startTime)) return false;
+        const endTime = event.endAt ? new Date(event.endAt).getTime() : startTime + 4 * 60 * 60 * 1000;
+        const isUpcoming = endTime >= now.getTime() || startTime >= startOfToday;
+        return isUpcoming && event.status !== 'CANCELLED' && event.status !== 'COMPLETED';
+      })
+      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+      .slice(0, 2);
+  }, [dbEvents]);
 
   return (
     <View style={styles.recommendationList}>
@@ -577,34 +604,41 @@ const RecommendedContent: React.FC<{
           <AppIcon name="chevron-right" size={17} color={AdminColors.primaryDark} />
         </Pressable>
       ))}
-      {events.map(event => (
-        <Pressable
-          key={event.id}
-          style={styles.recommendation}
-          onPress={() => onOpenEvent?.(event)}
-          accessibilityRole="button"
-          accessibilityLabel={`Open event: ${event.title}`}
-        >
-          <Image
-            source={event.image}
-            style={styles.learningThumb}
-            resizeMode="cover"
-            accessible={false}
-          />
-          <View style={styles.recommendationCopy}>
-            <Text style={styles.recommendationCategory}>
-              {event.category.toUpperCase()} · {event.date}
-            </Text>
-            <Text style={styles.recommendationTitle} numberOfLines={2}>
-              {event.title}
-            </Text>
-            <Text style={styles.recommendationDescription} numberOfLines={1}>
-              {event.location}
-            </Text>
-          </View>
-          <AppIcon name="chevron-right" size={17} color={AdminColors.primaryDark} />
-        </Pressable>
-      ))}
+      {onOpenEvent && upcomingEvents.map(event => {
+        const imageSource = event.coverImageUrl ? { uri: event.coverImageUrl } : EVENT_IMAGE;
+        const d = new Date(event.startAt);
+        const formattedDate = !isNaN(d.getTime())
+          ? d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+          : '';
+        return (
+          <Pressable
+            key={event.id}
+            style={styles.recommendation}
+            onPress={() => onOpenEvent?.(event)}
+            accessibilityRole="button"
+            accessibilityLabel={`Open event: ${event.title}`}
+          >
+            <Image
+              source={imageSource}
+              style={styles.learningThumb}
+              resizeMode="cover"
+              accessible={false}
+            />
+            <View style={styles.recommendationCopy}>
+              <Text style={styles.recommendationCategory}>
+                {(event.category || 'EVENT').toUpperCase()} · {formattedDate}
+              </Text>
+              <Text style={styles.recommendationTitle} numberOfLines={2}>
+                {event.title}
+              </Text>
+              <Text style={styles.recommendationDescription} numberOfLines={1}>
+                {event.location}
+              </Text>
+            </View>
+            <AppIcon name="chevron-right" size={17} color={AdminColors.primaryDark} />
+          </Pressable>
+        );
+      })}
     </View>
   );
 };

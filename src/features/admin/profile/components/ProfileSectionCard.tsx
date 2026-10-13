@@ -40,8 +40,9 @@ export const ProfileSectionCard: React.FC<ProfileSectionCardProps> = ({
             style={styles.editButton}
             onPress={onEdit}
             activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityRole="button"
-            accessibilityLabel={`Edit ${title}`}
+            accessibilityLabel={`${editLabel} ${title}`}
           >
             <Text style={styles.editGlyph}>✎</Text>
             <Text style={styles.editLabel}>{editLabel}</Text>

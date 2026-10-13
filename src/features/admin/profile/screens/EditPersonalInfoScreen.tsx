@@ -10,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,10 +23,13 @@ import {
 } from '../../../../core';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppInput } from '../../../../core/components/common/AppInput';
+import { DatePickerModal } from '../../../../core/components/common/DatePickerModal';
+import { Calendar } from '../../../../core/components/icons';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
 import { PersonalInfoInput } from '../types/profile.types';
 import { PersonIcon, MailIcon, PhoneIcon } from '../components/ProfileIcons';
+import { ProfileToast, ToastState } from '../components/ProfileToast';
 
 const isEmailValid = (email: string): boolean =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -58,15 +62,24 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
   const stageMessage = useProfileStore(state => state.stageMessage);
 
   const [form, setForm] = useState<PersonalInfoInput>({
-    fullName: profile.fullName,
-    email: profile.email,
-    phone: profile.phone,
+    fullName: profile.fullName || '',
+    email: (profile.email || '').toLowerCase().trim(),
+    phone: (profile.phone || '').replace(/\D/g, '').slice(-10),
+    dob: (profile.dateOfBirth || (profile as any).dob || '').trim(),
   });
+  const [dobPickerVisible, setDobPickerVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | ToastState | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
 
   const setField = (field: keyof PersonalInfoInput, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    let cleanVal = value;
+    if (field === 'email') {
+      cleanVal = value.toLowerCase().trim();
+    } else if (field === 'phone') {
+      cleanVal = value.replace(/\D/g, '').slice(0, 10);
+    }
+    setForm(prev => ({ ...prev, [field]: cleanVal }));
     // Clear the field's validation message as the user fixes it.
     setErrors(prev => ({ ...prev, [field]: undefined }));
   };
@@ -76,15 +89,17 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
     if (!form.fullName.trim()) {
       next.fullName = 'Full name is required.';
     }
-    if (!form.email.trim()) {
+    const cleanEmail = form.email.trim().toLowerCase();
+    if (!cleanEmail) {
       next.email = 'Email address is required.';
-    } else if (!isEmailValid(form.email)) {
+    } else if (!isEmailValid(cleanEmail)) {
       next.email = 'Please enter a valid email address.';
     }
-    if (!form.phone.trim()) {
+    const cleanPhone = form.phone.replace(/\D/g, '');
+    if (!cleanPhone) {
       next.phone = 'Phone number is required.';
-    } else if (!isPhoneValid(form.phone)) {
-      next.phone = 'Please enter a valid phone number.';
+    } else if (cleanPhone.length !== 10) {
+      next.phone = 'Phone number must be exactly 10 digits.';
     }
     return next;
   };
@@ -96,22 +111,57 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
       return;
     }
 
+    const cleanEmail = form.email.trim().toLowerCase();
+    const cleanPhone = form.phone.replace(/\D/g, '').slice(0, 10);
+
     setIsSaving(true);
     try {
       await updatePersonalInfo({
         fullName: form.fullName.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
+        email: cleanEmail,
+        phone: cleanPhone,
+        dob: (form.dob || '').trim(),
+        dateOfBirth: (form.dob || '').trim(),
       });
       stageMessage('Profile updated successfully.');
-      if (onSaved) {
-        onSaved();
-      } else if (onNavigate) {
-        onNavigate('MyProfile');
-      }
+      setToastMessage({
+        message: 'Profile updated successfully.',
+        variant: 'success',
+      });
+      setTimeout(() => {
+        if (onSaved) {
+          onSaved();
+        } else if (onNavigate) {
+          onNavigate('MyProfile');
+        }
+      }, 700);
     } catch (err: any) {
-      const errMsg = err?.message || 'Failed to update personal info.';
-      setErrors({ phone: errMsg });
+      const respData = err?.response?.data || err?.data;
+      const rawMsg = respData?.message || err?.message || 'Failed to update personal info.';
+      const msg = Array.isArray(rawMsg) ? rawMsg[0] : String(rawMsg);
+      const code = respData?.code || '';
+
+      if (code === 'EMAIL_TAKEN' || msg.toLowerCase().includes('email')) {
+        setErrors(prev => ({
+          ...prev,
+          email: 'This email is already in use by another account.',
+        }));
+      } else if (
+        code === 'MOBILE_TAKEN' ||
+        code === 'MOBILE_NUMBER_TAKEN' ||
+        msg.toLowerCase().includes('mobile') ||
+        msg.toLowerCase().includes('phone')
+      ) {
+        setErrors(prev => ({
+          ...prev,
+          phone: 'This phone number is already in use by another account.',
+        }));
+      } else {
+        setErrors(prev => ({
+          ...prev,
+          phone: msg,
+        }));
+      }
     } finally {
       setIsSaving(false);
     }
@@ -178,11 +228,30 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
               required
               value={form.phone}
               onChangeText={value => setField('phone', value)}
-              placeholder="Enter phone number"
+              placeholder="Enter 10-digit phone number"
               error={errors.phone}
               leftIcon={<PhoneIcon size={16} color={AdminColors.textMuted} />}
               keyboardType="phone-pad"
+              maxLength={10}
               autoComplete="tel"
+            />
+            <AppInput
+              label="Date of Birth"
+              value={form.dob || ''}
+              onChangeText={value => setField('dob', value)}
+              placeholder="YYYY-MM-DD"
+              leftIcon={<Calendar size={16} color={AdminColors.textMuted} />}
+              rightIcon={
+                <TouchableOpacity
+                  onPress={() => setDobPickerVisible(true)}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityLabel="Select Date of Birth"
+                  accessibilityRole="button"
+                >
+                  <Calendar size={18} color={AdminColors.primary} />
+                </TouchableOpacity>
+              }
             />
           </View>
 
@@ -206,6 +275,27 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <DatePickerModal
+        visible={dobPickerVisible}
+        value={form.dob || ''}
+        onSelect={selectedDate => {
+          setField('dob', selectedDate);
+          setDobPickerVisible(false);
+        }}
+        onClose={() => setDobPickerVisible(false)}
+        title="Select Date of Birth"
+      />
+
+      {/* Floating toast */}
+      {toastMessage ? (
+        <View style={[styles.toastHost, { top: Math.max(insets.top, 16) + 60 }]}>
+          <ProfileToast
+            message={toastMessage}
+            onDismiss={() => setToastMessage(null)}
+          />
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -214,6 +304,13 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: AdminColors.background,
+  },
+  toastHost: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    elevation: 99,
   },
   flex: {
     flex: 1,

@@ -3,7 +3,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import { colors, serif } from '../../theme/theme';
 
 // Official HRSJM crest (extracted from the approved design) + wordmark.
-const LOGO_SOURCE = require('../../../assets/hrsjm-logo.png');
+const LOGO_SOURCE = require('../../../assets/hrsjm_logo.png');
 
 interface AppLogoProps {
   size?: number;

@@ -39,6 +39,8 @@ export {
 
   // Row actions
   Eye,
+  EyeOff,
+  Lock,
   Pencil,
   KeyRound,
 
