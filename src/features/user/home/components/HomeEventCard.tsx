@@ -134,14 +134,14 @@ const styles = StyleSheet.create({
     color: AdminColors.textSecondary,
   },
   body: {
-    padding: 5,
+    padding: 7,
   },
   title: {
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: 12,
+    lineHeight: 15,
     fontWeight: '600',
     color: AdminColors.primaryDark,
-    minHeight: 25,
+    minHeight: 30,
   },
   footer: {
     flexDirection: 'row',

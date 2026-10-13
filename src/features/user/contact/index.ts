@@ -14,6 +14,8 @@ export { ContactForm } from './components/ContactForm';
 export { ContactDetailsSection, ContactDetailsCard } from './components/ContactDetailsSection';
 export { ContactMapSection } from './components/ContactMapSection';
 export { ContactFinalCta } from './components/ContactFinalCta';
+export { ContactFaqSection } from './components/ContactFaqSection';
+
 export type {
   ContactAction,
   ContactDetailCard,

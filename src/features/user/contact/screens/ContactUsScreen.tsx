@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -17,8 +18,13 @@ import { ContactForm } from '../components/ContactForm';
 import { ContactDetailsSection } from '../components/ContactDetailsSection';
 import { ContactMapSection } from '../components/ContactMapSection';
 import { ContactFinalCta } from '../components/ContactFinalCta';
+import { ContactFaqSection } from '../components/ContactFaqSection';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import { CONTACT_ACTIONS } from '../data/contact-content';
+
+/** Verified organisation contact details. */
+const ORG_PHONE = '+912212345678';
+const ORG_EMAIL = 'info@hrsjm.org';
 
 export interface ContactUsScreenProps {
   /** Returns to the previous User screen (temporary router back navigation). */
@@ -36,8 +42,8 @@ export interface ContactUsScreenProps {
  * Reference-locked Contact Us page — a standalone User App screen:
  * header, navy contact hero, four quick-action cards, the "Send Us a
  * Message" form with UI-only validation, "Our Contact Details" 2x2 grid,
- * "Find Us on Map" with the office info card, the "Open in Google Maps"
- * action, the closing navy CTA and the five-tab bottom navigation
+ * "Find Us on Map" with the office info card, an FAQ accordion, the
+ * closing navy CTA and the five-tab bottom navigation
  * (Home · About · Rights · Events · News).
  */
 export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
@@ -49,15 +55,67 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
   onOpenNews,
 }) => {
   const showComingSoon = (feature: string) => {
-    // UI PHASE ONLY placeholder for actions that ship with later phases.
     Alert.alert(feature, `"${feature}" is part of an upcoming phase.`);
+  };
+
+  const handleActionPress = async (actionId: string, title: string) => {
+    if (actionId === 'help') {
+      onOpenGetHelp?.();
+      return;
+    }
+    if (actionId === 'call') {
+      const url = `tel:${ORG_PHONE}`;
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Call Us', `Please call us at +91 22 1234 5678`);
+      }
+      return;
+    }
+    if (actionId === 'email') {
+      const url = `mailto:${ORG_EMAIL}`;
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Email Us', `Please email us at ${ORG_EMAIL}`);
+      }
+      return;
+    }
+    if (actionId === 'visit') {
+      const mapsUrl = 'https://maps.google.com/?q=Kurla+West,+Mumbai,+Maharashtra+400070';
+      const canOpen = await Linking.canOpenURL(mapsUrl);
+      if (canOpen) {
+        await Linking.openURL(mapsUrl);
+      } else {
+        Alert.alert(
+          'Office Address',
+          'HRSJM\n123 Justice Lane, Kurla (W)\nMumbai, Maharashtra 400070',
+        );
+      }
+      return;
+    }
+    showComingSoon(title);
+  };
+
+  const handleOpenMaps = async () => {
+    const mapsUrl = 'https://maps.google.com/?q=Kurla+West,+Mumbai,+Maharashtra+400070';
+    const canOpen = await Linking.canOpenURL(mapsUrl);
+    if (canOpen) {
+      await Linking.openURL(mapsUrl);
+    } else {
+      Alert.alert(
+        'Office Address',
+        'HRSJM\n123 Justice Lane, Kurla (W)\nMumbai, Maharashtra 400070',
+      );
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <ContactHeader
         onBack={onBack}
-        onPressSearch={() => showComingSoon('Search')}
       />
 
       <KeyboardAvoidingView
@@ -70,21 +128,20 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* 1. Hero banner */}
           <ContactHero />
 
+          {/* 2. Quick contact action cards */}
           <View style={styles.actionsSection}>
             <ContactActionsRow
               actions={CONTACT_ACTIONS}
-              onPressAction={action => {
-                if (action.id === 'help') {
-                  onOpenGetHelp?.();
-                  return;
-                }
-                showComingSoon(action.title);
-              }}
+              onPressAction={action =>
+                handleActionPress(action.id, action.title)
+              }
             />
           </View>
 
+          {/* 3. Contact form */}
           <View style={styles.formSection}>
             <Text style={styles.formHeading}>Send Us a Message</Text>
             <Text style={styles.formSupporting}>
@@ -94,14 +151,22 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
             <ContactForm />
           </View>
 
+          {/* 4. Our Contact Details 2×2 grid */}
           <View style={styles.detailsSection}>
             <ContactDetailsSection
-              onLinkPress={() => showComingSoon('View on Maps')}
+              onLinkPress={handleOpenMaps}
             />
           </View>
 
-          <ContactMapSection />
+          {/* 5. Find Us on Map */}
+          <ContactMapSection onOpenMaps={handleOpenMaps} />
 
+          {/* 6. FAQ accordion — new section */}
+          <View style={styles.faqSection}>
+            <ContactFaqSection />
+          </View>
+
+          {/* 7. Closing CTA banner */}
           <View style={styles.ctaSection}>
             <ContactFinalCta />
           </View>
@@ -137,7 +202,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: Spacing.xl,
+    paddingBottom: Spacing.xl * 2,
   },
   actionsSection: {
     marginTop: Spacing.lg,
@@ -163,7 +228,11 @@ const styles = StyleSheet.create({
   detailsSection: {
     marginTop: Spacing.xl,
   },
+  faqSection: {
+    marginTop: Spacing.xl,
+  },
   ctaSection: {
     marginTop: Spacing.xl,
   },
 });
+

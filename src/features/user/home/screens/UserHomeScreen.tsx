@@ -19,6 +19,10 @@ import { HomeEventCard } from '../components/HomeEventCard';
 import { NewsCard } from '../components/NewsCard';
 import { ActivitiesRow } from '../components/ActivityCard';
 import { RecommendationCard } from '../components/RecommendationCard';
+import { EmergencyHelplinesSection } from '../components/EmergencyHelplinesSection';
+import { QuickRightsAwarenessSection } from '../components/QuickRightsAwarenessSection';
+import { SuccessStoriesSection } from '../components/SuccessStoriesSection';
+import { JoinMovementBanner } from '../components/JoinMovementBanner';
 import { DonationBanner } from '../components/DonationBanner';
 import { UserBottomNavigation } from '../components/UserBottomNavigation';
 import {
@@ -37,6 +41,11 @@ import type { WhatWeDoId } from '../../what-we-do';
 import type { ActionPageId } from '../../action-pages';
 import { getHomeActionDestination } from '../utils/home-action-destination';
 
+import type { UserEvent } from '../../events/data/user-events';
+import type { UserNewsArticle } from '../../news/data/user-news';
+import { USER_EVENTS } from '../../events/data/user-events';
+import { USER_NEWS_ARTICLES } from '../../news/data/user-news';
+
 export interface UserHomeScreenProps {
   /**
    * Opens the Contact Us screen (Contact tab in the shared six-tab
@@ -50,6 +59,8 @@ export interface UserHomeScreenProps {
   onOpenGetHelp?: () => void;
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
+  onOpenEvent?: (event: UserEvent) => void;
+  onOpenNewsArticle?: (article: UserNewsArticle) => void;
   onOpenRight?: (rightId: string) => void;
   onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
   onOpenActionPage?: (pageId: ActionPageId) => void;
@@ -74,6 +85,8 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   onOpenGetHelp,
   onOpenEvents,
   onOpenNews,
+  onOpenEvent,
+  onOpenNewsArticle,
   onOpenRight,
   onOpenWhatWeDo,
   onOpenActionPage,
@@ -84,6 +97,68 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const showComingSoon = (feature: string) => {
     Alert.alert(feature, `"${feature}" is part of an upcoming Home phase.`);
+  };
+
+  const handleOpenEventCard = (homeEventId: string) => {
+    const matched =
+      USER_EVENTS.find(e => e.id === homeEventId) ??
+      (homeEventId === 'event-1' ? USER_EVENTS[0] : undefined) ??
+      (homeEventId === 'event-2' ? USER_EVENTS[1] : undefined) ??
+      (homeEventId === 'event-3' ? USER_EVENTS[2] : undefined) ??
+      USER_EVENTS[0];
+
+    if (matched && onOpenEvent) {
+      onOpenEvent(matched);
+    } else {
+      onOpenEvents?.();
+    }
+  };
+
+  const handleOpenNewsCard = (homeNewsId: string) => {
+    const matched =
+      USER_NEWS_ARTICLES.find(a => a.id === homeNewsId) ??
+      (homeNewsId === 'news-1' || homeNewsId === 'update-1'
+        ? USER_NEWS_ARTICLES[0]
+        : homeNewsId === 'update-2'
+          ? USER_NEWS_ARTICLES[1]
+          : undefined) ??
+      USER_NEWS_ARTICLES[0];
+
+    if (matched && onOpenNewsArticle) {
+      onOpenNewsArticle(matched);
+    } else {
+      onOpenNews?.();
+    }
+  };
+
+  const handleActivityPress = (activityId: string) => {
+    if (activityId === 'complaints') {
+      onOpenGetHelp?.();
+    } else if (activityId === 'events') {
+      onOpenEvents?.();
+    } else if (activityId === 'membership') {
+      onOpenActionPage?.('membership');
+    } else if (activityId === 'certificates') {
+      onOpenActionPage?.('membership');
+    } else {
+      onOpenActionPage?.('membership');
+    }
+  };
+
+  const handleRecommendationPress = (recId: string) => {
+    if (recId === 'rec-1') {
+      if (USER_EVENTS[0] && onOpenEvent) {
+        onOpenEvent(USER_EVENTS[0]);
+      } else {
+        onOpenEvents?.();
+      }
+    } else if (recId === 'rec-2') {
+      onOpenRight?.('right-to-education');
+    } else if (recId === 'rec-3') {
+      onOpenActionPage?.('membership');
+    } else {
+      onOpenAbout?.();
+    }
   };
 
   const handleTabPress = (tab: HomeTab) => {
@@ -102,10 +177,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <HomeHeader
-        onPressSearch={() => showComingSoon('Search')}
-        onPressNotifications={() => showComingSoon('Notifications')}
-      />
+      <HomeHeader />
 
       <ScrollView
         style={styles.scroll}
@@ -161,7 +233,12 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
         <View style={styles.section}>
           <AboutSection
             onMorePress={() => onOpenAbout?.()}
-            onMediaPress={() => showComingSoon('Introduction video')}
+            onMediaPress={() => {
+              Alert.alert(
+                'HRSJM Introduction',
+                'Human Rights & Social Justice Mission video introduction.\n\nWorking for equality, human dignity, and social justice across communities.',
+              );
+            }}
           />
         </View>
 
@@ -179,6 +256,18 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
           </View>
         </View>
 
+        {/* NEW SECTION 1: Legal Awareness & Citizen Rights Tips */}
+        <View style={styles.section}>
+          <View style={styles.sectionInset}>
+            <SectionHeader
+              title="Legal Awareness & Tips"
+              linkLabel="Learn More"
+              onLinkPress={() => onOpenRights?.()}
+            />
+            <QuickRightsAwarenessSection onOpenRight={onOpenRight} />
+          </View>
+        </View>
+
         <View style={styles.section}>
           <View style={styles.sectionInset}>
             <SectionHeader
@@ -193,7 +282,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
           </View>
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.impactSection}>
           <ImpactSection
             stats={getImpactStats()}
             onDetailsPress={() => onOpenAbout?.()}
@@ -216,7 +305,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
                 <HomeEventCard
                   key={event.id}
                   event={event}
-                  onPress={() => onOpenEvents?.()}
+                  onPress={() => handleOpenEventCard(event.id)}
                 />
               ))}
             </ScrollView>
@@ -235,7 +324,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
                 <NewsCard
                   key={item.id}
                   item={item}
-                  onPress={() => onOpenNews?.()}
+                  onPress={() => handleOpenNewsCard(item.id)}
                 />
               ))}
             </View>
@@ -247,11 +336,11 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
             <SectionHeader
               title="My Activities"
               linkLabel="View All"
-              onLinkPress={() => showComingSoon('My Activities')}
+              onLinkPress={() => onOpenActionPage?.('membership')}
             />
             <ActivitiesRow
               activities={MEMBER_ACTIVITIES}
-              onPressActivity={activity => showComingSoon(activity.label)}
+              onPressActivity={activity => handleActivityPress(activity.id)}
             />
           </View>
         </View>
@@ -261,7 +350,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
             <SectionHeader
               title="Recommended for You"
               linkLabel="View All"
-              onLinkPress={() => showComingSoon('Recommended for You')}
+              onLinkPress={() => onOpenEvents?.()}
             />
             <ScrollView
               horizontal
@@ -272,7 +361,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
                 <RecommendationCard
                   key={item.id}
                   item={item}
-                  onPress={() => showComingSoon(item.title)}
+                  onPress={() => handleRecommendationPress(item.id)}
                 />
               ))}
             </ScrollView>
@@ -291,11 +380,43 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
                 <NewsCard
                   key={item.id}
                   item={item}
-                  onPress={() => showComingSoon(item.title)}
+                  onPress={() => handleOpenNewsCard(item.id)}
                 />
               ))}
             </View>
           </View>
+        </View>
+
+        {/* Emergency Helplines & Quick Support */}
+        <View style={styles.section}>
+          <View style={styles.sectionInset}>
+            <SectionHeader
+              title="Emergency Helplines"
+              linkLabel="Contact Us"
+              onLinkPress={() => onOpenContact?.()}
+            />
+            <EmergencyHelplinesSection />
+          </View>
+        </View>
+
+        {/* NEW SECTION: Success Stories */}
+        <View style={styles.section}>
+          <View style={styles.sectionInset}>
+            <SectionHeader
+              title="Impact Stories"
+              linkLabel="View All"
+              onLinkPress={() => onOpenAbout?.()}
+            />
+          </View>
+          <SuccessStoriesSection />
+        </View>
+
+        {/* NEW SECTION: Join the Movement CTA */}
+        <View style={styles.joinSection}>
+          <JoinMovementBanner
+            onJoinPress={() => onOpenActionPage?.('join')}
+            onLearnMorePress={() => onOpenAbout?.()}
+          />
         </View>
 
         <View style={styles.donationSection}>
@@ -322,18 +443,26 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
   },
   section: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.lg,
+  },
+  impactSection: {
+    marginTop: Spacing.xl,
+  },
+  joinSection: {
+    marginTop: Spacing.xl,
+    paddingHorizontal: Spacing.base,
   },
   donationSection: {
     marginTop: Spacing.lg,
   },
   quickActionsSection: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.md,
   },
   sectionInset: {
     paddingHorizontal: Spacing.base,
   },
   carousel: {
+    paddingLeft: Spacing.base,
     paddingRight: Spacing.base,
     gap: Spacing.sm,
   },

@@ -71,8 +71,8 @@ const styles = StyleSheet.create({
     color: AdminColors.textOnDark,
   },
   description: {
-    fontSize: 9,
-    lineHeight: 12,
+    fontSize: 11,
+    lineHeight: 15,
     color: AdminColors.textOnDark,
     opacity: 0.85,
     marginTop: Spacing.xs,

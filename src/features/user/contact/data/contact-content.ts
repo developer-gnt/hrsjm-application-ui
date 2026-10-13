@@ -11,10 +11,10 @@ import type {
 } from '../types/contact.types';
 
 export const CONTACT_ACTIONS: ContactAction[] = [
-  { id: 'call', icon: 'phone', title: 'Call Us', description: 'Get in touch\ndirectly' },
-  { id: 'email', icon: 'email', title: 'Email Us', description: 'Send us\na message' },
-  { id: 'visit', icon: 'map-pin', title: 'Visit Us', description: 'Our office\naddress' },
-  { id: 'help', icon: 'users', title: 'Get Help', description: 'Report an issue\nor seek support' },
+  { id: 'call', icon: 'phone', title: 'Call Us', description: 'Get in touch with our team directly.' },
+  { id: 'email', icon: 'email', title: 'Email Us', description: 'Send us a message or inquiry.' },
+  { id: 'visit', icon: 'map-pin', title: 'Visit Us', description: 'Find our office location on maps.' },
+  { id: 'help', icon: 'users', title: 'Get Help', description: 'Report an issue or seek support.' },
 ];
 
 /**
@@ -84,3 +84,43 @@ export const CONTACT_FINAL_CTA = {
   description:
     "Your voice matters. Let's work together to protect rights, empower communities and create positive change.",
 };
+
+export interface ContactFaq {
+  question: string;
+  answer: string;
+}
+
+/** Collapsible FAQ items shown on the Contact Us page. */
+export const CONTACT_FAQS: ContactFaq[] = [
+  {
+    question: 'How do I report a human rights violation?',
+    answer:
+      'You can report a violation using the "Get Help" option on this page or by calling our helpline directly. Our team will assess your case and guide you through the next steps. All reports are handled with strict confidentiality.',
+  },
+  {
+    question: 'What services does HRSJM offer?',
+    answer:
+      'HRSJM offers legal advice, complaint assistance, community education, advocacy support, and membership services. We work across women\'s rights, children\'s rights, labour rights, and civil liberties to ensure justice for all.',
+  },
+  {
+    question: 'How quickly will you respond to my enquiry?',
+    answer:
+      'We aim to respond to all enquiries within 24–48 business hours. For urgent matters, please call our helpline directly. Email responses may take slightly longer during peak periods.',
+  },
+  {
+    question: 'Is my personal information kept confidential?',
+    answer:
+      'Yes. All personal information shared with HRSJM is held in strict confidence under our privacy policy. We do not share your details with any third party without your explicit consent except where required by law.',
+  },
+  {
+    question: 'How can I volunteer or become a member?',
+    answer:
+      'We welcome volunteers and members who share our mission. You can get in touch via the form on this page, email us at info@hrsjm.org, or visit us at our office. Our team will guide you through the onboarding process.',
+  },
+  {
+    question: 'Can I donate to support HRSJM\'s work?',
+    answer:
+      'Yes. HRSJM is a registered non-profit organisation and gratefully accepts donations. Please email donations@hrsjm.org or contact us via this page for details on how to contribute.',
+  },
+];
+

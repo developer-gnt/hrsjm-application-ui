@@ -56,8 +56,8 @@ const styles = StyleSheet.create({
   },
   description: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
     color: '#4B5563',
   },
   media: {

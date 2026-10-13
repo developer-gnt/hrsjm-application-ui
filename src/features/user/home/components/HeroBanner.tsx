@@ -223,8 +223,8 @@ const styles = StyleSheet.create({
   },
   headline: {
     fontFamily: FontFamilies.serif,
-    fontSize: 21,
-    lineHeight: 27,
+    fontSize: 23,
+    lineHeight: 29,
     fontWeight: '700',
     color: AdminColors.textOnDark,
   },
@@ -232,8 +232,8 @@ const styles = StyleSheet.create({
     color: '#EAA532',
   },
   supporting: {
-    fontSize: 11,
-    lineHeight: 15.5,
+    fontSize: 12.5,
+    lineHeight: 17,
     color: AdminColors.textOnDark,
     marginTop: 8,
     maxWidth: 220,

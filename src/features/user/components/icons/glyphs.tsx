@@ -343,6 +343,10 @@ const chevronDown: React.FC<GlyphProps> = () => (
   <Polyline points="6.5,9.5 12,15 17.5,9.5" />
 );
 
+const chevronUp: React.FC<GlyphProps> = () => (
+  <Polyline points="6.5,14.5 12,9 17.5,14.5" />
+);
+
 const chevronLeft: React.FC<GlyphProps> = () => (
   <Polyline points="14.5,5.5 8,12 14.5,18.5" />
 );
@@ -427,6 +431,7 @@ export const GLYPHS = {
   check,
   calendar,
   'chevron-down': chevronDown,
+  'chevron-up': chevronUp,
   'chevron-left': chevronLeft,
   'child-care': childCare,
   'chevron-right': chevronRight,

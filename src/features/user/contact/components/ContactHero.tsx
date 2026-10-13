@@ -16,6 +16,7 @@ import ContactHeroBuilding from '../../../../assets/images/contact-hero-building
 export const ContactHero: React.FC = () => (
   <View style={styles.container}>
     <Image source={ContactHeroBuilding} style={styles.image} resizeMode="cover" />
+    <View style={styles.gradientOverlay} />
 
     <View style={styles.content}>
       <Text style={styles.headline}>
@@ -23,7 +24,7 @@ export const ContactHero: React.FC = () => (
       </Text>
       <Text style={styles.supporting}>
         We are here to listen, support and work together for a fairer, more
-        just and equal society.
+        just and equal society. Your voice matters.
       </Text>
     </View>
   </View>
@@ -36,6 +37,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: BorderRadius.xxl,
     borderBottomRightRadius: BorderRadius.xxl,
     overflow: 'hidden',
+    position: 'relative',
   },
   image: {
     position: 'absolute',
@@ -46,11 +48,20 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  gradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(11, 47, 91, 0.35)',
+  },
   content: {
     position: 'absolute',
     top: 0,
     bottom: 0,
-    width: '62%',
+    left: 0,
+    width: '64%',
     paddingHorizontal: Spacing.base,
     justifyContent: 'center',
   },
@@ -65,10 +76,11 @@ const styles = StyleSheet.create({
     color: AdminColors.accentGold,
   },
   supporting: {
-    fontSize: 11.5,
-    lineHeight: 17,
+    fontSize: 12,
+    lineHeight: 18,
     color: AdminColors.textOnDark,
-    marginTop: Spacing.sm,
-    maxWidth: 170,
+    opacity: 0.95,
+    marginTop: Spacing.xs + 2,
+    maxWidth: 180,
   },
 });

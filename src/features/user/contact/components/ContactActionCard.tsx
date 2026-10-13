@@ -30,12 +30,16 @@ export const ContactActionCard: React.FC<ContactActionCardProps> = ({
     accessibilityRole="button"
     accessibilityLabel={`${action.title} — ${action.description}`}
   >
-    <View style={styles.iconCircle}>
-      <View style={styles.iconCircleTint} />
-      <AppIcon name={action.icon} size={18} color={AdminColors.primaryDark} />
+    <View style={styles.iconWrap}>
+      <AppIcon name={action.icon} size={20} color={AdminColors.primaryDark} />
     </View>
+
     <Text style={styles.title}>{action.title}</Text>
     <Text style={styles.description}>{action.description}</Text>
+
+    <View style={styles.arrowWrap}>
+      <AppIcon name="arrow-right" size={11} color={AdminColors.accentGold} />
+    </View>
   </TouchableOpacity>
 );
 
@@ -44,69 +48,78 @@ interface ContactActionsRowProps {
   onPressAction?: (action: ContactAction) => void;
 }
 
-/** Four-across responsive row (reference layout, no carousel). */
+/** 2x2 responsive grid matching the Get Help cards */
 export const ContactActionsRow: React.FC<ContactActionsRowProps> = ({
   actions,
   onPressAction,
 }) => (
-  <View style={styles.row}>
+  <View style={styles.grid}>
     {actions.map(action => (
-      <ContactActionCard
-        key={action.id}
-        action={action}
-        onPress={() => onPressAction?.(action)}
-      />
+      <View key={action.id} style={styles.gridCard}>
+        <ContactActionCard
+          action={action}
+          onPress={() => onPressAction?.(action)}
+        />
+      </View>
     ))}
   </View>
 );
 
 const styles = StyleSheet.create({
-  row: {
+  grid: {
     flexDirection: 'row',
-    alignItems: 'stretch',
+    flexWrap: 'wrap',
     paddingHorizontal: Spacing.base,
     gap: Spacing.sm,
   },
+  gridCard: {
+    width: '48%',
+  },
   card: {
     flex: 1,
-    alignItems: 'flex-start',
-    paddingVertical: Spacing.sm + 2,
-    paddingHorizontal: Spacing.xs + 2,
-    borderRadius: BorderRadius.lg + 2,
-    backgroundColor: AdminColors.accentGoldLight,
+    minHeight: 144,
+    backgroundColor: AdminColors.cardSurface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.base,
     borderWidth: 1,
     borderColor: AdminColors.border,
-    ...Shadows.card,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
-  iconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  iconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: AdminColors.accentGoldLight,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  // Pale-gold backdrop as a sibling tint layer so the icon keeps full opacity.
-  iconCircleTint: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 19,
-    backgroundColor: AdminColors.accentGold,
-    opacity: 0.16,
+    marginBottom: Spacing.sm,
   },
   title: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '700',
     color: AdminColors.primaryDark,
-    marginTop: Spacing.sm,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '700',
+    marginBottom: Spacing.xs,
   },
   description: {
-    fontSize: 9.5,
-    lineHeight: 13,
     color: AdminColors.textSecondary,
-    marginTop: 2,
+    fontSize: 11.5,
+    lineHeight: 17,
+    flexShrink: 1,
+  },
+  arrowWrap: {
+    position: 'absolute',
+    right: Spacing.sm,
+    bottom: Spacing.sm,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: AdminColors.accentGoldLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

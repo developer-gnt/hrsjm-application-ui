@@ -12,6 +12,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AppButton } from '../../../../core/components';
 import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core/theme';
 import { AppIcon, HrsjmLogoMark } from '../../components';
+import { useHeaderActions } from '../../components/HeaderActionsContext';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeTab } from '../../home/types/home.types';
 import { HelpActionCard, type HelpActionCardItem } from '../components/HelpActionCard';
@@ -60,6 +61,7 @@ export interface GetHelpScreenProps {
   onOpenFileComplaint?: () => void;
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
+  onOpenHelpDetail?: (helpId: string) => void;
 }
 
 export const GetHelpScreen: React.FC<GetHelpScreenProps> = ({
@@ -71,12 +73,10 @@ export const GetHelpScreen: React.FC<GetHelpScreenProps> = ({
   onOpenFileComplaint,
   onOpenEvents,
   onOpenNews,
+  onOpenHelpDetail,
 }) => {
   const insets = useSafeAreaInsets();
-
-  const showComingSoon = (feature: string) => {
-    Alert.alert(feature, `${feature} is part of an upcoming phase.`);
-  };
+  const headerActions = useHeaderActions();
 
   const handleActionPress = (action: HelpActionCardItem) => {
     if (action.id === 'complaint') {
@@ -84,13 +84,30 @@ export const GetHelpScreen: React.FC<GetHelpScreenProps> = ({
       return;
     }
 
-    const messageMap: Record<string, string> = {
-      talk: 'Speak with our support team for immediate guidance.',
-      legal: 'Our legal support guidance is available to help you understand your options.',
-      community: 'Connect with support groups and local resources through HRSJM.',
-    };
+    if (action.id === 'talk') {
+      onOpenContact?.();
+      return;
+    }
 
-    Alert.alert(action.title, messageMap[action.id] ?? 'This action will be connected in a later phase.');
+    if (action.id === 'legal') {
+      if (onOpenHelpDetail) {
+        onOpenHelpDetail('legal-support');
+      } else {
+        onOpenRights?.();
+      }
+      return;
+    }
+
+    if (action.id === 'community') {
+      if (onOpenHelpDetail) {
+        onOpenHelpDetail('community-support');
+      } else {
+        onOpenRights?.();
+      }
+      return;
+    }
+
+    onOpenFileComplaint?.();
   };
 
   const handleTabPress = (tab: HomeTab) => {
@@ -146,7 +163,7 @@ export const GetHelpScreen: React.FC<GetHelpScreenProps> = ({
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.iconButton}
-              onPress={() => showComingSoon('Search')}
+              onPress={headerActions.onOpenSearch}
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel="Search"
@@ -155,7 +172,7 @@ export const GetHelpScreen: React.FC<GetHelpScreenProps> = ({
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.iconButton}
-              onPress={() => showComingSoon('Notifications')}
+              onPress={headerActions.onOpenNotifications}
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel="Notifications"

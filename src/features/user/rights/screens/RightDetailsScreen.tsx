@@ -41,6 +41,33 @@ export interface RightDetailsScreenProps {
   onOpenNews?: () => void;
   onOpenRight?: (rightId: string) => void;
   onFileComplaint?: () => void;
+  /**
+   * Called when a Key Areas category card is tapped.
+   * The argument is the stable category ID (e.g. 'safety-protection').
+   * When not provided the card falls back to the previous coming-soon alert.
+   */
+  onOpenCategory?: (categoryId: string) => void;
+  /**
+   * Called when a "Know Your Legal Protections" card is tapped.
+   * The argument is the stable protection ID (e.g. 'constitutional-equality').
+   * When not provided the card falls back to the previous coming-soon alert.
+   */
+  onOpenLegalProtection?: (protectionId: string) => void;
+  /**
+   * Called when a "How HRSJM Supports Women" card is tapped.
+   * The argument is the stable support ID (e.g. 'awareness').
+   */
+  onOpenSupport?: (supportId: string) => void;
+  /**
+   * Called when a "Useful Resources" card is tapped.
+   * The argument is the stable resource ID (e.g. 'government-schemes').
+   */
+  onOpenResource?: (resourceId: string) => void;
+  /**
+   * Called when a help card that has its own detail page is tapped
+   * ('legal-help' or 'community-help').
+   */
+  onOpenHelpDetail?: (helpId: string) => void;
 }
 
 const TABS: { id: SectionId; label: string }[] = [
@@ -173,14 +200,17 @@ const CompactCard: React.FC<{
   variant: 'support' | 'resource' | 'related' | 'protection' | 'help';
 }> = ({ item, onPress, variant }) => {
   const isTripleCol = variant === 'resource' || variant === 'related';
-  const iconSize = isTripleCol ? 32 : 36;
+  const iconSize = isTripleCol ? 30 : 34;
+  // Pale-gold for support, pale-blue for resource, per design spec
   const bubbleTint =
     item.iconColor ??
-    (variant === 'help'
-      ? '#EEF4FF'
+    (variant === 'support'
+      ? '#FFF0C7'
       : variant === 'resource'
-        ? '#E9F0FF'
-        : '#FCEFC9');
+        ? '#EAF0FF'
+        : variant === 'help'
+          ? '#EEF4FF'
+          : '#FCEFC9');
 
   return (
     <TouchableOpacity
@@ -248,6 +278,11 @@ const RightsDetailsContentView: React.FC<{
   onOpenRight: (rightId: string) => void;
   onFileComplaint: () => void;
   onOpenContact: () => void;
+  onOpenCategory?: (categoryId: string) => void;
+  onOpenLegalProtection?: (protectionId: string) => void;
+  onOpenSupport?: (supportId: string) => void;
+  onOpenResource?: (resourceId: string) => void;
+  onOpenHelpDetail?: (helpId: string) => void;
 }> = ({
   content,
   compactTopics,
@@ -257,6 +292,11 @@ const RightsDetailsContentView: React.FC<{
   onOpenRight,
   onFileComplaint,
   onOpenContact,
+  onOpenCategory,
+  onOpenLegalProtection,
+  onOpenSupport,
+  onOpenResource,
+  onOpenHelpDetail,
 }) => {
   const titleWords = content.title.split(' ');
   const titleAccent = titleWords.pop() ?? '';
@@ -269,6 +309,13 @@ const RightsDetailsContentView: React.FC<{
     }
     if (item.id === 'contact-hrsjm') {
       onOpenContact();
+      return;
+    }
+    if (
+      (item.id === 'legal-help' || item.id === 'community-help') &&
+      onOpenHelpDetail
+    ) {
+      onOpenHelpDetail(item.id);
       return;
     }
     notifyComingSoon(item.title);
@@ -364,7 +411,11 @@ const RightsDetailsContentView: React.FC<{
                 <InfoCard
                   key={item.id}
                   item={item}
-                  onPress={() => notifyComingSoon(item.title)}
+                  onPress={() =>
+                    onOpenCategory
+                      ? onOpenCategory(item.id)
+                      : notifyComingSoon(item.title)
+                  }
                 />
               ))}
             </View>
@@ -379,7 +430,25 @@ const RightsDetailsContentView: React.FC<{
                 <TopicRow
                   key={item.id}
                   item={item}
-                  onPress={() => notifyComingSoon(item.title)}
+                  onPress={() => {
+                    const topicMap: Record<string, string> = {
+                      'right-to-equality': 'constitutional-equality',
+                      'protection-from-violence': 'protection-violence',
+                      'workplace-rights': 'workplace-rights',
+                      'property-rights': 'property-inheritance',
+                    };
+                    const protectionId = topicMap[item.id];
+                    if (protectionId && onOpenLegalProtection) {
+                      onOpenLegalProtection(protectionId);
+                    } else {
+                      Alert.alert(
+                        item.title,
+                        item.description
+                          ? `${item.description}\n\nHRSJM provides education and support to uphold and protect this fundamental right.`
+                          : 'HRSJM provides education and support to uphold and protect this fundamental right.',
+                      );
+                    }
+                  }}
                 />
               ))}
             </View>
@@ -389,7 +458,19 @@ const RightsDetailsContentView: React.FC<{
         {!compactTopics && content.legalFramework ? (
           <View>
             <SectionTitle title="Legal Framework" />
-            <View style={styles.frameworkCard}>
+            <TouchableOpacity
+              style={styles.frameworkCard}
+              activeOpacity={0.8}
+              onPress={() => {
+                if (onOpenLegalProtection) {
+                  onOpenLegalProtection('constitutional-equality');
+                } else {
+                  notifyComingSoon(content.legalFramework?.title ?? 'Legal Framework');
+                }
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={content.legalFramework.title}
+            >
               <View style={styles.frameworkImage}>
                 {content.legalFramework.image ? (
                   <Image
@@ -416,7 +497,7 @@ const RightsDetailsContentView: React.FC<{
                 </Text>
               </View>
               <CardArrow />
-            </View>
+            </TouchableOpacity>
           </View>
         ) : null}
 
@@ -427,9 +508,17 @@ const RightsDetailsContentView: React.FC<{
               {content.supportAreas.map(item => (
                 <CompactCard
                   key={item.id}
-                  item={item}
+                  item={{
+                    ...item,
+                    color: '#FFFFFF',
+                    iconColor: '#FFF0C7',
+                  }}
                   variant="support"
-                  onPress={() => notifyComingSoon(item.title)}
+                  onPress={() =>
+                    onOpenSupport
+                      ? onOpenSupport(item.id)
+                      : notifyComingSoon(item.title)
+                  }
                 />
               ))}
             </View>
@@ -440,15 +529,23 @@ const RightsDetailsContentView: React.FC<{
           <View>
             <SectionTitle
               title="Useful Resources"
-              onViewAll={() => notifyComingSoon('Useful Resources')}
+              onViewAll={onOpenResource ? () => onOpenResource('government-schemes') : undefined}
             />
             <View style={styles.resourceGrid}>
               {content.resources.map(item => (
                 <CompactCard
                   key={item.id}
-                  item={item}
+                  item={{
+                    ...item,
+                    color: '#FFFFFF',
+                    iconColor: '#EAF0FF',
+                  }}
                   variant="resource"
-                  onPress={() => notifyComingSoon(item.title)}
+                  onPress={() =>
+                    onOpenResource
+                      ? onOpenResource(item.id)
+                      : notifyComingSoon(item.title)
+                  }
                 />
               ))}
             </View>
@@ -492,7 +589,11 @@ const RightsDetailsContentView: React.FC<{
                   key={item.id}
                   item={item}
                   variant="protection"
-                  onPress={() => notifyComingSoon(item.title)}
+                  onPress={() =>
+                    onOpenLegalProtection
+                      ? onOpenLegalProtection(item.id)
+                      : notifyComingSoon(item.title)
+                  }
                 />
               ))}
             </View>
@@ -562,6 +663,11 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
   onOpenNews,
   onOpenRight,
   onFileComplaint,
+  onOpenCategory,
+  onOpenLegalProtection,
+  onOpenSupport,
+  onOpenResource,
+  onOpenHelpDetail,
 }) => {
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const sectionOffsets = useRef<Record<SectionId, number>>({
@@ -627,6 +733,11 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
             onOpenRight={onOpenRight ?? onOpenRights}
             onFileComplaint={onFileComplaint ?? (() => notifyComingSoon('File a Complaint'))}
             onOpenContact={onOpenContact ?? (() => notifyComingSoon('Contact HRSJM'))}
+            onOpenCategory={onOpenCategory}
+            onOpenLegalProtection={onOpenLegalProtection}
+            onOpenSupport={onOpenSupport}
+            onOpenResource={onOpenResource}
+            onOpenHelpDetail={onOpenHelpDetail}
           />
         ) : (
           <View style={styles.genericDetails}>

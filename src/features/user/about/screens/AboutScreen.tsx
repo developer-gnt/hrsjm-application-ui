@@ -37,6 +37,7 @@ export interface AboutScreenProps {
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
   onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
+  onOpenActionPage?: (pageId: import('../../action-pages').ActionPageId) => void;
 }
 
 const SectionHeading: React.FC<{
@@ -59,6 +60,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
   onOpenEvents,
   onOpenNews,
   onOpenWhatWeDo,
+  onOpenActionPage,
 }) => {
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const monitoringOffset = useRef(0);
@@ -120,8 +122,6 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
       <HomeHeader
         showNotificationDot
         notificationDotColor={AdminColors.accentGold}
-        onPressSearch={() => showComingSoon('Search')}
-        onPressNotifications={() => showComingSoon('Notifications')}
       />
       <ScrollView
         ref={scrollRef}
@@ -169,7 +169,13 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
         <View style={styles.ctaSection}>
           <AboutFinalCta
             content={ABOUT_CONTENT.finalCta}
-            onPress={() => showComingSoon(ABOUT_CONTENT.finalCta.buttonLabel)}
+            onPress={() => {
+              if (onOpenActionPage) {
+                onOpenActionPage('join');
+              } else {
+                showComingSoon(ABOUT_CONTENT.finalCta.buttonLabel);
+              }
+            }}
           />
         </View>
       </ScrollView>

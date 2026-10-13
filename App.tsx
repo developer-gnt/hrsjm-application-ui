@@ -48,7 +48,7 @@ import { UserHomeScreen } from './src/features/user/home';
 import { AboutScreen } from './src/features/user/about';
 import { ContactUsScreen } from './src/features/user/contact';
 import { GetHelpScreen, FileComplaintScreen } from './src/features/user/help';
-import { RightDetailsScreen as UserRightDetailsScreen } from './src/features/user/rights';
+import { RightDetailsScreen as UserRightDetailsScreen, RightsCategoryDetailScreen, LegalProtectionDetailScreen, SupportDetailScreen, ResourceDetailScreen, HelpDetailScreen } from './src/features/user/rights';
 import {
   RegisterForEventScreen,
   UserEventDetailsScreen,
@@ -82,7 +82,7 @@ type AppRoute =
   | {
       name: 'user-action-page';
       pageId: ActionPageId;
-      returnTo: 'user-home' | 'member-dashboard' | 'member-details';
+      returnTo: 'user-home' | 'about' | 'member-dashboard' | 'member-details';
     }
   | { name: 'member-dashboard' }
   | { name: 'member-details' }
@@ -103,23 +103,48 @@ type AppRoute =
       topicsOnly?: boolean;
     }
   | {
+      name: 'women-rights-category';
+      categoryId: string;
+      returnTo: 'user-rights';
+    }
+  | {
+      name: 'legal-protection-detail';
+      protectionId: string;
+      returnTo: 'user-rights';
+    }
+  | {
+      name: 'support-detail';
+      supportId: string;
+      returnTo: 'user-rights';
+    }
+  | {
+      name: 'resource-detail';
+      resourceId: string;
+      returnTo: 'user-rights';
+    }
+  | {
+      name: 'help-detail';
+      helpId: string;
+      returnTo: 'user-rights' | 'user-help';
+    }
+  | {
       name: 'user-events';
       returnTo?: 'user-home' | 'member-dashboard' | 'member-details';
     }
   | {
       name: 'user-event-details';
       event: UserEvent;
-      returnTo?: 'user-events' | 'user-search' | 'member-dashboard' | 'member-details';
+      returnTo?: 'user-home' | 'user-events' | 'user-search' | 'member-dashboard' | 'member-details';
       eventsReturnTo?: 'user-home' | 'member-dashboard' | 'member-details';
     }
   | {
       name: 'user-event-register';
       event: UserEvent;
-      returnTo?: 'user-events' | 'user-search' | 'member-dashboard' | 'member-details';
+      returnTo?: 'user-home' | 'user-events' | 'user-search' | 'member-dashboard' | 'member-details';
       eventsReturnTo?: 'user-home' | 'member-dashboard' | 'member-details';
     }
   | { name: 'user-news' }
-  | { name: 'user-news-details'; article: UserNewsArticle; returnTo?: 'user-news' | 'user-search' }
+  | { name: 'user-news-details'; article: UserNewsArticle; returnTo?: 'user-home' | 'user-news' | 'user-search' }
   | { name: 'list' }
   | { name: 'details'; event: EventListItem }
   | { name: 'create' }
@@ -234,6 +259,20 @@ function App() {
             onOpenGetHelp={() => setRoute({ name: 'user-help' })}
             onOpenEvents={() => setRoute({ name: 'user-events' })}
             onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenEvent={event =>
+              setRoute({
+                name: 'user-event-details',
+                event,
+                returnTo: 'user-home',
+              })
+            }
+            onOpenNewsArticle={article =>
+              setRoute({
+                name: 'user-news-details',
+                article,
+                returnTo: 'user-home',
+              })
+            }
             onOpenWhatWeDo={contentId =>
               setRoute({ name: 'what-we-do-detail', contentId, returnTo: 'home' })
             }
@@ -390,7 +429,9 @@ function App() {
                 ? setRoute({ name: 'member-dashboard' })
                 : route.returnTo === 'member-details'
                   ? setRoute({ name: 'member-details' })
-                  : setRoute({ name: 'user-home' })
+                  : route.returnTo === 'about'
+                    ? setRoute({ name: 'about' })
+                    : setRoute({ name: 'user-home' })
             }
             onOpenHome={() => setRoute({ name: 'user-home' })}
             onOpenAbout={() => setRoute({ name: 'about' })}
@@ -413,6 +454,9 @@ function App() {
             onOpenWhatWeDo={contentId =>
               setRoute({ name: 'what-we-do-detail', contentId, returnTo: 'about' })
             }
+            onOpenActionPage={pageId =>
+              setRoute({ name: 'user-action-page', pageId, returnTo: 'about' })
+            }
           />
         ) : route.name === 'contact' ? (
           <ContactUsScreen
@@ -433,6 +477,13 @@ function App() {
             onOpenEvents={() => setRoute({ name: 'user-events' })}
             onOpenFileComplaint={() => setRoute({ name: 'file-complaint' })}
             onOpenNews={() => setRoute({ name: 'user-news' })}
+            onOpenHelpDetail={helpId =>
+              setRoute({
+                name: 'help-detail',
+                helpId,
+                returnTo: 'user-help',
+              })
+            }
           />
         ) : route.name === 'file-complaint' ? (
           <FileComplaintScreen
@@ -458,6 +509,41 @@ function App() {
               setRoute({
                 name: 'user-right-details',
                 rightId,
+                returnTo: 'user-rights',
+              })
+            }
+            onOpenCategory={categoryId =>
+              setRoute({
+                name: 'women-rights-category',
+                categoryId,
+                returnTo: 'user-rights',
+              })
+            }
+            onOpenLegalProtection={protectionId =>
+              setRoute({
+                name: 'legal-protection-detail',
+                protectionId,
+                returnTo: 'user-rights',
+              })
+            }
+            onOpenSupport={supportId =>
+              setRoute({
+                name: 'support-detail',
+                supportId,
+                returnTo: 'user-rights',
+              })
+            }
+            onOpenResource={resourceId =>
+              setRoute({
+                name: 'resource-detail',
+                resourceId,
+                returnTo: 'user-rights',
+              })
+            }
+            onOpenHelpDetail={helpId =>
+              setRoute({
+                name: 'help-detail',
+                helpId,
                 returnTo: 'user-rights',
               })
             }
@@ -489,13 +575,115 @@ function App() {
                 returnTo: route.returnTo,
               })
             }
+            onOpenCategory={categoryId =>
+              setRoute({
+                name: 'women-rights-category',
+                categoryId,
+                returnTo: 'user-rights',
+              })
+            }
+            onOpenLegalProtection={protectionId =>
+              setRoute({
+                name: 'legal-protection-detail',
+                protectionId,
+                returnTo: 'user-rights',
+              })
+            }
+            onOpenSupport={supportId =>
+              setRoute({
+                name: 'support-detail',
+                supportId,
+                returnTo: 'user-rights',
+              })
+            }
+            onOpenResource={resourceId =>
+              setRoute({
+                name: 'resource-detail',
+                resourceId,
+                returnTo: 'user-rights',
+              })
+            }
+            onOpenHelpDetail={helpId =>
+              setRoute({
+                name: 'help-detail',
+                helpId,
+                returnTo: 'user-rights',
+              })
+            }
+            onFileComplaint={() => setRoute({ name: 'file-complaint' })}
+          />
+        ) : route.name === 'women-rights-category' ? (
+          <RightsCategoryDetailScreen
+            categoryId={route.categoryId}
+            onBack={() => setRoute({ name: 'user-rights' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+            onOpenEvents={() => setRoute({ name: 'user-events' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onFileComplaint={() => setRoute({ name: 'file-complaint' })}
+            onOpenHelp={() => setRoute({ name: 'user-help' })}
+          />
+        ) : route.name === 'legal-protection-detail' ? (
+          <LegalProtectionDetailScreen
+            protectionId={route.protectionId}
+            onBack={() => setRoute({ name: 'user-rights' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+            onOpenEvents={() => setRoute({ name: 'user-events' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onFileComplaint={() => setRoute({ name: 'file-complaint' })}
+          />
+        ) : route.name === 'support-detail' ? (
+          <SupportDetailScreen
+            supportId={route.supportId}
+            onBack={() => setRoute({ name: 'user-rights' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+            onOpenEvents={() => setRoute({ name: 'user-events' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onFileComplaint={() => setRoute({ name: 'file-complaint' })}
+          />
+        ) : route.name === 'resource-detail' ? (
+          <ResourceDetailScreen
+            resourceId={route.resourceId}
+            onBack={() => setRoute({ name: 'user-rights' })}
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+            onOpenEvents={() => setRoute({ name: 'user-events' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
+            onFileComplaint={() => setRoute({ name: 'file-complaint' })}
+          />
+        ) : route.name === 'help-detail' ? (
+          <HelpDetailScreen
+            helpId={route.helpId}
+            onBack={() =>
+              route.returnTo === 'user-help'
+                ? setRoute({ name: 'user-help' })
+                : setRoute({ name: 'user-rights' })
+            }
+            onOpenRights={() => setRoute({ name: 'user-rights' })}
+            onOpenHome={() => setRoute({ name: 'user-home' })}
+            onOpenAbout={() => setRoute({ name: 'about' })}
+            onOpenContact={() => setRoute({ name: 'contact' })}
+            onOpenEvents={() => setRoute({ name: 'user-events' })}
+            onOpenNews={() => setRoute({ name: 'user-news' })}
             onFileComplaint={() => setRoute({ name: 'file-complaint' })}
           />
         ) : route.name === 'user-event-details' ? (
           <UserEventDetailsScreen
             event={route.event}
             onBack={() =>
-              route.returnTo === 'user-search'
+              route.returnTo === 'user-home'
+                ? setRoute({ name: 'user-home' })
+                : route.returnTo === 'user-search'
                 ? setRoute({ name: 'user-search' })
                 : route.returnTo === 'member-dashboard'
                   ? setRoute({ name: 'member-dashboard' })
@@ -527,7 +715,9 @@ function App() {
               })
             }
             onBackToEvents={() =>
-              route.returnTo === 'user-search'
+              route.returnTo === 'user-home'
+                ? setRoute({ name: 'user-home' })
+                : route.returnTo === 'user-search'
                 ? setRoute({ name: 'user-search' })
                 : route.returnTo === 'member-dashboard'
                   ? setRoute({ name: 'member-dashboard' })
@@ -570,7 +760,9 @@ function App() {
           <UserNewsDetailsScreen
             article={route.article}
             onBack={() =>
-              route.returnTo === 'user-search'
+              route.returnTo === 'user-home'
+                ? setRoute({ name: 'user-home' })
+                : route.returnTo === 'user-search'
                 ? setRoute({ name: 'user-search' })
                 : setRoute({ name: 'user-news' })
             }
