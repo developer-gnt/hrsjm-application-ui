@@ -9,6 +9,7 @@ import {
 } from '../../admin/membershipApplications/services/membershipApplicationsStore';
 import { MembershipApplicationItem, ApplicationStatus } from '../../admin/membershipApplications/types/membershipApplications.types';
 import { useProfileStore } from '../../admin/profile/profileStore';
+import { useAuthStore } from '../../auth/store/authStore';
 
 export type DisplayMembershipStatus = 'Active' | 'Under Review' | 'Rejected' | 'Inactive';
 
