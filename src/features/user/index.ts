@@ -1,3 +1,4 @@
+export * from './navigation/UserTabNavigator';
 export * from './about';
 export * from './home';
 export * from './contact';

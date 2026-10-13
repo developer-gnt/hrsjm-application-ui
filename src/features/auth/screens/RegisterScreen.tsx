@@ -68,10 +68,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
       case 'member':
         return 'MEMBER';
       case 'seeker':
-        return 'SEEKER';
+        return 'DONATION_SEEKER';
       case 'general':
       default:
-        return 'GENERAL_USER';
+        return 'USER';
     }
   };
 
@@ -117,7 +117,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
           mobile_number: cleanMobile,
           password: password,
           confirm_password: password,
-          role_name: 'GENERAL_USER',
+          role_name: 'USER',
         });
 
         setStep(3); // Go to Complete
