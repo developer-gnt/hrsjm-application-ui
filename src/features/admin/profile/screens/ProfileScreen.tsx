@@ -77,6 +77,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const { width: windowWidth } = useWindowDimensions();
   const profile = useProfileStore(state => state.profile);
   const updateAvatar = useProfileStore(state => state.updateAvatar);
+  const stagedMessage = useProfileStore(state => state.stagedMessage);
   const consumeStagedMessage = useProfileStore(
     state => state.consumeStagedMessage,
   );
@@ -107,11 +108,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   // Edit screens stage success messages here before navigating back.
   useEffect(() => {
-    const staged = consumeStagedMessage();
-    if (staged) {
-      setToastMessage({ message: staged, variant: 'success' });
+    if (stagedMessage) {
+      const staged = consumeStagedMessage();
+      if (staged) {
+        setToastMessage({ message: staged, variant: 'success' });
+      }
     }
-  }, [consumeStagedMessage]);
+  }, [stagedMessage, consumeStagedMessage]);
 
   const handleEditPersonal = () => {
     if (onEditPersonal) {
@@ -605,8 +608,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    zIndex: 99,
-    elevation: 20,
+    zIndex: 9999,
+    elevation: 99,
   },
   changePasswordTag: {
     backgroundColor: AdminColors.primaryLight,

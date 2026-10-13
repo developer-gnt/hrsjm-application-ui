@@ -29,6 +29,7 @@ import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
 import { PersonalInfoInput } from '../types/profile.types';
 import { PersonIcon, MailIcon, PhoneIcon } from '../components/ProfileIcons';
+import { ProfileToast, ToastState } from '../components/ProfileToast';
 
 const isEmailValid = (email: string): boolean =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -67,6 +68,7 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
     dob: (profile.dateOfBirth || (profile as any).dob || '').trim(),
   });
   const [dobPickerVisible, setDobPickerVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | ToastState | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
 
@@ -122,11 +124,17 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
         dateOfBirth: (form.dob || '').trim(),
       });
       stageMessage('Profile updated successfully.');
-      if (onSaved) {
-        onSaved();
-      } else if (onNavigate) {
-        onNavigate('MyProfile');
-      }
+      setToastMessage({
+        message: 'Profile updated successfully.',
+        variant: 'success',
+      });
+      setTimeout(() => {
+        if (onSaved) {
+          onSaved();
+        } else if (onNavigate) {
+          onNavigate('MyProfile');
+        }
+      }, 700);
     } catch (err: any) {
       const respData = err?.response?.data || err?.data;
       const rawMsg = respData?.message || err?.message || 'Failed to update personal info.';
@@ -278,6 +286,16 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
         onClose={() => setDobPickerVisible(false)}
         title="Select Date of Birth"
       />
+
+      {/* Floating toast */}
+      {toastMessage ? (
+        <View style={[styles.toastHost, { top: Math.max(insets.top, 16) + 60 }]}>
+          <ProfileToast
+            message={toastMessage}
+            onDismiss={() => setToastMessage(null)}
+          />
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -286,6 +304,13 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: AdminColors.background,
+  },
+  toastHost: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    elevation: 99,
   },
   flex: {
     flex: 1,
