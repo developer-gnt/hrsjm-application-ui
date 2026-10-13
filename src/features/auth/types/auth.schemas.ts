@@ -30,7 +30,7 @@ export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 /** Account types offered at registration (mockup). `role_name` must be one of
  * the backend's PUBLIC_REGISTER_ROLE_NAMES; undefined → backend default MEMBER. */
 export const ACCOUNT_TYPE_OPTIONS = [
-  { key: 'GENERAL_USER', label: 'General User', description: 'Explore, learn and support HRSJM', role_name: undefined, icon: '👤' },
+  { key: 'GENERAL_USER', label: 'General User', description: 'Explore, learn and support HRSJM', role_name: 'USER', icon: '👤' },
   { key: 'MEMBER', label: 'Member', description: 'Join as a member of HRSJM', role_name: 'MEMBER', icon: '👥' },
   { key: 'DONATION_SEEKER', label: 'Donation Seeker', description: 'Request support for approved causes', role_name: 'DONATION_SEEKER', icon: '❤️' },
   { key: 'ORGANISATION', label: 'Organisation', description: 'NGO, educational or corporate', role_name: 'DONOR', icon: '💼' },

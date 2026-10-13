@@ -55,6 +55,7 @@ export interface UserHomeScreenProps {
   onOpenRight?: (rightId: string) => void;
   onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
   onOpenActionPage?: (pageId: ActionPageId) => void;
+  onOpenProfile?: () => void;
   initialScrollOffset?: number;
   onScrollOffsetChange?: (offset: number) => void;
 }
@@ -70,6 +71,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   onOpenRight,
   onOpenWhatWeDo,
   onOpenActionPage,
+  onOpenProfile,
   initialScrollOffset = 0,
   onScrollOffsetChange,
 }) => {
@@ -98,6 +100,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
       <HomeHeader
         onPressSearch={() => showComingSoon('Search')}
         onPressNotifications={() => showComingSoon('Notifications')}
+        onPressProfile={onOpenProfile}
       />
 
       <ScrollView

@@ -7,17 +7,21 @@ import { AuthNavigator } from './AuthNavigator';
 import { AuthenticatedHomeScreen } from './AuthenticatedHomeScreen';
 import { AdminTabNavigator } from './AdminTabNavigator';
 import { MemberTabNavigator } from '../../features/member';
+import { UserTabNavigator } from '../../features/user';
 import { SeekerHomeScreen } from '../../features/seeker/screens/SeekerHomeScreen';
 import { DonorHomeScreen } from '../../features/donor/screens/DonorHomeScreen';
 import { HomeStackParamList } from './NavigationTypes';
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 
-const RoleBasedHomeNavigator: React.FC<{ roleType: 'member' | 'seeker' | 'donor' | 'default' }> = ({
+const RoleBasedHomeNavigator: React.FC<{ roleType: 'member' | 'user' | 'seeker' | 'donor' | 'default' }> = ({
   roleType,
 }) => {
   if (roleType === 'member') {
     return <MemberTabNavigator />;
+  }
+  if (roleType === 'user') {
+    return <UserTabNavigator />;
   }
 
   let Component = AuthenticatedHomeScreen;
@@ -40,6 +44,7 @@ const RoleBasedHomeNavigator: React.FC<{ roleType: 'member' | 'seeker' | 'donor'
  * - unauthenticated/idle → Auth stack (splash decides the first route)
  * - authenticated + ADMIN / SUPER_ADMIN → AdminTabNavigator (5 tabs + sidebar)
  * - authenticated + MEMBER → Member Portal
+ * - authenticated + USER / GENERAL_USER → User Portal (UserTabNavigator)
  * - authenticated + SEEKER / DONATION_SEEKER → Donation Seeker Portal
  * - authenticated + DONOR → Donor Portal
  * - authenticated + other → General Authenticated Home
@@ -51,11 +56,13 @@ export const RootNavigator: React.FC = () => {
   const roleNames = (user?.roles ?? []).map(r => r.name.toUpperCase());
   const isAdmin = roleNames.includes('ADMIN') || roleNames.includes('SUPER_ADMIN');
   const isMember = roleNames.includes('MEMBER');
+  const isUser = roleNames.includes('USER') || roleNames.includes('GENERAL_USER');
   const isSeeker = roleNames.includes('SEEKER') || roleNames.includes('DONATION_SEEKER');
   const isDonor = roleNames.includes('DONOR');
 
-  let activeRoleType: 'member' | 'seeker' | 'donor' | 'default' = 'default';
+  let activeRoleType: 'member' | 'user' | 'seeker' | 'donor' | 'default' = 'default';
   if (isMember) activeRoleType = 'member';
+  else if (isUser) activeRoleType = 'user';
   else if (isSeeker) activeRoleType = 'seeker';
   else if (isDonor) activeRoleType = 'donor';
 

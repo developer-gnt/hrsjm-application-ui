@@ -9,6 +9,7 @@ interface HomeHeaderProps {
   onBack?: () => void;
   onPressSearch?: () => void;
   onPressNotifications?: () => void;
+  onPressProfile?: () => void;
   /** Unread dot on the bell. */
   showNotificationDot?: boolean;
   notificationDotColor?: string;
@@ -29,6 +30,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onBack,
   onPressSearch,
   onPressNotifications,
+  onPressProfile,
   showNotificationDot = false,
   notificationDotColor = AdminColors.statusInactive,
   preferLocalActions = false,
@@ -101,6 +103,18 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             />
           )}
         </TouchableOpacity>
+
+        {onPressProfile ? (
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={onPressProfile}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Profile"
+          >
+            <AppIcon name="user" size={22} color={AdminColors.primaryDark} />
+          </TouchableOpacity>
+        ) : null}
       </View>
     </View>
   );
