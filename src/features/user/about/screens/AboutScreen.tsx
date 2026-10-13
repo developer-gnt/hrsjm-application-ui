@@ -28,6 +28,7 @@ import { AboutWorkGrid } from '../components/AboutWorkGrid';
 import { HumanRightsMonitoringSection } from '../components/HumanRightsMonitoringSection';
 import { ABOUT_CONTENT } from '../data/about-content';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
+import { AppRoutes } from '../../../../core/constants/routes';
 import type { AboutWorkArea } from '../types/about.types';
 import type { WhatWeDoId } from '../../what-we-do';
 
@@ -186,7 +187,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
         <View style={styles.ctaSection}>
           <AboutFinalCta
             content={ABOUT_CONTENT.finalCta}
-            onPress={() => onNavigate?.('donations') || showComingSoon(ABOUT_CONTENT.finalCta.buttonLabel)}
+            onPress={() => onNavigate?.(AppRoutes.DONATIONS) || showComingSoon(ABOUT_CONTENT.finalCta.buttonLabel)}
           />
         </View>
       </ScrollView>
