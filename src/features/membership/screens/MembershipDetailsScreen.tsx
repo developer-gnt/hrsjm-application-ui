@@ -65,7 +65,7 @@ export const MembershipDetailsScreen: React.FC<MembershipDetailsScreenProps> = (
   onBenefitItemPress,
   onDocumentItemPress,
   initialData,
-  showBottomNav = false,
+  showBottomNav = true,
 }) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -306,12 +306,14 @@ export const MembershipDetailsScreen: React.FC<MembershipDetailsScreenProps> = (
         </ScrollView>
 
         {/* Phase 1: Bottom Navigation */}
-        <DonationsBottomNav
-          bottomInset={insets.bottom}
-          activeKey="profile"
-          items={MEMBER_NAV_ITEMS}
-          onTabPress={handleBottomTabPress}
-        />
+        {showBottomNav ? (
+          <DonationsBottomNav
+            bottomInset={insets.bottom}
+            activeKey="profile"
+            items={MEMBER_NAV_ITEMS}
+            onTabPress={handleBottomTabPress}
+          />
+        ) : null}
 
         {/* Phase 4: Document Preview & Download Modal */}
         <MembershipCertificateModal

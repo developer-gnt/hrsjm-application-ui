@@ -51,8 +51,12 @@ function NotificationRow({
   );
 }
 
-export function NotificationsScreen() {
-  const navigation = useNavigation();
+export interface NotificationsScreenProps {
+  onBack?: () => void;
+}
+
+export function NotificationsScreen({ onBack: onBackProp }: NotificationsScreenProps = {}) {
+  const navigation = useNavigation<any>();
   const {
     items,
     unreadCount,
@@ -85,13 +89,36 @@ export function NotificationsScreen() {
     count: view.key === 'UNREAD' ? unreadCount : undefined,
   }));
 
+  const canShowBack = Boolean(onBackProp || (navigation?.canGoBack && navigation.canGoBack()));
+  const handleBack = () => {
+    if (onBackProp) {
+      onBackProp();
+    } else if (navigation?.canGoBack && navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={styles.safe}>
       <AdminHeader
         title="Notifications"
-        showBack={navigation.canGoBack()}
-        onBack={() => (navigation.canGoBack() ? navigation.goBack() : undefined)}
+        showBack={canShowBack}
+        onBack={handleBack}
+        hideNotifications
       />
+      <View style={styles.headerArea}>
+        <View style={styles.tabsRow}>
+          <View style={styles.tabs}>
+            <AdminFilterTabs tabs={tabs} activeKey={activeView} onSelect={setView} />
+          </View>
+          <AppButton
+            title="Mark all read"
+            variant="ghost"
+            onPress={handleMarkAllRead}
+            disabled={unreadCount === 0}
+          />
+        </View>
+      </View>
       <FlatList
         data={items}
         keyExtractor={item => item.recipient_id}
@@ -108,21 +135,6 @@ export function NotificationsScreen() {
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
-        ListHeaderComponent={
-          <View style={styles.headerArea}>
-            <View style={styles.tabsRow}>
-              <View style={styles.tabs}>
-                <AdminFilterTabs tabs={tabs} activeKey={activeView} onSelect={setView} />
-              </View>
-              <AppButton
-                title="Mark all read"
-                variant="ghost"
-                onPress={handleMarkAllRead}
-                disabled={unreadCount === 0}
-              />
-            </View>
-          </View>
-        }
         ListEmptyComponent={
           initialLoading ? (
             <SkeletonList count={4} />
@@ -147,7 +159,7 @@ export function NotificationsScreen() {
           items.length === 0 && styles.emptyList,
         ]}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -157,7 +169,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   headerArea: {
-    marginBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+    backgroundColor: colors.background,
   },
   tabsRow: {
     flexDirection: 'row',
@@ -168,12 +183,14 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   listContent: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.xxl * 2,
   },
   emptyList: {
     flexGrow: 1,
     justifyContent: 'center',
+    paddingBottom: spacing.xxl * 2,
   },
   row: {
     flexDirection: 'row',

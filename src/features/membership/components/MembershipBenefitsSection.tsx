@@ -110,7 +110,7 @@ export const MembershipBenefitsSection: React.FC<MembershipBenefitsSectionProps>
   ];
 
   return (
-    <View style={styles.container} accessibilityRole="region" accessibilityLabel="Membership Benefits Section">
+    <View style={styles.container} accessible={true} accessibilityLabel="Membership Benefits Section">
       {/* Section Header */}
       <Text style={styles.sectionTitle}>Membership Benefits</Text>
 

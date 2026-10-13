@@ -51,12 +51,16 @@ export interface AdminHeaderProps {
   showBack?: boolean;
   /** Callback when user taps back button. */
   onBack?: () => void;
-  /** Number of unread notifications to show on bell badge. Defaults to 3. */
+  /** Number of unread notifications to show on bell badge. Defaults to 0. */
   unreadCount?: number;
   /** Navigation helper for older tab navigator hooks. */
   onOpenMore?: () => void;
   /** Callback when user selects an item in the slide-in sidebar. */
   onNavigate?: (target: string) => void;
+  /** Optional callback when user taps the notification bell. */
+  onPressNotifications?: () => void;
+  /** Whether to hide the notification bell icon (e.g. on the Notifications screen itself). */
+  hideNotifications?: boolean;
   /** Optional custom right action element (e.g. button or custom control). */
   rightAction?: React.ReactNode;
 }
@@ -65,9 +69,11 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   title,
   showBack = false,
   onBack,
-  unreadCount = 3,
+  unreadCount = 0,
   onOpenMore,
   onNavigate,
+  onPressNotifications,
+  hideNotifications = false,
   rightAction,
 }) => {
   const insets = useSafeAreaInsets();
@@ -89,19 +95,39 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   };
 
   const handleOpenNotifications = () => {
+    if (onPressNotifications) {
+      onPressNotifications();
+      return;
+    }
     if (onNavigate) {
       onNavigate(AppRoutes.NOTIFICATIONS);
-    } else if (navigation?.navigate) {
-      try {
-        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS });
-      } catch {
-        try {
-          navigation.navigate(AppRoutes.NOTIFICATIONS);
-        } catch {
-          // ignore
-        }
+      return;
+    }
+    if (navigation?.navigate) {
+      const state = navigation.getState ? navigation.getState() : null;
+      const routeNames: string[] = state?.routeNames || [];
+
+      if (
+        routeNames.includes(AppRoutes.NOTIFICATIONS) ||
+        routeNames.includes('Notifications')
+      ) {
+        navigation.navigate(AppRoutes.NOTIFICATIONS);
+        return;
       }
-    } else if (onOpenMore) {
+
+      if (routeNames.includes(AppRoutes.ADMIN_MORE_TAB)) {
+        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS });
+        return;
+      }
+
+      try {
+        navigation.navigate(AppRoutes.NOTIFICATIONS);
+        return;
+      } catch {
+        // ignore
+      }
+    }
+    if (onOpenMore) {
       onOpenMore();
     }
   };
@@ -257,31 +283,33 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           ) : null}
 
           {/* Notification Bell */}
-          <TouchableOpacity
-            style={styles.bellWrap}
-            onPress={handleOpenNotifications}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={`Notifications, ${unreadCount} unread`}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22ZM18 16V11C18 7.93 16.37 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.64 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z"
-                stroke="#1E293B"
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-            {unreadCount > 0 ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </Text>
-              </View>
-            ) : null}
-          </TouchableOpacity>
+          {!(hideNotifications || title === 'Notifications') ? (
+            <TouchableOpacity
+              style={styles.bellWrap}
+              onPress={handleOpenNotifications}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={`Notifications, ${unreadCount} unread`}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22ZM18 16V11C18 7.93 16.37 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.64 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z"
+                  stroke="#1E293B"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+              {unreadCount > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+          ) : null}
 
           {/* Profile Avatar + Dropdown Chevron */}
           <TouchableOpacity

@@ -43,6 +43,7 @@ export interface MemberHomeDashboardScreenProps {
   onOpenRight: (rightId: string) => void;
   onOpenRights: () => void;
   onOpenComplaint: () => void;
+  onOpenTickets?: () => void;
   onOpenEvents: () => void;
   onOpenEvent: (event: UserEvent) => void;
   onOpenDonation: () => void;
@@ -135,6 +136,7 @@ export const MemberHomeDashboardScreen: React.FC<
   onOpenRight,
   onOpenRights,
   onOpenComplaint,
+  onOpenTickets,
   onOpenEvents,
   onOpenEvent,
   onOpenDonation,
@@ -155,10 +157,10 @@ export const MemberHomeDashboardScreen: React.FC<
     { title: 'Resources', icon: 'download', onPress: onOpenRights },
   ];
   const impactMetrics = [
-    { value: '3', label: 'Events\nAttended', icon: 'users' as const },
-    { value: '2', label: 'Causes\nSupported', icon: 'heart' as const },
-    { value: '1', label: 'Complaint\nSubmitted', icon: 'file-text' as const },
-    { value: '12', label: 'Hours\nVolunteered', icon: 'clock' as const },
+    { value: '3', label: 'Events\nAttended', icon: 'users' as const, onPress: onOpenEvents },
+    { value: '2', label: 'Causes\nSupported', icon: 'heart' as const, onPress: onOpenDonation },
+    { value: '1', label: 'Complaint\nSubmitted', icon: 'file-text' as const, onPress: onOpenTickets || onOpenComplaint },
+    { value: '12', label: 'Hours\nVolunteered', icon: 'clock' as const, onPress: onOpenEvents },
   ];
 
   const handleTabPress = (tab: HomeTab) => {
@@ -212,13 +214,21 @@ export const MemberHomeDashboardScreen: React.FC<
           <View style={styles.membershipStatusCard}>
             <View style={styles.membershipStatusLeft}>
               <View style={styles.starBadge}>
-                <AppIcon name="star" size={20} color="#FFFFFF" filled />
+                <AppIcon name="star" size={18} color="#FFFFFF" filled />
               </View>
               <View style={styles.statusTextGroup}>
-                <Text style={styles.statusTitle}>
+                <Text
+                  style={styles.statusTitle}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {currentMembership.status === 'active' ? 'Active Member' : 'Member'}
                 </Text>
-                <Text style={styles.statusCategory}>
+                <Text
+                  style={styles.statusCategory}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {currentMembership.category || 'Individual Member'}
                 </Text>
               </View>
@@ -230,10 +240,12 @@ export const MemberHomeDashboardScreen: React.FC<
               accessibilityRole="button"
               accessibilityLabel="View Membership"
             >
-              <Text style={styles.viewMembershipText}>View Membership</Text>
+              <Text style={styles.viewMembershipText} numberOfLines={1}>
+                View Membership
+              </Text>
               <AppIcon
                 name="arrow-right"
-                size={13}
+                size={12}
                 color={AdminColors.primaryDark}
               />
             </Pressable>
@@ -432,56 +444,64 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: '#E8EDF5',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
     ...Shadows.card,
   },
   membershipStatusLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
   },
   starBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: '#EAA532',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
+    flexShrink: 0,
   },
   statusTextGroup: {
+    flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
   },
   statusTitle: {
     color: AdminColors.primaryDark,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    lineHeight: 20,
+    lineHeight: 19,
   },
   statusCategory: {
     color: '#64748B',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
+    lineHeight: 16,
   },
   viewMembershipButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     backgroundColor: '#F8FAFC',
-    gap: 6,
+    gap: 4,
+    flexShrink: 0,
   },
   viewMembershipText: {
     color: AdminColors.primaryDark,
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: '600',
   },
   quickActionsRow: {

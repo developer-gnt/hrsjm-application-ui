@@ -42,6 +42,7 @@ import {
   getFilteredStates,
   type StateLocation,
 } from '../../location/data/india-locations';
+import { supportTicketsStore } from '../../../support/services/supportTicketsStore';
 
 const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 const SUPPORTED_ATTACHMENT_EXTENSIONS = ['jpg', 'jpeg', 'png', 'pdf'];
@@ -89,6 +90,7 @@ const emptyForm: FormState = {
 
 export interface FileComplaintScreenProps {
   onBack?: () => void;
+  onViewTickets?: () => void;
   onOpenHome?: () => void;
   onOpenAbout?: () => void;
   onOpenRights?: () => void;
@@ -100,6 +102,7 @@ export interface FileComplaintScreenProps {
 
 export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
   onBack,
+  onViewTickets,
   onOpenHome,
   onOpenAbout,
   onOpenRights,
@@ -123,6 +126,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     Partial<Record<keyof FormState, string>>
   >({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedTicketId, setSubmittedTicketId] = useState<string>('');
   const [isHelpTopicSelectorVisible, setIsHelpTopicSelectorVisible] =
     useState(false);
 
@@ -739,7 +743,23 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         />
         <AppButton
           title="Submit Complaint"
-          onPress={() => setIsSubmitted(true)}
+          onPress={() => {
+            const ticket = supportTicketsStore.createTicketFromDraft({
+              category: form.helpType || selectedHelpTopic?.title || 'Human Rights Grievance',
+              subject: form.subject || 'Complaint / Grievance',
+              description: `${form.description}\n\nComplainant: ${form.fullName}\nPhone: ${form.mobile}\nEmail: ${form.email || 'N/A'}\nLocation: ${form.city || ''}, ${form.state || ''}`,
+              attachments: attachments.map((a, idx) => ({
+                id: `att-${Date.now()}-${idx}`,
+                name: a.name || 'document',
+                size: a.size || 0,
+                formattedSize: a.size ? `${(a.size / (1024 * 1024)).toFixed(1)} MB` : '1.0 MB',
+                type: a.type || 'file',
+                uri: a.uri,
+              })),
+            });
+            setSubmittedTicketId(ticket.ticketNumber || ticket.id);
+            setIsSubmitted(true);
+          }}
           variant="gold"
           size="lg"
           style={styles.primaryButton}
@@ -802,11 +822,27 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.pageTitle}>File a Complaint / Get Help</Text>
-          <Text style={styles.subtitle}>
-            Please provide the details below. Our team will review your
-            complaint and get in touch with you.
-          </Text>
+          <View style={styles.titleActionRow}>
+            <View style={styles.titleColumn}>
+              <Text style={styles.pageTitle}>File a Complaint / Get Help</Text>
+              <Text style={styles.subtitle}>
+                Please provide the details below. Our team will review your
+                complaint and get in touch with you.
+              </Text>
+            </View>
+            {onViewTickets ? (
+              <TouchableOpacity
+                style={styles.trackTicketsBadge}
+                onPress={onViewTickets}
+                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel="View existing tickets"
+              >
+                <AppIcon name="file-text" size={14} color="#1E40AF" />
+                <Text style={styles.trackTicketsText}>My Tickets</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
 
           <ComplaintProgress
             steps={stepLabels.map(label => ({ id: label, label }))}
@@ -825,20 +861,32 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
               <Text style={styles.successTitle}>Complaint Submitted</Text>
               <Text style={styles.successText}>
                 Thank you for reaching out to HRSJM. Your complaint has been
-                received and our team will review it.
+                received and recorded in our support ticket system.
               </Text>
               <View style={styles.referenceBox}>
-                <Text style={styles.referenceLabel}>Reference ID</Text>
-                <Text style={styles.referenceId}>HRSJM-DEMO-001</Text>
+                <Text style={styles.referenceLabel}>Reference Ticket ID</Text>
+                <Text style={styles.referenceId}>{submittedTicketId || 'HRSJM-DEMO-001'}</Text>
               </View>
-              <AppButton
-                title="Back to Home"
-                onPress={() => onBack?.()}
-                variant="gold"
-                size="lg"
-                style={styles.successButton}
-                textStyle={{ color: AdminColors.primaryDark }}
-              />
+              <View style={styles.successButtonsColumn}>
+                {onViewTickets ? (
+                  <AppButton
+                    title="View My Tickets"
+                    onPress={onViewTickets}
+                    variant="outline"
+                    size="lg"
+                    style={styles.successTicketsButton}
+                    textStyle={{ color: AdminColors.primaryDark }}
+                  />
+                ) : null}
+                <AppButton
+                  title="Back to Home"
+                  onPress={() => onBack?.()}
+                  variant="gold"
+                  size="lg"
+                  style={styles.successButton}
+                  textStyle={{ color: AdminColors.primaryDark }}
+                />
+              </View>
             </View>
           ) : step === 1 ? (
             renderStepOne()
@@ -1272,7 +1320,44 @@ const styles = StyleSheet.create({
   },
   successButton: {
     width: '100%',
-    marginTop: Spacing.lg,
+    marginTop: Spacing.sm,
     borderRadius: BorderRadius.lg,
+  },
+  successButtonsColumn: {
+    width: '100%',
+    marginTop: Spacing.lg,
+    gap: Spacing.xs,
+  },
+  successTicketsButton: {
+    width: '100%',
+    borderRadius: BorderRadius.lg,
+    borderColor: AdminColors.primaryDark,
+  },
+  titleActionRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
+  },
+  titleColumn: {
+    flex: 1,
+    paddingRight: Spacing.xs,
+  },
+  trackTicketsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+    marginTop: 4,
+  },
+  trackTicketsText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E40AF',
   },
 });

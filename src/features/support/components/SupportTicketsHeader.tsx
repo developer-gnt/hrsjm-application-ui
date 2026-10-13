@@ -12,6 +12,7 @@ const HRSJM_LOGO = require('../../../assets/hrsjm_logo.png');
 
 interface SupportTicketsHeaderProps {
   paddingTop?: number;
+  onBack?: () => void;
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   onProfilePress?: () => void;
@@ -19,6 +20,7 @@ interface SupportTicketsHeaderProps {
 
 export const SupportTicketsHeader: React.FC<SupportTicketsHeaderProps> = ({
   paddingTop = 0,
+  onBack,
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
@@ -26,20 +28,32 @@ export const SupportTicketsHeader: React.FC<SupportTicketsHeaderProps> = ({
   return (
     <View style={[styles.wrapper, { paddingTop: paddingTop + Spacing.xs }]}>
       <View style={styles.topBar}>
-        {/* Hamburger Menu Button */}
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={onMenuPress}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Open Navigation Menu"
-        >
-          <View style={styles.hamburgerIcon}>
-            <View style={styles.hamburgerBar} />
-            <View style={[styles.hamburgerBar, styles.hamburgerBarMiddle]} />
-            <View style={styles.hamburgerBar} />
-          </View>
-        </TouchableOpacity>
+        {/* Left Action: Back Button or Hamburger Menu Button */}
+        {onBack ? (
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={onBack}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text style={styles.backButtonGlyph}>←</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={onMenuPress}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Open Navigation Menu"
+          >
+            <View style={styles.hamburgerIcon}>
+              <View style={styles.hamburgerBar} />
+              <View style={[styles.hamburgerBar, styles.hamburgerBarMiddle]} />
+              <View style={styles.hamburgerBar} />
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* Center Brand Identity */}
         <View style={styles.centerBrand}>
@@ -125,6 +139,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+  },
+  backButtonGlyph: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1E293B',
+    lineHeight: 22,
   },
   hamburgerIcon: {
     width: 18,

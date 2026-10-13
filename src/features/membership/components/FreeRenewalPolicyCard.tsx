@@ -13,7 +13,7 @@ export const FreeRenewalPolicyCard: React.FC = () => {
   return (
     <View
       style={styles.cardContainer}
-      accessibilityRole="region"
+      accessible={true}
       accessibilityLabel="Note for Free Renewal Policy"
     >
       {/* Header Banner */}

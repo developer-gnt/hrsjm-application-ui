@@ -45,6 +45,7 @@ export interface MemberDashboardDetailsContentProps {
   membership?: MemberMembershipRecord | null;
   onOpenMembershipInfo?: () => void;
   onOpenComplaint?: () => void;
+  onOpenTickets?: () => void;
   onOpenDonation?: () => void;
   onOpenEvents?: () => void;
   onOpenRights?: () => void;
@@ -82,6 +83,7 @@ export const MemberDashboardDetailsScreen: React.FC<
   onBack,
   onOpenMembershipInfo,
   onOpenComplaint,
+  onOpenTickets,
   onOpenDonation,
   onOpenEvents,
   onOpenRights,
@@ -114,6 +116,7 @@ export const MemberDashboardDetailsScreen: React.FC<
           membership={membership}
           onOpenMembershipInfo={onOpenMembershipInfo}
           onOpenComplaint={onOpenComplaint}
+          onOpenTickets={onOpenTickets}
           onOpenDonation={onOpenDonation}
           onOpenEvents={onOpenEvents}
           onOpenRights={onOpenRights}
@@ -134,6 +137,7 @@ export const MemberDashboardDetailsContent: React.FC<
   membership,
   onOpenMembershipInfo,
   onOpenComplaint,
+  onOpenTickets,
   onOpenDonation,
   onOpenEvents,
   onOpenRights,
@@ -159,7 +163,7 @@ export const MemberDashboardDetailsContent: React.FC<
       icon: 'file-text' as const,
       title: 'Complaints Submitted',
       subtitle: '1 complaint',
-      onPress: onOpenComplaint,
+      onPress: onOpenTickets || onOpenComplaint,
     },
     {
       id: 'donations',

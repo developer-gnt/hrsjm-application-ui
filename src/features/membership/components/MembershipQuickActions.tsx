@@ -21,7 +21,7 @@ export const MembershipQuickActions: React.FC<MembershipQuickActionsProps> = ({
   onRenewPress,
 }) => {
   return (
-    <View style={styles.container} accessibilityRole="region" accessibilityLabel="Quick Actions">
+    <View style={styles.container} accessible={true} accessibilityLabel="Quick Actions">
       {/* 1. Member Card */}
       <TouchableOpacity
         style={styles.actionCard}
