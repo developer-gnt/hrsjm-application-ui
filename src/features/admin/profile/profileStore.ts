@@ -173,7 +173,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         membershipType: membershipData?.category?.name || (isUserAdmin ? 'Executive Member' : 'Individual Member'),
         memberId,
         adminId,
-        dateOfBirth: (membershipData?.application_data as any)?.personal_details?.dob || '',
+        dateOfBirth: (user as any)?.dob || (membershipData?.application_data as any)?.personal_details?.dob || '',
         memberSince,
         validTill,
       };
@@ -187,14 +187,21 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   updatePersonalInfo: async input => {
     const cleanEmail = (input.email || '').trim().toLowerCase();
     const cleanPhone = (input.phone || '').replace(/\D/g, '').slice(-10);
+    const dob = (input.dob || input.dateOfBirth || '').trim();
 
-    // 1. Persist to backend /auth/me
-    const res: any = await apiClient.patch<any>(ApiRoutes.AUTH.ME, {
+    const patchPayload: Record<string, any> = {
       full_name: input.fullName.trim(),
       email: cleanEmail,
       mobile_number: cleanPhone,
       phone: cleanPhone,
-    });
+    };
+    if (dob) {
+      patchPayload.dob = dob;
+      patchPayload.dateOfBirth = dob;
+    }
+
+    // 1. Persist to backend /auth/me
+    const res: any = await apiClient.patch<any>(ApiRoutes.AUTH.ME, patchPayload);
 
     const userData = res?.data || res;
 
@@ -213,6 +220,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
           full_name: input.fullName.trim(),
           email: cleanEmail,
           mobile_number: cleanPhone,
+          dob: dob || (currentUser as any)?.dob,
           roles,
         },
       });
@@ -225,6 +233,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         accountName: input.fullName.trim(),
         email: cleanEmail,
         phone: cleanPhone,
+        dateOfBirth: dob || state.profile.dateOfBirth,
       },
     }));
   },

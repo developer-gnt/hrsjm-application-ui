@@ -12,6 +12,8 @@ export interface PersonalInfoInput {
   fullName: string;
   email: string;
   phone: string;
+  dob?: string;
+  dateOfBirth?: string;
 }
 
 /** Values editable through the Admin Details screen. */

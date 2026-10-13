@@ -106,6 +106,9 @@ export const useMembershipDetailsData = (
     '';
   const dob =
     initialOverride?.dob ||
+    profile?.dateOfBirth ||
+    (profile as any)?.dob ||
+    (authUser as any)?.dob ||
     regState.dob?.trim() ||
     latestApp?.dob ||
     '';

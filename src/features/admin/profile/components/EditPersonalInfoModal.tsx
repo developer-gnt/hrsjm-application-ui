@@ -24,7 +24,9 @@ import {
   Phone,
   X,
   AlertCircle,
+  Calendar,
 } from '../../../../core/components/icons';
+import { DatePickerModal } from '../../../../core/components/common/DatePickerModal';
 import { useProfileStore } from '../profileStore';
 import type { PersonalInfoInput } from '../types/profile.types';
 
@@ -54,7 +56,9 @@ export const EditPersonalInfoModal: React.FC<EditPersonalInfoModalProps> = ({
     fullName: profile.fullName || '',
     email: profile.email || '',
     phone: profile.phone || '',
+    dob: (profile.dateOfBirth || (profile as any).dob || '').trim(),
   });
+  const [dobPickerVisible, setDobPickerVisible] = useState(false);
 
   const [errors, setErrors] = useState<Partial<Record<keyof PersonalInfoInput, string>>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -66,6 +70,7 @@ export const EditPersonalInfoModal: React.FC<EditPersonalInfoModalProps> = ({
         fullName: profile.fullName || '',
         email: profile.email || '',
         phone: profile.phone || '',
+        dob: (profile.dateOfBirth || (profile as any).dob || '').trim(),
       });
       setErrors({});
       setErrorMessage(null);
@@ -128,6 +133,8 @@ export const EditPersonalInfoModal: React.FC<EditPersonalInfoModalProps> = ({
         fullName: form.fullName.trim(),
         email: cleanEmail,
         phone: cleanPhone,
+        dob: (form.dob || '').trim(),
+        dateOfBirth: (form.dob || '').trim(),
       });
       onSuccess();
     } catch (err: any) {
@@ -272,6 +279,31 @@ export const EditPersonalInfoModal: React.FC<EditPersonalInfoModalProps> = ({
               ) : null}
             </View>
 
+            {/* Date of Birth */}
+            <View style={styles.field}>
+              <Text style={styles.label}>Date of Birth</Text>
+              <View style={styles.inputWrap}>
+                <Calendar size={16} color={AdminColors.textSecondary} style={styles.fieldIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={AdminColors.textMuted}
+                  value={form.dob || ''}
+                  onChangeText={v => setField('dob', v)}
+                  editable={!isLoading}
+                />
+                <TouchableOpacity
+                  onPress={() => setDobPickerVisible(true)}
+                  style={styles.calendarIconBtn}
+                  activeOpacity={0.7}
+                  accessibilityLabel="Select Date of Birth"
+                  accessibilityRole="button"
+                >
+                  <Calendar size={18} color={AdminColors.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {/* Actions */}
             <View style={styles.actionsRow}>
               <TouchableOpacity
@@ -292,6 +324,17 @@ export const EditPersonalInfoModal: React.FC<EditPersonalInfoModalProps> = ({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+
+      <DatePickerModal
+        visible={dobPickerVisible}
+        value={form.dob || ''}
+        onSelect={selectedDate => {
+          setField('dob', selectedDate);
+          setDobPickerVisible(false);
+        }}
+        onClose={() => setDobPickerVisible(false)}
+        title="Select Date of Birth"
+      />
     </Modal>
   );
 };
@@ -394,6 +437,11 @@ const styles = StyleSheet.create({
   },
   fieldIcon: {
     marginRight: Spacing.xs,
+  },
+  calendarIconBtn: {
+    padding: Spacing.xs,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   input: {
     flex: 1,

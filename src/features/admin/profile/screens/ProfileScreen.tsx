@@ -43,7 +43,7 @@ import { AvatarPickerModal } from '../components/AvatarPickerModal';
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { EditPersonalInfoModal } from '../components/EditPersonalInfoModal';
 import { MyIdCard } from '../components/MyIdCard';
-import { Lock, KeyRound } from '../../../../core/components/icons';
+import { Lock, KeyRound, Calendar } from '../../../../core/components/icons';
 import {
   PersonIcon,
   MailIcon,
@@ -253,6 +253,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             icon={<PhoneIcon size={16} color={AdminColors.textSecondary} />}
             label="Phone Number"
             value={profile.phone}
+          />
+          <ProfileInfoRow
+            icon={<Calendar size={16} color={AdminColors.textSecondary} />}
+            label="Date of Birth"
+            value={profile.dateOfBirth || 'Not provided'}
             divider={false}
           />
         </ProfileSectionCard>

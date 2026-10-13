@@ -10,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +23,8 @@ import {
 } from '../../../../core';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppInput } from '../../../../core/components/common/AppInput';
+import { DatePickerModal } from '../../../../core/components/common/DatePickerModal';
+import { Calendar } from '../../../../core/components/icons';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
 import { PersonalInfoInput } from '../types/profile.types';
@@ -61,7 +64,9 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
     fullName: profile.fullName || '',
     email: (profile.email || '').toLowerCase().trim(),
     phone: (profile.phone || '').replace(/\D/g, '').slice(-10),
+    dob: (profile.dateOfBirth || (profile as any).dob || '').trim(),
   });
+  const [dobPickerVisible, setDobPickerVisible] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
 
@@ -113,6 +118,8 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
         fullName: form.fullName.trim(),
         email: cleanEmail,
         phone: cleanPhone,
+        dob: (form.dob || '').trim(),
+        dateOfBirth: (form.dob || '').trim(),
       });
       stageMessage('Profile updated successfully.');
       if (onSaved) {
@@ -220,6 +227,24 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
               maxLength={10}
               autoComplete="tel"
             />
+            <AppInput
+              label="Date of Birth"
+              value={form.dob || ''}
+              onChangeText={value => setField('dob', value)}
+              placeholder="YYYY-MM-DD"
+              leftIcon={<Calendar size={16} color={AdminColors.textMuted} />}
+              rightIcon={
+                <TouchableOpacity
+                  onPress={() => setDobPickerVisible(true)}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityLabel="Select Date of Birth"
+                  accessibilityRole="button"
+                >
+                  <Calendar size={18} color={AdminColors.primary} />
+                </TouchableOpacity>
+              }
+            />
           </View>
 
           <View style={styles.actionsRow}>
@@ -242,6 +267,17 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <DatePickerModal
+        visible={dobPickerVisible}
+        value={form.dob || ''}
+        onSelect={selectedDate => {
+          setField('dob', selectedDate);
+          setDobPickerVisible(false);
+        }}
+        onClose={() => setDobPickerVisible(false)}
+        title="Select Date of Birth"
+      />
     </View>
   );
 };
