@@ -24,8 +24,8 @@ export type AppStackParamList = {
   Notifications: undefined;
   DonationDetail: { donationId: string };
   ReceiptsList: undefined;
-  ReceiptDetail: { receiptNo: string; fromScreen?: 'DonationHistory' | 'ReceiptsList' | 'DonationDetail' };
-  ReceiptPdfPreview: { receiptNo: string; fromScreen?: 'DonationHistory' | 'ReceiptsList' | 'DonationDetail' };
+  ReceiptDetail: { receiptNo: string; record?: any; fromScreen?: 'DonationHistory' | 'ReceiptsList' | 'DonationDetail' };
+  ReceiptPdfPreview: { receiptNo: string; record?: any; fromScreen?: 'DonationHistory' | 'ReceiptsList' | 'DonationDetail' };
   // Membership journey routes
   MembershipIntro: undefined;
   MembershipStep1Personal: undefined;

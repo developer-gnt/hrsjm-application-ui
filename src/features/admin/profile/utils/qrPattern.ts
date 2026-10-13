@@ -15,22 +15,34 @@ const qrCache = new Map<string, boolean[][]>();
  * correction level so the code survives printing and glare on a card.
  */
 export const getQrMatrix = (data: string): boolean[][] => {
-  if (qrCache.has(data)) {
-    return qrCache.get(data)!;
+  const safeData =
+    data && typeof data === 'string' && data.trim().length > 0
+      ? data.trim()
+      : 'HRSJM-VALID';
+
+  if (qrCache.has(safeData)) {
+    return qrCache.get(safeData)!;
   }
-  const qr = createQr(data, {
-    errorCorrectionLevel: 'H' as QRCodeErrorCorrectionLevel,
-  });
-  const size = qr.modules.size;
-  const bytes = qr.modules.data;
-  const matrix: boolean[][] = [];
-  for (let row = 0; row < size; row += 1) {
-    const line: boolean[] = [];
-    for (let col = 0; col < size; col += 1) {
-      line.push(Boolean(bytes[row * size + col]));
+  try {
+    const qr = createQr(safeData, {
+      errorCorrectionLevel: 'H' as QRCodeErrorCorrectionLevel,
+    });
+    const size = qr.modules.size;
+    const bytes = qr.modules.data;
+    const matrix: boolean[][] = [];
+    for (let row = 0; row < size; row += 1) {
+      const line: boolean[] = [];
+      for (let col = 0; col < size; col += 1) {
+        line.push(Boolean(bytes[row * size + col]));
+      }
+      matrix.push(line);
     }
-    matrix.push(line);
+    qrCache.set(safeData, matrix);
+    return matrix;
+  } catch {
+    const fallbackSize = 21;
+    return Array.from({ length: fallbackSize }, () =>
+      Array.from({ length: fallbackSize }, () => false)
+    );
   }
-  qrCache.set(data, matrix);
-  return matrix;
 };

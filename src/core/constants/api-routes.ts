@@ -8,6 +8,7 @@ export const ApiRoutes = {
     ME: '/auth/me',
     LOGOUT: '/auth/logout',
     REFRESH: '/auth/refresh',
+    CHANGE_PASSWORD: '/auth/change-password',
   },
 
   // Users
@@ -70,6 +71,8 @@ export const ApiRoutes = {
     STATUS: (id: string | number) => `/expense-entries/${id}/status`,
   },
   RECEIPTS: {
+    MY: '/receipts/my',
+    ITEM: (id: string | number) => `/receipts/${id}`,
     BASE: '/receipt-entries',
     STATS: '/receipt-entries/stats',
     DETAILS: (id: string | number) => `/receipt-entries/${id}`,

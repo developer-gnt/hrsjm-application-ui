@@ -84,4 +84,16 @@ export const authService = {
     const response = await apiClient.get<UserProfile>(ApiRoutes.AUTH.ME);
     return response.data;
   },
+
+  async changePassword(payload: {
+    current_password: string;
+    new_password: string;
+    confirm_password: string;
+  }): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post<{ success: boolean; message: string }>(
+      ApiRoutes.AUTH.CHANGE_PASSWORD,
+      payload,
+    );
+    return (response as any)?.data || response;
+  },
 };

@@ -20,7 +20,7 @@ import {
 } from '../../../../core/theme';
 import { AppIcon } from '../../../user/components';
 import { HomeHeader } from '../../../user/home/components/HomeHeader';
-import { findRightById, RIGHTS_DETAILS } from '../data/rights-content';
+import { findRightById, RIGHTS_DETAILS, getRightDetails } from '../data/rights-content';
 import type { RightDetailsContent, RightsContentCard } from '../types/rights.types';
 
 type SectionId = 'overview' | 'keyAreas' | 'support' | 'work';
@@ -204,7 +204,7 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
 
   const resolvedRightId = rightId || 'human-rights';
-  const content = RIGHTS_DETAILS[resolvedRightId] ?? RIGHTS_DETAILS['human-rights']!;
+  const content = getRightDetails(resolvedRightId);
   const indexItem = findRightById(resolvedRightId) ?? findRightById('human-rights')!;
 
   const setSectionLayout = (id: SectionId, event: LayoutChangeEvent) => {

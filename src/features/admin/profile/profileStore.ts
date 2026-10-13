@@ -185,12 +185,15 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   },
 
   updatePersonalInfo: async input => {
+    const cleanEmail = (input.email || '').trim().toLowerCase();
+    const cleanPhone = (input.phone || '').replace(/\D/g, '').slice(-10);
+
     // 1. Persist to backend /auth/me
     const res: any = await apiClient.patch<any>(ApiRoutes.AUTH.ME, {
-      full_name: input.fullName,
-      email: input.email,
-      mobile_number: input.phone,
-      phone: input.phone,
+      full_name: input.fullName.trim(),
+      email: cleanEmail,
+      mobile_number: cleanPhone,
+      phone: cleanPhone,
     });
 
     const userData = res?.data || res;
@@ -207,9 +210,9 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         user: {
           ...currentUser,
           ...(typeof userData === 'object' && userData ? userData : {}),
-          full_name: input.fullName,
-          email: input.email,
-          mobile_number: input.phone,
+          full_name: input.fullName.trim(),
+          email: cleanEmail,
+          mobile_number: cleanPhone,
           roles,
         },
       });
@@ -218,10 +221,10 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     set(state => ({
       profile: {
         ...state.profile,
-        fullName: input.fullName,
-        accountName: input.fullName,
-        email: input.email,
-        phone: input.phone,
+        fullName: input.fullName.trim(),
+        accountName: input.fullName.trim(),
+        email: cleanEmail,
+        phone: cleanPhone,
       },
     }));
   },

@@ -82,10 +82,16 @@ export const getEventsList = async (
     { params: queryParams },
   );
 
-  const rawData = res.data;
+  const rawData: any = res?.data ?? res ?? {};
+  const rawItems = Array.isArray(rawData?.items)
+    ? rawData.items
+    : Array.isArray(rawData)
+    ? rawData
+    : [];
+
   return {
-    events: (rawData.items || []).map(mapBackendEventToUi),
-    stats: rawData.stats || {
+    events: rawItems.map(mapBackendEventToUi),
+    stats: rawData?.stats || {
       total: 0,
       upcoming: 0,
       completed: 0,
@@ -98,7 +104,8 @@ export const getEventDetails = async (id: string): Promise<EventListItem> => {
   const res = await apiClient.get<BackendEventItem>(
     ApiRoutes.EVENTS.DETAILS(id),
   );
-  return mapBackendEventToUi(res.data);
+  const rawData: any = res?.data ?? res ?? {};
+  return mapBackendEventToUi(rawData);
 };
 
 export const createEventApi = async (

@@ -38,11 +38,10 @@ const formatTimeRange = (startAt: string, endAt?: string): string =>
  * every event row, so labels always align with the data columns.
  */
 const COL_FLEX = {
-  details: 2.15,
-  dateTime: 0.85,
-  registrations: 0.78,
-  status: 1.0,
-  action: 0.78,
+  details: 2.3,
+  dateTime: 1.25,
+  status: 0.85,
+  action: 0.65,
 } as const;
 
 /**
@@ -72,27 +71,22 @@ export const EventListHeader: React.FC = () => {
   return (
     <View style={styles.listHeader} accessible accessibilityRole="header">
       <View style={styles.colDetails}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={styles.listHeaderText} numberOfLines={1}>
           Event Details
         </Text>
       </View>
       <View style={styles.colDateTime}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          Date &amp; Time ↓
-        </Text>
-      </View>
-      <View style={styles.colRegistrations}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          Registrations
+        <Text style={styles.listHeaderText} numberOfLines={1}>
+          Date & Time
         </Text>
       </View>
       <View style={styles.colStatus}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={styles.listHeaderText} numberOfLines={1}>
           Status
         </Text>
       </View>
       <View style={styles.colAction}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={[styles.listHeaderText, styles.actionHeaderText]} numberOfLines={1}>
           Action
         </Text>
       </View>
@@ -111,10 +105,6 @@ interface EventCardProps {
 export const EventCard: React.FC<EventCardProps> = ({ event, onPress, onMorePress }) => {
   const [imageFailed, setImageFailed] = useState(false);
   const coverUri = event.coverImageUrl && !imageFailed ? event.coverImageUrl : undefined;
-
-  const progress = event.capacity
-    ? Math.min(100, Math.round((event.registrations / event.capacity) * 100))
-    : 0;
 
   const handleView = () => onPress?.(event);
   const handleMore = () => onMorePress?.(event);
@@ -169,37 +159,14 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress, onMorePres
           <Text
             style={styles.dateText}
             adjustsFontSizeToFit
-            minimumFontScale={0.75}
+            minimumFontScale={0.8}
             numberOfLines={1}
           >
             {formatDate(event.startAt)}
           </Text>
-          <Text style={styles.timeText}>{formatTimeRange(event.startAt, event.endAt)}</Text>
-        </View>
-
-        {/* Registrations */}
-        <View style={styles.colRegistrations}>
-          {event.capacity ? (
-            <>
-              <Text
-                style={styles.registrationsText}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
-                numberOfLines={1}
-              >
-                {event.registrations} / {event.capacity}
-              </Text>
-              <View
-                style={styles.progressTrack}
-                accessible
-                accessibilityLabel={`${event.registrations} of ${event.capacity} registrations`}
-              >
-                <View style={[styles.progressFill, { width: `${progress}%` }]} />
-              </View>
-            </>
-          ) : (
-            <Text style={styles.registrationsText}>-</Text>
-          )}
+          <Text style={styles.timeText} numberOfLines={1}>
+            {formatTimeRange(event.startAt, event.endAt)}
+          </Text>
         </View>
 
         {/* Status */}
@@ -248,14 +215,26 @@ const styles = StyleSheet.create({
   listHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.md + Spacing.sm,
-    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 10,
+    backgroundColor: '#F1F5F9',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
     gap: Spacing.xs,
   },
   listHeaderText: {
-    ...Typography.caption,
-    fontWeight: '600',
-    color: AdminColors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#334155',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  actionHeaderText: {
+    textAlign: 'right',
+    paddingRight: Spacing.xs,
   },
 
   // Shared column flex proportions (must match list header).
@@ -264,9 +243,6 @@ const styles = StyleSheet.create({
   },
   colDateTime: {
     flex: COL_FLEX.dateTime,
-  },
-  colRegistrations: {
-    flex: COL_FLEX.registrations,
   },
   colStatus: {
     flex: COL_FLEX.status,
@@ -334,34 +310,16 @@ const styles = StyleSheet.create({
 
   dateText: {
     ...Typography.badge,
-    fontSize: 10.5,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '600',
     color: AdminColors.textPrimary,
   },
   timeText: {
     ...Typography.caption,
-    fontSize: 9.5,
-    lineHeight: 12,
+    fontSize: 10,
+    lineHeight: 13,
     color: AdminColors.textSecondary,
     marginTop: 2,
-  },
-
-  registrationsText: {
-    ...Typography.badge,
-    fontSize: 10,
-    color: AdminColors.textPrimary,
-  },
-  progressTrack: {
-    height: 5,
-    borderRadius: BorderRadius.full,
-    backgroundColor: AdminColors.statusActiveLight,
-    overflow: 'hidden',
-    marginTop: 3,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: BorderRadius.full,
-    backgroundColor: AdminColors.statusActive,
   },
 
   statusBadge: {

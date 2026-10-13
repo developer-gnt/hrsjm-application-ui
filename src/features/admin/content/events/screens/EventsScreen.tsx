@@ -164,28 +164,58 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
 
   const filteredEvents = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
+    const nowTime = Date.now();
 
-    return events.filter(event => {
-      if (activeStatus !== 'ALL' && event.status !== activeStatus) {
-        return false;
-      }
-      if (activeCategory && event.category !== activeCategory) {
-        return false;
-      }
-      if (!query) {
-        return true;
-      }
-      const haystack = [
-        event.title,
-        event.location,
-        event.category,
-        formatDate(event.startAt),
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(query);
-    });
+    const isUpcoming = (event: EventListItem) => {
+      if (event.status === 'COMPLETED' || event.status === 'CANCELLED') return false;
+      if (!event.startAt) return false;
+      const startTime = new Date(event.startAt).getTime();
+      if (isNaN(startTime)) return false;
+      const endTime = event.endAt ? new Date(event.endAt).getTime() : startTime + 4 * 60 * 60 * 1000;
+      return endTime >= nowTime;
+    };
+
+    return events
+      .filter(event => {
+        if (activeStatus !== 'ALL' && event.status !== activeStatus) {
+          return false;
+        }
+        if (activeCategory && event.category !== activeCategory) {
+          return false;
+        }
+        if (!query) {
+          return true;
+        }
+        const haystack = [
+          event.title,
+          event.location,
+          event.category,
+          formatDate(event.startAt),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(query);
+      })
+      .sort((a, b) => {
+        const aUpcoming = isUpcoming(a);
+        const bUpcoming = isUpcoming(b);
+
+        // Upcoming events come first
+        if (aUpcoming && !bUpcoming) return -1;
+        if (!aUpcoming && bUpcoming) return 1;
+
+        const aTime = new Date(a.startAt).getTime() || 0;
+        const bTime = new Date(b.startAt).getTime() || 0;
+
+        // Among upcoming events: chronological order (nearest first)
+        if (aUpcoming && bUpcoming) {
+          return aTime - bTime;
+        }
+
+        // Among completed/past events: most recent past first
+        return bTime - aTime;
+      });
   }, [events, searchQuery, activeStatus, activeCategory]);
 
   const [page, setPage] = useState(1);

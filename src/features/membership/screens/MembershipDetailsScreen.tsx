@@ -306,12 +306,14 @@ export const MembershipDetailsScreen: React.FC<MembershipDetailsScreenProps> = (
         </ScrollView>
 
         {/* Phase 1: Bottom Navigation */}
-        <DonationsBottomNav
-          bottomInset={insets.bottom}
-          activeKey="profile"
-          items={MEMBER_NAV_ITEMS}
-          onTabPress={handleBottomTabPress}
-        />
+        {showBottomNav && (
+          <DonationsBottomNav
+            bottomInset={insets.bottom}
+            activeKey="profile"
+            items={MEMBER_NAV_ITEMS}
+            onTabPress={handleBottomTabPress}
+          />
+        )}
 
         {/* Phase 4: Document Preview & Download Modal */}
         <MembershipCertificateModal

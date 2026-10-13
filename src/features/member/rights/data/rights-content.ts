@@ -451,10 +451,195 @@ const womensRightsContent: RightDetailsContent = {
   ],
 };
 
+const fundamentalRightsContent: RightDetailsContent = {
+  id: 'fundamental-rights',
+  badge: 'CONSTITUTIONAL RIGHTS',
+  title: 'Fundamental Rights of Every Citizen',
+  description: 'Guaranteed by the Constitution of India to secure equality, liberty, and justice for all citizens.',
+  heroImage: RIGHTS_HERO_IMAGE,
+  overview: {
+    title: 'The Cornerstone of Indian Democracy',
+    description:
+      'Part III of the Constitution of India guarantees Fundamental Rights to all citizens. These rights act as a shield against arbitrary State actions and ensure that every individual can live with dignity, equality, and intellectual freedom.',
+    quote:
+      'Fundamental rights are essential to preserve human dignity and foster democratic living.',
+  },
+  keyTopics: [
+    { id: 'equality', title: 'Right to Equality (Articles 14–18)', description: 'Prohibits discrimination on grounds of religion, race, caste, sex or place of birth.', icon: 'scale' },
+    { id: 'freedom', title: 'Right to Freedom (Articles 19–22)', description: 'Protects freedom of speech, assembly, movement, residence, and profession.', icon: 'shield-check' },
+    { id: 'remedies', title: 'Right to Constitutional Remedies (Article 32)', description: 'Right to approach the Supreme Court for enforcement of fundamental rights.', icon: 'file-text' },
+  ],
+  keyAreas: [
+    { id: 'art-14', title: 'Equality Before Law', description: 'Equal protection of laws for all persons within India.', icon: 'scale', color: '#ECF9F4', iconColor: '#D0F0E3' },
+    { id: 'art-19', title: 'Protection of Six Freedoms', description: 'Speech, peaceful assembly, association, free movement, residence, and trade.', icon: 'megaphone', color: '#FFF8E8', iconColor: '#FCE9B8' },
+    { id: 'art-21', title: 'Protection of Life & Personal Liberty', description: 'No person shall be deprived of life or personal liberty except according to procedure established by law.', icon: 'shield-check', color: '#F5F0FF', iconColor: '#E7DFFF' },
+    { id: 'art-32', title: 'Direct Access to Supreme Court', description: 'Power of the Supreme Court to issue Writs including Habeas Corpus, Mandamus, and Certiorari.', icon: 'file-text', color: '#EEF4FF', iconColor: '#DCE9FF' },
+  ],
+  legalFramework: {
+    title: 'Part III of the Constitution of India',
+    description:
+      'Fundamental Rights are enforceable directly by High Courts (Article 226) and the Supreme Court (Article 32), making them justiciable and inviolable.',
+  },
+  supportAreas: [
+    { id: 'legal-advice', title: 'Constitutional Advisory & Representation', icon: 'scale' },
+    { id: 'writ-assistance', title: 'Writ Petition Preparation Assistance', icon: 'file-text' },
+    { id: 'rights-camps', title: 'Community Legal Awareness Camps', icon: 'users' },
+  ],
+  resources: [
+    { id: 'const-handbook', title: 'Constitution of India (Part III Summary)', icon: 'file-text' },
+    { id: 'article32-guide', title: 'Filing a Writ Petition Guide (PDF)', icon: 'download' },
+  ],
+  legalProtections: [
+    { id: 'art-14-p', title: 'Article 14: Equality', description: 'The State shall not deny to any person equality before the law.', icon: 'scale', color: '#ECF9F4', iconColor: '#D0F0E3' },
+    { id: 'art-21-p', title: 'Article 21: Life with Dignity', description: 'Includes right to clean environment, livelihood, and privacy.', icon: 'shield-check', color: '#FFF0F2', iconColor: '#F9DDE3' },
+    { id: 'art-25-p', title: 'Article 25: Freedom of Conscience', description: 'Freedom of religion and peaceful conscience.', icon: 'heart', color: '#FFF8E8', iconColor: '#FCE9B8' },
+  ],
+  helpOptions: [
+    { id: 'file-complaint', title: 'File a Complaint', description: 'Report rights violations directly.', icon: 'file-text' },
+    { id: 'contact-hrsjm', title: 'Contact Legal Cell', description: 'Speak with our constitutional legal advocates.', icon: 'phone' },
+  ],
+};
+
+const childRightsContent: RightDetailsContent = {
+  id: 'childrens-rights',
+  badge: "CHILDREN'S RIGHTS",
+  title: "Child Rights and Protection",
+  description: "Protection of children from exploitation, cruelty, and compulsory access to healthcare and education.",
+  heroImage: COMMUNITY_HERO_IMAGE,
+  overview: {
+    title: "Protecting Our Children's Future",
+    description:
+      "Every child has the inherent right to care, safety, education, and development free from physical abuse, mental cruelty, and child labour. India's legal framework provides rigorous safeguards against exploitation of minors.",
+    quote:
+      "A child's world should be filled with learning, safety, and joy — not labor and exploitation.",
+  },
+  keyTopics: [
+    { id: 'pocso', title: 'POCSO Act 2012', description: 'Protection of Children from Sexual Offences Act.', icon: 'shield-check' },
+    { id: 'rte', title: 'Right to Free Education', description: 'Compulsory schooling for all children aged 6 to 14 years.', icon: 'graduation-cap' },
+    { id: 'child-labour', title: 'Prohibition of Child Labour', description: 'Strict ban on employment in hazardous and non-hazardous work.', icon: 'scale' },
+  ],
+  keyAreas: [
+    { id: 'care-protection', title: 'Care & Protection (JJ Act)', description: 'Juvenile Justice (Care and Protection of Children) Act safeguards.', icon: 'heart', color: '#EEF4FF', iconColor: '#DCE9FF' },
+    { id: 'edu-welfare', title: 'Free Schooling (RTE Act)', description: 'Right of children to free and compulsory admission in neighborhood schools.', icon: 'graduation-cap', color: '#ECF9F4', iconColor: '#D0F0E3' },
+    { id: 'nutrition', title: 'Nutrition & Healthcare', description: 'Statutory midday meals, health checkups, and vaccinations.', icon: 'heart-pulse', color: '#FFF8E8', iconColor: '#FCE9B8' },
+  ],
+  legalFramework: {
+    title: 'POCSO Act 2012 & Juvenile Justice Act 2015',
+    description:
+      'Stringent criminal laws, special child-friendly courts, and child welfare committees (CWC) established in every district.',
+  },
+  supportAreas: [
+    { id: 'childline', title: 'Childline 1098 Coordination', icon: 'phone' },
+    { id: 'rescue', title: 'Child Labour Rescue Operations', icon: 'shield-check' },
+    { id: 'education-aid', title: 'Free School Enrollment Assistance', icon: 'graduation-cap' },
+  ],
+  resources: [
+    { id: 'pocso-handbook', title: 'POCSO Act Citizen Handbook (PDF)', icon: 'file-text' },
+    { id: 'child-rights-guide', title: 'National Commission for Protection of Child Rights Guidelines', icon: 'download' },
+  ],
+  legalProtections: [
+    { id: 'art-21a', title: 'Article 21A: Right to Education', description: 'Free & compulsory education for children between 6 and 14.', icon: 'graduation-cap', color: '#ECF9F4', iconColor: '#D0F0E3' },
+    { id: 'art-24', title: 'Article 24: Prohibition of Child Labour', description: 'Ban on employing children under 14 in factories or mines.', icon: 'scale', color: '#FFF0F2', iconColor: '#F9DDE3' },
+  ],
+  helpOptions: [
+    { id: 'file-complaint', title: 'Report Child Abuse / Labour', description: 'Confidential reporting to HRSJM Child Cell.', icon: 'file-text' },
+    { id: 'contact-hrsjm', title: 'Contact Child Helpline', description: 'Immediate assistance for children in distress.', icon: 'phone' },
+  ],
+};
+
+const rtiContent: RightDetailsContent = {
+  id: 'right-to-information',
+  badge: 'RIGHT TO INFORMATION',
+  title: 'Right to Information (RTI Act 2005)',
+  description: 'Empowering every citizen to demand accountability, inspect public documents, and promote transparency in government functioning.',
+  heroImage: SOLIDARITY_HERO_IMAGE,
+  overview: {
+    title: 'Democracy Thrives on Transparency',
+    description:
+      'The Right to Information Act 2005 mandates timely response to citizen requests for government information. It serves as a master key against corruption and ensures democratic oversight by the public.',
+    quote:
+      'Information is the currency of democracy; transparent governance is the right of every citizen.',
+  },
+  keyTopics: [
+    { id: 'how-to-file', title: 'How to File an RTI Application', description: 'Step-by-step guidance on drafting queries to Public Information Officers.', icon: 'file-text' },
+    { id: 'timelines', title: 'Statutory Timelines (30 Days)', description: 'Mandatory 30-day response window (48 hours for life & liberty).', icon: 'clock' },
+    { id: 'appeals', title: 'First & Second Appeals', description: 'Recourse to Information Commissions when requests are denied.', icon: 'scale' },
+  ],
+  keyAreas: [
+    { id: 'inspection', title: 'Inspection of Public Works & Files', description: 'Citizens have the right to inspect government registers and take certified samples.', icon: 'doc-search', color: '#EEF4FF', iconColor: '#DCE9FF' },
+    { id: 'fund-audit', title: 'Tracking Public Fund Expenditures', description: 'Query municipal budgets, development allocations, and tenders.', icon: 'scale', color: '#FFF8E8', iconColor: '#FCE9B8' },
+  ],
+  legalFramework: {
+    title: 'Right to Information Act, 2005',
+    description:
+      'Covers Central and State government ministries, departments, public sector undertakings, and government-aided NGOs.',
+  },
+  supportAreas: [
+    { id: 'drafting', title: 'RTI Application Drafting Help', icon: 'file-text' },
+    { id: 'appeal-aid', title: 'Second Appeal Legal Representation', icon: 'scale' },
+  ],
+  resources: [
+    { id: 'sample-rti', title: 'Sample RTI Application Format (PDF)', icon: 'download' },
+  ],
+  helpOptions: [
+    { id: 'file-complaint', title: 'Report Non-Compliance', description: 'Submit RTI grievance to HRSJM Transparency Cell.', icon: 'file-text' },
+    { id: 'contact-hrsjm', title: 'RTI Advisory Hotline', description: 'Talk to an RTI legal expert.', icon: 'phone' },
+  ],
+};
+
 export const RIGHTS_DETAILS: Partial<Record<string, RightDetailsContent>> = {
   'human-rights': humanRightsContent,
   'womens-rights': womensRightsContent,
+  'fundamental-rights': fundamentalRightsContent,
+  'childrens-rights': childRightsContent,
+  'right-to-information': rtiContent,
 };
 
 export const findRightById = (rightId: string): RightsIndexItem | undefined =>
   RIGHTS_INDEX.find(right => right.id === rightId);
+
+/**
+ * Builds dynamic content for any right in RIGHTS_INDEX that doesn't have custom copy.
+ */
+export const getRightDetails = (rightId: string): RightDetailsContent => {
+  if (RIGHTS_DETAILS[rightId]) {
+    return RIGHTS_DETAILS[rightId]!;
+  }
+
+  const item = findRightById(rightId) || RIGHTS_INDEX[0];
+  return {
+    id: item.id,
+    badge: item.title.toUpperCase(),
+    title: item.title,
+    description: item.description,
+    heroImage: RIGHTS_HERO_IMAGE,
+    overview: {
+      title: `Understanding Your ${item.title}`,
+      description: `${item.description} In India, legal protections and statutory frameworks guarantee that no individual can be denied this right arbitrarily. HRSJM stands with citizens to safeguard these entitlements.`,
+      quote: `Justice and equality are only realized when every citizen knows and asserts their ${item.title.toLowerCase()}.`,
+    },
+    keyTopics: [
+      { id: 'legal-scope', title: 'Legal Protections & Laws', description: 'Statutory guarantees under Indian law.', icon: 'scale' },
+      { id: 'remedies', title: 'Enforcement & Grievance Redressal', description: 'How to claim and protect this right.', icon: 'shield-check' },
+    ],
+    keyAreas: [
+      { id: 'protection', title: 'Equal Protection Under Law', description: 'Freedom from discrimination and unfair denial.', icon: 'shield-check', color: '#EEF4FF', iconColor: '#DCE9FF' },
+      { id: 'support', title: 'Legal Aid & Advice', description: 'Access to counsel and court representation.', icon: 'scale', color: '#FFF8E8', iconColor: '#FCE9B8' },
+    ],
+    legalFramework: {
+      title: 'Constitution of India & Statutory Laws',
+      description: 'Enforceable under relevant central and state laws and the fundamental constitutional guarantees.',
+    },
+    supportAreas: [
+      { id: 'legal-guidance', title: 'Legal Counseling & Grievance Cell', icon: 'scale' },
+      { id: 'mediation', title: 'Community Rights Advocacy', icon: 'users' },
+    ],
+    resources: [
+      { id: 'citizen-guide', title: `${item.title} Citizen Handbook (PDF)`, icon: 'download' },
+    ],
+    helpOptions: [
+      { id: 'file-complaint', title: 'File a Complaint', description: 'Report rights violations directly.', icon: 'file-text' },
+      { id: 'contact-hrsjm', title: 'Contact HRSJM Support', description: 'Call our citizen assistance desk.', icon: 'phone' },
+    ],
+  };
+};

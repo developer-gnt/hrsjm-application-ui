@@ -58,15 +58,21 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
   const stageMessage = useProfileStore(state => state.stageMessage);
 
   const [form, setForm] = useState<PersonalInfoInput>({
-    fullName: profile.fullName,
-    email: profile.email,
-    phone: profile.phone,
+    fullName: profile.fullName || '',
+    email: (profile.email || '').toLowerCase().trim(),
+    phone: (profile.phone || '').replace(/\D/g, '').slice(-10),
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
 
   const setField = (field: keyof PersonalInfoInput, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    let cleanVal = value;
+    if (field === 'email') {
+      cleanVal = value.toLowerCase().trim();
+    } else if (field === 'phone') {
+      cleanVal = value.replace(/\D/g, '').slice(0, 10);
+    }
+    setForm(prev => ({ ...prev, [field]: cleanVal }));
     // Clear the field's validation message as the user fixes it.
     setErrors(prev => ({ ...prev, [field]: undefined }));
   };
@@ -76,15 +82,17 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
     if (!form.fullName.trim()) {
       next.fullName = 'Full name is required.';
     }
-    if (!form.email.trim()) {
+    const cleanEmail = form.email.trim().toLowerCase();
+    if (!cleanEmail) {
       next.email = 'Email address is required.';
-    } else if (!isEmailValid(form.email)) {
+    } else if (!isEmailValid(cleanEmail)) {
       next.email = 'Please enter a valid email address.';
     }
-    if (!form.phone.trim()) {
+    const cleanPhone = form.phone.replace(/\D/g, '');
+    if (!cleanPhone) {
       next.phone = 'Phone number is required.';
-    } else if (!isPhoneValid(form.phone)) {
-      next.phone = 'Please enter a valid phone number.';
+    } else if (cleanPhone.length !== 10) {
+      next.phone = 'Phone number must be exactly 10 digits.';
     }
     return next;
   };
@@ -96,12 +104,15 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
       return;
     }
 
+    const cleanEmail = form.email.trim().toLowerCase();
+    const cleanPhone = form.phone.replace(/\D/g, '').slice(0, 10);
+
     setIsSaving(true);
     try {
       await updatePersonalInfo({
         fullName: form.fullName.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
+        email: cleanEmail,
+        phone: cleanPhone,
       });
       stageMessage('Profile updated successfully.');
       if (onSaved) {
@@ -110,8 +121,32 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
         onNavigate('MyProfile');
       }
     } catch (err: any) {
-      const errMsg = err?.message || 'Failed to update personal info.';
-      setErrors({ phone: errMsg });
+      const respData = err?.response?.data || err?.data;
+      const rawMsg = respData?.message || err?.message || 'Failed to update personal info.';
+      const msg = Array.isArray(rawMsg) ? rawMsg[0] : String(rawMsg);
+      const code = respData?.code || '';
+
+      if (code === 'EMAIL_TAKEN' || msg.toLowerCase().includes('email')) {
+        setErrors(prev => ({
+          ...prev,
+          email: 'This email is already in use by another account.',
+        }));
+      } else if (
+        code === 'MOBILE_TAKEN' ||
+        code === 'MOBILE_NUMBER_TAKEN' ||
+        msg.toLowerCase().includes('mobile') ||
+        msg.toLowerCase().includes('phone')
+      ) {
+        setErrors(prev => ({
+          ...prev,
+          phone: 'This phone number is already in use by another account.',
+        }));
+      } else {
+        setErrors(prev => ({
+          ...prev,
+          phone: msg,
+        }));
+      }
     } finally {
       setIsSaving(false);
     }
@@ -178,10 +213,11 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
               required
               value={form.phone}
               onChangeText={value => setField('phone', value)}
-              placeholder="Enter phone number"
+              placeholder="Enter 10-digit phone number"
               error={errors.phone}
               leftIcon={<PhoneIcon size={16} color={AdminColors.textMuted} />}
               keyboardType="phone-pad"
+              maxLength={10}
               autoComplete="tel"
             />
           </View>

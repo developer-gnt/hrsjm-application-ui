@@ -767,9 +767,6 @@ export const RightsArticleForm: React.FC<RightsArticleFormProps> = ({
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar activeTab="rights" onTabPress={handleShellTabPress} />
-
       <EventFormToast
         message={toast?.message ?? null}
         variant={toast?.variant ?? 'success'}

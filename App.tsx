@@ -520,8 +520,8 @@ function App() {
 
   const isIsolatedDevPreview =
     Platform.OS === 'web' &&
-    typeof window !== 'undefined' &&
-    window.location.hash.startsWith('#/dev/');
+    typeof (globalThis as any).window !== 'undefined' &&
+    (globalThis as any).window?.location?.hash?.startsWith('#/dev/');
 
   if (isIsolatedDevPreview) {
     return (

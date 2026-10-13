@@ -152,7 +152,6 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
   canManage = true,
 }) => {
   const [coverFailed, setCoverFailed] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
 
   // Android hardware back returns to the Events list (no-op on iOS).
   useEffect(() => {
@@ -182,10 +181,6 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
     );
   }
 
-  const progress = event.capacity
-    ? Math.min(100, Math.round((event.registrations / event.capacity) * 100))
-    : 0;
-
   const statusMeta = STATUS_SECTION_META[event.status];
 
   const handlePlaceholderAction = (actionName: string) => {
@@ -193,22 +188,6 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
     Alert.alert(
       actionName,
       'This is a UI placeholder. Actual functionality will be connected in a later phase after backend integration.',
-    );
-  };
-
-  const handleMemberRegister = () => {
-    if (isRegistered) {
-      Alert.alert(
-        'Already Registered',
-        `You have already registered for "${event.title}". You will receive updates prior to the event schedule.`,
-      );
-      return;
-    }
-    setIsRegistered(true);
-    Alert.alert(
-      'Registration Confirmed',
-      `Thank you for registering for "${event.title}". We look forward to your participation!`,
-      [{ text: 'OK' }],
     );
   };
 
@@ -284,27 +263,6 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
             ) : null}
           </AppCard>
 
-          {/* Registrations */}
-          {event.capacity ? (
-            <AppCard variant="outlined" padding="base" style={styles.registrationCard}>
-              <View style={styles.registrationRow}>
-                <Text style={styles.registrationIcon}>👥</Text>
-                <Text style={styles.registrationText}>
-                  {event.registrations} / {event.capacity} Registered
-                </Text>
-              </View>
-              <View style={styles.registrationBarRow}>
-                <View
-                  style={styles.progressTrack}
-                  accessible
-                  accessibilityLabel={`${event.registrations} of ${event.capacity} registrations`}
-                >
-                  <View style={[styles.progressFill, { width: `${progress}%` }]} />
-                </View>
-                <Text style={styles.registrationPercent}>{progress}%</Text>
-              </View>
-            </AppCard>
-          ) : null}
 
           {/* Description */}
           <Text style={styles.sectionHeader}>Description</Text>
@@ -408,29 +366,16 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
               </View>
             </>
           ) : (
-            <>
-              <Text style={styles.sectionHeader}>Participation</Text>
-              <View style={styles.actionsRow}>
-                {event.status === 'UPCOMING' ? (
-                  <AppButton
-                    title={isRegistered ? 'Registered ✓' : 'Register for Event'}
-                    variant={isRegistered ? 'outline' : 'primary'}
-                    size="sm"
-                    onPress={handleMemberRegister}
-                    icon={<Text style={styles.actionIcon}>{isRegistered ? '✓' : '📝'}</Text>}
-                    style={styles.actionButton}
-                  />
-                ) : null}
-                <AppButton
-                  title="Share Event"
-                  variant="outline"
-                  size="sm"
-                  onPress={handleShareEvent}
-                  icon={<Text style={styles.actionIcon}>🔗</Text>}
-                  style={styles.actionButton}
-                />
-              </View>
-            </>
+            <View style={[styles.actionsRow, { marginTop: Spacing.md }]}>
+              <AppButton
+                title="Share Event"
+                variant="outline"
+                size="sm"
+                onPress={handleShareEvent}
+                icon={<Text style={styles.actionIcon}>🔗</Text>}
+                style={styles.actionButton}
+              />
+            </View>
           )}
         </ScrollView>
       </SafeAreaView>

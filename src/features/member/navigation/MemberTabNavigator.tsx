@@ -13,7 +13,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MemberHomeScreen } from '../screens/MemberHomeScreen';
 import { MemberCausesContainer } from '../screens/MemberCausesContainer';
 import { MemberEventsContainer } from '../screens/MemberEventsContainer';
-import { DonationsScreen } from '../../admin/donations/screens/DonationsScreen';
+import { ReceiptsListScreen } from '../../receipts/screens/ReceiptsListScreen';
+import { ReceiptDetailScreen } from '../../receipts/screens/ReceiptDetailScreen';
+import { ReceiptPdfPreviewScreen } from '../../receipts/screens/ReceiptPdfPreviewScreen';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import {
   MembershipDetailsScreen,
@@ -23,8 +25,19 @@ import {
   MemberHomeDashboardScreen,
   MemberDashboardDetailsScreen,
 } from '../dashboard';
-import { RightDetailsScreen } from '../rights';
+import { RightDetailsScreen, MemberRightsScreen } from '../rights';
 import { FileComplaintScreen } from '../../user/help';
+import { AboutScreen } from '../../user/about';
+import { NewsListScreen, NewsDetailsScreen } from '../../admin/content/news';
+import { BlogsListScreen, BlogDetailsScreen } from '../../admin/content/blogs';
+import { NotificationsScreen } from '../../admin/notifications';
+import { ProfileSettingsScreen } from '../../admin/settings';
+import { EventDetailsScreen } from '../../admin/content/events';
+import {
+  MyIdCardScreen,
+  EditPersonalInfoScreen,
+  AdminDetailsScreen,
+} from '../../admin/profile';
 import {
   House,
   Heart,
@@ -49,17 +62,29 @@ const MemberHomeScreenComponent: React.FC<any> = ({ navigation }) => {
       useAdminHeader
       showBottomNav={false}
       onOpenMembershipInfo={() => navigation.navigate('MembershipDetails')}
-      onOpenMembershipDetails={() => navigation.navigate('MemberDashboardDetails')}
-      onOpenRights={() => navigation.navigate('MemberRights')}
-      onOpenResources={() => navigation.navigate('MemberRights')}
+      onOpenMembershipDetails={() => navigation.navigate('MembershipDetails')}
+      onOpenRights={() => navigation.navigate('KnowYourRights')}
+      onOpenResources={() => navigation.navigate('KnowYourRights')}
       onOpenComplaint={() => navigation.navigate('MemberComplaint')}
       onOpenEvents={() => navigation.navigate('MemberEvents')}
-      onOpenEvent={() => navigation.navigate('MemberEvents')}
+      onOpenEvent={(event) => navigation.navigate('EventDetails', { event })}
       onOpenDonation={() => navigation.navigate('MemberCauses')}
       onOpenHome={() => navigation.navigate('MemberHome')}
-      onOpenAbout={() => navigation.navigate('MemberProfile')}
-      onOpenNews={() => navigation.navigate('MemberEvents')}
+      onOpenAbout={() => navigation.navigate('About')}
+      onOpenNews={() => navigation.navigate('News')}
       onOpenContact={() => navigation.navigate('MemberProfile')}
+    />
+  );
+};
+
+const MemberProfileScreenComponent: React.FC<any> = ({ navigation }) => {
+  return (
+    <ProfileScreen
+      onNavigate={(target) => navigation.navigate(target)}
+      onEditPersonal={() => navigation.navigate('EditPersonalInfo')}
+      onEditAdminDetails={() => navigation.navigate('AdminDetails')}
+      onViewIdCard={() => navigation.navigate('MyIdCard')}
+      onViewMembershipDetails={() => navigation.navigate('MembershipDetails')}
     />
   );
 };
@@ -87,13 +112,13 @@ const MEMBER_TABS: MemberTabItem[] = [
     name: 'MemberReceipts',
     label: 'Receipts',
     Icon: FileText,
-    component: DonationsScreen,
+    component: ReceiptsListScreen,
   },
   {
     name: 'MemberProfile',
     label: 'Profile',
     Icon: User,
-    component: ProfileScreen,
+    component: MemberProfileScreenComponent,
   },
 ];
 
@@ -159,6 +184,7 @@ export const MemberTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
       initialRouteName="MemberHome"
+      backBehavior="history"
       tabBar={props => <MemberCustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
@@ -175,8 +201,15 @@ export const MemberTabNavigator: React.FC = () => {
       >
         {({ navigation }) => (
           <MembershipDetailsScreen
-            onBack={navigation.goBack}
+            onBack={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MemberHome');
+              }
+            }}
             onRenewPress={() => navigation.navigate('RenewMembership')}
+            onMemberCardPress={() => navigation.navigate('MyIdCard')}
           />
         )}
       </Tab.Screen>
@@ -186,7 +219,13 @@ export const MemberTabNavigator: React.FC = () => {
       >
         {({ navigation }) => (
           <RenewMembershipScreen
-            onBack={navigation.goBack}
+            onBack={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MembershipDetails');
+              }
+            }}
             onProfilePress={() => navigation.navigate('MemberProfile')}
           />
         )}
@@ -199,16 +238,16 @@ export const MemberTabNavigator: React.FC = () => {
           <MemberHomeDashboardScreen
             onBack={navigation.goBack}
             onOpenMembershipInfo={() => navigation.navigate('MembershipDetails')}
-            onOpenMembershipDetails={() => navigation.navigate('MemberDashboardDetails')}
-            onOpenRight={() => {}}
-            onOpenRights={() => {}}
-            onOpenComplaint={() => navigation.navigate('MemberProfile')}
+            onOpenMembershipDetails={() => navigation.navigate('MembershipDetails')}
+            onOpenRight={(rightId) => navigation.navigate('MemberRights', { rightId })}
+            onOpenRights={() => navigation.navigate('KnowYourRights')}
+            onOpenComplaint={() => navigation.navigate('MemberComplaint')}
             onOpenEvents={() => navigation.navigate('MemberEvents')}
-            onOpenEvent={() => navigation.navigate('MemberEvents')}
+            onOpenEvent={(event) => navigation.navigate('EventDetails', { event })}
             onOpenDonation={() => navigation.navigate('MemberCauses')}
             onOpenHome={() => navigation.navigate('MemberHome')}
-            onOpenAbout={() => {}}
-            onOpenNews={() => {}}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenNews={() => navigation.navigate('News')}
             onOpenContact={() => navigation.navigate('MemberProfile')}
           />
         )}
@@ -225,12 +264,12 @@ export const MemberTabNavigator: React.FC = () => {
             onOpenComplaint={() => navigation.navigate('MemberComplaint')}
             onOpenDonation={() => navigation.navigate('MemberCauses')}
             onOpenRight={(rightId) => navigation.navigate('MemberRights', { rightId })}
-            onOpenRights={() => navigation.navigate('MemberRights')}
+            onOpenRights={() => navigation.navigate('KnowYourRights')}
             onOpenEvents={() => navigation.navigate('MemberEvents')}
-            onOpenEvent={() => navigation.navigate('MemberEvents')}
+            onOpenEvent={(event) => navigation.navigate('EventDetails', { event })}
             onOpenHome={() => navigation.navigate('MemberHome')}
-            onOpenAbout={() => navigation.navigate('MemberProfile')}
-            onOpenNews={() => navigation.navigate('MemberEvents')}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenNews={() => navigation.navigate('News')}
             onOpenContact={() => navigation.navigate('MemberProfile')}
           />
         )}
@@ -259,16 +298,198 @@ export const MemberTabNavigator: React.FC = () => {
             rightId={route?.params?.rightId || 'human-rights'}
             showBottomNav={false}
             onBack={navigation.goBack}
-            onOpenRights={() => navigation.navigate('MemberRights')}
+            onOpenRights={() => navigation.navigate('KnowYourRights')}
             onFileComplaint={() => navigation.navigate('MemberComplaint')}
             onOpenEvents={() => navigation.navigate('MemberEvents')}
             onOpenHome={() => navigation.navigate('MemberHome')}
-            onOpenAbout={() => navigation.navigate('MemberProfile')}
+            onOpenAbout={() => navigation.navigate('About')}
             onOpenContact={() => navigation.navigate('MemberProfile')}
             onOpenRight={(id) => navigation.navigate('MemberRights', { rightId: id })}
           />
         )}
       </Tab.Screen>
+      <Tab.Screen
+        name="ReceiptDetail"
+        options={{ tabBarButton: () => null }}
+        component={ReceiptDetailScreen}
+      />
+      <Tab.Screen
+        name="ReceiptPdfPreview"
+        options={{ tabBarButton: () => null }}
+        component={ReceiptPdfPreviewScreen}
+      />
+
+      {/* Community & Impact Pages */}
+      <Tab.Screen
+        name="About"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <AboutScreen
+            onBack={navigation.goBack}
+            onNavigate={(target) => {
+              if (target === 'KnowYourRights' || target === 'rights') {
+                navigation.navigate('KnowYourRights');
+              } else if (target === 'events' || target === 'Events') {
+                navigation.navigate('MemberEvents');
+              } else if (target === 'news' || target === 'News') {
+                navigation.navigate('News');
+              } else if (target === 'contact' || target === 'Contact') {
+                navigation.navigate('MemberProfile');
+              } else {
+                navigation.navigate(target as any);
+              }
+            }}
+            onOpenRights={() => navigation.navigate('KnowYourRights')}
+            onOpenContact={() => navigation.navigate('MemberProfile')}
+            onOpenEvents={() => navigation.navigate('MemberEvents')}
+            onOpenNews={() => navigation.navigate('News')}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="KnowYourRights"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <MemberRightsScreen
+            onBack={navigation.goBack}
+            onOpenRight={(rightId) =>
+              navigation.navigate('MemberRights', { rightId })
+            }
+            onFileComplaint={() => navigation.navigate('MemberComplaint')}
+            onContactSupport={() => navigation.navigate('MemberProfile')}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="News"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <NewsListScreen
+            onViewNews={(news) => navigation.navigate('NewsDetails', { news })}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="NewsDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <NewsDetailsScreen
+            news={route.params?.news}
+            onBack={navigation.goBack}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="Blogs"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <BlogsListScreen
+            onOpenBlog={(blog) => navigation.navigate('BlogDetails', { blog })}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="BlogDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <BlogDetailsScreen
+            blog={route.params?.blog}
+            onBack={navigation.goBack}
+          />
+        )}
+      </Tab.Screen>
+
+      {/* Account, Events & System Pages */}
+      <Tab.Screen
+        name="Notifications"
+        options={{ tabBarButton: () => null }}
+        component={NotificationsScreen}
+      />
+
+      <Tab.Screen
+        name="Settings"
+        options={{ tabBarButton: () => null }}
+        component={ProfileSettingsScreen}
+      />
+
+      <Tab.Screen
+        name="MyIdCard"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <MyIdCardScreen onBack={navigation.goBack} />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="EventDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <EventDetailsScreen
+            event={route.params?.event}
+            onBack={navigation.goBack}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="AdminComplaintsTab"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <FileComplaintScreen
+            onBack={navigation.goBack}
+            onOpenHome={() => navigation.navigate('MemberHome')}
+            onOpenEvents={() => navigation.navigate('MemberEvents')}
+            onOpenRights={() => navigation.navigate('KnowYourRights')}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenContact={() => navigation.navigate('MemberProfile')}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="EditPersonalInfo"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <EditPersonalInfoScreen
+            onBack={navigation.goBack}
+            onSaved={navigation.goBack}
+            onNavigate={(target) => navigation.navigate(target)}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="AdminDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <AdminDetailsScreen
+            onBack={navigation.goBack}
+            onNavigate={(target) => navigation.navigate(target)}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="MyProfile"
+        options={{ tabBarButton: () => null }}
+        component={MemberProfileScreenComponent}
+      />
     </Tab.Navigator>
   );
 };

@@ -238,7 +238,7 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
                 },
               ]}
             >
-              <QrCode size={qrSize} data={profile.memberId} />
+              <QrCode size={qrSize} data={profile.memberId || 'HRSJM-00001'} />
             </View>
             <Text style={[styles.tapToView, { fontSize: tapToViewSize }]}>
               Tap to View

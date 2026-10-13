@@ -35,12 +35,24 @@ export const donationsService = {
       params.search = query.search.trim();
     }
 
-    const response = await apiClient.get<PaginatedResponse<Donation>>(
-      ApiRoutes.DONATIONS.BASE,
-      { params },
-    );
+    try {
+      const response = await apiClient.get<PaginatedResponse<Donation>>(
+        ApiRoutes.DONATIONS.BASE,
+        { params },
+      );
 
-    return response.data;
+      return (response as any)?.data || response;
+    } catch {
+      return {
+        items: [],
+        meta: {
+          page: typeof query.page === 'number' ? query.page : 1,
+          limit: typeof query.limit === 'number' ? query.limit : 20,
+          total: 0,
+          totalPages: 1,
+        },
+      };
+    }
   },
 
   /**

@@ -82,11 +82,11 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
     }
 
     const cleanMobile = mobileNumber.replace(/\D/g, '');
-    if (!cleanMobile || cleanMobile.length < 10) {
-      newErrors.mobileNumber = 'Enter a valid 10-digit mobile number.';
+    if (!cleanMobile || cleanMobile.length !== 10) {
+      newErrors.mobileNumber = 'Mobile number must be exactly 10 digits.';
     }
 
-    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim().toLowerCase())) {
       newErrors.email = 'Please enter a valid email address.';
     }
 
@@ -139,8 +139,8 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
       await onSubmit({
         category_id: selectedCategoryId,
         full_name: fullName.trim(),
-        mobile_number: mobileNumber.replace(/\D/g, ''),
-        email: email.trim() || undefined,
+        mobile_number: mobileNumber.replace(/\D/g, '').slice(0, 10),
+        email: email.trim() ? email.trim().toLowerCase() : undefined,
         personal_details: {
           gender,
           qualification: finalQualification,
@@ -323,7 +323,8 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                   maxLength={10}
                   value={mobileNumber}
                   onChangeText={text => {
-                    setMobileNumber(text);
+                    const clean = text.replace(/\D/g, '').slice(0, 10);
+                    setMobileNumber(clean);
                     if (errors.mobileNumber)
                       setErrors(prev => ({ ...prev, mobileNumber: '' }));
                   }}
@@ -345,7 +346,8 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 autoCapitalize="none"
                 value={email}
                 onChangeText={text => {
-                  setEmail(text);
+                  const clean = text.toLowerCase().trim();
+                  setEmail(clean);
                   if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
                 }}
               />

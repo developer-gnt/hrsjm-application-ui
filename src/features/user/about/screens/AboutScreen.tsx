@@ -27,6 +27,7 @@ import { AboutWhoWeAreSection } from '../components/AboutWhoWeAreSection';
 import { AboutWorkGrid } from '../components/AboutWorkGrid';
 import { HumanRightsMonitoringSection } from '../components/HumanRightsMonitoringSection';
 import { ABOUT_CONTENT } from '../data/about-content';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import type { AboutWorkArea } from '../types/about.types';
 import type { WhatWeDoId } from '../../what-we-do';
 
@@ -39,6 +40,8 @@ export interface AboutScreenProps {
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
   onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
+  showBottomNav?: boolean;
+  useAdminHeader?: boolean;
 }
 
 const SectionHeading: React.FC<{
@@ -62,6 +65,8 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
   onOpenEvents,
   onOpenNews,
   onOpenWhatWeDo,
+  showBottomNav = false,
+  useAdminHeader = true,
 }) => {
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const monitoringOffset = useRef(0);
@@ -120,12 +125,21 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <HomeHeader
-        showNotificationDot
-        notificationDotColor={AdminColors.accentGold}
-        onPressSearch={() => onNavigate?.('search') || showComingSoon('Search')}
-        onPressNotifications={() => onNavigate?.('notifications') || showComingSoon('Notifications')}
-      />
+      {useAdminHeader ? (
+        <AdminHeader
+          unreadCount={1}
+          showBack={Boolean(onBack)}
+          onBack={onBack}
+          title={onBack ? 'About HRSJM' : undefined}
+        />
+      ) : (
+        <HomeHeader
+          showNotificationDot
+          notificationDotColor={AdminColors.accentGold}
+          onPressSearch={() => onNavigate?.('search') || showComingSoon('Search')}
+          onPressNotifications={() => onNavigate?.('notifications') || showComingSoon('Notifications')}
+        />
+      )}
       <ScrollView
         ref={scrollRef}
         style={styles.scroll}
@@ -176,7 +190,9 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
           />
         </View>
       </ScrollView>
-      <UserBottomNavigation activeTab="about" onTabPress={handleTabPress} />
+      {showBottomNav ? (
+        <UserBottomNavigation activeTab="about" onTabPress={handleTabPress} />
+      ) : null}
     </SafeAreaView>
   );
 };

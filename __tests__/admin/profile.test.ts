@@ -105,14 +105,14 @@ describe('My Profile & ID Card Flow', () => {
     expect(apiClient.patch).toHaveBeenCalledWith('/auth/me', {
       full_name: 'Updated Name',
       email: 'updated@hrsjm.org',
-      mobile_number: '+91 91234 56789',
-      phone: '+91 91234 56789',
+      mobile_number: '9123456789',
+      phone: '9123456789',
     });
 
     const profile = useProfileStore.getState().profile;
     expect(profile.fullName).toBe('Updated Name');
     expect(profile.email).toBe('updated@hrsjm.org');
-    expect(profile.phone).toBe('+91 91234 56789');
+    expect(profile.phone).toBe('9123456789');
   });
 
   it('updates admin role among the 4 allowed roles without department', async () => {

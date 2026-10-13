@@ -10,11 +10,12 @@ import { getQrMatrix } from '../utils/qrPattern';
 
 interface QrCodeProps {
   size: number;
-  data: string;
+  data?: string;
 }
 
 export const QrCode: React.FC<QrCodeProps> = ({ size, data }) => {
-  const matrix = useMemo(() => getQrMatrix(data), [data]);
+  const safeData = data && data.trim().length > 0 ? data.trim() : 'HRSJM-MEMBER';
+  const matrix = useMemo(() => getQrMatrix(safeData), [safeData]);
 
   const quietZone = size * 0.06;
   const gridArea = size - quietZone * 2;

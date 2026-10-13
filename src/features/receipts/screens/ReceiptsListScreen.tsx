@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Platform,
@@ -12,12 +12,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AdminTopBar } from '../../../core/components/admin/AdminTopBar';
+import { AdminHeader } from '../../../app/navigation/AdminHeader';
 import { Icon } from '../../../core/components/common/Icon';
 import { AppEmptyState } from '../../../core/components/common/AppEmptyState';
 import { colors, serif, spacing, radius } from '../../../core/theme/theme';
 import type { AppStackParamList } from '../../../core/navigation/types';
-import { MOCK_DONATION_RECORDS } from '../../donations/data/donations.mock';
+import { receiptsService } from '../services/receipts.service';
 import type {
   DonationRecord,
   ReceiptFilterState,
@@ -36,28 +36,49 @@ const INITIAL_RECEIPT_FILTERS: ReceiptFilterState = {
 
 export function ReceiptsListScreen() {
   const navigation = useNavigation<NavProp>();
+  const [receipts, setReceipts] = useState<DonationRecord[]>([]);
   const [activeTab, setActiveTab] = useState<ReceiptFilterTab>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<ReceiptFilterState>(INITIAL_RECEIPT_FILTERS);
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const loadReceipts = useCallback(async () => {
+    try {
+      const data = await receiptsService.getMyReceipts();
+      setReceipts(data);
+    } catch (err) {
+      console.warn('Error loading receipts:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadReceipts();
+  }, [loadReceipts]);
 
   // Dynamic counts for receipt document types
   const tabCounts = useMemo(() => {
-    const all = MOCK_DONATION_RECORDS.length;
-    const membership = MOCK_DONATION_RECORDS.filter(
+    const all = receipts.length;
+    const membership = receipts.filter(
       r => r.type === 'Membership'
     ).length;
-    const donation = MOCK_DONATION_RECORDS.filter(
+    const renewal = receipts.filter(
+      r => r.type === 'Renewal'
+    ).length;
+    const donation = receipts.filter(
       r => r.type === 'Donation'
     ).length;
-    return { all, membership, donation };
-  }, []);
+    return { all, membership, renewal, donation };
+  }, [receipts]);
 
   const tabs: Array<{ key: ReceiptFilterTab; label: string; count: number }> = [
     { key: 'ALL', label: 'All', count: tabCounts.all },
     { key: 'Membership', label: 'Membership', count: tabCounts.membership },
+    { key: 'Renewal', label: 'Renewal', count: tabCounts.renewal },
     { key: 'Donation', label: 'Donation', count: tabCounts.donation },
   ];
 
@@ -76,9 +97,12 @@ export function ReceiptsListScreen() {
 
   // Combined Filter evaluation
   const filteredReceipts = useMemo(() => {
-    return MOCK_DONATION_RECORDS.filter(item => {
+    return receipts.filter(item => {
       // 1. Quick Tabs
       if (activeTab === 'Membership' && item.type !== 'Membership') {
+        return false;
+      }
+      if (activeTab === 'Renewal' && item.type !== 'Renewal') {
         return false;
       }
       if (activeTab === 'Donation' && item.type !== 'Donation') {
@@ -144,13 +168,11 @@ export function ReceiptsListScreen() {
 
       return true;
     });
-  }, [activeTab, filters, searchQuery]);
+  }, [receipts, activeTab, filters, searchQuery]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 600);
+    loadReceipts();
   };
 
   const handleApplyFilters = (newFilters: ReceiptFilterState) => {
@@ -170,13 +192,14 @@ export function ReceiptsListScreen() {
   const handleCardPress = (record: DonationRecord) => {
     navigation.navigate('ReceiptDetail', {
       receiptNo: record.receiptNo,
+      record,
       fromScreen: 'ReceiptsList',
     });
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <AdminTopBar />
+      <AdminHeader unreadCount={1} />
 
       {loading ? (
         <View style={styles.skeletonContainer}>
@@ -298,10 +321,10 @@ export function ReceiptsListScreen() {
                 message={
                   searchQuery.length > 0
                     ? `No receipts found matching "${searchQuery}".`
-                    : 'There are no receipts matching your current filters.'
+                    : 'You do not have any receipts yet. When you purchase a membership or make a donation, your official receipts will appear here.'
                 }
-                actionLabel="Clear All Filters"
-                onAction={handleClearAll}
+                actionLabel={searchQuery.length > 0 ? 'Clear All Filters' : undefined}
+                onAction={searchQuery.length > 0 ? handleClearAll : undefined}
               />
             </View>
           }

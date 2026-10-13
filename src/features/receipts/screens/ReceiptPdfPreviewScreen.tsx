@@ -12,7 +12,7 @@ import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-n
 import { colors, radius, serif, spacing } from '../../../core/theme/theme';
 import { Icon } from '../../../core/components/common/Icon';
 import { AppLogo } from '../../../core/components/common/AppLogo';
-import { formatCurrency } from '../../../core/utils/format';
+import { formatCurrency, amountToWords } from '../../../core/utils/format';
 import type { AppStackParamList } from '../../../core/navigation/types';
 import { MOCK_DONATION_RECORDS } from '../../donations/data/donations.mock';
 import { ShareReceiptSheet } from '../components/ShareReceiptSheet';
@@ -31,6 +31,7 @@ export function ReceiptPdfPreviewScreen() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const record =
+    (route.params as any)?.record ||
     MOCK_DONATION_RECORDS.find(r => r.receiptNo === receiptNo) ||
     MOCK_DONATION_RECORDS[0];
 
@@ -117,7 +118,9 @@ export function ReceiptPdfPreviewScreen() {
               </Text>
               <View style={styles.goldDivider} />
               <Text style={styles.docTitle}>
-                {record.type === 'Membership'
+                {record.type === 'Renewal'
+                  ? 'Membership Renewal Receipt'
+                  : record.type === 'Membership'
                   ? 'Membership Receipt'
                   : 'Donation Receipt'}
               </Text>
@@ -140,13 +143,21 @@ export function ReceiptPdfPreviewScreen() {
               </View>
 
               <View style={styles.pdfRow}>
-                <Text style={styles.pdfLabel}>Donor Name</Text>
+                <Text style={styles.pdfLabel}>
+                  {record.type === 'Donation' ? 'Donor Name' : 'Member Name'}
+                </Text>
                 <Text style={styles.pdfColon}>:</Text>
                 <Text style={styles.pdfValue}>{record.donorName}</Text>
               </View>
 
               <View style={styles.pdfRow}>
-                <Text style={styles.pdfLabel}>Cause</Text>
+                <Text style={styles.pdfLabel}>
+                  {record.type === 'Renewal'
+                    ? 'Renewal Purpose'
+                    : record.type === 'Membership'
+                    ? 'Membership Type'
+                    : 'Cause'}
+                </Text>
                 <Text style={styles.pdfColon}>:</Text>
                 <Text style={styles.pdfValue}>{record.cause}</Text>
               </View>
@@ -173,7 +184,7 @@ export function ReceiptPdfPreviewScreen() {
                 </Text>
               </View>
               <Text style={styles.pdfAmountWords}>
-                {record.amountInWords || 'Two Thousand Five Hundred Rupees Only'}
+                {record.amountInWords || amountToWords(record.amount)}
               </Text>
             </View>
 

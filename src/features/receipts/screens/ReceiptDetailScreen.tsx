@@ -12,7 +12,7 @@ import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-n
 import { colors, radius, serif, spacing } from '../../../core/theme/theme';
 import { Icon } from '../../../core/components/common/Icon';
 import { AppLogo } from '../../../core/components/common/AppLogo';
-import { formatCurrency } from '../../../core/utils/format';
+import { formatCurrency, amountToWords } from '../../../core/utils/format';
 import type { AppStackParamList } from '../../../core/navigation/types';
 import { MOCK_DONATION_RECORDS } from '../../donations/data/donations.mock';
 import type { DonationRecord, DonationStatus } from '../../donations/types/donation.types';
@@ -58,6 +58,7 @@ export function ReceiptDetailScreen() {
 
   // Find corresponding donation or membership record
   const record: DonationRecord =
+    (route.params as any)?.record ||
     MOCK_DONATION_RECORDS.find(r => r.receiptNo === receiptNo) ||
     MOCK_DONATION_RECORDS[0];
 
@@ -72,6 +73,7 @@ export function ReceiptDetailScreen() {
   const handleDownload = () => {
     navigation.navigate('ReceiptPdfPreview', {
       receiptNo: record.receiptNo,
+      record,
       fromScreen,
     });
   };
@@ -126,7 +128,11 @@ export function ReceiptDetailScreen() {
             </Text>
             <View style={styles.paperTitleBadge}>
               <Text style={styles.paperTitleText}>
-                {isMembership ? 'Membership Receipt' : 'Donation Receipt'}
+                {record.type === 'Renewal'
+                  ? 'Membership Renewal Receipt'
+                  : isMembership
+                  ? 'Membership Receipt'
+                  : 'Donation Receipt'}
               </Text>
             </View>
           </View>
@@ -151,13 +157,19 @@ export function ReceiptDetailScreen() {
             </View>
 
             <View style={styles.gridRow}>
-              <Text style={styles.fieldLabel}>Donor Name</Text>
+              <Text style={styles.fieldLabel}>
+                {record.type === 'Donation' ? 'Donor Name' : 'Member Name'}
+              </Text>
               <Text style={styles.fieldValue}>{record.donorName}</Text>
             </View>
 
             <View style={styles.gridRow}>
               <Text style={styles.fieldLabel}>
-                {isMembership ? 'Membership Type' : 'Cause'}
+                {record.type === 'Renewal'
+                  ? 'Renewal Purpose'
+                  : isMembership
+                  ? 'Membership Type'
+                  : 'Cause'}
               </Text>
               <Text style={styles.fieldValue}>{record.cause}</Text>
             </View>
@@ -175,7 +187,7 @@ export function ReceiptDetailScreen() {
               <Text style={styles.amountVal}>{formatCurrency(record.amount)}</Text>
             </View>
             <Text style={styles.amountWords}>
-              {record.amountInWords || 'Amount in words'}
+              {record.amountInWords || amountToWords(record.amount)}
             </Text>
           </View>
 

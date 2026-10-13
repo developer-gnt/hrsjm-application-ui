@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -16,20 +16,18 @@ import {
   Spacing,
 } from '../../../../core/theme';
 import { AppIcon } from '../../../user/components';
-import { USER_EVENTS } from '../../../user/events/data/user-events';
-import type { UserEvent } from '../../../user/events/data/user-events';
 import { HomeHeader } from '../../../user/home/components/HomeHeader';
 import { UserBottomNavigation } from '../../../user/home/components/UserBottomNavigation';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useAuthStore } from '../../../auth/store/authStore';
 import type { HomeTab } from '../../../user/home/types/home.types';
-import {
-  getUpcomingMemberEvents,
-  MOCK_ACTIVE_MEMBERSHIP,
-} from '../data/member-dashboard';
+import { MOCK_ACTIVE_MEMBERSHIP } from '../data/member-dashboard';
 import type { MemberMembershipRecord } from '../types/member-dashboard.types';
+import { getEventsList } from '../../../admin/content/events/services/events.service';
+import type { EventListItem } from '../../../admin/content/events/types/events.types';
 
 const MEMBER_HERO_IMAGE = require('../../../../assets/images/member-hero-rally.jpg');
+const DEFAULT_EVENT_IMAGE = require('../../../../assets/images/event-legal-awareness.jpg');
 
 interface QuickAction {
   title: string;
@@ -46,7 +44,7 @@ export interface MemberHomeDashboardScreenProps {
   onOpenRights?: () => void;
   onOpenComplaint?: () => void;
   onOpenEvents?: () => void;
-  onOpenEvent?: (event: UserEvent) => void;
+  onOpenEvent?: (event: EventListItem) => void;
   onOpenDonation?: () => void;
   onOpenHome?: () => void;
   onOpenAbout?: () => void;
@@ -84,56 +82,71 @@ const DashboardCard: React.FC<React.PropsWithChildren> = ({ children }) => (
 );
 
 const EventCard: React.FC<{
-  event: UserEvent;
+  event: EventListItem;
   onPress: () => void;
-}> = ({ event, onPress }) => (
-  <Pressable
-    style={styles.eventCard}
-    onPress={onPress}
-    accessibilityRole="button"
-    accessibilityLabel={`Event: ${event.title}`}
-  >
-    <View style={styles.eventMedia}>
-      <Image
-        source={event.image}
-        style={styles.eventImage}
-        resizeMode="cover"
-      />
-      <View style={styles.eventDateBadge}>
-        <Text style={styles.eventDayText}>{event.day || '18'}</Text>
-        <Text style={styles.eventMonthText}>{event.month || 'Oct'}</Text>
-      </View>
-    </View>
-    <View style={styles.eventBody}>
-      <View style={styles.eventTagsRow}>
-        <View style={styles.tagWorkshop}>
-          <Text style={styles.tagWorkshopText}>{event.category || 'Workshop'}</Text>
+}> = ({ event, onPress }) => {
+  const eventDate = new Date(event.startAt);
+  const isValidDate = !isNaN(eventDate.getTime());
+  const day = isValidDate ? eventDate.getDate().toString() : '—';
+  const month = isValidDate
+    ? eventDate.toLocaleDateString('en-US', { month: 'short' })
+    : '—';
+
+  const imageSource = event.coverImageUrl
+    ? { uri: event.coverImageUrl }
+    : DEFAULT_EVENT_IMAGE;
+
+  return (
+    <Pressable
+      style={styles.eventCard}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Event: ${event.title}`}
+    >
+      <View style={styles.eventMedia}>
+        <Image
+          source={imageSource}
+          style={styles.eventImage}
+          resizeMode="cover"
+        />
+        <View style={styles.eventDateBadge}>
+          <Text style={styles.eventDayText}>{day}</Text>
+          <Text style={styles.eventMonthText}>{month}</Text>
         </View>
-        <View style={styles.tagInPerson}>
-          <Text style={styles.tagInPersonText}>In Person</Text>
-        </View>
       </View>
-      <Text style={styles.eventTitle} numberOfLines={2}>
-        {event.title}
-      </Text>
-      <View style={styles.eventLocation}>
-        <AppIcon name="map-pin" size={13} color="#64748B" />
-        <Text style={styles.eventLocationText} numberOfLines={1}>
-          {event.location}
+      <View style={styles.eventBody}>
+        <View style={styles.eventTagsRow}>
+          <View style={styles.tagWorkshop}>
+            <Text style={styles.tagWorkshopText}>
+              {event.category || 'Workshop'}
+            </Text>
+          </View>
+          <View style={styles.tagInPerson}>
+            <Text style={styles.tagInPersonText}>In Person</Text>
+          </View>
+        </View>
+        <Text style={styles.eventTitle} numberOfLines={2}>
+          {event.title}
         </Text>
+        <View style={styles.eventLocation}>
+          <AppIcon name="map-pin" size={13} color="#64748B" />
+          <Text style={styles.eventLocationText} numberOfLines={1}>
+            {event.location || 'Mumbai, Maharashtra'}
+          </Text>
+        </View>
+        <Pressable
+          style={styles.registerButton}
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Register for ${event.title}`}
+        >
+          <Text style={styles.registerButtonText}>Register Now</Text>
+          <AppIcon name="arrow-right" size={12} color={AdminColors.primaryDark} />
+        </Pressable>
       </View>
-      <Pressable
-        style={styles.registerButton}
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={`Register for ${event.title}`}
-      >
-        <Text style={styles.registerButtonText}>Register Now</Text>
-        <AppIcon name="arrow-right" size={12} color={AdminColors.primaryDark} />
-      </Pressable>
-    </View>
-  </Pressable>
-);
+    </Pressable>
+  );
+};
 
 export const MemberHomeDashboardScreen: React.FC<
   MemberHomeDashboardScreenProps
@@ -166,10 +179,53 @@ export const MemberHomeDashboardScreen: React.FC<
     joinedDate: membership?.joinedDate ?? MOCK_ACTIVE_MEMBERSHIP.joinedDate,
     validUntil: membership?.validUntil ?? MOCK_ACTIVE_MEMBERSHIP.validUntil,
   };
-  const upcomingEvents = useMemo(
-    () => getUpcomingMemberEvents(USER_EVENTS, new Date()).slice(0, 4),
-    [],
-  );
+
+  const [dbEvents, setDbEvents] = useState<EventListItem[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchUpcomingEvents = async () => {
+      try {
+        setIsLoadingEvents(true);
+        const res = await getEventsList({ limit: 50 });
+        if (isMounted) {
+          setDbEvents(res.events || []);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setDbEvents([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingEvents(false);
+        }
+      }
+    };
+
+    fetchUpcomingEvents();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    return dbEvents
+      .filter(event => {
+        if (!event.startAt) return false;
+        const startTime = new Date(event.startAt).getTime();
+        if (isNaN(startTime)) return false;
+        const endTime = event.endAt ? new Date(event.endAt).getTime() : startTime + 4 * 60 * 60 * 1000;
+
+        // An event is upcoming if it has not ended yet and starts today or in the future
+        const isUpcoming = endTime >= now.getTime() || startTime >= startOfToday;
+        return isUpcoming && event.status !== 'CANCELLED' && event.status !== 'COMPLETED';
+      })
+      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+  }, [dbEvents]);
   const quickActions: QuickAction[] = [
     { title: 'Know Your Rights', icon: 'book-open', onPress: onOpenRights || (() => undefined) },
     { title: 'File a Complaint', icon: 'file-text', onPress: onOpenComplaint || (() => undefined) },
@@ -237,7 +293,7 @@ export const MemberHomeDashboardScreen: React.FC<
           {/* Active Member Status Card */}
           <Pressable
             style={styles.membershipStatusCard}
-            onPress={onOpenMembershipDetails || (() => undefined)}
+            onPress={onOpenMembershipDetails || onOpenMembershipInfo || (() => undefined)}
             accessibilityRole="button"
             accessibilityLabel="View Membership Details"
           >
@@ -255,14 +311,19 @@ export const MemberHomeDashboardScreen: React.FC<
               </View>
             </View>
 
-            <View style={styles.viewMembershipButton}>
+            <Pressable
+              style={styles.viewMembershipButton}
+              onPress={onOpenMembershipDetails || onOpenMembershipInfo || (() => undefined)}
+              accessibilityRole="button"
+              accessibilityLabel="View Membership"
+            >
               <Text style={styles.viewMembershipText}>View Membership</Text>
               <AppIcon
                 name="arrow-right"
                 size={13}
                 color={AdminColors.primaryDark}
               />
-            </View>
+            </Pressable>
           </Pressable>
 
           {/* Quick Actions (4 in a row) */}
@@ -323,7 +384,11 @@ export const MemberHomeDashboardScreen: React.FC<
               linkLabel="View All"
               onLinkPress={onOpenEvents}
             />
-            {upcomingEvents.length > 0 ? (
+            {isLoadingEvents ? (
+              <View style={styles.noEventsCard}>
+                <Text style={styles.noEventsSubtitle}>Loading upcoming events...</Text>
+              </View>
+            ) : upcomingEvents.length > 0 ? (
               <View style={styles.eventList}>
                 {upcomingEvents.slice(0, 1).map(event => (
                   <EventCard
@@ -334,9 +399,13 @@ export const MemberHomeDashboardScreen: React.FC<
                 ))}
               </View>
             ) : (
-              <DashboardCard>
-                <Text style={styles.bodyText}>No upcoming events are available.</Text>
-              </DashboardCard>
+              <View style={styles.noEventsCard}>
+                <AppIcon name="calendar" size={28} color="#94A3B8" />
+                <Text style={styles.noEventsTitle}>No events yet</Text>
+                <Text style={styles.noEventsSubtitle}>
+                  There are no upcoming events scheduled at the moment.
+                </Text>
+              </View>
             )}
           </View>
 
@@ -811,5 +880,29 @@ const styles = StyleSheet.create({
     color: '#0284C7',
     fontSize: 11.5,
     fontWeight: '700',
+  },
+  noEventsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    ...Shadows.subtle,
+  },
+  noEventsTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginTop: 4,
+  },
+  noEventsSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });

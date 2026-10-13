@@ -27,6 +27,7 @@ import { RightsFilterSheet } from '../components/RightsFilterSheet';
 import { RightsStatusTabs } from '../components/RightsStatusTabs';
 import { RightsSummaryCard } from '../components/RightsSummaryCard';
 import { RightsActionMenu } from '../components/RightsActionMenu';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
 import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
 import {
@@ -133,6 +134,7 @@ interface KnowYourRightsScreenProps {
    * not handle fall back to the shell's preview notice.
    */
   onTabPress?: (tab: string) => void;
+  showBottomNav?: boolean;
 }
 
 /**
@@ -147,6 +149,7 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
   onOpenArticle,
   onEditArticle,
   onTabPress,
+  showBottomNav = false,
 }) => {
   const [uiState, setUiState] = useState<RightsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
@@ -327,8 +330,7 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
 
   return (
     <View style={styles.root}>
-      {/* TEMPORARY preview shell: real global header is owned by the app-level architecture. */}
-      <AdminShellHeader />
+      <AdminHeader unreadCount={1} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         {/* Page header: title/subtitle + Add Rights Content */}
@@ -441,8 +443,9 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
         )}
       </SafeAreaView>
 
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar activeTab="rights" onTabPress={handleShellTabPress} />
+      {showBottomNav ? (
+        <AdminShellTabBar activeTab="rights" onTabPress={handleShellTabPress} />
+      ) : null}
 
       <RightsFilterSheet
         visible={filterSheetVisible}

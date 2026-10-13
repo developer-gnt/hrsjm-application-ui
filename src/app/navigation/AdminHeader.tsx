@@ -88,18 +88,20 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     }
   };
 
+  const isAdmin = user?.roles?.some(r => r.name === 'ADMIN' || r.name === 'SUPER_ADMIN') ?? false;
+
   const handleOpenNotifications = () => {
     if (onNavigate) {
       onNavigate(AppRoutes.NOTIFICATIONS);
     } else if (navigation?.navigate) {
-      try {
-        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS });
-      } catch {
+      if (isAdmin) {
         try {
-          navigation.navigate(AppRoutes.NOTIFICATIONS);
+          navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS });
         } catch {
-          // ignore
+          navigation.navigate(AppRoutes.NOTIFICATIONS);
         }
+      } else {
+        navigation.navigate('Notifications');
       }
     } else if (onOpenMore) {
       onOpenMore();
@@ -111,10 +113,14 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     if (onNavigate) {
       onNavigate(AppRoutes.MY_PROFILE);
     } else if (navigation?.navigate) {
-      try {
-        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
-      } catch {
-        navigation.navigate(AppRoutes.MY_PROFILE);
+      if (isAdmin) {
+        try {
+          navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
+        } catch {
+          navigation.navigate(AppRoutes.MY_PROFILE);
+        }
+      } else {
+        navigation.navigate('MemberProfile');
       }
     } else {
       setProfileModalVisible(true);
@@ -149,42 +155,83 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     if (onNavigate) {
       onNavigate(AppRoutes.MY_PROFILE);
     } else if (navigation?.navigate) {
-      try {
-        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
-      } catch {
+      if (isAdmin) {
         try {
-          navigation.navigate(AppRoutes.MY_PROFILE);
+          navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
         } catch {
-          // ignore
+          navigation.navigate(AppRoutes.MY_PROFILE);
         }
+      } else {
+        navigation.navigate('MemberProfile');
       }
     }
   };
 
   const handleDrawerNavigate = (rawTarget: string) => {
-    const target = TAB_TARGET_MAP[rawTarget] || rawTarget;
-
     if (onNavigate) {
-      onNavigate(target);
+      onNavigate(rawTarget);
       return;
     }
 
     if (navigation?.navigate) {
-      if (TAB_ROUTE_SET.has(target as any)) {
-        try {
-          navigation.navigate(target);
-        } catch {
-          // ignore
-        }
-      } else {
-        try {
-          navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: target });
-        } catch {
+      if (isAdmin) {
+        const target = TAB_TARGET_MAP[rawTarget] || rawTarget;
+        if (TAB_ROUTE_SET.has(target as any)) {
           try {
             navigation.navigate(target);
           } catch {
             // ignore
           }
+        } else {
+          try {
+            navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: target });
+          } catch {
+            try {
+              navigation.navigate(target);
+            } catch {
+              // ignore
+            }
+          }
+        }
+      } else {
+        // Non-admin / Member navigation routing
+        const memberTargetMap: Record<string, string> = {
+          [AppRoutes.ADMIN_COMPLAINTS_TAB]: 'MemberComplaint',
+          Complaints: 'MemberComplaint',
+          SupportTickets: 'MemberComplaint',
+          complaints: 'MemberComplaint',
+          [AppRoutes.MY_PROFILE]: 'MemberProfile',
+          profile: 'MemberProfile',
+          [AppRoutes.KNOW_YOUR_RIGHTS]: 'KnowYourRights',
+          rights: 'KnowYourRights',
+          [AppRoutes.ABOUT]: 'About',
+          about: 'About',
+          [AppRoutes.NEWS]: 'News',
+          news: 'News',
+          [AppRoutes.BLOGS]: 'Blogs',
+          blogs: 'Blogs',
+          [AppRoutes.NOTIFICATIONS]: 'Notifications',
+          notifications: 'Notifications',
+          [AppRoutes.SETTINGS]: 'Settings',
+          settings: 'Settings',
+          ProfileSettings: 'Settings',
+          MemberHome: 'MemberHome',
+          MemberCauses: 'MemberCauses',
+          MemberEvents: 'MemberEvents',
+          MemberReceipts: 'MemberReceipts',
+          MembershipDetails: 'MembershipDetails',
+          RenewMembership: 'RenewMembership',
+        };
+
+        const resolvedTarget =
+          memberTargetMap[rawTarget] ||
+          memberTargetMap[TAB_TARGET_MAP[rawTarget] || ''] ||
+          rawTarget;
+
+        try {
+          navigation.navigate(resolvedTarget);
+        } catch {
+          // ignore
         }
       }
     } else if (onOpenMore) {
