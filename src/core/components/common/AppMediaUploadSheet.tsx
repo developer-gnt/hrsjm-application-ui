@@ -108,6 +108,46 @@ export const AppMediaUploadSheet: React.FC<AppMediaUploadSheetProps> = ({
 
   const isWeb = Platform.OS === 'web' || typeof (globalThis as any).document !== 'undefined';
 
+  const compressImageOnWeb = (
+    dataUrl: string,
+    maxDimension: number,
+    quality: number,
+    callback: (compressed: string) => void,
+  ) => {
+    const webGlobal: any = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
+    if (!webGlobal.Image || !webGlobal.document) {
+      callback(dataUrl);
+      return;
+    }
+    const img = new webGlobal.Image();
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+      const canvas = webGlobal.document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        callback(dataUrl);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      const compressed = canvas.toDataURL('image/jpeg', quality);
+      callback(compressed);
+    };
+    img.onerror = () => callback(dataUrl);
+    img.src = dataUrl;
+  };
+
   const pickFromWeb = (isCamera: boolean) => {
     const webGlobal: any = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
     const doc = webGlobal.document;
@@ -124,10 +164,12 @@ export const AppMediaUploadSheet: React.FC<AppMediaUploadSheetProps> = ({
         const reader = new webGlobal.FileReader();
         reader.onload = () => {
           if (typeof reader.result === 'string') {
-            const uri = reader.result;
-            setSelectedUri(uri);
-            onSelect(uri);
-            onClose();
+            const rawUri = reader.result;
+            compressImageOnWeb(rawUri, 1280, 0.8, (optimizedUri) => {
+              setSelectedUri(optimizedUri);
+              onSelect(optimizedUri);
+              onClose();
+            });
           }
         };
         reader.readAsDataURL(file);

@@ -9,7 +9,7 @@ export const getHomeActionDestination = (
   if (actionId === 'donate') {
     return 'donate';
   }
-  if (actionId === 'renew') {
+  if (actionId === 'renew' || actionId === 'membership') {
     return 'membership';
   }
   return undefined;

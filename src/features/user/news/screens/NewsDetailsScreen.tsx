@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   BackHandler,
   Image,
   ImageBackground,
-  Modal,
   ScrollView,
   Share,
   StyleSheet,
@@ -37,6 +36,8 @@ interface NewsDetailsScreenProps {
   onOpenRights: () => void;
   onOpenEvents: () => void;
   onOpenContact: () => void;
+  showBottomNav?: boolean;
+  hideBottomNav?: boolean;
 }
 
 interface ShareOption {
@@ -53,19 +54,26 @@ const SHARE_OPTIONS: ShareOption[] = [
   { id: 'copy', label: 'Copy Link', disabled: true },
 ];
 
-const formatDateBadge = (publishedAt: string) => {
-  const [year, month, day] = publishedAt.split('-');
-  const monthLabel = new Date(Number(year), Number(month) - 1, 1)
-    .toLocaleString('en', { month: 'short' })
-    .toUpperCase();
-  return { day, month: monthLabel, year };
+const formatDateBadge = (publishedAt?: string) => {
+  if (!publishedAt || typeof publishedAt !== 'string') {
+    return { day: '14', month: 'OCT', year: '2026' };
+  }
+  const parts = publishedAt.split('-');
+  if (parts.length >= 3) {
+    const [year, month, day] = parts;
+    const monthLabel = new Date(Number(year), Number(month) - 1, 1)
+      .toLocaleString('en', { month: 'short' })
+      .toUpperCase();
+    return { day: day || '14', month: monthLabel || 'OCT', year: year || '2026' };
+  }
+  return { day: '14', month: 'OCT', year: '2026' };
 };
 
 const locationLines = (location?: string) =>
   location?.replace(', ', ',\n') ?? 'Not specified';
 
 export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
-  article,
+  article: initialArticle,
   onBack,
   onOpenArticle,
   onOpenHome,
@@ -73,9 +81,11 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
   onOpenRights,
   onOpenEvents,
   onOpenContact,
+  showBottomNav = false,
+  hideBottomNav = true,
 }) => {
+  const article = initialArticle || USER_NEWS_ARTICLES[0];
   const { width } = useWindowDimensions();
-  const [galleryOpen, setGalleryOpen] = useState(false);
   const dateBadge = useMemo(() => formatDateBadge(article.publishedAt), [article.publishedAt]);
   const relatedArticles = useMemo(
     () => USER_NEWS_ARTICLES.filter(item => item.id !== article.id).slice(0, 2),
@@ -88,15 +98,11 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (galleryOpen) {
-        setGalleryOpen(false);
-        return true;
-      }
       handleBack();
       return true;
     });
     return () => subscription.remove();
-  }, [galleryOpen, handleBack]);
+  }, [handleBack]);
 
   const handleShare = async () => {
     await Share.share({
@@ -200,44 +206,6 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
           </View>
         </View>
 
-        <View style={styles.gallerySection}>
-          <View style={styles.paddedSectionHeader}>
-            <SectionHeader
-              title="Photo Gallery"
-              linkLabel="View All"
-              onLinkPress={() => setGalleryOpen(true)}
-            />
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.galleryRow}
-            accessibilityLabel="Article photo gallery"
-          >
-            {article.galleryImages.map((image, index) => (
-              <TouchableOpacity
-                key={`${article.id}-gallery-${index}`}
-                onPress={() => setGalleryOpen(true)}
-                activeOpacity={0.85}
-                accessibilityRole="imagebutton"
-                accessibilityLabel={`Open photo ${index + 1} from ${article.title}`}
-              >
-                <Image
-                  source={image}
-                  style={styles.galleryImage}
-                  resizeMode="cover"
-                  accessible={false}
-                />
-                {index === article.galleryImages.length - 1 ? (
-                  <View style={styles.galleryMoreOverlay}>
-                    <Text style={styles.galleryMoreText}>+5</Text>
-                  </View>
-                ) : null}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
         <View style={styles.paddedSection}>
           <Text style={styles.sectionTitle}>Related Topics</Text>
           <View style={styles.topicList}>
@@ -301,39 +269,9 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
         </View>
       </ScrollView>
 
-      <UserBottomNavigation activeTab="news" onTabPress={handleTabPress} />
-
-      <Modal
-        visible={galleryOpen}
-        animationType="slide"
-        onRequestClose={() => setGalleryOpen(false)}
-      >
-        <SafeAreaView style={styles.galleryModal}>
-          <View style={styles.galleryModalHeader}>
-            <TouchableOpacity
-              onPress={() => setGalleryOpen(false)}
-              style={styles.galleryClose}
-              accessibilityRole="button"
-              accessibilityLabel="Close photo gallery"
-            >
-              <AppIcon name="chevron-left" size={20} color={AdminColors.primaryDark} />
-            </TouchableOpacity>
-            <Text style={styles.galleryModalTitle}>Photo Gallery</Text>
-            <View style={styles.galleryHeaderSpacer} />
-          </View>
-          <ScrollView contentContainerStyle={styles.galleryModalContent}>
-            {article.galleryImages.map((image, index) => (
-              <Image
-                key={`${article.id}-gallery-modal-${index}`}
-                source={image}
-                style={styles.galleryModalImage}
-                resizeMode="cover"
-                accessibilityLabel={`Photo ${index + 1} from ${article.title}`}
-              />
-            ))}
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
+      {showBottomNav && !hideBottomNav && (
+        <UserBottomNavigation activeTab="news" onTabPress={handleTabPress} />
+      )}
     </SafeAreaView>
   );
 };
@@ -524,36 +462,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: Spacing.xs,
   },
-  gallerySection: {
-    marginTop: Spacing.lg,
-  },
   paddedSectionHeader: {
     paddingHorizontal: Spacing.base,
-  },
-  galleryRow: {
-    paddingHorizontal: Spacing.base,
-    paddingBottom: Spacing.xs,
-  },
-  galleryImage: {
-    width: 132,
-    height: 104,
-    borderRadius: BorderRadius.md,
-    marginRight: Spacing.sm,
-    backgroundColor: AdminColors.primaryLight,
-  },
-  galleryMoreOverlay: {
-    ...StyleSheet.absoluteFill,
-    width: 132,
-    height: 104,
-    borderRadius: BorderRadius.md,
-    backgroundColor: 'rgba(15, 23, 42, 0.52)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  galleryMoreText: {
-    color: AdminColors.textOnDark,
-    fontSize: 16,
-    fontWeight: '700',
   },
   paddedSection: {
     paddingHorizontal: Spacing.base,
@@ -613,47 +523,5 @@ const styles = StyleSheet.create({
   },
   moreNewsSection: {
     marginTop: Spacing.lg,
-  },
-  galleryModal: {
-    flex: 1,
-    backgroundColor: AdminColors.background,
-  },
-  galleryModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
-    backgroundColor: AdminColors.cardSurface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AdminColors.border,
-  },
-  galleryClose: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: BorderRadius.full,
-    backgroundColor: AdminColors.primaryLight,
-  },
-  galleryModalTitle: {
-    flex: 1,
-    color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  galleryHeaderSpacer: {
-    width: 38,
-  },
-  galleryModalContent: {
-    padding: Spacing.base,
-  },
-  galleryModalImage: {
-    width: '100%',
-    height: 220,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.md,
-    backgroundColor: AdminColors.primaryLight,
   },
 });

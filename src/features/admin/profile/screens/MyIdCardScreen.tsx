@@ -25,12 +25,14 @@ import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppBadge } from '../../../../core/components/common/AppBadge';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
+import { useAuthStore } from '../../../auth/store/authStore';
 import { MyIdCard } from '../components/MyIdCard';
 import { ProfileToast, ToastState } from '../components/ProfileToast';
 import {
   DownloadIcon,
   ShareIcon,
   BadgeCheckIcon,
+  IdCardIcon,
 } from '../components/ProfileIcons';
 import { useIdCardFiles } from '../hooks/useIdCardFiles';
 
@@ -58,6 +60,30 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  const authUser = useAuthStore(state => state.user);
+  const authRoleNames = (authUser?.roles ?? []).map(r => (r.name || '').toUpperCase());
+  const roleLower = (profile.role || '').toLowerCase();
+
+  const isMember =
+    authRoleNames.includes('MEMBER') ||
+    roleLower === 'member' ||
+    roleLower.includes('member');
+
+  const isAdmin =
+    authRoleNames.includes('ADMIN') ||
+    authRoleNames.includes('SUPER_ADMIN') ||
+    roleLower === 'admin' ||
+    roleLower.includes('admin');
+
+  const isSeeker =
+    authRoleNames.includes('SEEKER') ||
+    authRoleNames.includes('DONATION_SEEKER') ||
+    roleLower.includes('seeker') ||
+    roleLower.includes('donar seeker') ||
+    roleLower.includes('donation seeker');
+
+  const isAllowed = isMember || isAdmin || isSeeker;
 
   const handleBack = () => {
     if (onBack) {
@@ -110,59 +136,84 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
           />
         </View>
 
-        {/* Large ID card preview */}
-        <View style={styles.cardWrap}>
-          <MyIdCard profile={profile} width={cardWidth} />
-        </View>
-
-        {/* Actions */}
-        <AppButton
-          title={
-            busyAction === 'download' ? 'Generating PDF...' : 'Download ID Card'
-          }
-          variant="primary"
-          size="lg"
-          loading={busyAction === 'download'}
-          disabled={busyAction !== null}
-          icon={<DownloadIcon color={AdminColors.textOnDark} size={16} />}
-          onPress={() => download(profile)}
-          style={styles.downloadButton}
-        />
-        <AppButton
-          title={
-            busyAction === 'share' ? 'Preparing card…' : 'Share ID Card'
-          }
-          variant="outline"
-          size="lg"
-          loading={busyAction === 'share'}
-          disabled={busyAction !== null}
-          icon={<ShareIcon color={AdminColors.primary} size={16} />}
-          onPress={() => share(profile)}
-          style={styles.shareButton}
-        />
-
-        {/* About section */}
-        <View style={styles.aboutCard}>
-          <Text style={styles.aboutTitle}>About this card</Text>
-          <Text style={styles.aboutBody}>
-            This digitally issued HRSJM membership card identifies you as a
-            registered member of the Human Rights &amp; Social Justice
-            Mission. Each card carries a unique member ID and verification
-            QR code, and is valid through the validity period shown.
-          </Text>
-          <View style={styles.aboutRow}>
-            <BadgeCheckIcon size={15} />
-            <Text style={styles.aboutRowText}>
-              Digitally verifiable via the QR code
+        {!isAllowed ? (
+          <View style={styles.notAllowedCard}>
+            <View style={styles.notAllowedIconBox}>
+              <IdCardIcon size={36} color={AdminColors.primary} />
+            </View>
+            <Text style={styles.notAllowedTitle}>ID Card Unavailable</Text>
+            <Text style={styles.notAllowedBody}>
+              Official HRSJM ID Cards are issued exclusively to active Members, Administrators, and verified Donation Seekers.
             </Text>
+            <AppButton
+              title="Apply for Membership"
+              variant="primary"
+              size="md"
+              onPress={() => {
+                if (onNavigate) {
+                  onNavigate('MembershipCategories');
+                }
+              }}
+              style={styles.notAllowedButton}
+            />
           </View>
-          <View style={styles.aboutRow}>
-            <BadgeCheckIcon size={15} />
-            <Text style={styles.aboutRowText}>
-              Issued by HRSJM — {profile.memberSince}
-            </Text>
-          </View>
-        </View>
+        ) : (
+          <>
+            {/* Large ID card preview */}
+            <View style={styles.cardWrap}>
+              <MyIdCard profile={profile} width={cardWidth} />
+            </View>
+
+            {/* Actions */}
+            <AppButton
+              title={
+                busyAction === 'download' ? 'Generating PDF...' : 'Download ID Card'
+              }
+              variant="primary"
+              size="lg"
+              loading={busyAction === 'download'}
+              disabled={busyAction !== null}
+              icon={<DownloadIcon color={AdminColors.textOnDark} size={16} />}
+              onPress={() => download(profile)}
+              style={styles.downloadButton}
+            />
+            <AppButton
+              title={
+                busyAction === 'share' ? 'Preparing card…' : 'Share ID Card'
+              }
+              variant="outline"
+              size="lg"
+              loading={busyAction === 'share'}
+              disabled={busyAction !== null}
+              icon={<ShareIcon color={AdminColors.primary} size={16} />}
+              onPress={() => share(profile)}
+              style={styles.shareButton}
+            />
+
+            {/* About section */}
+            <View style={styles.aboutCard}>
+              <Text style={styles.aboutTitle}>About this card</Text>
+              <Text style={styles.aboutBody}>
+                This digitally issued HRSJM membership card identifies you as a
+                registered member of the Human Rights &amp; Social Justice
+                Mission. Each card carries a unique member ID and verification
+                QR code, and is valid through the validity period shown.
+              </Text>
+              <View style={styles.aboutRow}>
+                <BadgeCheckIcon size={15} />
+                <Text style={styles.aboutRowText}>
+                  Digitally verifiable via the QR code
+                </Text>
+              </View>
+              <View style={styles.aboutRow}>
+                <BadgeCheckIcon size={15} />
+                <Text style={styles.aboutRowText}>
+                  Issued by HRSJM — {profile.memberSince}
+                </Text>
+              </View>
+            </View>
+          </>
+        )}
       </ScrollView>
 
       {toastMessage ? (
@@ -279,6 +330,44 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 99,
     elevation: 20,
+  },
+  notAllowedCard: {
+    backgroundColor: AdminColors.cardSurface,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: AdminColors.border,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    marginTop: Spacing.lg,
+    ...Shadows.card,
+  },
+  notAllowedIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: AdminColors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
+  },
+  notAllowedTitle: {
+    ...Typography.screenTitle,
+    fontSize: 18,
+    color: AdminColors.primaryDark,
+    textAlign: 'center',
+    marginBottom: Spacing.xs,
+  },
+  notAllowedBody: {
+    ...Typography.body,
+    color: AdminColors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: Spacing.lg,
+  },
+  notAllowedButton: {
+    width: '100%',
+    minHeight: 46,
+    borderRadius: BorderRadius.lg,
   },
 });
 

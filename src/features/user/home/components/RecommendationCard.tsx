@@ -89,7 +89,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
           </View>
         )}
 
-        <View style={styles.arrow}>
+        <View style={styles.arrow} pointerEvents="none">
           <AppIcon
             name="arrow-right"
             size={13}

@@ -53,12 +53,18 @@ const SUPPORTED_ATTACHMENT_TYPES = [
 
 const isSupportedAttachment = (file: DocumentPickerResponse) => {
   const extension = file.name?.split('.').pop()?.toLowerCase();
-  if (file.type) {
-    return SUPPORTED_ATTACHMENT_TYPES.includes(file.type);
-  }
-  return extension
+  const hasValidExt = extension
     ? SUPPORTED_ATTACHMENT_EXTENSIONS.includes(extension)
     : false;
+  if (hasValidExt) return true;
+  if (file.type) {
+    return (
+      SUPPORTED_ATTACHMENT_TYPES.includes(file.type) ||
+      file.type.startsWith('image/') ||
+      file.type.includes('pdf')
+    );
+  }
+  return false;
 };
 
 type FormState = {
@@ -123,6 +129,11 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     Partial<Record<keyof FormState, string>>
   >({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [referenceId, setReferenceId] = useState(() => {
+    const year = new Date().getFullYear();
+    const randomNum = Math.floor(100000 + Math.random() * 900000);
+    return `HRSJM-${year}-${randomNum}`;
+  });
   const [isHelpTopicSelectorVisible, setIsHelpTopicSelectorVisible] =
     useState(false);
 
@@ -298,7 +309,74 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     setIsHelpTopicSelectorVisible(true);
   };
 
+  const removeAttachment = (indexToRemove: number) => {
+    setAttachments(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
   const openAttachmentPicker = async () => {
+    if (Platform.OS === 'web') {
+      const docObj =
+        typeof globalThis !== 'undefined' ? (globalThis as any).document : undefined;
+      if (docObj && docObj.createElement) {
+        const fileInput = docObj.createElement('input');
+        fileInput.type = 'file';
+        fileInput.multiple = true;
+        fileInput.accept = 'image/jpeg,image/png,image/jpg,application/pdf,.jpg,.jpeg,.png,.pdf';
+        fileInput.style.position = 'fixed';
+        fileInput.style.top = '-10000px';
+        fileInput.style.opacity = '0';
+
+        fileInput.onchange = (event: any) => {
+          const files: any[] = Array.from(event.target?.files || []);
+          const validFiles: DocumentPickerResponse[] = [];
+          const rejectedFiles: string[] = [];
+
+          files.forEach(file => {
+            const fileName = file.name || 'Unnamed file';
+            const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
+            const isValidExt = SUPPORTED_ATTACHMENT_EXTENSIONS.includes(fileExt);
+            const isValidType =
+              SUPPORTED_ATTACHMENT_TYPES.includes(file.type) ||
+              file.type?.startsWith('image/') ||
+              file.type?.includes('pdf');
+
+            if (!isValidExt && !isValidType) {
+              rejectedFiles.push(`${fileName} (unsupported file type)`);
+            } else if (file.size > MAX_ATTACHMENT_SIZE) {
+              rejectedFiles.push(`${fileName} (larger than 5 MB)`);
+            } else {
+              const objectUrl =
+                typeof URL !== 'undefined' && URL.createObjectURL
+                  ? URL.createObjectURL(file)
+                  : '';
+              validFiles.push({
+                uri: objectUrl,
+                name: fileName,
+                size: file.size,
+                type: file.type || (fileExt === 'pdf' ? 'application/pdf' : 'image/jpeg'),
+                fileCopyUri: null,
+              } as unknown as DocumentPickerResponse);
+            }
+          });
+
+          if (validFiles.length > 0) {
+            setAttachments(previous => [...previous, ...validFiles]);
+          }
+          if (rejectedFiles.length > 0) {
+            Alert.alert('Some files were not added', rejectedFiles.join('\n'));
+          }
+
+          try {
+            docObj.body.removeChild(fileInput);
+          } catch {}
+        };
+
+        docObj.body.appendChild(fileInput);
+        fileInput.click();
+        return;
+      }
+    }
+
     try {
       const pickedFiles = await pick({
         type: [types.images, types.pdf],
@@ -457,6 +535,52 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
             : 'JPG, PNG, PDF (max 5MB each)'}
         </Text>
       </TouchableOpacity>
+
+      {attachments.length > 0 && (
+        <View style={styles.attachmentList}>
+          {attachments.map((file, idx) => {
+            const isPdf =
+              file.name?.toLowerCase().endsWith('.pdf') ||
+              file.type?.includes('pdf');
+            const sizeStr = file.size
+              ? file.size < 1024 * 1024
+                ? `${(file.size / 1024).toFixed(0)} KB`
+                : `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+              : '';
+            return (
+              <View
+                key={`${file.name || 'file'}-${idx}`}
+                style={styles.attachmentItem}
+              >
+                <View style={styles.attachmentIconBox}>
+                  <AppIcon
+                    name={isPdf ? 'file-text' : 'image'}
+                    size={16}
+                    color={AdminColors.primaryDark}
+                  />
+                </View>
+                <View style={styles.attachmentInfo}>
+                  <Text style={styles.attachmentName} numberOfLines={1}>
+                    {file.name || `Document ${idx + 1}`}
+                  </Text>
+                  {sizeStr ? (
+                    <Text style={styles.attachmentSize}>{sizeStr}</Text>
+                  ) : null}
+                </View>
+                <TouchableOpacity
+                  onPress={() => removeAttachment(idx)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.attachmentRemoveBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove ${file.name || 'attachment'}`}
+                >
+                  <AppIcon name="close" size={16} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </View>
+      )}
 
       <View style={styles.actionRow}>
         <AppButton
@@ -739,7 +863,12 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         />
         <AppButton
           title="Submit Complaint"
-          onPress={() => setIsSubmitted(true)}
+          onPress={() => {
+            const year = new Date().getFullYear();
+            const randomNum = Math.floor(100000 + Math.random() * 900000);
+            setReferenceId(`HRSJM-${year}-${randomNum}`);
+            setIsSubmitted(true);
+          }}
           variant="gold"
           size="lg"
           style={styles.primaryButton}
@@ -829,7 +958,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
               </Text>
               <View style={styles.referenceBox}>
                 <Text style={styles.referenceLabel}>Reference ID</Text>
-                <Text style={styles.referenceId}>HRSJM-DEMO-001</Text>
+                <Text style={styles.referenceId}>{referenceId}</Text>
               </View>
               <AppButton
                 title="Back to Home"
@@ -1066,6 +1195,47 @@ const styles = StyleSheet.create({
     color: AdminColors.textSecondary,
     fontSize: 11.5,
     marginTop: 2,
+  },
+  attachmentList: {
+    gap: Spacing.xs,
+    marginBottom: Spacing.md,
+  },
+  attachmentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: BorderRadius.base,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    gap: Spacing.sm,
+  },
+  attachmentIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: '#EAF1FE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  attachmentInfo: {
+    flex: 1,
+  },
+  attachmentName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: AdminColors.primaryDark,
+  },
+  attachmentSize: {
+    fontSize: 11,
+    color: AdminColors.textSecondary,
+    marginTop: 2,
+  },
+  attachmentRemoveBtn: {
+    padding: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionRow: {
     marginTop: Spacing.md,

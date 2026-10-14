@@ -35,6 +35,7 @@ import {
 import { updateRegistrationState } from '../../auth/state/registrationState';
 import { BorderRadius, Spacing } from '../../../core';
 import { MembershipVerificationNotice } from '../components/MembershipVerificationNotice';
+import { useMembership } from '../context/MembershipContext';
 
 interface MembershipCategoriesScreenProps {
   onBack?: () => void;
@@ -47,6 +48,14 @@ export const MembershipCategoriesScreen: React.FC<MembershipCategoriesScreenProp
 }) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+
+  let membershipContext: any = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    membershipContext = useMembership();
+  } catch {
+    // rendered outside provider in isolated tests
+  }
 
   const isTabletOrDesktop = width > 520;
   const contentMaxWidth = isTabletOrDesktop ? 460 : width;
@@ -64,6 +73,10 @@ export const MembershipCategoriesScreen: React.FC<MembershipCategoriesScreenProp
       accountType: 'member',
       accountTypeLabel: post.postName,
     });
+
+    if (membershipContext?.setSelectedPost) {
+      membershipContext.setSelectedPost(post);
+    }
 
     if (onApplyPost) {
       onApplyPost(post);

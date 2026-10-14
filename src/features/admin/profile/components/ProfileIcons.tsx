@@ -6,12 +6,43 @@
  */
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { AdminColors } from '../../../../core';
 
 interface IconProps {
   size?: number;
   color?: string;
+  strokeWidth?: number;
 }
+
+export const SolidPersonIcon: React.FC<IconProps> = ({
+  size = 16,
+  color = AdminColors.primaryDark,
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <Circle cx="12" cy="7" r="4.5" fill={color} />
+    <Path
+      d="M12 13.5c-4.4 0-8 2.2-8 5v1.5h16V18.5c0-2.8-3.6-5-8-5z"
+      fill={color}
+    />
+  </Svg>
+);
+
+export const ChevronRightIcon: React.FC<IconProps> = ({
+  size = 14,
+  color = AdminColors.primaryDark,
+  strokeWidth = 2.6,
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M9 18l6-6-6-6"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
 
 const Container: React.FC<{ size: number; children: React.ReactNode }> = ({
   size,

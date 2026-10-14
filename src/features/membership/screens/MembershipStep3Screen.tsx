@@ -120,41 +120,41 @@ export function MembershipStep3Screen() {
     setCustomFileName('');
   };
 
-  // Launch Native Camera for Document
+  // Launch Native / Web Camera for Document Scan
   const handleLaunchNativeCamera = async (type: DocCategory) => {
     setIsProcessing(true);
     try {
       const result = await takePhotoWithNativeCamera(type === 'photo' ? 'front' : 'back');
-      if (result && result.uri) {
+      if (result && (result.uri || result.fileName)) {
         applyUploadedDocument(type, {
-          name: type === 'photo' ? 'Photograph' : `${type.toUpperCase()} Document (Camera)`,
+          name: type === 'photo' ? 'Photograph' : `${type === 'identity' ? 'Identity' : 'Address'} Proof (Camera)`,
           fileName: result.fileName,
           fileSize: result.fileSize,
           uri: result.uri,
         });
       }
     } catch (e) {
-      console.warn('Native camera doc scan error:', e);
+      console.warn('Camera doc scan error:', e);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Launch Native File Manager / Document Picker
+  // Launch Native File Manager / Web Document Picker
   const handleLaunchNativeFilePicker = async (type: DocCategory) => {
     setIsProcessing(true);
     try {
       const result = await pickNativeDocument();
-      if (result && result.uri) {
+      if (result && (result.uri || result.fileName)) {
         applyUploadedDocument(type, {
-          name: `${type.toUpperCase()} Document`,
+          name: type === 'photo' ? 'Photograph' : `${type === 'identity' ? 'Identity' : 'Address'} Proof`,
           fileName: result.fileName,
           fileSize: result.fileSize,
           uri: result.uri,
         });
       }
     } catch (e) {
-      console.warn('Native file picker error:', e);
+      console.warn('File picker error:', e);
     } finally {
       setIsProcessing(false);
     }

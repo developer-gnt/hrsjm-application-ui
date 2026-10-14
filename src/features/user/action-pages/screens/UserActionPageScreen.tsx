@@ -33,6 +33,7 @@ import {
   parseCustomDonationAmount,
   SUGGESTED_DONATION_AMOUNTS,
 } from '../utils/donation-amount';
+import { navigateToMembershipCategories } from '../../../../core/navigation/appRouter';
 
 export interface UserActionPageScreenProps {
   pageId: ActionPageId;
@@ -43,6 +44,9 @@ export interface UserActionPageScreenProps {
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
   onOpenContact?: () => void;
+  onOpenMembershipCategories?: () => void;
+  showBottomNav?: boolean;
+  hideBottomNav?: boolean;
 }
 
 const SectionTitle: React.FC<{ title: string }> = ({ title }) => (
@@ -75,6 +79,9 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
   onOpenEvents,
   onOpenNews,
   onOpenContact,
+  onOpenMembershipCategories,
+  showBottomNav = false,
+  hideBottomNav = true,
 }) => {
   const content = ACTION_PAGE_CONTENT[pageId];
   const { width } = useWindowDimensions();
@@ -101,6 +108,23 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
       action,
       `${action} is not connected yet. No information has been submitted and no payment has been processed.`,
     );
+  };
+
+  const handleCtaPress = () => {
+    if (
+      pageId === 'join' ||
+      pageId === 'membership' ||
+      content.ctaLabel === 'Apply for Membership' ||
+      content.ctaLabel === 'Become a Member'
+    ) {
+      if (onOpenMembershipCategories) {
+        onOpenMembershipCategories();
+      } else {
+        navigateToMembershipCategories();
+      }
+      return;
+    }
+    showPendingAction(content.ctaLabel);
   };
 
   const handleTabPress = (tab: HomeTab) => {
@@ -161,7 +185,19 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
             <SectionTitle title="Member Categories" />
             <View style={styles.categoryList}>
               {MEMBERSHIP_CATEGORIES.map(category => (
-                <View key={category.title} style={styles.categoryCard}>
+                <Pressable
+                  key={category.title}
+                  style={styles.categoryCard}
+                  onPress={() => {
+                    if (onOpenMembershipCategories) {
+                      onOpenMembershipCategories();
+                    } else {
+                      navigateToMembershipCategories();
+                    }
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${category.title} category`}
+                >
                   <View style={styles.categoryIcon}>
                     <AppIcon
                       name={category.icon}
@@ -180,7 +216,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
                     size={18}
                     color={AdminColors.accentGold}
                   />
-                </View>
+                </Pressable>
               ))}
             </View>
           </View>
@@ -353,7 +389,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
             <Text style={styles.ctaDescription}>{content.ctaDescription}</Text>
             <Pressable
               style={styles.ctaButton}
-              onPress={() => showPendingAction(content.ctaLabel)}
+              onPress={handleCtaPress}
               accessibilityRole="button"
               accessibilityLabel={content.ctaLabel}
             >
@@ -367,7 +403,9 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
           </View>
         </View>
       </ScrollView>
-      <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      {showBottomNav && !hideBottomNav && (
+        <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      )}
     </SafeAreaView>
   );
 };

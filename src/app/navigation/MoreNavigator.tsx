@@ -349,6 +349,7 @@ export const MoreNavigator: React.FC = () => (
     <Stack.Screen name={AppRoutes.MY_PROFILE}>
       {({ navigation }) => (
         <ProfileScreen
+          showIdCard={true}
           onBack={navigation.goBack}
           onEditPersonal={() =>
             navigation.navigate(AppRoutes.EDIT_PERSONAL_INFO as any)

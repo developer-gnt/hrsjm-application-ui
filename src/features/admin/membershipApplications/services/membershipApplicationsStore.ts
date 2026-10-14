@@ -210,6 +210,49 @@ class MembershipApplicationsStore {
   private isLoading = false;
   private listeners: Set<() => void> = new Set();
 
+  constructor() {
+    if (process.env.NODE_ENV !== 'test') {
+      this.loadPersistedApplications();
+    }
+  }
+
+  private loadPersistedApplications(): void {
+    const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+    if (win && win.localStorage) {
+      try {
+        const saved = win.localStorage.getItem('hrsjm_local_membership_applications');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const existingIds = new Set(this.applications.map(a => a.id));
+            const existingAppIds = new Set(this.applications.map(a => a.applicationId));
+            const toAdd = parsed.filter(
+              (p: any) => !existingIds.has(p.id) && !existingAppIds.has(p.applicationId)
+            );
+            this.applications = [...toAdd, ...this.applications];
+            this.recalculateStatsFromItems();
+          }
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+  }
+
+  private savePersistedApplications(): void {
+    const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+    if (win && win.localStorage) {
+      try {
+        win.localStorage.setItem(
+          'hrsjm_local_membership_applications',
+          JSON.stringify(this.applications)
+        );
+      } catch {
+        // ignore storage errors
+      }
+    }
+  }
+
   public getApplications(): MembershipApplicationItem[] {
     return [...this.applications];
   }
@@ -250,9 +293,24 @@ class MembershipApplicationsStore {
         ? resData
         : (resData as any)?.items || [];
 
-      const mapped = rawItems.map(mapBackendToApplicationItem);
+      const mapped: MembershipApplicationItem[] = rawItems.map(mapBackendToApplicationItem);
 
-      this.applications = mapped;
+      // Preserve any locally added applications that are not yet in backend items
+      const backendIds = new Set(mapped.map((m: MembershipApplicationItem) => m.id));
+      const backendAppIds = new Set(mapped.map((m: MembershipApplicationItem) => m.applicationId));
+
+      const localOnly = this.applications.filter(
+        app => !backendIds.has(app.id) && !backendAppIds.has(app.applicationId)
+      );
+
+      const combined = [...localOnly, ...mapped];
+      combined.sort((a, b) => {
+        const timeA = new Date(a.submittedDate || 0).getTime();
+        const timeB = new Date(b.submittedDate || 0).getTime();
+        return timeB - timeA;
+      });
+
+      this.applications = combined;
 
       // Compute or fetch real stats
       try {
@@ -264,11 +322,16 @@ class MembershipApplicationsStore {
             ? (statsResRaw as any).data
             : statsResRaw;
         if (statsRes && typeof statsRes.total === 'number') {
+          // Adjust stats to account for local items not in backend
+          const localUnderReview = localOnly.filter(a => a.status === 'under_review').length;
+          const localApproved = localOnly.filter(a => a.status === 'approved').length;
+          const localRejected = localOnly.filter(a => a.status === 'rejected').length;
+
           this.baseStats = {
-            total: statsRes.total || 0,
-            underReview: statsRes.pending || 0,
-            approved: statsRes.active || 0,
-            rejected: statsRes.inactive || 0,
+            total: (statsRes.total || 0) + localOnly.length,
+            underReview: (statsRes.pending || 0) + localUnderReview,
+            approved: (statsRes.active || 0) + localApproved,
+            rejected: (statsRes.inactive || 0) + localRejected,
           };
         } else {
           this.recalculateStatsFromItems();
@@ -277,7 +340,8 @@ class MembershipApplicationsStore {
         this.recalculateStatsFromItems();
       }
 
-      return mapped;
+      this.savePersistedApplications();
+      return this.applications;
     } catch (error) {
       if (process.env.NODE_ENV === 'test') {
         return this.applications;
@@ -418,6 +482,7 @@ class MembershipApplicationsStore {
       activityLog: [newLogItem, ...(current.activityLog || [])],
     };
     this.recalculateStatsFromItems();
+    this.savePersistedApplications();
     this.notify();
 
     if (process.env.NODE_ENV === 'test') {
@@ -449,8 +514,15 @@ class MembershipApplicationsStore {
   }
 
   public addApplication(application: MembershipApplicationItem): void {
-    this.applications = [application, ...this.applications];
+    // Put newly added application in 1st position
+    this.applications = [
+      application,
+      ...this.applications.filter(
+        a => a.id !== application.id && a.applicationId !== application.applicationId,
+      ),
+    ];
     this.recalculateStatsFromItems();
+    this.savePersistedApplications();
     this.notify();
   }
 

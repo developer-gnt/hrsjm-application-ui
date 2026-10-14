@@ -1,6 +1,6 @@
 export type MembershipStatus = 'Under Review' | 'Approved' | 'Rejected' | 'Draft';
 
-export type MembershipType = 'Individual Membership' | 'Annual Membership' | 'Lifetime Membership' | 'Student Membership';
+export type MembershipType = 'Individual Membership' | 'Annual Membership' | 'Lifetime Membership' | 'Student Membership' | (string & {});
 
 export interface PersonalInfo {
   profilePhotoUri?: string;

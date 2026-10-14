@@ -30,6 +30,8 @@ export interface ContactUsScreenProps {
   onOpenGetHelp?: () => void;
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
+  showBottomNav?: boolean;
+  hideBottomNav?: boolean;
 }
 
 /**
@@ -47,6 +49,8 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
   onOpenGetHelp,
   onOpenEvents,
   onOpenNews,
+  showBottomNav = false,
+  hideBottomNav = true,
 }) => {
   const showComingSoon = (feature: string) => {
     // UI PHASE ONLY placeholder for actions that ship with later phases.
@@ -108,22 +112,24 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <UserBottomNavigation
-        activeTab="contact"
-        onTabPress={tab => {
-          if (tab.id === 'home') {
-            onBack?.();
-          } else if (tab.id === 'rights') {
-            onOpenRights?.();
-          } else if (tab.id === 'about') {
-            onOpenAbout?.();
-          } else if (tab.id === 'events') {
-            onOpenEvents?.();
-          } else if (tab.id === 'news') {
-            onOpenNews?.();
-          }
-        }}
-      />
+      {showBottomNav && !hideBottomNav && (
+        <UserBottomNavigation
+          activeTab="contact"
+          onTabPress={tab => {
+            if (tab.id === 'home') {
+              onBack?.();
+            } else if (tab.id === 'rights') {
+              onOpenRights?.();
+            } else if (tab.id === 'about') {
+              onOpenAbout?.();
+            } else if (tab.id === 'events') {
+              onOpenEvents?.();
+            } else if (tab.id === 'news') {
+              onOpenNews?.();
+            }
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };

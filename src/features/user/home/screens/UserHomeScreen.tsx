@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -17,22 +17,24 @@ import { SectionHeader } from '../components/SectionHeader';
 import { ImpactSection } from '../components/ImpactSection';
 import { HomeEventCard } from '../components/HomeEventCard';
 import { NewsCard } from '../components/NewsCard';
-import { ActivitiesRow } from '../components/ActivityCard';
-import { RecommendationCard } from '../components/RecommendationCard';
+import { BlogArticleCard } from '../components/BlogArticleCard';
 import { DonationBanner } from '../components/DonationBanner';
 import { UserBottomNavigation } from '../components/UserBottomNavigation';
 import {
   GUEST_QUICK_ACTIONS,
   LATEST_NEWS,
-  LATEST_UPDATES,
-  MEMBER_ACTIVITIES,
-  RECOMMENDATIONS,
   RIGHTS_CATEGORIES,
   UPCOMING_EVENTS,
   WHAT_WE_DO_ITEMS,
 } from '../data/home-preview-data';
+import { USER_EVENTS, type UserEvent } from '../../events/data/user-events';
+import { fetchLatestPublishedNews } from '../../news/services/user-news.service';
+import {
+  fetchPublishedBlogs,
+  DEFAULT_HOME_BLOGS,
+} from '../services/user-blogs.service';
 import { getImpactStats } from '../data/impact-stats-provider';
-import type { HomeTab } from '../types/home.types';
+import type { HomeBlogItem, HomeNewsItem, HomeTab } from '../types/home.types';
 import type { WhatWeDoId } from '../../what-we-do';
 import type { ActionPageId } from '../../action-pages';
 import { getHomeActionDestination } from '../utils/home-action-destination';
@@ -51,7 +53,11 @@ export interface UserHomeScreenProps {
   /** Opens the Get Help flow from the existing Home quick action card. */
   onOpenGetHelp?: () => void;
   onOpenEvents?: () => void;
+  onOpenEvent?: (event: UserEvent) => void;
+  onOpenNotifications?: () => void;
   onOpenNews?: () => void;
+  onOpenBlogs?: () => void;
+  onOpenArticle?: (article: any) => void;
   onOpenRight?: (rightId: string) => void;
   onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
   onOpenActionPage?: (pageId: ActionPageId) => void;
@@ -67,7 +73,11 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   hideBottomNav = true,
   onOpenGetHelp,
   onOpenEvents,
+  onOpenEvent,
+  onOpenNotifications,
   onOpenNews,
+  onOpenBlogs,
+  onOpenArticle,
   onOpenRight,
   onOpenWhatWeDo,
   onOpenActionPage,
@@ -77,6 +87,54 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
 }) => {
   const hasRestoredScroll = useRef(false);
   const scrollRef = useRef<ScrollViewInstance | null>(null);
+  const [latestNews, setLatestNews] = useState<HomeNewsItem[]>(LATEST_NEWS);
+  const [blogs, setBlogs] = useState<HomeBlogItem[]>(DEFAULT_HOME_BLOGS);
+
+  const loadDynamicData = React.useCallback(async () => {
+    try {
+      const [newsItems, blogItems] = await Promise.all([
+        fetchLatestPublishedNews(5),
+        fetchPublishedBlogs(8),
+      ]);
+      if (newsItems.length > 0) {
+        setLatestNews(newsItems);
+      }
+      if (blogItems.length > 0) {
+        setBlogs(blogItems);
+      }
+    } catch (err) {
+      console.warn('Error loading dynamic home content:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDynamicData();
+
+    // Auto-refresh periodically so newly published news and blogs appear automatically in 1st position
+    const intervalId = setInterval(loadDynamicData, 5000);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [loadDynamicData]);
+
+  const handleNewsCardPress = (item: HomeNewsItem) => {
+    if (item.article && onOpenArticle) {
+      onOpenArticle(item.article);
+    } else if (onOpenNews) {
+      onOpenNews();
+    }
+  };
+
+  const handleBlogCardPress = (item: HomeBlogItem) => {
+    if (item.article && onOpenArticle) {
+      onOpenArticle(item.article);
+    } else if (onOpenBlogs) {
+      onOpenBlogs();
+    } else if (onOpenNews) {
+      onOpenNews();
+    }
+  };
+
   const showComingSoon = (feature: string) => {
     Alert.alert(feature, `"${feature}" is part of an upcoming Home phase.`);
   };
@@ -98,8 +156,14 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
-        onPressSearch={() => showComingSoon('Search')}
-        onPressNotifications={() => showComingSoon('Notifications')}
+        onPressSearch={() => onOpenRights?.()}
+        onPressNotifications={() => {
+          if (onOpenNotifications) {
+            onOpenNotifications();
+          } else {
+            onOpenProfile?.();
+          }
+        }}
         onPressProfile={onOpenProfile}
       />
 
@@ -212,7 +276,16 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
                 <HomeEventCard
                   key={event.id}
                   event={event}
-                  onPress={() => onOpenEvents?.()}
+                  onPress={() => {
+                    const matched =
+                      USER_EVENTS.find(e => e.id === 'legal-awareness-workshop') ||
+                      USER_EVENTS[0];
+                    if (onOpenEvent) {
+                      onOpenEvent(matched);
+                    } else if (onOpenEvents) {
+                      onOpenEvents();
+                    }
+                  }}
                 />
               ))}
             </ScrollView>
@@ -227,70 +300,44 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
               onLinkPress={() => onOpenNews?.()}
             />
             <View style={styles.updatesList}>
-              {LATEST_NEWS.map(item => (
+              {latestNews.slice(0, 2).map(item => (
                 <NewsCard
                   key={item.id}
                   item={item}
-                  onPress={() => onOpenNews?.()}
+                  onPress={() => handleNewsCardPress(item)}
                 />
               ))}
             </View>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionInset}>
-            <SectionHeader
-              title="My Activities"
-              linkLabel="View All"
-              onLinkPress={() => showComingSoon('My Activities')}
-            />
-            <ActivitiesRow
-              activities={MEMBER_ACTIVITIES}
-              onPressActivity={activity => showComingSoon(activity.label)}
-            />
-          </View>
-        </View>
 
         <View style={styles.section}>
           <View style={styles.sectionInset}>
             <SectionHeader
-              title="Recommended for You"
+              title="Articles & Blogs"
               linkLabel="View All"
-              onLinkPress={() => showComingSoon('Recommended for You')}
+              onLinkPress={() => {
+                if (onOpenBlogs) {
+                  onOpenBlogs();
+                } else if (onOpenNews) {
+                  onOpenNews();
+                }
+              }}
             />
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.carousel}
             >
-              {RECOMMENDATIONS.map(item => (
-                <RecommendationCard
+              {blogs.map(item => (
+                <BlogArticleCard
                   key={item.id}
                   item={item}
-                  onPress={() => showComingSoon(item.title)}
+                  onPress={() => handleBlogCardPress(item)}
                 />
               ))}
             </ScrollView>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionInset}>
-            <SectionHeader
-              title="Latest Updates"
-              linkLabel="View All"
-              onLinkPress={() => onOpenNews?.()}
-            />
-            <View style={styles.updatesList}>
-              {LATEST_UPDATES.map(item => (
-                <NewsCard
-                  key={item.id}
-                  item={item}
-                  onPress={() => showComingSoon(item.title)}
-                />
-              ))}
-            </View>
           </View>
         </View>
 

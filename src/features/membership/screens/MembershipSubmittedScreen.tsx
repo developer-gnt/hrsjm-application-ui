@@ -40,11 +40,24 @@ export function MembershipSubmittedScreen() {
   };
 
   const handleGoToMyApplication = () => {
-    navigation.navigate('MyApplication');
+    navigation.navigate('MyApplication' as any);
   };
 
   const handleBackToHome = () => {
-    navigation.navigate('Tabs', { screen: 'MembersTab' });
+    const navAny = navigation as any;
+    const state = navAny.getState?.();
+    const routeNames: string[] = state?.routeNames || [];
+    if (routeNames.includes('UserHome')) {
+      navAny.navigate('UserHome');
+    } else if (routeNames.includes('DashboardTab')) {
+      navAny.navigate('DashboardTab');
+    } else {
+      try {
+        navAny.navigate('UserHome');
+      } catch {
+        navAny.navigate('Tabs', { screen: 'MembersTab' });
+      }
+    }
   };
 
   return (

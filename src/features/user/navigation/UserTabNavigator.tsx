@@ -16,6 +16,7 @@ import { AboutScreen } from '../about/screens/AboutScreen';
 import { MemberRightsScreen } from '../../member/rights/screens/MemberRightsScreen';
 import { UserEventsScreen } from '../events/screens/UserEventsScreen';
 import { NewsScreen } from '../news/screens/NewsScreen';
+import { UserBlogsScreen } from '../blogs/screens/UserBlogsScreen';
 import { ContactUsScreen } from '../contact/screens/ContactUsScreen';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import { EditPersonalInfoScreen } from '../../admin/profile/screens/EditPersonalInfoScreen';
@@ -23,6 +24,7 @@ import { AdminDetailsScreen } from '../../admin/profile/screens/AdminDetailsScre
 import { MyIdCardScreen } from '../../admin/profile/screens/MyIdCardScreen';
 import { UserEventDetailsScreen } from '../events/screens/UserEventDetailsScreen';
 import { RegisterForEventScreen } from '../events/screens/RegisterForEventScreen';
+import { USER_EVENTS } from '../events/data/user-events';
 import { NewsDetailsScreen } from '../news/screens/NewsDetailsScreen';
 import { RightDetailsScreen } from '../rights/screens/RightDetailsScreen';
 import { FileComplaintScreen } from '../help/screens/FileComplaintScreen';
@@ -30,6 +32,16 @@ import { NotificationsScreen } from '../../admin/notifications';
 import { ProfileSettingsScreen } from '../../admin/settings';
 import { UserActionPageScreen } from '../action-pages/screens/UserActionPageScreen';
 import { WhatWeDoDetailScreen } from '../what-we-do/components/WhatWeDoDetailScreen';
+import { MembershipCategoriesScreen } from '../../membership/screens/MembershipCategoriesScreen';
+import { MembershipStep1Screen } from '../../membership/screens/MembershipStep1Screen';
+import { MembershipStep2Screen } from '../../membership/screens/MembershipStep2Screen';
+import { MembershipStep3Screen } from '../../membership/screens/MembershipStep3Screen';
+import { MembershipSubmittedScreen } from '../../membership/screens/MembershipSubmittedScreen';
+import { MyApplicationScreen } from '../../membership/screens/MyApplicationScreen';
+import { ApplicationDetailsScreen } from '../../membership/screens/ApplicationDetailsScreen';
+import { ApplicationApprovedScreen } from '../../membership/screens/ApplicationApprovedScreen';
+import { ApplicationRejectedScreen } from '../../membership/screens/ApplicationRejectedScreen';
+import { ApplicationAppliedScreen } from '../../membership/screens/ApplicationAppliedScreen';
 
 import {
   House,
@@ -59,11 +71,21 @@ const UserHomeScreenComponent: React.FC<any> = ({ navigation }) => {
       onOpenRights={() => navigation.navigate('UserRights')}
       onOpenAbout={() => navigation.navigate('UserAbout')}
       onOpenEvents={() => navigation.navigate('UserEvents')}
+      onOpenEvent={(event) => navigation.navigate('UserEventDetails', { event })}
+      onOpenNotifications={() => navigation.navigate('Notifications')}
       onOpenNews={() => navigation.navigate('UserNews')}
+      onOpenBlogs={() => navigation.navigate('UserBlogs')}
+      onOpenArticle={(article) => navigation.navigate('NewsDetails', { article })}
       onOpenGetHelp={() => navigation.navigate('FileComplaint')}
       onOpenRight={(rightId) => navigation.navigate('RightDetails', { rightId })}
       onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail', { contentId })}
-      onOpenActionPage={(pageId) => navigation.navigate('UserActionPage', { pageId })}
+      onOpenActionPage={(pageId) => {
+        if (pageId === 'membership') {
+          navigation.navigate('MembershipCategories');
+        } else {
+          navigation.navigate('UserActionPage', { pageId });
+        }
+      }}
     />
   );
 };
@@ -81,6 +103,10 @@ const UserAboutScreenComponent: React.FC<any> = ({ navigation }) => {
       onNavigate={(target) => {
         if (target === 'donations') {
           navigation.navigate('UserActionPage', { pageId: 'donate' });
+        } else if (target === 'membership' || target === 'membership-categories') {
+          navigation.navigate('MembershipCategories');
+        } else if (target === 'blogs' || target === 'articles') {
+          navigation.navigate('UserBlogs');
         } else {
           navigation.navigate(target);
         }
@@ -103,6 +129,8 @@ const UserRightsScreenComponent: React.FC<any> = ({ navigation }) => {
 const UserEventsScreenComponent: React.FC<any> = ({ navigation }) => {
   return (
     <UserEventsScreen
+      hideBottomNav={true}
+      showBottomNav={false}
       onBack={() => navigation.navigate('UserHome')}
       onOpenEvent={(event) => navigation.navigate('UserEventDetails', { event })}
       onOpenAbout={() => navigation.navigate('UserAbout')}
@@ -116,6 +144,8 @@ const UserEventsScreenComponent: React.FC<any> = ({ navigation }) => {
 const UserNewsScreenComponent: React.FC<any> = ({ navigation }) => {
   return (
     <NewsScreen
+      hideBottomNav={true}
+      showBottomNav={false}
       onOpenArticle={(article) => navigation.navigate('NewsDetails', { article })}
       onOpenHome={() => navigation.navigate('UserHome')}
       onOpenAbout={() => navigation.navigate('UserAbout')}
@@ -129,16 +159,21 @@ const UserNewsScreenComponent: React.FC<any> = ({ navigation }) => {
 const UserProfileScreenComponent: React.FC<any> = ({ navigation }) => {
   return (
     <ProfileScreen
+      showIdCard={false}
       onNavigate={(target) => {
         if (target === 'ContactUs' || target === 'contact') {
           navigation.navigate('ContactUs');
+        } else if (target === 'MyIdCard') {
+          return;
+        } else if (target === 'MyApplication' || target === 'status') {
+          navigation.navigate('MyApplication');
         } else {
           navigation.navigate(target);
         }
       }}
+      onViewStatus={() => navigation.navigate('MyApplication')}
       onEditPersonal={() => navigation.navigate('EditPersonalInfo')}
       onEditAdminDetails={() => navigation.navigate('AdminDetails')}
-      onViewIdCard={() => navigation.navigate('MyIdCard')}
       onViewMembershipDetails={() => navigation.navigate('UserHome')}
     />
   );
@@ -263,6 +298,8 @@ export const UserTabNavigator: React.FC = () => {
       >
         {({ navigation }) => (
           <ContactUsScreen
+            hideBottomNav={true}
+            showBottomNav={false}
             onBack={navigation.goBack}
             onOpenAbout={() => navigation.navigate('UserAbout')}
             onOpenRights={() => navigation.navigate('UserRights')}
@@ -279,11 +316,11 @@ export const UserTabNavigator: React.FC = () => {
       >
         {({ navigation, route }: any) => (
           <UserEventDetailsScreen
-            event={route.params?.event}
+            event={route.params?.event || USER_EVENTS[0]}
             onBack={navigation.goBack}
             onRegister={() =>
               navigation.navigate('RegisterForEvent', {
-                event: route.params?.event,
+                event: route.params?.event || USER_EVENTS[0],
               })
             }
           />
@@ -297,6 +334,8 @@ export const UserTabNavigator: React.FC = () => {
         {({ navigation, route }: any) => (
           <RegisterForEventScreen
             event={route.params?.event}
+            hideBottomNav={true}
+            showBottomNav={false}
             onBack={navigation.goBack}
             onBackToEvents={() => navigation.navigate('UserEvents')}
             onOpenHome={() => navigation.navigate('UserHome')}
@@ -315,6 +354,8 @@ export const UserTabNavigator: React.FC = () => {
         {({ navigation, route }: any) => (
           <NewsDetailsScreen
             article={route.params?.article}
+            hideBottomNav={true}
+            showBottomNav={false}
             onBack={navigation.goBack}
             onOpenArticle={(art) =>
               navigation.navigate('NewsDetails', { article: art })
@@ -411,9 +452,113 @@ export const UserTabNavigator: React.FC = () => {
         name="UserActionPage"
         options={{ tabBarButton: () => null }}
       >
+        {({ navigation, route }: any) => {
+          const pageId = route.params?.pageId || 'join';
+          if (pageId === 'membership') {
+            return (
+              <MembershipCategoriesScreen
+                onBack={navigation.goBack}
+                onApplyPost={(post) => {
+                  navigation.navigate('MembershipStep1Personal', { post });
+                }}
+              />
+            );
+          }
+          return (
+            <UserActionPageScreen
+              pageId={pageId}
+              hideBottomNav={true}
+              showBottomNav={false}
+              onBack={navigation.goBack}
+              onOpenHome={() => navigation.navigate('UserHome')}
+              onOpenAbout={() => navigation.navigate('UserAbout')}
+              onOpenRights={() => navigation.navigate('UserRights')}
+              onOpenEvents={() => navigation.navigate('UserEvents')}
+              onOpenNews={() => navigation.navigate('UserNews')}
+              onOpenContact={() => navigation.navigate('ContactUs')}
+              onOpenMembershipCategories={() => navigation.navigate('MembershipCategories')}
+            />
+          );
+        }}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="MembershipCategories"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <MembershipCategoriesScreen
+            onBack={navigation.goBack}
+            onApplyPost={(post) => {
+              navigation.navigate('MembershipStep1Personal', { post });
+            }}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="MembershipStep1Personal"
+        options={{ tabBarButton: () => null }}
+        component={MembershipStep1Screen}
+      />
+
+      <Tab.Screen
+        name="MembershipStep2Address"
+        options={{ tabBarButton: () => null }}
+        component={MembershipStep2Screen}
+      />
+
+      <Tab.Screen
+        name="MembershipStep3Documents"
+        options={{ tabBarButton: () => null }}
+        component={MembershipStep3Screen}
+      />
+
+      <Tab.Screen
+        name="MembershipSubmitted"
+        options={{ tabBarButton: () => null }}
+        component={MembershipSubmittedScreen}
+      />
+
+      <Tab.Screen
+        name="MyApplication"
+        options={{ tabBarButton: () => null }}
+        component={MyApplicationScreen}
+      />
+
+      <Tab.Screen
+        name="ApplicationDetails"
+        options={{ tabBarButton: () => null }}
+        component={ApplicationDetailsScreen}
+      />
+
+      <Tab.Screen
+        name="ApplicationApproved"
+        options={{ tabBarButton: () => null }}
+        component={ApplicationApprovedScreen}
+      />
+
+      <Tab.Screen
+        name="ApplicationRejected"
+        options={{ tabBarButton: () => null }}
+        component={ApplicationRejectedScreen}
+      />
+
+      <Tab.Screen
+        name="ApplicationApplied"
+        options={{ tabBarButton: () => null }}
+        component={ApplicationAppliedScreen}
+      />
+
+      <Tab.Screen
+        name="WhatWeDoDetail"
+        options={{ tabBarButton: () => null }}
+      >
         {({ navigation, route }: any) => (
-          <UserActionPageScreen
-            pageId={route.params?.pageId || 'join'}
+          <WhatWeDoDetailScreen
+            contentId={route.params?.contentId || 'awareness-campaigns'}
+            hideBottomNav={true}
+            showBottomNav={false}
             onBack={navigation.goBack}
             onOpenHome={() => navigation.navigate('UserHome')}
             onOpenAbout={() => navigation.navigate('UserAbout')}
@@ -426,13 +571,19 @@ export const UserTabNavigator: React.FC = () => {
       </Tab.Screen>
 
       <Tab.Screen
-        name="WhatWeDoDetail"
+        name="UserBlogs"
         options={{ tabBarButton: () => null }}
       >
-        {({ navigation, route }: any) => (
-          <WhatWeDoDetailScreen
-            contentId={route.params?.contentId || 'awareness-campaigns'}
+        {({ navigation }: any) => (
+          <UserBlogsScreen
+            hideBottomNav={true}
+            showBottomNav={false}
             onBack={navigation.goBack}
+            onOpenBlog={(blog) => {
+              if (blog.article) {
+                navigation.navigate('NewsDetails', { article: blog.article });
+              }
+            }}
             onOpenHome={() => navigation.navigate('UserHome')}
             onOpenAbout={() => navigation.navigate('UserAbout')}
             onOpenRights={() => navigation.navigate('UserRights')}

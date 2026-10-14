@@ -80,6 +80,7 @@ const MemberHomeScreenComponent: React.FC<any> = ({ navigation }) => {
 const MemberProfileScreenComponent: React.FC<any> = ({ navigation }) => {
   return (
     <ProfileScreen
+      showIdCard={true}
       onNavigate={(target) => navigation.navigate(target)}
       onEditPersonal={() => navigation.navigate('EditPersonalInfo')}
       onEditAdminDetails={() => navigation.navigate('AdminDetails')}

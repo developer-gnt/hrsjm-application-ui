@@ -33,6 +33,8 @@ export interface WhatWeDoDetailScreenProps {
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
   onOpenContact?: () => void;
+  showBottomNav?: boolean;
+  hideBottomNav?: boolean;
 }
 
 const SectionHeading: React.FC<{ title: string }> = ({ title }) => (
@@ -48,6 +50,8 @@ export const WhatWeDoDetailScreen: React.FC<WhatWeDoDetailScreenProps> = ({
   onOpenEvents,
   onOpenNews,
   onOpenContact,
+  showBottomNav = false,
+  hideBottomNav = true,
 }) => {
   const content = getWhatWeDoContent(contentId);
   const { width } = useWindowDimensions();
@@ -199,7 +203,9 @@ export const WhatWeDoDetailScreen: React.FC<WhatWeDoDetailScreenProps> = ({
           </View>
         </View>
       </ScrollView>
-      <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      {showBottomNav && !hideBottomNav && (
+        <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      )}
     </SafeAreaView>
   );
 };

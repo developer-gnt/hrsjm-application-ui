@@ -43,6 +43,8 @@ interface RegisterForEventScreenProps {
   onOpenRights: () => void;
   onOpenContact: () => void;
   onOpenNews: () => void;
+  showBottomNav?: boolean;
+  hideBottomNav?: boolean;
 }
 
 const INITIAL_FORM: RegistrationForm = {
@@ -63,6 +65,8 @@ export const RegisterForEventScreen: React.FC<RegisterForEventScreenProps> = ({
   onOpenRights,
   onOpenContact,
   onOpenNews,
+  showBottomNav = false,
+  hideBottomNav = true,
 }) => {
   const [form, setForm] = useState<RegistrationForm>(INITIAL_FORM);
   const [consentAccepted, setConsentAccepted] = useState(false);
@@ -449,7 +453,9 @@ export const RegisterForEventScreen: React.FC<RegisterForEventScreenProps> = ({
         </KeyboardAvoidingView>
       )}
 
-      <UserBottomNavigation activeTab="events" onTabPress={handleTabPress} />
+      {showBottomNav && !hideBottomNav && (
+        <UserBottomNavigation activeTab="events" onTabPress={handleTabPress} />
+      )}
     </SafeAreaView>
   );
 };

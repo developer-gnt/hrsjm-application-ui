@@ -28,6 +28,7 @@ import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppBadge } from '../../../../core/components/common/AppBadge';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
+import { useAuthStore } from '../../../auth/store/authStore';
 import {
   navigateToProfileEditPersonal,
   navigateToProfileAdminDetails,
@@ -53,6 +54,8 @@ import {
   BadgeCheckIcon,
   ChevronRight,
   DownloadIcon,
+  SolidPersonIcon,
+  ChevronRightIcon,
 } from '../components/ProfileIcons';
 import { useIdCardFiles } from '../hooks/useIdCardFiles';
 
@@ -63,6 +66,8 @@ export interface ProfileScreenProps {
   onEditAdminDetails?: () => void;
   onViewIdCard?: () => void;
   onViewMembershipDetails?: () => void;
+  onViewStatus?: () => void;
+  showIdCard?: boolean;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
@@ -72,6 +77,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onEditAdminDetails,
   onViewIdCard,
   onViewMembershipDetails,
+  onViewStatus,
+  showIdCard,
 }) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -138,7 +145,32 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
   };
 
-  const isMember = (profile.role || '').toLowerCase() === 'member';
+  const authUser = useAuthStore(state => state.user);
+  const authRoleNames = (authUser?.roles ?? []).map(r => (r.name || '').toUpperCase());
+  const roleLower = (profile.role || '').toLowerCase();
+
+  const isMember =
+    authRoleNames.includes('MEMBER') ||
+    roleLower === 'member' ||
+    roleLower.includes('member');
+
+  const isAdmin =
+    authRoleNames.includes('ADMIN') ||
+    authRoleNames.includes('SUPER_ADMIN') ||
+    roleLower === 'admin' ||
+    roleLower.includes('admin');
+
+  const isSeeker =
+    authRoleNames.includes('SEEKER') ||
+    authRoleNames.includes('DONATION_SEEKER') ||
+    roleLower.includes('seeker') ||
+    roleLower.includes('donar seeker') ||
+    roleLower.includes('donation seeker');
+
+  // ID Card is available only for Member, Admin, and Donation Seeker.
+  // Standard/general users do not have an ID card.
+  const isAllowedRoleForIdCard = isMember || isAdmin || isSeeker;
+  const canShowIdCard = showIdCard !== undefined ? showIdCard : isAllowedRoleForIdCard;
 
   const handleMemberDetailsAction = () => {
     if (onViewMembershipDetails) {
@@ -168,6 +200,20 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
   };
 
+  const handleViewStatus = () => {
+    if (onViewStatus) {
+      onViewStatus();
+    } else if (onNavigate) {
+      onNavigate('MyApplication');
+    } else if (navigation?.navigate) {
+      try {
+        navigation.navigate('MyApplication');
+      } catch {
+        // no-op
+      }
+    }
+  };
+
   // Inline ID card keeps the reference proportions on narrow screens.
   const cardWidth = Math.min(windowWidth - 2 * Spacing.lg - 2 * Spacing.md, 340);
 
@@ -182,7 +228,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          !canShowIdCard && {
+            paddingBottom: Math.max(insets.bottom + Spacing.lg, Spacing.xl),
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Page title */}
@@ -221,17 +272,31 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <Text style={styles.adminIdText}>{profile.adminId}</Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.myIdButton}
-            onPress={handleViewIdCard}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Open My ID Card"
-          >
-            <IdCardIcon size={13} color={AdminColors.primaryDark} />
-            <Text style={styles.myIdButtonText}>My ID</Text>
-            <ChevronRight size={13} color={AdminColors.primaryDark} />
-          </TouchableOpacity>
+          {canShowIdCard ? (
+            <TouchableOpacity
+              style={styles.myIdButton}
+              onPress={handleViewIdCard}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Open My ID Card"
+            >
+              <IdCardIcon size={13} color={AdminColors.primaryDark} />
+              <Text style={styles.myIdButtonText}>My ID</Text>
+              <ChevronRight size={13} color={AdminColors.primaryDark} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.myStatusButton}
+              onPress={handleViewStatus}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Open My Status"
+            >
+              <SolidPersonIcon size={16} color={AdminColors.primaryDark} />
+              <Text style={styles.myStatusButtonText}>My Status</Text>
+              <ChevronRightIcon size={14} color={AdminColors.primaryDark} strokeWidth={2.6} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Personal information */}
@@ -355,9 +420,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         ) : (
           <ProfileSectionCard
             icon={<BuildingIcon size={18} />}
-            title="Admin Details"
+            title={
+              isAdmin
+                ? 'Admin Details'
+                : isSeeker
+                ? 'Seeker Details'
+                : 'Account Details'
+            }
             backgroundColor={AdminColors.primaryLight}
-            onEdit={handleEditAdminDetails}
+            onEdit={isAdmin ? handleEditAdminDetails : undefined}
             style={styles.sectionGap}
           >
             <ProfileInfoRow
@@ -383,40 +454,44 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </ProfileSectionCard>
         )}
 
-        {/* My ID Card section — inline preview of the actual card */}
-        <View style={[styles.sectionGap, styles.idCardSection]}>
-          <View style={styles.idCardSectionHeader}>
-            <IdCardIcon size={18} />
-            <Text style={styles.idCardSectionTitle}>My ID Card</Text>
-          </View>
+        {/* My ID Card section — inline preview of the actual card (Member, Admin, Donation Seeker only) */}
+        {canShowIdCard ? (
+          <View style={[styles.sectionGap, styles.idCardSection]}>
+            <View style={styles.idCardSectionHeader}>
+              <IdCardIcon size={18} />
+              <Text style={styles.idCardSectionTitle}>My ID Card</Text>
+            </View>
 
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleViewIdCard}
-            accessibilityRole="button"
-            accessibilityLabel="Open the full My ID Card page"
-            style={styles.idCardWrap}
-          >
-            <MyIdCard profile={profile} width={cardWidth} />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={handleViewIdCard}
+              accessibilityRole="button"
+              accessibilityLabel="Open the full My ID Card page"
+              style={styles.idCardWrap}
+            >
+              <MyIdCard profile={profile} width={cardWidth} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </ScrollView>
 
-      {/* Download action — pinned directly above bottom */}
-      <View style={[styles.downloadPanel, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <AppButton
-          title={
-            busyAction === 'download' ? 'Generating PDF...' : 'Download ID Card'
-          }
-          variant="primary"
-          size="md"
-          loading={busyAction === 'download'}
-          disabled={busyAction !== null}
-          icon={<DownloadIcon color={AdminColors.textOnDark} />}
-          onPress={() => download(profile)}
-          style={styles.downloadButton}
-        />
-      </View>
+      {/* Download action — pinned directly above bottom (Member, Admin, Donation Seeker only) */}
+      {canShowIdCard ? (
+        <View style={[styles.downloadPanel, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          <AppButton
+            title={
+              busyAction === 'download' ? 'Generating PDF...' : 'Download ID Card'
+            }
+            variant="primary"
+            size="md"
+            loading={busyAction === 'download'}
+            disabled={busyAction !== null}
+            icon={<DownloadIcon color={AdminColors.textOnDark} />}
+            onPress={() => download(profile)}
+            style={styles.downloadButton}
+          />
+        </View>
+      ) : null}
 
       {/* Avatar Picker Modal */}
       <AvatarPickerModal
@@ -569,6 +644,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: AdminColors.primaryDark,
     marginHorizontal: 4,
+  },
+  myStatusButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AdminColors.accentGoldLight,
+    borderWidth: 1.5,
+    borderColor: 'rgba(201, 162, 39, 0.45)',
+    borderRadius: 14,
+    paddingHorizontal: 13,
+    paddingVertical: 7.5,
+  },
+  myStatusButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+    marginHorizontal: 6,
   },
   sectionGap: {
     marginTop: Spacing.md,

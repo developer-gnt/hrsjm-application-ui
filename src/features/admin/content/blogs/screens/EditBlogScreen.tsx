@@ -54,6 +54,7 @@ export const EditBlogScreen: React.FC<EditBlogScreenProps> = ({
   return (
     <BlogForm
       mode="edit"
+      blogId={blog.id}
       title="Edit Blog"
       subtitle="Update and manage this blog article."
       initialForm={initialForm}

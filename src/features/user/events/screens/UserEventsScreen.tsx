@@ -30,6 +30,8 @@ interface UserEventsScreenProps {
   onOpenRights: () => void;
   onOpenContact: () => void;
   onOpenNews: () => void;
+  showBottomNav?: boolean;
+  hideBottomNav?: boolean;
 }
 
 interface SearchInputHandle {
@@ -158,6 +160,8 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
   onOpenRights,
   onOpenContact,
   onOpenNews,
+  showBottomNav = false,
+  hideBottomNav = true,
 }) => {
   const searchRef = useRef<SearchInputHandle | null>(null);
   const [search, setSearch] = useState('');
@@ -416,7 +420,9 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
         </View>
       </ScrollView>
 
-      <UserBottomNavigation activeTab="events" onTabPress={handleTabPress} />
+      {showBottomNav && !hideBottomNav && (
+        <UserBottomNavigation activeTab="events" onTabPress={handleTabPress} />
+      )}
 
       <Modal
         visible={filterOpen}

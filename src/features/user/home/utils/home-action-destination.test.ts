@@ -5,6 +5,7 @@ describe('getHomeActionDestination', () => {
     ['join', 'join'],
     ['donate', 'donate'],
     ['renew', 'membership'],
+    ['membership', 'membership'],
   ])('routes the %s quick action to %s', (actionId, destination) => {
     expect(getHomeActionDestination(actionId)).toBe(destination);
   });

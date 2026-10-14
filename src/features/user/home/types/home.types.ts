@@ -44,6 +44,20 @@ export interface HomeNewsItem {
   title: string;
   date: string;
   imageAssetName: string;
+  imageUrl?: string;
+  article?: any;
+}
+
+export interface HomeBlogItem {
+  id: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  date: string;
+  author: string;
+  thumbnailUrl?: string;
+  content?: string[];
+  article?: any;
 }
 
 export type ActivityTone = 'green' | 'blue' | 'amber' | 'purple';
