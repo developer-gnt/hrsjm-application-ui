@@ -125,3 +125,14 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.hasTask(":app:assembleRelease") || taskGraph.hasTask(":app:bundleRelease")) {
+        if (!project.hasProperty('HRSJM_RELEASE_STORE_FILE') || !file(HRSJM_RELEASE_STORE_FILE).exists()) {
+            throw new GradleException("FATAL: Release build requested but production release keystore configuration is missing. " +
+                "Debug keystore must NEVER be used for release builds. Configure HRSJM_RELEASE_STORE_FILE, HRSJM_RELEASE_KEY_ALIAS, " +
+                "HRSJM_RELEASE_STORE_PASSWORD, and HRSJM_RELEASE_KEY_PASSWORD in ~/.gradle/gradle.properties or CI environment.")
+        }
+    }
+}

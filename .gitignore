@@ -1,4 +1,4 @@
-# OSX
+﻿# OSX
 #
 .DS_Store
 
@@ -75,3 +75,12 @@ current_*.png
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Production signing and environment secrets
+*.jks
+.env*
+!android/app/debug.keystore
+
+emulator-*.png
+*.keystore
+!android/app/debug.keystore
