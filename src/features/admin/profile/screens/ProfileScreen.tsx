@@ -155,11 +155,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const authRoleNames = (authUser?.roles ?? []).map(r => (r.name || '').toUpperCase());
   const roleLower = (profile.role || '').toLowerCase();
 
-  const isMember =
-    authRoleNames.includes('MEMBER') ||
-    roleLower === 'member' ||
-    roleLower.includes('member');
-
   const isAdmin =
     authRoleNames.includes('ADMIN') ||
     authRoleNames.includes('SUPER_ADMIN') ||
@@ -173,10 +168,22 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     roleLower.includes('donar seeker') ||
     roleLower.includes('donation seeker');
 
-  // ID Card is available only for Member, Admin, and Donation Seeker.
-  // Standard/general users do not have an ID card.
-  const isAllowedRoleForIdCard = isMember || isAdmin || isSeeker;
-  const canShowIdCard = showIdCard !== undefined ? showIdCard : isAllowedRoleForIdCard;
+  const isApproved =
+    profile.membershipStatus === 'Approved' ||
+    profile.membershipStatus === 'Active';
+
+  const isMember =
+    (authRoleNames.includes('MEMBER') || roleLower === 'member') && isApproved;
+
+  const isPlainUser =
+    authRoleNames.includes('USER') ||
+    roleLower === 'user' ||
+    (!isAdmin && !isSeeker && !isApproved);
+
+  // ID Card is available ONLY for Approved Members, Admins, and Donation Seekers.
+  // Standard/general users and applicants whose membership is not approved NEVER have an ID card.
+  const isAllowedRoleForIdCard = (isMember || isAdmin || isSeeker) && !isPlainUser;
+  const canShowIdCard = showIdCard !== undefined ? (showIdCard && !isPlainUser) : isAllowedRoleForIdCard;
 
   const handleMemberDetailsAction = () => {
     if (onViewMembershipDetails) {
@@ -233,7 +240,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     profile.membershipStatus ||
     membershipCtx.activeApplication?.status ||
     (membershipCtx.applications[0]?.status) ||
-    'Under Review';
+    'Applied';
 
   const rejectionReason =
     profile.rejectionReason ||
@@ -312,9 +319,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <Text style={styles.summaryRole} numberOfLines={1}>
               {profile.role}
             </Text>
-            <View style={styles.adminIdBadge}>
-              <Text style={styles.adminIdText}>{profile.adminId}</Text>
-            </View>
+            {canShowIdCard && Boolean(profile.adminId) ? (
+              <View style={styles.adminIdBadge}>
+                <Text style={styles.adminIdText}>{profile.adminId}</Text>
+              </View>
+            ) : null}
           </View>
           {canShowIdCard ? (
             <TouchableOpacity
@@ -511,7 +520,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         )}
 
         {/* Application Status Card for User who has applied */}
-        {!canShowIdCard && hasApplied ? (
+        {hasApplied && (!canShowIdCard || currentAppStatus !== 'Approved') ? (
           <ProfileSectionCard
             icon={<BadgeCheckIcon size={18} color="#0F2860" />}
             title="Application Status"
@@ -549,7 +558,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                         ? styles.statusPillApproved
                         : currentAppStatus === 'Rejected'
                         ? styles.statusPillRejected
-                        : styles.statusPillReview,
+                        : currentAppStatus === 'Under Review'
+                        ? styles.statusPillReview
+                        : styles.statusPillApplied,
                     ]}
                   >
                     <Text
@@ -559,7 +570,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                           ? styles.statusPillTextApproved
                           : currentAppStatus === 'Rejected'
                           ? styles.statusPillTextRejected
-                          : styles.statusPillTextReview,
+                          : currentAppStatus === 'Under Review'
+                          ? styles.statusPillTextReview
+                          : styles.statusPillTextApplied,
                       ]}
                     >
                       {currentAppStatus}
@@ -571,6 +584,24 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <View style={styles.rejectionNoticeBox}>
                   <Text style={styles.rejectionNoticeLabel}>Reason for Rejection:</Text>
                   <Text style={styles.rejectionNoticeText}>{rejectionReason}</Text>
+                  <TouchableOpacity
+                    style={styles.profileReapplyButton}
+                    onPress={() => {
+                      membershipCtx.reapply();
+                      if (onJoinMembership) {
+                        onJoinMembership();
+                      } else if (onNavigate) {
+                        onNavigate('MembershipCategories');
+                      } else if (navigation?.navigate) {
+                        navigation.navigate('MembershipCategories');
+                      }
+                    }}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Re-apply for Membership"
+                  >
+                    <Text style={styles.profileReapplyButtonText}>Re-apply for Membership</Text>
+                  </TouchableOpacity>
                 </View>
               ) : null}
 
@@ -897,6 +928,9 @@ const styles = StyleSheet.create({
   statusPillReview: {
     backgroundColor: '#FEF3C7',
   },
+  statusPillApplied: {
+    backgroundColor: '#ECFDF5',
+  },
   statusPillApproved: {
     backgroundColor: '#DCFCE7',
   },
@@ -909,6 +943,9 @@ const styles = StyleSheet.create({
   },
   statusPillTextReview: {
     color: '#B45309',
+  },
+  statusPillTextApplied: {
+    color: '#059669',
   },
   statusPillTextApproved: {
     color: '#15803D',
@@ -934,6 +971,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#991B1B',
     lineHeight: 16,
+  },
+  profileReapplyButton: {
+    backgroundColor: '#1B3F8F',
+    borderRadius: BorderRadius.md,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  profileReapplyButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   sectionGap: {
     marginTop: Spacing.md,

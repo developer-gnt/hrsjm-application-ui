@@ -61,9 +61,7 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
 
   const handleUnderReviewPress = () => {
     setUnderReviewActive(true);
-    if (application?.status !== 'under_review') {
-      handleSelectStatus('under_review');
-    }
+    handleSelectStatus('under_review');
   };
 
   const handleApprovePress = () => {

@@ -24,7 +24,7 @@ import {
 } from '../data/user-events';
 
 interface UserEventsScreenProps {
-  onBack: () => void;
+  onBack?: () => void;
   onOpenEvent: (event: UserEvent) => void;
   onOpenAbout: () => void;
   onOpenRights: () => void;
@@ -248,7 +248,7 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
 
   const handleTabPress = (tab: HomeTab) => {
     if (tab.id === 'home') {
-      onBack();
+      onBack?.();
     } else if (tab.id === 'about') {
       onOpenAbout();
     } else if (tab.id === 'rights') {

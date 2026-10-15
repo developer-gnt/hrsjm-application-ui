@@ -27,8 +27,8 @@ export const MembershipDetailsBottomBar: React.FC<MembershipDetailsBottomBarProp
   onApprovePress,
   onRejectPress,
 }) => {
-  // Case 1: Status is Under Review and user clicked Under Review -> Show 2 rows
-  if (status === 'under_review' && underReviewActive) {
+  // Case 1: Admin clicked Under Review -> Show 2 rows
+  if (underReviewActive && status !== 'approved' && status !== 'rejected') {
     return (
       <View style={[styles.container, styles.twoRowContainer, { paddingBottom: Math.max(bottomInset, Spacing.sm) }]}>
         {/* Row 1: Reject (50%) & Approve (50%) */}

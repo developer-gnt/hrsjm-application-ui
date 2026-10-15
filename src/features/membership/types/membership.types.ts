@@ -1,4 +1,4 @@
-export type MembershipStatus = 'Under Review' | 'Approved' | 'Rejected' | 'Draft';
+export type MembershipStatus = 'Applied' | 'Under Review' | 'Approved' | 'Rejected' | 'Draft';
 
 export type MembershipType = 'Individual Membership' | 'Annual Membership' | 'Lifetime Membership' | 'Student Membership' | (string & {});
 
@@ -52,6 +52,7 @@ export interface MembershipApplicationRecord {
   membershipType: MembershipType;
   status: MembershipStatus;
   submittedAt: string; // e.g. '14 Sep 2026, 04:15 PM'
+  underReviewAt?: string; // e.g. '15 Sep 2026, 11:20 AM'
   approvedAt?: string; // e.g. '18 Sep 2026, 10:30 AM'
   rejectedAt?: string; // e.g. '16 Sep 2026, 02:40 PM'
   validFrom?: string; // e.g. '14 Sep 2026'

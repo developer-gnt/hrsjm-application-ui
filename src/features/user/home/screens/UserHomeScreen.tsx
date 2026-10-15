@@ -40,6 +40,7 @@ import type { HomeBlogItem, HomeEvent, HomeNewsItem, HomeTab } from '../types/ho
 import type { WhatWeDoId } from '../../what-we-do';
 import type { ActionPageId } from '../../action-pages';
 import { getHomeActionDestination } from '../utils/home-action-destination';
+import { useMembership } from '../../../membership/context/MembershipContext';
 
 const mapEventToHomeEvent = (item: EventListItem): HomeEvent => {
   let day = '25';
@@ -90,6 +91,7 @@ export interface UserHomeScreenProps {
   onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
   onOpenActionPage?: (pageId: ActionPageId) => void;
   onOpenProfile?: () => void;
+  onOpenStatus?: () => void;
   initialScrollOffset?: number;
   onScrollOffsetChange?: (offset: number) => void;
 }
@@ -110,9 +112,21 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   onOpenWhatWeDo,
   onOpenActionPage,
   onOpenProfile,
+  onOpenStatus,
   initialScrollOffset = 0,
   onScrollOffsetChange,
 }) => {
+  let hasApplied = false;
+  let isReapplying = false;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const membershipCtx = useMembership();
+    hasApplied = Boolean(membershipCtx?.hasApplied);
+    isReapplying = Boolean(membershipCtx?.isReapplying);
+  } catch {
+    // isolated test environment without provider
+  }
+
   const hasRestoredScroll = useRef(false);
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const [latestNews, setLatestNews] = useState<HomeNewsItem[]>(LATEST_NEWS);
@@ -227,6 +241,12 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
       >
         <HeroBanner
           onCtaPress={() => {
+            if (hasApplied && !isReapplying) {
+              if (onOpenStatus) {
+                onOpenStatus();
+                return;
+              }
+            }
             if (onOpenActionPage) {
               onOpenActionPage('join');
             } else {
@@ -239,8 +259,25 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
           <QuickActionsRow
             actions={GUEST_QUICK_ACTIONS}
             onPressAction={action => {
+              if (
+                (action.id === 'join' || action.id === 'renew' || action.id === 'membership') &&
+                hasApplied &&
+                !isReapplying
+              ) {
+                if (onOpenStatus) {
+                  onOpenStatus();
+                  return;
+                }
+              }
+
               const destination = getHomeActionDestination(action.id);
               if (destination) {
+                if ((destination === 'join' || destination === 'membership') && hasApplied && !isReapplying) {
+                  if (onOpenStatus) {
+                    onOpenStatus();
+                    return;
+                  }
+                }
                 onOpenActionPage?.(destination);
                 return;
               }

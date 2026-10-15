@@ -20,6 +20,9 @@ import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import {
   MembershipDetailsScreen,
   RenewMembershipScreen,
+  MyApplicationScreen,
+  MembershipCategoriesScreen,
+  ApplicationDetailsScreen,
 } from '../../membership';
 import {
   MemberHomeDashboardScreen,
@@ -84,8 +87,17 @@ const MemberHomeScreenComponent: React.FC<any> = ({ navigation }) => {
 const MemberProfileScreenComponent: React.FC<any> = ({ navigation }) => {
   return (
     <ProfileScreen
-      showIdCard={true}
-      onNavigate={(target) => navigation.navigate(target)}
+      onNavigate={(target) => {
+        if (target === 'MyApplication' || target === 'status') {
+          navigation.navigate('MyApplication');
+        } else if (target === 'MembershipCategories' || target === 'membership') {
+          navigation.navigate('MembershipCategories');
+        } else {
+          navigation.navigate(target);
+        }
+      }}
+      onViewStatus={() => navigation.navigate('MyApplication')}
+      onJoinMembership={() => navigation.navigate('MembershipCategories')}
       onEditPersonal={() => navigation.navigate('EditPersonalInfo')}
       onEditAdminDetails={() => navigation.navigate('AdminDetails')}
       onViewIdCard={() => navigation.navigate('MyIdCard')}
@@ -537,6 +549,42 @@ export const MemberTabNavigator: React.FC = () => {
         options={{ tabBarButton: () => null }}
         component={MemberProfileScreenComponent}
       />
+
+      <Tab.Screen
+        name="MyApplication"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <MyApplicationScreen
+            onBack={navigation.goBack}
+            onViewDetails={(app) => navigation.navigate('ApplicationDetails', { application: app })}
+            onNavigateHome={() => navigation.navigate('MemberHome')}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="ApplicationDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <ApplicationDetailsScreen
+            application={route.params?.application}
+            onBack={navigation.goBack}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="MembershipCategories"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <MembershipCategoriesScreen
+            onBack={navigation.goBack}
+          />
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 };

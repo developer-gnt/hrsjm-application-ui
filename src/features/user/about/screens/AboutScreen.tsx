@@ -67,7 +67,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
   onOpenNews,
   onOpenWhatWeDo,
   showBottomNav = false,
-  useAdminHeader = true,
+  useAdminHeader = false,
 }) => {
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const monitoringOffset = useRef(0);
@@ -135,6 +135,8 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
         />
       ) : (
         <HomeHeader
+          onBack={onBack}
+          unreadCount={3}
           showNotificationDot
           notificationDotColor={AdminColors.accentGold}
           onPressSearch={() => onNavigate?.('search') || showComingSoon('Search')}

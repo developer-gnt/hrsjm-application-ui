@@ -1,4 +1,4 @@
-export type ApplicationStatus = 'under_review' | 'approved' | 'rejected';
+export type ApplicationStatus = 'submitted' | 'under_review' | 'approved' | 'rejected';
 
 export interface MembershipApplicationItem {
   id: string;

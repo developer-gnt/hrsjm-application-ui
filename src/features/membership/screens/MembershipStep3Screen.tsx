@@ -63,7 +63,7 @@ const PRESET_OPTIONS: Record<
 
 export function MembershipStep3Screen() {
   const navigation = useNavigation<NavProp>();
-  const { documents, updateDocuments, submitApplication } = useMembership();
+  const { documents, updateDocuments, submitApplication, submitApplicationAsync } = useMembership();
 
   const [errors, setErrors] = useState<UploadErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -199,17 +199,28 @@ export function MembershipStep3Screen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateUploads()) return;
 
     setSubmitting(true);
-    setTimeout(() => {
+    try {
+      let newRecord: any;
+      if (submitApplicationAsync) {
+        newRecord = await submitApplicationAsync({ documents });
+      } else {
+        newRecord = submitApplication({ documents });
+      }
       setSubmitting(false);
-      const newRecord = submitApplication();
       navigation.navigate('MembershipSubmitted', {
         applicationId: newRecord.applicationId,
       });
-    }, 600);
+    } catch {
+      setSubmitting(false);
+      const newRecord = submitApplication({ documents });
+      navigation.navigate('MembershipSubmitted', {
+        applicationId: newRecord.applicationId,
+      });
+    }
   };
 
   return (

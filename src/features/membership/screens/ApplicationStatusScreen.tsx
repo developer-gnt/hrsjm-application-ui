@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -85,7 +85,7 @@ const STATUS_CONFIGS: Record<ApplicationInnerStatus, StatusConfigItem> = {
       {
         title: 'Under Review',
         timeKey: 'underReview',
-        defaultTime: '15 Oct 2026, 02:15 PM',
+        defaultTime: 'Recently',
       },
     ],
     timelineColor: 'green',
@@ -112,7 +112,7 @@ const STATUS_CONFIGS: Record<ApplicationInnerStatus, StatusConfigItem> = {
       {
         title: 'Under Review',
         timeKey: 'underReview',
-        defaultTime: '15 Oct 2026, 02:15 PM',
+        defaultTime: 'Recently',
       },
       {
         title: 'Approved',
@@ -143,7 +143,7 @@ const STATUS_CONFIGS: Record<ApplicationInnerStatus, StatusConfigItem> = {
       {
         title: 'Under Review',
         timeKey: 'underReview',
-        defaultTime: '15 Oct 2026, 02:15 PM',
+        defaultTime: 'Recently',
       },
     ],
     timelineColor: 'red',
@@ -154,18 +154,21 @@ const STATUS_CONFIGS: Record<ApplicationInnerStatus, StatusConfigItem> = {
 };
 
 const mapAppStatusToInnerStatus = (status?: string): ApplicationInnerStatus => {
-  if (!status) return 'under_review';
+  if (!status) return 'applied';
   const s = status.toLowerCase();
-  if (s.includes('applied') || s.includes('submit') || s.includes('draft')) {
+  if (s.includes('applied') || s.includes('submit') || s.includes('draft') || s === 'pending') {
     return 'applied';
   }
-  if (s.includes('approve')) {
+  if (s.includes('review')) {
+    return 'under_review';
+  }
+  if (s.includes('approve') || s === 'active') {
     return 'approved';
   }
   if (s.includes('reject')) {
     return 'rejected';
   }
-  return 'under_review';
+  return 'applied';
 };
 
 export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = ({
@@ -174,7 +177,7 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
 }) => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { applications, activeApplication } = useMembership();
+  const { applications, activeApplication, reapply } = useMembership();
 
   const targetAppId = applicationId || route.params?.applicationId;
   const currentApp =
@@ -184,18 +187,25 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
 
   const resolvedInitialStatus: ApplicationInnerStatus =
     initialStatus ||
-    route.params?.status ||
-    (currentApp ? mapAppStatusToInnerStatus(currentApp.status) : 'under_review');
+    (route.params?.status && route.params.status !== 'under_review' ? route.params.status : undefined) ||
+    (currentApp ? mapAppStatusToInnerStatus(currentApp.status) : 'applied');
 
   const [activeStatus, setActiveStatus] =
     useState<ApplicationInnerStatus>(resolvedInitialStatus);
 
-  const config = STATUS_CONFIGS[activeStatus] || STATUS_CONFIGS.under_review;
+  useEffect(() => {
+    if (currentApp?.status && !initialStatus && !route.params?.status) {
+      setActiveStatus(mapAppStatusToInnerStatus(currentApp.status));
+    }
+  }, [currentApp?.status, initialStatus, route.params?.status]);
+
+  const config = STATUS_CONFIGS[activeStatus] || STATUS_CONFIGS.applied;
 
   // Dynamic application data with exact reference fallback values
   const appType = currentApp?.membershipType || 'Membership Application';
   const appId = currentApp?.applicationId || 'APP-20261012-001';
   const appliedOn = currentApp?.submittedAt || '12 Oct 2026, 10:30 AM';
+  const underReviewOn = currentApp?.underReviewAt || currentApp?.submittedAt || 'Recently';
   const approvedOn = currentApp?.approvedAt || '15 Oct 2026, 04:20 PM';
   const rejectedOn = currentApp?.rejectedAt || '16 Oct 2026, 11:45 AM';
   const rejectionReason =
@@ -203,7 +213,7 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
 
   const timestamps = {
     applied: appliedOn,
-    underReview: '15 Oct 2026, 02:15 PM',
+    underReview: underReviewOn,
     approved: approvedOn,
     rejected: rejectedOn,
   };
@@ -554,6 +564,38 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
             </View>
           </View>
 
+          {/* Re-apply for Membership Button (When rejected) */}
+          {activeStatus === 'rejected' && (
+            <TouchableOpacity
+              style={styles.reapplyPrimaryButton}
+              onPress={() => {
+                reapply();
+                navigation.navigate('MembershipCategories');
+              }}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Re-apply for Membership"
+            >
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M1 4v6h6M23 20v-6h-6"
+                  stroke="#FFFFFF"
+                  strokeWidth={2.4}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <Path
+                  d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"
+                  stroke="#FFFFFF"
+                  strokeWidth={2.4}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+              <Text style={styles.reapplyPrimaryButtonText}>Re-apply for Membership</Text>
+            </TouchableOpacity>
+          )}
+
           {/* 4. Back to My Status Button */}
           <TouchableOpacity
             style={styles.backToStatusButton}
@@ -803,6 +845,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     marginTop: 3,
+  },
+
+  // Re-apply for Membership Button
+  reapplyPrimaryButton: {
+    backgroundColor: '#1B3F8F',
+    borderRadius: 10,
+    height: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    marginBottom: 10,
+    gap: 8,
+    shadowColor: '#1B3F8F',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  reapplyPrimaryButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
 
   // 4. Back to My Status Button

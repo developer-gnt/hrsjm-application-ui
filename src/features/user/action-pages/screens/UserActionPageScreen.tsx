@@ -36,6 +36,7 @@ import {
 import { navigateToMembershipCategories } from '../../../../core/navigation/appRouter';
 import { GlobalPaymentModal, PaymentPayload } from '../../../payments';
 import { useAuthStore } from '../../../auth/store/authStore';
+import { useMembership } from '../../../membership/context/MembershipContext';
 
 export interface UserActionPageScreenProps {
   pageId: ActionPageId;
@@ -47,6 +48,7 @@ export interface UserActionPageScreenProps {
   onOpenNews?: () => void;
   onOpenContact?: () => void;
   onOpenMembershipCategories?: () => void;
+  onOpenStatus?: () => void;
   showBottomNav?: boolean;
   hideBottomNav?: boolean;
 }
@@ -82,9 +84,19 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
   onOpenNews,
   onOpenContact,
   onOpenMembershipCategories,
+  onOpenStatus,
   showBottomNav = false,
   hideBottomNav = true,
 }) => {
+  let hasApplied = false;
+  let isReapplying = false;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const membershipCtx = useMembership();
+    hasApplied = Boolean(membershipCtx?.hasApplied);
+    isReapplying = Boolean(membershipCtx?.isReapplying);
+  } catch {}
+
   const content = ACTION_PAGE_CONTENT[pageId];
   const { width } = useWindowDimensions();
   const [selectedAmount, setSelectedAmount] = useState<number | 'custom'>(500);
@@ -144,6 +156,16 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
       content.ctaLabel === 'Apply for Membership' ||
       content.ctaLabel === 'Become a Member'
     ) {
+      if (hasApplied && !isReapplying) {
+        if (onOpenStatus) {
+          onOpenStatus();
+          return;
+        }
+        if (onOpenMembershipCategories) {
+          onOpenMembershipCategories();
+          return;
+        }
+      }
       if (onOpenMembershipCategories) {
         onOpenMembershipCategories();
       } else {

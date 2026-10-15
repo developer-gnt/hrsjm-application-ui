@@ -56,6 +56,8 @@ interface NewsScreenProps {
   onOpenContact: () => void;
   showBottomNav?: boolean;
   hideBottomNav?: boolean;
+  showBack?: boolean;
+  onBack?: () => void;
 }
 
 const DATE_FILTERS: NewsDateFilter[] = [
@@ -192,6 +194,8 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
   onOpenContact,
   showBottomNav = false,
   hideBottomNav = true,
+  showBack = false,
+  onBack,
 }) => {
   const { width } = useWindowDimensions();
   const slideWidth = width;
@@ -492,7 +496,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
-        onBack={handleBack}
+        onBack={showBack ? (onBack || handleBack) : undefined}
         onPressSearch={() => searchRef.current?.focus()}
       />
       <FlatList

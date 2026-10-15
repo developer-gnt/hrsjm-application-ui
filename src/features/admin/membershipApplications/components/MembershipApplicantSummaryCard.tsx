@@ -43,6 +43,13 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
             <Text style={[styles.statusText, styles.textRejected]}>Rejected</Text>
           </View>
         );
+      case 'submitted':
+      default:
+        return (
+          <View style={[styles.statusBadge, styles.badgeSubmitted]}>
+            <Text style={[styles.statusText, styles.textSubmitted]}>Submitted</Text>
+          </View>
+        );
     }
   };
 
@@ -237,6 +244,12 @@ const styles = StyleSheet.create({
   },
   textRejected: {
     color: '#DC2626',
+  },
+  badgeSubmitted: {
+    backgroundColor: '#EEF2FF',
+  },
+  textSubmitted: {
+    color: '#4338CA',
   },
   statusText: {
     fontSize: 11,

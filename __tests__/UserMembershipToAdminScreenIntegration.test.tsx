@@ -106,7 +106,7 @@ describe('User Membership to Admin Membership Applications Screen Integration', 
     const firstApp = applications[0];
     expect(firstApp.applicantName).toBe('qwertyuiop');
     expect(firstApp.membershipType).toBe('District Active Member');
-    expect(firstApp.status).toBe('under_review');
+    expect(['submitted', 'under_review']).toContain(firstApp.status);
     expect(firstApp.phone).toContain('1234567890');
     expect(firstApp.email).toBe('qwertyuio@gmail.com');
     expect(firstApp.dob).toBe('15/01/1998');

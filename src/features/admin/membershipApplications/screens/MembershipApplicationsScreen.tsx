@@ -88,7 +88,33 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
       setApplications(membershipApplicationsStore.getApplications());
       setStats(membershipApplicationsStore.getStats());
     });
-    return unsubscribe;
+
+    // Auto-refresh interval so new submissions and re-applications appear dynamically without hard reload
+    let intervalId: any = null;
+    if (process.env.NODE_ENV !== 'test') {
+      intervalId = setInterval(() => {
+        membershipApplicationsStore.fetchApplications().catch(() => {});
+      }, 4000);
+    }
+
+    // Sync on window focus and storage changes
+    const handleSync = () => {
+      membershipApplicationsStore.fetchApplications().catch(() => {});
+    };
+
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('focus', handleSync);
+      window.addEventListener('storage', handleSync);
+    }
+
+    return () => {
+      unsubscribe();
+      if (intervalId) clearInterval(intervalId);
+      if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+        window.removeEventListener('focus', handleSync);
+        window.removeEventListener('storage', handleSync);
+      }
+    };
   }, []);
 
   // Reset to page 1 on filter changes
@@ -142,7 +168,11 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   const filteredApplications = useMemo(() => {
     const list = applications.filter(app => {
       // Status filter
-      if (activeTab !== 'all' && app.status !== activeTab) {
+      if (activeTab === 'under_review') {
+        if (app.status !== 'under_review' && (app.status as string) !== 'submitted') {
+          return false;
+        }
+      } else if (activeTab !== 'all' && app.status !== activeTab) {
         return false;
       }
       // Membership type filter

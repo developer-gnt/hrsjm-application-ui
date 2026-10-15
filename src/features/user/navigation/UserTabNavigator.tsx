@@ -43,6 +43,7 @@ import { ApplicationDetailsScreen } from '../../membership/screens/ApplicationDe
 import { ApplicationApprovedScreen } from '../../membership/screens/ApplicationApprovedScreen';
 import { ApplicationRejectedScreen } from '../../membership/screens/ApplicationRejectedScreen';
 import { ApplicationAppliedScreen } from '../../membership/screens/ApplicationAppliedScreen';
+import { useMembership } from '../../membership/context/MembershipContext';
 
 import {
   House,
@@ -64,9 +65,23 @@ interface UserTabItem {
 }
 
 const UserHomeScreenComponent: React.FC<any> = ({ navigation }) => {
+  let hasApplied = false;
+  let isReapplying = false;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const membershipCtx = useMembership();
+    hasApplied = Boolean(membershipCtx?.hasApplied);
+    isReapplying = Boolean(membershipCtx?.isReapplying);
+  } catch {}
+
+  const handleOpenStatus = () => {
+    navigation.navigate('MyApplication');
+  };
+
   return (
     <UserHomeScreen
       hideBottomNav={true}
+      onOpenStatus={handleOpenStatus}
       onOpenProfile={() => navigation.navigate('UserProfile')}
       onOpenContact={() => navigation.navigate('ContactUs')}
       onOpenRights={() => navigation.navigate('UserRights')}
@@ -81,6 +96,10 @@ const UserHomeScreenComponent: React.FC<any> = ({ navigation }) => {
       onOpenRight={(rightId) => navigation.navigate('RightDetails', { rightId })}
       onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail', { contentId })}
       onOpenActionPage={(pageId) => {
+        if ((pageId === 'membership' || pageId === 'join') && hasApplied && !isReapplying) {
+          handleOpenStatus();
+          return;
+        }
         if (pageId === 'membership') {
           navigation.navigate('MembershipCategories');
         } else {
@@ -92,10 +111,18 @@ const UserHomeScreenComponent: React.FC<any> = ({ navigation }) => {
 };
 
 const UserAboutScreenComponent: React.FC<any> = ({ navigation }) => {
+  let hasApplied = false;
+  let isReapplying = false;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const membershipCtx = useMembership();
+    hasApplied = Boolean(membershipCtx?.hasApplied);
+    isReapplying = Boolean(membershipCtx?.isReapplying);
+  } catch {}
+
   return (
     <AboutScreen
       showBottomNav={false}
-      onBack={() => navigation.navigate('UserHome')}
       onOpenRights={() => navigation.navigate('UserRights')}
       onOpenContact={() => navigation.navigate('ContactUs')}
       onOpenEvents={() => navigation.navigate('UserEvents')}
@@ -105,7 +132,11 @@ const UserAboutScreenComponent: React.FC<any> = ({ navigation }) => {
         if (target === 'donations') {
           navigation.navigate('UserActionPage', { pageId: 'donate' });
         } else if (target === 'membership' || target === 'membership-categories') {
-          navigation.navigate('MembershipCategories');
+          if (hasApplied && !isReapplying) {
+            navigation.navigate('MyApplication');
+          } else {
+            navigation.navigate('MembershipCategories');
+          }
         } else if (target === 'blogs' || target === 'articles') {
           navigation.navigate('UserBlogs');
         } else {
@@ -119,7 +150,6 @@ const UserAboutScreenComponent: React.FC<any> = ({ navigation }) => {
 const UserRightsScreenComponent: React.FC<any> = ({ navigation }) => {
   return (
     <MemberRightsScreen
-      onBack={() => navigation.navigate('UserHome')}
       onOpenRight={(rightId) => navigation.navigate('RightDetails', { rightId })}
       onFileComplaint={() => navigation.navigate('FileComplaint')}
       onContactSupport={() => navigation.navigate('ContactUs')}
@@ -132,7 +162,6 @@ const UserEventsScreenComponent: React.FC<any> = ({ navigation }) => {
     <UserEventsScreen
       hideBottomNav={true}
       showBottomNav={false}
-      onBack={() => navigation.navigate('UserHome')}
       onOpenEvent={(event) => navigation.navigate('UserEventDetails', { event })}
       onOpenAbout={() => navigation.navigate('UserAbout')}
       onOpenRights={() => navigation.navigate('UserRights')}
@@ -161,7 +190,7 @@ const UserProfileScreenComponent: React.FC<any> = ({ navigation }) => {
   return (
     <ProfileScreen
       showIdCard={false}
-      headerComponent={<HomeHeader onBack={() => navigation.navigate('UserHome')} />}
+      headerComponent={<HomeHeader />}
       onNavigate={(target) => {
         if (target === 'ContactUs' || target === 'contact') {
           navigation.navigate('ContactUs');
@@ -458,8 +487,20 @@ export const UserTabNavigator: React.FC = () => {
         options={{ tabBarButton: () => null }}
       >
         {({ navigation, route }: any) => {
+          let hasApplied = false;
+          let isReapplying = false;
+          try {
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            const membershipCtx = useMembership();
+            hasApplied = Boolean(membershipCtx?.hasApplied);
+            isReapplying = Boolean(membershipCtx?.isReapplying);
+          } catch {}
+
           const pageId = route.params?.pageId || 'join';
           if (pageId === 'membership') {
+            if (hasApplied && !isReapplying) {
+              return <MyApplicationScreen />;
+            }
             return (
               <MembershipCategoriesScreen
                 onBack={navigation.goBack}
@@ -481,7 +522,13 @@ export const UserTabNavigator: React.FC = () => {
               onOpenEvents={() => navigation.navigate('UserEvents')}
               onOpenNews={() => navigation.navigate('UserNews')}
               onOpenContact={() => navigation.navigate('ContactUs')}
-              onOpenMembershipCategories={() => navigation.navigate('MembershipCategories')}
+              onOpenMembershipCategories={() => {
+                if (hasApplied && !isReapplying) {
+                  navigation.navigate('MyApplication');
+                } else {
+                  navigation.navigate('MembershipCategories');
+                }
+              }}
             />
           );
         }}
