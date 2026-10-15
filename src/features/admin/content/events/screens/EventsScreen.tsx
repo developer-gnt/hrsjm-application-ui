@@ -3,6 +3,7 @@ import {
   Alert,
   FlatList,
   RefreshControl,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -19,16 +20,20 @@ import {
   AppButton,
   AppEmptyState,
   AppErrorState,
+  AppPagination,
   AppSearchBar,
   SkeletonCard,
 } from '../../../../../core/components';
 import { formatDate } from '../../../../../core/utils';
+import { useNavigation } from '@react-navigation/native';
+import { useAuthStore } from '../../../../auth/store/authStore';
 import { EventCard, EventListHeader } from '../components/EventCard';
 import { EventFilters } from '../components/EventFilters';
 import { EventSummaryStats } from '../components/EventSummaryStats';
-import { AdminShellHeader } from '../preview/AdminShellHeader';
-import { AdminShellTabBar } from '../preview/AdminShellTabBar';
+import { AdminHeader } from '../../../../../app/navigation';
+import { useEvents, useRefreshEvents } from '../hooks/useEvents';
 import { SAMPLE_EVENTS, SAMPLE_EVENT_CATEGORIES } from '../data/sample-events';
+import { EventDetailsScreen } from './EventDetailsScreen';
 import type {
   EventListItem,
   EventStatusFilter,
@@ -63,7 +68,8 @@ const EmptyStateView: React.FC<{
   hasActiveFilters: boolean;
   onClearFilters: () => void;
   onAddEvent: () => void;
-}> = ({ hasActiveFilters, onClearFilters, onAddEvent }) => (
+  allowCreate?: boolean;
+}> = ({ hasActiveFilters, onClearFilters, onAddEvent, allowCreate = true }) => (
   <View style={styles.emptyContainer}>
     {hasActiveFilters ? (
       <AppEmptyState
@@ -78,8 +84,8 @@ const EmptyStateView: React.FC<{
         icon="📅"
         title="No Events Found"
         description="There are no events to display yet."
-        actionTitle="Add Event"
-        onAction={onAddEvent}
+        actionTitle={allowCreate ? 'Add Event' : undefined}
+        onAction={allowCreate ? onAddEvent : undefined}
       />
     )}
   </View>
@@ -87,26 +93,38 @@ const EmptyStateView: React.FC<{
 
 interface EventsScreenProps {
   /**
-   * TEMPORARY (UI-only phase): called when the user taps View on an event row.
-   * When not provided, a placeholder alert is shown instead. Real navigation
-   * will replace this with the shared admin navigation architecture.
+   * Called when the user taps View on an event row.
+   * When not provided, opens EventDetailsScreen internally.
    */
   onViewEvent?: (event: EventListItem) => void;
   /**
-   * TEMPORARY (UI-only phase): called when the user taps "+ Add Event".
-   * When not provided, a placeholder alert is shown instead.
+   * Called when the user taps "+ Add Event".
    */
   onAddEvent?: () => void;
   /**
-   * TEMPORARY (UI-only phase): called when a bottom tab is pressed on the
-   * preview shell (e.g. jumping to News/Blogs/Rights). When not provided, the
-   * shell shows its preview notice (original behavior). Real navigation
-   * replaces this.
+   * Called when a bottom tab is pressed on the preview shell.
    */
   onTabPress?: (tab: string) => void;
+  /**
+   * Whether to display the create event action button. Defaults to true for admin, false for members.
+   */
+  canCreate?: boolean;
 }
 
-export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEvent, onTabPress }) => {
+export const EventsScreen: React.FC<EventsScreenProps> = ({
+  onViewEvent,
+  onAddEvent,
+  onTabPress,
+  canCreate,
+}) => {
+  const navigation = useNavigation<any>();
+  const user = useAuthStore(state => state.user);
+  const isAdmin = user?.roles?.some(r =>
+    ['admin', 'superadmin', 'super_admin'].includes(r.name.toLowerCase()),
+  );
+  const allowCreate = canCreate !== undefined ? canCreate : Boolean(isAdmin);
+
+  const [internalSelectedEvent, setInternalSelectedEvent] = useState<EventListItem | null>(null);
   const [uiState, setUiState] = useState<EventsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,25 +132,25 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  /** TEMPORARY: replace `events` with the data returned by the real useEvents hook. */
-  const events = SAMPLE_EVENTS;
+  const { data, isLoading, isError, refetch } = useEvents({
+    status: activeStatus,
+    category: activeCategory || undefined,
+    search: searchQuery,
+  });
 
-  // TEMPORARY (UI-only phase): simulated latency so the loading state is
-  // demonstrable during review. Remove when the real events hook drives this screen.
-  useEffect(() => {
-    const timer = setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, []);
+  const refreshEvents = useRefreshEvents({
+    status: activeStatus,
+    category: activeCategory || undefined,
+    search: searchQuery,
+  });
 
-  const stats = useMemo<EventStatsSummary>(
-    () => ({
-      total: events.length,
-      upcoming: events.filter(event => event.status === 'UPCOMING').length,
-      completed: events.filter(event => event.status === 'COMPLETED').length,
-      cancelled: events.filter(event => event.status === 'CANCELLED').length,
-    }),
-    [events],
-  );
+  const events = data?.events ?? SAMPLE_EVENTS;
+  const stats: EventStatsSummary = data?.stats ?? {
+    total: events.length,
+    upcoming: events.filter(event => event.status === 'UPCOMING').length,
+    completed: events.filter(event => event.status === 'COMPLETED').length,
+    cancelled: events.filter(event => event.status === 'CANCELLED').length,
+  };
 
   const statusTabs = useMemo(
     () => [
@@ -170,6 +188,18 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
     });
   }, [events, searchQuery, activeStatus, activeCategory]);
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredEvents.slice(startIndex, startIndex + pageSize);
+  }, [filteredEvents, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeStatus, activeCategory]);
+
   const hasActiveFilters =
     searchQuery.trim() !== '' || activeStatus !== 'ALL' || activeCategory !== null;
 
@@ -199,13 +229,27 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
       onViewEvent(event);
       return;
     }
-    Alert.alert(
-      event.title,
-      'The Event Details screen will be implemented in the next phase of the Events module.',
-    );
+    setInternalSelectedEvent(event);
   };
 
   const handleEventMenu = (event: EventListItem) => {
+    if (!allowCreate) {
+      Alert.alert(event.title, undefined, [
+        { text: 'View Details', onPress: () => handleEventPress(event) },
+        {
+          text: 'Share',
+          onPress: () => {
+            Share.share({
+              title: event.title,
+              message: `Join "${event.title}" on ${formatDate(event.startAt)} at ${event.location || 'HRSJM'}.`,
+            }).catch(() => {});
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+      return;
+    }
+
     Alert.alert(event.title, undefined, [
       { text: 'View Details', onPress: () => handleEventPress(event) },
       {
@@ -232,36 +276,61 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
   const handleStatusChange = (status: EventStatusFilter) => setActiveStatus(status);
 
   const handleRetry = () => {
-    setUiState('loading');
-    // TEMPORARY (UI-only phase): retry returns to the sample data — no API call yet.
-    setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
+    refetch();
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    // TEMPORARY (UI-only phase): simulated refresh latency — no API call yet.
-    setTimeout(() => setRefreshing(false), SAMPLE_DATA_LOAD_DELAY_MS);
+    try {
+      await refreshEvents();
+    } finally {
+      setRefreshing(false);
+    }
   };
 
-  return (
-    <View style={styles.root}>
-      {/* TEMPORARY preview shell: real global header is owned by the app-level architecture. */}
-      <AdminShellHeader />
+  const handleDrawerNavigate = (target: string) => {
+    if (
+      target === 'AdminDashboardTab' ||
+      target === 'AdminMembersTab' ||
+      target === 'AdminApplicationsTab' ||
+      target === 'AdminComplaintsTab'
+    ) {
+      (navigation.getParent() as any)?.jumpTo(target);
+    } else if (target === 'AdminMoreTab') {
+      navigation.navigate('MoreMenu' as any);
+    } else {
+      navigation.navigate(target as any);
+    }
+  };
 
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        {/* Page header: title/subtitle + Add Event */}
-        <View style={styles.pageHeader}>
-          <View style={styles.pageHeaderText}>
-            <Text style={styles.pageTitle}>Events</Text>
-            <Text
-              style={styles.pageSubtitle}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              numberOfLines={1}
-            >
-              Manage and view all events and activities.
-            </Text>
-          </View>
+  if (internalSelectedEvent) {
+    return (
+      <EventDetailsScreen
+        event={internalSelectedEvent}
+        onBack={() => setInternalSelectedEvent(null)}
+        canManage={allowCreate}
+      />
+    );
+  }
+
+  const renderListHeader = () => (
+    <View>
+      {/* Page header: title/subtitle + Add Event */}
+      <View style={styles.pageHeader}>
+        <View style={styles.pageHeaderText}>
+          <Text style={styles.pageTitle}>Events</Text>
+          <Text
+            style={styles.pageSubtitle}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            numberOfLines={1}
+          >
+            {allowCreate
+              ? 'Manage and view all events and activities.'
+              : 'View and participate in all events and activities.'}
+          </Text>
+        </View>
+        {allowCreate && (
           <AppButton
             title="Add Event"
             size="sm"
@@ -270,89 +339,110 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onViewEvent, onAddEv
             textStyle={styles.addButtonText}
             style={styles.addButton}
           />
-        </View>
+        )}
+      </View>
 
-        <View style={styles.statsSection}>
-          <EventSummaryStats stats={stats} />
-        </View>
+      <View style={styles.statsSection}>
+        <EventSummaryStats stats={stats} />
+      </View>
 
-        <View style={styles.searchRow}>
-          <AppSearchBar
-            placeholder="Search by event name, location or date..."
-            value={searchQuery}
-            onSearch={handleSearch}
-            containerStyle={styles.searchBar}
-          />
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              (filtersExpanded || activeCategory !== null) && styles.filterButtonActive,
-            ]}
-            onPress={() => setFiltersExpanded(previous => !previous)}
-            accessibilityRole="button"
-            accessibilityLabel="Filters"
-            accessibilityState={{ expanded: filtersExpanded }}
-          >
-            <Text style={styles.filterIcon}>{filtersExpanded ? '▴' : '▾'}</Text>
-            <Text style={styles.filterText}>Filters</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.searchRow}>
+        <AppSearchBar
+          placeholder="Search by event name, location or date..."
+          value={searchQuery}
+          onSearch={handleSearch}
+          containerStyle={styles.searchBar}
+        />
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            (filtersExpanded || activeCategory !== null) && styles.filterButtonActive,
+          ]}
+          onPress={() => setFiltersExpanded(previous => !previous)}
+          accessibilityRole="button"
+          accessibilityLabel="Filters"
+          accessibilityState={{ expanded: filtersExpanded }}
+        >
+          <Text style={styles.filterIcon}>{filtersExpanded ? '▴' : '▾'}</Text>
+          <Text style={styles.filterText}>Filters</Text>
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.filtersSection}>
-          <EventFilters
-            tabs={statusTabs}
-            activeTab={activeStatus}
-            onTabChange={handleStatusChange}
-            expanded={filtersExpanded}
-            categories={SAMPLE_EVENT_CATEGORIES}
-            activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-            onApply={() => setFiltersExpanded(false)}
-          />
-        </View>
+      <View style={styles.filtersSection}>
+        <EventFilters
+          tabs={statusTabs}
+          activeTab={activeStatus}
+          onTabChange={handleStatusChange}
+          expanded={filtersExpanded}
+          categories={SAMPLE_EVENT_CATEGORIES}
+          activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory}
+          onApply={() => setFiltersExpanded(false)}
+        />
+      </View>
 
-        {uiState === 'loading' ? (
-          <LoadingListView />
-        ) : uiState === 'error' ? (
-          <AppErrorState
-            title="Unable to load events."
-            message="Something went wrong while loading events. Please try again."
-            onRetry={handleRetry}
-            style={styles.errorState}
-          />
-        ) : (
-          <FlatList
-            data={filteredEvents}
-            keyExtractor={item => item.id}
-            ListHeaderComponent={EventListHeader}
-            renderItem={({ item }) => (
-              <EventCard event={item} onPress={handleEventPress} onMorePress={handleEventMenu} />
-            )}
-            ListEmptyComponent={
+      <EventListHeader />
+    </View>
+  );
+
+  return (
+    <View style={styles.root}>
+      {/* Unified official Admin Header - Fixed at Top */}
+      <AdminHeader onNavigate={handleDrawerNavigate} unreadCount={3} />
+
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+        <FlatList
+          data={isLoading && !data ? [] : paginatedEvents}
+          keyExtractor={item => item.id}
+          ListHeaderComponent={renderListHeader}
+          ListFooterComponent={
+            filteredEvents.length > 0 ? (
+              <AppPagination
+                currentPage={page}
+                totalItems={filteredEvents.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemLabel="events"
+              />
+            ) : undefined
+          }
+          renderItem={({ item }) => (
+            <EventCard event={item} onPress={handleEventPress} onMorePress={handleEventMenu} />
+          )}
+          ListEmptyComponent={
+            isLoading && !data ? (
+              <LoadingListView />
+            ) : isError && !data ? (
+              <AppErrorState
+                title="Unable to load events."
+                message="Something went wrong while loading events. Please try again."
+                onRetry={handleRetry}
+                style={styles.errorState}
+              />
+            ) : (
               <EmptyStateView
                 hasActiveFilters={hasActiveFilters}
                 onClearFilters={clearFilters}
                 onAddEvent={handleAddEvent}
+                allowCreate={allowCreate}
               />
-            }
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                tintColor={AdminColors.primary}
-                colors={[AdminColors.primary]}
-              />
-            }
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-          />
-        )}
+            )
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={AdminColors.primary}
+              colors={[AdminColors.primary]}
+            />
+          }
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
       </SafeAreaView>
-
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar onTabPress={onTabPress} />
     </View>
   );
 };

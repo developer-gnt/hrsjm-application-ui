@@ -55,6 +55,8 @@ export interface UserHomeScreenProps {
   onOpenRights?: () => void;
   /** Opens the About page (About tab in the shared six-tab navigation). */
   onOpenAbout?: () => void;
+  /** Hides the built-in preview bottom bar when hosted in a tab navigator. */
+  hideBottomNav?: boolean;
   /** Opens the Get Help flow from the existing Home quick action card. */
   onOpenGetHelp?: () => void;
   onOpenEvents?: () => void;
@@ -68,20 +70,11 @@ export interface UserHomeScreenProps {
   onScrollOffsetChange?: (offset: number) => void;
 }
 
-/**
- * User-facing Home screen — single reference-locked composition:
- * header, hero, guest quick actions, About, Know Your Rights,
- * What HRSJM Does, Our Impact and the shared six-tab bottom navigation.
- *
- * Content comes from the isolated preview data modules until the backend
- * integration phase. Member-profile sections (greeting, membership card,
- * member quick actions) are intentionally NOT part of this composition —
- * their components remain in the codebase for the future Member Home.
- */
 export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   onOpenContact,
   onOpenRights,
   onOpenAbout,
+  hideBottomNav = true,
   onOpenGetHelp,
   onOpenEvents,
   onOpenNews,
@@ -426,7 +419,9 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
         </View>
       </ScrollView>
 
-      <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      {!hideBottomNav && (
+        <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      )}
     </SafeAreaView>
   );
 };

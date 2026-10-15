@@ -32,12 +32,13 @@ import type { WhatWeDoId } from '../../what-we-do';
 
 export interface AboutScreenProps {
   onBack?: () => void;
+  /** Navigate to an in-app route (used by the closing CTA). */
+  onNavigate?: (target: string) => void;
   onOpenRights?: () => void;
   onOpenContact?: () => void;
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
   onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
-  onOpenActionPage?: (pageId: import('../../action-pages').ActionPageId) => void;
 }
 
 const SectionHeading: React.FC<{
@@ -55,12 +56,12 @@ const SectionHeading: React.FC<{
 
 export const AboutScreen: React.FC<AboutScreenProps> = ({
   onBack,
+  onNavigate,
   onOpenRights,
   onOpenContact,
   onOpenEvents,
   onOpenNews,
   onOpenWhatWeDo,
-  onOpenActionPage,
 }) => {
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const monitoringOffset = useRef(0);
@@ -122,6 +123,8 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
       <HomeHeader
         showNotificationDot
         notificationDotColor={AdminColors.accentGold}
+        onPressSearch={() => onNavigate?.('search') || showComingSoon('Search')}
+        onPressNotifications={() => onNavigate?.('notifications') || showComingSoon('Notifications')}
       />
       <ScrollView
         ref={scrollRef}
@@ -169,13 +172,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
         <View style={styles.ctaSection}>
           <AboutFinalCta
             content={ABOUT_CONTENT.finalCta}
-            onPress={() => {
-              if (onOpenActionPage) {
-                onOpenActionPage('join');
-              } else {
-                showComingSoon(ABOUT_CONTENT.finalCta.buttonLabel);
-              }
-            }}
+            onPress={() => onNavigate?.('donations') || showComingSoon(ABOUT_CONTENT.finalCta.buttonLabel)}
           />
         </View>
       </ScrollView>
@@ -191,7 +188,6 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
-    backgroundColor: AdminColors.background,
   },
   scrollContent: {
     paddingBottom: Spacing.xl,
@@ -232,3 +228,5 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
 });
+
+export default AboutScreen;

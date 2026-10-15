@@ -24,8 +24,7 @@ import {
   formatBlogViews,
 } from '../components/BlogCard';
 import { BlogActionMenu } from '../components/BlogActionMenu';
-import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
-import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import type { BlogListItem } from '../types/blog.types';
 
 interface BlogDetailsScreenProps {
@@ -102,20 +101,6 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
     setCoverFailed(false);
   }, [blog?.id]);
 
-  const handleShellTabPress = (tab: string) => {
-    if (tab === 'blogs') {
-      return;
-    }
-    if ((tab === 'events' || tab === 'news' || tab === 'rights') && onTabPress) {
-      onTabPress(tab);
-      return;
-    }
-    Alert.alert(
-      'Preview shell',
-      'Global navigation is owned by the app-level architecture. This bar is a temporary visual preview only.',
-    );
-  };
-
   // The action sheet closes itself before calling this; all actions are
   // UI-only placeholders until the backend contract lands.
   const handleAction = (action: string) => {
@@ -136,7 +121,7 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
   if (loading) {
     return (
       <View style={styles.root}>
-        <AdminShellHeader leading="back" onBack={onBack} />
+        <AdminHeader showBack onBack={onBack} />
         <AppLoader fullScreen message="Loading blog..." />
       </View>
     );
@@ -145,7 +130,7 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
   if (!blog) {
     return (
       <View style={styles.root}>
-        <AdminShellHeader leading="back" onBack={onBack} />
+        <AdminHeader showBack onBack={onBack} />
         <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
           <AppEmptyState
             icon="📝"
@@ -174,8 +159,8 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
 
   return (
     <View style={styles.root}>
-      {/* TEMPORARY preview shell: real global header is owned by the app-level architecture. */}
-      <AdminShellHeader leading="back" onBack={onBack} />
+      {/* Unified HRSJM Admin Header with back button */}
+      <AdminHeader showBack onBack={onBack} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <ScrollView
@@ -269,9 +254,6 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
           ))}
         </ScrollView>
       </SafeAreaView>
-
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar activeTab="blogs" onTabPress={handleShellTabPress} />
 
       <BlogActionMenu
         visible={actionSheetVisible}

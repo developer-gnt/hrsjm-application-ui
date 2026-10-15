@@ -21,7 +21,7 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import { AppButton, AppAvatar } from '../../../../../core/components';
+import { AppButton, AppAvatar, AppMediaUploadSheet } from '../../../../../core/components';
 import { EventPickerSheet } from '../../events/components/EventPickerSheet';
 import { EventFormToast } from '../../events/components/EventFormToast';
 import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
@@ -806,17 +806,18 @@ export const RightsArticleForm: React.FC<RightsArticleFormProps> = ({
         onConfirm={handleDiscardConfirmed}
       />
 
-      {/* Cover image chooser (rights sample imagery, no upload) */}
-      <EventPickerSheet
+      {/* WhatsApp-Style Cover image chooser (Camera, Gallery, Presets, URL) */}
+      <AppMediaUploadSheet
         visible={imageChooserVisible}
-        title="Select Cover Image"
-        hint="Demo images only — real upload needs the shared image picker + backend flow"
-        options={RIGHTS_COVER_IMAGE_OPTIONS}
-        selected={form.coverImageUri}
-        itemLabel={uri => `Rights image ${RIGHTS_COVER_IMAGE_OPTIONS.indexOf(uri) + 1}`}
+        title="Select Rights Cover Image"
+        subtitle="Camera, Gallery, File or Curated Presets"
+        currentValue={form.coverImageUri}
         onSelect={value => {
           updateField('coverImageUri', value);
-          setToast({ message: 'Cover image selected.', variant: 'success' });
+          setToast({
+            message: value ? 'Cover image selected.' : 'Cover image removed.',
+            variant: 'success',
+          });
         }}
         onClose={() => setImageChooserVisible(false)}
       />

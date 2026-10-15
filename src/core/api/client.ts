@@ -1,16 +1,30 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { Platform } from 'react-native';
 import { authRequestInterceptor } from './interceptors/auth.interceptor';
 import { setupRefreshInterceptor } from './interceptors/refresh.interceptor';
 import { errorResponseInterceptor } from './interceptors/error.interceptor';
 import { ApiResponse } from './api.types';
+import { APP_CONFIG } from '../../app/config/app.config';
 
-// Default configuration for development / production
-export const API_BASE_URL = 'http://10.0.2.2:5000/api/v1'; // Android emulator localhost default
+// Single source of truth for the environment base URL (see app.config.ts).
+export const API_BASE_URL =
+  Platform.OS === 'web' ? '/api/v1' : APP_CONFIG.apiBaseUrl;
+
+/**
+ * Invoked when the refresh interceptor exhausts the refresh token (expired /
+ * revoked) and the session cannot be recovered. The app layer registers the
+ * handler at startup (see AppProviders) to route the user back to login.
+ */
+let sessionExpiredHandler: (() => void) | null = null;
+
+export const setSessionExpiredHandler = (handler: (() => void) | null): void => {
+  sessionExpiredHandler = handler;
+};
 
 const createApiClient = (baseURL: string = API_BASE_URL): AxiosInstance => {
   const instance = axios.create({
     baseURL,
-    timeout: 15000,
+    timeout: APP_CONFIG.requestTimeoutMs,
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -21,7 +35,7 @@ const createApiClient = (baseURL: string = API_BASE_URL): AxiosInstance => {
   instance.interceptors.request.use(authRequestInterceptor, error => Promise.reject(error));
 
   // 2. Token Refresh Interceptor (registered before error normalizer)
-  setupRefreshInterceptor(instance, baseURL);
+  setupRefreshInterceptor(instance, baseURL, () => sessionExpiredHandler?.());
 
   // 3. Error Normalization Interceptor
   instance.interceptors.response.use(
@@ -74,6 +88,31 @@ export const apiClient = {
     const response = await axiosInstance.delete<ApiResponse<T>>(url, config);
     return response.data;
   },
+};
+
+export const api = apiClient;
+
+export const unwrap = <T>(res: ApiResponse<T> | T): T => {
+  if (res && typeof res === 'object' && 'data' in (res as any) && (res as any).success !== undefined) {
+    return (res as any).data;
+  }
+  return res as T;
+};
+
+export const getApiErrorMessage = (
+  error: unknown,
+  defaultMsg: string = 'An error occurred'
+): string => {
+  if (error && typeof error === 'object') {
+    if ('message' in error && typeof (error as any).message === 'string') {
+      return (error as any).message;
+    }
+  }
+  return defaultMsg;
+};
+
+export const authEvents = {
+  onSessionExpired: (cb: () => void) => setSessionExpiredHandler(cb),
 };
 
 export default apiClient;

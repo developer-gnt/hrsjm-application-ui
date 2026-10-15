@@ -12,17 +12,7 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import { EventPickerSheet } from './EventPickerSheet';
-import { SAMPLE_COVER_IMAGE_OPTIONS } from '../data/sample-events';
-
-/**
- * TEMPORARY local cover-image selection UI.
- *
- * Real gallery capture/upload requires the shared AppImagePicker component
- * (Aman) plus the backend upload flow (spec section 26). Until then this
- * picker offers demo images locally so the full form UI is testable — no
- * upload happens and nothing is sent anywhere.
- */
+import { AppMediaUploadSheet } from '../../../../../core/components/common/AppMediaUploadSheet';
 
 interface EventImagePickerProps {
   value: string | null;
@@ -57,18 +47,16 @@ export const EventImagePicker: React.FC<EventImagePickerProps> = ({ value, error
           <View style={styles.emptyContent} pointerEvents="none">
             <Text style={styles.emptyIcon}>🖼️</Text>
             <Text style={styles.emptyTitle}>Tap to upload event image</Text>
-            <Text style={styles.emptySubtitle}>JPG, PNG (Max 5MB)</Text>
+            <Text style={styles.emptySubtitle}>Camera, Gallery, or Presets (JPG, PNG)</Text>
           </View>
         )}
       </TouchableOpacity>
 
-      <EventPickerSheet
+      <AppMediaUploadSheet
         visible={chooserVisible}
         title="Select Cover Image"
-        hint="Demo images only — real upload needs the shared image picker + backend flow"
-        options={SAMPLE_COVER_IMAGE_OPTIONS}
-        selected={value}
-        itemLabel={uri => `Demo image ${SAMPLE_COVER_IMAGE_OPTIONS.indexOf(uri) + 1}`}
+        subtitle="Camera, Gallery, File or Curated Presets"
+        currentValue={value}
         onSelect={onChange}
         onClose={() => setChooserVisible(false)}
       />

@@ -1,17 +1,12 @@
 import React from 'react';
-import { EMPTY_EVENT_FORM, EventForm } from '../components/EventForm';
+import { EventForm, EMPTY_EVENT_FORM } from '../components/EventForm';
 
-interface CreateEventScreenProps {
-  /** TEMPORARY: back navigation to the Events list (real navigation later). */
+export interface CreateEventScreenProps {
   onCancel: () => void;
 }
 
 /**
- * Create Event screen (spec section 10 / PRD Create Event).
- *
- * Thin wrapper around the shared EventForm — the exact same form the Edit
- * Event screen uses, starting empty. All sections, validation, pickers,
- * dirty-state handling and the UI-only save confirmation live in EventForm.
+ * Admin › Content › Events › Create Event screen.
  */
 export const CreateEventScreen: React.FC<CreateEventScreenProps> = ({ onCancel }) => {
   return (
@@ -26,3 +21,5 @@ export const CreateEventScreen: React.FC<CreateEventScreenProps> = ({ onCancel }
     />
   );
 };
+
+export default CreateEventScreen;

@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -19,24 +18,22 @@ import {
   AppButton,
   AppEmptyState,
   AppErrorState,
+  AppPagination,
   AppSearchBar,
   SkeletonCard,
-} from '../../../../../core/components';
+  feedback,
+} from '../../../../../core';
 import { NewsCard, NewsListHeader } from '../components/NewsCard';
+import { showNewsActionMenu } from '../components/NewsActionMenu';
 import { NewsFilterSheet } from '../components/NewsFilterSheet';
 import { NewsStatusTabs } from '../components/NewsStatusTabs';
 import { NewsSummaryStats } from '../components/NewsSummaryCard';
-import { showNewsActionMenu } from '../components/NewsActionMenu';
-import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
-import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
-import {
-  DEMO_NEWS_STATS,
-  NEWS_STATUS_TABS,
-  SAMPLE_NEWS,
-  SAMPLE_NEWS_CATEGORIES,
-} from '../data/sample-news';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
+import { SAMPLE_NEWS_CATEGORIES } from '../data/sample-news';
+import { useNews } from '../hooks/useNews';
 import type {
   NewsFilterState,
+  NewsFilterTab,
   NewsListItem,
   NewsStatusFilter,
   NewsUiState,
@@ -97,54 +94,52 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
   onViewNews,
   onTabPress,
 }) => {
-  const [uiState, setUiState] = useState<NewsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatus, setActiveStatus] = useState<NewsStatusFilter>('ALL');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
 
-  /** TEMPORARY: replace `newsItems` with the data returned by the real useNews hook. */
-  const newsItems = SAMPLE_NEWS;
+  const {
+    news: filteredNews,
+    stats,
+    state: uiState,
+    refresh,
+  } = useNews({
+    status: activeStatus,
+    category: activeCategory,
+    search: searchQuery,
+  });
 
-  // TEMPORARY (UI-only phase): simulated latency so the loading state is
-  // demonstrable during review. Remove when the real news hook drives this screen.
-  useEffect(() => {
-    const timer = setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Display-only reference numbers (42/30/8/4) — NOT computed from the 8
-  // sample rows; replaced by real backend counts when the contract lands.
-  const stats = DEMO_NEWS_STATS;
+  const statusTabs = useMemo<NewsFilterTab[]>(
+    () => [
+      { key: 'ALL', label: 'All', count: stats.total },
+      { key: 'PUBLISHED', label: 'Published', count: stats.published },
+      { key: 'DRAFT', label: 'Drafts', count: stats.drafts },
+      { key: 'ARCHIVED', label: 'Archived', count: stats.archived },
+    ],
+    [stats],
+  );
 
   const appliedFilters = useMemo<NewsFilterState>(
     () => ({ status: activeStatus, category: activeCategory }),
     [activeStatus, activeCategory],
   );
 
-  const filteredNews = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    return newsItems.filter(news => {
-      if (activeStatus !== 'ALL' && news.status !== activeStatus) {
-        return false;
-      }
-      if (activeCategory && news.category !== activeCategory) {
-        return false;
-      }
-      if (!query) {
-        return true;
-      }
-      const haystack = [news.title, news.summary, news.category]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [newsItems, searchQuery, activeStatus, activeCategory]);
-
   const hasActiveFilters =
     searchQuery.trim() !== '' || activeStatus !== 'ALL' || activeCategory !== null;
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedNews = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredNews.slice(startIndex, startIndex + pageSize);
+  }, [filteredNews, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeStatus, activeCategory]);
 
   const handleApplyFilters = (filters: NewsFilterState) => {
     setActiveStatus(filters.status);
@@ -162,10 +157,7 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
       onAddNews();
       return;
     }
-    Alert.alert(
-      'Add News',
-      'The Create News screen is not part of this phase. It will be implemented after the backend contract is confirmed.',
-    );
+    feedback.info('Add News', 'Create News is not configured.');
   };
 
   const handleNewsPress = (news: NewsListItem) => {
@@ -173,126 +165,136 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
       onViewNews(news);
       return;
     }
-    // UI placeholder only: News Details is connected by the host when ready.
-    Alert.alert(
-      news.title,
-      'The News Details screen will be implemented in a later phase after backend integration.',
-    );
+    feedback.info(news.title, news.summary);
   };
 
   const handleNewsMenu = (news: NewsListItem) => showNewsActionMenu(news);
 
   const handleStatusChange = (status: NewsStatusFilter) => setActiveStatus(status);
 
-  // Preview-shell tabs: hand off to the host for tabs it can navigate to;
-  // everything else falls back to the shell's temporary preview notice.
   const handleShellTabPress = (tab: string) => {
     if ((tab === 'events' || tab === 'blogs' || tab === 'rights') && onTabPress) {
       onTabPress(tab);
       return;
     }
     if (tab !== 'news') {
-      Alert.alert(
-        'Preview shell',
-        'Global navigation is owned by the app-level architecture. This bar is a temporary visual preview only.',
+      feedback.info(
+        'Navigation',
+        'Use the bottom navigation bar to switch between modules.',
       );
     }
   };
 
   const handleRetry = () => {
-    setUiState('loading');
-    // TEMPORARY (UI-only phase): retry returns to the sample data — no API call yet.
-    setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
+    refresh();
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    // TEMPORARY (UI-only phase): simulated refresh latency — no API call yet.
-    setTimeout(() => setRefreshing(false), SAMPLE_DATA_LOAD_DELAY_MS);
+    await refresh();
+    setRefreshing(false);
   };
+
+  const renderListHeader = () => (
+    <View>
+      {/* Page header: title/subtitle + Add News */}
+      <View style={styles.pageHeader}>
+        <View style={styles.pageHeaderText}>
+          <Text style={styles.pageTitle}>News</Text>
+          <Text
+            style={styles.pageSubtitle}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            numberOfLines={1}
+          >
+            Manage and publish news, updates and announcements.
+          </Text>
+        </View>
+        <AppButton
+          title="Add News"
+          size="sm"
+          onPress={handleAddNews}
+          icon={<Text style={styles.addIcon}>+</Text>}
+          textStyle={styles.addButtonText}
+          style={styles.addButton}
+        />
+      </View>
+
+      <View style={styles.statsSection}>
+        <NewsSummaryStats stats={stats} />
+      </View>
+
+      <View style={styles.searchRow}>
+        <AppSearchBar
+          placeholder="Search by title, category or keyword..."
+          value={searchQuery}
+          onSearch={setSearchQuery}
+          containerStyle={styles.searchBar}
+        />
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            (filterSheetVisible || activeCategory !== null || activeStatus !== 'ALL') &&
+              styles.filterButtonActive,
+          ]}
+          onPress={() => setFilterSheetVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Filters"
+          accessibilityState={{ expanded: filterSheetVisible }}
+        >
+          <Text style={styles.filterIcon}>▾</Text>
+          <Text style={styles.filterText}>Filters</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.tabsSection}>
+        <NewsStatusTabs
+          tabs={statusTabs}
+          activeTab={activeStatus}
+          onTabChange={handleStatusChange}
+        />
+      </View>
+
+      <NewsListHeader />
+    </View>
+  );
 
   return (
     <View style={styles.root}>
-      {/* TEMPORARY preview shell: real global header is owned by the app-level architecture. */}
-      <AdminShellHeader />
+      {/* Unified official Admin Header - Fixed at Top */}
+      <AdminHeader />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        {/* Page header: title/subtitle + Add News */}
-        <View style={styles.pageHeader}>
-          <View style={styles.pageHeaderText}>
-            <Text style={styles.pageTitle}>News</Text>
-            <Text
-              style={styles.pageSubtitle}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              numberOfLines={1}
-            >
-              Manage and publish news, updates and announcements.
-            </Text>
-          </View>
-          <AppButton
-            title="Add News"
-            size="sm"
-            onPress={handleAddNews}
-            icon={<Text style={styles.addIcon}>+</Text>}
-            textStyle={styles.addButtonText}
-            style={styles.addButton}
-          />
-        </View>
-
-        <View style={styles.statsSection}>
-          <NewsSummaryStats stats={stats} />
-        </View>
-
-        <View style={styles.searchRow}>
-          <AppSearchBar
-            placeholder="Search by title, category or keyword..."
-            value={searchQuery}
-            onSearch={setSearchQuery}
-            containerStyle={styles.searchBar}
-          />
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              (filterSheetVisible || activeCategory !== null || activeStatus !== 'ALL') &&
-                styles.filterButtonActive,
-            ]}
-            onPress={() => setFilterSheetVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Filters"
-            accessibilityState={{ expanded: filterSheetVisible }}
-          >
-            <Text style={styles.filterIcon}>▾</Text>
-            <Text style={styles.filterText}>Filters</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.tabsSection}>
-          <NewsStatusTabs
-            tabs={NEWS_STATUS_TABS}
-            activeTab={activeStatus}
-            onTabChange={handleStatusChange}
-          />
-        </View>
-
-        {uiState === 'loading' ? (
-          <LoadingListView />
-        ) : uiState === 'error' ? (
-          <AppErrorState
-            title="Unable to load news."
-            message="Something went wrong while loading news. Please try again."
-            onRetry={handleRetry}
-            style={styles.errorState}
-          />
-        ) : (
-          <FlatList
-            data={filteredNews}
-            keyExtractor={item => item.id}
-            ListHeaderComponent={NewsListHeader}
-            renderItem={({ item }) => (
-              <NewsCard news={item} onPress={handleNewsPress} onMorePress={handleNewsMenu} />
-            )}
-            ListEmptyComponent={
+        <FlatList
+          data={uiState === 'loading' ? [] : paginatedNews}
+          keyExtractor={item => item.id}
+          ListHeaderComponent={renderListHeader}
+          ListFooterComponent={
+            filteredNews.length > 0 ? (
+              <AppPagination
+                currentPage={page}
+                totalItems={filteredNews.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemLabel="news"
+              />
+            ) : undefined
+          }
+          renderItem={({ item }) => (
+            <NewsCard news={item} onPress={handleNewsPress} onMorePress={handleNewsMenu} />
+          )}
+          ListEmptyComponent={
+            uiState === 'loading' ? (
+              <LoadingListView />
+            ) : uiState === 'error' ? (
+              <AppErrorState
+                title="Unable to load news."
+                message="Something went wrong while loading news. Please try again."
+                onRetry={handleRetry}
+                style={styles.errorState}
+              />
+            ) : (
               <View style={styles.emptyContainer}>
                 <AppEmptyState
                   icon="🔍"
@@ -302,25 +304,22 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
                   onAction={hasActiveFilters ? clearFilters : undefined}
                 />
               </View>
-            }
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                tintColor={AdminColors.primary}
-                colors={[AdminColors.primary]}
-              />
-            }
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-          />
-        )}
+            )
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={AdminColors.primary}
+              colors={[AdminColors.primary]}
+            />
+          }
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
       </SafeAreaView>
-
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar activeTab="news" onTabPress={handleShellTabPress} />
 
       <NewsFilterSheet
         visible={filterSheetVisible}

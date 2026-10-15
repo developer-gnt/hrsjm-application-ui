@@ -21,12 +21,11 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import { AppButton } from '../../../../../core/components';
+import { AppButton, AppMediaUploadSheet } from '../../../../../core/components';
 import { EventPickerSheet } from '../../events/components/EventPickerSheet';
 import { EventFormToast } from '../../events/components/EventFormToast';
 import { EventTagInput } from '../../events/components/EventTagInput';
-import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
-import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { SAMPLE_BLOGS, SAMPLE_BLOG_CATEGORIES } from '../data/sample-blogs';
 import { BLOG_STATUS_LABELS } from './BlogCard';
 import type {
@@ -468,7 +467,7 @@ export const BlogForm: React.FC<BlogFormProps> = ({
 
   return (
     <View style={styles.root}>
-      <AdminShellHeader leading="back" onBack={requestCancel} />
+      <AdminHeader showBack onBack={requestCancel} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <KeyboardAvoidingView
@@ -744,9 +743,6 @@ export const BlogForm: React.FC<BlogFormProps> = ({
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar activeTab="blogs" onTabPress={handleShellTabPress} />
-
       <EventFormToast
         message={toast?.message ?? null}
         variant={toast?.variant ?? 'success'}
@@ -779,18 +775,18 @@ export const BlogForm: React.FC<BlogFormProps> = ({
         onConfirm={handleDiscardConfirmed}
       />
 
-      {/* Cover image chooser (blog sample imagery, no upload) */}
-      <EventPickerSheet
+      {/* WhatsApp-Style Cover image chooser (Camera, Gallery, Presets, URL) */}
+      <AppMediaUploadSheet
         visible={imageChooserVisible}
-        title="Select Cover Image"
-        hint="Demo images only — real upload needs the shared image picker + backend flow"
-        options={COVER_IMAGE_OPTIONS}
-        selected={form.coverImageUri}
-        itemLabel={uri => `Blog image ${COVER_IMAGE_OPTIONS.indexOf(uri) + 1}`}
+        title="Select Blog Cover Image"
+        subtitle="Camera, Gallery, File or Curated Presets"
+        currentValue={form.coverImageUri}
         onSelect={value => {
           updateField('coverImageUri', value);
           setToast({
-            message: isEdit ? 'Cover image updated.' : 'Cover image selected.',
+            message: value
+              ? isEdit ? 'Cover image updated.' : 'Cover image selected.'
+              : 'Cover image removed.',
             variant: 'success',
           });
         }}

@@ -1,0 +1,82 @@
+import type { MembershipApplicationRecord } from '../types/membership.types';
+
+export const INITIAL_APPLICATION_RECORD: MembershipApplicationRecord = {
+  id: 'app-001',
+  applicationId: 'APP20260914023',
+  membershipId: 'MEM2026001283',
+  membershipType: 'Individual Membership',
+  status: 'Under Review',
+  submittedAt: '14 Sep 2026, 04:15 PM',
+  approvedAt: '18 Sep 2026, 10:30 AM',
+  rejectedAt: '16 Sep 2026, 02:40 PM',
+  validFrom: '14 Sep 2026',
+  validTill: '14 Sep 2027',
+  rejectionReason: 'Documents are not clear. Please upload a valid address proof and clear photograph.',
+  personalInfo: {
+    fullName: 'Aman Shaikh',
+    dateOfBirth: '15/08/1994',
+    gender: 'Male',
+    countryCode: '+91',
+    mobileNumber: '9876543210',
+    email: 'aman.shaikh@example.com',
+  },
+  addressInfo: {
+    addressLine1: 'Flat 402, Green Meadows',
+    addressLine2: 'Near City Park, MG Road',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    pincode: '400001',
+    country: 'India',
+  },
+  documents: {
+    identityProof: {
+      type: 'identity',
+      name: 'Aadhaar Card',
+      fileName: 'aadhaar_card_front.pdf',
+      fileSize: '1.8 MB',
+      isUploaded: true,
+    },
+    addressProof: {
+      type: 'address',
+      name: 'Electricity Bill',
+      fileName: 'electricity_bill_aug.pdf',
+      fileSize: '2.1 MB',
+      isUploaded: true,
+    },
+    photograph: {
+      type: 'photo',
+      name: 'Passport Photograph',
+      fileName: 'passport_photo.jpg',
+      fileSize: '850 KB',
+      isUploaded: true,
+    },
+  },
+  timeline: [
+    {
+      id: 'tl-1',
+      title: 'Application Submitted',
+      description: 'Your application has been received successfully.',
+      dateTime: '14 Sep 2026, 04:15 PM',
+      status: 'completed',
+    },
+    {
+      id: 'tl-2',
+      title: 'Under Review',
+      description: 'Your application is being reviewed by our team.',
+      dateTime: '15 Sep 2026, 11:20 AM',
+      status: 'current',
+    },
+    {
+      id: 'tl-3',
+      title: 'Verification Pending',
+      description: 'Document verification and background check.',
+      status: 'upcoming',
+    },
+    {
+      id: 'tl-4',
+      title: 'Decision Pending',
+      description: 'Final committee decision and membership card issuance.',
+      status: 'upcoming',
+    },
+  ],
+};

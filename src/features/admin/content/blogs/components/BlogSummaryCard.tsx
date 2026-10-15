@@ -1,117 +1,61 @@
 import React from 'react';
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { AdminColors, BorderRadius, Spacing, Typography } from '../../../../../core/theme';
+import { StyleSheet, View, ViewStyle } from 'react-native';
+import { Spacing } from '../../../../../core/theme';
+import { AdminStatCard } from '../../../../../core/components/admin/AdminStatCard';
+import { FileText, Clock3, Check, X } from '../../../../../core/components/icons';
 import type { BlogStatsSummary } from '../types/blog.types';
 
-interface StatCardConfig {
-  key: keyof BlogStatsSummary;
-  label: string;
-  icon: string;
-  backgroundColor: string;
-}
-
-/** Card order/tones per the reference: Total (blue), Drafts (amber), Published (green), Archived (red). */
-const STAT_CARDS: StatCardConfig[] = [
-  {
-    key: 'total',
-    label: 'Total Blogs',
-    icon: '📄',
-    backgroundColor: AdminColors.primaryLight,
-  },
-  {
-    key: 'drafts',
-    label: 'Drafts',
-    icon: '🕐',
-    backgroundColor: AdminColors.warningLight,
-  },
-  {
-    key: 'published',
-    label: 'Published',
-    icon: '✅',
-    backgroundColor: AdminColors.statusActiveLight,
-  },
-  {
-    key: 'archived',
-    label: 'Archived',
-    icon: '❌',
-    backgroundColor: AdminColors.statusInactiveLight,
-  },
-];
-
-/**
- * Summary/stat row for the Blogs screen.
- * Values are UI demonstration data for now (reference numbers, not backend
- * values) and will be fed by the backend once the Blogs API is confirmed.
- */
-export const BlogSummaryCard: React.FC<{
+interface BlogSummaryCardProps {
   stats: BlogStatsSummary;
   style?: ViewStyle;
-}> = ({ stats, style }) => {
-  return (
-    <View style={[styles.row, style]}>
-      {STAT_CARDS.map(card => {
-        const value = stats[card.key];
+}
 
-        return (
-          <View
-            key={card.key}
-            style={[styles.card, { backgroundColor: card.backgroundColor }]}
-            accessible
-            accessibilityLabel={`${card.label}: ${value}`}
-            accessibilityRole="text"
-          >
-            <View style={styles.iconChip}>
-              <Text style={styles.icon}>{card.icon}</Text>
-            </View>
-            <Text style={styles.value}>{value}</Text>
-            <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit>
-              {card.label}
-            </Text>
-          </View>
-        );
-      })}
+/**
+ * 2×2 Summary KPI Grid matching the HRSJM official reference design (same as Events & News).
+ */
+export const BlogSummaryCard: React.FC<BlogSummaryCardProps> = ({ stats, style }) => {
+  return (
+    <View style={[styles.grid, style]}>
+      <View style={styles.row}>
+        <AdminStatCard
+          label="Total Blogs"
+          value={stats.total}
+          tone="navy"
+          Icon={FileText}
+        />
+        <AdminStatCard
+          label="Drafts"
+          value={stats.drafts}
+          tone="warning"
+          Icon={Clock3}
+        />
+      </View>
+      <View style={styles.row}>
+        <AdminStatCard
+          label="Published"
+          value={stats.published}
+          tone="success"
+          Icon={Check}
+        />
+        <AdminStatCard
+          label="Archived"
+          value={stats.archived}
+          tone="danger"
+          Icon={X}
+        />
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  grid: {
+    gap: Spacing.sm,
+  },
   row: {
     flexDirection: 'row',
     gap: Spacing.sm,
   },
-  card: {
-    flex: 1,
-    minHeight: 94,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconChip: {
-    width: 22,
-    height: 22,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: AdminColors.cardSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.xs,
-  },
-  icon: {
-    fontSize: 12,
-  },
-  value: {
-    ...Typography.metric,
-    fontSize: 19,
-    lineHeight: 24,
-    color: AdminColors.textPrimary,
-  },
-  label: {
-    ...Typography.caption,
-    fontSize: 9,
-    lineHeight: 12,
-    color: AdminColors.textSecondary,
-    textAlign: 'center',
-    marginTop: 2,
-  },
 });
+
+export default BlogSummaryCard;

@@ -5,11 +5,13 @@ import { Typography } from '../../theme/typography';
 import { Spacing } from '../../theme/spacing';
 import { AppButton } from '../common/AppButton';
 
-interface AppEmptyStateProps {
+export interface AppEmptyStateProps {
   title: string;
   description?: string;
-  icon?: string;
+  message?: string;
+  icon?: any;
   actionTitle?: string;
+  actionLabel?: string;
   onAction?: () => void;
   style?: ViewStyle;
 }
@@ -17,19 +19,23 @@ interface AppEmptyStateProps {
 export const AppEmptyState: React.FC<AppEmptyStateProps> = ({
   title,
   description,
+  message,
   icon = '📋',
   actionTitle,
+  actionLabel,
   onAction,
   style,
 }) => {
+  const displayMsg = message || description;
+  const displayBtn = actionLabel || actionTitle;
   return (
     <View style={[styles.container, style]}>
       <Text style={styles.icon}>{icon}</Text>
       <Text style={styles.title}>{title}</Text>
-      {description && <Text style={styles.description}>{description}</Text>}
-      {actionTitle && onAction && (
+      {displayMsg && <Text style={styles.description}>{displayMsg}</Text>}
+      {displayBtn && onAction && (
         <AppButton
-          title={actionTitle}
+          title={displayBtn}
           onPress={onAction}
           variant="primary"
           size="sm"

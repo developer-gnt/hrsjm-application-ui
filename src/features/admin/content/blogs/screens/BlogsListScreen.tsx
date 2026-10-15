@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -19,24 +18,22 @@ import {
   AppButton,
   AppEmptyState,
   AppErrorState,
+  AppPagination,
   AppSearchBar,
   SkeletonCard,
-} from '../../../../../core/components';
+  feedback,
+} from '../../../../../core';
 import { BlogCard, BlogListHeader } from '../components/BlogCard';
 import { BlogFilterSheet } from '../components/BlogFilterSheet';
 import { BlogStatusTabs } from '../components/BlogStatusTabs';
 import { BlogSummaryCard } from '../components/BlogSummaryCard';
 import { BlogActionMenu } from '../components/BlogActionMenu';
-import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
-import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
-import {
-  BLOG_STATUS_TABS,
-  DEMO_BLOG_STATS,
-  SAMPLE_BLOGS,
-  SAMPLE_BLOG_CATEGORIES,
-} from '../data/sample-blogs';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
+import { SAMPLE_BLOG_CATEGORIES } from '../data/sample-blogs';
+import { useBlogs } from '../hooks/useBlogs';
 import type {
   BlogFilterState,
+  BlogFilterTab,
   BlogListItem,
   BlogStatusFilter,
   BlogsUiState,
@@ -128,76 +125,58 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
   onEditBlog,
   onTabPress,
 }) => {
-  const [uiState, setUiState] = useState<BlogsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatus, setActiveStatus] = useState<BlogStatusFilter>('ALL');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeDateRange, setActiveDateRange] = useState('ANY');
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
-  // Action sheet state: the blog is kept while the sheet closes so the
-  // slide-out animation still shows it.
   const [actionMenuBlog, setActionMenuBlog] = useState<BlogListItem | null>(null);
   const [actionMenuVisible, setActionMenuVisible] = useState(false);
 
-  /** TEMPORARY: replace `blogs` with the data returned by the real useBlogs hook. */
-  const blogs = SAMPLE_BLOGS;
+  const {
+    blogs: filteredBlogs,
+    stats,
+    state: uiState,
+    refresh,
+    updateBlog,
+    deleteBlog,
+  } = useBlogs({
+    status: activeStatus,
+    category: activeCategory,
+    dateRange: activeDateRange as any,
+    search: searchQuery,
+  });
 
-  // TEMPORARY (UI-only phase): simulated latency so the loading state is
-  // demonstrable during review. Remove when the real blogs hook drives this screen.
-  useEffect(() => {
-    const timer = setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Display-only reference numbers (28/6/18/4) — NOT computed from the 8
-  // sample rows; replaced by real backend counts when the contract lands.
-  const stats = DEMO_BLOG_STATS;
+  const statusTabs = useMemo<BlogFilterTab[]>(
+    () => [
+      { key: 'ALL', label: 'All', count: stats.total },
+      { key: 'PUBLISHED', label: 'Published', count: stats.published },
+      { key: 'DRAFT', label: 'Drafts', count: stats.drafts },
+      { key: 'ARCHIVED', label: 'Archived', count: stats.archived },
+    ],
+    [stats],
+  );
 
   const appliedFilters = useMemo<BlogFilterState>(
     () => ({ status: activeStatus, category: activeCategory, dateRange: activeDateRange as BlogFilterState['dateRange'] }),
     [activeStatus, activeCategory, activeDateRange],
   );
 
-  const filteredBlogs = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    // UI-only date filter: sample dates sit in Sep–Aug 2026, so a real
-    // calendar comparison would empty the list. Approximate: "Today/Week/
-    // Month" narrow to the N most recent sample records until the backend
-    // defines real date semantics. Sorted by the parsed display date, not
-    // the raw string (alphabetical order put "28 Aug" before "15 Sep").
-    let recentIds: Set<string> | null = null;
-    if (activeDateRange !== 'ANY') {
-      const sortedByDate = [...blogs].sort((a, b) => blogDateValue(b.date) - blogDateValue(a.date));
-      const limit = DATE_FILTER_DAYS[activeDateRange] ?? 0;
-      recentIds = new Set(
-        sortedByDate.slice(0, Math.max(1, Math.min(limit, 4))).map(item => item.id),
-      );
-    }
-
-    return blogs.filter(blog => {
-      if (activeStatus !== 'ALL' && blog.status !== activeStatus) {
-        return false;
-      }
-      if (activeCategory && blog.category !== activeCategory) {
-        return false;
-      }
-      if (recentIds && !recentIds.has(blog.id)) {
-        return false;
-      }
-      if (!query) {
-        return true;
-      }
-      const haystack = [blog.title, blog.excerpt, blog.category]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [blogs, searchQuery, activeStatus, activeCategory, activeDateRange]);
-
   const hasActiveFilters =
     searchQuery.trim() !== '' || activeStatus !== 'ALL' || activeCategory !== null || activeDateRange !== 'ANY';
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedBlogs = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredBlogs.slice(startIndex, startIndex + pageSize);
+  }, [filteredBlogs, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeStatus, activeCategory, activeDateRange]);
 
   const handleApplyFilters = (filters: BlogFilterState) => {
     setActiveStatus(filters.status);
@@ -217,10 +196,7 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
       onAddBlog();
       return;
     }
-    Alert.alert(
-      'Add Blog',
-      'The Create Blog screen is not part of this phase. It will be implemented after the backend contract is confirmed.',
-    );
+    feedback.info('Add Blog', 'Create Blog is not configured.');
   };
 
   const handleBlogPress = (blog: BlogListItem) => {
@@ -228,16 +204,10 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
       onOpenBlog(blog);
       return;
     }
-    // UI placeholder only: Blog Details opens through the host app when wired.
-    Alert.alert(
-      blog.title,
-      'The Edit Blog screen will be implemented in a later phase after backend integration.',
-    );
+    feedback.info(blog.title, blog.excerpt);
   };
 
   const handleBlogEdit = (blog: BlogListItem) => {
-    // Opens the shared EditBlogScreen through the host app — the same screen
-    // the Blog Details ⋮ → Edit path uses, pre-filled with this blog.
     onEditBlog?.(blog);
   };
 
@@ -246,122 +216,163 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
     setActionMenuVisible(true);
   };
 
+  const handleActionMenuSelect = async (actionKey: string) => {
+    if (!actionMenuBlog) return;
+    const current = actionMenuBlog;
+    try {
+      if (actionKey === 'edit') {
+        onEditBlog?.(current);
+      } else if (actionKey === 'publish') {
+        await updateBlog(current.id, { status: 'PUBLISHED' });
+        feedback.success('Published', 'Article has been published successfully.');
+      } else if (actionKey === 'unpublish') {
+        await updateBlog(current.id, { status: 'DRAFT' });
+        feedback.warning('Unpublished', 'Article reverted to draft mode.');
+      } else if (actionKey === 'archive') {
+        await updateBlog(current.id, { status: 'ARCHIVED' });
+        feedback.info('Archived', 'Article has been archived.');
+      } else if (actionKey === 'restore') {
+        await updateBlog(current.id, { status: 'PUBLISHED' });
+        feedback.success('Restored', 'Article restored to published.');
+      } else if (actionKey === 'delete') {
+        await deleteBlog(current.id);
+        feedback.success('Deleted', 'Article has been removed.');
+      }
+    } catch (err: any) {
+      feedback.error('Error', err?.message || 'Action failed.');
+    }
+  };
+
   const handleStatusChange = (status: BlogStatusFilter) => setActiveStatus(status);
 
-  // Preview-shell tabs: hand off to the host for tabs it can navigate to;
-  // everything else falls back to the shell's temporary preview notice.
   const handleShellTabPress = (tab: string) => {
     if ((tab === 'events' || tab === 'news' || tab === 'rights') && onTabPress) {
       onTabPress(tab);
       return;
     }
     if (tab !== 'blogs') {
-      Alert.alert(
-        'Preview shell',
-        'Global navigation is owned by the app-level architecture. This bar is a temporary visual preview only.',
+      feedback.info(
+        'Navigation',
+        'Use the bottom navigation bar to switch between modules.',
       );
     }
   };
 
   const handleRetry = () => {
-    setUiState('loading');
-    // TEMPORARY (UI-only phase): retry returns to the sample data — no API call yet.
-    setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
+    refresh();
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    // TEMPORARY (UI-only phase): simulated refresh latency — no API call yet.
-    setTimeout(() => setRefreshing(false), SAMPLE_DATA_LOAD_DELAY_MS);
+    await refresh();
+    setRefreshing(false);
   };
+
+  const renderListHeader = () => (
+    <View>
+      {/* Page header: title/subtitle + Add Blog */}
+      <View style={styles.pageHeader}>
+        <View style={styles.pageHeaderText}>
+          <Text style={styles.pageTitle}>Blogs</Text>
+          <Text
+            style={styles.pageSubtitle}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+            numberOfLines={1}
+          >
+            Create, manage and publish blog articles.
+          </Text>
+        </View>
+        <AppButton
+          title="Add Blog"
+          size="sm"
+          onPress={handleAddBlog}
+          icon={<Text style={styles.addIcon}>+</Text>}
+          textStyle={styles.addButtonText}
+          style={styles.addButton}
+        />
+      </View>
+
+      <View style={styles.statsSection}>
+        <BlogSummaryCard stats={stats} />
+      </View>
+
+      <View style={styles.searchRow}>
+        <AppSearchBar
+          placeholder="Search by title, category or keyword..."
+          value={searchQuery}
+          onSearch={setSearchQuery}
+          containerStyle={styles.searchBar}
+        />
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            (filterSheetVisible || activeCategory !== null || activeStatus !== 'ALL' || activeDateRange !== 'ANY') &&
+              styles.filterButtonActive,
+          ]}
+          onPress={() => setFilterSheetVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Filters"
+          accessibilityState={{ expanded: filterSheetVisible }}
+        >
+          <Text style={styles.filterIcon}>▾</Text>
+          <Text style={styles.filterText}>Filters</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.tabsSection}>
+        <BlogStatusTabs
+          tabs={statusTabs}
+          activeTab={activeStatus}
+          onTabChange={handleStatusChange}
+        />
+      </View>
+
+      <BlogListHeader />
+    </View>
+  );
 
   return (
     <View style={styles.root}>
-      {/* TEMPORARY preview shell: real global header is owned by the app-level architecture. */}
-      <AdminShellHeader />
+      {/* Unified official Admin Header - Fixed at Top */}
+      <AdminHeader />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        {/* Page header: title/subtitle + Add Blog */}
-        <View style={styles.pageHeader}>
-          <View style={styles.pageHeaderText}>
-            <Text style={styles.pageTitle}>Blogs</Text>
-            <Text
-              style={styles.pageSubtitle}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              numberOfLines={1}
-            >
-              Create, manage and publish blog articles.
-            </Text>
-          </View>
-          <AppButton
-            title="Add Blog"
-            size="sm"
-            onPress={handleAddBlog}
-            icon={<Text style={styles.addIcon}>+</Text>}
-            textStyle={styles.addButtonText}
-            style={styles.addButton}
-          />
-        </View>
-
-        <View style={styles.statsSection}>
-          <BlogSummaryCard stats={stats} />
-        </View>
-
-        <View style={styles.searchRow}>
-          <AppSearchBar
-            placeholder="Search by title, category or keyword..."
-            value={searchQuery}
-            onSearch={setSearchQuery}
-            containerStyle={styles.searchBar}
-          />
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              (filterSheetVisible || activeCategory !== null || activeStatus !== 'ALL' || activeDateRange !== 'ANY') &&
-                styles.filterButtonActive,
-            ]}
-            onPress={() => setFilterSheetVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Filters"
-            accessibilityState={{ expanded: filterSheetVisible }}
-          >
-            <Text style={styles.filterIcon}>▾</Text>
-            <Text style={styles.filterText}>Filters</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.tabsSection}>
-          <BlogStatusTabs
-            tabs={BLOG_STATUS_TABS}
-            activeTab={activeStatus}
-            onTabChange={handleStatusChange}
-          />
-        </View>
-
-        {uiState === 'loading' ? (
-          <LoadingListView />
-        ) : uiState === 'error' ? (
-          <AppErrorState
-            title="Unable to load blogs."
-            message="Something went wrong while loading blogs. Please try again."
-            onRetry={handleRetry}
-            style={styles.errorState}
-          />
-        ) : (
-          <FlatList
-            data={filteredBlogs}
-            keyExtractor={item => item.id}
-            ListHeaderComponent={BlogListHeader}
-            renderItem={({ item }) => (
-              <BlogCard
-                blog={item}
-                onPress={handleBlogPress}
-                onEditPress={handleBlogEdit}
-                onMorePress={handleBlogMenu}
+        <FlatList
+          data={uiState === 'loading' ? [] : paginatedBlogs}
+          keyExtractor={item => item.id}
+          ListHeaderComponent={renderListHeader}
+          ListFooterComponent={
+            filteredBlogs.length > 0 ? (
+              <AppPagination
+                currentPage={page}
+                totalItems={filteredBlogs.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemLabel="blogs"
               />
-            )}
-            ListEmptyComponent={
+            ) : undefined
+          }
+          renderItem={({ item }) => (
+            <BlogCard
+              blog={item}
+              onPress={handleBlogPress}
+              onEditPress={handleBlogEdit}
+              onMorePress={handleBlogMenu}
+            />
+          )}
+          ListEmptyComponent={
+            uiState === 'loading' ? (
+              <LoadingListView />
+            ) : uiState === 'error' ? (
+              <AppErrorState
+                title="Unable to load blogs."
+                message="Something went wrong while loading blogs. Please try again."
+                onRetry={handleRetry}
+                style={styles.errorState}
+              />
+            ) : (
               <View style={styles.emptyContainer}>
                 <AppEmptyState
                   icon="🔍"
@@ -371,25 +382,22 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
                   onAction={hasActiveFilters ? clearFilters : undefined}
                 />
               </View>
-            }
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                tintColor={AdminColors.primary}
-                colors={[AdminColors.primary]}
-              />
-            }
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-          />
-        )}
+            )
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={AdminColors.primary}
+              colors={[AdminColors.primary]}
+            />
+          }
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
       </SafeAreaView>
-
-      {/* TEMPORARY preview shell: real bottom navigation is owned by the app-level architecture. */}
-      <AdminShellTabBar activeTab="blogs" onTabPress={handleShellTabPress} />
 
       <BlogFilterSheet
         visible={filterSheetVisible}
@@ -403,7 +411,11 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
       <BlogActionMenu
         visible={actionMenuVisible}
         blog={actionMenuBlog}
-        onClose={() => setActionMenuVisible(false)}
+        onAction={handleActionMenuSelect}
+        onClose={() => {
+          setActionMenuVisible(false);
+          setActionMenuBlog(null);
+        }}
       />
     </View>
   );

@@ -85,6 +85,7 @@ export const EditNewsScreen: React.FC<EditNewsScreenProps> = ({ news, onBack }) 
       title="Edit News"
       subtitle="Update news, updates and announcements on HRSJM activities and initiatives."
       initialForm={initialForm}
+      newsId={news.id}
       onCancel={onBack}
     />
   );

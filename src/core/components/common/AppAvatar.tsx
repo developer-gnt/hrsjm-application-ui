@@ -1,80 +1,71 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, ImageSourcePropType } from 'react-native';
-import { AdminColors } from '../../theme/colors';
-import { Typography } from '../../theme/typography';
+import React, { useEffect, useState } from 'react';
+import { Image, ImageStyle, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { colors } from '../../theme/theme';
+import { initialsOf } from '../../utils/format';
 
 interface AppAvatarProps {
-  name?: string;
-  source?: ImageSourcePropType | { uri: string };
+  name: string;
   size?: number;
-  backgroundColor?: string;
+  imageUrl?: string | null;
+  style?: ViewStyle;
+  imageStyle?: ImageStyle;
 }
 
-export const AppAvatar: React.FC<AppAvatarProps> = ({
-  name = 'User',
-  source,
-  size = 40,
-  backgroundColor = AdminColors.primaryLight,
-}) => {
-  const getInitials = (str: string): string => {
-    const parts = str.trim().split(' ');
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    }
-    return (str.substring(0, 2) || 'US').toUpperCase();
+export function AppAvatar({
+  name,
+  size = 44,
+  imageUrl,
+  style,
+  imageStyle,
+}: AppAvatarProps) {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [imageUrl]);
+
+  const dynamic = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
   };
 
-  const borderRadius = size / 2;
-
-  if (source) {
+  if (imageUrl && !hasError) {
     return (
-      <Image
-        source={source}
-        style={[
-          styles.image,
-          {
-            width: size,
-            height: size,
-            borderRadius,
-          },
-        ]}
-      />
+      <View style={[styles.avatar, dynamic, style]}>
+        <Image
+          source={{ uri: imageUrl }}
+          style={[styles.image, dynamic, imageStyle]}
+          onError={() => setHasError(true)}
+          accessibilityLabel={`Avatar for ${name}`}
+        />
+      </View>
     );
   }
 
   return (
-    <View
-      style={[
-        styles.avatarContainer,
-        {
-          width: size,
-          height: size,
-          borderRadius,
-          backgroundColor,
-        },
-      ]}
-    >
-      <Text
-        style={[
-          Typography.bodyBold,
-          {
-            color: AdminColors.primary,
-            fontSize: Math.max(12, Math.floor(size * 0.38)),
-          },
-        ]}
-      >
-        {getInitials(name)}
+    <View style={[styles.avatar, dynamic, style]} accessibilityLabel={`Avatar for ${name}`}>
+      <Text style={[styles.initials, { fontSize: size * 0.36 }]}>
+        {initialsOf(name || 'User')}
       </Text>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  avatarContainer: {
+  avatar: {
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   image: {
     resizeMode: 'cover',
   },
+  initials: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
 });
+
+export default AppAvatar;

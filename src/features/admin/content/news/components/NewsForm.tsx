@@ -20,31 +20,27 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import { AppButton } from '../../../../../core/components';
+import {
+  AppButton,
+  AppMediaUploadSheet,
+  DatePickerModal,
+  TimePickerModal,
+} from '../../../../../core/components';
 import { formatDate } from '../../../../../core/utils';
 import { NewsFormSection } from './NewsFormSection';
 import { NewsPreviewSheet } from './NewsPreviewSheet';
 import { EventPickerSheet } from '../../events/components/EventPickerSheet';
 import { EventTagInput } from '../../events/components/EventTagInput';
 import { EventFormToast } from '../../events/components/EventFormToast';
-import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
-import { SAMPLE_NEWS, SAMPLE_NEWS_AUTHORS, SAMPLE_NEWS_CATEGORIES } from '../data/sample-news';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
+import { SAMPLE_NEWS_AUTHORS, SAMPLE_NEWS_CATEGORIES } from '../data/sample-news';
 import { STATUS_LABELS } from './NewsCard';
+import { createNewsApi, updateNewsApi } from '../services/news.service';
 import type {
   CreateNewsFieldErrors,
   CreateNewsFormState,
   NewsListItem,
 } from '../types/news.types';
-
-/**
- * Shared Create/Edit News form.
- *
- * ONE form for both flows so they stay visually and behaviorally identical:
- * same sections, same validation, same pickers, same dirty-state guard.
- * UI + local form behavior only — NO backend is called. Save/Update actions
- * perform local validation and show UI-only confirmations; they do NOT claim
- * anything was persisted remotely.
- */
 
 export type NewsFormMode = 'create' | 'edit';
 
@@ -69,27 +65,11 @@ export const EMPTY_NEWS_FORM: CreateNewsFormState = {
   allowComments: true,
 };
 
-const TIME_OPTIONS: string[] = Array.from({ length: 48 }, (_, index) => {
-  const hours = String(Math.floor(index / 2)).padStart(2, '0');
-  const minutes = index % 2 === 0 ? '00' : '30';
-  return `${hours}:${minutes}`;
-});
-
-/** Builds the next `count` days (local calendar) as ISO YYYY-MM-DD options. */
-const buildDateOptions = (count: number): string[] => {
-  const options: string[] = [];
-  const today = new Date();
-  for (let index = 0; index < count; index += 1) {
-    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + index);
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    options.push(`${date.getFullYear()}-${month}-${day}`);
-  }
-  return options;
-};
-
 const formatTimeLabel = (hhmm: string): string => {
-  const [hours, minutes] = hhmm.split(':').map(part => parseInt(part, 10));
+  if (!hhmm) return '';
+  const [hoursStr, minutesStr] = hhmm.split(':');
+  const hours = parseInt(hoursStr, 10);
+  const minutes = parseInt(minutesStr, 10);
   if (Number.isNaN(hours) || Number.isNaN(minutes)) {
     return hhmm;
   }
@@ -97,15 +77,6 @@ const formatTimeLabel = (hhmm: string): string => {
   const displayHours = hours % 12 === 0 ? 12 : hours % 12;
   return `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${period}`;
 };
-
-/**
- * Demo featured-image choices: the news sample imagery already used by
- * Details/List (no new image sources, no uploads).
- */
-const FEATURED_IMAGE_OPTIONS: string[] = [
-  ...(SAMPLE_NEWS[0]?.thumbnailUrl ? [SAMPLE_NEWS[0].thumbnailUrl as string] : []),
-  ...(SAMPLE_NEWS[0]?.gallery ?? []),
-];
 
 /** Local frontend validation for the required Create/Edit News fields. */
 const validateNewsForm = (form: CreateNewsFormState): CreateNewsFieldErrors => {
@@ -149,11 +120,11 @@ const validateNewsForm = (form: CreateNewsFormState): CreateNewsFieldErrors => {
 /** Confirmation dialog configuration for the primary Update/Publish action. */
 interface PrimaryConfirmConfig {
   icon: string;
-  iconCircleDanger?: boolean;
+  iconTone?: 'info' | 'warning';
   title: string;
   message: string;
   confirmLabel: string;
-  toast: string;
+  targetStatus: 'DRAFT' | 'PUBLISHED';
 }
 
 interface FieldShellProps {
@@ -188,7 +159,7 @@ const FieldShell: React.FC<FieldShellProps> = ({
   </View>
 );
 
-/** Dropdown-style select display field (reference: icon + value + chevron). */
+/** Dropdown-style select display field (icon + value + chevron). */
 const SelectField: React.FC<{
   icon: string;
   value: string | null;
@@ -210,22 +181,16 @@ const SelectField: React.FC<{
   </TouchableOpacity>
 );
 
-/**
- * Centered dialog matching the reference (icon circle, title, message,
- * Cancel + confirm). Used for the Discard-changes guard and the
- * Update/Publish confirmation. State-driven, so duplicate dialogs cannot
- * stack.
- */
+/** Centered modal dialog. */
 const NewsConfirmDialog: React.FC<{
   visible: boolean;
   icon: string;
-  /** Icon circle tint: 'info' light blue, 'warning' amber (discard). */
   iconTone?: 'info' | 'warning';
   title: string;
   message: string;
   confirmLabel: string;
-  /** Red confirm button (Discard). */
   destructive?: boolean;
+  loading?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }> = ({
@@ -236,6 +201,7 @@ const NewsConfirmDialog: React.FC<{
   message,
   confirmLabel,
   destructive,
+  loading,
   onCancel,
   onConfirm,
 }) => (
@@ -253,14 +219,25 @@ const NewsConfirmDialog: React.FC<{
         <Text style={styles.dialogTitle}>{title}</Text>
         <Text style={styles.dialogMessage}>{message}</Text>
         <View style={styles.dialogButtonsRow}>
-          <TouchableOpacity style={styles.dialogCancelButton} onPress={onCancel}>
+          <TouchableOpacity
+            style={styles.dialogCancelButton}
+            onPress={onCancel}
+            disabled={loading}
+          >
             <Text style={styles.dialogCancelText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.dialogConfirmButton, destructive && styles.dialogConfirmDanger]}
+            style={[
+              styles.dialogConfirmButton,
+              destructive && styles.dialogConfirmDanger,
+              loading && styles.dialogConfirmDisabled,
+            ]}
             onPress={onConfirm}
+            disabled={loading}
           >
-            <Text style={styles.dialogConfirmText}>{confirmLabel}</Text>
+            <Text style={styles.dialogConfirmText}>
+              {loading ? 'Processing...' : confirmLabel}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -269,16 +246,13 @@ const NewsConfirmDialog: React.FC<{
 );
 
 interface NewsFormProps {
-  /** 'create' saves nothing; 'edit' confirms with update/publish wording. */
   mode: NewsFormMode;
-  /** Header bar + page title ("Create News" / "Edit News"). */
   title: string;
-  /** Page subtitle under the title. */
   subtitle: string;
-  /** Starting field values; also the baseline for dirty-state detection. */
   initialForm: CreateNewsFormState;
-  /** Leave the screen (after confirmation when the form is dirty). */
+  newsId?: string;
   onCancel: () => void;
+  onSuccess?: (news: NewsListItem) => void;
 }
 
 export const NewsForm: React.FC<NewsFormProps> = ({
@@ -286,12 +260,21 @@ export const NewsForm: React.FC<NewsFormProps> = ({
   title,
   subtitle,
   initialForm,
+  newsId,
   onCancel,
+  onSuccess,
 }) => {
   const [form, setForm] = useState<CreateNewsFormState>(initialForm);
   const [errors, setErrors] = useState<CreateNewsFieldErrors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null);
+
+  // Content Selection tracking for rich text formatting
+  const [contentSelection, setContentSelection] = useState<{ start: number; end: number }>({
+    start: 0,
+    end: 0,
+  });
 
   // Picker/overlay visibility
   const [imageChooserVisible, setImageChooserVisible] = useState(false);
@@ -302,18 +285,13 @@ export const NewsForm: React.FC<NewsFormProps> = ({
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [discardDialogVisible, setDiscardDialogVisible] = useState(false);
-  /** Primary-action confirmation; visible while non-null. */
   const [primaryConfirm, setPrimaryConfirm] = useState<PrimaryConfirmConfig | null>(null);
-
-  const dateOptions = useMemo(() => buildDateOptions(60), []);
 
   const isDirty = useMemo(
     () => JSON.stringify(form) !== JSON.stringify(initialForm),
     [form, initialForm],
   );
 
-  // Guards against stacking overlays: while one is visible, further
-  // hardware-back presses do nothing until it is resolved.
   const overlayVisibleRef = useRef(false);
   overlayVisibleRef.current =
     primaryConfirm !== null ||
@@ -340,7 +318,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
     }
   };
 
-  // Android hardware back: confirm before leaving with unsaved changes.
+  // Hardware back guard
   const requestCancel = () => {
     if (overlayVisibleRef.current) {
       return;
@@ -372,36 +350,139 @@ export const NewsForm: React.FC<NewsFormProps> = ({
     return true;
   };
 
-  const handleSaveDraft = () => {
+  /** Applies rich markdown/formatting tokens to the content input. */
+  const applyFormat = (
+    type: 'bold' | 'italic' | 'underline' | 'bullet' | 'number' | 'link' | 'heading',
+  ) => {
+    const currentContent = form.content || '';
+    const { start, end } = contentSelection;
+    const selectedText = currentContent.slice(start, end);
+    const before = currentContent.slice(0, start);
+    const after = currentContent.slice(end);
+    let inserted = '';
+
+    switch (type) {
+      case 'bold':
+        inserted = selectedText ? `**${selectedText}**` : '**Bold Text**';
+        break;
+      case 'italic':
+        inserted = selectedText ? `*${selectedText}*` : '*Italic Text*';
+        break;
+      case 'underline':
+        inserted = selectedText ? `<u>${selectedText}</u>` : '<u>Underlined Text</u>';
+        break;
+      case 'bullet':
+        if (selectedText) {
+          inserted = selectedText
+            .split('\n')
+            .map(line => (line.startsWith('• ') ? line : `• ${line}`))
+            .join('\n');
+        } else {
+          const prefix = before.length > 0 && !before.endsWith('\n') ? '\n' : '';
+          inserted = `${prefix}• `;
+        }
+        break;
+      case 'number':
+        if (selectedText) {
+          inserted = selectedText
+            .split('\n')
+            .map((line, idx) => `${idx + 1}. ${line.replace(/^\d+\.\s*/, '')}`)
+            .join('\n');
+        } else {
+          const prefix = before.length > 0 && !before.endsWith('\n') ? '\n' : '';
+          inserted = `${prefix}1. `;
+        }
+        break;
+      case 'link':
+        inserted = selectedText ? `[${selectedText}](https://example.com)` : '[Link Title](https://example.com)';
+        break;
+      case 'heading':
+        if (selectedText) {
+          inserted = `\n## ${selectedText}\n`;
+        } else {
+          const prefix = before.length > 0 && !before.endsWith('\n') ? '\n\n' : '';
+          inserted = `${prefix}## Subheading\n`;
+        }
+        break;
+    }
+
+    const newContent = before + inserted + after;
+    updateField('content', newContent);
+  };
+
+  // Draft Save Handler (connected to backend)
+  const handleSaveDraft = async () => {
     if (!runValidation()) {
       return;
     }
-    // UI-only confirmation: the form was validated locally. NO backend call
-    // happens and nothing is claimed to be persisted remotely.
-    setToast({ message: 'News saved as draft.', variant: 'success' });
+    setIsSubmitting(true);
+    try {
+      const draftForm = { ...form, status: 'DRAFT' as const };
+      let result: NewsListItem;
+      if (mode === 'edit' && newsId) {
+        result = await updateNewsApi(newsId, draftForm);
+      } else {
+        result = await createNewsApi(draftForm);
+      }
+      setToast({ message: 'News draft saved successfully to database.', variant: 'success' });
+      if (onSuccess) {
+        onSuccess(result);
+      }
+      setTimeout(() => {
+        onCancel();
+      }, 900);
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message || err?.message || 'Failed to save draft. Please try again.';
+      setToast({ message: errorMsg, variant: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleSaveChanges = () => {
+  // Save changes handler for Edit Mode
+  const handleSaveChanges = async () => {
     if (!runValidation()) {
       return;
     }
-    // UI-only confirmation; the screen stays and the edited data remains
-    // visible (spec: do not leave the screen).
-    setToast({ message: 'Changes saved successfully.', variant: 'success' });
+    setIsSubmitting(true);
+    try {
+      let result: NewsListItem;
+      if (mode === 'edit' && newsId) {
+        result = await updateNewsApi(newsId, form);
+      } else {
+        result = await createNewsApi(form);
+      }
+      setToast({ message: 'Changes saved successfully to database.', variant: 'success' });
+      if (onSuccess) {
+        onSuccess(result);
+      }
+      setTimeout(() => {
+        onCancel();
+      }, 900);
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message || err?.message || 'Failed to save changes. Please try again.';
+      setToast({ message: errorMsg, variant: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // Publish button triggers modal confirmation
   const handlePublishPress = () => {
     if (runValidation()) {
       setPrimaryConfirm({
         icon: '📣',
-        title: 'Publish News?',
-        message: 'Are you sure you want to publish this news?',
-        confirmLabel: 'Publish',
-        toast: 'News published successfully.',
+        title: 'Publish News Article?',
+        message: 'This article will be saved to the database and made immediately visible to all users.',
+        confirmLabel: 'Publish Now',
+        targetStatus: 'PUBLISHED',
       });
     }
   };
 
+  // Update button triggers modal confirmation
   const handleUpdatePress = () => {
     if (!runValidation()) {
       return;
@@ -409,33 +490,63 @@ export const NewsForm: React.FC<NewsFormProps> = ({
     if (form.status === 'PUBLISHED') {
       setPrimaryConfirm({
         icon: '✈️',
-        title: 'Publish News?',
-        message: 'Are you sure you want to update and publish this news?',
-        confirmLabel: 'Publish',
-        toast: 'News updated and published successfully.',
+        title: 'Publish News Changes?',
+        message: 'Are you sure you want to update and keep this news published live?',
+        confirmLabel: 'Update & Publish',
+        targetStatus: 'PUBLISHED',
       });
       return;
     }
     setPrimaryConfirm({
       icon: '📝',
-      title: 'Update News?',
-      message: 'Are you sure you want to save these changes?',
-      confirmLabel: 'Update',
-      toast: 'News updated successfully.',
+      title: 'Update News Article?',
+      message: 'Are you sure you want to save these changes to the database?',
+      confirmLabel: 'Update Article',
+      targetStatus: form.status,
     });
   };
 
-  const handlePrimaryConfirmed = () => {
+  // Confirmed Publish/Update execution (connected to backend)
+  const handlePrimaryConfirmed = async () => {
     const config = primaryConfirm;
     setPrimaryConfirm(null);
-    if (config) {
-      // UI-only confirmation — no backend call, nothing is persisted remotely.
-      setToast({ message: config.toast, variant: 'success' });
+    if (!config) return;
+
+    setIsSubmitting(true);
+    try {
+      const targetPayload = { ...form, status: config.targetStatus };
+      let result: NewsListItem;
+      if (mode === 'edit' && newsId) {
+        result = await updateNewsApi(newsId, targetPayload);
+      } else {
+        result = await createNewsApi(targetPayload);
+      }
+
+      setToast({
+        message:
+          config.targetStatus === 'PUBLISHED'
+            ? 'News article published successfully to backend.'
+            : 'News article updated successfully in backend.',
+        variant: 'success',
+      });
+
+      if (onSuccess) {
+        onSuccess(result);
+      }
+      setTimeout(() => {
+        onCancel();
+      }, 900);
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message || err?.message || 'Failed to persist news. Please try again.';
+      setToast({ message: errorMsg, variant: 'error' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const previewNews: NewsListItem = {
-    id: 'preview',
+    id: newsId || 'preview',
     title: form.headline.trim(),
     summary: form.summary.trim() || 'Summary will appear here.',
     category: form.category ?? 'Category',
@@ -465,7 +576,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
 
   return (
     <View style={styles.root}>
-      <AdminShellHeader leading="back" onBack={requestCancel} />
+      <AdminHeader showBack title={title} onBack={requestCancel} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <KeyboardAvoidingView
@@ -506,14 +617,14 @@ export const NewsForm: React.FC<NewsFormProps> = ({
                 required
                 counter={`${form.slug.length}/${SLUG_MAX_LENGTH}`}
                 error={errors.slug}
-                helperText="Lowercase, numbers and hyphens only"
+                helperText="Lowercase letters, numbers and hyphens only"
               >
                 <TextInput
                   value={form.slug}
                   onChangeText={value =>
                     updateField('slug', value.slice(0, SLUG_MAX_LENGTH).toLowerCase())
                   }
-                  placeholder="Enter news slug"
+                  placeholder="enter-news-slug-url"
                   placeholderTextColor={AdminColors.textMuted}
                   autoCapitalize="none"
                   style={[styles.input, errors.slug && styles.inputError]}
@@ -530,7 +641,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
                 <TextInput
                   value={form.summary}
                   onChangeText={value => updateField('summary', value.slice(0, SUMMARY_MAX_LENGTH))}
-                  placeholder="Enter short summary"
+                  placeholder="Enter brief executive summary..."
                   placeholderTextColor={AdminColors.textMuted}
                   multiline
                   textAlignVertical="top"
@@ -540,29 +651,98 @@ export const NewsForm: React.FC<NewsFormProps> = ({
               </FieldShell>
             </NewsFormSection>
 
-            {/* 2. Content */}
+            {/* 2. Content with Interactive Rich Toolbar */}
             <NewsFormSection icon="📝" title="Content">
-              <FieldShell label="Content" required error={errors.content}>
+              <FieldShell
+                label="Content"
+                required
+                error={errors.content}
+                helperText="Use the formatting toolbar to style headings, bold text, italics, lists, and links."
+              >
+                {/* Active Formatting Toolbar */}
                 <View style={styles.toolbar}>
-                  <TouchableOpacity style={styles.toolbarParagraph} disabled accessibilityLabel="Paragraph style">
-                    <Text style={styles.toolbarParagraphText}>Paragraph</Text>
+                  {/* Heading Style Button */}
+                  <TouchableOpacity
+                    style={styles.toolbarParagraph}
+                    onPress={() => applyFormat('heading')}
+                    activeOpacity={0.7}
+                    accessibilityLabel="Insert Subheading"
+                  >
+                    <Text style={styles.toolbarParagraphText}>Heading</Text>
                     <Text style={styles.toolbarChevron}>⌄</Text>
                   </TouchableOpacity>
-                  {['B', 'I', 'U'].map(glyph => (
-                    <TouchableOpacity key={glyph} style={styles.toolbarButton} disabled accessibilityLabel={glyph}>
-                      <Text style={[styles.toolbarIcon, glyph === 'B' && styles.toolbarBold]}>{glyph}</Text>
-                    </TouchableOpacity>
-                  ))}
-                  {['•', '⋮≡', '🔗'].map(glyph => (
-                    <TouchableOpacity key={glyph} style={styles.toolbarButton} disabled accessibilityLabel={glyph}>
-                      <Text style={styles.toolbarIcon}>{glyph}</Text>
-                    </TouchableOpacity>
-                  ))}
+
+                  <View style={styles.toolbarDivider} />
+
+                  {/* Bold */}
+                  <TouchableOpacity
+                    style={styles.toolbarButton}
+                    onPress={() => applyFormat('bold')}
+                    activeOpacity={0.6}
+                    accessibilityLabel="Bold Text"
+                  >
+                    <Text style={[styles.toolbarIcon, styles.toolbarBold]}>B</Text>
+                  </TouchableOpacity>
+
+                  {/* Italic */}
+                  <TouchableOpacity
+                    style={styles.toolbarButton}
+                    onPress={() => applyFormat('italic')}
+                    activeOpacity={0.6}
+                    accessibilityLabel="Italic Text"
+                  >
+                    <Text style={[styles.toolbarIcon, styles.toolbarItalic]}>I</Text>
+                  </TouchableOpacity>
+
+                  {/* Underline */}
+                  <TouchableOpacity
+                    style={styles.toolbarButton}
+                    onPress={() => applyFormat('underline')}
+                    activeOpacity={0.6}
+                    accessibilityLabel="Underline Text"
+                  >
+                    <Text style={[styles.toolbarIcon, styles.toolbarUnderline]}>U</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.toolbarDivider} />
+
+                  {/* Bullet List */}
+                  <TouchableOpacity
+                    style={styles.toolbarButton}
+                    onPress={() => applyFormat('bullet')}
+                    activeOpacity={0.6}
+                    accessibilityLabel="Bullet List"
+                  >
+                    <Text style={styles.toolbarIcon}>•</Text>
+                  </TouchableOpacity>
+
+                  {/* Numbered List */}
+                  <TouchableOpacity
+                    style={styles.toolbarButton}
+                    onPress={() => applyFormat('number')}
+                    activeOpacity={0.6}
+                    accessibilityLabel="Numbered List"
+                  >
+                    <Text style={styles.toolbarIcon}>1.</Text>
+                  </TouchableOpacity>
+
+                  {/* Hyperlink */}
+                  <TouchableOpacity
+                    style={styles.toolbarButton}
+                    onPress={() => applyFormat('link')}
+                    activeOpacity={0.6}
+                    accessibilityLabel="Insert Link"
+                  >
+                    <Text style={styles.toolbarIcon}>🔗</Text>
+                  </TouchableOpacity>
                 </View>
+
+                {/* Content TextArea */}
                 <TextInput
                   value={form.content}
                   onChangeText={value => updateField('content', value)}
-                  placeholder="Write the full news content..."
+                  onSelectionChange={e => setContentSelection(e.nativeEvent.selection)}
+                  placeholder="Write the full news content here... Supports markdown headings, lists, and links."
                   placeholderTextColor={AdminColors.textMuted}
                   multiline
                   textAlignVertical="top"
@@ -592,20 +772,16 @@ export const NewsForm: React.FC<NewsFormProps> = ({
                         <Text style={styles.removeIcon}>✕</Text>
                       </TouchableOpacity>
                     </View>
-                    {isEdit ? (
-                      <>
-                        <Text style={styles.uploadCaption}>JPG, PNG or WebP (Max 5 MB)</Text>
-                        <TouchableOpacity
-                          style={styles.changeImageButton}
-                          onPress={() => setImageChooserVisible(true)}
-                          accessibilityRole="button"
-                          accessibilityLabel="Change Image"
-                        >
-                          <Text style={styles.changeImageIcon}>🖼️</Text>
-                          <Text style={styles.changeImageText}>Change Image</Text>
-                        </TouchableOpacity>
-                      </>
-                    ) : null}
+                    <Text style={styles.uploadCaption}>JPG, PNG or WebP (Max 5 MB)</Text>
+                    <TouchableOpacity
+                      style={styles.changeImageButton}
+                      onPress={() => setImageChooserVisible(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Change Image"
+                    >
+                      <Text style={styles.changeImageIcon}>🖼️</Text>
+                      <Text style={styles.changeImageText}>Change Image</Text>
+                    </TouchableOpacity>
                   </View>
                 ) : (
                   <TouchableOpacity
@@ -617,7 +793,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
                     <View style={styles.uploadEmpty} pointerEvents="none">
                       <Text style={styles.uploadIcon}>🖼️</Text>
                       <Text style={styles.uploadTitle}>Upload Featured Image</Text>
-                      <Text style={styles.uploadSubtitle}>JPG, PNG or WebP (Max 5 MB)</Text>
+                      <Text style={styles.uploadSubtitle}>JPG, PNG, WebP or Curated Library</Text>
                       <View style={styles.chooseButton}>
                         <Text style={styles.chooseButtonText}>Choose Image</Text>
                       </View>
@@ -654,35 +830,40 @@ export const NewsForm: React.FC<NewsFormProps> = ({
                   tags={form.tags}
                   onChange={value => updateField('tags', value)}
                   error={errors.tags}
+                  placeholder="Add news tags (e.g. Health, Relief, Education)"
+                  helperText="Add relevant tags to help people discover this news article"
                 />
               </FieldShell>
             </NewsFormSection>
 
-            {/* 5. Publish Settings */}
+            {/* 5. Publish Settings with Calendar & Clock Modals */}
             <NewsFormSection icon="📅" title="Publish Settings">
+              {/* Publish Date (Calendar) */}
               <FieldShell label="Publish Date" required error={errors.publishDate}>
                 <SelectField
                   icon="📅"
                   value={form.publishDate ? formatDate(form.publishDate) : null}
-                  placeholder="Select publish date"
+                  placeholder="Select publish date (interactive calendar)"
                   hasError={Boolean(errors.publishDate)}
                   onPress={() => setDatePickerVisible(true)}
                 />
               </FieldShell>
 
+              {/* Publish Time (Clock) */}
               <FieldShell label="Publish Time" required error={errors.publishTime}>
                 <SelectField
                   icon="🕐"
                   value={form.publishTime ? formatTimeLabel(form.publishTime) : null}
-                  placeholder="Select publish time"
+                  placeholder="Select publish time (interactive clock)"
                   hasError={Boolean(errors.publishTime)}
                   onPress={() => setTimePickerVisible(true)}
                 />
               </FieldShell>
 
+              {/* Status */}
               <FieldShell label="Status" required error={errors.status}>
                 <SelectField
-                  icon={isEdit ? '⚑' : '📄'}
+                  icon={form.status === 'PUBLISHED' ? '✅' : '📄'}
                   value={form.status ? STATUS_LABELS[form.status] : null}
                   placeholder="Select status"
                   hasError={Boolean(errors.status)}
@@ -697,7 +878,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
                 ]}
               >
                 <Text style={styles.statusInfoIcon}>
-                  {form.status === 'PUBLISHED' && isEdit ? '✅' : 'ℹ️'}
+                  {form.status === 'PUBLISHED' ? '✅' : 'ℹ️'}
                 </Text>
                 <Text
                   style={[
@@ -706,10 +887,8 @@ export const NewsForm: React.FC<NewsFormProps> = ({
                   ]}
                 >
                   {form.status === 'PUBLISHED'
-                    ? isEdit
-                      ? 'This news will be published immediately and visible to users.'
-                      : 'News will be published immediately once saved.'
-                    : 'News will be saved as a draft. You can publish it later.'}
+                    ? 'News will be published immediately to the database and visible to public users.'
+                    : 'News will be saved as a draft in the database. You can publish it at any time.'}
                 </Text>
               </View>
             </NewsFormSection>
@@ -718,10 +897,10 @@ export const NewsForm: React.FC<NewsFormProps> = ({
             <NewsFormSection icon="⚙️" title="Additional Options">
               <View style={styles.optionRow}>
                 <View style={styles.optionText}>
-                  <Text style={styles.optionLabel}>Allow comments (UI only)</Text>
-                  {isEdit ? (
-                    <Text style={styles.optionSubtitle}>Allow users to comment on this news.</Text>
-                  ) : null}
+                  <Text style={styles.optionLabel}>Allow comments</Text>
+                  <Text style={styles.optionSubtitle}>
+                    Allow users to submit public comments and feedback on this news article.
+                  </Text>
                 </View>
                 <Switch
                   value={form.allowComments}
@@ -733,15 +912,13 @@ export const NewsForm: React.FC<NewsFormProps> = ({
               </View>
             </NewsFormSection>
 
-            {/* 7. Preview */}
+            {/* 7. Preview Section */}
             <NewsFormSection icon="👁" title="Preview">
               <View style={styles.previewArea}>
                 <Text style={styles.previewIcon}>📰</Text>
-                <Text style={styles.previewTitle}>Preview how this news will look</Text>
+                <Text style={styles.previewTitle}>Executive Article Preview</Text>
                 <Text style={styles.previewSubtitle}>
-                  {isEdit
-                    ? 'You can preview the news before saving or updating.'
-                    : 'You can preview the news before saving or publishing.'}
+                  View high-fidelity article preview with full formatting, author details, and publication metadata.
                 </Text>
                 <TouchableOpacity
                   style={styles.previewButton}
@@ -749,18 +926,20 @@ export const NewsForm: React.FC<NewsFormProps> = ({
                   accessibilityRole="button"
                   accessibilityLabel="Preview News"
                 >
-                  <Text style={styles.previewButtonText}>Preview News</Text>
+                  <Text style={styles.previewButtonIcon}>👁️</Text>
+                  <Text style={styles.previewButtonText}>Open Live Preview</Text>
                 </TouchableOpacity>
               </View>
             </NewsFormSection>
 
-            {/* 8. Bottom actions */}
+            {/* 8. Bottom Actions */}
             <View style={styles.bottomActions}>
               <AppButton
                 title="Cancel"
                 variant="outline"
                 size="md"
                 onPress={requestCancel}
+                disabled={isSubmitting}
                 style={styles.bottomButton}
               />
               <AppButton
@@ -768,6 +947,8 @@ export const NewsForm: React.FC<NewsFormProps> = ({
                 variant="secondary"
                 size="md"
                 onPress={middleAction.onPress}
+                loading={isSubmitting}
+                disabled={isSubmitting}
                 style={styles.bottomButton}
               />
               <AppButton
@@ -775,6 +956,8 @@ export const NewsForm: React.FC<NewsFormProps> = ({
                 variant="primary"
                 size="md"
                 onPress={primaryAction.onPress}
+                loading={isSubmitting}
+                disabled={isSubmitting}
                 style={styles.bottomButton}
               />
             </View>
@@ -788,7 +971,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
         onDismiss={() => setToast(null)}
       />
 
-      {/* Primary-action confirmation (UI-only, no backend) */}
+      {/* Primary-action confirmation modal */}
       <NewsConfirmDialog
         visible={primaryConfirm !== null}
         icon={primaryConfirm?.icon ?? '📣'}
@@ -796,93 +979,101 @@ export const NewsForm: React.FC<NewsFormProps> = ({
         title={primaryConfirm?.title ?? ''}
         message={primaryConfirm?.message ?? ''}
         confirmLabel={primaryConfirm?.confirmLabel ?? ''}
+        loading={isSubmitting}
         onCancel={() => setPrimaryConfirm(null)}
         onConfirm={handlePrimaryConfirmed}
       />
 
-      {/* Discard changes (reference dialog) */}
+      {/* Discard changes dialog */}
       <NewsConfirmDialog
         visible={discardDialogVisible}
         icon="⚠️"
         iconTone="warning"
         title="Discard changes?"
-        message="You have unsaved changes. Are you sure you want to leave this screen? Your changes will be lost."
+        message="You have unsaved changes. Are you sure you want to leave this screen? Your unsaved input will be lost."
         confirmLabel="Discard"
         destructive
         onCancel={() => setDiscardDialogVisible(false)}
         onConfirm={onCancel}
       />
 
-      {/* UI-only preview of the current form values */}
+      {/* Live High-Fidelity Rich Preview */}
       <NewsPreviewSheet
         visible={previewVisible}
         news={previewNews}
         onClose={() => setPreviewVisible(false)}
       />
 
-      {/* Featured image chooser (news sample imagery, no upload) */}
-      <EventPickerSheet
+      {/* Media Upload Sheet */}
+      <AppMediaUploadSheet
         visible={imageChooserVisible}
         title="Select Featured Image"
-        hint="Demo images only — real upload needs the shared image picker + backend flow"
-        options={FEATURED_IMAGE_OPTIONS}
-        selected={form.featuredImageUri}
-        itemLabel={uri => `News image ${FEATURED_IMAGE_OPTIONS.indexOf(uri) + 1}`}
+        subtitle="Camera, Gallery, File or Curated Presets"
+        currentValue={form.featuredImageUri}
         onSelect={value => {
           updateField('featuredImageUri', value);
           setToast({
-            message: isEdit ? 'Featured image updated.' : 'Featured image selected.',
+            message: value
+              ? isEdit
+                ? 'Featured image updated.'
+                : 'Featured image selected.'
+              : 'Featured image removed.',
             variant: 'success',
           });
         }}
         onClose={() => setImageChooserVisible(false)}
       />
 
+      {/* Author Picker */}
       <EventPickerSheet
         visible={authorPickerVisible}
         title="Select Author"
-        hint="Demo options only — not backend values"
+        hint="Select editorial staff or official author"
         options={SAMPLE_NEWS_AUTHORS}
         selected={form.author}
         onSelect={value => updateField('author', value)}
         onClose={() => setAuthorPickerVisible(false)}
       />
+
+      {/* Category Picker */}
       <EventPickerSheet
         visible={categoryPickerVisible}
         title="Select Category"
-        hint="Demo options only — not backend values"
+        hint="Select news department or classification"
         options={SAMPLE_NEWS_CATEGORIES}
         selected={form.category}
         onSelect={value => updateField('category', value)}
         onClose={() => setCategoryPickerVisible(false)}
       />
+
+      {/* Status Picker */}
       <EventPickerSheet
         visible={statusPickerVisible}
         title="Select Status"
-        hint="UI-only status selection"
+        hint="Choose publication status"
         options={['DRAFT', 'PUBLISHED']}
         selected={form.status}
         itemLabel={value => STATUS_LABELS[value as CreateNewsFormState['status']]}
         onSelect={value => updateField('status', value as CreateNewsFormState['status'])}
         onClose={() => setStatusPickerVisible(false)}
       />
-      <EventPickerSheet
+
+      {/* Interactive Calendar Date Picker Modal */}
+      <DatePickerModal
         visible={datePickerVisible}
-        title="Select Publish Date"
-        options={dateOptions}
-        selected={form.publishDate}
-        itemLabel={value => formatDate(value)}
+        value={form.publishDate || ''}
         onSelect={value => updateField('publishDate', value)}
         onClose={() => setDatePickerVisible(false)}
+        title="Select Publish Date"
       />
-      <EventPickerSheet
+
+      {/* Interactive Clock Time Picker Modal */}
+      <TimePickerModal
         visible={timePickerVisible}
-        title="Select Publish Time"
-        options={TIME_OPTIONS}
-        selected={form.publishTime}
-        itemLabel={value => formatTimeLabel(value)}
+        value={form.publishTime || ''}
         onSelect={value => updateField('publishTime', value)}
         onClose={() => setTimePickerVisible(false)}
+        title="Select Publish Time"
       />
     </View>
   );
@@ -991,56 +1182,81 @@ const styles = StyleSheet.create({
     minHeight: 90,
   },
   contentArea: {
-    minHeight: 160,
+    minHeight: 180,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
   },
 
+  // Rich Formatting Toolbar
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: 4,
     borderWidth: 1,
     borderColor: AdminColors.border,
     borderBottomWidth: 0,
     borderTopLeftRadius: BorderRadius.base,
     borderTopRightRadius: BorderRadius.base,
-    backgroundColor: AdminColors.background,
+    backgroundColor: '#F8FAFC',
     paddingHorizontal: Spacing.xs,
-    paddingVertical: Spacing.xs,
+    paddingVertical: 6,
+  },
+  toolbarDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 2,
   },
   toolbarParagraph: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: Spacing.xs,
-    minHeight: 30,
+    gap: 4,
+    paddingHorizontal: Spacing.xs + 2,
+    height: 30,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   toolbarParagraphText: {
     ...Typography.caption,
-    color: AdminColors.textSecondary,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
   },
   toolbarChevron: {
     fontSize: 9,
     color: AdminColors.textMuted,
   },
   toolbarButton: {
-    width: 30,
+    width: 32,
     height: 30,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: BorderRadius.sm,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   toolbarIcon: {
-    fontSize: 12,
-    color: AdminColors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+    color: AdminColors.textPrimary,
   },
   toolbarBold: {
+    fontWeight: '900',
+  },
+  toolbarItalic: {
+    fontStyle: 'italic',
+    fontWeight: '700',
+  },
+  toolbarUnderline: {
+    textDecorationLine: 'underline',
     fontWeight: '700',
   },
 
+  // Upload Box
   uploadArea: {
-    height: 210,
+    height: 200,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
     borderColor: AdminColors.primary,
@@ -1054,13 +1270,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   uploadIcon: {
-    fontSize: 26,
+    fontSize: 28,
     marginBottom: Spacing.xs,
   },
   uploadTitle: {
     ...Typography.bodyMedium,
     color: AdminColors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   uploadSubtitle: {
     ...Typography.secondary,
@@ -1079,6 +1295,7 @@ const styles = StyleSheet.create({
   chooseButtonText: {
     ...Typography.secondaryMedium,
     color: AdminColors.primary,
+    fontWeight: '700',
   },
   imagePreviewContainer: {
     height: 180,
@@ -1117,6 +1334,7 @@ const styles = StyleSheet.create({
   changeImageText: {
     ...Typography.secondaryMedium,
     color: AdminColors.primary,
+    fontWeight: '700',
   },
   removeButton: {
     position: 'absolute',
@@ -1146,7 +1364,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   selectIcon: {
-    fontSize: 13,
+    fontSize: 14,
     marginRight: Spacing.sm,
   },
   selectValue: {
@@ -1174,12 +1392,13 @@ const styles = StyleSheet.create({
     backgroundColor: AdminColors.successLight,
   },
   statusInfoIcon: {
-    fontSize: 12,
+    fontSize: 14,
   },
   statusInfoText: {
     ...Typography.secondary,
     color: AdminColors.info,
     flex: 1,
+    fontWeight: '500',
   },
   statusInfoTextPublished: {
     color: AdminColors.success,
@@ -1197,6 +1416,7 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     ...Typography.body,
+    fontWeight: '600',
     color: AdminColors.textPrimary,
   },
   optionSubtitle: {
@@ -1207,16 +1427,16 @@ const styles = StyleSheet.create({
 
   previewArea: {
     alignItems: 'center',
-    paddingVertical: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
   previewIcon: {
-    fontSize: 28,
-    marginBottom: Spacing.sm,
+    fontSize: 32,
+    marginBottom: Spacing.xs,
   },
   previewTitle: {
     ...Typography.bodyMedium,
     color: AdminColors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   previewSubtitle: {
     ...Typography.secondary,
@@ -1224,6 +1444,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: Spacing.md,
     textAlign: 'center',
+    paddingHorizontal: Spacing.sm,
   },
   previewButton: {
     flexDirection: 'row',
@@ -1232,13 +1453,18 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.base,
     backgroundColor: AdminColors.primaryLight,
     paddingHorizontal: Spacing.lg,
-    minHeight: 40,
+    minHeight: 42,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+  },
+  previewButtonIcon: {
+    fontSize: 14,
   },
   previewButtonText: {
     ...Typography.secondaryMedium,
     color: AdminColors.primary,
+    fontWeight: '700',
   },
 
   bottomActions: {
@@ -1253,7 +1479,7 @@ const styles = StyleSheet.create({
   // Dialogs
   dialogBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 40, 96, 0.45)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.lg,
@@ -1281,7 +1507,7 @@ const styles = StyleSheet.create({
     backgroundColor: AdminColors.warningLight,
   },
   dialogIcon: {
-    fontSize: 22,
+    fontSize: 24,
   },
   dialogTitle: {
     ...Typography.bodyBold,
@@ -1327,9 +1553,12 @@ const styles = StyleSheet.create({
   dialogConfirmDanger: {
     backgroundColor: AdminColors.error,
   },
+  dialogConfirmDisabled: {
+    opacity: 0.6,
+  },
   dialogConfirmText: {
     ...Typography.bodyMedium,
-    fontWeight: '600',
+    fontWeight: '700',
     color: AdminColors.textOnDark,
   },
 });

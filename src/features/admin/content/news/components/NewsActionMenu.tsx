@@ -1,4 +1,5 @@
 import { Alert } from 'react-native';
+import { feedback } from '../../../../../core/feedback/FeedbackContext';
 import type { NewsListItem } from '../types/news.types';
 
 /**
@@ -11,7 +12,7 @@ const PLACEHOLDER_MESSAGE =
   'This is a UI placeholder. It will be connected after backend integration.';
 
 const showPlaceholder = (action: string) => {
-  Alert.alert(action, PLACEHOLDER_MESSAGE);
+  feedback.info(action, PLACEHOLDER_MESSAGE);
 };
 
 /** Actions per status per the reference (Archived rows offer Restore/Delete). */

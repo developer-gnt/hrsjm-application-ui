@@ -57,14 +57,19 @@ export const setupRefreshInterceptor = (
             throw new Error('No refresh token available');
           }
 
-          const response = await axios.post(`${baseURL}${ApiRoutes.AUTH.REFRESH}`, {
-            refreshToken,
-          });
+          // Backend contract: POST /auth/refresh { refresh_token } →
+          // { user, access_token, refresh_token } (refresh token is rotated).
+          const response = await axios.post(
+            `${baseURL}${ApiRoutes.AUTH.REFRESH}`,
+            { refresh_token: refreshToken },
+            { timeout: 15000 },
+          );
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data?.data || {};
+          const { access_token: accessToken, refresh_token: newRefreshToken } =
+            response.data?.data || {};
 
           if (!accessToken) {
-            throw new Error('Token refresh did not return a valid accessToken');
+            throw new Error('Token refresh did not return a valid access_token');
           }
 
           tokenStorage.setAccessToken(accessToken);

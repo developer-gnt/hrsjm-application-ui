@@ -4,6 +4,7 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
+  StyleProp,
   AccessibilityRole,
   ViewStyle,
   TextStyle,
@@ -12,22 +13,25 @@ import { AdminColors } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
 import { Spacing, BorderRadius } from '../../theme/spacing';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'gold';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'gold' | 'ghost' | 'success' | 'text';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
-interface AppButtonProps {
+export interface AppButtonProps {
   title: string;
   onPress: () => void;
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
   disabled?: boolean;
-  icon?: React.ReactNode;
-  iconPosition?: 'left' | 'right';
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  fullWidth?: boolean;
   accessibilityLabel?: string;
   accessibilityRole?: AccessibilityRole;
+  icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right';
+  /** Optional border color override (used by variant 'outline'). */
+  borderColor?: string;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 }
 
 export const AppButton: React.FC<AppButtonProps> = ({
@@ -37,12 +41,14 @@ export const AppButton: React.FC<AppButtonProps> = ({
   size = 'md',
   loading = false,
   disabled = false,
-  icon,
-  iconPosition = 'left',
-  style,
-  textStyle,
+  fullWidth = false,
   accessibilityLabel,
   accessibilityRole = 'button',
+  icon,
+  iconPosition = 'left',
+  borderColor,
+  style,
+  textStyle,
 }) => {
   const isDisabled = disabled || loading;
 
@@ -56,11 +62,20 @@ export const AppButton: React.FC<AppButtonProps> = ({
         return {
           backgroundColor: 'transparent',
           borderWidth: 1.5,
-          borderColor: AdminColors.primary,
+          borderColor: borderColor || AdminColors.primary,
+        };
+      case 'ghost':
+      case 'text':
+        return {
+          backgroundColor: 'transparent',
         };
       case 'danger':
         return {
           backgroundColor: AdminColors.error,
+        };
+      case 'success':
+        return {
+          backgroundColor: '#10B981',
         };
       case 'gold':
         return {
@@ -82,9 +97,18 @@ export const AppButton: React.FC<AppButtonProps> = ({
         };
       case 'outline':
         return {
+          color: borderColor || AdminColors.primary,
+        };
+      case 'ghost':
+      case 'text':
+        return {
           color: AdminColors.primary,
         };
       case 'danger':
+        return {
+          color: AdminColors.textOnDark,
+        };
+      case 'success':
         return {
           color: AdminColors.textOnDark,
         };
@@ -141,13 +165,15 @@ export const AppButton: React.FC<AppButtonProps> = ({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
-      accessibilityRole={accessibilityRole}
+      accessibilityRole={accessibilityRole || 'button'}
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityState={{ disabled: isDisabled }}
       style={[
         styles.baseButton,
         getVariantContainerStyle(),
         getSizeContainerStyle(),
+        variant === 'outline' && borderColor ? { borderColor } : null,
+        fullWidth ? styles.fullWidth : null,
         isDisabled && styles.disabledButton,
         style,
       ]}
@@ -155,7 +181,11 @@ export const AppButton: React.FC<AppButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'outline' || variant === 'secondary' ? AdminColors.primary : '#FFFFFF'}
+          color={
+            variant === 'outline' || variant === 'secondary' || variant === 'ghost' || variant === 'text'
+              ? AdminColors.primary
+              : '#FFFFFF'
+          }
         />
       ) : (
         <>
@@ -186,6 +216,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  fullWidth: {
+    width: '100%',
+  },
   disabledButton: {
     opacity: 0.5,
   },
@@ -199,3 +232,5 @@ const styles = StyleSheet.create({
     marginRight: Spacing.sm,
   },
 });
+
+export default AppButton;

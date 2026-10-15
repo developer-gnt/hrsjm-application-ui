@@ -27,6 +27,7 @@ Applications
 KYC UI
 Membership Card
 Renewal UI
+
 ```
 
 The implementation must work from the same React Native codebase for:

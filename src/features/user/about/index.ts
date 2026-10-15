@@ -6,6 +6,7 @@
  */
 export { AboutScreen } from './screens/AboutScreen';
 export type { AboutScreenProps } from './screens/AboutScreen';
+export * from './theme';
 export { AboutHero } from './components/AboutHero';
 export { AboutWhoWeAreSection } from './components/AboutWhoWeAreSection';
 export { AboutWorkCard } from './components/AboutWorkCard';
@@ -24,3 +25,4 @@ export type {
   AboutApproachStep,
   AboutImpactStat,
 } from './types/about.types';
+

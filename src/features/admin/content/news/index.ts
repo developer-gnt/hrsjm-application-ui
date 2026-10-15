@@ -8,6 +8,8 @@ export { NewsListScreen } from './screens/NewsListScreen';
 export { NewsDetailsScreen } from './screens/NewsDetailsScreen';
 export { CreateNewsScreen } from './screens/CreateNewsScreen';
 export { EditNewsScreen } from './screens/EditNewsScreen';
+export * from './services/news.service';
+export * from './hooks/useNews';
 export type {
   NewsListItem,
   NewsStatus,
@@ -17,3 +19,4 @@ export type {
   NewsFilterState,
   NewsUiState,
 } from './types/news.types';
+

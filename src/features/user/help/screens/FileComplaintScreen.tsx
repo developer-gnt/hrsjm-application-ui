@@ -305,7 +305,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
       const validFiles: DocumentPickerResponse[] = [];
       const rejectedFiles: string[] = [];
 
-      pickedFiles.forEach(file => {
+      pickedFiles.forEach((file: DocumentPickerResponse) => {
         const fileName = file.name || 'Unnamed file';
         if (file.error) {
           rejectedFiles.push(`${fileName} (${file.error})`);
@@ -326,7 +326,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
       if (rejectedFiles.length > 0) {
         Alert.alert('Some files were not added', rejectedFiles.join('\n'));
       }
-    } catch (error) {
+    } catch (error: any) {
       if (isErrorWithCode(error)) {
         if (error.code === errorCodes.OPERATION_CANCELED) {
           return;
@@ -613,8 +613,6 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
       </View>
     </View>
   );
-
-  const cityOptions = selectedState ? getFilteredCities(selectedState, '') : [];
 
   const renderStepThree = () => (
     <View>
