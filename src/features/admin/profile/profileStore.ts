@@ -46,7 +46,7 @@ const mapBackendRole = (roles?: Array<{ name: string }>): string => {
   const roleNames = roles.map(r => r.name.toUpperCase());
   if (roleNames.includes('ADMIN')) return 'Admin';
   if (roleNames.includes('DONATION_SEEKER')) return 'Donar Seeker';
-  if (roleNames.includes('DONOR')) return 'User';
+  if (roleNames.includes('USER')) return 'User';
   if (roleNames.includes('MEMBER')) return 'Member';
   const first = roles[0].name;
   return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();

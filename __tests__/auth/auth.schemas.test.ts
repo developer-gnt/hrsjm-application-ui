@@ -169,12 +169,12 @@ describe('auth validation schemas', () => {
       const roleByName = Object.fromEntries(
         ACCOUNT_TYPE_OPTIONS.map(o => [o.key, o.role_name]),
       );
-      // General User maps to USER; Member maps to MEMBER; ADMIN is never
-      // offered for self-registration (backend allowlist).
+      // General User maps to USER; Member maps to MEMBER; Seeker maps to DONATION_SEEKER;
+      // ADMIN is never offered for self-registration (backend allowlist).
       expect(roleByName.GENERAL_USER).toBe('USER');
       expect(roleByName.MEMBER).toBe('MEMBER');
       expect(roleByName.DONATION_SEEKER).toBe('DONATION_SEEKER');
-      expect(roleByName.ORGANISATION).toBe('DONOR');
+      expect(roleByName.ORGANISATION).toBeUndefined();
     });
   });
 

@@ -21,15 +21,21 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
   const emphasized = action.emphasized === true;
 
   const label =
-    action.id === 'join'
-      ? 'Join\nHRSJM'
-      : action.id === 'complaint'
-        ? 'File a\nComplaint'
-        : action.id === 'donate'
-          ? 'Donate\nNow'
-          : action.id === 'renew'
-            ? 'Renew\nMembership'
-            : action.label;
+    action.id === 'apply-aid'
+      ? 'Apply for\nAid'
+      : action.id === 'track-aid'
+        ? 'Track Aid\nStatus'
+        : action.id === 'rights'
+          ? 'Know Your\nRights'
+          : action.id === 'join'
+            ? 'Join\nHRSJM'
+            : action.id === 'complaint'
+              ? 'File a\nComplaint'
+              : action.id === 'donate'
+                ? 'Donate\nNow'
+                : action.id === 'renew'
+                  ? 'Renew\nMembership'
+                  : action.label;
 
   return (
     <TouchableOpacity

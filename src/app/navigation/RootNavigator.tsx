@@ -8,13 +8,12 @@ import { AuthenticatedHomeScreen } from './AuthenticatedHomeScreen';
 import { AdminTabNavigator } from './AdminTabNavigator';
 import { MemberTabNavigator } from '../../features/member';
 import { UserTabNavigator } from '../../features/user';
-import { SeekerHomeScreen } from '../../features/seeker/screens/SeekerHomeScreen';
-import { DonorHomeScreen } from '../../features/donor/screens/DonorHomeScreen';
+import { SeekerTabNavigator } from '../../features/seeker';
 import { HomeStackParamList } from './NavigationTypes';
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 
-const RoleBasedHomeNavigator: React.FC<{ roleType: 'member' | 'user' | 'seeker' | 'donor' | 'default' }> = ({
+const RoleBasedHomeNavigator: React.FC<{ roleType: 'member' | 'user' | 'seeker' | 'default' }> = ({
   roleType,
 }) => {
   if (roleType === 'member') {
@@ -23,16 +22,15 @@ const RoleBasedHomeNavigator: React.FC<{ roleType: 'member' | 'user' | 'seeker' 
   if (roleType === 'user') {
     return <UserTabNavigator />;
   }
-
-  let Component = AuthenticatedHomeScreen;
-  if (roleType === 'seeker') Component = SeekerHomeScreen;
-  else if (roleType === 'donor') Component = DonorHomeScreen;
+  if (roleType === 'seeker') {
+    return <SeekerTabNavigator />;
+  }
 
   return (
     <HomeStack.Navigator>
       <HomeStack.Screen
         name="AuthenticatedHome"
-        component={Component}
+        component={AuthenticatedHomeScreen}
         options={{ headerShown: false }}
       />
     </HomeStack.Navigator>
@@ -46,7 +44,6 @@ const RoleBasedHomeNavigator: React.FC<{ roleType: 'member' | 'user' | 'seeker' 
  * - authenticated + MEMBER → Member Portal
  * - authenticated + USER / GENERAL_USER → User Portal (UserTabNavigator)
  * - authenticated + SEEKER / DONATION_SEEKER → Donation Seeker Portal
- * - authenticated + DONOR → Donor Portal
  * - authenticated + other → General Authenticated Home
  */
 export const RootNavigator: React.FC = () => {
@@ -58,13 +55,11 @@ export const RootNavigator: React.FC = () => {
   const isMember = roleNames.includes('MEMBER');
   const isUser = roleNames.includes('USER') || roleNames.includes('GENERAL_USER');
   const isSeeker = roleNames.includes('SEEKER') || roleNames.includes('DONATION_SEEKER');
-  const isDonor = roleNames.includes('DONOR');
 
-  let activeRoleType: 'member' | 'user' | 'seeker' | 'donor' | 'default' = 'default';
+  let activeRoleType: 'member' | 'user' | 'seeker' | 'default' = 'default';
   if (isMember) activeRoleType = 'member';
   else if (isUser) activeRoleType = 'user';
   else if (isSeeker) activeRoleType = 'seeker';
-  else if (isDonor) activeRoleType = 'donor';
 
   return (
     <NavigationContainer>

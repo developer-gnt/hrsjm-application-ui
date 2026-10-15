@@ -12,7 +12,7 @@ export type Permission = 'assistance.review' | 'support.manage';
 const ROLE_PERMISSIONS: Record<UserRoleName, Permission[]> = {
   ADMIN: ['assistance.review', 'support.manage'],
   MEMBER: [],
-  DONOR: [],
+  USER: [],
   DONATION_SEEKER: [],
 };
 

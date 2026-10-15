@@ -34,7 +34,7 @@ export interface PageQuery {
 }
 
 // Shared backend enums (confirmed against implemented backend contract)
-export type UserRoleName = 'ADMIN' | 'MEMBER' | 'DONOR' | 'DONATION_SEEKER';
+export type UserRoleName = 'ADMIN' | 'MEMBER' | 'USER' | 'DONATION_SEEKER';
 
 // CommonStatus enum (backend common/enums/common-status.enum.ts)
 export type CommonStatus = 'ACTIVE' | 'INACTIVE';
