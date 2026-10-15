@@ -15,7 +15,7 @@ export const MembershipEmptyState: React.FC<MembershipEmptyStateProps> = ({
   onStartRegistration,
 }) => {
   return (
-    <View style={styles.cardContainer} accessibilityRole="region" accessibilityLabel="Empty Membership State">
+    <View style={styles.cardContainer} accessibilityRole="summary" accessibilityLabel="Empty Membership State">
       {/* Icon Badge */}
       <View style={styles.iconCircle}>
         <View style={styles.idCardOutline}>

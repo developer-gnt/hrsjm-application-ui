@@ -28,8 +28,16 @@ export { MembershipCard } from './components/MembershipCard';
 export { ActivityCard, ActivitiesRow } from './components/ActivityCard';
 export { RecommendationCard } from './components/RecommendationCard';
 export { DonationBanner } from './components/DonationBanner';
+export { EmergencyHelplinesSection } from './components/EmergencyHelplinesSection';
+export { QuickRightsAwarenessSection } from './components/QuickRightsAwarenessSection';
+export { SuccessStoriesSection } from './components/SuccessStoriesSection';
+export { JoinMovementBanner } from './components/JoinMovementBanner';
 export { HomeTabBar } from './components/HomeTabBar';
 export { UserBottomNavigation } from './components/UserBottomNavigation';
+
+export type { HelplineItem } from './components/EmergencyHelplinesSection';
+export type { RightsTipItem } from './components/QuickRightsAwarenessSection';
+export type { StoryItem } from './components/SuccessStoriesSection';
 
 export type {
   HomeVariant,

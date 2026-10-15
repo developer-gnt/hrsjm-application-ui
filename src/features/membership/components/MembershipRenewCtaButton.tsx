@@ -19,7 +19,7 @@ export const MembershipRenewCtaButton: React.FC<MembershipRenewCtaButtonProps> =
   disabled = false,
 }) => {
   return (
-    <View style={styles.container} accessibilityRole="region" accessibilityLabel="Renew Membership Action">
+    <View style={styles.container} accessibilityRole="summary" accessibilityLabel="Renew Membership Action">
       <TouchableOpacity
         style={[styles.button, disabled && styles.buttonDisabled]}
         activeOpacity={0.85}

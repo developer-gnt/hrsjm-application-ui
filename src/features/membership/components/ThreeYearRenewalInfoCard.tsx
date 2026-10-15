@@ -7,7 +7,7 @@ export const ThreeYearRenewalInfoCard: React.FC = () => {
   return (
     <View
       style={styles.cardContainer}
-      accessibilityRole="region"
+      accessibilityRole="summary"
       accessibilityLabel="3-Year Renewal Information"
     >
       <View style={styles.iconWrapper}>

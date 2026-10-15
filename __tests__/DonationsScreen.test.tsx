@@ -42,6 +42,7 @@ describe('Donations Functionality Tests', () => {
       },
     },
   });
+  let screenRenderer: ReactTestRenderer.ReactTestRenderer | undefined;
 
   const initialMetrics = {
     frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -58,6 +59,16 @@ describe('Donations Functionality Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  afterEach(async () => {
+    if (screenRenderer) {
+      await ReactTestRenderer.act(async () => {
+        screenRenderer?.unmount();
+      });
+      screenRenderer = undefined;
+    }
+    queryClient.clear();
   });
 
   describe('1. Add Donation Flow', () => {
@@ -339,11 +350,18 @@ describe('Donations Functionality Tests', () => {
 
   describe('7. Screen Mounting and Controls', () => {
     it('renders the complete DonationsScreen with locked approved design and all controls', async () => {
-      let renderer: ReactTestRenderer.ReactTestRenderer;
-      await ReactTestRenderer.act(() => {
-        renderer = renderWithProviders(<DonationsScreen />);
+      (apiClient.get as jest.Mock).mockResolvedValueOnce({
+        data: {
+          items: [],
+          meta: { page: 1, limit: 20, total: 0, totalPages: 0 },
+        },
       });
-      const root = renderer!.root;
+
+      await ReactTestRenderer.act(async () => {
+        screenRenderer = renderWithProviders(<DonationsScreen />);
+        await Promise.resolve();
+      });
+      const root = screenRenderer!.root;
 
       // Page Title
       expect(root.findAllByProps({ children: 'Donations' }).length).toBeGreaterThanOrEqual(1);

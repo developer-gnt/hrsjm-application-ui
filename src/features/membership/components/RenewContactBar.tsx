@@ -46,7 +46,7 @@ export const RenewContactBar: React.FC<RenewContactBarProps> = ({
   return (
     <View
       style={styles.cardContainer}
-      accessibilityRole="region"
+      accessibilityRole="summary"
       accessibilityLabel="Contact Information"
     >
       {/* Left Segment: Website */}

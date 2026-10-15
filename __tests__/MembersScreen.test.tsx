@@ -34,6 +34,9 @@ const createTestQueryClient = () =>
     },
   });
 
+const renderers: ReactTestRenderer.ReactTestRenderer[] = [];
+const queryClients: QueryClient[] = [];
+
 const renderScreen = async (props?: { previewState?: PreviewState }) => {
   const queryClient = createTestQueryClient();
   let tree: ReactTestRenderer.ReactTestRenderer | undefined;
@@ -46,8 +49,17 @@ const renderScreen = async (props?: { previewState?: PreviewState }) => {
       </NavigationContainer>
     );
   });
+  renderers.push(tree!);
+  queryClients.push(queryClient);
   return tree!;
 };
+
+afterEach(async () => {
+  await ReactTestRenderer.act(async () => {
+    renderers.splice(0).forEach(renderer => renderer.unmount());
+  });
+  queryClients.splice(0).forEach(queryClient => queryClient.clear());
+});
 
 /** Collects all rendered Text strings (avoids JSON.stringify on animated style nodes).
  *  Joins without separators first so JSX-interpolated Text fragments recombine

@@ -8,6 +8,8 @@ import {
 } from '../src/features/admin/membershipApplications';
 
 describe('MembershipApplicationsScreen Phase 1 & 2 Tests', () => {
+  const renderers: ReactTestRenderer.ReactTestRenderer[] = [];
+
   const renderScreen = async (props = {}) => {
     let renderer: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
@@ -22,8 +24,15 @@ describe('MembershipApplicationsScreen Phase 1 & 2 Tests', () => {
         </SafeAreaProvider>
       );
     });
+    renderers.push(renderer!);
     return renderer!;
   };
+
+  afterEach(async () => {
+    await act(async () => {
+      renderers.splice(0).forEach(renderer => renderer.unmount());
+    });
+  });
 
   it('renders without crashing and displays header title and subtitle', async () => {
     const renderer = await renderScreen();

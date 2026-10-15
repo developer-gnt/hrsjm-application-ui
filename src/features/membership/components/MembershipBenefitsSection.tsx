@@ -110,7 +110,7 @@ export const MembershipBenefitsSection: React.FC<MembershipBenefitsSectionProps>
   ];
 
   return (
-    <View style={styles.container} accessibilityRole="region" accessibilityLabel="Membership Benefits Section">
+    <View style={styles.container} accessibilityRole="summary" accessibilityLabel="Membership Benefits Section">
       {/* Section Header */}
       <Text style={styles.sectionTitle}>Membership Benefits</Text>
 
@@ -122,7 +122,7 @@ export const MembershipBenefitsSection: React.FC<MembershipBenefitsSectionProps>
             style={styles.card}
             activeOpacity={onBenefitPress ? 0.75 : 1}
             onPress={() => onBenefitPress?.(item)}
-            accessibilityRole={onBenefitPress ? 'button' : 'region'}
+            accessibilityRole={onBenefitPress ? 'button' : undefined}
             accessibilityLabel={`${item.title}: ${item.description}`}
           >
             {/* Warm Peach/Gold Icon Circle */}

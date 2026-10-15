@@ -57,7 +57,7 @@ export const MembershipValidityCard: React.FC<MembershipValidityCardProps> = ({
   const badgeStyle = getStatusBadgeStyle();
 
   return (
-    <View style={styles.sectionContainer} accessibilityRole="region" accessibilityLabel="Membership Validity Section">
+    <View style={styles.sectionContainer} accessibilityRole="summary" accessibilityLabel="Membership Validity Section">
       {/* Section Title */}
       <Text style={styles.sectionTitle}>Membership Validity</Text>
 

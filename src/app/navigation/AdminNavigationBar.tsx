@@ -7,16 +7,13 @@ import {
 } from 'react-native';
 import type {
   BottomTabBarProps,
-  BottomTabNavigationProp,
 } from '@react-navigation/bottom-tabs';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PermissionKeys } from '../../core/permissions/permission.constants';
-import { useCanAny } from '../../core/permissions/can';
 import { usePermissionStore } from '../../core/permissions/permission.store';
 import { AppRoutes } from '../../core/constants/routes';
 import { MoreNavigator } from './MoreNavigator';
-import { ModulePlaceholderScreen } from './ModulePlaceholderScreen';
 import { AdminDashboardScreen } from '../../features/admin/dashboard';
 import { MembersScreen } from '../../features/admin/members/screens/MembersScreen';
 import { AssistanceRequestsScreen } from '../../features/admin/assistance';
@@ -30,7 +27,6 @@ import {
   LayoutGrid,
 } from '../../core/components/icons';
 import type { AppIconComponent } from '../../core/components/icons';
-import { PressableScale } from '../../core/components/common/PressableScale';
 import { BrandColors } from '../../core/theme/colors';
 import { Spacing, BorderRadius } from '../../core/theme/spacing';
 
@@ -102,6 +98,17 @@ const TAB_PERMISSIONS: Partial<Record<keyof AdminTabParamList, string[]>> = {
   [AppRoutes.ADMIN_APPLICATIONS_TAB]: [PermissionKeys.ASSISTANCE_REVIEW],
   [AppRoutes.ADMIN_COMPLAINTS_TAB]: [PermissionKeys.SUPPORT_MANAGE],
 };
+
+export const getPermittedAdminTabs = (
+  permissions: readonly string[],
+): TabDefinition[] =>
+  TAB_DEFINITIONS.filter(tab => {
+    const requiredPermissions = TAB_PERMISSIONS[tab.name];
+    return (
+      !requiredPermissions ||
+      requiredPermissions.some(permission => permissions.includes(permission))
+    );
+  });
 
 const NAV_ICON_SIZE = 24;
 const NAV_LABEL_SIZE = 11;
@@ -188,6 +195,9 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
 };
 
 export const AdminNavigationBar: React.FC = () => {
+  const permissions = usePermissionStore(state => state.permissions);
+  const permittedTabs = getPermittedAdminTabs(permissions);
+
   return (
     <Tab.Navigator
       tabBar={props => <CustomTabBar {...props} />}
@@ -195,7 +205,7 @@ export const AdminNavigationBar: React.FC = () => {
         headerShown: false,
       }}
     >
-      {TAB_DEFINITIONS.map(tab => (
+      {permittedTabs.map(tab => (
         <Tab.Screen
           key={tab.name}
           name={tab.name}

@@ -5,7 +5,7 @@ import { VerificationShieldIcon } from './MembershipIcons';
 
 export const MembershipVerificationNotice: React.FC = () => {
   return (
-    <View style={styles.cardContainer} accessibilityRole="region" accessibilityLabel="Verification Notice">
+    <View style={styles.cardContainer} accessibilityRole="summary" accessibilityLabel="Verification Notice">
       <View style={styles.headerRow}>
         <View style={styles.iconCircle}>
           <VerificationShieldIcon size={18} color="#1E40AF" />

@@ -15,10 +15,12 @@ const qrCache = new Map<string, boolean[][]>();
  * correction level so the code survives printing and glare on a card.
  */
 export const getQrMatrix = (data: string): boolean[][] => {
-  if (qrCache.has(data)) {
-    return qrCache.get(data)!;
+  const safeData =
+    typeof data === 'string' && data.trim().length > 0 ? data.trim() : 'HRSJM';
+  if (qrCache.has(safeData)) {
+    return qrCache.get(safeData)!;
   }
-  const qr = createQr(data, {
+  const qr = createQr(safeData, {
     errorCorrectionLevel: 'H' as QRCodeErrorCorrectionLevel,
   });
   const size = qr.modules.size;

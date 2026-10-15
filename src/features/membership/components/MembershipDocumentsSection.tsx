@@ -47,7 +47,7 @@ export const MembershipDocumentsSection: React.FC<MembershipDocumentsSectionProp
   ];
 
   return (
-    <View style={styles.sectionContainer} accessibilityRole="region" accessibilityLabel="Membership Documents Section">
+    <View style={styles.sectionContainer} accessibilityRole="summary" accessibilityLabel="Membership Documents Section">
       {/* Section Header */}
       <Text style={styles.sectionTitle}>Membership Documents</Text>
 

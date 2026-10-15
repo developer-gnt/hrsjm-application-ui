@@ -17,7 +17,8 @@ export { HumanRightsMonitoringSection } from './components/HumanRightsMonitoring
 export { AboutVisionMissionSection } from './components/AboutVisionMissionSection';
 export { AboutCoreValuesSection } from './components/AboutCoreValuesSection';
 export { AboutFinalCta } from './components/AboutFinalCta';
-export { ABOUT_CONTENT } from './data/about-content';
+export { ABOUT_CONTENT } from './content/aboutContent';
+export type { AboutLeader, AboutValueItem } from './content/aboutContent';
 export type {
   AboutContent,
   AboutWorkArea,
