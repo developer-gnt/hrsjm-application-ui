@@ -34,6 +34,8 @@ import {
   SUGGESTED_DONATION_AMOUNTS,
 } from '../utils/donation-amount';
 import { navigateToMembershipCategories } from '../../../../core/navigation/appRouter';
+import { GlobalPaymentModal, PaymentPayload } from '../../../payments';
+import { useAuthStore } from '../../../auth/store/authStore';
 
 export interface UserActionPageScreenProps {
   pageId: ActionPageId;
@@ -103,6 +105,31 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
       Spacing.sm * (pageId === 'membership' ? 1 : 3)) /
     2;
 
+  const authUser = useAuthStore(state => state.user);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+
+  const resolvedDonationAmount =
+    typeof donationAmount === 'number' && donationAmount > 0
+      ? donationAmount
+      : 500;
+
+  const paymentPayload: PaymentPayload = {
+    purpose: 'donation',
+    title: 'HRSJM General Donation',
+    subtitle: 'Human Rights & Social Justice Mission',
+    amount: resolvedDonationAmount,
+    donorName: authUser?.full_name || 'Donor',
+    donorMobile: authUser?.mobile_number || '',
+    donorEmail: authUser?.email || '',
+    category: 'General Public Aid',
+    location: 'National / All India',
+    entityId: `don-gen-${Date.now()}`,
+  };
+
+  const handleDonatePress = () => {
+    setPaymentModalVisible(true);
+  };
+
   const showPendingAction = (action: string) => {
     Alert.alert(
       action,
@@ -122,6 +149,10 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
       } else {
         navigateToMembershipCategories();
       }
+      return;
+    }
+    if (pageId === 'donate' || content.ctaLabel === 'Donate Now') {
+      handleDonatePress();
       return;
     }
     showPendingAction(content.ctaLabel);
@@ -355,8 +386,9 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
                   : null,
               ]}
               disabled={selectedAmount === 'custom' && !customAmount}
-              onPress={() => showPendingAction('Donation payment')}
+              onPress={handleDonatePress}
               accessibilityRole="button"
+              accessibilityLabel={`Donate Now${donationAmount ? ` ${formatRupees(donationAmount)}` : ''}`}
             >
               <Text style={styles.donateButtonText}>
                 Donate Now{donationAmount ? ` · ${formatRupees(donationAmount)}` : ''}
@@ -370,7 +402,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
             <View style={styles.secureNote}>
               <AppIcon name="lock" size={13} color={AdminColors.textSecondary} />
               <Text style={styles.secureNoteText}>
-                Payment setup is pending. No payment will be processed.
+                Secure 256-bit encrypted donation. Eligible for 80G tax benefit.
               </Text>
             </View>
           </View>
@@ -406,6 +438,13 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
       {showBottomNav && !hideBottomNav && (
         <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
       )}
+      <GlobalPaymentModal
+        visible={paymentModalVisible}
+        payload={paymentPayload}
+        initialStage="checkout"
+        onClose={() => setPaymentModalVisible(false)}
+        onNavigateHome={onBack}
+      />
     </SafeAreaView>
   );
 };

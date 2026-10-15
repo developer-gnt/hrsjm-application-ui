@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useMembership } from '../context/MembershipContext';
+import { ApplicationStatusStepper } from '../components/stepper';
 
 export type ApplicationInnerStatus =
   | 'applied'
@@ -243,41 +244,12 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
         <View style={styles.headerRightSpace} />
       </View>
 
-      {/* Quick Status Switcher Tabs (enables seamless demonstration and switching between all 4 inner pages) */}
-      <View style={styles.statusTabsRow}>
-        {(['applied', 'under_review', 'approved', 'rejected'] as ApplicationInnerStatus[]).map(
-          key => {
-            const isTabActive = activeStatus === key;
-            const labelMap: Record<ApplicationInnerStatus, string> = {
-              applied: 'Applied',
-              under_review: 'Under Review',
-              approved: 'Approved',
-              rejected: 'Rejected',
-            };
-            return (
-              <TouchableOpacity
-                key={key}
-                style={[
-                  styles.statusTabPill,
-                  isTabActive && styles.statusTabPillActive,
-                ]}
-                onPress={() => setActiveStatus(key)}
-                activeOpacity={0.75}
-                accessibilityRole="tab"
-                accessibilityLabel={labelMap[key]}
-              >
-                <Text
-                  style={[
-                    styles.statusTabPillText,
-                    isTabActive && styles.statusTabPillTextActive,
-                  ]}
-                >
-                  {labelMap[key]}
-                </Text>
-              </TouchableOpacity>
-            );
-          },
-        )}
+      {/* Top 4-Step Horizontal Stepper with Interactive Step Switching */}
+      <View style={styles.topStepperContainer}>
+        <ApplicationStatusStepper
+          status={activeStatus}
+          onStepPress={(_stepNum, stepKey) => setActiveStatus(stepKey as ApplicationInnerStatus)}
+        />
       </View>
 
       <ScrollView
@@ -642,33 +614,13 @@ const styles = StyleSheet.create({
   headerRightSpace: {
     width: 38,
   },
-  statusTabsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  topStepperContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  statusTabPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    backgroundColor: '#EDF2F7',
-  },
-  statusTabPillActive: {
-    backgroundColor: '#1B3F8F',
-  },
-  statusTabPillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  statusTabPillTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    borderBottomColor: '#EDF2F7',
   },
   scroll: {
     flex: 1,

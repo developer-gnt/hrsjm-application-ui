@@ -17,7 +17,7 @@ import {
   Spacing,
 } from '../../../../core/theme';
 import { AppIcon } from '../../../user/components';
-import { AdminHeader } from '../../../../app/navigation/AdminHeader';
+import { HomeHeader } from '../../../user/home/components/HomeHeader';
 import { RIGHTS_INDEX } from '../data/rights-content';
 import type { RightsIndexItem } from '../types/rights.types';
 
@@ -190,11 +190,9 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <AdminHeader
-        title="Know Your Rights"
-        showBack={Boolean(onBack)}
+      <HomeHeader
         onBack={onBack}
-        unreadCount={1}
+        unreadCount={3}
       />
 
       <ScrollView

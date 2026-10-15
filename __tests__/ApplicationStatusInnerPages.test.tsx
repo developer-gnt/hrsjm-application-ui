@@ -160,13 +160,11 @@ describe('My Status Inner Pages (Application Status)', () => {
     expect(JSON.stringify(rejectedWrapper.toJSON())).toContain('Rejected');
   });
 
-  it('6. MyApplicationScreen renders status buttons', async () => {
+  it('6. MyApplicationScreen renders screen cleanly', async () => {
     const renderer = await renderComponent(<MyApplicationScreen />);
 
     const rootText = JSON.stringify(renderer.toJSON());
-    expect(rootText).toContain('Applied Successfully');
-    expect(rootText).toContain('Under Review');
-    expect(rootText).toContain('Approved');
-    expect(rootText).toContain('Rejected');
+    expect(rootText).toContain('My Application');
+    expect(rootText).not.toContain('statusButtonsCard');
   });
 });

@@ -155,8 +155,8 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
       // Search query filter (matches name, application ID, phone, or email)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
-        const matchName = app.applicantName.toLowerCase().includes(query);
-        const matchAppId = app.applicationId.toLowerCase().includes(query);
+        const matchName = (app.applicantName || '').toLowerCase().includes(query);
+        const matchAppId = (app.applicationId || '').toLowerCase().includes(query);
         const matchPhone = app.phone ? app.phone.toLowerCase().includes(query) : false;
         const matchEmail = app.email ? app.email.toLowerCase().includes(query) : false;
         return matchName || matchAppId || matchPhone || matchEmail;
@@ -165,15 +165,17 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     });
 
     // Sorting
-    return list.sort((a, b) => {
+    return [...list].sort((a, b) => {
       if (filterOptions.sortBy === 'name_asc') {
-        return a.applicantName.localeCompare(b.applicantName);
+        return (a.applicantName || '').localeCompare(b.applicantName || '');
       }
+      const timeA = new Date(a.submittedDate || 0).getTime() || 0;
+      const timeB = new Date(b.submittedDate || 0).getTime() || 0;
       if (filterOptions.sortBy === 'oldest') {
-        return new Date(a.submittedDate).getTime() - new Date(b.submittedDate).getTime();
+        return timeA - timeB;
       }
       // Default: newest
-      return new Date(b.submittedDate).getTime() - new Date(a.submittedDate).getTime();
+      return timeB - timeA;
     });
   }, [applications, activeTab, filterOptions, searchQuery]);
 

@@ -34,10 +34,38 @@ import {
   DEFAULT_HOME_BLOGS,
 } from '../services/user-blogs.service';
 import { getImpactStats } from '../data/impact-stats-provider';
-import type { HomeBlogItem, HomeNewsItem, HomeTab } from '../types/home.types';
+import { getEventsList } from '../../../admin/content/events/services/events.service';
+import type { EventListItem } from '../../../admin/content/events/types/events.types';
+import type { HomeBlogItem, HomeEvent, HomeNewsItem, HomeTab } from '../types/home.types';
 import type { WhatWeDoId } from '../../what-we-do';
 import type { ActionPageId } from '../../action-pages';
 import { getHomeActionDestination } from '../utils/home-action-destination';
+
+const mapEventToHomeEvent = (item: EventListItem): HomeEvent => {
+  let day = '25';
+  let month = 'OCT';
+  if (item.startAt) {
+    try {
+      const d = new Date(item.startAt);
+      if (!isNaN(d.getTime())) {
+        day = String(d.getDate()).padStart(2, '0');
+        month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  return {
+    id: item.id,
+    title: item.title,
+    day,
+    month,
+    location: item.location || 'Mumbai, Maharashtra',
+    imageAssetName: 'home/events/rights-workshop.png',
+    imageUrl: item.coverImageUrl || undefined,
+  };
+};
 
 export interface UserHomeScreenProps {
   /**
@@ -89,18 +117,25 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const [latestNews, setLatestNews] = useState<HomeNewsItem[]>(LATEST_NEWS);
   const [blogs, setBlogs] = useState<HomeBlogItem[]>(DEFAULT_HOME_BLOGS);
+  const [upcomingEvents, setUpcomingEvents] = useState<HomeEvent[]>(UPCOMING_EVENTS);
 
   const loadDynamicData = React.useCallback(async () => {
     try {
-      const [newsItems, blogItems] = await Promise.all([
+      const [newsItems, blogItems, eventsRes] = await Promise.all([
         fetchLatestPublishedNews(5),
         fetchPublishedBlogs(8),
+        getEventsList({ limit: 10 }),
       ]);
       if (newsItems.length > 0) {
         setLatestNews(newsItems);
       }
       if (blogItems.length > 0) {
         setBlogs(blogItems);
+      }
+      if (eventsRes && Array.isArray(eventsRes.events) && eventsRes.events.length > 0) {
+        const upcomingList = eventsRes.events.filter(e => e.status === 'UPCOMING');
+        const listToDisplay = upcomingList.length > 0 ? upcomingList : eventsRes.events;
+        setUpcomingEvents(listToDisplay.map(mapEventToHomeEvent));
       }
     } catch (err) {
       console.warn('Error loading dynamic home content:', err);
@@ -272,7 +307,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.carousel}
             >
-              {UPCOMING_EVENTS.map(event => (
+              {upcomingEvents.map(event => (
                 <HomeEventCard
                   key={event.id}
                   event={event}

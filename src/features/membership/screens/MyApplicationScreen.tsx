@@ -117,63 +117,7 @@ export function MyApplicationScreen() {
           </Text>
         </View>
 
-        {/* Status Buttons matching reference */}
-        <View style={styles.statusButtonsCard}>
-          <Text style={styles.statusButtonsHeader}>Application Status</Text>
-          <View style={styles.statusButtonsGrid}>
-            <TouchableOpacity
-              style={[styles.statusQuickBtn, styles.statusQuickBtnApplied]}
-              onPress={() => handleOpenStatus('applied')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="View Applied Successfully status page">
-              <View style={[styles.statusQuickDot, { backgroundColor: '#10B981' }]} />
-              <Text style={[styles.statusQuickBtnText, { color: '#065F46' }]}>
-                Applied Successfully
-              </Text>
-              <Text style={styles.statusQuickBtnArrow}>›</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.statusQuickBtn, styles.statusQuickBtnUnderReview]}
-              onPress={() => handleOpenStatus('under_review')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="View Under Review status page">
-              <View style={[styles.statusQuickDot, { backgroundColor: '#F59E0B' }]} />
-              <Text style={[styles.statusQuickBtnText, { color: '#92400E' }]}>
-                Under Review
-              </Text>
-              <Text style={styles.statusQuickBtnArrow}>›</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.statusQuickBtn, styles.statusQuickBtnApproved]}
-              onPress={() => handleOpenStatus('approved')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="View Approved status page">
-              <View style={[styles.statusQuickDot, { backgroundColor: '#10B981' }]} />
-              <Text style={[styles.statusQuickBtnText, { color: '#065F46' }]}>
-                Approved
-              </Text>
-              <Text style={styles.statusQuickBtnArrow}>›</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.statusQuickBtn, styles.statusQuickBtnRejected]}
-              onPress={() => handleOpenStatus('rejected')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="View Rejected status page">
-              <View style={[styles.statusQuickDot, { backgroundColor: '#EF4444' }]} />
-              <Text style={[styles.statusQuickBtnText, { color: '#991B1B' }]}>
-                Rejected
-              </Text>
-              <Text style={styles.statusQuickBtnArrow}>›</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
 
         {/* Applications List */}
         {applications.length > 0 ? (
@@ -278,68 +222,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
     lineHeight: 18,
   },
-  statusButtonsCard: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  statusButtonsHeader: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: spacing.sm,
-  },
-  statusButtonsGrid: {
-    gap: 8,
-  },
-  statusQuickBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  statusQuickBtnApplied: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#A7F3D0',
-  },
-  statusQuickBtnUnderReview: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
-  },
-  statusQuickBtnApproved: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#A7F3D0',
-  },
-  statusQuickBtnRejected: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
-  },
-  statusQuickDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  statusQuickBtnText: {
-    flex: 1,
-    fontSize: 13.5,
-    fontWeight: '700',
-  },
-  statusQuickBtnArrow: {
-    fontSize: 18,
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
+
   listContainer: {
     gap: spacing.md,
   },

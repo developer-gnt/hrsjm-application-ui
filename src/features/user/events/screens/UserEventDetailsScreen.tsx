@@ -13,6 +13,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdminColors, BorderRadius, FontFamilies, Shadows, Spacing } from '../../../../core/theme';
 import { AppIcon } from '../../components';
+import { HomeHeader } from '../../home/components/HomeHeader';
 import type { UserEvent } from '../data/user-events';
 
 interface UserEventDetailsScreenProps {
@@ -51,25 +52,19 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, Spacing.sm) }]}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Go back to Events"
-        >
-          <AppIcon name="chevron-left" size={20} color={AdminColors.primaryDark} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Event Details</Text>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={handleShare}
-          accessibilityRole="button"
-          accessibilityLabel="Share event"
-        >
-          <AppIcon name="share" size={19} color={AdminColors.primaryDark} />
-        </TouchableOpacity>
-      </View>
+      <HomeHeader
+        onBack={onBack}
+        rightAction={
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={handleShare}
+            accessibilityRole="button"
+            accessibilityLabel="Share event"
+          >
+            <AppIcon name="share" size={19} color={AdminColors.primaryDark} />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView
         style={styles.flex}

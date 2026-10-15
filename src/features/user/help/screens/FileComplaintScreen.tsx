@@ -30,6 +30,7 @@ import {
   Spacing,
 } from '../../../../core/theme';
 import { AppIcon, HrsjmLogoMark } from '../../components';
+import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeTab } from '../../home/types/home.types';
 import { ComplaintProgress } from '../components/ComplaintProgress';
@@ -890,46 +891,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <View
-        style={[
-          styles.header,
-          { paddingTop: Math.max(insets.top, Spacing.sm) },
-        ]}
-      >
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={handleStepBack}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <AppIcon
-              name="chevron-left"
-              size={20}
-              color={AdminColors.primaryDark}
-            />
-          </TouchableOpacity>
-
-          <View style={styles.logoWrap}>
-            <HrsjmLogoMark height={38} />
-          </View>
-
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.iconButton}
-              accessibilityRole="button"
-              accessibilityLabel="Search"
-            >
-              <AppIcon
-                name="search"
-                size={20}
-                color={AdminColors.primaryDark}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <HomeHeader onBack={handleStepBack} />
 
       <KeyboardAvoidingView
         style={styles.flex}

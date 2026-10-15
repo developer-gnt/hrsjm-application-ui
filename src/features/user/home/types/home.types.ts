@@ -36,6 +36,7 @@ export interface HomeEvent {
    * No photo assets are bundled yet — ImageSlot documents the requirement.
    */
   imageAssetName: string;
+  imageUrl?: string;
 }
 
 export interface HomeNewsItem {

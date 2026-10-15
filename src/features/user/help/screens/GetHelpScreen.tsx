@@ -12,6 +12,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AppButton } from '../../../../core/components';
 import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core/theme';
 import { AppIcon, HrsjmLogoMark } from '../../components';
+import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeTab } from '../../home/types/home.types';
 import { HelpActionCard, type HelpActionCardItem } from '../components/HelpActionCard';
@@ -121,50 +122,9 @@ export const GetHelpScreen: React.FC<GetHelpScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, Spacing.sm) }]}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => {
-              if (onBack) {
-                onBack();
-                return;
-              }
-              onOpenHome?.();
-            }}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <AppIcon name="chevron-left" size={20} color={AdminColors.primaryDark} />
-          </TouchableOpacity>
-
-          <View style={styles.logoWrap}>
-            <HrsjmLogoMark height={38} />
-          </View>
-
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => showComingSoon('Search')}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Search"
-            >
-              <AppIcon name="search" size={20} color={AdminColors.primaryDark} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => showComingSoon('Notifications')}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Notifications"
-            >
-              <AppIcon name="bell" size={20} color={AdminColors.primaryDark} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <HomeHeader
+        onBack={onBack ? onBack : onOpenHome}
+      />
 
       <ScrollView
         style={styles.scroll}

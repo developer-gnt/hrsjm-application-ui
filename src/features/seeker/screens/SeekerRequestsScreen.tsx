@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../core/components/common/AppHeader';
+import { HomeHeader } from '../../user/home/components/HomeHeader';
 import { AppCard } from '../../../core/components/common/AppCard';
 import { AppButton } from '../../../core/components/common/AppButton';
 import { AssistanceStatusBadge } from '../../admin/assistance/components/AssistanceStatusBadge';
@@ -133,7 +134,8 @@ export const SeekerRequestsScreen: React.FC<SeekerRequestsScreenProps> = ({
   ];
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['left', 'right']}>
+      <HomeHeader onBack={() => navigation?.navigate?.('SeekerHome')} />
       <AppHeader
         title="Aid Application Tracker"
         subtitle="Track status and timeline of your requests"

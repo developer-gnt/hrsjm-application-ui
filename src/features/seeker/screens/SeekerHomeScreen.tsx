@@ -36,16 +36,49 @@ import {
   WHAT_WE_DO_ITEMS,
 } from '../../user/home/data/home-preview-data';
 import { getImpactStats } from '../../user/home/data/impact-stats-provider';
+import { getEventsList } from '../../admin/content/events/services/events.service';
+import type { EventListItem } from '../../admin/content/events/types/events.types';
+import { fetchLatestPublishedNews } from '../../user/news/services/user-news.service';
+import type { HomeEvent, HomeNewsItem } from '../../user/home/types/home.types';
 import type {
   AssistanceRequest,
   CreateAssistanceRequestPayload,
 } from '../../admin/assistance/types/assistance.types';
+
+const mapEventToHomeEvent = (item: EventListItem): HomeEvent => {
+  let day = '25';
+  let month = 'OCT';
+  if (item.startAt) {
+    try {
+      const d = new Date(item.startAt);
+      if (!isNaN(d.getTime())) {
+        day = String(d.getDate()).padStart(2, '0');
+        month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  return {
+    id: item.id,
+    title: item.title,
+    day,
+    month,
+    location: item.location || 'Mumbai, Maharashtra',
+    imageAssetName: 'home/events/rights-workshop.png',
+    imageUrl: item.coverImageUrl || undefined,
+  };
+};
 
 export interface SeekerHomeScreenProps {
   navigation?: any;
   onNavigateToRequests?: () => void;
   onNavigateToSupport?: () => void;
   onNavigateToRights?: () => void;
+  onNavigateToEvents?: () => void;
+  onNavigateToNews?: () => void;
+  onNavigateToComplaint?: () => void;
   onOpenNotifications?: () => void;
   onOpenProfile?: () => void;
 }
@@ -55,12 +88,17 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
   onNavigateToRequests,
   onNavigateToSupport,
   onNavigateToRights,
+  onNavigateToEvents,
+  onNavigateToNews,
+  onNavigateToComplaint,
   onOpenNotifications,
   onOpenProfile,
 }) => {
   const user = useAuthStore(state => state.user);
 
   const [requests, setRequests] = useState<AssistanceRequest[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<HomeEvent[]>(UPCOMING_EVENTS);
+  const [latestNews, setLatestNews] = useState<HomeNewsItem[]>(LATEST_NEWS);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isApplyModalVisible, setIsApplyModalVisible] = useState(false);
@@ -91,13 +129,42 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
     }
   };
 
+  const loadDynamicEventsAndNews = React.useCallback(async () => {
+    try {
+      const [eventsRes, newsItems] = await Promise.all([
+        getEventsList({ limit: 10 }),
+        fetchLatestPublishedNews(5),
+      ]);
+
+      if (eventsRes && Array.isArray(eventsRes.events) && eventsRes.events.length > 0) {
+        const upcomingList = eventsRes.events.filter(e => e.status === 'UPCOMING');
+        const listToDisplay = upcomingList.length > 0 ? upcomingList : eventsRes.events;
+        setUpcomingEvents(listToDisplay.map(mapEventToHomeEvent));
+      }
+
+      if (Array.isArray(newsItems) && newsItems.length > 0) {
+        setLatestNews(newsItems);
+      }
+    } catch (err) {
+      console.warn('Error loading dynamic events and news in SeekerHomeScreen:', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadRequests();
-  }, []);
+    loadDynamicEventsAndNews();
+
+    // Auto-refresh periodically so newly added events & news appear automatically
+    const intervalId = setInterval(loadDynamicEventsAndNews, 5000);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [loadDynamicEventsAndNews]);
 
   const handleRefresh = () => {
     setRefreshing(true);
     loadRequests();
+    loadDynamicEventsAndNews();
   };
 
   const handleCreateRequest = async (payload: CreateAssistanceRequestPayload) => {
@@ -246,13 +313,13 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
                 if (onNavigateToRights) {
                   onNavigateToRights();
                 } else if (navigation) {
-                  navigation.navigate('KnowYourRights');
+                  navigation.navigate('SeekerRights');
                 }
               } else if (action.id === 'complaint') {
-                if (onNavigateToSupport) {
-                  onNavigateToSupport();
+                if (onNavigateToComplaint) {
+                  onNavigateToComplaint();
                 } else if (navigation) {
-                  navigation.navigate('SeekerSupport');
+                  navigation.navigate('FileComplaint');
                 }
               }
             }}
@@ -333,15 +400,45 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
               title="Upcoming Relief Camps & Events"
               linkLabel="View All"
               onLinkPress={() => {
-                if (navigation) navigation.navigate('Events');
+                if (onNavigateToEvents) {
+                  onNavigateToEvents();
+                } else if (navigation) {
+                  navigation.navigate('SeekerEvents');
+                }
               }}
             />
-            <HomeEventCard
-              event={UPCOMING_EVENTS[0]}
-              onPress={() => {
-                if (navigation) navigation.navigate('Events');
-              }}
-            />
+            {upcomingEvents.length <= 1 ? (
+              <HomeEventCard
+                event={upcomingEvents[0] || UPCOMING_EVENTS[0]}
+                onPress={() => {
+                  if (onNavigateToEvents) {
+                    onNavigateToEvents();
+                  } else if (navigation) {
+                    navigation.navigate('SeekerEvents');
+                  }
+                }}
+              />
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.carousel}
+              >
+                {upcomingEvents.map(event => (
+                  <HomeEventCard
+                    key={event.id}
+                    event={event}
+                    onPress={() => {
+                      if (onNavigateToEvents) {
+                        onNavigateToEvents();
+                      } else if (navigation) {
+                        navigation.navigate('SeekerEvents');
+                      }
+                    }}
+                  />
+                ))}
+              </ScrollView>
+            )}
           </View>
         </View>
 
@@ -352,15 +449,28 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
               title="Stories of Hope & News"
               linkLabel="View All"
               onLinkPress={() => {
-                if (navigation) navigation.navigate('News');
+                if (onNavigateToNews) {
+                  onNavigateToNews();
+                } else if (navigation) {
+                  navigation.navigate('News');
+                }
               }}
             />
-            <NewsCard
-              item={LATEST_NEWS[0]}
-              onPress={() => {
-                if (navigation) navigation.navigate('News');
-              }}
-            />
+            <View style={styles.newsList}>
+              {latestNews.slice(0, 2).map(item => (
+                <NewsCard
+                  key={item.id}
+                  item={item}
+                  onPress={() => {
+                    if (onNavigateToNews) {
+                      onNavigateToNews();
+                    } else if (navigation) {
+                      navigation.navigate('News');
+                    }
+                  }}
+                />
+              ))}
+            </View>
           </View>
         </View>
 
@@ -563,6 +673,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#78350F',
     marginTop: 1,
+  },
+  carousel: {
+    paddingRight: Spacing.base,
+    gap: Spacing.sm,
+  },
+  newsList: {
+    gap: Spacing.sm,
   },
 });
 

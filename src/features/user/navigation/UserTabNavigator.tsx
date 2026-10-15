@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { UserHomeScreen } from '../home/screens/UserHomeScreen';
+import { HomeHeader } from '../home/components/HomeHeader';
 import { AboutScreen } from '../about/screens/AboutScreen';
 import { MemberRightsScreen } from '../../member/rights/screens/MemberRightsScreen';
 import { UserEventsScreen } from '../events/screens/UserEventsScreen';
@@ -160,6 +161,7 @@ const UserProfileScreenComponent: React.FC<any> = ({ navigation }) => {
   return (
     <ProfileScreen
       showIdCard={false}
+      headerComponent={<HomeHeader onBack={() => navigation.navigate('UserHome')} />}
       onNavigate={(target) => {
         if (target === 'ContactUs' || target === 'contact') {
           navigation.navigate('ContactUs');
@@ -167,11 +169,14 @@ const UserProfileScreenComponent: React.FC<any> = ({ navigation }) => {
           return;
         } else if (target === 'MyApplication' || target === 'status') {
           navigation.navigate('MyApplication');
+        } else if (target === 'MembershipCategories' || target === 'membership') {
+          navigation.navigate('MembershipCategories');
         } else {
           navigation.navigate(target);
         }
       }}
       onViewStatus={() => navigation.navigate('MyApplication')}
+      onJoinMembership={() => navigation.navigate('MembershipCategories')}
       onEditPersonal={() => navigation.navigate('EditPersonalInfo')}
       onEditAdminDetails={() => navigation.navigate('AdminDetails')}
       onViewMembershipDetails={() => navigation.navigate('UserHome')}

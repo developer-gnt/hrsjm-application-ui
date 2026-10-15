@@ -3,6 +3,7 @@ import ReactTestRenderer from 'react-test-renderer';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UserActionPageScreen } from './UserActionPageScreen';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
+import { GlobalPaymentModal } from '../../../payments';
 
 describe('UserActionPageScreen', () => {
   const initialMetrics = {
@@ -67,5 +68,35 @@ describe('UserActionPageScreen', () => {
     });
 
     expect(onOpenMembershipCategories).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens GlobalPaymentModal when tapping the Donate Now button on donate page', async () => {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <SafeAreaProvider initialMetrics={initialMetrics}>
+          <UserActionPageScreen
+            pageId="donate"
+            onBack={jest.fn()}
+          />
+        </SafeAreaProvider>,
+      );
+    });
+
+    const paymentModal = renderer.root.findByType(GlobalPaymentModal);
+    expect(paymentModal.props.visible).toBe(false);
+
+    const donateButton = renderer.root.findByProps({
+      accessibilityLabel: 'Donate Now ₹500',
+    });
+    expect(donateButton).toBeDefined();
+
+    await ReactTestRenderer.act(async () => {
+      donateButton.props.onPress();
+    });
+
+    expect(paymentModal.props.visible).toBe(true);
+    expect(paymentModal.props.payload.amount).toBe(500);
+    expect(paymentModal.props.payload.purpose).toBe('donation');
   });
 });

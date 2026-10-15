@@ -10,6 +10,8 @@ import {
 } from './membershipApplications.data';
 import { apiClient } from '../../../../core/api/client';
 import { ApiRoutes } from '../../../../core/constants/api-routes';
+import { useAuthStore } from '../../../auth/store/authStore';
+import { useProfileStore } from '../../profile/profileStore';
 
 export function mapBackendToApplicationItem(backend: any): MembershipApplicationItem {
   const appData = backend.application_data || {};
@@ -213,10 +215,23 @@ class MembershipApplicationsStore {
   constructor() {
     if (process.env.NODE_ENV !== 'test') {
       this.loadPersistedApplications();
+      const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+      if (win && win.addEventListener) {
+        win.addEventListener('storage', (e: any) => {
+          if (
+            e.key === 'hrsjm_local_membership_applications' ||
+            e.key === 'hrsjm_user_membership_record' ||
+            e.key === 'hrsjm_has_applied'
+          ) {
+            this.loadPersistedApplications();
+            this.notify();
+          }
+        });
+      }
     }
   }
 
-  private loadPersistedApplications(): void {
+  public loadPersistedApplications(): void {
     const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
     if (win && win.localStorage) {
       try {
@@ -224,15 +239,87 @@ class MembershipApplicationsStore {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            const existingIds = new Set(this.applications.map(a => a.id));
-            const existingAppIds = new Set(this.applications.map(a => a.applicationId));
-            const toAdd = parsed.filter(
-              (p: any) => !existingIds.has(p.id) && !existingAppIds.has(p.applicationId)
-            );
-            this.applications = [...toAdd, ...this.applications];
-            this.recalculateStatsFromItems();
+            const map = new Map<string, MembershipApplicationItem>();
+            parsed.forEach((item: MembershipApplicationItem) => {
+              if (item && item.id) map.set(item.id, item);
+            });
+            this.applications.forEach(item => {
+              if (item && item.id && !map.has(item.id)) {
+                map.set(item.id, item);
+              }
+            });
+            this.applications = Array.from(map.values());
           }
         }
+
+        // Also check if user has an active application record stored under hrsjm_user_membership_record
+        const userSaved = win.localStorage.getItem('hrsjm_user_membership_record');
+        if (userSaved) {
+          const userRec = JSON.parse(userSaved);
+          if (userRec && (userRec.id || userRec.applicationId)) {
+            const appId = userRec.applicationId || userRec.id;
+            const statusKey: ApplicationStatus =
+              userRec.status === 'Approved'
+                ? 'approved'
+                : userRec.status === 'Rejected'
+                ? 'rejected'
+                : 'under_review';
+
+            const addressParts = [
+              userRec.addressInfo?.addressLine1,
+              userRec.addressInfo?.addressLine2,
+              userRec.addressInfo?.city,
+              userRec.addressInfo?.state,
+              userRec.addressInfo?.pincode,
+              userRec.addressInfo?.country,
+            ].filter(Boolean);
+
+            const userAppItem: MembershipApplicationItem = {
+              id: userRec.id || `app-${Date.now()}`,
+              applicationId: appId,
+              applicantName: userRec.personalInfo?.fullName?.trim() || 'Applicant',
+              membershipType: userRec.membershipType || 'District Active Member',
+              avatarUrl: userRec.documents?.photograph?.fileUri || userRec.personalInfo?.profilePhotoUri,
+              status: statusKey,
+              submittedAt: userRec.submittedAt || new Date().toLocaleString(),
+              submittedDate: userRec.submittedDate || new Date().toISOString(),
+              phone: userRec.personalInfo?.mobileNumber
+                ? `${userRec.personalInfo?.countryCode || '+91'} ${userRec.personalInfo?.mobileNumber}`
+                : undefined,
+              email: userRec.personalInfo?.email || undefined,
+              gender: userRec.personalInfo?.gender || 'Not specified',
+              dob: userRec.personalInfo?.dateOfBirth || 'Not specified',
+              fatherName: 'Not specified',
+              address: addressParts.join(', ') || 'Not specified',
+              occupation: 'Member',
+              documents: [],
+              activityLog: [
+                {
+                  id: `log-rev-${userRec.id}`,
+                  title: 'Under Review',
+                  description: 'Application submitted and queued for verification review.',
+                  timestamp: userRec.submittedAt || new Date().toLocaleString(),
+                  status: statusKey,
+                },
+              ],
+            };
+
+            const existingIdx = this.applications.findIndex(
+              a => a.id === userAppItem.id || a.applicationId === userAppItem.applicationId
+            );
+            if (existingIdx >= 0) {
+              this.applications[existingIdx] = {
+                ...this.applications[existingIdx],
+                ...userAppItem,
+                status: this.applications[existingIdx].status || userAppItem.status,
+              };
+            } else {
+              this.applications = [userAppItem, ...this.applications];
+            }
+          }
+        }
+
+        this.recalculateStatsFromItems();
       } catch {
         // ignore storage errors
       }
@@ -243,18 +330,59 @@ class MembershipApplicationsStore {
     const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
     if (win && win.localStorage) {
       try {
+        const sanitizeUri = (uri?: string) => {
+          if (!uri) return undefined;
+          if (uri.startsWith('data:') && uri.length > 300) {
+            return undefined;
+          }
+          return uri;
+        };
+
+        const sanitized = this.applications.slice(0, 100).map(app => ({
+          ...app,
+          avatarUrl: sanitizeUri(app.avatarUrl),
+          documents: Array.isArray(app.documents)
+            ? app.documents.map((d: any) => ({
+                ...d,
+                uri: sanitizeUri(d.uri),
+              }))
+            : app.documents,
+        }));
+
         win.localStorage.setItem(
           'hrsjm_local_membership_applications',
-          JSON.stringify(this.applications)
+          JSON.stringify(sanitized)
         );
-      } catch {
-        // ignore storage errors
+      } catch (e) {
+        // If quota exceeded, attempt to clear old records and retry
+        try {
+          const minimal = this.applications.slice(0, 20).map(app => ({
+            ...app,
+            avatarUrl: undefined,
+            documents: [],
+          }));
+          win.localStorage.setItem(
+            'hrsjm_local_membership_applications',
+            JSON.stringify(minimal)
+          );
+        } catch {
+          // ignore
+        }
       }
     }
   }
 
   public getApplications(): MembershipApplicationItem[] {
     return [...this.applications];
+  }
+
+  public resetForTest(): void {
+    this.applications =
+      process.env.NODE_ENV === 'test'
+        ? [...TEST_SEED_APPLICATIONS]
+        : [...INITIAL_APPLICATIONS];
+    this.recalculateStatsFromItems();
+    this.notify();
   }
 
   public getApplicationById(id: string): MembershipApplicationItem | undefined {
@@ -277,6 +405,8 @@ class MembershipApplicationsStore {
       return this.applications;
     }
 
+    // Always reload any newly submitted local applications first
+    this.loadPersistedApplications();
     this.isLoading = true;
     this.notify();
 
@@ -305,8 +435,8 @@ class MembershipApplicationsStore {
 
       const combined = [...localOnly, ...mapped];
       combined.sort((a, b) => {
-        const timeA = new Date(a.submittedDate || 0).getTime();
-        const timeB = new Date(b.submittedDate || 0).getTime();
+        const timeA = new Date(a.submittedDate || 0).getTime() || 0;
+        const timeB = new Date(b.submittedDate || 0).getTime() || 0;
         return timeB - timeA;
       });
 
@@ -346,6 +476,7 @@ class MembershipApplicationsStore {
       if (process.env.NODE_ENV === 'test') {
         return this.applications;
       }
+      this.loadPersistedApplications();
       this.recalculateStatsFromItems();
       return this.applications;
     } finally {
@@ -365,8 +496,14 @@ class MembershipApplicationsStore {
     }
 
     try {
+      const localApp = this.getApplicationById(id);
+      const queryId = (localApp && /^[0-9a-fA-F-]{36}$/.test(localApp.id)) ? localApp.id : id;
+      if (!/^[0-9a-fA-F-]{36}$/.test(queryId)) {
+        return localApp;
+      }
+
       const backendRes = await apiClient.get<any>(
-        ApiRoutes.MEMBERSHIPS.DETAILS(id),
+        ApiRoutes.MEMBERSHIPS.DETAILS(queryId),
       );
       const backend =
         (backendRes as any)?.data !== undefined
@@ -376,7 +513,7 @@ class MembershipApplicationsStore {
         // Attempt to fetch attached documents as well
         try {
           const docsRes = await apiClient.get<any>(
-            ApiRoutes.MEMBERSHIPS.DOCUMENTS(id),
+            ApiRoutes.MEMBERSHIPS.DOCUMENTS(queryId),
           );
           const docs =
             (docsRes as any)?.data !== undefined
@@ -479,8 +616,67 @@ class MembershipApplicationsStore {
     this.applications[index] = {
       ...current,
       status: newStatus,
+      rejectionReason: newStatus === 'rejected' ? (notes || 'Incomplete documents') : undefined,
       activityLog: [newLogItem, ...(current.activityLog || [])],
     };
+
+    // If status updated to approved, convert user role to MEMBER
+    if (newStatus === 'approved') {
+      try {
+        const authUser = useAuthStore.getState().user;
+        if (authUser) {
+          const isUserOrApplicant =
+            authUser.id === current.id ||
+            !authUser.roles?.some(r => r.name?.toUpperCase() === 'ADMIN');
+          if (isUserOrApplicant) {
+            useAuthStore.setState({
+              user: {
+                ...authUser,
+                roles: [
+                  ...(authUser.roles?.filter(r => r.name?.toUpperCase() !== 'USER') || []),
+                  { id: 'role-member', name: 'MEMBER' },
+                ],
+              },
+            });
+            useProfileStore.getState().fetchProfile();
+          }
+        }
+      } catch {
+        // ignore in test
+      }
+    }
+
+    // Sync status change to hrsjm_user_membership_record so user status updates immediately
+    const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+    if (win && win.localStorage) {
+      try {
+        const userSaved = win.localStorage.getItem('hrsjm_user_membership_record');
+        if (userSaved) {
+          const userRec = JSON.parse(userSaved);
+          if (
+            userRec &&
+            (userRec.id === id ||
+              userRec.applicationId === id ||
+              userRec.id === current.id ||
+              userRec.applicationId === current.applicationId)
+          ) {
+            userRec.status =
+              newStatus === 'approved'
+                ? 'Approved'
+                : newStatus === 'rejected'
+                ? 'Rejected'
+                : 'Under Review';
+            if (newStatus === 'rejected') {
+              userRec.rejectionReason = notes || 'Incomplete documents';
+            }
+            win.localStorage.setItem('hrsjm_user_membership_record', JSON.stringify(userRec));
+          }
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+
     this.recalculateStatsFromItems();
     this.savePersistedApplications();
     this.notify();
@@ -498,14 +694,22 @@ class MembershipApplicationsStore {
         : 'PENDING';
 
     try {
-      await apiClient.patch(ApiRoutes.MEMBERSHIPS.STATUS(current.id), {
-        status: backendStatus,
-        admin_notes: notes,
-        rejection_reason:
-          newStatus === 'rejected'
-            ? notes || 'Application rejected by admin'
-            : undefined,
-      });
+      if (/^[0-9a-fA-F-]{36}$/.test(current.id)) {
+        const patchRes = await apiClient.patch<any>(ApiRoutes.MEMBERSHIPS.STATUS(current.id), {
+          status: backendStatus,
+          admin_notes: notes,
+          rejection_reason:
+            newStatus === 'rejected'
+              ? notes || 'Application rejected by admin'
+              : undefined,
+        });
+        const patchData = (patchRes as any)?.data || patchRes;
+        if (patchData?.membership_number) {
+          this.applications[index].applicationId = patchData.membership_number;
+          this.savePersistedApplications();
+          this.notify();
+        }
+      }
     } catch (e) {
       // Backend sync completed or test mock
     }

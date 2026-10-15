@@ -50,7 +50,13 @@ export const HomeEventCard: React.FC<HomeEventCardProps> = ({ event, onPress }) 
       accessibilityLabel={`Event: ${event.title}`}
     >
       <View style={styles.media}>
-        {imageSource ? (
+        {event.imageUrl ? (
+          <Image
+            source={{ uri: event.imageUrl }}
+            style={styles.mediaSlot}
+            resizeMode="cover"
+          />
+        ) : imageSource ? (
           <Image source={imageSource} style={styles.mediaSlot} resizeMode="cover" />
         ) : (
           <ImageSlot

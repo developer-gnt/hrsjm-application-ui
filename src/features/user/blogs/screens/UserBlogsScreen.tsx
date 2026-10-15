@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdminColors, BorderRadius, FontFamilies, Shadows, Spacing } from '../../../../core/theme';
 import { AppIcon } from '../../components';
+import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeBlogItem, HomeTab } from '../../home/types/home.types';
 import {
@@ -290,21 +291,8 @@ export const UserBlogsScreen: React.FC<UserBlogsScreenProps> = ({
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      {/* Top Header Bar */}
-      <View style={styles.navBar}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <AppIcon name="chevron-left" size={20} color={AdminColors.primaryDark} />
-        </TouchableOpacity>
-        <Text style={styles.navTitle}>Articles & Blogs</Text>
-        <View style={styles.navRightPlaceholder} />
-      </View>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+      <HomeHeader onBack={onBack} />
 
       <FlatList
         data={!searchQuery && selectedCategory === 'ALL' && featuredBlog ? regularBlogs : filteredBlogs}

@@ -16,6 +16,7 @@ export interface MembershipApplicationItem {
   fatherName?: string;
   address?: string;
   occupation?: string;
+  rejectionReason?: string;
   documents?: {
     id: string;
     title: string;
