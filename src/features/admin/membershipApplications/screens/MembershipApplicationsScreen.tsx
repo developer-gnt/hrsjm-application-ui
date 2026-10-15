@@ -102,17 +102,18 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
       membershipApplicationsStore.fetchApplications().catch(() => {});
     };
 
-    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-      window.addEventListener('focus', handleSync);
-      window.addEventListener('storage', handleSync);
+    const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+    if (win && typeof win.addEventListener === 'function') {
+      win.addEventListener('focus', handleSync);
+      win.addEventListener('storage', handleSync);
     }
 
     return () => {
       unsubscribe();
       if (intervalId) clearInterval(intervalId);
-      if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
-        window.removeEventListener('focus', handleSync);
-        window.removeEventListener('storage', handleSync);
+      if (win && typeof win.removeEventListener === 'function') {
+        win.removeEventListener('focus', handleSync);
+        win.removeEventListener('storage', handleSync);
       }
     };
   }, []);

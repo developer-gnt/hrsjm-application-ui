@@ -83,6 +83,8 @@ describe('Membership Reapply & Home Status Redirection Flow', () => {
           mobile_number: '9888880005',
           status: 'ACTIVE',
           roles: [{ id: 'role-1', name: 'USER' }],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         },
         status: 'authenticated',
       });

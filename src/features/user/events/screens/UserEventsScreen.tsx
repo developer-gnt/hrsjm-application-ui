@@ -189,7 +189,7 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
         setFilterOpen(false);
         return true;
       }
-      onBack();
+      onBack?.();
       return true;
     });
     return () => subscription.remove();

@@ -553,27 +553,14 @@ export const MemberTabNavigator: React.FC = () => {
       <Tab.Screen
         name="MyApplication"
         options={{ tabBarButton: () => null }}
-      >
-        {({ navigation }) => (
-          <MyApplicationScreen
-            onBack={navigation.goBack}
-            onViewDetails={(app) => navigation.navigate('ApplicationDetails', { application: app })}
-            onNavigateHome={() => navigation.navigate('MemberHome')}
-          />
-        )}
-      </Tab.Screen>
+        component={MyApplicationScreen}
+      />
 
       <Tab.Screen
         name="ApplicationDetails"
         options={{ tabBarButton: () => null }}
-      >
-        {({ navigation, route }: any) => (
-          <ApplicationDetailsScreen
-            application={route.params?.application}
-            onBack={navigation.goBack}
-          />
-        )}
-      </Tab.Screen>
+        component={ApplicationDetailsScreen as any}
+      />
 
       <Tab.Screen
         name="MembershipCategories"

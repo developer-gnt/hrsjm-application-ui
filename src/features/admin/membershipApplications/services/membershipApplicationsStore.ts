@@ -128,10 +128,12 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
     });
   }
 
+  const avatarUrl = user.avatar || personal.avatar || personal.profilePhotoUri || appData.avatar || undefined;
+
   // Ensure documents are available for verification
   if (documents.length === 0) {
     const docDate = submittedAt.split(',')[0] || 'Recently';
-    const cleanName = (applicantName || 'applicant').toLowerCase().replace(/\s+/g, '_');
+    const cleanName = (name || 'applicant').toLowerCase().replace(/\s+/g, '_');
     documents = [
       {
         id: `doc-${backend.id || 'app'}-aadhaar`,
