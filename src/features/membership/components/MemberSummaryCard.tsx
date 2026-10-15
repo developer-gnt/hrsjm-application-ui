@@ -57,7 +57,8 @@ export const MemberSummaryCard: React.FC<MemberSummaryCardProps> = ({
       style={styles.cardContainer}
       activeOpacity={onPress ? 0.8 : 1}
       onPress={onPress}
-      accessibilityRole="region"
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessible={true}
       accessibilityLabel={`Membership Summary for ${membershipType}, Status: ${status}`}
     >
       <View style={styles.cardContent}>

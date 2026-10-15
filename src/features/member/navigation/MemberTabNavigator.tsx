@@ -27,10 +27,12 @@ import {
 } from '../dashboard';
 import { RightDetailsScreen, MemberRightsScreen } from '../rights';
 import { FileComplaintScreen } from '../../user/help';
+import { SupportTicketsScreen } from '../../support';
+import { NotificationsScreen } from '../../admin/notifications';
+import { AppRoutes } from '../../../core/constants/routes';
 import { AboutScreen } from '../../user/about';
 import { NewsListScreen, NewsDetailsScreen } from '../../admin/content/news';
 import { BlogsListScreen, BlogDetailsScreen } from '../../admin/content/blogs';
-import { NotificationsScreen } from '../../admin/notifications';
 import { ProfileSettingsScreen } from '../../admin/settings';
 import { EventDetailsScreen } from '../../admin/content/events';
 import {
@@ -61,11 +63,13 @@ const MemberHomeScreenComponent: React.FC<any> = ({ navigation }) => {
     <MemberHomeDashboardScreen
       useAdminHeader
       showBottomNav={false}
+      onOpenNotifications={() => navigation.navigate(AppRoutes.NOTIFICATIONS)}
       onOpenMembershipInfo={() => navigation.navigate('MembershipDetails')}
       onOpenMembershipDetails={() => navigation.navigate('MembershipDetails')}
       onOpenRights={() => navigation.navigate('KnowYourRights')}
       onOpenResources={() => navigation.navigate('KnowYourRights')}
       onOpenComplaint={() => navigation.navigate('MemberComplaint')}
+      onOpenTickets={() => navigation.navigate(AppRoutes.SUPPORT_TICKETS)}
       onOpenEvents={() => navigation.navigate('MemberEvents')}
       onOpenEvent={(event) => navigation.navigate('EventDetails', { event })}
       onOpenDonation={() => navigation.navigate('MemberCauses')}
@@ -202,8 +206,9 @@ export const MemberTabNavigator: React.FC = () => {
       >
         {({ navigation }) => (
           <MembershipDetailsScreen
+            showBottomNav={false}
             onBack={() => {
-              if (navigation.canGoBack()) {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
                 navigation.goBack();
               } else {
                 navigation.navigate('MemberHome');
@@ -238,11 +243,13 @@ export const MemberTabNavigator: React.FC = () => {
         {({ navigation }) => (
           <MemberHomeDashboardScreen
             onBack={navigation.goBack}
+            onOpenNotifications={() => navigation.navigate(AppRoutes.NOTIFICATIONS)}
             onOpenMembershipInfo={() => navigation.navigate('MembershipDetails')}
             onOpenMembershipDetails={() => navigation.navigate('MembershipDetails')}
             onOpenRight={(rightId) => navigation.navigate('MemberRights', { rightId })}
             onOpenRights={() => navigation.navigate('KnowYourRights')}
             onOpenComplaint={() => navigation.navigate('MemberComplaint')}
+            onOpenTickets={() => navigation.navigate(AppRoutes.SUPPORT_TICKETS)}
             onOpenEvents={() => navigation.navigate('MemberEvents')}
             onOpenEvent={(event) => navigation.navigate('EventDetails', { event })}
             onOpenDonation={() => navigation.navigate('MemberCauses')}
@@ -263,6 +270,7 @@ export const MemberTabNavigator: React.FC = () => {
             onBack={navigation.goBack}
             onOpenMembershipInfo={() => navigation.navigate('MembershipDetails')}
             onOpenComplaint={() => navigation.navigate('MemberComplaint')}
+            onOpenTickets={() => navigation.navigate(AppRoutes.SUPPORT_TICKETS)}
             onOpenDonation={() => navigation.navigate('MemberCauses')}
             onOpenRight={(rightId) => navigation.navigate('MemberRights', { rightId })}
             onOpenRights={() => navigation.navigate('KnowYourRights')}
@@ -281,12 +289,39 @@ export const MemberTabNavigator: React.FC = () => {
       >
         {({ navigation }) => (
           <FileComplaintScreen
-            onBack={navigation.goBack}
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MemberHome');
+              }
+            }}
+            onViewTickets={() => navigation.navigate(AppRoutes.SUPPORT_TICKETS)}
             onOpenHome={() => navigation.navigate('MemberHome')}
             onOpenEvents={() => navigation.navigate('MemberEvents')}
             onOpenRights={() => navigation.navigate('MemberRights')}
             onOpenAbout={() => navigation.navigate('MemberProfile')}
             onOpenContact={() => navigation.navigate('MemberProfile')}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name={AppRoutes.SUPPORT_TICKETS}
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <SupportTicketsScreen
+            showBottomNav={false}
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MemberHome');
+              }
+            }}
+            onCreateTicketPress={() => navigation.navigate('MemberComplaint')}
+            onProfilePress={() => navigation.navigate('MemberProfile')}
+            onNotificationsPress={() => navigation.navigate(AppRoutes.NOTIFICATIONS)}
           />
         )}
       </Tab.Screen>
@@ -415,8 +450,19 @@ export const MemberTabNavigator: React.FC = () => {
       <Tab.Screen
         name="Notifications"
         options={{ tabBarButton: () => null }}
-        component={NotificationsScreen}
-      />
+      >
+        {({ navigation }) => (
+          <NotificationsScreen
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MemberHome');
+              }
+            }}
+          />
+        )}
+      </Tab.Screen>
 
       <Tab.Screen
         name="Settings"

@@ -77,7 +77,7 @@ export const MembershipInformationCard: React.FC<MembershipInformationCardProps>
   const badgeStyle = getStatusBadgeStyle();
 
   return (
-    <View style={styles.sectionContainer} accessibilityRole="region" accessibilityLabel="Membership Information Section">
+    <View style={styles.sectionContainer} accessible={true} accessibilityLabel="Membership Information Section">
       {/* Section Title */}
       <Text style={styles.sectionTitle}>Membership Information</Text>
 

@@ -11,6 +11,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AdminHeader } from '../../../app/navigation/AdminHeader';
+import { useNotifications } from '../../admin/notifications';
+import { AppRoutes } from '../../../core/constants/routes';
 import { useAuthStore } from '../../auth/store/authStore';
 import { DEFAULT_ADMIN_AVATAR } from '../../auth/components/UserProfileModal';
 
@@ -20,6 +22,7 @@ export const MemberHomeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const user = useAuthStore(state => state.user);
+  const { unreadCount } = useNotifications();
 
   const memberName = user?.full_name || 'HRSJM Member';
   const memberEmail = user?.email || 'member@hrsjm.org';
@@ -29,7 +32,10 @@ export const MemberHomeScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <AdminHeader unreadCount={1} />
+      <AdminHeader
+        unreadCount={unreadCount}
+        onPressNotifications={() => navigation.navigate(AppRoutes.NOTIFICATIONS)}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

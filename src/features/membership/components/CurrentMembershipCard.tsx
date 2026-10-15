@@ -17,7 +17,7 @@ export const CurrentMembershipCard: React.FC<CurrentMembershipCardProps> = ({
   return (
     <View
       style={styles.cardContainer}
-      accessibilityRole="region"
+      accessible={true}
       accessibilityLabel="Current Membership Information"
     >
       {/* Left Column: Post Name & Icon */}

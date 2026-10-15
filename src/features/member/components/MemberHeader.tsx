@@ -14,5 +14,11 @@ export interface MemberHeaderProps extends AdminHeaderProps {
  * - Profile Avatar with dropdown options
  */
 export const MemberHeader: React.FC<MemberHeaderProps> = props => {
-  return <AdminHeader {...props} unreadCount={props.unreadCount ?? 1} />;
+  return (
+    <AdminHeader
+      {...props}
+      onPressNotifications={props.onNotificationsPress || props.onPressNotifications}
+      unreadCount={props.unreadCount ?? 0}
+    />
+  );
 };

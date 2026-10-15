@@ -1,40 +1,71 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
+  Alert,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppHeader } from '../../../core/components/common/AppHeader';
+import { AdminColors, Spacing, BorderRadius, Typography } from '../../../core/theme';
+import { HomeHeader } from '../../user/home/components/HomeHeader';
+import { HeroBanner } from '../../user/home/components/HeroBanner';
+import { QuickActionsRow } from '../../user/home/components/QuickActionCard';
+import { AboutSection } from '../../user/home/components/AboutSection';
+import { CategoryIconRow } from '../../user/home/components/CategoryIconCard';
+import { SectionHeader } from '../../user/home/components/SectionHeader';
+import { ImpactSection } from '../../user/home/components/ImpactSection';
+import { HomeEventCard } from '../../user/home/components/HomeEventCard';
+import { NewsCard } from '../../user/home/components/NewsCard';
 import { AppCard } from '../../../core/components/common/AppCard';
-import { AppButton } from '../../../core/components/common/AppButton';
-import { BrandColors, AdminColors } from '../../../core/theme/colors';
-import { Typography } from '../../../core/theme/typography';
-import { Spacing, BorderRadius } from '../../../core/theme/spacing';
-import { useAuthStore } from '../../auth/store/authStore';
-import { assistanceService } from '../../admin/assistance/services/assistance.service';
 import { AssistanceStatusBadge } from '../../admin/assistance/components/AssistanceStatusBadge';
 import { AddSeekerModal } from '../../admin/assistance/components/AddSeekerModal';
 import { AppFeedbackModal } from '../../../core/components/common/AppFeedbackModal';
+import { SeekerTimelineStepper } from '../components/SeekerTimelineStepper';
+import { AdminSidebar } from '../../../app/navigation/AdminSidebar';
+import { assistanceService } from '../../admin/assistance/services/assistance.service';
+import { useAuthStore } from '../../auth/store/authStore';
 import { getApiErrorMessage } from '../../../core/api/client';
+import {
+  SEEKER_QUICK_ACTIONS,
+  LATEST_NEWS,
+  RIGHTS_CATEGORIES,
+  UPCOMING_EVENTS,
+  WHAT_WE_DO_ITEMS,
+} from '../../user/home/data/home-preview-data';
+import { getImpactStats } from '../../user/home/data/impact-stats-provider';
 import type {
   AssistanceRequest,
   CreateAssistanceRequestPayload,
 } from '../../admin/assistance/types/assistance.types';
 
-export const SeekerHomeScreen: React.FC = () => {
+export interface SeekerHomeScreenProps {
+  navigation?: any;
+  onNavigateToRequests?: () => void;
+  onNavigateToSupport?: () => void;
+  onNavigateToRights?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenProfile?: () => void;
+}
+
+export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
+  navigation,
+  onNavigateToRequests,
+  onNavigateToSupport,
+  onNavigateToRights,
+  onOpenNotifications,
+  onOpenProfile,
+}) => {
   const user = useAuthStore(state => state.user);
-  const signOut = useAuthStore(state => state.signOut);
 
   const [requests, setRequests] = useState<AssistanceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isApplyModalVisible, setIsApplyModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
 
   const [feedbackConfig, setFeedbackConfig] = useState<{
     visible: boolean;
@@ -50,10 +81,10 @@ export const SeekerHomeScreen: React.FC = () => {
 
   const loadRequests = async () => {
     try {
-      const res = await assistanceService.list({ page: 1, limit: 50 });
+      const res = await assistanceService.list({ page: 1, limit: 10 });
       setRequests(res.items || []);
     } catch {
-      // Fallback
+      // Graceful fallback
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -78,7 +109,8 @@ export const SeekerHomeScreen: React.FC = () => {
         visible: true,
         tone: 'success',
         title: 'Application Submitted',
-        message: 'Your assistance request has been submitted successfully. Our team will review it and publish it as a verified cause once approved.',
+        message:
+          'Your assistance request has been submitted successfully. Our field assessment team will review it.',
       });
       loadRequests();
     } catch (err) {
@@ -93,127 +125,266 @@ export const SeekerHomeScreen: React.FC = () => {
     }
   };
 
-  const approvedCount = requests.filter(r => r.status === 'APPROVED').length;
-  const underReviewCount = requests.filter(
-    r => r.status === 'UNDER_REVIEW' || r.status === 'PENDING',
-  ).length;
+  const latestRequest = requests.length > 0 ? requests[0] : null;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <AppHeader title="Donation Assistance Portal" />
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+      {/* Official HRSJM User-grade HomeHeader */}
+      <HomeHeader
+        onPressSearch={() => {
+          if (navigation) navigation.navigate('SeekerRequests');
+        }}
+        onPressNotifications={() => {
+          if (onOpenNotifications) {
+            onOpenNotifications();
+          } else if (navigation) {
+            navigation.navigate('Notifications');
+          }
+        }}
+        onPressProfile={() => {
+          if (onOpenProfile) {
+            onOpenProfile();
+          } else if (navigation) {
+            navigation.navigate('SeekerProfile');
+          }
+        }}
+      />
 
-      <FlatList
-        data={requests}
-        keyExtractor={item => item.id}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
-        contentContainerStyle={styles.container}
-        ListHeaderComponent={
-          <>
-            <AppCard style={styles.welcomeCard}>
-              <Text style={styles.welcomeTitle}>
-                Hello, {user?.full_name || 'Friend'}
-              </Text>
-              <Text style={styles.welcomeSubtitle}>
-                Human Rights and Social Justice Mission — Assistance Portal
-              </Text>
-              <View style={styles.statsRow}>
-                <View style={styles.statBox}>
-                  <Text style={styles.statNum}>{requests.length}</Text>
-                  <Text style={styles.statLabel}>Total Requests</Text>
-                </View>
-                <View style={styles.statBox}>
-                  <Text style={[styles.statNum, { color: '#D97706' }]}>
-                    {underReviewCount}
+      >
+        {/* Hero Banner with Compassion Message & Gold CTA */}
+        <HeroBanner onCtaPress={() => setIsApplyModalVisible(true)} />
+
+        {/* Seeker Active Status / Immediate Aid Card */}
+        <View style={styles.section}>
+          {latestRequest ? (
+            <AppCard style={styles.activeAidCard}>
+              <View style={styles.activeAidHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.activeAidTag}>ACTIVE ASSISTANCE REQUEST</Text>
+                  <Text style={styles.activeAidReason}>{latestRequest.reason}</Text>
+                  <Text style={styles.activeAidRef}>
+                    ASST-{latestRequest.id.slice(0, 8).toUpperCase()} •{' '}
+                    {new Date(latestRequest.created_at).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
                   </Text>
-                  <Text style={styles.statLabel}>Under Review</Text>
                 </View>
-                <View style={styles.statBox}>
-                  <Text style={[styles.statNum, { color: '#059669' }]}>
-                    {approvedCount}
-                  </Text>
-                  <Text style={styles.statLabel}>Approved & Live</Text>
-                </View>
+                <AssistanceStatusBadge status={latestRequest.status} />
               </View>
 
-              <View style={styles.actionBtnRow}>
-                <AppButton
-                  title="+ Apply for Assistance"
-                  variant="primary"
-                  onPress={() => setIsApplyModalVisible(true)}
-                />
-              </View>
-            </AppCard>
-
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionHeaderTitle}>My Assistance Requests</Text>
-              <Text style={styles.sectionHeaderCount}>{requests.length} total</Text>
-            </View>
-          </>
-        }
-        renderItem={({ item }) => (
-          <AppCard style={styles.requestCard}>
-            <View style={styles.requestCardHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.requestReason}>{item.reason}</Text>
-                <Text style={styles.requestDate}>
-                  Submitted on {new Date(item.created_at).toLocaleDateString('en-IN')}
+              <View style={styles.amountBar}>
+                <Text style={styles.amountBarLabel}>Requested Aid Amount:</Text>
+                <Text style={styles.amountBarValue}>
+                  ₹{Number(latestRequest.requested_amount).toLocaleString('en-IN')}
                 </Text>
               </View>
-              <AssistanceStatusBadge status={item.status} />
-            </View>
 
-            {item.description ? (
-              <Text style={styles.requestDesc} numberOfLines={2}>
-                {item.description}
-              </Text>
-            ) : null}
-
-            <View style={styles.requestFooter}>
-              <Text style={styles.requestAmountLabel}>Requested Amount</Text>
-              <Text style={styles.requestAmountVal}>
-                ₹{Number(item.requested_amount).toLocaleString('en-IN')}
-              </Text>
-            </View>
-            {item.status === 'APPROVED' ? (
-              <View style={styles.liveNotice}>
-                <Text style={styles.liveNoticeText}>
-                  ✨ Published as a verified cause on the Causes page!
-                </Text>
+              {/* Visual 4-Step Timeline Stepper */}
+              <View style={styles.stepperWrap}>
+                <SeekerTimelineStepper status={latestRequest.status} />
               </View>
-            ) : null}
-          </AppCard>
-        )}
-        ListEmptyComponent={
-          loading ? (
-            <ActivityIndicator size="large" color={AdminColors.primary} style={{ marginTop: 24 }} />
-          ) : (
-            <AppCard style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>No Assistance Requests Yet</Text>
-              <Text style={styles.emptyBody}>
-                You haven't submitted any assistance requests. Tap below to submit a new application.
-              </Text>
+
               <TouchableOpacity
-                style={styles.applyNowBtn}
-                onPress={() => setIsApplyModalVisible(true)}
+                style={styles.trackLink}
+                onPress={() => {
+                  if (onNavigateToRequests) {
+                    onNavigateToRequests();
+                  } else if (navigation) {
+                    navigation.navigate('SeekerRequests');
+                  }
+                }}
               >
-                <Text style={styles.applyNowBtnText}>Submit New Application</Text>
+                <Text style={styles.trackLinkText}>
+                  View Full Status & Documents History →
+                </Text>
               </TouchableOpacity>
             </AppCard>
-          )
-        }
-        ListFooterComponent={
-          <View style={styles.actionContainer}>
-            <AppButton
-              title="Log Out"
-              variant="outline"
-              onPress={signOut}
+          ) : (
+            <AppCard style={styles.needAidCard}>
+              <View style={styles.needAidContent}>
+                <Text style={styles.needAidBadge}>HUMANITARIAN ASSISTANCE</Text>
+                <Text style={styles.needAidTitle}>
+                  Need Emergency Medical, Education, or Legal Relief?
+                </Text>
+                <Text style={styles.needAidDesc}>
+                  HRSJM provides direct financial, legal, and welfare assistance for approved causes. Submit your request for rapid verification.
+                </Text>
+                <TouchableOpacity
+                  style={styles.applyNowBtn}
+                  onPress={() => setIsApplyModalVisible(true)}
+                >
+                  <Text style={styles.applyNowBtnText}>+ Apply for Assistance</Text>
+                </TouchableOpacity>
+              </View>
+            </AppCard>
+          )}
+        </View>
+
+        {/* Quick Actions Row */}
+        <View style={styles.quickActionsSection}>
+          <QuickActionsRow
+            actions={SEEKER_QUICK_ACTIONS}
+            onPressAction={action => {
+              if (action.id === 'apply-aid') {
+                setIsApplyModalVisible(true);
+              } else if (action.id === 'track-aid') {
+                if (onNavigateToRequests) {
+                  onNavigateToRequests();
+                } else if (navigation) {
+                  navigation.navigate('SeekerRequests');
+                }
+              } else if (action.id === 'rights') {
+                if (onNavigateToRights) {
+                  onNavigateToRights();
+                } else if (navigation) {
+                  navigation.navigate('KnowYourRights');
+                }
+              } else if (action.id === 'complaint') {
+                if (onNavigateToSupport) {
+                  onNavigateToSupport();
+                } else if (navigation) {
+                  navigation.navigate('SeekerSupport');
+                }
+              }
+            }}
+          />
+        </View>
+
+        {/* Emergency Helpline Banner */}
+        <View style={styles.section}>
+          <View style={styles.helplineBanner}>
+            <Text style={styles.helplineIcon}>📞</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.helplineTitle}>24x7 Emergency Social & Legal Helpline</Text>
+              <Text style={styles.helplinePhone}>+91 98888 80004 / 1800-HRSJM-AID</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Know Your Rights Categories */}
+        <View style={styles.section}>
+          <View style={styles.sectionInset}>
+            <SectionHeader
+              title="Know Your Rights & Legal Aid"
+              linkLabel="View All"
+              onLinkPress={() => {
+                if (onNavigateToRights) {
+                  onNavigateToRights();
+                } else if (navigation) {
+                  navigation.navigate('KnowYourRights');
+                }
+              }}
+            />
+            <CategoryIconRow
+              items={RIGHTS_CATEGORIES}
+              onPressItem={() => {
+                if (onNavigateToRights) {
+                  onNavigateToRights();
+                } else if (navigation) {
+                  navigation.navigate('KnowYourRights');
+                }
+              }}
             />
           </View>
-        }
+        </View>
+
+        {/* What HRSJM Does */}
+        <View style={styles.section}>
+          <View style={styles.sectionInset}>
+            <SectionHeader
+              title="Relief & Assistance Programs"
+              linkLabel="Learn More"
+              onLinkPress={() => {
+                if (navigation) navigation.navigate('About');
+              }}
+            />
+            <CategoryIconRow
+              items={WHAT_WE_DO_ITEMS}
+              onPressItem={() => {
+                if (navigation) navigation.navigate('About');
+              }}
+            />
+          </View>
+        </View>
+
+        {/* Impact Section */}
+        <View style={styles.section}>
+          <ImpactSection
+            stats={getImpactStats()}
+            onDetailsPress={() => {
+              if (navigation) navigation.navigate('About');
+            }}
+          />
+        </View>
+
+        {/* Upcoming Relief Camps & Events */}
+        <View style={styles.section}>
+          <View style={styles.sectionInset}>
+            <SectionHeader
+              title="Upcoming Relief Camps & Events"
+              linkLabel="View All"
+              onLinkPress={() => {
+                if (navigation) navigation.navigate('Events');
+              }}
+            />
+            <HomeEventCard
+              event={UPCOMING_EVENTS[0]}
+              onPress={() => {
+                if (navigation) navigation.navigate('Events');
+              }}
+            />
+          </View>
+        </View>
+
+        {/* Latest News & Stories of Hope */}
+        <View style={styles.section}>
+          <View style={styles.sectionInset}>
+            <SectionHeader
+              title="Stories of Hope & News"
+              linkLabel="View All"
+              onLinkPress={() => {
+                if (navigation) navigation.navigate('News');
+              }}
+            />
+            <NewsCard
+              item={LATEST_NEWS[0]}
+              onPress={() => {
+                if (navigation) navigation.navigate('News');
+              }}
+            />
+          </View>
+        </View>
+
+        {/* About HRSJM Section */}
+        <View style={styles.section}>
+          <AboutSection
+            onMorePress={() => {
+              if (navigation) navigation.navigate('About');
+            }}
+          />
+        </View>
+      </ScrollView>
+
+      {/* Slide-out Sidebar Drawer */}
+      <AdminSidebar
+        visible={isSidebarVisible}
+        onClose={() => setIsSidebarVisible(false)}
+        onNavigate={(target: string) => {
+          setIsSidebarVisible(false);
+          if (navigation) navigation.navigate(target);
+        }}
       />
 
+      {/* New Assistance Request Modal */}
       <AddSeekerModal
         visible={isApplyModalVisible}
         onClose={() => setIsApplyModalVisible(false)}
@@ -221,6 +392,7 @@ export const SeekerHomeScreen: React.FC = () => {
         isSubmitting={isSubmitting}
       />
 
+      {/* Feedback Toast */}
       <AppFeedbackModal
         visible={feedbackConfig.visible}
         tone={feedbackConfig.tone}
@@ -233,160 +405,164 @@ export const SeekerHomeScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  safe: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: AdminColors.background,
   },
-  container: {
-    padding: Spacing.base,
-    gap: 12,
+  scroll: {
+    flex: 1,
   },
-  welcomeCard: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
-    borderWidth: 1,
+  scrollContent: {
+    paddingBottom: Spacing.xl,
+  },
+  section: {
+    marginTop: Spacing.base,
+  },
+  sectionInset: {
+    paddingHorizontal: Spacing.base,
+  },
+  quickActionsSection: {
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.base,
+  },
+  activeAidCard: {
+    marginHorizontal: Spacing.base,
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
-  },
-  welcomeTitle: {
-    ...Typography.screenTitle,
-    color: '#B45309',
-    marginBottom: 4,
-  },
-  welcomeSubtitle: {
-    ...Typography.secondary,
-    color: AdminColors.textSecondary,
-    marginBottom: 12,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginVertical: 8,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 10,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-    borderWidth: 1,
     borderColor: '#E2E8F0',
+    borderWidth: 1,
+    backgroundColor: '#FFFFFF',
   },
-  statNum: {
-    fontSize: 18,
+  activeAidHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  activeAidTag: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0D9488',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  activeAidReason: {
+    fontSize: 16,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#0F172A',
   },
-  statLabel: {
+  activeAidRef: {
     fontSize: 11,
     color: '#64748B',
     marginTop: 2,
   },
-  actionBtnRow: {
-    marginTop: 12,
-  },
-  sectionHeaderRow: {
+  amountBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 4,
+    backgroundColor: '#F8FAFC',
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginVertical: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0D9488',
   },
-  sectionHeaderTitle: {
-    ...Typography.sectionHeader,
-    color: AdminColors.textPrimary,
-  },
-  sectionHeaderCount: {
-    fontSize: 13,
+  amountBarLabel: {
+    fontSize: 12,
     color: '#64748B',
   },
-  requestCard: {
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    gap: 6,
+  amountBarValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
   },
-  requestCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  requestReason: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  requestDate: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-  requestDesc: {
-    fontSize: 13,
-    color: '#475569',
+  stepperWrap: {
     marginTop: 4,
-  },
-  requestFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 6,
-    paddingTop: 6,
+    marginBottom: 6,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
+    paddingTop: 8,
   },
-  requestAmountLabel: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  requestAmountVal: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: AdminColors.primary,
-  },
-  liveNotice: {
-    marginTop: 6,
-    padding: 8,
-    backgroundColor: '#ECFDF5',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-  },
-  liveNoticeText: {
-    fontSize: 12,
-    color: '#065F46',
-    fontWeight: '600',
-  },
-  emptyCard: {
-    padding: Spacing.xl,
+  trackLink: {
     alignItems: 'center',
-    borderRadius: BorderRadius.md,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    marginTop: 4,
   },
-  emptyTitle: {
-    fontSize: 16,
+  trackLinkText: {
+    fontSize: 12,
     fontWeight: '700',
-    color: '#334155',
+    color: '#0D9488',
+  },
+  needAidCard: {
+    marginHorizontal: Spacing.base,
+    backgroundColor: '#F0FDFA',
+    borderColor: '#CCFBF1',
+    borderWidth: 1,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+  },
+  needAidContent: {
+    alignItems: 'flex-start',
+  },
+  needAidBadge: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0D9488',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  needAidTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    lineHeight: 22,
     marginBottom: 6,
   },
-  emptyBody: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 16,
+  needAidDesc: {
+    fontSize: 12,
+    color: '#475569',
+    lineHeight: 18,
+    marginBottom: 12,
   },
   applyNowBtn: {
-    backgroundColor: AdminColors.primary,
-    paddingHorizontal: 20,
+    backgroundColor: '#0D9488',
+    paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: BorderRadius.md,
   },
   applyNowBtnText: {
     color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 13,
   },
-  actionContainer: {
-    marginTop: Spacing.md,
-    marginBottom: Spacing.xxl,
+  helplineBanner: {
+    marginHorizontal: Spacing.base,
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+    borderWidth: 1,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  helplineIcon: {
+    fontSize: 22,
+    marginRight: 10,
+  },
+  helplineTitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#92400E',
+  },
+  helplinePhone: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#78350F',
+    marginTop: 1,
   },
 });
 

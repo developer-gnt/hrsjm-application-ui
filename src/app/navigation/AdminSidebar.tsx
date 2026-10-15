@@ -121,25 +121,6 @@ export const MEMBER_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }
   },
 ];
 
-export const DONOR_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
-  {
-    groupTitle: 'DONOR SERVICES',
-    items: [
-      { id: 'donor_home', icon: '🏠', title: 'Donor Dashboard', target: 'DonorHome' },
-      { id: 'donor_causes', icon: '💛', title: 'Discover Causes', target: 'DonorCauses' },
-      { id: 'donor_receipts', icon: '📥', title: 'Tax Exemption Receipts (80G)', target: 'DonorReceipts' },
-      { id: 'complaints', icon: '💬', title: 'Support & Inquiries', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
-    ],
-  },
-  {
-    groupTitle: 'COMMUNITY & UPDATES',
-    items: [
-      { id: 'about', icon: '📖', title: 'About HRSJM', target: AppRoutes.ABOUT },
-      { id: 'news', icon: '📰', title: 'News & Impact Stories', target: AppRoutes.NEWS },
-      { id: 'profile', icon: '👤', title: 'Donor Profile', target: AppRoutes.MY_PROFILE },
-    ],
-  },
-];
 
 export const SEEKER_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
   {
@@ -228,16 +209,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   const activeMenuGroups = isAdmin
     ? ADMIN_MENU_GROUPS
-    : userRole === 'DONOR'
-    ? DONOR_MENU_GROUPS
     : userRole === 'DONATION_SEEKER'
     ? SEEKER_MENU_GROUPS
     : MEMBER_MENU_GROUPS;
 
   const appRoleLabel = isAdmin
     ? 'Admin'
-    : userRole === 'DONOR'
-    ? 'Donor'
     : userRole === 'DONATION_SEEKER'
     ? 'Seeker'
     : 'Member';

@@ -29,6 +29,8 @@ interface SupportTicketsScreenProps {
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   onProfilePress?: () => void;
+  onBack?: () => void;
+  showBottomNav?: boolean;
 }
 
 export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
@@ -39,6 +41,8 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
+  onBack,
+  showBottomNav = true,
 }) => {
   const insets = useSafeAreaInsets();
   const [statusTab, setStatusTab] = useState<StatusTabKey>('all');
@@ -87,6 +91,7 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
       {/* Top Header */}
       <SupportTicketsHeader
         paddingTop={insets.top}
+        onBack={onBack}
         onMenuPress={onMenuPress}
         onNotificationsPress={onNotificationsPress}
         onProfilePress={onProfilePress}
@@ -96,7 +101,7 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 84 },
+          { paddingBottom: insets.bottom + (showBottomNav ? 84 : 24) },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -210,13 +215,15 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
       />
 
       {/* Bottom Navigation with Support highlighted */}
-      <View style={styles.bottomNavHost}>
-        <SupportBottomNav
-          bottomInset={insets.bottom}
-          activeKey="support"
-          onTabPress={onBottomTabPress}
-        />
-      </View>
+      {showBottomNav ? (
+        <View style={styles.bottomNavHost}>
+          <SupportBottomNav
+            bottomInset={insets.bottom}
+            activeKey="support"
+            onTabPress={onBottomTabPress}
+          />
+        </View>
+      ) : null}
     </View>
   );
 };

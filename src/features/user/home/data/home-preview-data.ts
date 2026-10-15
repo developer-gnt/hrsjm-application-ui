@@ -33,6 +33,13 @@ export const MEMBER_QUICK_ACTIONS: HomeQuickAction[] = [
   { id: 'events', label: 'Events & Activities', icon: 'calendar' },
 ];
 
+export const SEEKER_QUICK_ACTIONS: HomeQuickAction[] = [
+  { id: 'apply-aid', label: 'Apply for Aid', icon: 'file-text', emphasized: true },
+  { id: 'track-aid', label: 'Track Aid Status', icon: 'clock' },
+  { id: 'rights', label: 'Know Your Rights', icon: 'scale' },
+  { id: 'complaint', label: 'File Grievance', icon: 'message' },
+];
+
 export const ABOUT_DESCRIPTION =
   'Human Rights & Social Justice Mission (HRSJM) works for human rights, dignity, equality and social justice through awareness, advocacy, education and community support.';
 

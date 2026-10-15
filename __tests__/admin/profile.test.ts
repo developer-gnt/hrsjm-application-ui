@@ -70,7 +70,7 @@ describe('My Profile & ID Card Flow', () => {
           email: 'testuser@hrsjm.org',
           mobile_number: '+91 91234 56789',
           status: 'ACTIVE',
-          roles: [{ id: 'r-1', name: 'DONOR' }],
+          roles: [{ id: 'r-1', name: 'USER' }],
           created_at: '2026-10-01T10:00:00Z',
           updated_at: '2026-10-01T10:00:00Z',
         });
