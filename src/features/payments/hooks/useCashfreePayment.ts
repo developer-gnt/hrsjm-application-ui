@@ -14,6 +14,61 @@ export interface UseCashfreePaymentOptions {
   onClose?: () => void;
 }
 
+/**
+ * Loads Cashfree JS SDK on web and opens official checkout modal
+ */
+export async function launchCashfreeWebCheckout(
+  paymentSessionId: string,
+  isProduction = false,
+): Promise<void> {
+  const globalObj: any = typeof globalThis !== 'undefined' ? globalThis : {};
+  const win = globalObj?.window || globalObj;
+  const doc = globalObj?.document;
+
+  if (!win || !doc || Platform.OS !== 'web') return;
+
+  const loadSdk = (): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      if (win.Cashfree) {
+        return resolve(win.Cashfree);
+      }
+      const existing = doc.getElementById('cashfree-js-sdk');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(win.Cashfree));
+        return;
+      }
+      try {
+        const script = doc.createElement('script');
+        script.id = 'cashfree-js-sdk';
+        script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+        script.onload = () => resolve(win.Cashfree);
+        script.onerror = () => reject(new Error('Failed to load Cashfree Web SDK'));
+        doc.head.appendChild(script);
+      } catch {
+        resolve(null);
+      }
+    });
+  };
+
+  try {
+    const CashfreeFactory = await loadSdk();
+    if (CashfreeFactory) {
+      const cashfree = CashfreeFactory({ mode: isProduction ? 'production' : 'sandbox' });
+      await cashfree.checkout({
+        paymentSessionId,
+        redirectTarget: '_modal',
+      });
+    }
+  } catch (err) {
+    const checkoutUrl = isProduction
+      ? `https://api.cashfree.com/pg/view/sessions/${paymentSessionId}`
+      : `https://sandbox.cashfree.com/pg/view/sessions/${paymentSessionId}`;
+    if (win.open) {
+      win.open(checkoutUrl, '_blank');
+    }
+  }
+}
+
 export function useCashfreePayment(options?: UseCashfreePaymentOptions) {
   const [stage, setStage] = useState<PaymentStage>('amount_selection');
   const [orderSession, setOrderSession] = useState<CashfreeOrderSession | null>(null);
@@ -194,8 +249,15 @@ export function useCashfreePayment(options?: UseCashfreePaymentOptions) {
             // If native view cannot open, verify with backend
             await verifyWithBackend(session.order_id, payload);
           }
+        } else if (Platform.OS === 'web' && session.payment_session_id) {
+          try {
+            await launchCashfreeWebCheckout(session.payment_session_id);
+          } catch {
+            // continue to verification
+          }
+          await verifyWithBackend(session.order_id, payload);
         } else {
-          // Web or fallback mode: verify directly with backend
+          // Fallback verify directly with backend
           await verifyWithBackend(session.order_id, payload);
         }
       } catch (err: any) {

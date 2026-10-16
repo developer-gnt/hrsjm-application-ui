@@ -126,6 +126,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     Partial<Record<keyof FormState, string>>
   >({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedTicketId, setSubmittedTicketId] = useState<string>('');
   const [isHelpTopicSelectorVisible, setIsHelpTopicSelectorVisible] =
     useState(false);
@@ -743,22 +744,33 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         />
         <AppButton
           title="Submit Complaint"
-          onPress={() => {
-            const ticket = supportTicketsStore.createTicketFromDraft({
-              category: form.helpType || selectedHelpTopic?.title || 'Human Rights Grievance',
-              subject: form.subject || 'Complaint / Grievance',
-              description: `${form.description}\n\nComplainant: ${form.fullName}\nPhone: ${form.mobile}\nEmail: ${form.email || 'N/A'}\nLocation: ${form.city || ''}, ${form.state || ''}`,
-              attachments: attachments.map((a, idx) => ({
-                id: `att-${Date.now()}-${idx}`,
-                name: a.name || 'document',
-                size: a.size || 0,
-                formattedSize: a.size ? `${(a.size / (1024 * 1024)).toFixed(1)} MB` : '1.0 MB',
-                type: a.type || 'file',
-                uri: a.uri,
-              })),
-            });
-            setSubmittedTicketId(ticket.ticketNumber || ticket.id);
-            setIsSubmitted(true);
+          loading={isSubmitting}
+          disabled={isSubmitting}
+          onPress={async () => {
+            if (isSubmitting) return;
+            setIsSubmitting(true);
+            try {
+              const ticket = await supportTicketsStore.createTicket({
+                category: form.helpType || selectedHelpTopic?.title || 'Human Rights Grievance',
+                subject: form.subject || 'Complaint / Grievance',
+                description: `${form.description}\n\nComplainant: ${form.fullName}\nPhone: ${form.mobile}\nEmail: ${form.email || 'N/A'}\nLocation: ${form.city || ''}, ${form.state || ''}`,
+                attachments: attachments.map((a, idx) => ({
+                  id: `att-${Date.now()}-${idx}`,
+                  name: a.name || 'document',
+                  size: a.size || 0,
+                  formattedSize: a.size ? `${(a.size / (1024 * 1024)).toFixed(1)} MB` : '1.0 MB',
+                  type: a.type || 'file',
+                  uri: a.uri,
+                })),
+              });
+              setSubmittedTicketId(ticket.ticketNumber || ticket.id);
+              setIsSubmitted(true);
+            } catch (err) {
+              console.error('Error submitting complaint:', err);
+              Alert.alert('Error', 'Unable to submit your complaint. Please try again.');
+            } finally {
+              setIsSubmitting(false);
+            }
           }}
           variant="gold"
           size="lg"

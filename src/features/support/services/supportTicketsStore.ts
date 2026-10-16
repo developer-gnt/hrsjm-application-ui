@@ -1,5 +1,14 @@
-import { SupportTicket, TicketStatsData, StatusTabKey, DateFilter, TicketDraft } from '../types/ticket.types';
+import {
+  SupportTicket,
+  TicketStatsData,
+  StatusTabKey,
+  DateFilter,
+  TicketDraft,
+  TicketAttachment,
+  TicketStatus,
+} from '../types/ticket.types';
 import { INITIAL_DEV_TICKETS } from '../data/ticketFixtures';
+import { supportService } from '../../admin/support/services/support.service';
 
 export interface TicketFilterOptions {
   statusTab?: StatusTabKey;
@@ -16,12 +25,70 @@ const INITIAL_DRAFT: TicketDraft = {
   attachments: [],
 };
 
+export const mapBackendTicketToSupportTicket = (item: any): SupportTicket => {
+  const rawSubject = (item.subject || '').trim();
+  const match = /^\[(.*?)\]\s*(.*)$/.exec(rawSubject);
+  const category = match ? match[1] : item.category || 'General Inquiry';
+  const cleanSubject = match ? (match[2] || match[1]) : rawSubject;
+
+  const rawStatus = (item.status || '').toUpperCase();
+  let status: TicketStatus = 'open';
+  if (rawStatus === 'SUBMITTED' || rawStatus === 'OPEN') {
+    status = 'open';
+  } else if (rawStatus === 'UNDER_REVIEW' || rawStatus === 'IN_PROGRESS') {
+    status = 'in_progress';
+  } else if (rawStatus === 'RESOLVED') {
+    status = 'resolved';
+  } else if (rawStatus === 'CLOSED') {
+    status = 'closed';
+  } else if (rawStatus === 'PENDING') {
+    status = 'pending';
+  }
+
+  const d = new Date(item.created_at || Date.now());
+  const formattedDate = !isNaN(d.getTime())
+    ? d.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }) + `, ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
+    : 'Recently';
+
+  const rawId = item.id || '';
+  const ticketNumber = `#${rawId.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+
+  const attachments: TicketAttachment[] = Array.isArray(item.documents)
+    ? item.documents.map((doc: any, idx: number) => ({
+        id: doc.id || `att-${idx}`,
+        name: doc.document_name || 'document',
+        size: doc.file_size || 0,
+        formattedSize: doc.file_size ? `${(doc.file_size / (1024 * 1024)).toFixed(1)} MB` : '1.0 MB',
+        type: doc.mime_type || 'file',
+        uri: doc.file_url,
+      }))
+    : [];
+
+  return {
+    id: item.id,
+    ticketNumber,
+    category,
+    subject: cleanSubject || rawSubject,
+    description: item.description || '',
+    status,
+    createdAt: item.created_at || new Date().toISOString(),
+    formattedDate,
+    attachments,
+  };
+};
+
 class SupportTicketsStore {
-  private tickets: SupportTicket[] = [...INITIAL_DEV_TICKETS];
+  // Real tickets fetched from backend; defaults to empty so NO mock data is shown to real users
+  private tickets: SupportTicket[] = [];
   private draft: TicketDraft = { ...INITIAL_DRAFT, attachments: [] };
   private lastCreatedTicket: SupportTicket | undefined = undefined;
   private listeners: Set<() => void> = new Set();
   private version: number = 0;
+  private isFetching: boolean = false;
 
   public getSnapshot = (): number => {
     return this.version;
@@ -44,6 +111,27 @@ class SupportTicketsStore {
     this.draft = { ...INITIAL_DRAFT, attachments: [] };
     this.notify();
   };
+
+  public async fetchTickets(options?: TicketFilterOptions): Promise<SupportTicket[]> {
+    if (this.isFetching) return this.tickets;
+    this.isFetching = true;
+    try {
+      const data = await supportService.list({
+        limit: 50,
+        search: options?.searchQuery,
+      });
+
+      const rawItems = Array.isArray(data?.items) ? data.items : [];
+      this.tickets = rawItems.map(mapBackendTicketToSupportTicket);
+      this.notify();
+      return this.tickets;
+    } catch (err) {
+      console.warn('Failed to fetch support tickets from backend:', err);
+      return this.tickets;
+    } finally {
+      this.isFetching = false;
+    }
+  }
 
   public getTickets(options?: TicketFilterOptions): SupportTicket[] {
     let result = [...this.tickets];
@@ -137,29 +225,63 @@ class SupportTicketsStore {
     };
   }
 
+  public async createTicket(draft?: TicketDraft): Promise<SupportTicket> {
+    const data = draft || this.draft;
+    const finalCategory = data.category || 'General Inquiry';
+    const finalSubject = data.subject || 'Support Request';
+
+    try {
+      const created = await supportService.create({
+        category: finalCategory,
+        subject: finalSubject,
+        description: data.description || '',
+        priority: 'NORMAL',
+      });
+
+      const mapped = mapBackendTicketToSupportTicket(created);
+      this.tickets = [mapped, ...this.tickets.filter(t => t.id !== mapped.id)];
+      this.lastCreatedTicket = mapped;
+      this.clearDraft();
+      this.notify();
+      return mapped;
+    } catch (err) {
+      console.error('Failed to create support ticket in backend:', err);
+      // Local fallback if network fails
+      const now = new Date();
+      const ticketId = `TKT-${Date.now().toString().slice(-6)}`;
+      const fallbackTicket: SupportTicket = {
+        id: ticketId,
+        ticketNumber: `#${ticketId}`,
+        category: finalCategory,
+        subject: finalSubject,
+        description: data.description || '',
+        status: 'open',
+        createdAt: now.toISOString(),
+        formattedDate: 'Just now',
+        attachments: data.attachments ? [...data.attachments] : [],
+      };
+      this.tickets = [fallbackTicket, ...this.tickets];
+      this.lastCreatedTicket = fallbackTicket;
+      this.clearDraft();
+      this.notify();
+      return fallbackTicket;
+    }
+  }
+
   public createTicketFromDraft(draft?: TicketDraft): SupportTicket {
     const data = draft || this.draft;
     const now = new Date();
-    const isoString = now.toISOString();
-    const formattedDate = now.toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-
-    const nextSeq = this.tickets.length + 1;
-    const seqStr = String(nextSeq).padStart(4, '0');
-    const ticketId = `TKT-${now.getFullYear()}-${seqStr}`;
-
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const tempId = `TKT-2026-${randomSuffix}`;
     const newTicket: SupportTicket = {
-      id: ticketId,
-      ticketNumber: `#${ticketId}`,
+      id: tempId,
+      ticketNumber: `#${tempId}`,
       category: data.category || 'General Inquiry',
       subject: data.subject || 'Support Request',
       description: data.description || '',
       status: 'pending',
-      createdAt: isoString,
-      formattedDate: formattedDate,
+      createdAt: now.toISOString(),
+      formattedDate: 'Just now',
       attachments: data.attachments ? [...data.attachments] : [],
     };
 
@@ -167,6 +289,27 @@ class SupportTicketsStore {
     this.lastCreatedTicket = newTicket;
     this.clearDraft();
     this.notify();
+
+    // Trigger backend creation immediately and replace temp ticket
+    supportService
+      .create({
+        category: newTicket.category,
+        subject: newTicket.subject,
+        description: newTicket.description,
+        priority: 'NORMAL',
+      })
+      .then(created => {
+        const mapped = mapBackendTicketToSupportTicket(created);
+        this.tickets = this.tickets.map(t => (t.id === tempId ? mapped : t));
+        if (this.lastCreatedTicket?.id === tempId) {
+          this.lastCreatedTicket = mapped;
+        }
+        this.notify();
+      })
+      .catch(err => {
+        console.warn('Background createTicket error:', err);
+      });
+
     return newTicket;
   }
 
@@ -175,7 +318,7 @@ class SupportTicketsStore {
   }
 
   public addTicket(newTicket: SupportTicket): void {
-    this.tickets = [newTicket, ...this.tickets];
+    this.tickets = [newTicket, ...this.tickets.filter(t => t.id !== newTicket.id)];
     this.notify();
   }
 

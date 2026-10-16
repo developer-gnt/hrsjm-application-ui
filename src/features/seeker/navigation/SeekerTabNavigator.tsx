@@ -69,7 +69,6 @@ const SeekerRequestsWrapper: React.FC<any> = ({ navigation }) => {
 const SeekerRightsWrapper: React.FC<any> = ({ navigation }) => {
   return (
     <MemberRightsScreen
-      onBack={() => navigation.navigate('SeekerHome')}
       onOpenRight={(rightId) => navigation.navigate('RightDetails', { rightId })}
       onFileComplaint={() => navigation.navigate('FileComplaint')}
       onContactSupport={() => navigation.navigate('SeekerSupport')}
@@ -80,7 +79,6 @@ const SeekerRightsWrapper: React.FC<any> = ({ navigation }) => {
 const SeekerEventsWrapper: React.FC<any> = ({ navigation }) => {
   return (
     <UserEventsScreen
-      onBack={() => navigation.navigate('SeekerHome')}
       onOpenEvent={(event) => navigation.navigate('SeekerHome')}
       onOpenAbout={() => navigation.navigate('About')}
       onOpenRights={() => navigation.navigate('SeekerRights')}
@@ -90,8 +88,15 @@ const SeekerEventsWrapper: React.FC<any> = ({ navigation }) => {
   );
 };
 
-const SeekerSupportWrapper: React.FC<any> = () => {
-  return <SupportTicketsScreen showBottomNav={false} />;
+const SeekerSupportWrapper: React.FC<any> = ({ navigation }) => {
+  return (
+    <SupportTicketsScreen
+      showBottomNav={false}
+      onCreateTicketPress={() => navigation.navigate('FileComplaint')}
+      onProfilePress={() => navigation.navigate('SeekerProfile')}
+      onNotificationsPress={() => navigation.navigate('Notifications')}
+    />
+  );
 };
 
 const SeekerProfileWrapper: React.FC<any> = ({ navigation }) => {

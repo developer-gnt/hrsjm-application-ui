@@ -58,7 +58,12 @@ import {
   MembershipApplicationDetailsScreen,
 } from '../../features/admin/membershipApplications';
 import { AboutScreen } from '../../features/user/about';
-import { KnowYourRightsScreen } from '../../features/admin/content/rights';
+import {
+  KnowYourRightsScreen,
+  RightArticleDetailsScreen,
+  CreateRightsArticleScreen,
+  EditRightsArticleScreen,
+} from '../../features/admin/content/rights';
 import {
   MembershipDetailsScreen,
   RenewMembershipScreen,
@@ -438,9 +443,51 @@ export const MoreNavigator: React.FC = () => (
       )}
     </Stack.Screen>
 
-    {/* Know Your Rights */}
+    {/* Know Your Rights Management */}
     <Stack.Screen name={AppRoutes.KNOW_YOUR_RIGHTS}>
-      {() => <KnowYourRightsScreen />}
+      {({ navigation }) => (
+        <KnowYourRightsScreen
+          onAddRights={() =>
+            navigation.navigate(AppRoutes.CREATE_RIGHT as any)
+          }
+          onOpenArticle={article =>
+            navigation.navigate(AppRoutes.RIGHT_DETAILS as any, { article })
+          }
+          onEditArticle={article =>
+            navigation.navigate(AppRoutes.EDIT_RIGHT as any, { article })
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.RIGHT_DETAILS}>
+      {({ navigation, route }: any) => (
+        <RightArticleDetailsScreen
+          article={route.params?.article}
+          onBack={navigation.goBack}
+          onEdit={article =>
+            navigation.navigate(AppRoutes.EDIT_RIGHT as any, { article })
+          }
+          onDelete={() => navigation.goBack()}
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.CREATE_RIGHT}>
+      {({ navigation }) => (
+        <CreateRightsArticleScreen
+          onCancel={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.EDIT_RIGHT}>
+      {({ navigation, route }: any) => (
+        <EditRightsArticleScreen
+          article={route.params?.article}
+          onBack={navigation.goBack}
+        />
+      )}
     </Stack.Screen>
 
     {/* Notifications — Real merged NotificationsScreen */}

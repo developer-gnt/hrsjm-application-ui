@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdminColors, Spacing, BorderRadius, Typography } from '../../../core/theme';
-import { HomeHeader } from '../../user/home/components/HomeHeader';
+import { AdminHeader } from '../../../app/navigation/AdminHeader';
 import { HeroBanner } from '../../user/home/components/HeroBanner';
 import { QuickActionsRow } from '../../user/home/components/QuickActionCard';
 import { AboutSection } from '../../user/home/components/AboutSection';
@@ -129,11 +129,10 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      {/* Official HRSJM User-grade HomeHeader */}
-      <HomeHeader
-        onPressSearch={() => {
-          if (navigation) navigation.navigate('SeekerRequests');
-        }}
+      {/* Official HRSJM Brand Header */}
+      <AdminHeader
+        showMenu={false}
+        showBack={false}
         onPressNotifications={() => {
           if (onOpenNotifications) {
             onOpenNotifications();

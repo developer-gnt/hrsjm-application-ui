@@ -31,7 +31,9 @@ import {
   RIGHTS_COVER_IMAGE_OPTIONS,
   SAMPLE_RIGHTS_CATEGORIES,
 } from '../data/sample-rights';
+import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { RIGHTS_STATUS_LABELS } from './RightsCard';
+import { createRightApi, updateRightApi } from '../services/rights.service';
 import type {
   RightsArticleFieldErrors,
   RightsArticleFormState,
@@ -148,6 +150,7 @@ const RightsFormDialog: React.FC<{
 interface RightsArticleFormProps {
   /** 'create' (default) keeps Create wording; 'edit' pre-fills and updates. */
   mode?: 'create' | 'edit';
+  articleId?: string;
   /** Header bar + page title ("Create Rights Article" / "Edit Rights Article"). */
   title: string;
   /** Page subtitle under the title. */
@@ -195,6 +198,7 @@ const ToolbarButton: React.FC<{
 
 export const RightsArticleForm: React.FC<RightsArticleFormProps> = ({
   mode = 'create',
+  articleId,
   title,
   subtitle,
   initialForm,
@@ -203,6 +207,7 @@ export const RightsArticleForm: React.FC<RightsArticleFormProps> = ({
   onTabPress,
 }) => {
   const isEdit = mode === 'edit';
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<RightsArticleFormState>(initialForm);
   const [errors, setErrors] = useState<RightsArticleFieldErrors>({});
   const [submitted, setSubmitted] = useState(false);
@@ -316,35 +321,57 @@ export const RightsArticleForm: React.FC<RightsArticleFormProps> = ({
     return true;
   };
 
-  const handleSaveDraft = () => {
-    if (!runValidation()) {
+  const handleSaveDraft = async () => {
+    if (!runValidation() || saving) {
       return;
     }
-    // UI-only confirmation: the form was validated locally. NO backend call
-    // happens and nothing is claimed to be persisted remotely.
-    setToast({
-      message: isEdit ? 'Changes saved successfully.' : 'Article saved as draft.',
-      variant: 'success',
-    });
+    setSaving(true);
+    try {
+      const draftForm: RightsArticleFormState = { ...form, status: 'DRAFT' };
+      if (isEdit && articleId) {
+        await updateRightApi(articleId, draftForm);
+        setToast({ message: 'Changes saved as draft.', variant: 'success' });
+      } else {
+        await createRightApi(draftForm);
+        setToast({ message: 'Article saved as draft.', variant: 'success' });
+      }
+      setTimeout(isEdit ? onSaved || onCancel : onCancel, 900);
+    } catch (err: any) {
+      setToast({
+        message: err?.response?.data?.message || err?.message || 'Failed to save draft.',
+        variant: 'error',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handlePublishPress = () => {
-    if (runValidation()) {
+    if (runValidation() && !saving) {
       setPublishConfirmVisible(true);
     }
   };
 
-  const handlePublishConfirmed = () => {
+  const handlePublishConfirmed = async () => {
     setPublishConfirmVisible(false);
-    // UI-only confirmation — no backend call, nothing is persisted remotely.
-    setToast({
-      message: isEdit ? 'Article updated successfully.' : 'Article published successfully.',
-      variant: 'success',
-    });
-    // Reference flow: return to Right Article Details after update. Brief
-    // delay so the success toast is visible before leaving.
-    if (isEdit) {
-      setTimeout(onSaved || onCancel, 900);
+    setSaving(true);
+    try {
+      const publishForm: RightsArticleFormState = { ...form, status: 'PUBLISHED' };
+      if (isEdit && articleId) {
+        await updateRightApi(articleId, publishForm);
+        setToast({ message: 'Article updated successfully.', variant: 'success' });
+      } else {
+        await createRightApi(publishForm);
+        setToast({ message: 'Article published successfully.', variant: 'success' });
+      }
+      setTimeout(isEdit ? onSaved || onCancel : onCancel, 900);
+    } catch (err: any) {
+      setToast({
+        message: err?.response?.data?.message || err?.message || 'Failed to publish article.',
+        variant: 'error',
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -371,7 +398,7 @@ export const RightsArticleForm: React.FC<RightsArticleFormProps> = ({
 
   return (
     <View style={styles.root}>
-      <AdminShellHeader leading="back" onBack={requestCancel} />
+      <AdminHeader showMenu={false} showBack onBack={requestCancel} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <KeyboardAvoidingView

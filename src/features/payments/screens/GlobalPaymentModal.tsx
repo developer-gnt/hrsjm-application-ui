@@ -94,8 +94,8 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   const [upiId, setUpiId] = useState<string>(initialUpiId);
 
   // Card details
-  const [cardNumber, setCardNumber] = useState<string>('1234 5678 9012 3456');
-  const [cardExpiry, setCardExpiry] = useState<string>('MM / YY');
+  const [cardNumber, setCardNumber] = useState<string>('');
+  const [cardExpiry, setCardExpiry] = useState<string>('');
   const [cardCvv, setCardCvv] = useState<string>('');
   const [cardHolder, setCardHolder] = useState<string>(user?.full_name || '');
   const [showCvv, setShowCvv] = useState<boolean>(false);
@@ -103,7 +103,6 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   // Net banking & Wallets
   const [selectedBank, setSelectedBank] = useState<string>('HDFC Bank');
   const [selectedWallet, setSelectedWallet] = useState<string>('Paytm Wallet');
-  const [simulationMode, setSimulationMode] = useState<'success' | 'failure'>('success');
 
   // Processing timeline step (0 to 5)
   const [processingStep, setProcessingStep] = useState<number>(0);
@@ -279,59 +278,54 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
     setStage('processing');
     setProcessingStep(1);
 
-    // Simulated multi-step realistic gateway transitions
-    setTimeout(() => setProcessingStep(2), 800);
-    setTimeout(() => setProcessingStep(3), 1600);
-    setTimeout(() => setProcessingStep(4), 2400);
+    try {
+      let upiAppLabel = 'Google Pay';
+      if (selectedUpiApp === 'phonepe') upiAppLabel = 'PhonePe';
+      else if (selectedUpiApp === 'paytm') upiAppLabel = 'Paytm';
+      else if (selectedUpiApp === 'bhim') upiAppLabel = 'BHIM UPI';
 
-    setTimeout(async () => {
-      try {
-        let upiAppLabel = 'Google Pay';
-        if (selectedUpiApp === 'phonepe') upiAppLabel = 'PhonePe';
-        else if (selectedUpiApp === 'paytm') upiAppLabel = 'Paytm';
-        else if (selectedUpiApp === 'bhim') upiAppLabel = 'BHIM UPI';
+      setProcessingStep(2);
 
-        const result = await globalPaymentService.executePayment(
-          {
-            ...payload,
-            amount: activeAmount,
-            donorName,
-            donorMobile,
-            donorEmail,
-            panNumber: need80G ? panNumber.toUpperCase() : undefined,
-            need80GReceipt: need80G,
-          },
-          paymentMethod,
-          {
-            upiId,
-            selectedUpiApp: upiAppLabel,
-            cardNumber,
-            cardHolderName: cardHolder,
-            bankName: selectedBank,
-            walletName: selectedWallet,
-            simulationMode,
-          },
-        );
+      const result = await globalPaymentService.executePayment(
+        {
+          ...payload,
+          amount: activeAmount,
+          donorName,
+          donorMobile,
+          donorEmail,
+          panNumber: need80G ? panNumber.toUpperCase() : undefined,
+          need80GReceipt: need80G,
+        },
+        paymentMethod,
+        {
+          upiId,
+          selectedUpiApp: upiAppLabel,
+          cardNumber,
+          cardHolderName: cardHolder,
+          bankName: selectedBank,
+          walletName: selectedWallet,
+        },
+      );
 
-        // Record donation in causesService so all cause statistics reflect immediately
-        if (payload.purpose === 'donation') {
-          causesService.recordDonation(payload.entityId || payload.title, activeAmount, result.paymentId);
-        }
+      setProcessingStep(4);
 
-        setReceiptResult(result);
-        setStage('success');
-        onSuccess?.(result);
-      } catch (error: any) {
-        setFailureError({
-          code: 'PAYMENT_DECLINED',
-          message: error?.message || 'Payment was declined by the simulated bank server / issuer.',
-          reason: simulationMode === 'failure'
-            ? 'Simulated bank decline triggered via Sandbox controls.'
-            : 'Payment network declined transaction authorization.',
-        });
-        setStage('failed');
+      // Record donation in causesService so all cause statistics reflect immediately
+      if (payload.purpose === 'donation') {
+        causesService.recordDonation(payload.entityId || payload.title, activeAmount, result.paymentId);
       }
-    }, 2800);
+
+      setProcessingStep(5);
+      setReceiptResult(result);
+      setStage('success');
+      onSuccess?.(result);
+    } catch (error: any) {
+      setFailureError({
+        code: 'PAYMENT_DECLINED',
+        message: error?.message || 'Payment processing was cancelled or declined.',
+        reason: error?.message || 'Payment network declined transaction authorization.',
+      });
+      setStage('failed');
+    }
   };
 
   const handleShareReceipt = async () => {
@@ -620,89 +614,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           </View>
         </View>
 
-        {/* Professional Sandbox Simulator Card */}
-        <View style={styles.sandboxCard}>
-          <View style={styles.sandboxHeaderRow}>
-            <View style={styles.sandboxBadge}>
-              <View style={styles.sandboxActiveDot} />
-              <Text style={styles.sandboxBadgeText}>TEST ENVIRONMENT</Text>
-            </View>
-            <Text style={styles.sandboxGatewaySub}>HRSJM Gateway Simulator</Text>
-          </View>
-
-          <View style={styles.sandboxControlSection}>
-            <Text style={styles.sandboxSectionTitle}>Simulated Bank Response</Text>
-            <View style={styles.sandboxSegmentContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.segmentOptionBtn,
-                  simulationMode === 'success' && styles.segmentOptionSuccess,
-                ]}
-                onPress={() => setSimulationMode('success')}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[
-                    styles.segmentOptionText,
-                    simulationMode === 'success' && styles.segmentOptionTextActive,
-                  ]}
-                >
-                  ✓ Approve (HTTP 200)
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.segmentOptionBtn,
-                  simulationMode === 'failure' && styles.segmentOptionFail,
-                ]}
-                onPress={() => setSimulationMode('failure')}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[
-                    styles.segmentOptionText,
-                    simulationMode === 'failure' && styles.segmentOptionTextActive,
-                  ]}
-                >
-                  ✕ Decline (HTTP 402)
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.sandboxQuickFillRow}>
-            <Text style={styles.sandboxQuickFillLabel}>Quick Test:</Text>
-            <TouchableOpacity
-              style={styles.sandboxChip}
-              onPress={() => {
-                setPaymentMethod('upi');
-                setSelectedUpiApp('bhim');
-                setUpiId('success@upi');
-                setSimulationMode('success');
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.sandboxChipText}>⚡ BHIM (success@upi)</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.sandboxChip}
-              onPress={() => {
-                setPaymentMethod('card');
-                setCardNumber('4111 2222 3333 4444');
-                setCardExpiry('12/28');
-                setCardCvv('123');
-                setSimulationMode('success');
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.sandboxChipText}>💳 Visa 4111</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Select Payment Method (Screenshot 2) */}
+        {/* Select Payment Method */}
         <View style={styles.methodsSection}>
           <Text style={styles.chooseMethodHeading}>Select Payment Method</Text>
 
@@ -1457,13 +1369,13 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
               </Text>
             </View>
             <View style={styles.receiptMetaRow}>
-              <Text style={styles.receiptMetaLabel}>Decline Code</Text>
-              <Text style={styles.receiptMetaValue}>SIM_GATEWAY_DECLINE_402</Text>
+              <Text style={styles.receiptMetaLabel}>Status Code</Text>
+              <Text style={styles.receiptMetaValue}>{failureError?.code || 'GATEWAY_DECLINED'}</Text>
             </View>
             <View style={styles.receiptMetaRow}>
               <Text style={styles.receiptMetaLabel}>Reason</Text>
               <Text style={styles.receiptMetaValue} numberOfLines={2}>
-                {failureError?.reason || 'Bank issuer declined test authorization.'}
+                {failureError?.message || failureError?.reason || 'Transaction could not be completed.'}
               </Text>
             </View>
           </View>
@@ -1477,26 +1389,6 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
                 Your money is completely safe. No charges were made to your bank account or card.
               </Text>
             </View>
-          </View>
-
-          {/* Simulator Quick Resolution Helper Card */}
-          <View style={styles.simulatorHelperCard}>
-            <View style={styles.simulatorHelperHeader}>
-              <Text style={styles.simulatorHelperTag}>⚡ DEVELOPER SANDBOX HINT</Text>
-            </View>
-            <Text style={styles.simulatorHelperText}>
-              This transaction declined because the simulator was set to <Text style={{ fontWeight: '700', color: '#B91C1C' }}>✕ Decline (HTTP 402)</Text>.
-            </Text>
-            <TouchableOpacity
-              style={styles.simulatorHelperBtn}
-              onPress={() => {
-                setSimulationMode('success');
-                setStage('checkout');
-              }}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.simulatorHelperBtnText}>Switch to "Approve (200)" & Retry →</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
 
@@ -2020,136 +1912,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#0F2860',
   },
-
-  /* Professional Sandbox Simulator Card */
-  sandboxCard: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 12,
-    marginBottom: 18,
-    shadowColor: '#0F2860',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  sandboxHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  sandboxBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    gap: 5,
-  },
-  sandboxActiveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#2563EB',
-  },
-  sandboxBadgeText: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#1D4ED8',
-    letterSpacing: 0.4,
-  },
-  sandboxGatewaySub: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 11,
-    color: '#64748B',
-  },
-  sandboxControlSection: {
-    marginBottom: 10,
-  },
-  sandboxSectionTitle: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 11,
-    color: '#475569',
-    marginBottom: 6,
-  },
-  sandboxSegmentContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#E2E8F0',
-    borderRadius: 9,
-    padding: 3,
-    gap: 4,
-  },
-  segmentOptionBtn: {
-    flex: 1,
-    paddingVertical: 7,
-    paddingHorizontal: 8,
-    borderRadius: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segmentOptionSuccess: {
-    backgroundColor: '#16A34A',
-    shadowColor: '#16A34A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.25,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  segmentOptionFail: {
-    backgroundColor: '#DC2626',
-    shadowColor: '#DC2626',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.25,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  segmentOptionText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 11.5,
-    color: '#475569',
-    fontWeight: '600',
-  },
-  segmentOptionTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontFamily: 'Inter-Bold',
-  },
-  sandboxQuickFillRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flexWrap: 'wrap',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-  },
-  sandboxQuickFillLabel: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 11,
-    color: '#64748B',
-  },
-  sandboxChip: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3.5,
-  },
-  sandboxChipText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 11,
-    color: '#0F2860',
-    fontWeight: '600',
-  },
-
   /* Choose Payment Method */
   methodsSection: {
     marginBottom: 20,

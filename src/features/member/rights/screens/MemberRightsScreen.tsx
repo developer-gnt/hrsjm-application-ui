@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,11 +19,14 @@ import {
 } from '../../../../core/theme';
 import { AppIcon } from '../../../user/components';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
+import { apiClient } from '../../../../core/api/client';
+import { ApiRoutes } from '../../../../core/constants/api-routes';
 import { RIGHTS_INDEX } from '../data/rights-content';
 import type { RightsIndexItem } from '../types/rights.types';
 
 export interface MemberRightsScreenProps {
   onBack?: () => void;
+  showBackButton?: boolean;
   onOpenRight: (rightId: string) => void;
   onFileComplaint?: () => void;
   onContactSupport?: () => void;
@@ -157,8 +161,19 @@ const RIGHT_METADATA: Record<
   },
 };
 
+const normalizeCategory = (cat?: string): RightsCategoryKey => {
+  if (!cat) return 'ALL';
+  const c = cat.toLowerCase();
+  if (c.includes('constitut')) return 'CONSTITUTIONAL';
+  if (c.includes('women') || c.includes('child')) return 'WOMEN_CHILD';
+  if (c.includes('civil') || c.includes('justic') || c.includes('consumer') || c.includes('rti')) return 'CIVIL_JUSTICE';
+  if (c.includes('labour') || c.includes('welfare') || c.includes('senior')) return 'LABOUR_WELFARE';
+  return 'CONSTITUTIONAL';
+};
+
 export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
   onBack,
+  showBackButton = false,
   onOpenRight,
   onFileComplaint,
   onContactSupport,
@@ -166,35 +181,100 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] =
     useState<RightsCategoryKey>('ALL');
+  const [dbRights, setDbRights] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchLiveRights = useCallback(async () => {
+    try {
+      const res = await apiClient.get<any>(ApiRoutes.RIGHTS.BASE);
+      const items = res.data?.data?.items || res.data?.items;
+      if (Array.isArray(items) && items.length > 0) {
+        setDbRights(items);
+      }
+    } catch (err) {
+      console.warn('Live rights fetch failed, continuing with fallback:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLiveRights();
+  }, [fetchLiveRights]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchLiveRights();
+    setRefreshing(false);
+  };
+
+  const allRights = useMemo(() => {
+    if (dbRights.length > 0) {
+      return dbRights.map(item => {
+        const catKey = normalizeCategory(item.category);
+        const highlights = item.highlights
+          ? item.highlights.split(',').map((s: string) => s.trim()).filter(Boolean)
+          : ['Fundamental Freedom', 'Legal Shield', 'Equality'];
+
+        return {
+          id: item.slug || item.id,
+          realId: item.id,
+          title: item.title,
+          description: item.description,
+          icon: item.icon || 'scale',
+          color: item.color || '#FFF8E8',
+          iconColor: item.icon_color || '#1D4ED8',
+          meta: {
+            category: catKey,
+            categoryLabel: item.category_label || item.category || 'Citizen Rights',
+            legalReference: item.legal_reference || 'Constitution of India',
+            highlights,
+            accentColor: item.icon_color || '#1D4ED8',
+            badgeBg: item.badge_bg || '#DBEAFE',
+          },
+        };
+      });
+    }
+
+    return RIGHTS_INDEX.map(item => ({
+      ...item,
+      realId: item.id,
+      meta: RIGHT_METADATA[item.id] || {
+        category: 'ALL' as RightsCategoryKey,
+        categoryLabel: 'Citizen Rights',
+        legalReference: 'Constitution of India',
+        highlights: ['Fundamental Freedom', 'Legal Shield', 'Equality'],
+        accentColor: '#1E3A8A',
+        badgeBg: '#EEF2FF',
+      },
+    }));
+  }, [dbRights]);
 
   const filteredRights = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return RIGHTS_INDEX.filter((item: RightsIndexItem) => {
-      const meta = RIGHT_METADATA[item.id];
+    return allRights.filter(item => {
+      const meta = item.meta;
       const matchesCategory =
-        selectedCategory === 'ALL' || meta?.category === selectedCategory;
+        selectedCategory === 'ALL' || meta.category === selectedCategory;
 
       if (!matchesCategory) return false;
       if (!query) return true;
 
       const titleMatch = item.title.toLowerCase().includes(query);
       const descMatch = item.description.toLowerCase().includes(query);
-      const refMatch = meta?.legalReference.toLowerCase().includes(query);
-      const highlightsMatch = meta?.highlights.some(h =>
-        h.toLowerCase().includes(query)
+      const refMatch = meta.legalReference.toLowerCase().includes(query);
+      const highlightsMatch = meta.highlights.some((h: string) =>
+        h.toLowerCase().includes(query),
       );
 
       return titleMatch || descMatch || refMatch || highlightsMatch;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [allRights, searchQuery, selectedCategory]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <AdminHeader
-        title="Know Your Rights"
-        showBack={Boolean(onBack)}
+        showMenu={false}
+        showBack={Boolean(showBackButton && onBack)}
         onBack={onBack}
-        unreadCount={1}
       />
 
       <ScrollView
@@ -202,6 +282,13 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[AdminColors.primary]}
+          />
+        }
       >
         {/* Spotlight Hero Banner */}
         <View style={styles.heroCard}>
@@ -210,7 +297,7 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
               <AppIcon name="scale" size={13} color="#FFFFFF" />
               <Text style={styles.heroBadgeText}>CITIZEN RIGHTS & JUSTICE</Text>
             </View>
-            <Text style={styles.heroGuideCount}>12 Legal Guides</Text>
+            <Text style={styles.heroGuideCount}>{allRights.length} Legal Guides</Text>
           </View>
 
           <Text style={styles.heroTitle}>Know Your Rights. Protect Your Voice.</Text>
@@ -356,7 +443,7 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
         ) : (
           <View style={styles.rightsGrid}>
             {filteredRights.map(item => {
-              const meta = RIGHT_METADATA[item.id] || {
+              const meta = item.meta || RIGHT_METADATA[item.id] || {
                 category: 'ALL',
                 categoryLabel: 'Citizen Rights',
                 legalReference: 'Constitution of India',
@@ -425,7 +512,7 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
                   {/* Highlights Pills */}
                   {meta.highlights?.length ? (
                     <View style={styles.highlightsContainer}>
-                      {meta.highlights.slice(0, 3).map((tag, idx) => (
+                      {meta.highlights.slice(0, 3).map((tag: string, idx: number) => (
                         <View key={idx} style={styles.highlightPill}>
                           <Text style={styles.highlightPillDot}>•</Text>
                           <Text style={styles.highlightPillText}>{tag}</Text>

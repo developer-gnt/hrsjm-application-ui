@@ -49,6 +49,10 @@ export interface AdminHeaderProps {
   title?: string;
   /** Whether to show back button instead of hamburger menu. */
   showBack?: boolean;
+  /** Whether to show hamburger menu when showBack is false. Defaults to true. If false, no left icon is shown. */
+  showMenu?: boolean;
+  /** Alignment of brand logo when title is omitted. Defaults to 'center' (or 'left' when showMenu=false). */
+  alignLogo?: 'left' | 'center';
   /** Callback when user taps back button. */
   onBack?: () => void;
   /** Number of unread notifications to show on bell badge. Defaults to 0. */
@@ -59,6 +63,8 @@ export interface AdminHeaderProps {
   onNavigate?: (target: string) => void;
   /** Optional callback when user taps the notification bell. */
   onPressNotifications?: () => void;
+  /** Optional callback when user taps the profile avatar. */
+  onPressProfile?: () => void;
   /** Whether to hide the notification bell icon (e.g. on the Notifications screen itself). */
   hideNotifications?: boolean;
   /** Optional custom right action element (e.g. button or custom control). */
@@ -68,11 +74,14 @@ export interface AdminHeaderProps {
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
   title,
   showBack = false,
+  showMenu = true,
+  alignLogo,
   onBack,
   unreadCount = 0,
   onOpenMore,
   onNavigate,
   onPressNotifications,
+  onPressProfile,
   hideNotifications = false,
   rightAction,
 }) => {
@@ -274,7 +283,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     }
   };
 
-  const isBackMode = Boolean(showBack || onBack);
+  const isBackMode = Boolean(showBack && onBack);
 
   return (
     <>
@@ -291,7 +300,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       >
         <StatusBar barStyle="dark-content" />
 
-        {/* Left Action: Back Arrow OR Hamburger Menu */}
+        {/* Left Action: Back Arrow OR Hamburger Menu OR None */}
         {isBackMode ? (
           <TouchableOpacity
             style={styles.menuButton}
@@ -303,7 +312,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           >
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-        ) : (
+        ) : showMenu ? (
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => setDrawerVisible(true)}
@@ -314,10 +323,15 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           >
             <Text style={styles.menuIcon}>☰</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
 
-        {/* Center: Title OR Official HRSJM Logo */}
-        <View style={styles.centerWrap}>
+        {/* Center/Left: Title OR Official HRSJM Logo */}
+        <View
+          style={[
+            styles.centerWrap,
+            (alignLogo === 'left' || (!title && !showMenu && !isBackMode)) && styles.centerWrapLeft,
+          ]}
+        >
           {title ? (
             <Text style={styles.centerTitle} numberOfLines={1}>
               {title}
@@ -370,7 +384,13 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           {/* Profile Avatar + Dropdown Chevron */}
           <TouchableOpacity
             style={styles.avatarWrap}
-            onPress={() => setDropdownVisible(true)}
+            onPress={() => {
+              if (onPressProfile) {
+                onPressProfile();
+              } else {
+                setDropdownVisible(true);
+              }
+            }}
             activeOpacity={0.8}
           >
             <Image
@@ -505,6 +525,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 8,
+  },
+  centerWrapLeft: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingHorizontal: 0,
   },
   centerTitle: {
     ...Typography.screenTitle,

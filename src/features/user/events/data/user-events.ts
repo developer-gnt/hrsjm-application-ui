@@ -3,7 +3,16 @@ import type { ImageSourcePropType } from 'react-native';
 const EVENT_PHOTO = require('../../../../assets/images/about-hero-community.png');
 const EVENT_LEGAL_PHOTO = require('../../../../assets/images/event-legal-awareness.jpg');
 
-export type UserEventCategory = 'Workshop' | 'Awareness' | 'Community' | 'Education';
+export type UserEventCategory =
+  | 'Workshop'
+  | 'Awareness'
+  | 'Community'
+  | 'Education'
+  | 'Seminar'
+  | 'Relief Activity'
+  | 'Health Camp'
+  | 'Awareness Camp'
+  | string;
 
 export interface UserEvent {
   id: string;
@@ -19,6 +28,8 @@ export interface UserEvent {
   description: string;
   topics: string[];
   image: ImageSourcePropType;
+  status?: string;
+  rawEvent?: any;
 }
 
 export const USER_EVENTS: UserEvent[] = [

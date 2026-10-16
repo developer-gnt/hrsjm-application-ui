@@ -67,6 +67,7 @@ export const ADMIN_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[
       { id: 'events', icon: '📅', title: 'Events Management', target: AppRoutes.EVENTS },
       { id: 'news', icon: '📰', title: 'News & Press', target: AppRoutes.NEWS },
       { id: 'blogs', icon: '✍️', title: 'Articles & Blogs', target: AppRoutes.BLOGS },
+      { id: 'rights', icon: '⚖️', title: 'Know Your Rights', target: AppRoutes.KNOW_YOUR_RIGHTS },
     ],
   },
   {

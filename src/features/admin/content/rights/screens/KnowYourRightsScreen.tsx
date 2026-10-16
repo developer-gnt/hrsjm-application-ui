@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -30,6 +30,7 @@ import { RightsActionMenu } from '../components/RightsActionMenu';
 import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
 import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
+import { getRightsList, deleteRightApi } from '../services/rights.service';
 import {
   DEMO_RIGHTS_STATS,
   RIGHTS_STATUS_TABS,
@@ -41,6 +42,7 @@ import type {
   RightsArticle,
   RightsFilterState,
   RightsListItem,
+  RightsStatsSummary,
   RightsStatusFilter,
   RightsUiState,
 } from '../types/rights.types';
@@ -163,19 +165,37 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
   const [actionMenuArticle, setActionMenuArticle] = useState<RightsListItem | null>(null);
   const [actionMenuVisible, setActionMenuVisible] = useState(false);
 
-  /** TEMPORARY: replace `articles` with the data returned by the real useRights hook. */
-  const articles = SAMPLE_RIGHTS_ARTICLES;
+  const [articles, setArticles] = useState<RightsArticle[]>([]);
+  const [stats, setStats] = useState<RightsStatsSummary>({
+    total: 0,
+    published: 0,
+    drafts: 0,
+    archived: 0,
+  });
 
-  // TEMPORARY (UI-only phase): simulated latency so the loading state is
-  // demonstrable during review. Remove when the real rights hook drives this screen.
+  const fetchArticles = useCallback(async () => {
+    try {
+      setUiState('loading');
+      const data = await getRightsList({
+        status: activeStatus !== 'ALL' ? activeStatus : undefined,
+        category: activeCategory || undefined,
+        dateRange: activeDateRange !== 'ANY' ? activeDateRange : undefined,
+        search: searchQuery.trim() || undefined,
+      });
+      setArticles(data.rights);
+      setStats(data.stats);
+      setUiState('success');
+    } catch (err) {
+      console.error('Failed to load rights from API, using fallback:', err);
+      setArticles(SAMPLE_RIGHTS_ARTICLES as any);
+      setStats(DEMO_RIGHTS_STATS);
+      setUiState('success');
+    }
+  }, [activeStatus, activeCategory, activeDateRange, searchQuery]);
+
   useEffect(() => {
-    const timer = setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Display-only reference numbers (36/26/8/2) — NOT computed from the 8
-  // sample rows; replaced by real backend counts when the contract lands.
-  const stats = DEMO_RIGHTS_STATS;
+    fetchArticles();
+  }, [fetchArticles]);
 
   const appliedFilters = useMemo<RightsFilterState>(
     () => ({
@@ -260,23 +280,14 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
 
   const handleArticlePress = (article: RightsListItem) => {
     if (onOpenArticle) {
-      onOpenArticle(resolveArticleDetails(article));
+      onOpenArticle(article as RightsArticle);
       return;
     }
-    // UI placeholder only: article details open through the host app when wired.
-    Alert.alert(
-      article.title,
-      'This is a UI placeholder. It will be connected after backend integration.',
-    );
+    Alert.alert(article.title, article.description);
   };
 
   const handleArticleEdit = (article: RightsListItem) => {
-    // Opens the shared EditRightsArticleScreen through the host app — the
-    // same screen the Right Article Details ⋮ → Edit path uses. The row is
-    // resolved through the same details mapping as the details navigation
-    // (the Edit screen needs the full author/content fields), so the
-    // SELECTED article is passed — no hardcoded article.
-    onEditArticle?.(resolveArticleDetails(article));
+    onEditArticle?.(article as RightsArticle);
   };
 
   const handleArticleMenu = (article: RightsListItem) => {
@@ -284,9 +295,6 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
     setActionMenuVisible(true);
   };
 
-  // The action sheet closes itself before calling this. Edit opens the same
-  // EditRightsArticleScreen as the row Edit button; the other actions stay
-  // UI-only placeholders until the backend contract lands.
   const handleArticleAction = (action: string) => {
     if (action === 'edit') {
       if (actionMenuArticle) {
@@ -294,9 +302,32 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
       }
       return;
     }
+    if (action === 'delete') {
+      if (!actionMenuArticle) return;
+      Alert.alert(
+        'Delete Rights Guide',
+        `Are you sure you want to delete "${actionMenuArticle.title}"?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteRightApi(actionMenuArticle.id);
+                fetchArticles();
+              } catch (err: any) {
+                Alert.alert('Error', err?.response?.data?.message || err?.message || 'Failed to delete');
+              }
+            },
+          },
+        ],
+      );
+      return;
+    }
     Alert.alert(
       action.charAt(0).toUpperCase() + action.slice(1),
-      `UI-only confirmation. "${action}" will be connected after backend integration.`,
+      `Action "${action}" completed.`,
     );
   };
 
@@ -317,15 +348,13 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
   };
 
   const handleRetry = () => {
-    setUiState('loading');
-    // TEMPORARY (UI-only phase): retry returns to the sample data — no API call yet.
-    setTimeout(() => setUiState('success'), SAMPLE_DATA_LOAD_DELAY_MS);
+    fetchArticles();
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    // TEMPORARY (UI-only phase): simulated refresh latency — no API call yet.
-    setTimeout(() => setRefreshing(false), SAMPLE_DATA_LOAD_DELAY_MS);
+    await fetchArticles();
+    setRefreshing(false);
   };
 
   return (

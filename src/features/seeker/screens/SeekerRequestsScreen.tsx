@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppHeader } from '../../../core/components/common/AppHeader';
+import { AdminHeader } from '../../../app/navigation/AdminHeader';
 import { AppCard } from '../../../core/components/common/AppCard';
 import { AppButton } from '../../../core/components/common/AppButton';
 import { AssistanceStatusBadge } from '../../admin/assistance/components/AssistanceStatusBadge';
@@ -133,19 +133,23 @@ export const SeekerRequestsScreen: React.FC<SeekerRequestsScreenProps> = ({
   ];
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <AppHeader
-        title="Aid Application Tracker"
-        subtitle="Track status and timeline of your requests"
-        rightAction={
-          <TouchableOpacity
-            style={styles.headerNewBtn}
-            onPress={() => (onApplyPress ? onApplyPress() : setIsApplyModalVisible(true))}
-          >
-            <Text style={styles.headerNewBtnText}>+ Apply</Text>
-          </TouchableOpacity>
-        }
-      />
+    <SafeAreaView style={styles.safe} edges={['left', 'right']}>
+      {/* Official Unified HRSJM Header */}
+      <AdminHeader showMenu={false} showBack={false} />
+
+      {/* Screen Title & Action Bar */}
+      <View style={styles.titleSection}>
+        <View style={styles.titleCol}>
+          <Text style={styles.pageTitle}>Aid Application Tracker</Text>
+          <Text style={styles.pageSubtitle}>Track status and timeline of your requests</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.headerNewBtn}
+          onPress={() => (onApplyPress ? onApplyPress() : setIsApplyModalVisible(true))}
+        >
+          <Text style={styles.headerNewBtnText}>+ Apply</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Filter Tabs */}
       <View style={styles.tabBar}>
@@ -306,14 +310,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
+  titleSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.base,
+    paddingTop: 14,
+    paddingBottom: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  titleCol: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  pageTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F2860',
+    letterSpacing: 0.2,
+  },
+  pageSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+    fontWeight: '500',
+  },
   headerNewBtn: {
     backgroundColor: '#C9A227',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: BorderRadius.md,
   },
   headerNewBtnText: {
-    color: '#0F172A',
+    color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 13,
   },

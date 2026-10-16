@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdminColors, Spacing } from '../../../../core/theme';
-import { HomeHeader } from '../components/HomeHeader';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { HeroBanner } from '../components/HeroBanner';
 import { QuickActionsRow } from '../components/QuickActionCard';
 import { AboutSection } from '../components/AboutSection';
@@ -97,8 +97,9 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <HomeHeader
-        onPressSearch={() => showComingSoon('Search')}
+      <AdminHeader
+        showMenu={false}
+        showBack={false}
         onPressNotifications={() => showComingSoon('Notifications')}
         onPressProfile={onOpenProfile}
       />

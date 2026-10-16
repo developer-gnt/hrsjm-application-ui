@@ -46,13 +46,14 @@ interface SearchInputHandle {
   focus: () => void;
 }
 
-interface NewsScreenProps {
+export interface NewsScreenProps {
   onOpenArticle: (article: UserNewsArticle) => void;
   onOpenHome: () => void;
   onOpenAbout: () => void;
   onOpenRights: () => void;
   onOpenEvents: () => void;
   onOpenContact: () => void;
+  showBottomNav?: boolean;
 }
 
 const DATE_FILTERS: NewsDateFilter[] = [
@@ -187,6 +188,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
   onOpenRights,
   onOpenEvents,
   onOpenContact,
+  showBottomNav = false,
 }) => {
   const { width } = useWindowDimensions();
   const slideWidth = width;
@@ -493,7 +495,9 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       />
-      <UserBottomNavigation activeTab="news" onTabPress={handleTabPress} />
+      {showBottomNav && (
+        <UserBottomNavigation activeTab="news" onTabPress={handleTabPress} />
+      )}
 
       <Modal
         visible={filterOpen}
