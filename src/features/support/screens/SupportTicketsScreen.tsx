@@ -225,7 +225,7 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
           )}
 
           {/* Ticket Cards List */}
-          {loading && filteredTickets.length === 0 ? (
+          {loading && stats.total === 0 && !searchQuery && !dateFilter ? (
             <SupportEmptyState type="loading" />
           ) : filteredTickets.length > 0 ? (
             <View style={styles.listContainer}>
