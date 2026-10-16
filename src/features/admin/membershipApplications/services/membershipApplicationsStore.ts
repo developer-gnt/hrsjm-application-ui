@@ -811,10 +811,10 @@ class MembershipApplicationsStore {
       try {
         const authUser = useAuthStore.getState().user;
         if (authUser) {
-          const isUserOrApplicant =
+          const isTargetApplicant =
             authUser.id === current.id ||
-            !authUser.roles?.some(r => r.name?.toUpperCase() === 'ADMIN');
-          if (isUserOrApplicant) {
+            (Boolean(current.email) && authUser.email?.toLowerCase().trim() === current.email?.toLowerCase().trim());
+          if (isTargetApplicant) {
             useAuthStore.setState({
               user: {
                 ...authUser,

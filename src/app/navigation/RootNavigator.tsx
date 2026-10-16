@@ -42,13 +42,14 @@ export const RootNavigator: React.FC = () => {
 
   const roleNames = (user?.roles ?? []).map(r => r.name.toUpperCase());
   const isAdmin = roleNames.includes('ADMIN') || roleNames.includes('SUPER_ADMIN');
-  const isMember = roleNames.includes('MEMBER') && !roleNames.includes('USER');
-  const isUser = roleNames.includes('USER') || roleNames.includes('GENERAL_USER');
+  const isMember = roleNames.includes('MEMBER');
   const isSeeker = roleNames.includes('SEEKER') || roleNames.includes('DONATION_SEEKER');
+  const isUser = roleNames.includes('USER') || roleNames.includes('GENERAL_USER');
 
   let activeRoleType: 'member' | 'user' | 'seeker' | 'default' = 'user';
   if (isMember) activeRoleType = 'member';
   else if (isSeeker) activeRoleType = 'seeker';
+  else if (isUser) activeRoleType = 'user';
   else activeRoleType = 'user';
 
   return (

@@ -193,8 +193,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       );
       const isApprovedMember =
         !isUserAdmin &&
-        membershipStatus === 'Approved' &&
-        user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
+        (membershipStatus === 'Approved' || user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER'));
 
       const memberId =
         membershipData?.membership_number ||
@@ -230,20 +229,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
               roles: [
                 ...(user.roles?.filter((r: any) => r.name?.toUpperCase() !== 'USER') || []),
                 { id: 'r-member', name: 'MEMBER' },
-              ],
-            },
-          });
-        }
-      } else if (membershipStatus !== 'Approved' && !isUserAdmin) {
-        effectiveRole = 'User';
-        const hasMemberRole = user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
-        if (hasMemberRole) {
-          useAuthStore.setState({
-            user: {
-              ...user,
-              roles: [
-                ...(user.roles?.filter((r: any) => r.name?.toUpperCase() !== 'MEMBER') || []),
-                { id: 'r-user', name: 'USER' },
               ],
             },
           });
