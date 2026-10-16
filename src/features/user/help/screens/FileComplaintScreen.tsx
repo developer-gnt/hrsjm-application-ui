@@ -26,8 +26,8 @@ import { AppButton, AppInput } from '../../../../core/components';
 import {
   AdminColors,
   BorderRadius,
-  FontFamilies,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon, HrsjmLogoMark } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
@@ -1069,7 +1069,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
   },
   pageTitle: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 24,
     lineHeight: 30,
     color: AdminColors.primaryDark,
@@ -1084,7 +1084,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   sectionHeading: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 20,
     lineHeight: 24,
     color: AdminColors.primaryDark,
@@ -1410,7 +1410,7 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 24,
     fontWeight: '700',
     marginBottom: Spacing.sm,

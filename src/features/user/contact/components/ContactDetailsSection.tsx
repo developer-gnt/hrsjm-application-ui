@@ -3,9 +3,9 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
   AdminColors,
   BorderRadius,
-  FontFamilies,
   Shadows,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { CONTACT_DETAIL_CARDS, CONTACT_DETAILS_SUBTITLE } from '../data/contact-content';
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
   },
   heading: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 19,
     lineHeight: 24,
     fontWeight: '700',

@@ -10,7 +10,12 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppButton } from '../../../../core/components';
-import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core/theme';
+import {
+  AdminColors,
+  BorderRadius,
+  Spacing,
+  UserFontFamilies,
+} from '../../../../core/theme';
 import { AppIcon, HrsjmLogoMark } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
@@ -265,7 +270,7 @@ const styles = StyleSheet.create({
     paddingRight: Spacing.sm,
   },
   heroTitle: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 32,
     fontWeight: '700',
     color: AdminColors.textOnDark,
@@ -306,7 +311,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
   },
   sectionHeading: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 20,
     lineHeight: 24,
     color: AdminColors.primaryDark,

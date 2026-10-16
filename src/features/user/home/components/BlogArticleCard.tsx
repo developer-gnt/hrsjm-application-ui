@@ -11,6 +11,7 @@ import {
   AdminColors,
   BorderRadius,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import type { HomeBlogItem } from '../types/home.types';
@@ -137,6 +138,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: {
+    fontFamily: UserFontFamilies.heading,
     fontSize: 13,
     lineHeight: 17,
     fontWeight: '700',

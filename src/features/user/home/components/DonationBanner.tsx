@@ -3,8 +3,8 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import {
   AdminColors,
   BorderRadius,
-  FontFamilies,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { GoldButton } from './GoldButton';
 import { DONATION_CONTENT } from '../data/home-preview-data';
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     width: '72%',
   },
   headline: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 15,
     lineHeight: 18,
     fontWeight: '700',

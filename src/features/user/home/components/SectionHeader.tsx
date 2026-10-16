@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AdminColors, Spacing, FontFamilies } from '../../../../core/theme';
+import { AdminColors, Spacing, UserFontFamilies } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 
 interface SectionHeaderProps {
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   title: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 19,
     lineHeight: 24,
     fontWeight: '700',

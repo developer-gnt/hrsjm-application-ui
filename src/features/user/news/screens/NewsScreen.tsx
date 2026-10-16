@@ -16,7 +16,13 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AdminColors, BorderRadius, FontFamilies, Shadows, Spacing } from '../../../../core/theme';
+import {
+  AdminColors,
+  BorderRadius,
+  Shadows,
+  Spacing,
+  UserFontFamilies,
+} from '../../../../core/theme';
 import { debounce } from '../../../../core/utils/debounce';
 import { AppIcon } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
@@ -665,7 +671,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     color: AdminColors.textOnDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 28,
     lineHeight: 33,
     fontWeight: '700',
@@ -786,7 +792,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 20,
     fontWeight: '700',
     marginTop: Spacing.md,
@@ -838,7 +844,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 22,
     lineHeight: 26,
     fontWeight: '700',

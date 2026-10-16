@@ -11,7 +11,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AdminColors, BorderRadius, FontFamilies, Shadows, Spacing } from '../../../../core/theme';
+import {
+  AdminColors,
+  BorderRadius,
+  Shadows,
+  Spacing,
+  UserFontFamilies,
+} from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { ContactHeader } from '../../contact/components/ContactHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
@@ -537,8 +543,9 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     height: 170,
-    marginTop: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    marginTop: 0,
+    borderBottomLeftRadius: BorderRadius.md,
+    borderBottomRightRadius: BorderRadius.md,
     overflow: 'hidden',
     backgroundColor: AdminColors.primaryDark,
     justifyContent: 'center',
@@ -558,7 +565,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     color: AdminColors.textOnDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 27,
     lineHeight: 31,
     fontWeight: '700',
@@ -649,7 +656,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 19.5,
     lineHeight: 25,
     fontWeight: '700',
@@ -801,7 +808,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 22,
     lineHeight: 26,
     fontWeight: '700',

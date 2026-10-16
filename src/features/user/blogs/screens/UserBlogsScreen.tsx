@@ -11,7 +11,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AdminColors, BorderRadius, FontFamilies, Shadows, Spacing } from '../../../../core/theme';
+import {
+  AdminColors,
+  BorderRadius,
+  Shadows,
+  Spacing,
+  UserFontFamilies,
+} from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
@@ -365,7 +371,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
   },
   navRightPlaceholder: {
     width: 36,
@@ -490,7 +496,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 22,
     color: AdminColors.textOnDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     marginBottom: 4,
   },
   featuredExcerpt: {
@@ -525,7 +531,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
   },
   card: {
     flexDirection: 'row',
@@ -573,7 +579,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 17.5,
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
   },
   cardExcerpt: {
     fontSize: 11,
@@ -624,7 +630,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     marginBottom: Spacing.xs,
   },
   emptySubtitle: {

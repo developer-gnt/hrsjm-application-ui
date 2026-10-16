@@ -192,8 +192,8 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         r.name?.toUpperCase() === 'ADMIN' || r.name?.toUpperCase() === 'SUPER_ADMIN'
       );
       const isApprovedMember =
-        !isUserAdmin &&
-        (membershipStatus === 'Approved' || user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER'));
+        membershipStatus === 'Approved' ||
+        user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
 
       const memberId =
         membershipData?.membership_number ||

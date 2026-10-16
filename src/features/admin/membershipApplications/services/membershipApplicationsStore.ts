@@ -807,29 +807,6 @@ class MembershipApplicationsStore {
       } catch {
         // ignore in test
       }
-    } else {
-      try {
-        const authUser = useAuthStore.getState().user;
-        if (authUser) {
-          const isTargetApplicant =
-            authUser.id === current.id ||
-            (Boolean(current.email) && authUser.email?.toLowerCase().trim() === current.email?.toLowerCase().trim());
-          if (isTargetApplicant) {
-            useAuthStore.setState({
-              user: {
-                ...authUser,
-                roles: [
-                  ...(authUser.roles?.filter(r => r.name?.toUpperCase() !== 'MEMBER') || []),
-                  { id: 'role-user', name: 'USER' },
-                ],
-              },
-            });
-            useProfileStore.getState().fetchProfile();
-          }
-        }
-      } catch {
-        // ignore in test
-      }
     }
 
     // Sync status change to hrsjm_user_membership_record so user status updates immediately

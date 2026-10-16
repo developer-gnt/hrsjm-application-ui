@@ -12,7 +12,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core/theme';
+import {
+  AdminColors,
+  BorderRadius,
+  Spacing,
+  UserFontFamilies,
+} from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { getMatchedHelpTopics, type HelpTopic } from '../data/help-topics';
 
@@ -228,7 +233,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   sheetTitle: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 20,
     lineHeight: 26,
     color: AdminColors.primaryDark,

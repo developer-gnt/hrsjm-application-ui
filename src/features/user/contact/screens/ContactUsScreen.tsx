@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AdminColors, FontFamilies, Spacing } from '../../../../core/theme';
+import { AdminColors, Spacing, UserFontFamilies } from '../../../../core/theme';
 import { ContactHeader } from '../components/ContactHeader';
 import { ContactHero } from '../components/ContactHero';
 import { ContactActionsRow } from '../components/ContactActionCard';
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
   },
   formHeading: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 19,
     lineHeight: 24,
     fontWeight: '700',

@@ -1,6 +1,12 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AdminColors, BorderRadius, FontFamilies, Shadows, Spacing } from '../../../../core/theme';
+import {
+  AdminColors,
+  BorderRadius,
+  Shadows,
+  Spacing,
+  UserFontFamilies,
+} from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import type { UserNewsArticle } from '../data/user-news';
 
@@ -103,6 +109,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: AdminColors.primaryDark,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 14.5,
     fontWeight: '700',
     lineHeight: 19,

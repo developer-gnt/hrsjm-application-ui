@@ -15,9 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AdminColors,
   BorderRadius,
-  FontFamilies,
   Shadows,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 24,
     lineHeight: 30,
     fontWeight: '700',
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 17,
     lineHeight: 22,
     fontWeight: '700',

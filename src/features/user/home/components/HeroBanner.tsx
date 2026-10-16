@@ -10,7 +10,12 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core/theme';
+import {
+  AdminColors,
+  BorderRadius,
+  Spacing,
+  UserFontFamilies,
+} from '../../../../core/theme';
 import { GoldButton } from './GoldButton';
 import HeroHomeSource from '../../../../assets/images/hero-home.webp';
 
@@ -222,7 +227,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
   },
   headline: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 21,
     lineHeight: 27,
     fontWeight: '700',
