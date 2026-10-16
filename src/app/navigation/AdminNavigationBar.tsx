@@ -17,9 +17,8 @@ import { usePermissionStore } from '../../core/permissions/permission.store';
 import { AppRoutes } from '../../core/constants/routes';
 import { MoreNavigator } from './MoreNavigator';
 import { MembersNavigator } from './MembersNavigator';
-import { ModulePlaceholderScreen } from './ModulePlaceholderScreen';
 import { AdminDashboardScreen } from '../../features/admin/dashboard';
-import { AssistanceRequestsScreen } from '../../features/admin/assistance';
+import { ApplicationsNavigator } from './ApplicationsNavigator';
 import { ComplaintsNavigator } from './ComplaintsNavigator';
 import { AdminTabParamList } from './NavigationTypes';
 import {
@@ -79,7 +78,7 @@ export const TAB_DEFINITIONS: TabDefinition[] = [
     label: 'Applications',
     Icon: FileText,
     icon: '📄',
-    component: AssistanceRequestsScreen,
+    component: ApplicationsNavigator,
   },
   {
     name: AppRoutes.ADMIN_COMPLAINTS_TAB,

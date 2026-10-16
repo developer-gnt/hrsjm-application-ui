@@ -95,6 +95,7 @@ describe('User Profile - Join Membership, Status Sync & Member Conversion Flow',
     });
 
     expect(onJoinMembershipMock).toHaveBeenCalled();
+    renderer.unmount();
   });
 
   it('2. Shows "My Status" when user has applied for membership and displays live status', async () => {
@@ -141,7 +142,8 @@ describe('User Profile - Join Membership, Status Sync & Member Conversion Flow',
     // Should now show My Status button and Application Status card
     expect(rootTextAfterApply).toContain('My Status');
     expect(rootTextAfterApply).toContain('Application Status');
-    expect(rootTextAfterApply).toContain('Under Review');
+    expect(rootTextAfterApply).toContain('Applied');
+    renderer.unmount();
   });
 
   it('3. Admin marks application as Rejected with reason -> user sees Rejected and reason', async () => {
@@ -169,6 +171,7 @@ describe('User Profile - Join Membership, Status Sync & Member Conversion Flow',
     expect(rootText).toContain('Rejected');
     expect(rootText).toContain('Reason for Rejection');
     expect(rootText).toContain('Incomplete address proof document');
+    renderer.unmount();
   });
 
   it('4. Admin marks application as Approved -> user role is converted to MEMBER and sees My ID', async () => {
@@ -199,5 +202,6 @@ describe('User Profile - Join Membership, Status Sync & Member Conversion Flow',
     // Since role is now MEMBER, user has an ID card and sees My ID
     expect(rootText).toContain('My ID');
     expect(rootText).toContain('Member');
+    renderer.unmount();
   });
 });

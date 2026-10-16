@@ -22,7 +22,8 @@ import { SeekerRowCard } from '../components/SeekerRowCard';
 import { SeekerDetailsModal } from '../components/SeekerDetailsModal';
 import { AssistanceFilters } from '../components/AssistanceFilters';
 import { AssistanceStatsRow } from '../components/AssistanceStats';
-import { AddSeekerModal } from '../components/AddSeekerModal';
+import { CreateSeekerScreen } from './CreateSeekerScreen';
+import { AppRoutes } from '../../../../core/constants/routes';
 import { ASSISTANCE_TABS, type AssistanceTabKey } from '../assistance.utils';
 import {
   useAssistance,
@@ -35,7 +36,15 @@ import type {
 } from '../types/assistance.types';
 import { AppEmptyState, AppErrorState, AppPagination } from '../../../../core';
 
-export function AssistanceRequestsScreen() {
+export interface AssistanceRequestsScreenProps {
+  navigation?: any;
+  onAddSeeker?: () => void;
+}
+
+export function AssistanceRequestsScreen({
+  navigation,
+  onAddSeeker,
+}: AssistanceRequestsScreenProps = {}) {
   const { width } = useWindowDimensions();
   const isWide = width >= 768;
 
@@ -61,8 +70,7 @@ export function AssistanceRequestsScreen() {
   const updateStatusMutation = useUpdateAssistanceStatus();
 
   const [filtersVisible, setFiltersVisible] = useState(false);
-  const [addSeekerVisible, setAddSeekerVisible] = useState(false);
-  const [isSubmittingSeeker, setIsSubmittingSeeker] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const [selectedRequest, setSelectedRequest] = useState<AssistanceRequest | null>(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
@@ -139,35 +147,25 @@ export function AssistanceRequestsScreen() {
     }
   };
 
-  const handleCreateSeekerSubmit = async (
-    payload: CreateAssistanceRequestPayload,
-  ) => {
-    setIsSubmittingSeeker(true);
-    try {
-      const created = await createRequest(payload);
-      setAddSeekerVisible(false);
-      setFeedbackConfig({
-        visible: true,
-        tone: 'success',
-        title: 'Assistance Request Created',
-        message: `Successfully registered assistance request for ${created.full_name || payload.full_name} (₹${payload.requested_amount.toLocaleString('en-IN')}). The case is placed under review.`,
-        badgeText: 'CASE RECORDED',
-      });
-    } catch (err: any) {
-      setFeedbackConfig({
-        visible: true,
-        tone: 'error',
-        title: 'Creation Failed',
-        message: getApiErrorMessage(
-          err,
-          'Unable to submit assistance request. Please verify mobile number and details.',
-        ),
-        badgeText: 'ERROR',
-      });
-    } finally {
-      setIsSubmittingSeeker(false);
-    }
-  };
+  if (isCreating) {
+    return (
+      <CreateSeekerScreen
+        navigation={navigation}
+        onBack={() => setIsCreating(false)}
+        onSuccess={created => {
+          setIsCreating(false);
+          refresh();
+          setFeedbackConfig({
+            visible: true,
+            tone: 'success',
+            title: 'Assistance Request Created',
+            message: `Successfully registered assistance request for ${created.full_name} (₹${Number(created.requested_amount).toLocaleString('en-IN')}). The case is placed under review.`,
+            badgeText: 'CASE RECORDED',
+          });
+        }}
+      />
+    );
+  }
 
   return (
     <View style={styles.flex}>
@@ -206,7 +204,15 @@ export function AssistanceRequestsScreen() {
                 </View>
                 {canReview ? (
                   <TouchableOpacity
-                    onPress={() => setAddSeekerVisible(true)}
+                    onPress={() => {
+                      if (onAddSeeker) {
+                        onAddSeeker();
+                      } else if (navigation?.navigate) {
+                        navigation.navigate(AppRoutes.CREATE_ASSISTANCE_REQUEST as any);
+                      } else {
+                        setIsCreating(true);
+                      }
+                    }}
                     accessibilityRole="button"
                     accessibilityLabel="Add Seeker"
                     style={styles.addButton}
@@ -345,12 +351,7 @@ export function AssistanceRequestsScreen() {
       />
 
 
-      <AddSeekerModal
-        visible={addSeekerVisible}
-        onClose={() => setAddSeekerVisible(false)}
-        onSubmit={handleCreateSeekerSubmit}
-        isSubmitting={isSubmittingSeeker}
-      />
+
 
       <SeekerDetailsModal
         visible={detailsModalVisible}

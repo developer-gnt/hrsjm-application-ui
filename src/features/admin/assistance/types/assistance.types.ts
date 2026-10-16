@@ -65,6 +65,15 @@ export interface AssistanceFilterState {
 }
 
 
+export interface AttachedDocumentPayload {
+  document_name: string;
+  file_name: string;
+  file_size?: string | number;
+  mime_type?: string;
+  uri?: string;
+  file?: any;
+}
+
 export interface CreateAssistanceRequestPayload {
   full_name: string;
   mobile: string;
@@ -75,6 +84,7 @@ export interface CreateAssistanceRequestPayload {
   user_id?: string;
   admin_remark?: string;
   status?: AssistanceStatus;
+  documents?: AttachedDocumentPayload[];
 }
 
 export interface AssistanceSummaryStats {

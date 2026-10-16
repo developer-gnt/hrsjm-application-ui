@@ -19,19 +19,30 @@ import { AppButton } from '../../../../core/components/common/AppButton';
 import {
   AlertCircle,
   Check,
+  FileCheck,
+  FileText,
   Heart,
   Mail,
   MapPin,
   Phone,
   Plus,
-  Shield,
+  Trash2,
+  UploadCloud,
   User,
   X,
 } from '../../../../core/components/icons';
-import type {
-  AssistanceStatus,
-  CreateAssistanceRequestPayload,
-} from '../types/assistance.types';
+import { pickNativeDocument } from '../../../membership/utils/filePicker';
+import type { CreateAssistanceRequestPayload } from '../types/assistance.types';
+
+export interface AttachedDocument {
+  id: string;
+  document_name: string;
+  fileName: string;
+  fileSize: string;
+  uri?: string;
+  type?: string;
+  file?: any;
+}
 
 interface AddSeekerModalProps {
   visible: boolean;
@@ -65,6 +76,14 @@ const URGENCY_LEVELS = [
   { key: 'CRITICAL', label: 'Critical', color: '#EF4444', bg: '#FEF2F2' },
 ];
 
+const SEEKER_DOC_CATEGORIES = [
+  'Aadhaar / ID Proof',
+  'Medical Report / Hospital Bill',
+  'Income / Ration Card',
+  'Tuition / School Fee Slip',
+  'Other Document',
+];
+
 export const AddSeekerModal: React.FC<AddSeekerModalProps> = ({
   visible,
   onClose,
@@ -81,8 +100,11 @@ export const AddSeekerModal: React.FC<AddSeekerModalProps> = ({
   const [requestedAmount, setRequestedAmount] = useState('');
   const [urgency, setUrgency] = useState('MEDIUM');
   const [description, setDescription] = useState('');
-  const [initialStatus, setInitialStatus] = useState<AssistanceStatus>('UNDER_REVIEW');
-  const [adminRemark, setAdminRemark] = useState('');
+
+  const [attachedDocs, setAttachedDocs] = useState<AttachedDocument[]>([]);
+  const [docCategory, setDocCategory] = useState<string>('Aadhaar / ID Proof');
+  const [customDocName, setCustomDocName] = useState<string>('');
+  const [isPickingDoc, setIsPickingDoc] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -111,8 +133,55 @@ export const AddSeekerModal: React.FC<AddSeekerModalProps> = ({
       newErrors.requestedAmount = 'Please enter a valid amount greater than ₹0.';
     }
 
+    if (attachedDocs.length === 0) {
+      newErrors.documents = 'Supporting document is compulsory. Please attach at least 1 document.';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handlePickDocument = async () => {
+    setIsPickingDoc(true);
+    try {
+      const result = await pickNativeDocument();
+      if (result) {
+        const finalDocName =
+          docCategory === 'Other Document'
+            ? (customDocName.trim() || 'Supporting Document')
+            : docCategory;
+        const newDoc: AttachedDocument = {
+          id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          document_name: finalDocName,
+          fileName: result.fileName,
+          fileSize: result.fileSize || '1.5 MB',
+          uri: result.uri,
+          type: result.type,
+        };
+        setAttachedDocs(prev => [...prev, newDoc]);
+        if (errors.documents) {
+          setErrors(prev => ({ ...prev, documents: '' }));
+        }
+      }
+    } catch (err) {
+      console.warn('Document picker error:', err);
+    } finally {
+      setIsPickingDoc(false);
+    }
+  };
+
+
+  const handleRemoveDoc = (id: string) => {
+    setAttachedDocs(prev => {
+      const next = prev.filter(d => d.id !== id);
+      if (next.length === 0) {
+        setErrors(errs => ({
+          ...errs,
+          documents: 'Supporting document is compulsory. Please attach at least 1 document.',
+        }));
+      }
+      return next;
+    });
   };
 
   const handleSave = async () => {
@@ -129,8 +198,14 @@ export const AddSeekerModal: React.FC<AddSeekerModalProps> = ({
       requested_amount: amt,
       reason: finalReason,
       description: description.trim() ? description.trim() : undefined,
-      status: initialStatus,
-      admin_remark: adminRemark.trim() ? adminRemark.trim() : undefined,
+      status: 'UNDER_REVIEW',
+      documents: attachedDocs.map(d => ({
+        document_name: d.document_name,
+        file_name: d.fileName,
+        file_size: d.fileSize,
+        mime_type: d.type || (d.fileName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
+        uri: d.uri,
+      })),
     };
 
     await onSubmit(payload);
@@ -146,8 +221,9 @@ export const AddSeekerModal: React.FC<AddSeekerModalProps> = ({
     setRequestedAmount('');
     setUrgency('MEDIUM');
     setDescription('');
-    setInitialStatus('UNDER_REVIEW');
-    setAdminRemark('');
+    setAttachedDocs([]);
+    setDocCategory('Aadhaar / ID Proof');
+    setCustomDocName('');
     setErrors({});
   };
 
@@ -531,65 +607,141 @@ export const AddSeekerModal: React.FC<AddSeekerModalProps> = ({
                 </View>
               </View>
 
-              {/* SECTION 3: STATUS & ADMIN REMARKS */}
-              <View style={styles.sectionCard}>
+              {/* SECTION 3: SUPPORTING DOCUMENTS (COMPULSORY) */}
+              <View
+                style={[
+                  styles.sectionCard,
+                  errors.documents ? styles.sectionCardError : null,
+                ]}
+              >
                 <View style={styles.sectionHeaderRow}>
-                  <Shield size={15} color="#0F2C59" />
-                  <Text style={styles.sectionTitle}>Initial Status & Review</Text>
+                  <FileText size={15} color="#0F2C59" />
+                  <Text style={styles.sectionTitle}>
+                    Supporting Documents <Text style={styles.requiredStar}>*</Text>
+                  </Text>
                 </View>
 
-                {/* Initial Status Selector */}
+                <Text style={styles.docSectionDesc}>
+                  Upload verification documents (Aadhaar, hospital bills, income proof, or certificates). At least one document is mandatory.
+                </Text>
+
+                {/* Document Category selector */}
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>Set Initial Status</Text>
-                  <View style={styles.statusOptionsRow}>
-                    {(['UNDER_REVIEW', 'PENDING', 'APPROVED'] as AssistanceStatus[]).map(
-                      st => {
-                        const isSelected = initialStatus === st;
-                        return (
-                          <TouchableOpacity
-                            key={st}
+                  <Text style={styles.fieldLabel}>Document Type</Text>
+                  <View style={styles.chipsWrap}>
+                    {SEEKER_DOC_CATEGORIES.map(cat => {
+                      const isSelected = docCategory === cat;
+                      return (
+                        <TouchableOpacity
+                          key={cat}
+                          style={[
+                            styles.docCatChip,
+                            isSelected && styles.docCatChipSelected,
+                          ]}
+                          onPress={() => setDocCategory(cat)}
+                          disabled={isSubmitting}
+                          activeOpacity={0.75}
+                        >
+                          <Text
                             style={[
-                              styles.statusSelectChip,
-                              isSelected && styles.statusSelectChipActive,
+                              styles.docCatChipText,
+                              isSelected && styles.docCatChipTextSelected,
                             ]}
-                            onPress={() => setInitialStatus(st)}
-                            disabled={isSubmitting}
-                            activeOpacity={0.8}
                           >
-                            <Text
-                              style={[
-                                styles.statusSelectChipText,
-                                isSelected && styles.statusSelectChipTextActive,
-                              ]}
-                            >
-                              {st === 'UNDER_REVIEW'
-                                ? 'Under Review'
-                                : st === 'PENDING'
-                                  ? 'Pending'
-                                  : 'Approved'}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      },
+                            {cat}
+                          </Text>
+                          {isSelected ? (
+                            <Check size={11} color="#FFFFFF" strokeWidth={3} />
+                          ) : null}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {docCategory === 'Other Document' ? (
+                    <View style={{ marginTop: Spacing.xs }}>
+                      <TextInput
+                        style={[styles.input, styles.docNameInput]}
+                        placeholder="Enter document title (e.g. Disability Certificate, Ration Card)"
+                        placeholderTextColor="#94A3B8"
+                        value={customDocName}
+                        onChangeText={setCustomDocName}
+                        editable={!isSubmitting}
+                      />
+                    </View>
+                  ) : null}
+                </View>
+
+                {/* Upload Button Box */}
+                <TouchableOpacity
+                  style={[
+                    styles.uploadDropZone,
+                    isPickingDoc && styles.uploadDropZoneActive,
+                  ]}
+                  onPress={handlePickDocument}
+                  disabled={isSubmitting || isPickingDoc}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.uploadIconCircle}>
+                    {isPickingDoc ? (
+                      <ActivityIndicator size="small" color="#0F2C59" />
+                    ) : (
+                      <UploadCloud size={20} color="#0F2C59" strokeWidth={2.2} />
                     )}
                   </View>
-                </View>
-
-                {/* Admin Remarks */}
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>Admin Verification Remarks</Text>
-                  <View style={styles.inputWrapper}>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="e.g. Documents verified via local coordinator"
-                      placeholderTextColor="#94A3B8"
-                      value={adminRemark}
-                      onChangeText={setAdminRemark}
-                      editable={!isSubmitting}
-                    />
+                  <View style={styles.uploadTextCol}>
+                    <Text style={styles.uploadPromptTitle}>
+                      {isPickingDoc ? 'Opening file browser...' : 'Tap to Browse & Upload Document'}
+                    </Text>
+                    <Text style={styles.uploadPromptSub}>
+                      Supports PDF, PNG, JPG, JPEG (Max 10 MB)
+                    </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
+
+
+                {/* Error Banner if validation fails */}
+                {errors.documents ? (
+                  <View style={styles.docErrorBanner}>
+                    <AlertCircle size={15} color="#DC2626" />
+                    <Text style={styles.docErrorBannerText}>{errors.documents}</Text>
+                  </View>
+                ) : null}
+
+                {/* Attached Documents List */}
+                {attachedDocs.length > 0 ? (
+                  <View style={styles.attachedDocsContainer}>
+                    <Text style={styles.attachedDocsHeader}>
+                      Attached Documents ({attachedDocs.length})
+                    </Text>
+                    {attachedDocs.map(doc => (
+                      <View key={doc.id} style={styles.docItemCard}>
+                        <View style={styles.docIconBg}>
+                          <FileCheck size={18} color="#16A34A" strokeWidth={2.2} />
+                        </View>
+                        <View style={styles.docInfoCol}>
+                          <Text style={styles.docItemTitle} numberOfLines={1}>
+                            {doc.document_name}
+                          </Text>
+                          <Text style={styles.docItemMeta} numberOfLines={1}>
+                            {doc.fileName} • {doc.fileSize}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.removeDocBtn}
+                          onPress={() => handleRemoveDoc(doc.id)}
+                          disabled={isSubmitting}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove document ${doc.document_name}`}
+                        >
+                          <Trash2 size={16} color="#EF4444" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
               </View>
+
             </ScrollView>
 
             {/* Footer Buttons */}
@@ -881,34 +1033,6 @@ const styles = StyleSheet.create({
     height: 70,
     textAlignVertical: 'top',
   },
-  statusOptionsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
-  },
-  statusSelectChip: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: BorderRadius.md,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  statusSelectChipActive: {
-    backgroundColor: '#0F2C59',
-    borderColor: '#0F2C59',
-  },
-  statusSelectChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  statusSelectChipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
   errorText: {
     fontSize: 11.5,
     color: '#EF4444',
@@ -960,6 +1084,151 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+
+  // Supporting Documents Section
+  sectionCardError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FFFDFD',
+  },
+  docSectionDesc: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#64748B',
+  },
+  docCatChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  docCatChipSelected: {
+    backgroundColor: '#0F2C59',
+    borderColor: '#0F2C59',
+  },
+  docCatChipText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  docCatChipTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  docNameInput: {
+    fontSize: 12.5,
+    minHeight: 40,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: 10,
+  },
+  uploadDropZone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1.5,
+    borderColor: '#93C5FD',
+    borderStyle: 'dashed',
+    backgroundColor: '#F0F7FF',
+    borderRadius: BorderRadius.lg,
+    padding: 12,
+  },
+  uploadDropZoneActive: {
+    borderColor: '#0F2C59',
+    backgroundColor: '#E0E7FF',
+  },
+  uploadIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  uploadTextCol: {
+    flex: 1,
+  },
+  uploadPromptTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F2C59',
+  },
+  uploadPromptSub: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  docErrorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    marginTop: 2,
+  },
+  docErrorBannerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#DC2626',
+    flex: 1,
+  },
+  attachedDocsContainer: {
+    marginTop: 4,
+    gap: 6,
+  },
+  attachedDocsHeader: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F2C59',
+  },
+  docItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    padding: 10,
+  },
+  docIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#DCFCE7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  docInfoCol: {
+    flex: 1,
+  },
+  docItemTitle: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#0F2C59',
+  },
+  docItemMeta: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  removeDocBtn: {
+    padding: 6,
+    borderRadius: 6,
+    backgroundColor: '#FEE2E2',
   },
 });
 

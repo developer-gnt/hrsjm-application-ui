@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SeekerHomeScreen } from '../screens/SeekerHomeScreen';
 import { SeekerRequestsScreen } from '../screens/SeekerRequestsScreen';
+import { CreateSeekerScreen } from '../../admin/assistance/screens/CreateSeekerScreen';
 import { MemberRightsScreen, RightDetailsScreen } from '../../member/rights';
 import { UserEventsScreen } from '../../user/events/screens/UserEventsScreen';
 import { SupportTicketsScreen } from '../../support';
@@ -50,6 +51,7 @@ const SeekerHomeWrapper: React.FC<any> = ({ navigation }) => {
   return (
     <SeekerHomeScreen
       navigation={navigation}
+      onNavigateToApply={() => navigation.navigate('AddSeeker')}
       onNavigateToRequests={() => navigation.navigate('SeekerRequests')}
       onNavigateToSupport={() => navigation.navigate('SeekerSupport')}
       onNavigateToRights={() => navigation.navigate('SeekerRights')}
@@ -66,6 +68,7 @@ const SeekerRequestsWrapper: React.FC<any> = ({ navigation }) => {
   return (
     <SeekerRequestsScreen
       navigation={navigation}
+      onApplyPress={() => navigation.navigate('AddSeeker')}
       onContactSupport={() => navigation.navigate('SeekerSupport')}
     />
   );
@@ -236,6 +239,19 @@ export const SeekerTabNavigator: React.FC = () => {
         options={{ tabBarButton: () => null }}
         component={NotificationsScreen}
       />
+
+      <Tab.Screen
+        name="AddSeeker"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <CreateSeekerScreen
+            navigation={navigation}
+            onBack={navigation.goBack}
+            onSuccess={() => navigation.navigate('SeekerRequests')}
+          />
+        )}
+      </Tab.Screen>
 
       <Tab.Screen
         name="About"

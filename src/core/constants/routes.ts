@@ -57,6 +57,8 @@ export const AppRoutes = {
   CREATE_BLOG: 'CreateBlog',
   EDIT_BLOG: 'EditBlog',
   ASSISTANCE_REQUESTS: 'AssistanceRequests',
+  CREATE_ASSISTANCE_REQUEST: 'CreateAssistanceRequest',
+  ADD_SEEKER: 'AddSeeker',
   ASSISTANCE_DETAILS: 'AssistanceDetails',
   ASSISTANCE_DOCUMENTS: 'AssistanceDocuments',
   SUPPORT_TICKETS: 'SupportTickets',

@@ -21,6 +21,7 @@ import HeroHomeSource from '../../../../assets/images/hero-home.webp';
 
 interface HeroBannerProps {
   onCtaPress?: () => void;
+  showCta?: boolean;
 }
 
 const HEADLINE_LINES = ['For Human Rights,', 'Dignity and a'];
@@ -66,7 +67,10 @@ const DOT_COUNT = 5;
  * with the gold final line, supporting copy, compact gold CTA, carousel
  * dots and the diagonal script overlay on the right.
  */
-export const HeroBanner: React.FC<HeroBannerProps> = ({ onCtaPress }) => {
+export const HeroBanner: React.FC<HeroBannerProps> = ({
+  onCtaPress,
+  showCta = true,
+}) => {
   const { width } = useWindowDimensions();
   const height = Math.round(Math.min(295, Math.max(250, width * 0.68)));
   const trackOffset = useRef(new Animated.Value(-width)).current;
@@ -164,15 +168,17 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onCtaPress }) => {
 
               <Text style={styles.supporting}>{slide.supporting}</Text>
 
-              <View style={styles.cta}>
-                <GoldButton
-                  label="Join the Movement"
-                  compact
-                  onPress={onCtaPress}
-                  textColor="#082245"
-                  backgroundColor="#EAA532"
-                />
-              </View>
+              {showCta && (
+                <View style={styles.cta}>
+                  <GoldButton
+                    label="Join the Movement"
+                    compact
+                    onPress={onCtaPress}
+                    textColor="#082245"
+                    backgroundColor="#EAA532"
+                  />
+                </View>
+              )}
             </View>
 
             <Text style={styles.script}>

@@ -1,6 +1,8 @@
+import { Platform } from 'react-native';
 import { api, unwrap } from '../../../../core/api/client';
 import type { ApiEnvelope } from '../../../../core/api/types';
 import type {
+  AssistanceDocumentItem,
   AssistanceDocumentsListData,
   AssistanceListData,
   AssistanceQuery,
@@ -12,8 +14,29 @@ import type {
 
 export const assistanceService = {
   async create(payload: CreateAssistanceRequestPayload): Promise<AssistanceRequest> {
-    const res = await api.post<ApiEnvelope<AssistanceRequest>>('/assistance-requests', payload);
-    return unwrap(res.data);
+    const { documents, ...body } = payload;
+    const res = await api.post<ApiEnvelope<AssistanceRequest>>('/assistance-requests', body);
+    const created = unwrap(res.data);
+
+    if (documents && documents.length > 0 && created?.id) {
+      for (const doc of documents) {
+        await this.attachDocument(
+          created.id,
+          {
+            uri: doc.uri,
+            fileName: doc.file_name,
+            name: doc.document_name,
+            type: doc.mime_type,
+            file: doc.file,
+          },
+          {
+            document_name: doc.document_name,
+          },
+        );
+      }
+    }
+
+    return created;
   },
 
   async list(query: AssistanceQuery = {}): Promise<AssistanceListData> {
@@ -70,6 +93,59 @@ export const assistanceService = {
       },
     });
     return unwrap(res.data);
+  },
+
+  async attachDocument(
+    requestId: string,
+    fileData: { uri?: string; fileName?: string; name?: string; type?: string; file?: any; blob?: any },
+    meta?: { document_name?: string; description?: string },
+  ): Promise<AssistanceDocumentItem | null> {
+    try {
+      const form = new FormData() as any;
+      if (fileData.file instanceof Blob) {
+        form.append('file', fileData.file, fileData.fileName || fileData.name || 'document.pdf');
+      } else if (fileData.blob instanceof Blob) {
+        form.append('file', fileData.blob, fileData.fileName || fileData.name || 'document.pdf');
+      } else if (fileData.uri) {
+        if (Platform.OS === 'web' && typeof fetch !== 'undefined' && fileData.uri.startsWith('blob:')) {
+          try {
+            const blob = await fetch(fileData.uri).then(r => r.blob());
+            form.append('file', blob, fileData.fileName || fileData.name || 'document.pdf');
+          } catch {
+            form.append('file', {
+              uri: fileData.uri,
+              name: fileData.fileName || fileData.name || 'document.pdf',
+              type: fileData.type || 'application/pdf',
+            });
+          }
+        } else {
+          form.append('file', {
+            uri: fileData.uri,
+            name: fileData.fileName || fileData.name || 'document.pdf',
+            type: fileData.type || 'application/pdf',
+          });
+        }
+      }
+      if (meta?.document_name || fileData.name || fileData.fileName) {
+        form.append('document_name', meta?.document_name || fileData.name || fileData.fileName || 'Supporting Document');
+      }
+      if (meta?.description) {
+        form.append('description', meta.description);
+      }
+      const res = await api.post<ApiEnvelope<AssistanceDocumentItem>>(
+        `/assistance-requests/${requestId}/documents`,
+        form,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      );
+      return unwrap(res.data);
+    } catch (err) {
+      console.warn('Failed to attach document to assistance request:', err);
+      return null;
+    }
   },
 };
 
