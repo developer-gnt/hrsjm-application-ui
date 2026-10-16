@@ -302,6 +302,20 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
             });
             useProfileStore.getState().fetchProfile();
           }
+        } else {
+          const currentAuthUser = useAuthStore.getState().user;
+          if (currentAuthUser && currentAuthUser.roles?.some(r => r.name?.toUpperCase() === 'MEMBER') && !currentAuthUser.roles?.some(r => r.name?.toUpperCase() === 'ADMIN')) {
+            useAuthStore.setState({
+              user: {
+                ...currentAuthUser,
+                roles: [
+                  ...(currentAuthUser.roles?.filter(r => r.name?.toUpperCase() !== 'MEMBER') || []),
+                  { id: 'r-user', name: 'USER' },
+                ],
+              },
+            });
+            useProfileStore.getState().fetchProfile();
+          }
         }
         return;
       }
@@ -356,6 +370,20 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
                 roles: [
                   ...(currentAuthUser.roles?.filter(r => r.name?.toUpperCase() !== 'USER') || []),
                   { id: 'r-member', name: 'MEMBER' },
+                ],
+              },
+            });
+            useProfileStore.getState().fetchProfile();
+          }
+        } else {
+          const currentAuthUser = useAuthStore.getState().user;
+          if (currentAuthUser && currentAuthUser.roles?.some(r => r.name?.toUpperCase() === 'MEMBER') && !currentAuthUser.roles?.some(r => r.name?.toUpperCase() === 'ADMIN')) {
+            useAuthStore.setState({
+              user: {
+                ...currentAuthUser,
+                roles: [
+                  ...(currentAuthUser.roles?.filter(r => r.name?.toUpperCase() !== 'MEMBER') || []),
+                  { id: 'r-user', name: 'USER' },
                 ],
               },
             });

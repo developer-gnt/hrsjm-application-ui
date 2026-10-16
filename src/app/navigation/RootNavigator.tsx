@@ -19,32 +19,22 @@ const RoleBasedHomeNavigator: React.FC<{ roleType: 'member' | 'user' | 'seeker' 
   if (roleType === 'member') {
     return <MemberTabNavigator />;
   }
-  if (roleType === 'user') {
-    return <UserTabNavigator />;
-  }
   if (roleType === 'seeker') {
     return <SeekerTabNavigator />;
   }
 
-  return (
-    <HomeStack.Navigator>
-      <HomeStack.Screen
-        name="AuthenticatedHome"
-        component={AuthenticatedHomeScreen}
-        options={{ headerShown: false }}
-      />
-    </HomeStack.Navigator>
-  );
+  // Default and 'user' both route to UserTabNavigator (User Portal)
+  return <UserTabNavigator />;
 };
 
 /**
  * Root routing driven by the auth store status & roles:
  * - unauthenticated/idle → Auth stack (splash decides the first route)
  * - authenticated + ADMIN / SUPER_ADMIN → AdminTabNavigator (5 tabs + sidebar)
- * - authenticated + MEMBER → Member Portal
+ * - authenticated + MEMBER (without USER) → Member Portal
  * - authenticated + USER / GENERAL_USER → User Portal (UserTabNavigator)
  * - authenticated + SEEKER / DONATION_SEEKER → Donation Seeker Portal
- * - authenticated + other → General Authenticated Home
+ * - authenticated + other → User Portal (UserTabNavigator)
  */
 export const RootNavigator: React.FC = () => {
   const status = useAuthStore(state => state.status);
@@ -52,14 +42,14 @@ export const RootNavigator: React.FC = () => {
 
   const roleNames = (user?.roles ?? []).map(r => r.name.toUpperCase());
   const isAdmin = roleNames.includes('ADMIN') || roleNames.includes('SUPER_ADMIN');
-  const isMember = roleNames.includes('MEMBER');
+  const isMember = roleNames.includes('MEMBER') && !roleNames.includes('USER');
   const isUser = roleNames.includes('USER') || roleNames.includes('GENERAL_USER');
   const isSeeker = roleNames.includes('SEEKER') || roleNames.includes('DONATION_SEEKER');
 
-  let activeRoleType: 'member' | 'user' | 'seeker' | 'default' = 'default';
+  let activeRoleType: 'member' | 'user' | 'seeker' | 'default' = 'user';
   if (isMember) activeRoleType = 'member';
-  else if (isUser) activeRoleType = 'user';
   else if (isSeeker) activeRoleType = 'seeker';
+  else activeRoleType = 'user';
 
   return (
     <NavigationContainer>

@@ -192,7 +192,8 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         r.name?.toUpperCase() === 'ADMIN' || r.name?.toUpperCase() === 'SUPER_ADMIN'
       );
       const isApprovedMember =
-        membershipStatus === 'Approved' ||
+        !isUserAdmin &&
+        membershipStatus === 'Approved' &&
         user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
 
       const memberId =
@@ -229,6 +230,20 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
               roles: [
                 ...(user.roles?.filter((r: any) => r.name?.toUpperCase() !== 'USER') || []),
                 { id: 'r-member', name: 'MEMBER' },
+              ],
+            },
+          });
+        }
+      } else if (membershipStatus !== 'Approved' && !isUserAdmin) {
+        effectiveRole = 'User';
+        const hasMemberRole = user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
+        if (hasMemberRole) {
+          useAuthStore.setState({
+            user: {
+              ...user,
+              roles: [
+                ...(user.roles?.filter((r: any) => r.name?.toUpperCase() !== 'MEMBER') || []),
+                { id: 'r-user', name: 'USER' },
               ],
             },
           });

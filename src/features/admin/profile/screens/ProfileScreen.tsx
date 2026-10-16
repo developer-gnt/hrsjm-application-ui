@@ -489,8 +489,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               isAdmin
                 ? 'Admin Details'
                 : isSeeker
-                ? 'Seeker Details'
-                : 'Account Details'
+                  ? 'Seeker Details'
+                  : 'Account Details'
             }
             backgroundColor={AdminColors.primaryLight}
             onEdit={isAdmin ? handleEditAdminDetails : undefined}
@@ -557,10 +557,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                       currentAppStatus === 'Approved'
                         ? styles.statusPillApproved
                         : currentAppStatus === 'Rejected'
-                        ? styles.statusPillRejected
-                        : currentAppStatus === 'Under Review'
-                        ? styles.statusPillReview
-                        : styles.statusPillApplied,
+                          ? styles.statusPillRejected
+                          : currentAppStatus === 'Under Review'
+                            ? styles.statusPillReview
+                            : styles.statusPillApplied,
                     ]}
                   >
                     <Text
@@ -569,10 +569,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                         currentAppStatus === 'Approved'
                           ? styles.statusPillTextApproved
                           : currentAppStatus === 'Rejected'
-                          ? styles.statusPillTextRejected
-                          : currentAppStatus === 'Under Review'
-                          ? styles.statusPillTextReview
-                          : styles.statusPillTextApplied,
+                            ? styles.statusPillTextRejected
+                            : currentAppStatus === 'Under Review'
+                              ? styles.statusPillTextReview
+                              : styles.statusPillTextApplied,
                       ]}
                     >
                       {currentAppStatus}
@@ -604,11 +604,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   </TouchableOpacity>
                 </View>
               ) : null}
-
-              {/* Dynamic 4-Step Progress Stepper */}
-              <View style={{ marginTop: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9' }}>
-                <ApplicationStatusStepper status={currentAppStatus} />
-              </View>
             </TouchableOpacity>
           </ProfileSectionCard>
         ) : null}
