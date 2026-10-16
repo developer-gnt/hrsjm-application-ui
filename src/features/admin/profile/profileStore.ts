@@ -16,6 +16,7 @@ import {
 import { useAuthStore } from '../../auth/store/authStore';
 import { apiClient } from '../../../core/api/client';
 import { ApiRoutes } from '../../../core/constants/api-routes';
+import { membershipApplicationsStore } from '../../admin/membershipApplications/services/membershipApplicationsStore';
 
 interface ProfileStore {
   profile: AdminProfile;
@@ -42,9 +43,9 @@ const formatDateStr = (dateStr?: string | Date | null, fallback = ''): string =>
 };
 
 const mapBackendRole = (roles?: Array<{ name: string }>): string => {
-  if (!roles || roles.length === 0) return 'Member';
+  if (!roles || roles.length === 0) return 'User';
   const roleNames = roles.map(r => r.name.toUpperCase());
-  if (roleNames.includes('ADMIN')) return 'Admin';
+  if (roleNames.includes('ADMIN') || roleNames.includes('SUPER_ADMIN')) return 'Admin';
   if (roleNames.includes('DONATION_SEEKER')) return 'Donar Seeker';
   if (roleNames.includes('USER')) return 'User';
   if (roleNames.includes('MEMBER')) return 'Member';
@@ -68,10 +69,15 @@ const generateAutoMemberId = (userId?: string, seq = 1): string => {
 const getInitialProfile = (): AdminProfile => {
   const user = useAuthStore.getState().user;
   if (user) {
-    const isUserAdmin = user.roles?.some((r: any) => r.name?.toUpperCase() === 'ADMIN');
+    const isUserAdmin = user.roles?.some((r: any) =>
+      r.name?.toUpperCase() === 'ADMIN' || r.name?.toUpperCase() === 'SUPER_ADMIN'
+    );
+    const isMember = user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
     const adminId = isUserAdmin
       ? `ADMIN${user.id ? user.id.replace(/\D/g, '').slice(-3).padStart(3, '0') || '001' : '001'}`
-      : generateAutoMemberId(user.id, 1);
+      : isMember
+      ? generateAutoMemberId(user.id, 1)
+      : '';
     return {
       fullName: user.full_name || '',
       accountName: user.full_name || '',
@@ -80,7 +86,7 @@ const getInitialProfile = (): AdminProfile => {
       avatar: user.avatar || null,
       role: mapBackendRole(user.roles),
       accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
-      membershipType: isUserAdmin ? 'Executive Member' : 'Individual Member',
+      membershipType: isUserAdmin ? 'Executive Member' : isMember ? 'Individual Member' : 'General User',
       memberId: adminId,
       adminId,
       dateOfBirth: '',
@@ -133,23 +139,68 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       // 2. Safely check for user's membership details
       let membershipData: any = null;
       try {
-        membershipData = await apiClient.get<any>('/memberships/my');
+        const rawRes: any = await apiClient.get<any>('/memberships/my');
+        membershipData = rawRes?.data !== undefined ? rawRes.data : rawRes;
       } catch {
         try {
-          membershipData = await apiClient.get<any>('/users/me/membership');
+          const rawRes: any = await apiClient.get<any>('/users/me/membership');
+          membershipData = rawRes?.data !== undefined ? rawRes.data : rawRes;
         } catch {
           membershipData = null;
         }
       }
 
+      // Check application status
+      let hasAppliedMembership = Boolean(membershipData?.id);
+      let membershipStatus: string | undefined = undefined;
+      let rejectionReason: string | undefined = membershipData?.rejection_reason || undefined;
+
+      if (membershipData?.status) {
+        const raw = String(membershipData.status).toUpperCase();
+        if (raw === 'ACTIVE' || raw === 'APPROVED') membershipStatus = 'Approved';
+        else if (raw === 'REJECTED') membershipStatus = 'Rejected';
+        else if (raw === 'UNDER_REVIEW') membershipStatus = 'Under Review';
+        else membershipStatus = 'Applied';
+      }
+
+      // If not in backend /memberships/my yet, check local store
+      if (!hasAppliedMembership) {
+        const localApps = membershipApplicationsStore.getApplications();
+        const userEmail = (user.email || '').toLowerCase().trim();
+        const userPhone = (user.mobile_number || user.phone || '').replace(/\D/g, '').slice(-10);
+        const match = localApps.find(
+          a =>
+            (userEmail && a.email && a.email.toLowerCase().trim() === userEmail) ||
+            (userPhone && userPhone.length === 10 && a.phone && a.phone.replace(/\D/g, '').slice(-10) === userPhone)
+        );
+        if (match) {
+          hasAppliedMembership = true;
+          if (match.status === 'approved') membershipStatus = 'Approved';
+          else if (match.status === 'rejected') {
+            membershipStatus = 'Rejected';
+            rejectionReason = (match as any).rejectionReason || 'Incomplete documents';
+          } else if (match.status === 'under_review') {
+            membershipStatus = 'Under Review';
+          } else {
+            membershipStatus = 'Applied';
+          }
+        }
+      }
+
       const role = mapBackendRole(user.roles);
-      const isUserAdmin = user.roles?.some((r: any) => r.name?.toUpperCase() === 'ADMIN');
+      const isUserAdmin = user.roles?.some((r: any) =>
+        r.name?.toUpperCase() === 'ADMIN' || r.name?.toUpperCase() === 'SUPER_ADMIN'
+      );
+      const isApprovedMember =
+        membershipStatus === 'Approved' ||
+        user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
+
       const memberId =
         membershipData?.membership_number ||
-        generateAutoMemberId(user.id, 1);
+        (isApprovedMember ? generateAutoMemberId(user.id, 1) : '');
       const adminId = isUserAdmin
         ? `ADMIN${user.id ? user.id.replace(/\D/g, '').slice(-3).padStart(3, '0') || '001' : '001'}`
-        : memberId;
+        : (isApprovedMember ? memberId : '');
 
       const memberSince = formatDateStr(
         membershipData?.start_date || user.created_at,
@@ -162,20 +213,48 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         formatDateStr(defaultValidDate),
       );
 
+      // Convert user's role to Member if approved and currently a standard User
+      let effectiveRole = role;
+      const isPlainUser =
+        role === 'User' ||
+        (user.roles && user.roles.length > 0 && user.roles.every((r: any) => r.name?.toUpperCase() === 'USER'));
+
+      if (membershipStatus === 'Approved' && isPlainUser) {
+        effectiveRole = 'Member';
+        const hasMemberRole = user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
+        if (!hasMemberRole) {
+          useAuthStore.setState({
+            user: {
+              ...user,
+              roles: [
+                ...(user.roles?.filter((r: any) => r.name?.toUpperCase() !== 'USER') || []),
+                { id: 'r-member', name: 'MEMBER' },
+              ],
+            },
+          });
+        }
+      }
+
       const dynamicProfile: AdminProfile = {
         fullName: user.full_name || '',
         accountName: user.full_name || '',
         email: user.email || '—',
         phone: user.mobile_number || user.phone || '—',
         avatar: user.avatar || get().profile.avatar || null,
-        role,
+        role: effectiveRole,
         accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
-        membershipType: membershipData?.category?.name || (isUserAdmin ? 'Executive Member' : 'Individual Member'),
+        membershipType:
+          membershipData?.category?.name ||
+          (membershipData?.application_data as any)?.membership_type ||
+          (isUserAdmin ? 'Executive Member' : isApprovedMember ? 'Individual Member' : 'General User'),
         memberId,
         adminId,
         dateOfBirth: (user as any)?.dob || (membershipData?.application_data as any)?.personal_details?.dob || '',
         memberSince,
         validTill,
+        hasAppliedMembership,
+        membershipStatus,
+        rejectionReason,
       };
 
       set({ profile: dynamicProfile, isLoading: false });

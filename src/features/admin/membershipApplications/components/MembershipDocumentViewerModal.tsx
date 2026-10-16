@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   Modal,
   StyleSheet,
   Text,
@@ -64,18 +65,37 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
 
               {/* Preview Area */}
               <View style={styles.previewBox}>
-                <View style={styles.previewCenter}>
-                  <Text style={styles.largeIcon}>{isPdf ? '📄' : '🖼️'}</Text>
-                  <Text style={styles.previewFileName} numberOfLines={2}>
-                    {document.fileName}
-                  </Text>
-                  <Text style={styles.previewMeta}>
-                    {document.fileSize} • Uploaded {document.uploadDate}
-                  </Text>
-                  <View style={styles.verifiedBadge}>
-                    <Text style={styles.verifiedText}>✓ Verified Document Attachment</Text>
+                {!isPdf && document.uri ? (
+                  <View style={styles.imagePreviewWrap}>
+                    <Image
+                      source={{ uri: document.uri }}
+                      style={styles.imagePreview}
+                      resizeMode="cover"
+                    />
+                    <Text style={styles.previewFileName} numberOfLines={2}>
+                      {document.fileName}
+                    </Text>
+                    <Text style={styles.previewMeta}>
+                      {document.fileSize} • Uploaded {document.uploadDate}
+                    </Text>
+                    <View style={styles.verifiedBadge}>
+                      <Text style={styles.verifiedText}>✓ Verified Document Attachment</Text>
+                    </View>
                   </View>
-                </View>
+                ) : (
+                  <View style={styles.previewCenter}>
+                    <Text style={styles.largeIcon}>{isPdf ? '📄' : '🖼️'}</Text>
+                    <Text style={styles.previewFileName} numberOfLines={2}>
+                      {document.fileName}
+                    </Text>
+                    <Text style={styles.previewMeta}>
+                      {document.fileSize} • Uploaded {document.uploadDate}
+                    </Text>
+                    <View style={styles.verifiedBadge}>
+                      <Text style={styles.verifiedText}>✓ Verified Document Attachment</Text>
+                    </View>
+                  </View>
+                )}
               </View>
 
               {/* Actions */}
@@ -209,5 +229,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  imagePreviewWrap: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  imagePreview: {
+    width: 220,
+    height: 180,
+    borderRadius: BorderRadius.md,
+    backgroundColor: '#EEF2F6',
+    marginBottom: 8,
   },
 });

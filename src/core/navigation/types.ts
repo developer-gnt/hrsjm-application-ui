@@ -33,7 +33,8 @@ export type AppStackParamList = {
   MembershipStep3Documents: undefined;
   MembershipSubmitted: { applicationId: string };
   MyApplication: undefined;
-  ApplicationDetails: { applicationId?: string };
+  ApplicationDetails: { applicationId?: string; status?: 'applied' | 'under_review' | 'approved' | 'rejected' };
+  ApplicationApplied: { applicationId?: string };
   ApplicationApproved: { applicationId?: string };
   ApplicationRejected: { applicationId?: string };
 };

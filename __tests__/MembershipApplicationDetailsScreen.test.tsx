@@ -8,10 +8,12 @@ import {
 } from '../src/features/admin/membershipApplications';
 
 describe('MembershipApplicationDetailsScreen Status Flow & Confirmation Tests', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.setTimeout(15000);
     // Reset Aman Shaikh to under_review before each test
-    membershipApplicationsStore.updateStatus('APP20260915001', 'under_review');
+    await act(async () => {
+      await membershipApplicationsStore.updateStatus('APP20260915001', 'under_review');
+    });
   });
 
   const renderDetailsScreen = async (props = {}) => {

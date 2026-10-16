@@ -27,8 +27,8 @@ export const MembershipDetailsBottomBar: React.FC<MembershipDetailsBottomBarProp
   onApprovePress,
   onRejectPress,
 }) => {
-  // Case 1: Status is Under Review and user clicked Under Review -> Show 2 rows
-  if (status === 'under_review' && underReviewActive) {
+  // Case 1: Admin clicked Under Review -> Show 2 rows
+  if (underReviewActive && status !== 'approved' && status !== 'rejected') {
     return (
       <View style={[styles.container, styles.twoRowContainer, { paddingBottom: Math.max(bottomInset, Spacing.sm) }]}>
         {/* Row 1: Reject (50%) & Approve (50%) */}
@@ -82,10 +82,16 @@ export const MembershipDetailsBottomBar: React.FC<MembershipDetailsBottomBarProp
           <Text style={styles.backButtonText}>‹ Back</Text>
         </TouchableOpacity>
 
-        <View style={[styles.statusButton, styles.statusButtonApproved]}>
-          <Text style={styles.statusDocIconLight}>📄</Text>
+        <TouchableOpacity
+          style={[styles.statusButton, styles.statusButtonApproved]}
+          onPress={onUnderReviewPress}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Approved - Tap to change status"
+        >
+          <Text style={styles.statusDocIconLight}>✓</Text>
           <Text style={styles.statusTextApproved}>Approved</Text>
-        </View>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -104,10 +110,16 @@ export const MembershipDetailsBottomBar: React.FC<MembershipDetailsBottomBarProp
           <Text style={styles.backButtonText}>‹ Back</Text>
         </TouchableOpacity>
 
-        <View style={[styles.statusButton, styles.statusButtonRejected]}>
-          <Text style={styles.statusDocIconLight}>📄</Text>
-          <Text style={styles.statusTextRejected}>Rejected</Text>
-        </View>
+        <TouchableOpacity
+          style={[styles.statusButton, styles.statusButtonRejected]}
+          onPress={onUnderReviewPress}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Rejected - Tap to reconsider"
+        >
+          <Text style={styles.statusDocIconLight}>✕</Text>
+          <Text style={styles.statusTextRejected}>Rejected (Tap to Reconsider)</Text>
+        </TouchableOpacity>
       </View>
     );
   }

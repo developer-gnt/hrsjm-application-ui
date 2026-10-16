@@ -142,4 +142,40 @@ describe('My Profile & ID Card Flow', () => {
     const result = await downloadIdCardPdfWeb(profile);
     expect(result).toBe('downloaded');
   });
+
+  describe('Role-based ID card availability', () => {
+    const checkRoleAllowed = (roleName: string, backendRoles: string[]): boolean => {
+      const authRoleNames = backendRoles.map(r => r.toUpperCase());
+      const roleLower = roleName.toLowerCase();
+      const isMember =
+        authRoleNames.includes('MEMBER') ||
+        roleLower === 'member' ||
+        roleLower.includes('member');
+      const isAdmin =
+        authRoleNames.includes('ADMIN') ||
+        authRoleNames.includes('SUPER_ADMIN') ||
+        roleLower === 'admin' ||
+        roleLower.includes('admin');
+      const isSeeker =
+        authRoleNames.includes('SEEKER') ||
+        authRoleNames.includes('DONATION_SEEKER') ||
+        roleLower.includes('seeker') ||
+        roleLower.includes('donar seeker') ||
+        roleLower.includes('donation seeker');
+      return isMember || isAdmin || isSeeker;
+    };
+
+    it('enables ID card for Member, Admin, and Donation Seeker', () => {
+      expect(checkRoleAllowed('Member', ['MEMBER'])).toBe(true);
+      expect(checkRoleAllowed('Admin', ['ADMIN'])).toBe(true);
+      expect(checkRoleAllowed('Donar Seeker', ['DONATION_SEEKER'])).toBe(true);
+    });
+
+    it('disables ID card for general User / Donor', () => {
+      expect(checkRoleAllowed('User', ['USER'])).toBe(false);
+      expect(checkRoleAllowed('User', ['DONOR'])).toBe(false);
+      expect(checkRoleAllowed('User', ['GENERAL_USER'])).toBe(false);
+    });
+  });
 });
+

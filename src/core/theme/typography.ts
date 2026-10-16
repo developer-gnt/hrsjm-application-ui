@@ -10,6 +10,25 @@ export const FontFamilies = {
   serif: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
 } as const;
 
+/**
+ * Dedicated font families for the User Application headings and serif highlights.
+ * Uses Playfair Display on web, Georgia on iOS, and serif fallback on Android.
+ */
+export const UserFontFamilies = {
+  heading: Platform.select({
+    ios: 'Georgia',
+    android: 'serif',
+    web: "'Playfair Display', Georgia, 'Times New Roman', serif",
+    default: 'serif',
+  }),
+  serif: Platform.select({
+    ios: 'Georgia',
+    android: 'serif',
+    web: "'Playfair Display', Georgia, 'Times New Roman', serif",
+    default: 'serif',
+  }),
+} as const;
+
 export const Typography = {
   screenTitle: {
     fontSize: 22,

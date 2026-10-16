@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, radius, serif, spacing } from '../../../core/theme/theme';
 import { Icon } from '../../../core/components/common/Icon';
@@ -22,6 +22,7 @@ import { MembershipProgressBar } from '../components/MembershipProgressBar';
 import { AppBottomSheet } from '../../../core/components/common/AppBottomSheet';
 import { DatePickerSheet } from '../components/DatePickerSheet';
 import { ImagePickerSheet } from '../components/ImagePickerSheet';
+import type { MembershipPostData } from '../data/membershipCategoriesData';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -37,7 +38,28 @@ const GENDER_OPTIONS: Array<'Male' | 'Female' | 'Other'> = ['Male', 'Female', 'O
 
 export function MembershipStep1Screen() {
   const navigation = useNavigation<NavProp>();
-  const { personalInfo, updatePersonalInfo } = useMembership();
+  const route = useRoute<any>();
+  const {
+    personalInfo,
+    updatePersonalInfo,
+    selectedPost,
+    setSelectedPost,
+    selectedMembershipType,
+    setSelectedMembershipType,
+  } = useMembership();
+
+  const routePost = route?.params?.post as MembershipPostData | undefined;
+  const activePost = routePost || selectedPost;
+
+  React.useEffect(() => {
+    if (routePost) {
+      if (setSelectedPost) {
+        setSelectedPost(routePost);
+      } else if (setSelectedMembershipType) {
+        setSelectedMembershipType(routePost.postName);
+      }
+    }
+  }, [routePost]);
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [genderModalVisible, setGenderModalVisible] = useState(false);
@@ -111,7 +133,11 @@ export function MembershipStep1Screen() {
           if (navigation.canGoBack()) {
             navigation.goBack();
           } else {
-            navigation.navigate('Tabs' as any, { screen: 'DashboardTab' });
+            try {
+              (navigation as any).navigate('MembershipCategories');
+            } catch {
+              (navigation as any).navigate('UserHome');
+            }
           }
         }}
       />
@@ -131,6 +157,40 @@ export function MembershipStep1Screen() {
 
           {/* 3-Step Progress Bar (Step 1 Active) */}
           <MembershipProgressBar currentStep={1} />
+
+          {/* Selected Post Banner */}
+          {activePost ? (
+            <View style={styles.selectedPostBanner}>
+              <View style={styles.selectedPostLeft}>
+                <View style={styles.postBadgeCircle}>
+                  <Icon name="award" size={16} color="#059669" strokeWidth={2.4} />
+                </View>
+                <View style={styles.selectedPostInfo}>
+                  <Text style={styles.selectedPostLabel}>Applying For</Text>
+                  <Text style={styles.selectedPostTitle}>{activePost.postName}</Text>
+                  <Text style={styles.selectedPostSub}>
+                    {activePost.qualification} • {activePost.validity} Duration
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.selectedPostFeeBadge}>
+                <Text style={styles.selectedPostFeeText}>{activePost.fee}</Text>
+                <Text style={styles.selectedPostFeeSub}>Reg. Fee</Text>
+              </View>
+            </View>
+          ) : selectedMembershipType && selectedMembershipType !== 'Individual Membership' ? (
+            <View style={styles.selectedPostBanner}>
+              <View style={styles.selectedPostLeft}>
+                <View style={styles.postBadgeCircle}>
+                  <Icon name="award" size={16} color="#059669" strokeWidth={2.4} />
+                </View>
+                <View style={styles.selectedPostInfo}>
+                  <Text style={styles.selectedPostLabel}>Applying For</Text>
+                  <Text style={styles.selectedPostTitle}>{selectedMembershipType}</Text>
+                </View>
+              </View>
+            </View>
+          ) : null}
 
           {/* Section Heading */}
           <View style={styles.sectionHeader}>
@@ -635,6 +695,70 @@ const styles = StyleSheet.create({
   genderOptionTextSelected: {
     color: colors.primary,
     fontWeight: '700',
+  },
+  selectedPostBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: spacing.md,
+    gap: 8,
+  },
+  selectedPostLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  postBadgeCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#DCFCE7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedPostInfo: {
+    flex: 1,
+  },
+  selectedPostLabel: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#059669',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  selectedPostTitle: {
+    fontSize: 14.5,
+    fontWeight: '800',
+    color: '#0F2860',
+  },
+  selectedPostSub: {
+    fontSize: 11.5,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  selectedPostFeeBadge: {
+    backgroundColor: '#059669',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  selectedPostFeeText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  selectedPostFeeSub: {
+    fontSize: 9.5,
+    fontWeight: '600',
+    color: '#E6F4EA',
   },
 });
 

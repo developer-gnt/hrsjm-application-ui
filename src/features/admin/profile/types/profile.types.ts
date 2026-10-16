@@ -36,6 +36,12 @@ export interface AdminProfile extends PersonalInfoInput, AdminDetailsInput {
   dateOfBirth: string;
   memberSince: string;
   validTill: string;
+  /** Whether this user has an active/submitted membership application */
+  hasAppliedMembership?: boolean;
+  /** Current status of the user's membership application */
+  membershipStatus?: 'Applied Successfully' | 'Under Review' | 'Approved' | 'Rejected' | string;
+  /** Rejection reason if application was rejected */
+  rejectionReason?: string;
 }
 
 export interface ValidationResult {

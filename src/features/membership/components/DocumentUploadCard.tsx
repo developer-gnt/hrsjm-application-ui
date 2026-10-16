@@ -49,38 +49,42 @@ export function DocumentUploadCard({
 
       {/* Upload area */}
       {isUploaded ? (
-        <TouchableOpacity
-          style={styles.uploadedBox}
-          activeOpacity={0.8}
-          onPress={onPreview || onUpload}
-          accessibilityRole="button"
-          accessibilityLabel={`Uploaded ${title}: ${document.fileName}. Tap to preview or change`}>
-          <View style={styles.fileIconWrap}>
-            <Icon
-              name={document.fileName?.endsWith('.pdf') ? 'file-pdf' : 'file-text'}
-              size={24}
-              color={colors.primary}
-              strokeWidth={2}
-            />
-          </View>
-
-          <View style={styles.fileDetails}>
-            <Text style={styles.fileName} numberOfLines={1}>
-              {document.fileName || 'document.pdf'}
-            </Text>
-            <View style={styles.fileMetaRow}>
-              <View style={styles.successPill}>
-                <Icon name="check" size={10} color={colors.active} strokeWidth={3} />
-                <Text style={styles.successText}>Attached</Text>
-              </View>
-              <Text style={styles.fileSize}>{document.fileSize || '1.8 MB'}</Text>
+        <View style={styles.uploadedBox}>
+          <TouchableOpacity
+            style={styles.fileDetailsTouchable}
+            activeOpacity={0.75}
+            onPress={onPreview || onUpload}
+            accessibilityRole="button"
+            accessibilityLabel={`Uploaded ${title}: ${document.fileName}. Tap to preview`}>
+            <View style={styles.fileIconWrap}>
+              <Icon
+                name={document.fileName?.endsWith('.pdf') ? 'file-pdf' : 'file-text'}
+                size={24}
+                color={colors.primary}
+                strokeWidth={2}
+              />
             </View>
-          </View>
+
+            <View style={styles.fileDetails}>
+              <Text style={styles.fileName} numberOfLines={1}>
+                {document.fileName || 'document.pdf'}
+              </Text>
+              <View style={styles.fileMetaRow}>
+                <View style={styles.successPill}>
+                  <Icon name="check" size={10} color={colors.active} strokeWidth={3} />
+                  <Text style={styles.successText}>Attached</Text>
+                </View>
+                <Text style={styles.fileSize}>{document.fileSize || '1.8 MB'}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
 
           <View style={styles.actionBtns}>
             <TouchableOpacity
               onPress={onUpload}
               style={styles.replaceBtn}
+              activeOpacity={0.7}
+              accessibilityRole="button"
               accessibilityLabel={`Change ${title}`}>
               <Text style={styles.replaceText}>Change</Text>
             </TouchableOpacity>
@@ -88,11 +92,13 @@ export function DocumentUploadCard({
             <TouchableOpacity
               onPress={onRemove}
               style={styles.removeBtn}
+              activeOpacity={0.7}
+              accessibilityRole="button"
               accessibilityLabel={`Remove ${title}`}>
               <Icon name="x-circle" size={18} color={colors.danger} strokeWidth={2.2} />
             </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </View>
       ) : (
         <View style={[styles.emptyContainer, error ? styles.uploadBoxError : undefined]}>
           <TouchableOpacity
@@ -265,6 +271,12 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    gap: spacing.md,
+  },
+  fileDetailsTouchable: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.md,
   },
   fileIconWrap: {

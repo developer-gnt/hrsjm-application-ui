@@ -28,6 +28,7 @@ import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppBadge } from '../../../../core/components/common/AppBadge';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
+import { useAuthStore } from '../../../auth/store/authStore';
 import {
   navigateToProfileEditPersonal,
   navigateToProfileAdminDetails,
@@ -53,8 +54,12 @@ import {
   BadgeCheckIcon,
   ChevronRight,
   DownloadIcon,
+  SolidPersonIcon,
+  ChevronRightIcon,
 } from '../components/ProfileIcons';
 import { useIdCardFiles } from '../hooks/useIdCardFiles';
+import { useMembership } from '../../../membership/context/MembershipContext';
+import { ApplicationStatusStepper } from '../../../membership/components/stepper';
 
 export interface ProfileScreenProps {
   onBack?: () => void;
@@ -63,6 +68,10 @@ export interface ProfileScreenProps {
   onEditAdminDetails?: () => void;
   onViewIdCard?: () => void;
   onViewMembershipDetails?: () => void;
+  onViewStatus?: () => void;
+  onJoinMembership?: () => void;
+  showIdCard?: boolean;
+  headerComponent?: React.ReactNode;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
@@ -72,6 +81,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onEditAdminDetails,
   onViewIdCard,
   onViewMembershipDetails,
+  onViewStatus,
+  onJoinMembership,
+  showIdCard,
+  headerComponent,
 }) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -138,7 +151,39 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
   };
 
-  const isMember = (profile.role || '').toLowerCase() === 'member';
+  const authUser = useAuthStore(state => state.user);
+  const authRoleNames = (authUser?.roles ?? []).map(r => (r.name || '').toUpperCase());
+  const roleLower = (profile.role || '').toLowerCase();
+
+  const isAdmin =
+    authRoleNames.includes('ADMIN') ||
+    authRoleNames.includes('SUPER_ADMIN') ||
+    roleLower === 'admin' ||
+    roleLower.includes('admin');
+
+  const isSeeker =
+    authRoleNames.includes('SEEKER') ||
+    authRoleNames.includes('DONATION_SEEKER') ||
+    roleLower.includes('seeker') ||
+    roleLower.includes('donar seeker') ||
+    roleLower.includes('donation seeker');
+
+  const isApproved =
+    profile.membershipStatus === 'Approved' ||
+    profile.membershipStatus === 'Active';
+
+  const isMember =
+    (authRoleNames.includes('MEMBER') || roleLower === 'member') && isApproved;
+
+  const isPlainUser =
+    authRoleNames.includes('USER') ||
+    roleLower === 'user' ||
+    (!isAdmin && !isSeeker && !isApproved);
+
+  // ID Card is available ONLY for Approved Members, Admins, and Donation Seekers.
+  // Standard/general users and applicants whose membership is not approved NEVER have an ID card.
+  const isAllowedRoleForIdCard = (isMember || isAdmin || isSeeker) && !isPlainUser;
+  const canShowIdCard = showIdCard !== undefined ? (showIdCard && !isPlainUser) : isAllowedRoleForIdCard;
 
   const handleMemberDetailsAction = () => {
     if (onViewMembershipDetails) {
@@ -168,21 +213,78 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
   };
 
+  const handleViewStatus = () => {
+    if (onViewStatus) {
+      onViewStatus();
+    } else if (onNavigate) {
+      onNavigate('MyApplication');
+    } else if (navigation?.navigate) {
+      try {
+        navigation.navigate('MyApplication');
+      } catch {
+        // no-op
+      }
+    }
+  };
+
+  const membershipCtx = useMembership();
+  const hasApplied =
+    Boolean(
+      profile.hasAppliedMembership ||
+      membershipCtx.hasApplied ||
+      membershipCtx.activeApplication ||
+      (membershipCtx.applications && membershipCtx.applications.length > 0)
+    );
+
+  const currentAppStatus =
+    profile.membershipStatus ||
+    membershipCtx.activeApplication?.status ||
+    (membershipCtx.applications[0]?.status) ||
+    'Applied';
+
+  const rejectionReason =
+    profile.rejectionReason ||
+    membershipCtx.activeApplication?.rejectionReason ||
+    (membershipCtx.applications[0]?.rejectionReason) ||
+    'Incomplete documents';
+
+  const handleJoinMembership = () => {
+    if (onJoinMembership) {
+      onJoinMembership();
+    } else if (onNavigate) {
+      onNavigate('MembershipCategories');
+    } else if (navigation?.navigate) {
+      try {
+        navigation.navigate('MembershipCategories');
+      } catch {
+        // no-op
+      }
+    }
+  };
+
   // Inline ID card keeps the reference proportions on narrow screens.
   const cardWidth = Math.min(windowWidth - 2 * Spacing.lg - 2 * Spacing.md, 340);
 
   return (
     <View style={styles.screen}>
-      {/* Unified HRSJM Admin Header */}
-      <AdminHeader
-        showBack={Boolean(onBack)}
-        onBack={onBack}
-        onNavigate={onNavigate}
-      />
+      {headerComponent ? (
+        headerComponent
+      ) : (
+        <AdminHeader
+          showBack={Boolean(onBack)}
+          onBack={onBack}
+          onNavigate={onNavigate}
+        />
+      )}
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          !canShowIdCard && {
+            paddingBottom: Math.max(insets.bottom + Spacing.lg, Spacing.xl),
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Page title */}
@@ -217,21 +319,49 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <Text style={styles.summaryRole} numberOfLines={1}>
               {profile.role}
             </Text>
-            <View style={styles.adminIdBadge}>
-              <Text style={styles.adminIdText}>{profile.adminId}</Text>
-            </View>
+            {canShowIdCard && Boolean(profile.adminId) ? (
+              <View style={styles.adminIdBadge}>
+                <Text style={styles.adminIdText}>{profile.adminId}</Text>
+              </View>
+            ) : null}
           </View>
-          <TouchableOpacity
-            style={styles.myIdButton}
-            onPress={handleViewIdCard}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Open My ID Card"
-          >
-            <IdCardIcon size={13} color={AdminColors.primaryDark} />
-            <Text style={styles.myIdButtonText}>My ID</Text>
-            <ChevronRight size={13} color={AdminColors.primaryDark} />
-          </TouchableOpacity>
+          {canShowIdCard ? (
+            <TouchableOpacity
+              style={styles.myIdButton}
+              onPress={handleViewIdCard}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Open My ID Card"
+            >
+              <IdCardIcon size={13} color={AdminColors.primaryDark} />
+              <Text style={styles.myIdButtonText}>My ID</Text>
+              <ChevronRight size={13} color={AdminColors.primaryDark} />
+            </TouchableOpacity>
+          ) : hasApplied ? (
+            <TouchableOpacity
+              style={styles.myStatusButton}
+              onPress={handleViewStatus}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Open My Status"
+            >
+              <SolidPersonIcon size={16} color={AdminColors.primaryDark} />
+              <Text style={styles.myStatusButtonText}>My Status</Text>
+              <ChevronRightIcon size={14} color={AdminColors.primaryDark} strokeWidth={2.6} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.joinMembershipButton}
+              onPress={handleJoinMembership}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Join Membership"
+            >
+              <Text style={styles.joinMembershipIcon}>✦</Text>
+              <Text style={styles.joinMembershipButtonText}>Join Membership</Text>
+              <ChevronRightIcon size={14} color="#0F2860" strokeWidth={2.6} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Personal information */}
@@ -355,9 +485,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         ) : (
           <ProfileSectionCard
             icon={<BuildingIcon size={18} />}
-            title="Admin Details"
+            title={
+              isAdmin
+                ? 'Admin Details'
+                : isSeeker
+                  ? 'Seeker Details'
+                  : 'Account Details'
+            }
             backgroundColor={AdminColors.primaryLight}
-            onEdit={handleEditAdminDetails}
+            onEdit={isAdmin ? handleEditAdminDetails : undefined}
             style={styles.sectionGap}
           >
             <ProfileInfoRow
@@ -383,40 +519,160 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </ProfileSectionCard>
         )}
 
-        {/* My ID Card section — inline preview of the actual card */}
-        <View style={[styles.sectionGap, styles.idCardSection]}>
-          <View style={styles.idCardSectionHeader}>
-            <IdCardIcon size={18} />
-            <Text style={styles.idCardSectionTitle}>My ID Card</Text>
-          </View>
-
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleViewIdCard}
-            accessibilityRole="button"
-            accessibilityLabel="Open the full My ID Card page"
-            style={styles.idCardWrap}
+        {/* Application Status Card for User who has applied */}
+        {hasApplied && (!canShowIdCard || currentAppStatus !== 'Approved') ? (
+          <ProfileSectionCard
+            icon={<BadgeCheckIcon size={18} color="#0F2860" />}
+            title="Application Status"
+            backgroundColor={AdminColors.primaryLight}
+            onEdit={handleViewStatus}
+            editLabel="View Details"
+            style={styles.sectionGap}
           >
-            <MyIdCard profile={profile} width={cardWidth} />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={handleViewStatus}
+              accessibilityRole="button"
+              accessibilityLabel="Open Application Status"
+            >
+              <ProfileInfoRow
+                icon={<BuildingIcon size={16} color={AdminColors.textSecondary} />}
+                label="Application Type"
+                value={membershipCtx.activeApplication?.membershipType || profile.membershipType || 'Membership Application'}
+              />
+              <ProfileInfoRow
+                icon={<IdCardIcon size={16} color={AdminColors.textSecondary} />}
+                label="Application ID"
+                value={membershipCtx.activeApplication?.applicationId || profile.memberId || 'APP-20261012-001'}
+              />
+              <ProfileInfoRow
+                icon={<Calendar size={16} color={AdminColors.textSecondary} />}
+                label="Status"
+                value={currentAppStatus}
+                divider={Boolean(currentAppStatus === 'Rejected')}
+                trailing={
+                  <View
+                    style={[
+                      styles.statusPillBadge,
+                      currentAppStatus === 'Approved'
+                        ? styles.statusPillApproved
+                        : currentAppStatus === 'Rejected'
+                          ? styles.statusPillRejected
+                          : currentAppStatus === 'Under Review'
+                            ? styles.statusPillReview
+                            : styles.statusPillApplied,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.statusPillText,
+                        currentAppStatus === 'Approved'
+                          ? styles.statusPillTextApproved
+                          : currentAppStatus === 'Rejected'
+                            ? styles.statusPillTextRejected
+                            : currentAppStatus === 'Under Review'
+                              ? styles.statusPillTextReview
+                              : styles.statusPillTextApplied,
+                      ]}
+                    >
+                      {currentAppStatus}
+                    </Text>
+                  </View>
+                }
+              />
+              {currentAppStatus === 'Rejected' ? (
+                <View style={styles.rejectionNoticeBox}>
+                  <Text style={styles.rejectionNoticeLabel}>Reason for Rejection:</Text>
+                  <Text style={styles.rejectionNoticeText}>{rejectionReason}</Text>
+                  <TouchableOpacity
+                    style={styles.profileReapplyButton}
+                    onPress={() => {
+                      membershipCtx.reapply();
+                      if (onJoinMembership) {
+                        onJoinMembership();
+                      } else if (onNavigate) {
+                        onNavigate('MembershipCategories');
+                      } else if (navigation?.navigate) {
+                        navigation.navigate('MembershipCategories');
+                      }
+                    }}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Re-apply for Membership"
+                  >
+                    <Text style={styles.profileReapplyButtonText}>Re-apply for Membership</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+          </ProfileSectionCard>
+        ) : null}
+
+        {/* Join Membership Banner Card for User who has NOT applied */}
+        {!canShowIdCard && !hasApplied ? (
+          <View style={[styles.sectionGap, styles.joinMembershipCard]}>
+            <View style={styles.joinMembershipCardHeader}>
+              <View style={styles.joinMembershipIconCircle}>
+                <Text style={styles.joinMembershipBigIcon}>✦</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.joinMembershipCardTitle}>Become an Official Member</Text>
+                <Text style={styles.joinMembershipCardSubtitle}>
+                  Apply for membership to receive your official ID card, voting rights, and exclusive member benefits.
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.joinMembershipActionBtn}
+              onPress={handleJoinMembership}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Join Membership Now"
+            >
+              <Text style={styles.joinMembershipActionBtnText}>Explore Membership Categories</Text>
+              <ChevronRight size={14} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {/* My ID Card section — inline preview of the actual card (Member, Admin, Donation Seeker only) */}
+        {canShowIdCard ? (
+          <View style={[styles.sectionGap, styles.idCardSection]}>
+            <View style={styles.idCardSectionHeader}>
+              <IdCardIcon size={18} />
+              <Text style={styles.idCardSectionTitle}>My ID Card</Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={handleViewIdCard}
+              accessibilityRole="button"
+              accessibilityLabel="Open the full My ID Card page"
+              style={styles.idCardWrap}
+            >
+              <MyIdCard profile={profile} width={cardWidth} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </ScrollView>
 
-      {/* Download action — pinned directly above bottom */}
-      <View style={[styles.downloadPanel, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <AppButton
-          title={
-            busyAction === 'download' ? 'Generating PDF...' : 'Download ID Card'
-          }
-          variant="primary"
-          size="md"
-          loading={busyAction === 'download'}
-          disabled={busyAction !== null}
-          icon={<DownloadIcon color={AdminColors.textOnDark} />}
-          onPress={() => download(profile)}
-          style={styles.downloadButton}
-        />
-      </View>
+      {/* Download action — pinned directly above bottom (Member, Admin, Donation Seeker only) */}
+      {canShowIdCard ? (
+        <View style={[styles.downloadPanel, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          <AppButton
+            title={
+              busyAction === 'download' ? 'Generating PDF...' : 'Download ID Card'
+            }
+            variant="primary"
+            size="md"
+            loading={busyAction === 'download'}
+            disabled={busyAction !== null}
+            icon={<DownloadIcon color={AdminColors.textOnDark} />}
+            onPress={() => download(profile)}
+            style={styles.downloadButton}
+          />
+        </View>
+      ) : null}
 
       {/* Avatar Picker Modal */}
       <AvatarPickerModal
@@ -569,6 +825,160 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: AdminColors.primaryDark,
     marginHorizontal: 4,
+  },
+  myStatusButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AdminColors.accentGoldLight,
+    borderWidth: 1.5,
+    borderColor: 'rgba(201, 162, 39, 0.45)',
+    borderRadius: 14,
+    paddingHorizontal: 13,
+    paddingVertical: 7.5,
+  },
+  myStatusButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+    marginHorizontal: 6,
+  },
+  joinMembershipButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF4FF',
+    borderWidth: 1.5,
+    borderColor: '#3B82F6',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 7.5,
+  },
+  joinMembershipIcon: {
+    fontSize: 13,
+    color: '#1D4ED8',
+    marginRight: 4,
+  },
+  joinMembershipButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F2860',
+    marginRight: 4,
+  },
+  joinMembershipCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
+    padding: Spacing.md,
+    ...Shadows.card,
+  },
+  joinMembershipCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+    gap: 12,
+  },
+  joinMembershipIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  joinMembershipBigIcon: {
+    fontSize: 20,
+    color: '#1D4ED8',
+  },
+  joinMembershipCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F2860',
+    marginBottom: 2,
+  },
+  joinMembershipCardSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    lineHeight: 16,
+  },
+  joinMembershipActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0F2860',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: BorderRadius.md,
+    gap: 8,
+  },
+  joinMembershipActionBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  statusPillBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusPillReview: {
+    backgroundColor: '#FEF3C7',
+  },
+  statusPillApplied: {
+    backgroundColor: '#ECFDF5',
+  },
+  statusPillApproved: {
+    backgroundColor: '#DCFCE7',
+  },
+  statusPillRejected: {
+    backgroundColor: '#FEE2E2',
+  },
+  statusPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  statusPillTextReview: {
+    color: '#B45309',
+  },
+  statusPillTextApplied: {
+    color: '#059669',
+  },
+  statusPillTextApproved: {
+    color: '#15803D',
+  },
+  statusPillTextRejected: {
+    color: '#B91C1C',
+  },
+  rejectionNoticeBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: BorderRadius.md,
+    padding: 10,
+    marginTop: 8,
+  },
+  rejectionNoticeLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#B91C1C',
+    marginBottom: 2,
+  },
+  rejectionNoticeText: {
+    fontSize: 12,
+    color: '#991B1B',
+    lineHeight: 16,
+  },
+  profileReapplyButton: {
+    backgroundColor: '#1B3F8F',
+    borderRadius: BorderRadius.md,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  profileReapplyButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   sectionGap: {
     marginTop: Spacing.md,

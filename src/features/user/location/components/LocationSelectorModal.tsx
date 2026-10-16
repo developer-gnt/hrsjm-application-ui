@@ -12,7 +12,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core/theme';
+import {
+  AdminColors,
+  BorderRadius,
+  Spacing,
+  UserFontFamilies,
+} from '../../../../core/theme';
 import { AppIcon } from '../../components';
 
 interface LocationSelectorModalProps {
@@ -184,7 +189,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   title: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 20,
     lineHeight: 26,
     color: AdminColors.primaryDark,

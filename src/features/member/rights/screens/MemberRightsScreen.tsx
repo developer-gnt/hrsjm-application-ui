@@ -18,9 +18,9 @@ import {
   Spacing,
 } from '../../../../core/theme';
 import { AppIcon } from '../../../user/components';
-import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { apiClient } from '../../../../core/api/client';
 import { ApiRoutes } from '../../../../core/constants/api-routes';
+import { HomeHeader } from '../../../user/home/components/HomeHeader';
 import { RIGHTS_INDEX } from '../data/rights-content';
 import type { RightsIndexItem } from '../types/rights.types';
 
@@ -271,10 +271,9 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <AdminHeader
-        showMenu={false}
-        showBack={Boolean(showBackButton && onBack)}
+      <HomeHeader
         onBack={onBack}
+        unreadCount={3}
       />
 
       <ScrollView

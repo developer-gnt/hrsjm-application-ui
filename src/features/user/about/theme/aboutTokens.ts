@@ -21,12 +21,13 @@ import { Spacing } from '../../../../core/theme/spacing';
  * the system sans-serif. See docs/HRSJM_About_Implementation_Map.md (A1).
  */
 
-/** Built-in serif stack for display/headings (per-platform, no downloads). */
+/** Built-in serif stack for display/headings (Playfair Display on web, Georgia on iOS, serif on Android). */
 export const AboutFonts = {
   serif: Platform.select({
     ios: 'Georgia',
     android: 'serif',
-    default: 'Georgia, "Times New Roman", serif',
+    web: "'Playfair Display', Georgia, 'Times New Roman', serif",
+    default: "'Playfair Display', Georgia, 'Times New Roman', serif",
   }),
 } as const;
 

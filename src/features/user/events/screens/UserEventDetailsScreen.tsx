@@ -11,8 +11,15 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AdminColors, BorderRadius, FontFamilies, Shadows, Spacing } from '../../../../core/theme';
+import {
+  AdminColors,
+  BorderRadius,
+  Shadows,
+  Spacing,
+  UserFontFamilies,
+} from '../../../../core/theme';
 import { AppIcon } from '../../components';
+import { HomeHeader } from '../../home/components/HomeHeader';
 import type { UserEvent } from '../data/user-events';
 
 interface UserEventDetailsScreenProps {
@@ -51,25 +58,19 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, Spacing.sm) }]}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Go back to Events"
-        >
-          <AppIcon name="chevron-left" size={20} color={AdminColors.primaryDark} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Event Details</Text>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={handleShare}
-          accessibilityRole="button"
-          accessibilityLabel="Share event"
-        >
-          <AppIcon name="share" size={19} color={AdminColors.primaryDark} />
-        </TouchableOpacity>
-      </View>
+      <HomeHeader
+        onBack={onBack}
+        rightAction={
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={handleShare}
+            accessibilityRole="button"
+            accessibilityLabel="Share event"
+          >
+            <AppIcon name="share" size={19} color={AdminColors.primaryDark} />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView
         style={styles.flex}
@@ -201,7 +202,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 17,
     fontWeight: '700',
   },
@@ -289,7 +290,7 @@ const styles = StyleSheet.create({
   eventTitle: {
     marginTop: Spacing.sm,
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 23,
     lineHeight: 29,
     fontWeight: '700',
@@ -383,7 +384,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 18,
     lineHeight: 23,
     fontWeight: '700',

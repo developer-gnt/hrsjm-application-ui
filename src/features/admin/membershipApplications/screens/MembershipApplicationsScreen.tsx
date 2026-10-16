@@ -88,7 +88,34 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
       setApplications(membershipApplicationsStore.getApplications());
       setStats(membershipApplicationsStore.getStats());
     });
-    return unsubscribe;
+
+    // Auto-refresh interval so new submissions and re-applications appear dynamically without hard reload
+    let intervalId: any = null;
+    if (process.env.NODE_ENV !== 'test') {
+      intervalId = setInterval(() => {
+        membershipApplicationsStore.fetchApplications().catch(() => {});
+      }, 4000);
+    }
+
+    // Sync on window focus and storage changes
+    const handleSync = () => {
+      membershipApplicationsStore.fetchApplications().catch(() => {});
+    };
+
+    const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+    if (win && typeof win.addEventListener === 'function') {
+      win.addEventListener('focus', handleSync);
+      win.addEventListener('storage', handleSync);
+    }
+
+    return () => {
+      unsubscribe();
+      if (intervalId) clearInterval(intervalId);
+      if (win && typeof win.removeEventListener === 'function') {
+        win.removeEventListener('focus', handleSync);
+        win.removeEventListener('storage', handleSync);
+      }
+    };
   }, []);
 
   // Reset to page 1 on filter changes
@@ -142,7 +169,11 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   const filteredApplications = useMemo(() => {
     const list = applications.filter(app => {
       // Status filter
-      if (activeTab !== 'all' && app.status !== activeTab) {
+      if (activeTab === 'under_review') {
+        if (app.status !== 'under_review' && (app.status as string) !== 'submitted') {
+          return false;
+        }
+      } else if (activeTab !== 'all' && app.status !== activeTab) {
         return false;
       }
       // Membership type filter
@@ -155,8 +186,8 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
       // Search query filter (matches name, application ID, phone, or email)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
-        const matchName = app.applicantName.toLowerCase().includes(query);
-        const matchAppId = app.applicationId.toLowerCase().includes(query);
+        const matchName = (app.applicantName || '').toLowerCase().includes(query);
+        const matchAppId = (app.applicationId || '').toLowerCase().includes(query);
         const matchPhone = app.phone ? app.phone.toLowerCase().includes(query) : false;
         const matchEmail = app.email ? app.email.toLowerCase().includes(query) : false;
         return matchName || matchAppId || matchPhone || matchEmail;
@@ -165,15 +196,17 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     });
 
     // Sorting
-    return list.sort((a, b) => {
+    return [...list].sort((a, b) => {
       if (filterOptions.sortBy === 'name_asc') {
-        return a.applicantName.localeCompare(b.applicantName);
+        return (a.applicantName || '').localeCompare(b.applicantName || '');
       }
+      const timeA = new Date(a.submittedDate || 0).getTime() || 0;
+      const timeB = new Date(b.submittedDate || 0).getTime() || 0;
       if (filterOptions.sortBy === 'oldest') {
-        return new Date(a.submittedDate).getTime() - new Date(b.submittedDate).getTime();
+        return timeA - timeB;
       }
       // Default: newest
-      return new Date(b.submittedDate).getTime() - new Date(a.submittedDate).getTime();
+      return timeB - timeA;
     });
   }, [applications, activeTab, filterOptions, searchQuery]);
 

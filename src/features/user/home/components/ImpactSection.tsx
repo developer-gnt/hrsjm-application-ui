@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { AdminColors, FontFamilies, Spacing } from '../../../../core/theme';
+import { AdminColors, Spacing, UserFontFamilies } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { SectionHeader } from './SectionHeader';
 import type { ImpactStats } from '../types/home.types';
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   value: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 20,
     lineHeight: 26,
     fontWeight: '700',

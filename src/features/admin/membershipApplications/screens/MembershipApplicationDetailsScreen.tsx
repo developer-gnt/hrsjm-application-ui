@@ -54,37 +54,36 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
     return unsubscribe;
   }, [applicationId]);
 
-  const handleSelectStatus = async (newStatus: ApplicationStatus) => {
-    await membershipApplicationsStore.updateStatus(applicationId, newStatus);
+  const handleSelectStatus = async (newStatus: ApplicationStatus, notes?: string) => {
+    await membershipApplicationsStore.updateStatus(applicationId, newStatus, notes);
     onStatusChange?.(newStatus);
   };
 
   const handleUnderReviewPress = () => {
-    if (application?.status === 'under_review') {
-      setUnderReviewActive(true);
-    }
+    setUnderReviewActive(true);
+    handleSelectStatus('under_review');
   };
 
   const handleApprovePress = () => {
     // Show confirmation modal
-    if (application?.status === 'under_review') {
+    if (application?.status !== 'approved') {
       setConfirmationType('approve');
     }
   };
 
   const handleRejectPress = () => {
     // Show confirmation modal
-    if (application?.status === 'under_review') {
+    if (application?.status !== 'rejected') {
       setConfirmationType('reject');
     }
   };
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = (reason?: string) => {
     if (confirmationType === 'approve') {
       handleSelectStatus('approved');
       setUnderReviewActive(false);
     } else if (confirmationType === 'reject') {
-      handleSelectStatus('rejected');
+      handleSelectStatus('rejected', reason || 'Incomplete documents');
       setUnderReviewActive(false);
     }
     setConfirmationType(null);
@@ -176,6 +175,7 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
         contentContainerStyle={styles.scrollContent}
       >
         <MembershipApplicantSummaryCard application={application} />
+
         {renderTabButtons()}
         {renderTabContent()}
       </ScrollView>

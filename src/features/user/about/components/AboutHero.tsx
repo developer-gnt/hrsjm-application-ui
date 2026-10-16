@@ -9,8 +9,8 @@ import {
 import {
   AdminColors,
   BorderRadius,
-  FontFamilies,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import AboutHeroSource from '../../../../assets/images/about-hero-community.png';
 import type { AboutContent } from '../types/about.types';
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: AdminColors.textOnDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 27,
     lineHeight: 32,
     fontWeight: '700',

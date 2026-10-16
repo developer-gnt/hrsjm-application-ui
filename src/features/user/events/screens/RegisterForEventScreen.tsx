@@ -15,7 +15,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton, AppInput } from '../../../../core/components';
-import { AdminColors, BorderRadius, FontFamilies, Shadows, Spacing } from '../../../../core/theme';
+import {
+  AdminColors,
+  BorderRadius,
+  Shadows,
+  Spacing,
+  UserFontFamilies,
+} from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { ContactHeader } from '../../contact/components/ContactHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
@@ -43,6 +49,8 @@ interface RegisterForEventScreenProps {
   onOpenRights: () => void;
   onOpenContact: () => void;
   onOpenNews: () => void;
+  showBottomNav?: boolean;
+  hideBottomNav?: boolean;
 }
 
 const INITIAL_FORM: RegistrationForm = {
@@ -63,6 +71,8 @@ export const RegisterForEventScreen: React.FC<RegisterForEventScreenProps> = ({
   onOpenRights,
   onOpenContact,
   onOpenNews,
+  showBottomNav = false,
+  hideBottomNav = true,
 }) => {
   const [form, setForm] = useState<RegistrationForm>(INITIAL_FORM);
   const [consentAccepted, setConsentAccepted] = useState(false);
@@ -449,7 +459,9 @@ export const RegisterForEventScreen: React.FC<RegisterForEventScreenProps> = ({
         </KeyboardAvoidingView>
       )}
 
-      <UserBottomNavigation activeTab="events" onTabPress={handleTabPress} />
+      {showBottomNav && !hideBottomNav && (
+        <UserBottomNavigation activeTab="events" onTabPress={handleTabPress} />
+      )}
     </SafeAreaView>
   );
 };
@@ -469,7 +481,7 @@ const styles = StyleSheet.create({
   pageTitle: {
     marginTop: Spacing.sm,
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 22,
     lineHeight: 28,
     fontWeight: '700',
@@ -517,7 +529,7 @@ const styles = StyleSheet.create({
   },
   eventTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 16,
     lineHeight: 20,
     fontWeight: '700',
@@ -540,7 +552,7 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 19,
     lineHeight: 24,
     fontWeight: '700',
@@ -744,7 +756,7 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 21,
     lineHeight: 27,
     fontWeight: '700',

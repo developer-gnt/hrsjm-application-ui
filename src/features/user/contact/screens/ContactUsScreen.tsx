@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AdminColors, FontFamilies, Spacing } from '../../../../core/theme';
+import { AdminColors, Spacing, UserFontFamilies } from '../../../../core/theme';
 import { ContactHeader } from '../components/ContactHeader';
 import { ContactHero } from '../components/ContactHero';
 import { ContactActionsRow } from '../components/ContactActionCard';
@@ -31,6 +31,7 @@ export interface ContactUsScreenProps {
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
   showBottomNav?: boolean;
+  hideBottomNav?: boolean;
 }
 
 /**
@@ -49,6 +50,7 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
   onOpenEvents,
   onOpenNews,
   showBottomNav = false,
+  hideBottomNav = true,
 }) => {
   const showComingSoon = (feature: string) => {
     // UI PHASE ONLY placeholder for actions that ship with later phases.
@@ -110,7 +112,7 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {showBottomNav && (
+      {showBottomNav && !hideBottomNav && (
         <UserBottomNavigation
           activeTab="contact"
           onTabPress={tab => {
@@ -151,7 +153,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
   },
   formHeading: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 19,
     lineHeight: 24,
     fontWeight: '700',

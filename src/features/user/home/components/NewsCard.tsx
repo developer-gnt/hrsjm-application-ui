@@ -43,11 +43,17 @@ export const NewsCard: React.FC<NewsCardProps> = ({ item, onPress }) => {
       accessibilityRole="button"
       accessibilityLabel={`${item.category}: ${item.title}`}
     >
-      {imageSource ? (
+      {item.imageUrl ? (
+        <Image
+          source={{ uri: item.imageUrl }}
+          style={styles.thumbnail}
+          resizeMode="cover"
+        />
+      ) : imageSource ? (
         <Image source={imageSource} style={styles.thumbnail} resizeMode="cover" />
       ) : (
         <ImageSlot
-          assetName={item.imageAssetName}
+          assetName={item.imageAssetName || 'home/news/legal-awareness.png'}
           height={48}
           width={48}
           radius={BorderRadius.md}
@@ -62,7 +68,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ item, onPress }) => {
         <Text style={styles.date}>{item.date}</Text>
       </View>
 
-      <View style={styles.arrow}>
+      <View style={styles.arrow} pointerEvents="none">
         <AppIcon name="arrow-right" size={14} color={AdminColors.primaryDark} />
       </View>
     </TouchableOpacity>

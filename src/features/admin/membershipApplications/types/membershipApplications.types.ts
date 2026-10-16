@@ -1,4 +1,4 @@
-export type ApplicationStatus = 'under_review' | 'approved' | 'rejected';
+export type ApplicationStatus = 'submitted' | 'under_review' | 'approved' | 'rejected';
 
 export interface MembershipApplicationItem {
   id: string;
@@ -16,6 +16,7 @@ export interface MembershipApplicationItem {
   fatherName?: string;
   address?: string;
   occupation?: string;
+  rejectionReason?: string;
   documents?: {
     id: string;
     title: string;

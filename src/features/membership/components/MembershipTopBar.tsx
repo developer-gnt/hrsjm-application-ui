@@ -26,7 +26,28 @@ export function MembershipTopBar({ showBack = false, onBackPress }: MembershipTo
 
   const switchTab = (screen: keyof TabsParamList) => {
     setMenuVisible(false);
-    navigation.navigate('Tabs', { screen });
+    const navAny = navigation as any;
+    const state = navAny.getState?.();
+    const routeNames: string[] = state?.routeNames || [];
+    if (routeNames.includes('UserHome')) {
+      if (screen === 'MembersTab') {
+        navAny.navigate('MembershipCategories');
+      } else if (screen === 'DonationSeekersTab') {
+        navAny.navigate('UserActionPage', { pageId: 'donate' });
+      } else if (screen === 'ComplaintsTab') {
+        navAny.navigate('FileComplaint');
+      } else if (screen === 'MoreTab') {
+        navAny.navigate('UserProfile');
+      } else {
+        navAny.navigate('UserHome');
+      }
+      return;
+    }
+    try {
+      navAny.navigate('Tabs', { screen });
+    } catch {
+      // fallback
+    }
   };
 
   const handleBack = () => {
@@ -35,7 +56,16 @@ export function MembershipTopBar({ showBack = false, onBackPress }: MembershipTo
     } else if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate('Tabs', { screen: 'MembersTab' });
+      const navAny = navigation as any;
+      const state = navAny.getState?.();
+      const routeNames: string[] = state?.routeNames || [];
+      if (routeNames.includes('UserHome')) {
+        navAny.navigate('UserHome');
+      } else {
+        try {
+          navAny.navigate('Tabs', { screen: 'MembersTab' });
+        } catch {}
+      }
     }
   };
 

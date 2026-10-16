@@ -18,8 +18,10 @@ import { SupportTicketsScreen } from '../../support';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import { NotificationsScreen } from '../../admin/notifications';
 import { AboutScreen } from '../../user/about';
-import { NewsListScreen, NewsDetailsScreen } from '../../admin/content/news';
+import { NewsScreen } from '../../user/news/screens/NewsScreen';
+import { NewsDetailsScreen } from '../../user/news/screens/NewsDetailsScreen';
 import { FileComplaintScreen } from '../../user/help';
+import { HomeHeader } from '../../user/home/components/HomeHeader';
 import {
   MyIdCardScreen,
   EditPersonalInfoScreen,
@@ -51,6 +53,9 @@ const SeekerHomeWrapper: React.FC<any> = ({ navigation }) => {
       onNavigateToRequests={() => navigation.navigate('SeekerRequests')}
       onNavigateToSupport={() => navigation.navigate('SeekerSupport')}
       onNavigateToRights={() => navigation.navigate('SeekerRights')}
+      onNavigateToEvents={() => navigation.navigate('SeekerEvents')}
+      onNavigateToNews={() => navigation.navigate('News')}
+      onNavigateToComplaint={() => navigation.navigate('FileComplaint')}
       onOpenNotifications={() => navigation.navigate('Notifications')}
       onOpenProfile={() => navigation.navigate('SeekerProfile')}
     />
@@ -102,6 +107,7 @@ const SeekerSupportWrapper: React.FC<any> = ({ navigation }) => {
 const SeekerProfileWrapper: React.FC<any> = ({ navigation }) => {
   return (
     <ProfileScreen
+      headerComponent={<HomeHeader />}
       onNavigate={(target) => navigation.navigate(target)}
       onEditPersonal={() => navigation.navigate('EditPersonalInfo')}
       onEditAdminDetails={() => navigation.navigate('AdminDetails')}
@@ -227,6 +233,12 @@ export const SeekerTabNavigator: React.FC = () => {
 
       {/* Hidden Stack Routes accessible within Seeker flow */}
       <Tab.Screen
+        name="Events"
+        options={{ tabBarButton: () => null }}
+        component={SeekerEventsWrapper}
+      />
+
+      <Tab.Screen
         name="Notifications"
         options={{ tabBarButton: () => null }}
         component={NotificationsScreen}
@@ -243,8 +255,17 @@ export const SeekerTabNavigator: React.FC = () => {
         options={{ tabBarButton: () => null }}
       >
         {({ navigation }) => (
-          <NewsListScreen
-            onViewNews={(news) => navigation.navigate('NewsDetails', { news })}
+          <NewsScreen
+            hideBottomNav={true}
+            showBottomNav={false}
+            onOpenArticle={(article) =>
+              navigation.navigate('NewsDetails', { article })
+            }
+            onOpenHome={() => navigation.navigate('SeekerHome')}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenRights={() => navigation.navigate('SeekerRights')}
+            onOpenEvents={() => navigation.navigate('SeekerEvents')}
+            onOpenContact={() => navigation.navigate('SeekerSupport')}
           />
         )}
       </Tab.Screen>
@@ -255,8 +276,18 @@ export const SeekerTabNavigator: React.FC = () => {
       >
         {({ navigation, route }: any) => (
           <NewsDetailsScreen
-            news={route.params?.news}
+            article={route.params?.article}
+            hideBottomNav={true}
+            showBottomNav={false}
             onBack={navigation.goBack}
+            onOpenArticle={(art) =>
+              navigation.navigate('NewsDetails', { article: art })
+            }
+            onOpenHome={() => navigation.navigate('SeekerHome')}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenRights={() => navigation.navigate('SeekerRights')}
+            onOpenEvents={() => navigation.navigate('SeekerEvents')}
+            onOpenContact={() => navigation.navigate('SeekerSupport')}
           />
         )}
       </Tab.Screen>
@@ -276,6 +307,22 @@ export const SeekerTabNavigator: React.FC = () => {
 
       <Tab.Screen
         name="FileComplaint"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <FileComplaintScreen
+            onBack={navigation.goBack}
+            onViewTickets={() => navigation.navigate('SeekerSupport')}
+            onOpenHome={() => navigation.navigate('SeekerHome')}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenRights={() => navigation.navigate('SeekerRights')}
+            onOpenContact={() => navigation.navigate('SeekerProfile')}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="Complaint"
         options={{ tabBarButton: () => null }}
       >
         {({ navigation }) => (

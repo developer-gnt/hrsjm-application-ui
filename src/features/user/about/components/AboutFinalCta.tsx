@@ -9,9 +9,9 @@ import {
 import {
   AdminColors,
   BorderRadius,
-  FontFamilies,
   Shadows,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { GoldButton } from '../../home/components/GoldButton';
 import ContactCtaHandsSource from '../../../../assets/images/contact-cta-hands.jpg';
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     backgroundColor: AdminColors.accentGold,
   },
   title: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 25,
     lineHeight: 30,
     fontWeight: '700',

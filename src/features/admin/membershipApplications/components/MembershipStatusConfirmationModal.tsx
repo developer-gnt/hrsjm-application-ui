@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
@@ -15,7 +16,7 @@ interface MembershipStatusConfirmationModalProps {
   visible: boolean;
   type: ConfirmationType | null;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (reason?: string) => void;
 }
 
 export const MembershipStatusConfirmationModal: React.FC<MembershipStatusConfirmationModalProps> = ({
@@ -24,6 +25,14 @@ export const MembershipStatusConfirmationModal: React.FC<MembershipStatusConfirm
   onClose,
   onConfirm,
 }) => {
+  const [reason, setReason] = useState('Incomplete documents');
+
+  useEffect(() => {
+    if (visible) {
+      setReason('Incomplete documents');
+    }
+  }, [visible, type]);
+
   if (!visible || !type) return null;
 
   const isApprove = type === 'approve';
@@ -69,6 +78,20 @@ export const MembershipStatusConfirmationModal: React.FC<MembershipStatusConfirm
                   : 'After rejecting the status you cannot change the status. Are you sure you want to reject this application?'}
               </Text>
 
+              {/* Reason input when rejecting */}
+              {!isApprove ? (
+                <View style={styles.reasonFieldContainer}>
+                  <Text style={styles.reasonFieldLabel}>Rejection Reason:</Text>
+                  <TextInput
+                    style={styles.reasonInput}
+                    value={reason}
+                    onChangeText={setReason}
+                    placeholder="Enter reason for rejection"
+                    placeholderTextColor="#94A3B8"
+                  />
+                </View>
+              ) : null}
+
               {/* Buttons Row */}
               <View style={styles.buttonRow}>
                 <TouchableOpacity
@@ -83,7 +106,7 @@ export const MembershipStatusConfirmationModal: React.FC<MembershipStatusConfirm
 
                 <TouchableOpacity
                   style={[styles.okButton, isApprove ? styles.okButtonApprove : styles.okButtonReject]}
-                  onPress={onConfirm}
+                  onPress={() => onConfirm(isApprove ? undefined : (reason.trim() || 'Incomplete documents'))}
                   activeOpacity={0.8}
                   accessibilityRole="button"
                   accessibilityLabel={isApprove ? 'Confirm Approval' : 'Confirm Rejection'}
@@ -175,8 +198,29 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 19,
-    marginBottom: 20,
+    marginBottom: 16,
     paddingHorizontal: 4,
+  },
+  reasonFieldContainer: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  reasonFieldLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F2860',
+    marginBottom: 6,
+  },
+  reasonInput: {
+    width: '100%',
+    borderWidth: 1.5,
+    borderColor: '#FECACA',
+    borderRadius: BorderRadius.md,
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: '#0F172A',
   },
   buttonRow: {
     flexDirection: 'row',

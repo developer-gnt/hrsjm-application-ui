@@ -51,6 +51,7 @@ export interface GlobalPaymentModalProps {
   onSuccess?: (receipt: PaymentReceiptDetails) => void;
   onNavigateHome?: () => void;
   onViewHistory?: () => void;
+  initialStage?: PaymentStage;
 }
 
 type PaymentStage = 'amount_selection' | 'checkout' | 'processing' | 'success' | 'failed';
@@ -64,6 +65,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   onSuccess,
   onNavigateHome,
   onViewHistory,
+  initialStage,
 }) => {
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
@@ -148,7 +150,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
     prevVisibleRef.current = visible;
 
     if (justOpened) {
-      setStage('amount_selection');
+      setStage(initialStage || 'amount_selection');
       setProcessingStep(0);
       setReceiptResult(null);
       setIsCustomAmount(false);
@@ -199,7 +201,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
         : 'user@upi';
       setUpiId(dynamicUpi);
     }
-  }, [visible, payload, user, onClose]);
+  }, [visible, payload, user, onClose, initialStage]);
 
   // Handle processing spinner
   useEffect(() => {
@@ -547,6 +549,17 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
             <Text style={styles.headerHindiSub}>मानव अधिकार • सामाजिक न्याय</Text>
           </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.headerCloseCircleBtn}
+          onPress={onClose}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Close payment"
+        >
+          <Text style={styles.headerCloseIcon}>✕</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView

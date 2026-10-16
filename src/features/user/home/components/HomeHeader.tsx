@@ -1,137 +1,337 @@
-import React from 'react';
-import { StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import React, { useState } from 'react';
+import {
+  Image,
+  Modal,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { AdminColors, Spacing } from '../../../../core/theme';
-import { AppIcon, HrsjmLogoMark } from '../../components';
+import { AppIcon } from '../../components';
 import { useHeaderActions } from '../../components/HeaderActionsContext';
+import { useAuthStore } from '../../../auth/store/authStore';
+import {
+  DEFAULT_ADMIN_AVATAR,
+  UserProfileModal,
+} from '../../../auth/components/UserProfileModal';
 
-interface HomeHeaderProps {
+const LOGO_SOURCE = require('../../../../assets/logo/logo.png');
+
+export interface HomeHeaderProps {
   onBack?: () => void;
   onPressSearch?: () => void;
   onPressNotifications?: () => void;
   onPressProfile?: () => void;
-  /** Unread dot on the bell. */
+  /** Number of unread notifications to show on bell badge. Defaults to 3. */
+  unreadCount?: number;
+  /** Legacy prop for unread dot indicator */
   showNotificationDot?: boolean;
   notificationDotColor?: string;
-  /** Lets a dedicated search page use the header search button to focus its input. */
   preferLocalActions?: boolean;
+  /** Custom right-hand element if needed */
+  rightAction?: React.ReactNode;
 }
 
 /**
- * User-facing Home header: the official HRSJM logo lockup (emblem, wordmark
- * and taglines as one artwork) with search and notification actions —
- * matching the reference header (white surface, navy line icons).
- *
- * The top safe-area inset is applied here so the hosting screen can keep
- * SafeAreaView edges={['left', 'right']} (same pattern as the Admin shell
- * header) — no iOS-specific status-bar handling is reproduced.
+ * Official HRSJM User Portal Header:
+ * - Left: Official Shield Emblem + Bold "HRSJM" Brand Wordmark (with back button on inner pages)
+ * - Right: Notification bell with red count badge ('3') + Circular user avatar with blue border and dropdown caret
  */
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onBack,
-  onPressSearch,
   onPressNotifications,
   onPressProfile,
-  showNotificationDot = false,
-  notificationDotColor = AdminColors.statusInactive,
-  preferLocalActions = false,
+  unreadCount = 3,
+  rightAction,
 }) => {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const navigation = useNavigation<any>();
+  const user = useAuthStore(state => state.user);
+  const signOut = useAuthStore(state => state.signOut);
   const headerActions = useHeaderActions();
-  const searchHandler = preferLocalActions
-    ? onPressSearch ?? headerActions.onOpenSearch
-    : headerActions.onOpenSearch ?? onPressSearch;
-  const notificationsHandler =
-    headerActions.onOpenNotifications ?? onPressNotifications;
-  const hasUnreadNotifications =
-    headerActions.hasUnreadNotifications ?? showNotificationDot;
-  // Keep the full lockup + both actions visible on narrow phones.
-  const logoHeight = width < 350 ? 40 : 48;
+
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+
+  const effectiveUnreadCount = unreadCount ?? 3;
+
+  const handleOpenNotifications = () => {
+    if (onPressNotifications) {
+      onPressNotifications();
+      return;
+    }
+    if (headerActions.onOpenNotifications) {
+      headerActions.onOpenNotifications();
+      return;
+    }
+    if (navigation?.navigate) {
+      try {
+        navigation.navigate('Notifications');
+      } catch {
+        // ignore navigation failures
+      }
+    }
+  };
+
+  const handleBrandPress = () => {
+    if (navigation?.navigate) {
+      try {
+        navigation.navigate('UserHome');
+        return;
+      } catch {
+        // fallback to SeekerHome
+      }
+      try {
+        navigation.navigate('SeekerHome');
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const handleOpenProfile = () => {
+    setDropdownVisible(false);
+    if (onPressProfile) {
+      onPressProfile();
+      return;
+    }
+    if (navigation?.navigate) {
+      try {
+        navigation.navigate('UserProfile');
+        return;
+      } catch {
+        // fallback
+      }
+      try {
+        navigation.navigate('MemberProfile');
+        return;
+      } catch {
+        // fallback
+      }
+    }
+    setProfileModalVisible(true);
+  };
+
+  const handleSignOut = async () => {
+    setDropdownVisible(false);
+    try {
+      await signOut();
+    } catch {
+      // Local session cleanup handled in authStore
+    }
+  };
 
   return (
-    <View
-      style={[styles.container, { paddingTop: Math.max(insets.top, Spacing.sm) }]}
-    >
-      <View style={styles.content}>
-        {onBack ? (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={onBack}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <AppIcon name="chevron-left" size={20} color={AdminColors.primaryDark} />
-          </TouchableOpacity>
-        ) : null}
-        <HrsjmLogoMark height={logoHeight} />
+    <>
+      <View
+        style={[
+          styles.container,
+          {
+            paddingTop:
+              Platform.OS === 'ios'
+                ? Math.max(insets.top, 12)
+                : Math.max(insets.top, StatusBar.currentHeight ? StatusBar.currentHeight + 6 : 10),
+          },
+        ]}
+      >
+        <StatusBar barStyle="dark-content" />
 
-        <View style={styles.spacer} />
+        <View style={styles.content}>
+          {/* Left: Back button (if inner page) + Shield Logo + "HRSJM" text */}
+          <View style={styles.leftRow}>
+            {onBack ? (
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={onBack}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <AppIcon name="chevron-left" size={20} color="#0B2F5B" />
+              </TouchableOpacity>
+            ) : null}
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={searchHandler}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Search"
-        >
-          <AppIcon name="search" size={22} color={AdminColors.primaryDark} />
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.brandRow}
+              onPress={handleBrandPress}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="HRSJM Home"
+            >
+              <Image
+                source={LOGO_SOURCE}
+                style={styles.shieldLogo}
+                resizeMode="contain"
+              />
+              <Text style={styles.brandTitle}>HRSJM</Text>
+            </TouchableOpacity>
+          </View>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={notificationsHandler}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={
-            hasUnreadNotifications
-              ? 'Notifications, unread updates available'
-              : 'Notifications'
-          }
-        >
-          <AppIcon name="bell" size={22} color={AdminColors.primaryDark} />
-          {hasUnreadNotifications && (
-            <View
-              style={[
-                styles.unreadDot,
-                {
-                  backgroundColor: headerActions.hasUnreadNotifications
-                    ? AdminColors.accentGold
-                    : notificationDotColor,
-                },
-              ]}
-            />
-          )}
-        </TouchableOpacity>
+          {/* Spacer */}
+          <View style={styles.spacer} />
 
-        {onPressProfile ? (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={onPressProfile}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Profile"
-          >
-            <AppIcon name="user" size={22} color={AdminColors.primaryDark} />
-          </TouchableOpacity>
-        ) : null}
+          {/* Right: Custom Action (if any) + Bell with Count + Avatar with Blue Border & Caret */}
+          <View style={styles.rightRow}>
+            {rightAction ? (
+              <View style={styles.customRightAction}>{rightAction}</View>
+            ) : null}
+
+            {/* Notification Bell with red count badge */}
+            <TouchableOpacity
+              style={styles.bellButton}
+              onPress={handleOpenNotifications}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={`Notifications, ${effectiveUnreadCount} unread`}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22ZM18 16V11C18 7.93 16.37 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.64 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z"
+                  stroke="#112E51"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+              {effectiveUnreadCount > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {effectiveUnreadCount > 9 ? '9+' : effectiveUnreadCount}
+                  </Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+
+            {/* Circular Profile Avatar with Blue Ring + Caret */}
+            <TouchableOpacity
+              style={styles.avatarButton}
+              onPress={() => setDropdownVisible(true)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Open user profile menu"
+            >
+              <Image
+                source={{ uri: user?.avatar || DEFAULT_ADMIN_AVATAR }}
+                style={styles.avatarImage}
+              />
+              <Text style={styles.dropdownCaret}>▼</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-    </View>
+
+      {/* User Profile Dropdown Menu */}
+      <Modal
+        visible={dropdownVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDropdownVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.dropdownBackdrop}
+          activeOpacity={1}
+          onPress={() => setDropdownVisible(false)}
+        >
+          <View
+            style={[
+              styles.dropdownMenu,
+              {
+                top:
+                  Platform.OS === 'ios'
+                    ? Math.max(insets.top, 12) + 52
+                    : Math.max(insets.top, StatusBar.currentHeight ? StatusBar.currentHeight + 6 : 10) + 52,
+              },
+            ]}
+          >
+            {/* User Details */}
+            <View style={styles.dropdownHeader}>
+              <Text style={styles.dropdownName} numberOfLines={1}>
+                {user?.full_name || 'HRSJM Member'}
+              </Text>
+              <Text style={styles.dropdownEmail} numberOfLines={1}>
+                {user?.email || 'member@hrsjm.org'}
+              </Text>
+            </View>
+
+            <View style={styles.dropdownDivider} />
+
+            {/* View Profile */}
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={handleOpenProfile}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.dropdownItemIcon}>👤</Text>
+              <Text style={styles.dropdownItemText}>View Profile</Text>
+            </TouchableOpacity>
+
+            <View style={styles.dropdownDivider} />
+
+            {/* Sign Out */}
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={handleSignOut}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.dropdownItemIcon}>🚪</Text>
+              <Text style={[styles.dropdownItemText, styles.signOutText]}>
+                Sign Out
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Full User Profile Modal fallback */}
+      <UserProfileModal
+        visible={profileModalVisible}
+        onClose={() => setProfileModalVisible(false)}
+        onSignOut={handleSignOut}
+        onViewFullProfile={() => {
+          setProfileModalVisible(false);
+          if (navigation?.navigate) {
+            try {
+              navigation.navigate('UserProfile');
+            } catch {
+              // ignore
+            }
+          }
+        }}
+      />
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: AdminColors.cardSurface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AdminColors.border,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.sm,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 2,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     minHeight: 48,
+  },
+  leftRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   backButton: {
     width: 36,
@@ -140,27 +340,134 @@ const styles = StyleSheet.create({
     backgroundColor: AdminColors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.xs,
+    marginRight: 10,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  shieldLogo: {
+    width: 38,
+    height: 38,
+  },
+  brandTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0B2F5B',
+    letterSpacing: 0.5,
   },
   spacer: {
     flex: 1,
   },
-  actionButton: {
-    width: 38,
-    height: 38,
-    marginLeft: Spacing.xs,
+  rightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  customRightAction: {
+    marginRight: 2,
+  },
+  bellButton: {
+    position: 'relative',
+    padding: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  unreadDot: {
+  badge: {
     position: 'absolute',
-    top: 6,
-    right: 7,
-    width: 9,
-    height: 9,
-    borderRadius: 9999,
-    backgroundColor: AdminColors.statusInactive,
-    borderWidth: 1.5,
-    borderColor: AdminColors.cardSurface,
+    top: -4,
+    right: -6,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 12,
+  },
+  avatarButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 2,
+    paddingHorizontal: 2,
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: '#3B82F6',
+  },
+  dropdownCaret: {
+    fontSize: 9,
+    color: '#64748B',
+    marginLeft: 1,
+  },
+  dropdownBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    right: 16,
+    width: 210,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 6,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  dropdownHeader: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  dropdownName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  dropdownEmail: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 4,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  dropdownItemIcon: {
+    fontSize: 16,
+    marginRight: 10,
+  },
+  dropdownItemText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#334155',
+  },
+  signOutText: {
+    color: '#EF4444',
+    fontWeight: '600',
   },
 });

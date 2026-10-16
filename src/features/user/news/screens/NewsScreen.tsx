@@ -16,7 +16,13 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AdminColors, BorderRadius, FontFamilies, Shadows, Spacing } from '../../../../core/theme';
+import {
+  AdminColors,
+  BorderRadius,
+  Shadows,
+  Spacing,
+  UserFontFamilies,
+} from '../../../../core/theme';
 import { debounce } from '../../../../core/utils/debounce';
 import { AppIcon } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
@@ -31,6 +37,7 @@ import {
   type UserNewsCategory,
   type UserNewsContentType,
 } from '../data/user-news';
+import { fetchAllPublishedArticles } from '../services/user-news.service';
 
 type NewsDateFilter = 'All Dates' | 'Today' | 'This Week' | 'This Month' | 'Older';
 type CategoryFilter = UserNewsCategory | 'All';
@@ -54,6 +61,9 @@ export interface NewsScreenProps {
   onOpenEvents: () => void;
   onOpenContact: () => void;
   showBottomNav?: boolean;
+  hideBottomNav?: boolean;
+  showBack?: boolean;
+  onBack?: () => void;
 }
 
 const DATE_FILTERS: NewsDateFilter[] = [
@@ -189,6 +199,9 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
   onOpenEvents,
   onOpenContact,
   showBottomNav = false,
+  hideBottomNav = true,
+  showBack = false,
+  onBack,
 }) => {
   const { width } = useWindowDimensions();
   const slideWidth = width;
@@ -206,13 +219,37 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
   const [draftContentType, setDraftContentType] = useState<ContentTypeFilter>('All');
   const [draftDateFilter, setDraftDateFilter] = useState<NewsDateFilter>('All Dates');
   const debouncedSearch = useMemo(() => debounce(setSearch, 300), []);
+  const [dynamicArticles, setDynamicArticles] = useState<UserNewsArticle[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadArticles = async () => {
+      const items = await fetchAllPublishedArticles(30);
+      if (isMounted && items.length > 0) {
+        setDynamicArticles(items);
+      }
+    };
+    loadArticles();
+    const interval = setInterval(loadArticles, 15000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const allArticles = useMemo(() => {
+    if (dynamicArticles.length === 0) return USER_NEWS_ARTICLES;
+    const dynamicIds = new Set(dynamicArticles.map(a => a.id));
+    return [...dynamicArticles, ...USER_NEWS_ARTICLES.filter(a => !dynamicIds.has(a.id))];
+  }, [dynamicArticles]);
+
   const categories = useMemo(
-    () => [...new Set(USER_NEWS_ARTICLES.map(article => article.category))],
-    [],
+    () => [...new Set(allArticles.map(article => article.category))],
+    [allArticles],
   );
   const contentTypes = useMemo(
-    () => [...new Set(USER_NEWS_ARTICLES.map(article => article.contentType))],
-    [],
+    () => [...new Set(allArticles.map(article => article.contentType))],
+    [allArticles],
   );
 
   const handleBack = useCallback(() => {
@@ -249,7 +286,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
 
   const visibleArticles = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
-    return USER_NEWS_ARTICLES
+    return allArticles
       .filter(article => {
         const matchesCategory = category === 'All' || article.category === category;
         const matchesType = contentType === 'All' || article.contentType === contentType;
@@ -465,7 +502,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
-        onBack={handleBack}
+        onBack={showBack ? (onBack || handleBack) : undefined}
         onPressSearch={() => searchRef.current?.focus()}
       />
       <FlatList
@@ -495,7 +532,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       />
-      {showBottomNav && (
+      {showBottomNav && !hideBottomNav && (
         <UserBottomNavigation activeTab="news" onTabPress={handleTabPress} />
       )}
 
@@ -634,7 +671,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     color: AdminColors.textOnDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 28,
     lineHeight: 33,
     fontWeight: '700',
@@ -755,7 +792,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 20,
     fontWeight: '700',
     marginTop: Spacing.md,
@@ -807,7 +844,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 22,
     lineHeight: 26,
     fontWeight: '700',

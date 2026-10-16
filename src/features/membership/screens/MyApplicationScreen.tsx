@@ -23,6 +23,12 @@ const STATUS_CONFIG: Record<
   MembershipStatus,
   { label: string; bg: string; fg: string; icon: 'clock' | 'check-circle' | 'x-circle' }
 > = {
+  Applied: {
+    label: 'Applied',
+    bg: '#ECFDF5',
+    fg: '#059669',
+    icon: 'check-circle',
+  },
   'Under Review': {
     label: 'Under Review',
     bg: colors.goldSoft,
@@ -51,11 +57,53 @@ const STATUS_CONFIG: Record<
 
 export function MyApplicationScreen() {
   const navigation = useNavigation<NavProp>();
-  const { applications, setActiveApplication } = useMembership();
+  const { applications, setActiveApplication, reapply } = useMembership();
+
+  const handleOpenStatus = (
+    statusKey: 'applied' | 'under_review' | 'approved' | 'rejected',
+    app?: MembershipApplicationRecord,
+  ) => {
+    if (app) setActiveApplication(app);
+    const appId =
+      app?.applicationId ||
+      applications[0]?.applicationId ||
+      'APP-20261012-001';
+
+    if (statusKey === 'applied') {
+      (navigation as any).navigate('ApplicationApplied', {
+        applicationId: appId,
+        status: 'applied',
+      });
+    } else if (statusKey === 'approved') {
+      (navigation as any).navigate('ApplicationApproved', {
+        applicationId: appId,
+        status: 'approved',
+      });
+    } else if (statusKey === 'rejected') {
+      (navigation as any).navigate('ApplicationRejected', {
+        applicationId: appId,
+        status: 'rejected',
+      });
+    } else {
+      (navigation as any).navigate('ApplicationDetails', {
+        applicationId: appId,
+        status: 'under_review',
+      });
+    }
+  };
 
   const handleOpenDetails = (app: MembershipApplicationRecord) => {
     setActiveApplication(app);
-    navigation.navigate('ApplicationDetails', { applicationId: app.applicationId });
+    const s = (app.status || '').toLowerCase();
+    if (s.includes('approve')) {
+      handleOpenStatus('approved', app);
+    } else if (s.includes('reject')) {
+      handleOpenStatus('rejected', app);
+    } else if (s.includes('review')) {
+      handleOpenStatus('under_review', app);
+    } else {
+      handleOpenStatus('applied', app);
+    }
   };
 
   return (
@@ -74,6 +122,8 @@ export function MyApplicationScreen() {
             View the status and details of your membership application.
           </Text>
         </View>
+
+
 
         {/* Applications List */}
         {applications.length > 0 ? (
@@ -129,6 +179,25 @@ export function MyApplicationScreen() {
                       <Icon name="chevron-right" size={20} color="#94A3B8" strokeWidth={2.4} />
                     </View>
                   </View>
+
+                  {item.status === 'Rejected' && (
+                    <View style={styles.cardReapplyWrap}>
+                      <TouchableOpacity
+                        style={styles.cardReapplyButton}
+                        onPress={(e) => {
+                          e?.stopPropagation?.();
+                          reapply();
+                          (navigation as any).navigate('MembershipCategories');
+                        }}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Re-apply for Membership"
+                      >
+                        <Icon name="refresh-cw" size={14} color="#FFFFFF" strokeWidth={2.2} />
+                        <Text style={styles.cardReapplyButtonText}>Re-apply for Membership</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -178,6 +247,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
     lineHeight: 18,
   },
+
   listContainer: {
     gap: spacing.md,
   },
@@ -192,6 +262,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 1,
+  },
+  cardReapplyWrap: {
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  cardReapplyButton: {
+    backgroundColor: '#1B3F8F',
+    borderRadius: radius.md,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  cardReapplyButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   statusRow: {
     flexDirection: 'row',

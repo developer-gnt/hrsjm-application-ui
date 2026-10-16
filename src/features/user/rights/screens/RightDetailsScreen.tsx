@@ -16,9 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AdminColors,
   BorderRadius,
-  FontFamilies,
   Shadows,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     color: AdminColors.textOnDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 29,
     lineHeight: 33,
     fontWeight: '700',
@@ -769,7 +769,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 20,
     lineHeight: 25,
     fontWeight: '700',
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
   overviewTitle: {
     marginTop: Spacing.md,
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 20,
     lineHeight: 25,
     fontWeight: '700',
@@ -827,7 +827,7 @@ const styles = StyleSheet.create({
   },
   quoteText: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 13,
     lineHeight: 18.5,
     fontStyle: 'italic',
@@ -1112,7 +1112,7 @@ const styles = StyleSheet.create({
   },
   ctaTitle: {
     color: AdminColors.textOnDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 22,
     lineHeight: 27,
     fontWeight: '700',
@@ -1156,7 +1156,7 @@ const styles = StyleSheet.create({
   },
   genericTitle: {
     color: AdminColors.textOnDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 28,
     fontWeight: '700',
   },

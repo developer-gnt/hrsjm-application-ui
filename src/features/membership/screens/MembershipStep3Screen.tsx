@@ -63,7 +63,7 @@ const PRESET_OPTIONS: Record<
 
 export function MembershipStep3Screen() {
   const navigation = useNavigation<NavProp>();
-  const { documents, updateDocuments, submitApplication } = useMembership();
+  const { documents, updateDocuments, submitApplication, submitApplicationAsync } = useMembership();
 
   const [errors, setErrors] = useState<UploadErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -120,41 +120,41 @@ export function MembershipStep3Screen() {
     setCustomFileName('');
   };
 
-  // Launch Native Camera for Document
+  // Launch Native / Web Camera for Document Scan
   const handleLaunchNativeCamera = async (type: DocCategory) => {
     setIsProcessing(true);
     try {
       const result = await takePhotoWithNativeCamera(type === 'photo' ? 'front' : 'back');
-      if (result && result.uri) {
+      if (result && (result.uri || result.fileName)) {
         applyUploadedDocument(type, {
-          name: type === 'photo' ? 'Photograph' : `${type.toUpperCase()} Document (Camera)`,
+          name: type === 'photo' ? 'Photograph' : `${type === 'identity' ? 'Identity' : 'Address'} Proof (Camera)`,
           fileName: result.fileName,
           fileSize: result.fileSize,
           uri: result.uri,
         });
       }
     } catch (e) {
-      console.warn('Native camera doc scan error:', e);
+      console.warn('Camera doc scan error:', e);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Launch Native File Manager / Document Picker
+  // Launch Native File Manager / Web Document Picker
   const handleLaunchNativeFilePicker = async (type: DocCategory) => {
     setIsProcessing(true);
     try {
       const result = await pickNativeDocument();
-      if (result && result.uri) {
+      if (result && (result.uri || result.fileName)) {
         applyUploadedDocument(type, {
-          name: `${type.toUpperCase()} Document`,
+          name: type === 'photo' ? 'Photograph' : `${type === 'identity' ? 'Identity' : 'Address'} Proof`,
           fileName: result.fileName,
           fileSize: result.fileSize,
           uri: result.uri,
         });
       }
     } catch (e) {
-      console.warn('Native file picker error:', e);
+      console.warn('File picker error:', e);
     } finally {
       setIsProcessing(false);
     }
@@ -199,17 +199,28 @@ export function MembershipStep3Screen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateUploads()) return;
 
     setSubmitting(true);
-    setTimeout(() => {
+    try {
+      let newRecord: any;
+      if (submitApplicationAsync) {
+        newRecord = await submitApplicationAsync({ documents });
+      } else {
+        newRecord = submitApplication({ documents });
+      }
       setSubmitting(false);
-      const newRecord = submitApplication();
       navigation.navigate('MembershipSubmitted', {
         applicationId: newRecord.applicationId,
       });
-    }, 600);
+    } catch {
+      setSubmitting(false);
+      const newRecord = submitApplication({ documents });
+      navigation.navigate('MembershipSubmitted', {
+        applicationId: newRecord.applicationId,
+      });
+    }
   };
 
   return (

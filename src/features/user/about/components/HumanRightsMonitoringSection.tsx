@@ -9,9 +9,9 @@ import {
 import {
   AdminColors,
   BorderRadius,
-  FontFamilies,
   Shadows,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 17,
     lineHeight: 21,
     fontWeight: '700',
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   featureTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 12,
     lineHeight: 15,
     fontWeight: '700',

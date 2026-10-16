@@ -10,9 +10,9 @@ import {
 import {
   AdminColors,
   BorderRadius,
-  FontFamilies,
   Shadows,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 // TODO: Replace with a real static map / maps integration in a later phase.
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
   },
   heading: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 19,
     lineHeight: 24,
     fontWeight: '700',

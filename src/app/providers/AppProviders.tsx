@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { setSessionExpiredHandler } from '../../core/api/client';
 import { useAuthStore } from '../../features/auth/store/authStore';
 import { FeedbackProvider } from '../../core/feedback/FeedbackContext';
+import { MembershipProvider } from '../../features/membership/context/MembershipContext';
 
 /**
  * Shared React Query client — server-state cache for feature hooks.
@@ -40,7 +41,9 @@ export const AppProviders: React.FC<{ children: React.ReactNode }> = ({
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <FeedbackProvider>{children}</FeedbackProvider>
+        <FeedbackProvider>
+          <MembershipProvider>{children}</MembershipProvider>
+        </FeedbackProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
   );

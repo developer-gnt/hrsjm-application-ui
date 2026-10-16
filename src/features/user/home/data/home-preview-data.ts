@@ -23,7 +23,7 @@ export const GUEST_QUICK_ACTIONS: HomeQuickAction[] = [
   { id: 'join', label: 'Join HRSJM', icon: 'users', emphasized: true },
   { id: 'complaint', label: 'File a Complaint', icon: 'file-text' },
   { id: 'donate', label: 'Donate Now', icon: 'heart' },
-  { id: 'renew', label: 'Renew Membership', icon: 'refresh' },
+  { id: 'renew', label: 'Become a Member', icon: 'id-card' },
 ];
 
 export const MEMBER_QUICK_ACTIONS: HomeQuickAction[] = [

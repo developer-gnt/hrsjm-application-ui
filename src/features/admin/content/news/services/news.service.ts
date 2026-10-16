@@ -132,23 +132,36 @@ export const getNewsDetails = async (id: string): Promise<NewsListItem> => {
 export const createNewsApi = async (
   form: CreateNewsFormState,
 ): Promise<NewsListItem> => {
-  const publishedAt = form.publishDate
-    ? `${form.publishDate}T${form.publishTime || '09:00'}:00`
-    : new Date().toISOString();
+  let publishedAt: string;
+  try {
+    if (form.publishDate) {
+      const timePart = form.publishTime || '09:00';
+      const parsed = new Date(`${form.publishDate}T${timePart}:00`);
+      publishedAt = isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+    } else {
+      publishedAt = new Date().toISOString();
+    }
+  } catch {
+    publishedAt = new Date().toISOString();
+  }
+
+  const cleanSlug = form.slug?.trim()
+    ? form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
+    : undefined;
 
   const payload = {
-    title: form.headline,
-    slug: form.slug || undefined,
-    summary: form.summary,
-    summary_detailed: form.summary,
-    content: form.content,
+    title: form.headline.trim(),
+    slug: cleanSlug,
+    summary: form.summary.trim(),
+    summary_detailed: form.summary.trim(),
+    content: form.content.trim(),
     category: form.category || 'General',
     status: form.status,
     published_at: publishedAt,
     thumbnail_url: form.featuredImageUri || 'https://picsum.photos/seed/hrsjm-news-new/400/300',
-    author: form.author || 'HRSJM Team',
-    tags: form.tags,
-    allow_comments: form.allowComments,
+    author: form.author?.trim() || 'HRSJM Team',
+    tags: Array.isArray(form.tags) && form.tags.length > 0 ? form.tags : undefined,
+    allow_comments: form.allowComments ?? true,
   };
 
   const res = await apiClient.post<BackendNewsItem>(
@@ -163,15 +176,32 @@ export const updateNewsApi = async (
   form: Partial<CreateNewsFormState> & { status?: NewsStatus },
 ): Promise<NewsListItem> => {
   const payload: any = {};
-  if (form.headline) payload.title = form.headline;
-  if (form.slug) payload.slug = form.slug;
-  if (form.summary) payload.summary = form.summary;
-  if (form.content) payload.content = form.content;
-  if (form.category) payload.category = form.category;
-  if (form.status) payload.status = form.status;
-  if (form.featuredImageUri) payload.thumbnail_url = form.featuredImageUri;
-  if (form.author) payload.author = form.author;
-  if (form.tags) payload.tags = form.tags;
+  if (form.headline !== undefined) payload.title = form.headline.trim();
+  if (form.slug !== undefined) {
+    payload.slug = form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  }
+  if (form.summary !== undefined) {
+    payload.summary = form.summary.trim();
+    payload.summary_detailed = form.summary.trim();
+  }
+  if (form.content !== undefined) payload.content = form.content.trim();
+  if (form.category !== undefined) payload.category = form.category;
+  if (form.status !== undefined) payload.status = form.status;
+  if (form.featuredImageUri !== undefined) payload.thumbnail_url = form.featuredImageUri;
+  if (form.author !== undefined) payload.author = form.author?.trim();
+  if (form.tags !== undefined) {
+    payload.tags = Array.isArray(form.tags) && form.tags.length > 0 ? form.tags : null;
+  }
+  if (form.allowComments !== undefined) payload.allow_comments = form.allowComments;
+  if (form.publishDate) {
+    try {
+      const timePart = form.publishTime || '09:00';
+      const parsed = new Date(`${form.publishDate}T${timePart}:00`);
+      payload.published_at = isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+    } catch {
+      payload.published_at = new Date().toISOString();
+    }
+  }
 
   const res = await apiClient.patch<BackendNewsItem>(
     ApiRoutes.NEWS.DETAILS(id),

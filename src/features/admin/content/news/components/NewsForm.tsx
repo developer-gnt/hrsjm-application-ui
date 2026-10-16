@@ -78,6 +78,26 @@ const formatTimeLabel = (hhmm: string): string => {
   return `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${period}`;
 };
 
+const extractErrorMessage = (err: any, fallback: string): string => {
+  if (!err) return fallback;
+  if (Array.isArray(err?.rawData?.error?.details)) {
+    return err.rawData.error.details.join(', ');
+  }
+  if (Array.isArray(err?.response?.data?.error?.details)) {
+    return err.response.data.error.details.join(', ');
+  }
+  if (err?.rawData?.message) {
+    return String(err.rawData.message);
+  }
+  if (err?.response?.data?.message) {
+    return String(err.response.data.message);
+  }
+  if (err?.message) {
+    return String(err.message);
+  }
+  return fallback;
+};
+
 /** Local frontend validation for the required Create/Edit News fields. */
 const validateNewsForm = (form: CreateNewsFormState): CreateNewsFieldErrors => {
   const errors: CreateNewsFieldErrors = {};
@@ -432,8 +452,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
         onCancel();
       }, 900);
     } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.message || err?.message || 'Failed to save draft. Please try again.';
+      const errorMsg = extractErrorMessage(err, 'Failed to save draft. Please try again.');
       setToast({ message: errorMsg, variant: 'error' });
     } finally {
       setIsSubmitting(false);
@@ -461,8 +480,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
         onCancel();
       }, 900);
     } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.message || err?.message || 'Failed to save changes. Please try again.';
+      const errorMsg = extractErrorMessage(err, 'Failed to save changes. Please try again.');
       setToast({ message: errorMsg, variant: 'error' });
     } finally {
       setIsSubmitting(false);
@@ -537,8 +555,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
         onCancel();
       }, 900);
     } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.message || err?.message || 'Failed to persist news. Please try again.';
+      const errorMsg = extractErrorMessage(err, 'Failed to persist news. Please try again.');
       setToast({ message: errorMsg, variant: 'error' });
     } finally {
       setIsSubmitting(false);

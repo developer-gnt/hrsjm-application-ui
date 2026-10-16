@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core/theme';
+import { AdminColors, BorderRadius, Spacing, UserFontFamilies } from '../../../../core/theme';
 // TODO: Replace with the official HRSJM people/partnership photograph.
 // Temporary CTA image; keep the existing layout when replacing it.
 import ContactCtaPeoplePlaceholder from '../../../../assets/images/contact-cta-hands.jpg';
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headline: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 19,
     lineHeight: 25,
     fontWeight: '700',

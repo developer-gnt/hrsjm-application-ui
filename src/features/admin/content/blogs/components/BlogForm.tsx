@@ -28,7 +28,9 @@ import { EventTagInput } from '../../events/components/EventTagInput';
 import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { SAMPLE_BLOGS, SAMPLE_BLOG_CATEGORIES } from '../data/sample-blogs';
 import { BLOG_STATUS_LABELS } from './BlogCard';
+import { createBlogApi, updateBlogApi } from '../services/blogs.service';
 import type {
+  BlogListItem,
   CreateBlogFieldErrors,
   CreateBlogFormState,
 } from '../types/blog.types';
@@ -281,6 +283,8 @@ const BlogConfirmDialog: React.FC<{
 interface BlogFormProps {
   /** 'create' (default) keeps Create wording; 'edit' pre-fills and updates. */
   mode?: 'create' | 'edit';
+  /** ID of the blog being edited */
+  blogId?: string;
   /** Header bar + page title ("Create Blog" / "Edit Blog"). */
   title: string;
   /** Page subtitle under the title. */
@@ -294,6 +298,8 @@ interface BlogFormProps {
    * first). Falls back to onCancel when not provided.
    */
   onSaved?: () => void;
+  /** Callback when blog is successfully saved or updated */
+  onSuccess?: (blog: BlogListItem) => void;
   /**
    * TEMPORARY (UI-only phase): called when a bottom tab is pressed on the
    * preview shell; guarded by the dirty-state dialog like every other exit.
@@ -303,17 +309,20 @@ interface BlogFormProps {
 
 export const BlogForm: React.FC<BlogFormProps> = ({
   mode = 'create',
+  blogId,
   title,
   subtitle,
   initialForm,
   onCancel,
   onSaved,
+  onSuccess,
   onTabPress,
 }) => {
   const isEdit = mode === 'edit';
   const [form, setForm] = useState<CreateBlogFormState>(initialForm);
   const [errors, setErrors] = useState<CreateBlogFieldErrors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null);
 
   // Picker/overlay visibility
@@ -422,13 +431,28 @@ export const BlogForm: React.FC<BlogFormProps> = ({
     return true;
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!runValidation()) {
       return;
     }
-    // UI-only confirmation: the form was validated locally. NO backend call
-    // happens and nothing is claimed to be persisted remotely.
-    setToast({ message: 'Blog saved as draft.', variant: 'success' });
+    setIsSubmitting(true);
+    try {
+      const draftForm: CreateBlogFormState = { ...form, status: 'DRAFT' };
+      let savedBlog: BlogListItem;
+      if (isEdit && blogId) {
+        savedBlog = await updateBlogApi(blogId, draftForm);
+      } else {
+        savedBlog = await createBlogApi(draftForm);
+      }
+      onSuccess?.(savedBlog);
+      setToast({ message: 'Blog saved as draft in database.', variant: 'success' });
+      setTimeout(onCancel, 900);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to save blog draft.';
+      setToast({ message: msg, variant: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCreatePress = () => {
@@ -445,7 +469,7 @@ export const BlogForm: React.FC<BlogFormProps> = ({
           : {
               icon: '📝',
               title: 'Create Blog?',
-              message: 'Are you sure you want to create this blog?',
+              message: 'Are you sure you want to create and publish this blog?',
               confirmLabel: 'Create',
               toast: 'Blog created successfully.',
             },
@@ -453,16 +477,29 @@ export const BlogForm: React.FC<BlogFormProps> = ({
     }
   };
 
-  const handlePrimaryConfirmed = () => {
+  const handlePrimaryConfirmed = async () => {
     const config = primaryConfirm;
     setPrimaryConfirm(null);
-    // UI-only confirmation — no backend call, nothing is persisted remotely.
-    if (config) {
-      setToast({ message: config.toast, variant: 'success' });
+    setIsSubmitting(true);
+    try {
+      let savedBlog: BlogListItem;
+      if (isEdit && blogId) {
+        savedBlog = await updateBlogApi(blogId, form);
+      } else {
+        savedBlog = await createBlogApi(form);
+      }
+      onSuccess?.(savedBlog);
+      setToast({
+        message: config ? config.toast : (isEdit ? 'Blog updated successfully.' : 'Blog created successfully.'),
+        variant: 'success',
+      });
+      setTimeout(isEdit ? onSaved || onCancel : onCancel, 900);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to publish blog article.';
+      setToast({ message: msg, variant: 'error' });
+    } finally {
+      setIsSubmitting(false);
     }
-    // Reference flow: back to the Blogs list after create, Blog Details after
-    // update. Brief delay so the success toast is visible before leaving.
-    setTimeout(isEdit ? onSaved || onCancel : onCancel, 900);
   };
 
   return (
@@ -727,6 +764,7 @@ export const BlogForm: React.FC<BlogFormProps> = ({
                 variant="outline"
                 size="md"
                 onPress={handleSaveDraft}
+                disabled={isSubmitting}
                 icon={<Text style={styles.saveDraftIcon}>📄</Text>}
                 style={styles.bottomButton}
               />
@@ -735,6 +773,8 @@ export const BlogForm: React.FC<BlogFormProps> = ({
                 variant="primary"
                 size="md"
                 onPress={handleCreatePress}
+                loading={isSubmitting}
+                disabled={isSubmitting}
                 icon={isEdit ? undefined : <Text style={styles.createIcon}>✈️</Text>}
                 style={styles.bottomButton}
               />

@@ -33,8 +33,10 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
               ? 'File a\nComplaint'
               : action.id === 'donate'
                 ? 'Donate\nNow'
-                : action.id === 'renew'
-                  ? 'Renew\nMembership'
+                : action.id === 'renew' || action.id === 'membership'
+                  ? action.label === 'Renew Membership'
+                    ? 'Renew\nMembership'
+                    : 'Become\na Member'
                   : action.label;
 
   return (

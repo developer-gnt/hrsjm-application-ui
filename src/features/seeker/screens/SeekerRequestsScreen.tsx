@@ -10,7 +10,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AdminHeader } from '../../../app/navigation/AdminHeader';
+import { AppHeader } from '../../../core/components/common/AppHeader';
+import { HomeHeader } from '../../user/home/components/HomeHeader';
 import { AppCard } from '../../../core/components/common/AppCard';
 import { AppButton } from '../../../core/components/common/AppButton';
 import { AssistanceStatusBadge } from '../../admin/assistance/components/AssistanceStatusBadge';
@@ -134,22 +135,19 @@ export const SeekerRequestsScreen: React.FC<SeekerRequestsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safe} edges={['left', 'right']}>
-      {/* Official Unified HRSJM Header */}
-      <AdminHeader showMenu={false} showBack={false} />
-
-      {/* Screen Title & Action Bar */}
-      <View style={styles.titleSection}>
-        <View style={styles.titleCol}>
-          <Text style={styles.pageTitle}>Aid Application Tracker</Text>
-          <Text style={styles.pageSubtitle}>Track status and timeline of your requests</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.headerNewBtn}
-          onPress={() => (onApplyPress ? onApplyPress() : setIsApplyModalVisible(true))}
-        >
-          <Text style={styles.headerNewBtnText}>+ Apply</Text>
-        </TouchableOpacity>
-      </View>
+      <HomeHeader onBack={() => navigation?.navigate?.('SeekerHome')} />
+      <AppHeader
+        title="Aid Application Tracker"
+        subtitle="Track status and timeline of your requests"
+        rightAction={
+          <TouchableOpacity
+            style={styles.headerNewBtn}
+            onPress={() => (onApplyPress ? onApplyPress() : setIsApplyModalVisible(true))}
+          >
+            <Text style={styles.headerNewBtnText}>+ Apply</Text>
+          </TouchableOpacity>
+        }
+      />
 
       {/* Filter Tabs */}
       <View style={styles.tabBar}>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core/theme';
+import { AdminColors, BorderRadius, Spacing, UserFontFamilies } from '../../../../core/theme';
 // TODO: Replace with the official HRSJM campus/office photograph.
 // TEMPORARY ASSET: AI-generated campus visual with the hero-navy fade baked
 // into its left edge (src/assets/images/contact-hero-building.jpg) — swap
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headline: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 32,
     lineHeight: 38,
     fontWeight: '700',

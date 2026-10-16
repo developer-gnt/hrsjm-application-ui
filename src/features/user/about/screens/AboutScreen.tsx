@@ -11,8 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AdminColors,
-  FontFamilies,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
@@ -67,7 +67,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
   onOpenNews,
   onOpenWhatWeDo,
   showBottomNav = false,
-  useAdminHeader = true,
+  useAdminHeader = false,
 }) => {
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const monitoringOffset = useRef(0);
@@ -135,6 +135,8 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
         />
       ) : (
         <HomeHeader
+          onBack={onBack}
+          unreadCount={3}
           showNotificationDot
           notificationDotColor={AdminColors.accentGold}
           onPressSearch={() => onNavigate?.('search') || showComingSoon('Search')}
@@ -233,7 +235,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 22,
     lineHeight: 27,
     fontWeight: '700',

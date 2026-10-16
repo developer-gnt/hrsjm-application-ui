@@ -3,9 +3,9 @@ import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import {
   AdminColors,
   BorderRadius,
-  FontFamilies,
   Shadows,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import type { AboutContent } from '../types/about.types';
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 22,
     lineHeight: 27,
     fontWeight: '700',
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   principleTitle: {
     marginTop: 6,
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 12.5,
     lineHeight: 16,
     fontWeight: '700',

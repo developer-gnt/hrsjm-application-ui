@@ -3,8 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AdminColors,
-  FontFamilies,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 24,
     lineHeight: 30,
     fontWeight: '700',

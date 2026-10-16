@@ -3,9 +3,9 @@ import { StyleSheet, Text, View } from 'react-native';
 import {
   AdminColors,
   BorderRadius,
-  FontFamilies,
   Shadows,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 22,
     lineHeight: 27,
     fontWeight: '700',
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
+    fontFamily: UserFontFamilies.heading,
     fontSize: 16,
     lineHeight: 20,
     fontWeight: '700',
