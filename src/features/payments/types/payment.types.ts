@@ -44,6 +44,7 @@ export interface CashfreeOrderSession {
   currency: string;
   purpose: 'donation' | 'membership';
   reference_id: string;
+  environment?: 'SANDBOX' | 'PRODUCTION' | string;
 }
 
 export interface CashfreeVerifyResponse {

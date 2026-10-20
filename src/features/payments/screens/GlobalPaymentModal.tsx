@@ -118,7 +118,6 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   payload,
   onClose,
   onSuccess,
-  onNavigateHome,
   onViewHistory,
   initialStage,
 }) => {

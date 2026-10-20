@@ -73,10 +73,12 @@ export class GlobalPaymentService {
         const sdk = require('react-native-cashfree-pg-sdk');
         if (sdk?.CFPaymentGatewayService) {
           const { CFSession, CFEnvironment } = require('cashfree-pg-api-contract');
+          const isProduction = session.environment === 'PRODUCTION';
+          const cfEnv = isProduction ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
           const cfSession = new CFSession(
             session.payment_session_id,
             session.order_id,
-            CFEnvironment.SANDBOX,
+            cfEnv,
           );
           sdk.CFPaymentGatewayService.doWebPayment(cfSession);
         }
