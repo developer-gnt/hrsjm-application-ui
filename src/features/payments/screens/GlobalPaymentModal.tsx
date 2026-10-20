@@ -6,6 +6,7 @@ import {
   Easing,
   Image,
   Modal,
+  Platform,
   ScrollView,
   Share,
   StatusBar,
@@ -57,6 +58,60 @@ export interface GlobalPaymentModalProps {
 type PaymentStage = 'amount_selection' | 'checkout' | 'processing' | 'success' | 'failed';
 
 const PRESET_AMOUNTS = [500, 1000, 2000, 5000];
+
+const getFriendlyDeclineSubheading = (raw?: string): string => {
+  if (!raw) {
+    return 'Your transaction could not be processed at this time. No money has been debited.';
+  }
+  const lower = raw.toLowerCase();
+  if (
+    lower.includes('cashfree') ||
+    lower.includes('credential') ||
+    lower.includes('.env') ||
+    lower.includes('configured') ||
+    lower.includes('bad gateway') ||
+    lower.includes('api key')
+  ) {
+    return 'The payment gateway is temporarily unavailable. Your money is completely safe and no amount was debited.';
+  }
+  if (lower.includes('network') || lower.includes('timeout') || lower.includes('econnrefused')) {
+    return 'The connection to the payment server timed out. Please check your internet connection.';
+  }
+  if (lower.includes('balance') || lower.includes('insufficient')) {
+    return 'The transaction was declined due to insufficient account balance.';
+  }
+  if (lower.includes('bank') || lower.includes('issuer') || lower.includes('decline')) {
+    return 'Your bank or payment provider declined the transaction authorization.';
+  }
+  return 'Payment authorization could not be completed. No money was debited from your account.';
+};
+
+const getFriendlyDeclineReason = (raw?: string): string => {
+  if (!raw) {
+    return 'Transaction authorization was declined by the payment provider.';
+  }
+  const lower = raw.toLowerCase();
+  if (
+    lower.includes('cashfree') ||
+    lower.includes('credential') ||
+    lower.includes('.env') ||
+    lower.includes('configured') ||
+    lower.includes('bad gateway') ||
+    lower.includes('api key')
+  ) {
+    return 'Payment gateway service is currently undergoing routine maintenance or configuration. Please try again shortly or use another payment method.';
+  }
+  if (lower.includes('network') || lower.includes('timeout') || lower.includes('econnrefused')) {
+    return 'Network connection timed out while awaiting bank authorization. Please check your internet connectivity.';
+  }
+  if (lower.includes('balance') || lower.includes('insufficient')) {
+    return 'Insufficient balance in the account linked to this payment method.';
+  }
+  if (lower.includes('bank') || lower.includes('issuer')) {
+    return 'Transaction was declined by your bank or card issuer. Please try an alternate card or UPI app.';
+  }
+  return 'Transaction was declined by the payment processor. Please try again or select another payment option.';
+};
 
 export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   visible,
@@ -114,6 +169,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
     message: string;
     reason?: string;
   } | null>(null);
+  const [showDevDebug, setShowDevDebug] = useState<boolean>(false);
 
   // Spinner animation for Processing stage
   const spinAnim = useRef(new Animated.Value(0)).current;
@@ -154,6 +210,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       setProcessingStep(0);
       setReceiptResult(null);
       setIsCustomAmount(false);
+      setShowDevDebug(false);
 
       const maxLimit = payload?.maxAllowedAmount !== undefined
         ? payload.maxAllowedAmount
@@ -1307,6 +1364,24 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   // STAGE 5: PAYMENT FAILED / DECLINED STAGE
   // ============================================================================
   const renderFailedStage = () => {
+    const friendlySubheading = getFriendlyDeclineSubheading(failureError?.message || failureError?.reason);
+    const friendlyReason = getFriendlyDeclineReason(failureError?.message || failureError?.reason);
+
+    const paymentMethodDisplay =
+      paymentMethod === 'upi'
+        ? selectedUpiApp === 'gpay'
+          ? 'UPI (Google Pay)'
+          : selectedUpiApp === 'phonepe'
+          ? 'UPI (PhonePe)'
+          : selectedUpiApp === 'paytm'
+          ? 'UPI (Paytm)'
+          : 'UPI (BHIM)'
+        : paymentMethod === 'card'
+        ? 'Debit / Credit Card'
+        : paymentMethod === 'netbanking'
+        ? selectedBank
+        : selectedWallet;
+
     return (
       <View style={styles.stageContainer}>
         {/* Top Header */}
@@ -1334,7 +1409,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: Math.max(insets.bottom, 20) + 120 },
+            { paddingBottom: Math.max(insets.bottom, 20) + 160 },
           ]}
         >
           {/* Failure Aura Badge */}
@@ -1347,18 +1422,22 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           </View>
 
           <Text style={styles.failedHeading}>Payment Unsuccessful</Text>
-          <Text style={styles.failedSubheading}>
-            {failureError?.message || 'Payment was declined by the simulated bank server / card issuer.'}
-          </Text>
+          <Text style={styles.failedSubheading}>{friendlySubheading}</Text>
 
           {/* Failed Amount Card */}
           <View style={styles.failedAmountCard}>
+            <View style={styles.failedAmountBadge}>
+              <Text style={styles.failedAmountBadgeText}>TRANSACTION ATTEMPT</Text>
+            </View>
             <Text style={styles.failedAmountNumber}>
               ₹{activeAmount.toLocaleString('en-IN')}
             </Text>
-            <Text style={styles.failedAmountCaption}>
-              No money has been debited from your account.
-            </Text>
+            <View style={styles.failedSafeRow}>
+              <Text style={styles.failedSafeIcon}>🔒</Text>
+              <Text style={styles.failedAmountCaption}>
+                No money has been debited from your account.
+              </Text>
+            </View>
           </View>
 
           {/* Transaction Metadata Card */}
@@ -1366,50 +1445,82 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
             <View style={styles.receiptMetaRow}>
               <Text style={styles.receiptMetaLabel}>Payment Status</Text>
               <View style={styles.failedBadge}>
+                <View style={styles.failedBadgeDot} />
                 <Text style={styles.failedBadgeText}>Declined</Text>
               </View>
             </View>
+
             <View style={styles.receiptMetaRow}>
               <Text style={styles.receiptMetaLabel}>Payment Method</Text>
-              <Text style={styles.receiptMetaValue}>
-                {paymentMethod === 'upi'
-                  ? `UPI (${selectedUpiApp.toUpperCase()})`
-                  : paymentMethod === 'card'
-                  ? 'Debit / Credit Card'
-                  : paymentMethod === 'netbanking'
-                  ? selectedBank
-                  : selectedWallet}
-              </Text>
+              <Text style={styles.receiptMetaValue}>{paymentMethodDisplay}</Text>
             </View>
+
             <View style={styles.receiptMetaRow}>
               <Text style={styles.receiptMetaLabel}>Status Code</Text>
-              <Text style={styles.receiptMetaValue}>{failureError?.code || 'GATEWAY_DECLINED'}</Text>
-            </View>
-            <View style={styles.receiptMetaRow}>
-              <Text style={styles.receiptMetaLabel}>Reason</Text>
-              <Text style={styles.receiptMetaValue} numberOfLines={2}>
-                {failureError?.message || failureError?.reason || 'Transaction could not be completed.'}
+              <Text style={styles.receiptMetaCodeValue}>
+                {failureError?.code || 'PAYMENT_DECLINED'}
               </Text>
+            </View>
+
+            {/* Dedicated Failure Reason Box - Stacked layout prevents any text collision */}
+            <View style={styles.declineReasonBox}>
+              <View style={styles.declineReasonHeaderRow}>
+                <Text style={styles.declineReasonIcon}>⚠️</Text>
+                <Text style={styles.declineReasonLabel}>Reason for Failure</Text>
+              </View>
+              <Text style={styles.declineReasonText}>{friendlyReason}</Text>
             </View>
           </View>
 
           {/* Security Reassurance Card */}
           <View style={styles.secureReassureCard}>
-            <Text style={styles.secureReassureIcon}>🛡️</Text>
+            <View style={styles.secureReassureIconCircle}>
+              <Text style={styles.secureReassureIcon}>🛡️</Text>
+            </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.secureReassureTitle}>Zero Account Risk</Text>
+              <Text style={styles.secureReassureTitle}>Zero Account Risk Guarantee</Text>
               <Text style={styles.secureReassureBody}>
-                Your money is completely safe. No charges were made to your bank account or card.
+                Your money is completely safe. No charges were made to your bank account or card. In the event of an unexpected bank hold, it will automatically reverse within 24–48 hours.
               </Text>
             </View>
           </View>
+
+          {/* Developer Technical Diagnostics (__DEV__ only) */}
+          {__DEV__ && failureError?.message && (
+            <View style={styles.devDiagCard}>
+              <TouchableOpacity
+                onPress={() => setShowDevDebug(prev => !prev)}
+                style={styles.devDiagHeader}
+                activeOpacity={0.7}
+              >
+                <View style={styles.devDiagTitleRow}>
+                  <Text style={styles.devDiagIcon}>⚙️</Text>
+                  <Text style={styles.devDiagTitle}>Developer Diagnostics</Text>
+                </View>
+                <Text style={styles.devDiagToggle}>{showDevDebug ? '▲ Hide' : '▼ View Details'}</Text>
+              </TouchableOpacity>
+              {showDevDebug && (
+                <View style={styles.devDiagContent}>
+                  <Text style={styles.devDiagSub}>Raw Gateway Response:</Text>
+                  <Text style={styles.devDiagErrorText} selectable>
+                    {failureError.message}
+                  </Text>
+                  {failureError.code && (
+                    <Text style={styles.devDiagCodeText}>
+                      Code: {failureError.code}
+                    </Text>
+                  )}
+                </View>
+              )}
+            </View>
+          )}
         </ScrollView>
 
         {/* Sticky Bottom Actions */}
         <View
           style={[
             styles.bottomActionBar,
-            { paddingBottom: Math.max(insets.bottom, 14) + 6 },
+            { paddingBottom: Math.max(insets.bottom, 14) + 8 },
           ]}
         >
           <TouchableOpacity
@@ -1421,11 +1532,11 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.viewHistoryLinkBtn}
+            style={styles.cancelExitBtn}
             onPress={onClose}
             activeOpacity={0.7}
           >
-            <Text style={styles.viewHistoryLinkText}>Cancel & Exit</Text>
+            <Text style={styles.cancelExitBtnText}>Cancel & Exit</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -2507,12 +2618,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 12,
     color: '#64748B',
+    flexShrink: 0,
   },
   receiptMetaValue: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 12.5,
     fontWeight: '700',
     color: '#0F172A',
+    textAlign: 'right',
+    flexShrink: 1,
   },
   completedBadge: {
     backgroundColor: '#DCFCE7',
@@ -2613,27 +2727,33 @@ const styles = StyleSheet.create({
     marginVertical: 18,
   },
   failedCircleOuter: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
     backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 6,
-    borderColor: '#FEF2F2',
+    borderWidth: 4,
+    borderColor: '#FECACA',
   },
   failedCircleInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#EF4444',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 3,
   },
   failedCrossIcon: {
     color: '#FFFFFF',
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '900',
+    textAlign: 'center',
   },
   failedHeading: {
     fontFamily: 'Poppins-Bold',
@@ -2645,7 +2765,7 @@ const styles = StyleSheet.create({
   },
   failedSubheading: {
     fontFamily: 'Inter-Regular',
-    fontSize: 13.5,
+    fontSize: 13,
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 19,
@@ -2653,31 +2773,64 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   failedAmountCard: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#FFF5F5',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#FECACA',
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     alignItems: 'center',
     marginBottom: 16,
   },
+  failedAmountBadge: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  failedAmountBadgeText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#B91C1C',
+    letterSpacing: 0.5,
+  },
   failedAmountNumber: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '900',
     color: '#B91C1C',
+    letterSpacing: -0.5,
+  },
+  failedSafeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+  },
+  failedSafeIcon: {
+    fontSize: 12,
   },
   failedAmountCaption: {
     fontFamily: 'Inter-Medium',
     fontSize: 12,
     color: '#991B1B',
-    marginTop: 4,
   },
   failedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FEE2E2',
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: 6,
+    gap: 5,
+  },
+  failedBadgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#DC2626',
   },
   failedBadgeText: {
     fontFamily: 'Inter-Bold',
@@ -2685,83 +2838,170 @@ const styles = StyleSheet.create({
     color: '#B91C1C',
     fontWeight: '700',
   },
+  receiptMetaCodeValue: {
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#B91C1C',
+    letterSpacing: 0.3,
+  },
+  declineReasonBox: {
+    marginTop: 10,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  declineReasonHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  declineReasonIcon: {
+    fontSize: 13,
+  },
+  declineReasonLabel: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 11.5,
+    color: '#64748B',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  declineReasonText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12.5,
+    color: '#334155',
+    lineHeight: 18,
+    marginTop: 2,
+    backgroundColor: '#F8FAFC',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
   secureReassureCard: {
     flexDirection: 'row',
     backgroundColor: '#F0FDF4',
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#BBF7D0',
-    padding: 12,
+    padding: 14,
     marginBottom: 14,
-    gap: 10,
+    gap: 12,
+    alignItems: 'flex-start',
+  },
+  secureReassureIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#DCFCE7',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
   },
   secureReassureIcon: {
-    fontSize: 22,
+    fontSize: 18,
   },
   secureReassureTitle: {
     fontFamily: 'Poppins-Bold',
     fontSize: 13,
     fontWeight: '700',
     color: '#166534',
-    marginBottom: 2,
+    marginBottom: 3,
   },
   secureReassureBody: {
     fontFamily: 'Inter-Regular',
     fontSize: 11.5,
     color: '#15803D',
-    lineHeight: 16,
+    lineHeight: 16.5,
   },
-  simulatorHelperCard: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 14,
+  devDiagCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
-    padding: 14,
+    borderColor: '#E2E8F0',
+    padding: 10,
     marginBottom: 16,
   },
-  simulatorHelperHeader: {
-    marginBottom: 6,
-  },
-  simulatorHelperTag: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: '#1D4ED8',
-    letterSpacing: 0.5,
-  },
-  simulatorHelperText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    color: '#1E3A8A',
-    lineHeight: 17,
-    marginBottom: 10,
-  },
-  simulatorHelperBtn: {
-    backgroundColor: '#1E40AF',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  devDiagHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  simulatorHelperBtnText: {
-    fontFamily: 'Inter-Bold',
+  devDiagTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  devDiagIcon: {
     fontSize: 12,
-    color: '#FFFFFF',
+  },
+  devDiagTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 11,
+    color: '#475569',
     fontWeight: '700',
   },
+  devDiagToggle: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11,
+    color: '#1B3F8F',
+  },
+  devDiagContent: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  devDiagSub: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 10.5,
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  devDiagErrorText: {
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    fontSize: 10.5,
+    color: '#991B1B',
+    backgroundColor: '#FEF2F2',
+    padding: 8,
+    borderRadius: 6,
+    lineHeight: 14,
+  },
+  devDiagCodeText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 10.5,
+    color: '#64748B',
+    marginTop: 6,
+  },
   primaryRetryBtn: {
-    height: 46,
+    height: 48,
     borderRadius: 12,
-    backgroundColor: '#1B3F8F',
+    backgroundColor: '#0F2860',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   primaryRetryBtnText: {
     fontFamily: 'Inter-Bold',
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  cancelExitBtn: {
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  cancelExitBtnText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: '600',
   },
 });
