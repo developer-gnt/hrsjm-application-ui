@@ -16,7 +16,8 @@ import { MembershipRenewalEligibilitySection } from '../components/MembershipRen
 import { FreeRenewalPolicyCard } from '../components/FreeRenewalPolicyCard';
 import { RenewContactBar } from '../components/RenewContactBar';
 import { RenewNowButton } from '../components/RenewNowButton';
-import { RenewalPlanOption } from '../data/renewalPlansData';
+import { RenewalPlanOption, RENEWAL_PLANS } from '../data/renewalPlansData';
+import { GlobalPaymentModal, PaymentPayload } from '../../payments';
 import {
   navigateToMembershipApplications,
   navigateToProfile,
@@ -47,6 +48,8 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [selectedPlanId, setSelectedPlanId] = useState<string>('1-year');
+  const [paymentModalVisible, setPaymentModalVisible] = useState<boolean>(false);
+  const [paymentPayload, setPaymentPayload] = useState<PaymentPayload | null>(null);
 
   const isTabletOrDesktop = width > 520;
   const contentMaxWidth = isTabletOrDesktop ? 460 : width;
@@ -81,7 +84,17 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
   const handleRenew = () => {
     if (onRenewPress) {
       onRenewPress(selectedPlanId);
+      return;
     }
+    const plan = RENEWAL_PLANS.find(p => p.id === selectedPlanId) || RENEWAL_PLANS[0];
+    setPaymentPayload({
+      purpose: 'membership',
+      title: `Membership Renewal (${plan.duration})`,
+      category: 'Membership',
+      amount: plan.priceAmount,
+      entityId: 'membership_renewal',
+    });
+    setPaymentModalVisible(true);
   };
 
   const bottomPadding = Math.max(insets.bottom, 20) + Spacing.lg;
@@ -168,6 +181,14 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
           <RenewNowButton onPress={handleRenew} />
         </ScrollView>
       </View>
+
+      <GlobalPaymentModal
+        visible={paymentModalVisible}
+        payload={paymentPayload}
+        initialStage="checkout"
+        onClose={() => setPaymentModalVisible(false)}
+        onNavigateHome={onBack}
+      />
     </View>
   );
 };

@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   BackHandler,
   Image,
   Modal,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,6 +22,7 @@ import {
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { ContactHeader } from '../../contact/components/ContactHeader';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeTab } from '../../home/types/home.types';
 import {
@@ -28,14 +31,16 @@ import {
   type UserEvent,
   type UserEventCategory,
 } from '../data/user-events';
+import { fetchDatabaseEvents } from '../services/events.service';
 
-interface UserEventsScreenProps {
+export interface UserEventsScreenProps {
   onBack?: () => void;
-  onOpenEvent: (event: UserEvent) => void;
-  onOpenAbout: () => void;
-  onOpenRights: () => void;
-  onOpenContact: () => void;
-  onOpenNews: () => void;
+  showBackButton?: boolean;
+  onOpenEvent?: (event: UserEvent) => void;
+  onOpenAbout?: () => void;
+  onOpenRights?: () => void;
+  onOpenContact?: () => void;
+  onOpenNews?: () => void;
   showBottomNav?: boolean;
   hideBottomNav?: boolean;
 }
@@ -48,11 +53,19 @@ type EventDateFilter = 'All Dates' | 'Today' | 'Upcoming' | 'Past';
 type EventCategoryFilter = 'All' | UserEventCategory;
 type EventLocationFilter = 'All Locations' | string;
 
-const CATEGORY_COLORS: Record<UserEventCategory, { background: string; text: string }> = {
+const CATEGORY_COLORS: Record<string, { background: string; text: string }> = {
   Workshop: { background: '#FFF1C9', text: '#8A5A00' },
   Awareness: { background: '#FCE9DF', text: '#9C4F2E' },
+  'Awareness Camp': { background: '#FCE9DF', text: '#9C4F2E' },
   Community: { background: '#E7F4E8', text: '#397047' },
   Education: { background: '#E8F0FB', text: '#315A90' },
+  Seminar: { background: '#E8F0FB', text: '#315A90' },
+  'Relief Activity': { background: '#FFF1C9', text: '#8A5A00' },
+  'Health Camp': { background: '#E7F4E8', text: '#397047' },
+};
+
+const getCategoryColor = (category: string) => {
+  return CATEGORY_COLORS[category] || { background: '#E8F0FB', text: '#315A90' };
 };
 
 const MONTHS: Record<string, number> = {
@@ -75,6 +88,13 @@ const DATE_FILTERS: EventDateFilter[] = ['All Dates', 'Today', 'Upcoming', 'Past
 const parseEventDate = (
   event: UserEvent,
 ): { value: number; date: Date; hasTime: boolean } | null => {
+  if (event.rawEvent?.start_at) {
+    const d = new Date(event.rawEvent.start_at);
+    if (!isNaN(d.getTime())) {
+      return { value: d.getTime(), date: d, hasTime: !event.rawEvent.all_day };
+    }
+  }
+
   const match = /^(\d{1,2})\s+([a-z]{3})\s+(\d{4})$/i.exec(event.date.trim());
   if (!match) {
     return null;
@@ -161,6 +181,7 @@ const getEventCity = (location: string): string =>
 
 export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
   onBack,
+  showBackButton = false,
   onOpenEvent,
   onOpenAbout,
   onOpenRights,
@@ -180,14 +201,45 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
   const [draftDateFilter, setDraftDateFilter] = useState<EventDateFilter>('All Dates');
   const [draftLocation, setDraftLocation] = useState<EventLocationFilter>('All Locations');
 
+  const [dbEvents, setDbEvents] = useState<UserEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadEvents = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    try {
+      const items = await fetchDatabaseEvents();
+      setDbEvents(items);
+    } catch {
+      setDbEvents(USER_EVENTS);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
+
   const categories = useMemo(
-    () => [...new Set(USER_EVENTS.map(event => event.category))],
-    [],
+    () => [...new Set(dbEvents.map(event => event.category))],
+    [dbEvents],
   );
   const locations = useMemo(
-    () => [...new Set(USER_EVENTS.map(event => getEventCity(event.location)))].sort(),
-    [],
+    () => [...new Set(dbEvents.map(event => getEventCity(event.location)))].sort(),
+    [dbEvents],
   );
+
+  const horizontalCategories = useMemo(() => {
+    const base = ['All', 'Upcoming', 'Workshop', 'Awareness', 'Community'];
+    const dynamicCats = categories.filter(c => !base.includes(c));
+    return [...base, ...dynamicCats];
+  }, [categories]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -195,8 +247,11 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
         setFilterOpen(false);
         return true;
       }
-      onBack?.();
-      return true;
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      return false;
     });
     return () => subscription.remove();
   }, [filterOpen, onBack]);
@@ -208,7 +263,7 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
 
   const events = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return USER_EVENTS.filter(event => {
+    return dbEvents.filter(event => {
       const state = getEventDateState(event, now);
       const matchesCategory = category === 'All' || event.category === category;
       const matchesDate =
@@ -225,7 +280,7 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
           .includes(query);
       return matchesQuery && matchesCategory && matchesDate && matchesLocation;
     }).sort((a, b) => compareEventsByDate(a, b, now));
-  }, [category, dateFilter, location, now, search]);
+  }, [category, dateFilter, dbEvents, location, now, search]);
 
   const filtersActive =
     category !== 'All' || dateFilter !== 'All Dates' || location !== 'All Locations';
@@ -256,25 +311,37 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
     if (tab.id === 'home') {
       onBack?.();
     } else if (tab.id === 'about') {
-      onOpenAbout();
+      onOpenAbout?.();
     } else if (tab.id === 'rights') {
-      onOpenRights();
+      onOpenRights?.();
     } else if (tab.id === 'contact') {
-      onOpenContact();
+      onOpenContact?.();
     } else if (tab.id === 'news') {
-      onOpenNews();
+      onOpenNews?.();
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <ContactHeader onBack={onBack} onPressSearch={() => searchRef.current?.focus()} />
+      <AdminHeader
+        showMenu={false}
+        showBack={Boolean(showBackButton && onBack)}
+        onBack={onBack}
+      />
 
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => loadEvents(true)}
+            colors={[AdminColors.primary]}
+            tintColor={AdminColors.primary}
+          />
+        }
       >
         <View style={styles.hero}>
           <Image source={USER_EVENTS[0].image} style={styles.heroImage} resizeMode="cover" />
@@ -295,7 +362,7 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryRow}
         >
-          {USER_EVENT_CATEGORIES.map(item => {
+          {horizontalCategories.map(item => {
             const selected =
               item === 'Upcoming'
                 ? dateFilter === 'Upcoming'
@@ -374,55 +441,82 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
         </View>
 
         <View style={styles.eventList}>
-          {events.map(event => (
-            <TouchableOpacity
-              key={event.id}
-              style={styles.eventCard}
-              onPress={() => onOpenEvent(event)}
-              activeOpacity={0.82}
-              accessibilityRole="button"
-              accessibilityLabel={`View event: ${event.title}`}
-            >
-              <View style={styles.eventImageWrap}>
-                <Image source={event.image} style={styles.eventImage} resizeMode="cover" />
-                <View style={styles.dateBadge}>
-                  <Text style={styles.dateDay}>{event.day}</Text>
-                  <Text style={styles.dateMonth}>{event.month}</Text>
+          {loading && dbEvents.length === 0 ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator size="large" color={AdminColors.primary} />
+              <Text style={styles.loadingText}>Loading events from database...</Text>
+            </View>
+          ) : events.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <AppIcon name="calendar" size={44} color={AdminColors.textMuted} />
+              <Text style={styles.emptyTitle}>No events found</Text>
+              <Text style={styles.emptySubtitle}>
+                {filtersActive || search
+                  ? 'Try adjusting your search or filters to see more events.'
+                  : 'Check back soon for new events and programs.'}
+              </Text>
+              {filtersActive || search ? (
+                <TouchableOpacity style={styles.clearFilterBtn} onPress={clearFilters}>
+                  <Text style={styles.clearFilterBtnText}>Reset Filters</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : (
+            events.map(event => (
+              <TouchableOpacity
+                key={event.id}
+                style={styles.eventCard}
+                onPress={() => onOpenEvent?.(event)}
+                activeOpacity={0.82}
+                accessibilityRole="button"
+                accessibilityLabel={`View event: ${event.title}`}
+              >
+                <View style={styles.eventImageWrap}>
+                  <Image source={event.image} style={styles.eventImage} resizeMode="cover" />
+                  <View style={styles.dateBadge}>
+                    <Text style={styles.dateDay}>{event.day}</Text>
+                    <Text style={styles.dateMonth}>{event.month}</Text>
+                  </View>
                 </View>
-              </View>
-              <View style={styles.eventContent}>
-                <Text style={styles.eventTitle} numberOfLines={2}>
-                  {event.title}
-                </Text>
-                <View style={styles.eventMeta}>
-                  <AppIcon name="calendar" size={14} color={AdminColors.textSecondary} />
-                  <Text style={styles.eventMetaText} numberOfLines={1}>
-                    {event.date}  |  {event.time}
+                <View style={styles.eventContent}>
+                  <Text style={styles.eventTitle} numberOfLines={2}>
+                    {event.title}
                   </Text>
+                  <View style={styles.eventMeta}>
+                    <AppIcon name="calendar" size={14} color={AdminColors.textSecondary} />
+                    <Text style={styles.eventMetaText} numberOfLines={1}>
+                      {event.date}  |  {event.time}
+                    </Text>
+                  </View>
+                  <View style={styles.eventMeta}>
+                    <AppIcon name="map-pin" size={14} color={AdminColors.textSecondary} />
+                    <Text style={styles.eventMetaText} numberOfLines={1}>
+                      {event.location}
+                    </Text>
+                  </View>
+                  <View style={styles.tagRow}>
+                    <Text
+                      style={[
+                        styles.eventTag,
+                        {
+                          backgroundColor: getCategoryColor(event.category).background,
+                          color: getCategoryColor(event.category).text,
+                        },
+                      ]}
+                    >
+                      {event.category}
+                    </Text>
+                    <Text style={[styles.eventTag, styles.secondaryTag]} numberOfLines={1}>
+                      {event.tag}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.eventMeta}>
-                  <AppIcon name="map-pin" size={14} color={AdminColors.textSecondary} />
-                  <Text style={styles.eventMetaText} numberOfLines={1}>
-                    {event.location}
-                  </Text>
+                <View style={styles.eventArrow}>
+                  <AppIcon name="arrow-right" size={15} color={AdminColors.textOnDark} />
                 </View>
-                <View style={styles.tagRow}>
-                  <Text style={[styles.eventTag, { backgroundColor: CATEGORY_COLORS[event.category].background, color: CATEGORY_COLORS[event.category].text }]}>
-                    {event.category}
-                  </Text>
-                  <Text style={[styles.eventTag, styles.secondaryTag]} numberOfLines={1}>
-                    {event.tag}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.eventArrow}>
-                <AppIcon name="arrow-right" size={15} color={AdminColors.textOnDark} />
-              </View>
-            </TouchableOpacity>
-          ))}
-          {events.length === 0 ? (
-            <Text style={styles.emptyText}>No events match your search or filters.</Text>
-          ) : null}
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -538,7 +632,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: Spacing.md,
+    paddingBottom: 100,
   },
   hero: {
     width: '100%',
@@ -874,5 +968,48 @@ const styles = StyleSheet.create({
     color: AdminColors.primaryDark,
     fontSize: 14.5,
     fontWeight: '700',
+  },
+  loadingWrap: {
+    paddingVertical: Spacing.xl * 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: AdminColors.textSecondary,
+    fontSize: 14,
+    marginTop: Spacing.sm,
+  },
+  emptyWrap: {
+    paddingVertical: Spacing.xl * 1.5,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+  },
+  emptySubtitle: {
+    fontSize: 13.5,
+    color: AdminColors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: Spacing.md,
+  },
+  clearFilterBtn: {
+    backgroundColor: AdminColors.primaryLight,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: AdminColors.primary,
+  },
+  clearFilterBtnText: {
+    color: AdminColors.primary,
+    fontWeight: '600',
+    fontSize: 13,
   },
 });

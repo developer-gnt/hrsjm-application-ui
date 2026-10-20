@@ -53,6 +53,7 @@ export const EditRightsArticleScreen: React.FC<EditRightsArticleScreenProps> = (
   return (
     <RightsArticleForm
       mode="edit"
+      articleId={article.id}
       title="Edit Rights Article"
       subtitle="Update the rights article information."
       initialForm={initialForm}

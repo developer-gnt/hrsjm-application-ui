@@ -1,16 +1,18 @@
-import React, { useState, useSyncExternalStore } from 'react';
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { NavigationContext } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdminColors, BorderRadius, Spacing } from '../../../core';
 import { StatusTabKey, SupportTicket, DateFilter } from '../types/ticket.types';
 import { supportTicketsStore } from '../services/supportTicketsStore';
-import { SupportTicketsHeader } from '../components/SupportTicketsHeader';
+import { AdminHeader } from '../../../app/navigation/AdminHeader';
 import { SupportSummaryCards } from '../components/SupportSummaryCards';
 import { SupportSearchBar } from '../components/SupportSearchBar';
 import { SupportStatusTabs } from '../components/SupportStatusTabs';
@@ -20,6 +22,7 @@ import { SupportFilterModal, formatDisplayDate } from '../components/SupportFilt
 import { SupportTicketDetailsModal } from '../components/SupportTicketDetailsModal';
 import { SupportBottomNav } from '../components/SupportBottomNav';
 import { PlusIcon } from '../components/SupportIcons';
+import { CreateTicketModal } from '../../admin/support/components/CreateTicketModal';
 
 interface SupportTicketsScreenProps {
   initialTicketId?: string;
@@ -49,6 +52,9 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState<DateFilter | null>(null);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<SupportTicket | null>(() => {
     if (initialTicketId) {
       return supportTicketsStore.getTicketById(initialTicketId) || null;
@@ -62,6 +68,45 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
     supportTicketsStore.getSnapshot,
     supportTicketsStore.getSnapshot
   );
+
+  const loadTickets = useCallback(async () => {
+    try {
+      await supportTicketsStore.fetchTickets();
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const navContext = React.useContext(NavigationContext);
+
+  useEffect(() => {
+    loadTickets();
+  }, [loadTickets]);
+
+  useEffect(() => {
+    if (!navContext) return;
+    const unsubscribe = navContext.addListener('focus', () => {
+      supportTicketsStore.fetchTickets();
+    });
+    return unsubscribe;
+  }, [navContext]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await supportTicketsStore.fetchTickets();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleCreateTicketPress = () => {
+    if (onCreateTicketPress) {
+      onCreateTicketPress();
+    } else {
+      setCreateModalVisible(true);
+    }
+  };
 
   const stats = supportTicketsStore.getStats();
 
@@ -88,13 +133,13 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
 
   return (
     <View style={styles.screen}>
-      {/* Top Header */}
-      <SupportTicketsHeader
-        paddingTop={insets.top}
+      {/* Unified Official Brand Header */}
+      <AdminHeader
+        showMenu={false}
+        showBack={Boolean(onBack)}
         onBack={onBack}
-        onMenuPress={onMenuPress}
-        onNotificationsPress={onNotificationsPress}
-        onProfilePress={onProfilePress}
+        onPressNotifications={onNotificationsPress}
+        onPressProfile={onProfilePress}
       />
 
       <ScrollView
@@ -104,6 +149,14 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
           { paddingBottom: insets.bottom + (showBottomNav ? 84 : 24) },
         ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={AdminColors.primary}
+            colors={[AdminColors.primary]}
+          />
+        }
       >
         <View style={styles.contentWrap}>
           {/* Title Row: Title, Subtitle & Prominent Create Ticket Button */}
@@ -117,7 +170,7 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
 
             <TouchableOpacity
               style={styles.createTicketButton}
-              onPress={onCreateTicketPress}
+              onPress={handleCreateTicketPress}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Create Support Ticket"
@@ -172,7 +225,9 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
           )}
 
           {/* Ticket Cards List */}
-          {filteredTickets.length > 0 ? (
+          {loading && stats.total === 0 && !searchQuery && !dateFilter ? (
+            <SupportEmptyState type="loading" />
+          ) : filteredTickets.length > 0 ? (
             <View style={styles.listContainer}>
               {filteredTickets.map(ticket => (
                 <SupportTicketCard
@@ -186,7 +241,7 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
           ) : stats.total === 0 ? (
             <SupportEmptyState
               type="empty"
-              onCreateTicket={onCreateTicketPress}
+              onCreateTicket={handleCreateTicketPress}
             />
           ) : (
             <SupportEmptyState
@@ -212,6 +267,16 @@ export const SupportTicketsScreen: React.FC<SupportTicketsScreenProps> = ({
         visible={!!selectedTicketForDetails}
         ticket={selectedTicketForDetails}
         onClose={() => setSelectedTicketForDetails(null)}
+      />
+
+      {/* Create Ticket Modal */}
+      <CreateTicketModal
+        visible={createModalVisible}
+        onClose={() => setCreateModalVisible(false)}
+        onSuccess={() => {
+          setCreateModalVisible(false);
+          supportTicketsStore.fetchTickets();
+        }}
       />
 
       {/* Bottom Navigation with Support highlighted */}

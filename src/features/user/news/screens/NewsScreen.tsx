@@ -53,7 +53,7 @@ interface SearchInputHandle {
   focus: () => void;
 }
 
-interface NewsScreenProps {
+export interface NewsScreenProps {
   onOpenArticle: (article: UserNewsArticle) => void;
   onOpenHome: () => void;
   onOpenAbout: () => void;

@@ -96,8 +96,15 @@ const SeekerEventsWrapper: React.FC<any> = ({ navigation }) => {
   );
 };
 
-const SeekerSupportWrapper: React.FC<any> = () => {
-  return <SupportTicketsScreen showBottomNav={false} />;
+const SeekerSupportWrapper: React.FC<any> = ({ navigation }) => {
+  return (
+    <SupportTicketsScreen
+      showBottomNav={false}
+      onCreateTicketPress={() => navigation.navigate('FileComplaint')}
+      onProfilePress={() => navigation.navigate('SeekerProfile')}
+      onNotificationsPress={() => navigation.navigate('Notifications')}
+    />
+  );
 };
 
 const SeekerProfileWrapper: React.FC<any> = ({ navigation }) => {

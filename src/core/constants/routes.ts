@@ -74,6 +74,9 @@ export const AppRoutes = {
   // About & Information pages
   ABOUT: 'About',
   KNOW_YOUR_RIGHTS: 'KnowYourRights',
+  RIGHT_DETAILS: 'RightDetails',
+  CREATE_RIGHT: 'CreateRight',
+  EDIT_RIGHT: 'EditRight',
 
   // Membership & Renewal
   MEMBERSHIP_DETAILS: 'MembershipDetails',

@@ -133,6 +133,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     Partial<Record<keyof FormState, string>>
   >({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedTicketId, setSubmittedTicketId] = useState<string>('');
   const [isHelpTopicSelectorVisible, setIsHelpTopicSelectorVisible] =
     useState(false);
@@ -285,8 +286,8 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     }
     if (!form.mobile.trim()) {
       nextErrors.mobile = 'Mobile number is required.';
-    } else if (!/^\+?[0-9\s-]{8,15}$/.test(form.mobile.trim())) {
-      nextErrors.mobile = 'Enter a valid mobile number.';
+    } else if (!/^[0-9]{10}$/.test(form.mobile.trim())) {
+      nextErrors.mobile = 'Enter a valid 10-digit mobile number.';
     }
     if (!selectedState) {
       nextErrors.state = 'Please select your state.';
@@ -618,14 +619,21 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
       <AppInput
         label="Mobile Number"
         required
-        placeholder="Enter your mobile number"
+        placeholder="Enter 10-digit mobile number"
         keyboardType="phone-pad"
         value={form.mobile}
-        onChangeText={value => updateField('mobile', value)}
+        onChangeText={value => {
+          // Only allow digits, max 10
+          const digits = value.replace(/[^0-9]/g, '').slice(0, 10);
+          updateField('mobile', digits);
+        }}
+        maxLength={10}
         error={errors.mobile}
         accessibilityLabel="Mobile number"
         leftIcon={
-          <AppIcon name="phone" size={16} color={AdminColors.primaryDark} />
+          <View style={styles.countryCodePill}>
+            <Text style={styles.countryCodeText}>+91</Text>
+          </View>
         }
       />
       <AppInput
@@ -807,7 +815,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Mobile Number</Text>
           <Text style={styles.summaryValue}>
-            {form.mobile || 'Not provided'}
+            {form.mobile ? `+91 ${form.mobile}` : 'Not provided'}
           </Text>
         </View>
         <View style={styles.summaryRow}>
@@ -863,22 +871,33 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         />
         <AppButton
           title="Submit Complaint"
-          onPress={() => {
-            const ticket = supportTicketsStore.createTicketFromDraft({
-              category: form.helpType || selectedHelpTopic?.title || 'Human Rights Grievance',
-              subject: form.subject || 'Complaint / Grievance',
-              description: `${form.description}\n\nComplainant: ${form.fullName}\nPhone: ${form.mobile}\nEmail: ${form.email || 'N/A'}\nLocation: ${form.city || ''}, ${form.state || ''}`,
-              attachments: attachments.map((a, idx) => ({
-                id: `att-${Date.now()}-${idx}`,
-                name: a.name || 'document',
-                size: a.size || 0,
-                formattedSize: a.size ? `${(a.size / (1024 * 1024)).toFixed(1)} MB` : '1.0 MB',
-                type: a.type || 'file',
-                uri: a.uri,
-              })),
-            });
-            setSubmittedTicketId(ticket.ticketNumber || ticket.id);
-            setIsSubmitted(true);
+          loading={isSubmitting}
+          disabled={isSubmitting}
+          onPress={async () => {
+            if (isSubmitting) return;
+            setIsSubmitting(true);
+            try {
+              const ticket = await supportTicketsStore.createTicket({
+                category: form.helpType || selectedHelpTopic?.title || 'Human Rights Grievance',
+                subject: form.subject || 'Complaint / Grievance',
+                description: `${form.description}\n\nComplainant: ${form.fullName}\nPhone: +91${form.mobile}\nEmail: ${form.email || 'N/A'}\nLocation: ${form.city || ''}, ${form.state || ''}`,
+                attachments: attachments.map((a, idx) => ({
+                  id: `att-${Date.now()}-${idx}`,
+                  name: a.name || 'document',
+                  size: a.size || 0,
+                  formattedSize: a.size ? `${(a.size / (1024 * 1024)).toFixed(1)} MB` : '1.0 MB',
+                  type: a.type || 'file',
+                  uri: a.uri,
+                })),
+              });
+              setSubmittedTicketId(ticket.ticketNumber || ticket.id);
+              setIsSubmitted(true);
+            } catch (err) {
+              console.error('Error submitting complaint:', err);
+              Alert.alert('Error', 'Unable to submit your complaint. Please try again.');
+            } finally {
+              setIsSubmitting(false);
+            }
           }}
           variant="gold"
           size="lg"
@@ -1481,5 +1500,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#1E40AF',
+  },
+  countryCodePill: {
+    paddingRight: 8,
+    marginRight: 4,
+    borderRightWidth: 1,
+    borderRightColor: '#CBD5E1',
+    justifyContent: 'center',
+  },
+  countryCodeText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
   },
 });

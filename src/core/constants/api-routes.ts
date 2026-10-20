@@ -122,4 +122,11 @@ export const ApiRoutes = {
     DETAILS: (id: string | number) => `/blogs/${id}`,
     VIEWS: (id: string | number) => `/blogs/${id}/views`,
   },
+
+  // Rights
+  RIGHTS: {
+    BASE: '/rights',
+    DETAILS: (id: string | number) => `/rights/${id}`,
+    VIEWS: (id: string | number) => `/rights/${id}/views`,
+  },
 } as const;

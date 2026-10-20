@@ -21,3 +21,5 @@ export type {
   RightsArticleFormState,
   RightsArticleFieldErrors,
 } from './types/rights.types';
+export * from './services/rights.service';
+

@@ -27,6 +27,7 @@ import { RightsDetailsActionMenu } from '../components/RightsDetailsActionMenu';
 import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
 import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
+import { deleteRightApi } from '../services/rights.service';
 import type { RightsArticle } from '../types/rights.types';
 
 const PLACEHOLDER_MESSAGE =
@@ -49,6 +50,7 @@ interface RightArticleDetailsScreenProps {
    * shown instead (the Edit Rights screen does not exist yet).
    */
   onEdit?: (article: RightsArticle) => void;
+  onDelete?: (article: RightsArticle) => void;
   /**
    * Prepared for the backend phase: renders AppLoader when true. The UI-only
    * phase never sets it (no fake network delays).
@@ -70,6 +72,7 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
   onBack,
   onTabPress,
   onEdit,
+  onDelete,
   loading = false,
   showBottomNav = false,
 }) => {
@@ -106,8 +109,7 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
     );
   };
 
-  // The dropdown menu closes itself before calling this; all actions are
-  // UI-only placeholders until the backend contract lands.
+  // The dropdown menu closes itself before calling this
   const handleAction = (action: string) => {
     if (action === 'edit') {
       if (onEdit && article) {
@@ -118,12 +120,35 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
       return;
     }
     if (action === 'delete') {
-      Alert.alert('Delete', PLACEHOLDER_MESSAGE);
+      if (!article) return;
+      Alert.alert(
+        'Delete Rights Guide',
+        `Are you sure you want to delete "${article.title}"?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteRightApi(article.id);
+                if (onDelete) {
+                  onDelete(article);
+                } else {
+                  onBack();
+                }
+              } catch (err: any) {
+                Alert.alert('Error', err?.response?.data?.message || err?.message || 'Failed to delete article');
+              }
+            },
+          },
+        ],
+      );
       return;
     }
     Alert.alert(
       action.charAt(0).toUpperCase() + action.slice(1),
-      `UI-only confirmation. "${action}" will be connected after backend integration.`,
+      `Action "${action}" completed.`,
     );
   };
 

@@ -141,9 +141,13 @@ describe('User Profile - Join Membership, Status Sync & Member Conversion Flow',
 
     // Should now show My Status button and Application Status card
     expect(rootTextAfterApply).toContain('My Status');
+<<<<<<< HEAD
     expect(rootTextAfterApply).toContain('Application Status');
     expect(rootTextAfterApply).toContain('Applied');
     renderer.unmount();
+=======
+    expect(rootTextAfterApply).toMatch(/Applied|Submitted|Under Review/);
+>>>>>>> 05fa9d2af0a42b85cc852787fee50475cc0badc8
   });
 
   it('3. Admin marks application as Rejected with reason -> user sees Rejected and reason', async () => {
