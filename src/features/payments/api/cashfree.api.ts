@@ -1,4 +1,5 @@
 import { apiClient } from '../../../core/api/client';
+import { API_ENDPOINTS } from '../../../core/api/endpoints';
 import {
   CashfreeOrderSession,
   CashfreeVerifyResponse,
@@ -39,7 +40,7 @@ export const cashfreeApi = {
       : `Donation for ${params.cause}`;
 
     // 1. Create authoritative donation record
-    const donationRes = await apiClient.post<{ id: string }>('/donations', {
+    const donationRes = await apiClient.post<{ id: string }>(API_ENDPOINTS.DONATIONS.CREATE, {
       donor_name: params.donorName,
       donor_mobile: params.donorMobile || '9999999999',
       donor_email: params.donorEmail || undefined,
@@ -51,7 +52,7 @@ export const cashfreeApi = {
     const donationId = (donationRes as any)?.data?.id || (donationRes as any)?.id;
 
     // 2. Create pending donation payment
-    const paymentRes = await apiClient.post<{ id: string }>('/donation-payments', {
+    const paymentRes = await apiClient.post<{ id: string }>(API_ENDPOINTS.PAYMENTS.DONATION_PAYMENTS, {
       donation_id: donationId,
       amount: params.amount,
       payment_method: 'CASHFREE',
@@ -66,7 +67,7 @@ export const cashfreeApi = {
     }
 
     const orderRes = await apiClient.post<CashfreeOrderSession>(
-      '/payments/cashfree/orders',
+      API_ENDPOINTS.PAYMENTS.CASHFREE_ORDERS,
       {
         purpose: 'donation',
         reference_id: paymentId,
@@ -90,7 +91,7 @@ export const cashfreeApi = {
     }
 
     const orderRes = await apiClient.post<CashfreeOrderSession>(
-      '/payments/cashfree/orders',
+      API_ENDPOINTS.PAYMENTS.CASHFREE_ORDERS,
       {
         purpose: 'membership',
         reference_id: params.membershipPaymentId,
@@ -116,7 +117,7 @@ export const cashfreeApi = {
     }
 
     const orderRes = await apiClient.post<CashfreeOrderSession>(
-      '/payments/cashfree/orders',
+      API_ENDPOINTS.PAYMENTS.CASHFREE_ORDERS,
       {
         purpose,
         reference_id: referenceId,
@@ -133,7 +134,7 @@ export const cashfreeApi = {
    */
   async verifyOrder(orderId: string): Promise<CashfreeVerifyResponse> {
     const verifyRes = await apiClient.get<CashfreeVerifyResponse>(
-      `/payments/cashfree/orders/${encodeURIComponent(orderId)}/verify`,
+      API_ENDPOINTS.PAYMENTS.CASHFREE_VERIFY(orderId),
     );
     const verifyData = (verifyRes as any)?.data || verifyRes;
     return verifyData;
