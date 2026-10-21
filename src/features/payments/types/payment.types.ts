@@ -8,13 +8,23 @@ export type PaymentMethodType = 'upi' | 'card' | 'netbanking' | 'wallet';
 
 export type UPIAppType = 'gpay' | 'phonepe' | 'paytm' | 'bhim';
 
+export type PaymentResultStatus =
+  | 'SUCCESS'
+  | 'PENDING'
+  | 'FAILED'
+  | 'USER_DROPPED'
+  | 'CANCELLED'
+  | 'NETWORK_ERROR';
+
 export type PaymentStage =
   | 'amount_selection'
   | 'checkout'
   | 'processing'
   | 'reconciling'
   | 'success'
-  | 'failed';
+  | 'failed'
+  | 'user_dropped'
+  | 'pending';
 
 export interface PaymentPayload {
   purpose: PaymentPurposeType;
@@ -66,6 +76,19 @@ export interface CashfreeVerifyResponse {
     [key: string]: unknown;
   };
   attempts_count?: number;
+  latest_status?: string;
+  latest_message?: string;
+}
+
+export interface PaymentFailureInfo {
+  status: PaymentResultStatus;
+  code: string;
+  title: string;
+  message: string;
+  reason?: string;
+  orderId?: string;
+  canRetry?: boolean;
+  rawError?: any;
 }
 
 export interface PaymentReceiptDetails {

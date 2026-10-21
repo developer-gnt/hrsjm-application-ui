@@ -3,7 +3,6 @@ import { API_ENDPOINTS } from '../../../core/api/endpoints';
 import {
   CashfreeOrderSession,
   CashfreeVerifyResponse,
-  PaymentPayload,
 } from '../types/payment.types';
 
 export interface CreateDonationOrderParams {
@@ -138,5 +137,41 @@ export const cashfreeApi = {
     );
     const verifyData = (verifyRes as any)?.data || verifyRes;
     return verifyData;
+  },
+
+  /**
+   * Validates UPI format with backend validation pipeline
+   */
+  async validateUpiFormat(upiId: string): Promise<{
+    valid: boolean;
+    formatValid: boolean;
+    providerVerified: boolean;
+    message: string;
+    upiId: string;
+  }> {
+    try {
+      const res = await apiClient.post<{
+        valid: boolean;
+        formatValid: boolean;
+        providerVerified: boolean;
+        message: string;
+        upiId: string;
+      }>('/payments/cashfree/validate-upi', { upiId });
+      const data = (res as any)?.data || res;
+      return data;
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Enter a UPI ID in a supported format';
+      const displayMsg = Array.isArray(errorMsg) ? errorMsg[0] : String(errorMsg);
+      return {
+        valid: false,
+        formatValid: false,
+        providerVerified: false,
+        message: displayMsg,
+        upiId,
+      };
+    }
   },
 };

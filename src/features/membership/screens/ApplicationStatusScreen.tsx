@@ -11,6 +11,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useMembership } from '../context/MembershipContext';
 import { ApplicationStatusStepper } from '../components/stepper';
+import { GlobalPaymentModal, PaymentPayload } from '../../payments';
+import { useAuthStore } from '../../auth/store/authStore';
 
 export type ApplicationInnerStatus =
   | 'applied'
@@ -192,6 +194,9 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
 
   const [activeStatus, setActiveStatus] =
     useState<ApplicationInnerStatus>(resolvedInitialStatus);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(false);
+  const authUser = useAuthStore(state => state.user);
 
   useEffect(() => {
     if (currentApp?.status && !initialStatus && !route.params?.status) {
@@ -226,6 +231,27 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
     } else {
       navigation.goBack();
     }
+  };
+
+  const handleOpenPaymentModal = () => {
+    setPaymentModalVisible(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    setPaymentDone(true);
+    setPaymentModalVisible(false);
+  };
+
+  const paymentPayload: PaymentPayload = {
+    purpose: 'membership',
+    title: `Membership Registration Fee - ${appType}`,
+    subtitle: 'Human Rights & Social Justice Mission',
+    category: 'Membership Application',
+    amount: 800,
+    donorName: authUser?.full_name || 'Member Applicant',
+    donorMobile: authUser?.mobile_number || '',
+    donorEmail: authUser?.email || '',
+    entityId: appId || `app-${Date.now()}`,
   };
 
   return (
@@ -596,6 +622,48 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
             </TouchableOpacity>
           )}
 
+          {/* Membership Fee & Payment Action Card */}
+          {activeStatus !== 'rejected' && (
+            <View style={styles.feeStatusCard}>
+              <View style={styles.feeStatusRow}>
+                <View style={styles.feeStatusLeft}>
+                  <Text style={styles.feeStatusLabel}>Membership Registration Fee</Text>
+                  <Text style={styles.feeStatusSub}>{appType} (1 Year Validity)</Text>
+                </View>
+                <View style={styles.feeStatusBadge}>
+                  <Text style={styles.feeStatusBadgeText}>₹800</Text>
+                </View>
+              </View>
+
+              <View style={styles.feePaymentDivider} />
+
+              <View style={styles.paymentGatewayRow}>
+                <View style={styles.paymentStatusIndicator}>
+                  <View style={[styles.statusDot, paymentDone && styles.statusDotGreen]} />
+                  <Text style={styles.paymentStatusText}>
+                    {paymentDone ? 'Payment Verified (Cashfree PG)' : 'Payment Status: Fee Due / Online'}
+                  </Text>
+                </View>
+              </View>
+
+              {!paymentDone && (
+                <TouchableOpacity
+                  style={styles.payFeeGatewayButton}
+                  onPress={handleOpenPaymentModal}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Pay Membership Fee via Cashfree Gateway"
+                >
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                    <Rect x="2" y="5" width="20" height="14" rx="2" stroke="#FFFFFF" strokeWidth={2} />
+                    <Path d="M2 10h20" stroke="#FFFFFF" strokeWidth={2} />
+                  </Svg>
+                  <Text style={styles.payFeeGatewayButtonText}>Pay Membership Fee (₹800)</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
           {/* 4. Back to My Status Button */}
           <TouchableOpacity
             style={styles.backToStatusButton}
@@ -608,6 +676,16 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Cashfree Payment Gateway Modal */}
+      <GlobalPaymentModal
+        visible={paymentModalVisible}
+        payload={paymentPayload}
+        initialStage="checkout"
+        onClose={() => setPaymentModalVisible(false)}
+        onSuccess={handlePaymentSuccess}
+        onNavigateHome={() => navigation.navigate('UserHome' as any)}
+      />
     </SafeAreaView>
   );
 };
@@ -887,6 +965,101 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#1B3F8F',
+  },
+  // Fee status card styles
+  feeStatusCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginTop: 10,
+    marginBottom: 8,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  feeStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  feeStatusLeft: {
+    flex: 1,
+  },
+  feeStatusLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F2860',
+  },
+  feeStatusSub: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  feeStatusBadge: {
+    backgroundColor: '#FFF6D9',
+    borderColor: '#B88916',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  feeStatusBadgeText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#926C05',
+  },
+  feePaymentDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 10,
+  },
+  paymentGatewayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  paymentStatusIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#F59E0B',
+  },
+  statusDotGreen: {
+    backgroundColor: '#10B981',
+  },
+  paymentStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  payFeeGatewayButton: {
+    backgroundColor: '#123B7A',
+    borderRadius: 10,
+    height: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+    shadowColor: '#123B7A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  payFeeGatewayButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
 

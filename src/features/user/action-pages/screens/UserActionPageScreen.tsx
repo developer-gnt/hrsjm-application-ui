@@ -37,6 +37,7 @@ import { navigateToMembershipCategories } from '../../../../core/navigation/appR
 import { GlobalPaymentModal, PaymentPayload } from '../../../payments';
 import { useAuthStore } from '../../../auth/store/authStore';
 import { useMembership } from '../../../membership/context/MembershipContext';
+import { causesService } from '../../../member/services/causes.service';
 
 export interface UserActionPageScreenProps {
   pageId: ActionPageId;
@@ -465,6 +466,14 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
         payload={paymentPayload}
         initialStage="checkout"
         onClose={() => setPaymentModalVisible(false)}
+        onSuccess={(receipt) => {
+          const donatedAmount = receipt?.amount || resolvedDonationAmount;
+          causesService.recordDonation(
+            'General Public Aid',
+            donatedAmount,
+            receipt?.paymentId,
+          );
+        }}
         onNavigateHome={onBack}
       />
     </SafeAreaView>

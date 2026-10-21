@@ -2,11 +2,11 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   Alert,
   Animated,
-  Dimensions,
   Easing,
   Image,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   Share,
   StatusBar,
@@ -22,13 +22,24 @@ import {
   PaymentReceiptDetails,
   PaymentMethodType,
   UPIAppType,
+  PaymentStage,
+  PaymentFailureInfo,
+  PaymentResultStatus,
 } from '../types/payment.types';
-import { globalPaymentService } from '../services/payment.service';
+import { globalPaymentService, PaymentOutcomeError } from '../services/payment.service';
+import { cashfreeApi } from '../api/cashfree.api';
+import {
+  formatCardNumber,
+  validateUpiFormat,
+  validateLuhnCardNumber,
+  validateCardExpiry,
+  validateCardCvv,
+  validateCardHolderName,
+} from '../hooks/useCashfreePayment';
 import { useAuthStore } from '../../auth/store/authStore';
 import { causesService } from '../../member/services/causes.service';
 import {
   UpiBrandLogo,
-  BhimFlagLogo,
   GPayAppLogo,
   PhonePeAppLogo,
   PaytmAppLogo,
@@ -55,8 +66,6 @@ export interface GlobalPaymentModalProps {
   initialStage?: PaymentStage;
 }
 
-type PaymentStage = 'amount_selection' | 'checkout' | 'processing' | 'success' | 'failed';
-
 const PRESET_AMOUNTS = [500, 1000, 2000, 5000];
 
 const getFriendlyDeclineSubheading = (raw?: string): string => {
@@ -64,17 +73,10 @@ const getFriendlyDeclineSubheading = (raw?: string): string => {
     return 'Your transaction could not be processed at this time. No money has been debited.';
   }
   const lower = raw.toLowerCase();
-  if (
-    lower.includes('cashfree') ||
-    lower.includes('credential') ||
-    lower.includes('.env') ||
-    lower.includes('configured') ||
-    lower.includes('bad gateway') ||
-    lower.includes('api key')
-  ) {
-    return 'The payment gateway is temporarily unavailable. Your money is completely safe and no amount was debited.';
+  if (lower.includes('user_dropped') || lower.includes('cancel')) {
+    return 'You left or cancelled the payment before completing it. No successful payment has been confirmed. You can try again.';
   }
-  if (lower.includes('network') || lower.includes('timeout') || lower.includes('econnrefused')) {
+  if (lower.includes('network') || lower.includes('timeout') || lower.includes('econnrefused') || lower.includes('connection')) {
     return 'The connection to the payment server timed out. Please check your internet connection.';
   }
   if (lower.includes('balance') || lower.includes('insufficient')) {
@@ -82,6 +84,9 @@ const getFriendlyDeclineSubheading = (raw?: string): string => {
   }
   if (lower.includes('bank') || lower.includes('issuer') || lower.includes('decline')) {
     return 'Your bank or payment provider declined the transaction authorization.';
+  }
+  if (lower.includes('bad gateway') || lower.includes('502') || lower.includes('503') || lower.includes('maintenance')) {
+    return 'The payment gateway is temporarily unavailable. Your money is completely safe and no amount was debited.';
   }
   return 'Payment authorization could not be completed. No money was debited from your account.';
 };
@@ -91,17 +96,10 @@ const getFriendlyDeclineReason = (raw?: string): string => {
     return 'Transaction authorization was declined by the payment provider.';
   }
   const lower = raw.toLowerCase();
-  if (
-    lower.includes('cashfree') ||
-    lower.includes('credential') ||
-    lower.includes('.env') ||
-    lower.includes('configured') ||
-    lower.includes('bad gateway') ||
-    lower.includes('api key')
-  ) {
-    return 'Payment gateway service is currently undergoing routine maintenance or configuration. Please try again shortly or use another payment method.';
+  if (lower.includes('user_dropped') || lower.includes('cancel')) {
+    return 'The checkout session was closed before payment completion.';
   }
-  if (lower.includes('network') || lower.includes('timeout') || lower.includes('econnrefused')) {
+  if (lower.includes('network') || lower.includes('timeout') || lower.includes('econnrefused') || lower.includes('connection')) {
     return 'Network connection timed out while awaiting bank authorization. Please check your internet connectivity.';
   }
   if (lower.includes('balance') || lower.includes('insufficient')) {
@@ -109,6 +107,9 @@ const getFriendlyDeclineReason = (raw?: string): string => {
   }
   if (lower.includes('bank') || lower.includes('issuer')) {
     return 'Transaction was declined by your bank or card issuer. Please try an alternate card or UPI app.';
+  }
+  if (lower.includes('bad gateway') || lower.includes('502') || lower.includes('503') || lower.includes('maintenance')) {
+    return 'Payment gateway service is currently undergoing routine maintenance. Please try again shortly.';
   }
   return 'Transaction was declined by the payment processor. Please try again or select another payment option.';
 };
@@ -123,13 +124,6 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
-
-  // Default dynamic UPI ID from authenticated user
-  const initialUpiId = user?.mobile_number
-    ? `${user.mobile_number}@upi`
-    : user?.email
-    ? `${user.email.split('@')[0]}@upi`
-    : 'user@upi';
 
   // Step 1 is Amount Selection
   const [stage, setStage] = useState<PaymentStage>('amount_selection');
@@ -147,7 +141,37 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   // Payment Method selection
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('upi');
   const [selectedUpiApp, setSelectedUpiApp] = useState<UPIAppType>('gpay');
-  const [upiId, setUpiId] = useState<string>(initialUpiId);
+  const [upiId, setUpiId] = useState<string>('');
+  const [upiFocused, setUpiFocused] = useState<boolean>(false);
+  const [upiTouched, setUpiTouched] = useState<boolean>(false);
+  const [upiError, setUpiError] = useState<string | null>(null);
+  const upiInputRef = useRef<any>(null);
+  const cardInputRef = useRef<any>(null);
+  const cvvInputRef = useRef<any>(null);
+
+  const handleUpiChange = (text: string) => {
+    setUpiId(text);
+    if (upiError) {
+      setUpiError(null);
+    }
+  };
+
+  const handleUpiBlur = () => {
+    setUpiFocused(false);
+    const trimmed = upiId.trim();
+    if (trimmed.length > 0) {
+      setUpiTouched(true);
+      const res = validateUpiFormat(trimmed);
+      if (!res.isValid) {
+        setUpiError(res.error || 'Please enter a valid UPI ID (e.g. 9888880002@upi)');
+      } else {
+        setUpiError(null);
+      }
+    } else {
+      setUpiTouched(false);
+      setUpiError(null);
+    }
+  };
 
   // Card details
   const [cardNumber, setCardNumber] = useState<string>('');
@@ -155,6 +179,49 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   const [cardCvv, setCardCvv] = useState<string>('');
   const [cardHolder, setCardHolder] = useState<string>(user?.full_name || '');
   const [showCvv, setShowCvv] = useState<boolean>(false);
+  const [cardErrors, setCardErrors] = useState<{
+    cardNumber?: string;
+    cardExpiry?: string;
+    cardCvv?: string;
+    cardHolder?: string;
+  }>({});
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const isSubmittingRef = useRef<boolean>(false);
+
+  const handleCardNumberChange = (text: string) => {
+    const formatted = formatCardNumber(text);
+    setCardNumber(formatted);
+    if (cardErrors.cardNumber) {
+      setCardErrors(prev => ({ ...prev, cardNumber: undefined }));
+    }
+  };
+
+  const handleCardExpiryChange = (text: string) => {
+    const clean = text.replace(/\D/g, '').slice(0, 4);
+    if (clean.length >= 3) {
+      setCardExpiry(`${clean.slice(0, 2)}/${clean.slice(2)}`);
+    } else {
+      setCardExpiry(clean);
+    }
+    if (cardErrors.cardExpiry) {
+      setCardErrors(prev => ({ ...prev, cardExpiry: undefined }));
+    }
+  };
+
+  const handleCardCvvChange = (text: string) => {
+    const clean = text.replace(/\D/g, '').slice(0, 4);
+    setCardCvv(clean);
+    if (cardErrors.cardCvv) {
+      setCardErrors(prev => ({ ...prev, cardCvv: undefined }));
+    }
+  };
+
+  const handleCardHolderChange = (text: string) => {
+    setCardHolder(text);
+    if (cardErrors.cardHolder) {
+      setCardErrors(prev => ({ ...prev, cardHolder: undefined }));
+    }
+  };
 
   // Net banking & Wallets
   const [selectedBank, setSelectedBank] = useState<string>('HDFC Bank');
@@ -163,11 +230,8 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   // Processing timeline step (0 to 5)
   const [processingStep, setProcessingStep] = useState<number>(0);
   const [receiptResult, setReceiptResult] = useState<PaymentReceiptDetails | null>(null);
-  const [failureError, setFailureError] = useState<{
-    code: string;
-    message: string;
-    reason?: string;
-  } | null>(null);
+  const [failureError, setFailureError] = useState<PaymentFailureInfo | null>(null);
+  const [isRetrying, setIsRetrying] = useState<boolean>(false);
   const [showDevDebug, setShowDevDebug] = useState<boolean>(false);
 
   // Spinner animation for Processing stage
@@ -250,12 +314,11 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
         setNeed80G(false);
       }
 
-      const dynamicUpi = user?.mobile_number
-        ? `${user.mobile_number}@upi`
-        : user?.email
-        ? `${user.email.split('@')[0]}@upi`
-        : 'user@upi';
-      setUpiId(dynamicUpi);
+      setUpiId('');
+      setUpiTouched(false);
+      setUpiError(null);
+      setUpiFocused(false);
+      setCardErrors({});
     }
   }, [visible, payload, user, onClose, initialStage]);
 
@@ -328,11 +391,56 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
 
   const handleStartPayment = async () => {
     if (!payload) return;
+    if (isSubmittingRef.current || isSubmitting) return;
+
     if (activeAmount <= 0) {
       Alert.alert('Invalid Amount', 'Please enter a valid amount.');
       return;
     }
 
+    // Validation per selected method
+    if (paymentMethod === 'upi') {
+      const trimmedUpi = upiId.trim();
+      if (trimmedUpi.length > 0) {
+        const formatResult = validateUpiFormat(trimmedUpi);
+        if (!formatResult.isValid) {
+          setUpiTouched(true);
+          setUpiError(formatResult.error || 'Please enter a valid UPI ID (e.g. 9888880002@upi)');
+          Alert.alert('Invalid UPI Format', formatResult.error || 'Please enter a valid UPI ID (e.g. 9888880002@upi).');
+          return;
+        }
+      }
+    } else if (paymentMethod === 'card') {
+      const newCardErrors: {
+        cardNumber?: string;
+        cardExpiry?: string;
+        cardCvv?: string;
+        cardHolder?: string;
+      } = {};
+
+      if (!validateLuhnCardNumber(cardNumber)) {
+        newCardErrors.cardNumber = 'Please enter a valid 13-19 digit card number.';
+      }
+      const expValidation = validateCardExpiry(cardExpiry);
+      if (!expValidation.isValid) {
+        newCardErrors.cardExpiry = expValidation.error || 'Invalid expiry date.';
+      }
+      if (!validateCardCvv(cardCvv)) {
+        newCardErrors.cardCvv = 'CVV must be 3 or 4 digits.';
+      }
+      if (!validateCardHolderName(cardHolder)) {
+        newCardErrors.cardHolder = 'Please enter cardholder name.';
+      }
+
+      if (Object.keys(newCardErrors).length > 0) {
+        setCardErrors(newCardErrors);
+        Alert.alert('Incomplete Card Details', 'Please correct the highlighted card details to proceed.');
+        return;
+      }
+    }
+
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
     setStage('processing');
     setProcessingStep(1);
 
@@ -356,10 +464,12 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
         },
         paymentMethod,
         {
-          upiId,
+          upiId: upiId.trim() || undefined,
           selectedUpiApp: upiAppLabel,
           cardNumber,
           cardHolderName: cardHolder,
+          cardExpiry,
+          cardCvv,
           bankName: selectedBank,
           walletName: selectedWallet,
         },
@@ -375,15 +485,189 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       setProcessingStep(5);
       setReceiptResult(result);
       setStage('success');
+      // Clear sensitive card details from component state upon completion
+      setCardNumber('');
+      setCardCvv('');
       onSuccess?.(result);
     } catch (error: any) {
-      setFailureError({
-        code: 'PAYMENT_DECLINED',
-        message: error?.message || 'Payment processing was cancelled or declined.',
-        reason: error?.message || 'Payment network declined transaction authorization.',
-      });
-      setStage('failed');
+      if (error instanceof PaymentOutcomeError || error?.status) {
+        const status: PaymentResultStatus = error.status || 'FAILED';
+        const failureInfo: PaymentFailureInfo = {
+          status,
+          code: error.code || 'PAYMENT_FAILED',
+          title:
+            status === 'USER_DROPPED'
+              ? 'Payment Not Completed'
+              : status === 'PENDING'
+              ? 'Payment Pending Verification'
+              : status === 'NETWORK_ERROR'
+              ? 'Connection Error'
+              : 'Payment Unsuccessful',
+          message:
+            error.message ||
+            (status === 'USER_DROPPED'
+              ? 'You left or cancelled the payment before completing it. No successful payment has been confirmed. You can try again.'
+              : 'Payment processing was cancelled or declined.'),
+          reason: error.reason || error.message || 'Payment network declined transaction authorization.',
+          orderId: error.orderId,
+          canRetry: error.canRetry !== false,
+          rawError: error,
+        };
+        setFailureError(failureInfo);
+
+        if (status === 'USER_DROPPED' || status === 'CANCELLED') {
+          setStage('user_dropped');
+        } else if (status === 'PENDING') {
+          setStage('pending');
+        } else {
+          setStage('failed');
+        }
+      } else {
+        const failureInfo: PaymentFailureInfo = {
+          status: 'FAILED',
+          code: error?.code || 'PAYMENT_DECLINED',
+          title: 'Payment Unsuccessful',
+          message: error?.message || 'Payment processing was cancelled or declined.',
+          reason: error?.message || 'Payment network declined transaction authorization.',
+          orderId: error?.orderId,
+          canRetry: true,
+          rawError: error,
+        };
+        setFailureError(failureInfo);
+        setStage('failed');
+      }
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
+  };
+
+  const handleRetryPayment = async () => {
+    const prevOrderId = failureError?.orderId;
+    if (!prevOrderId) {
+      setFailureError(null);
+      setStage('checkout');
+      return;
+    }
+
+    setIsRetrying(true);
+    try {
+      // 1. Authoritative check: verify previous order with backend first to prevent duplicate charges
+      const verifyRes = await cashfreeApi.verifyOrder(prevOrderId);
+
+      if (verifyRes?.status === 'SUCCESS') {
+        // Payment actually succeeded in the background (e.g. UPI app delay or webhook)!
+        // Immediately record and render success receipt instead of initiating duplicate charge
+        const now = new Date();
+        const dateFormatted = now.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
+        const timeFormatted = now.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        });
+
+        const paymentId = String(
+          verifyRes.payment?.gateway_payment_id ||
+          verifyRes.payment?.id ||
+          prevOrderId,
+        );
+
+        const receiptNumber =
+          verifyRes.receipt?.receipt_number ||
+          `HRSJM-REC-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+
+        if (payload?.purpose === 'donation') {
+          causesService.recordDonation(payload.entityId || payload.title, activeAmount, paymentId);
+        }
+
+        const receipt: PaymentReceiptDetails = {
+          paymentId,
+          orderId: prevOrderId,
+          donationId: payload?.purpose === 'donation' ? payload.entityId || prevOrderId : undefined,
+          amount: Number(verifyRes.payment?.amount || activeAmount),
+          platformFee: 0,
+          taxCharges: 0,
+          totalPayable: Number(verifyRes.payment?.amount || activeAmount),
+          date: dateFormatted,
+          time: timeFormatted,
+          paymentMethod:
+            paymentMethod === 'upi'
+              ? selectedUpiApp === 'gpay'
+                ? 'UPI (Google Pay)'
+                : selectedUpiApp === 'phonepe'
+                ? 'UPI (PhonePe)'
+                : selectedUpiApp === 'paytm'
+                ? 'UPI (Paytm)'
+                : 'UPI (BHIM)'
+              : 'Online Payment',
+          paymentMethodType: paymentMethod,
+          status: 'Completed',
+          purpose: payload?.purpose || 'donation',
+          title: payload?.title || 'HRSJM Contribution',
+          category: payload?.category,
+          location: payload?.location,
+          imageUrl: payload?.imageUrl,
+          donorName,
+          donorEmail,
+          donorMobile,
+          panNumber,
+          is80GEligible: Boolean(panNumber && need80G),
+          receiptNumber,
+          bankReferenceNo: paymentId,
+          authCode: `AUTH-${Math.floor(100000 + Math.random() * 900000)}`,
+          gatewaySignature: 'CASHFREE_VERIFIED',
+        };
+
+        setReceiptResult(receipt);
+        setFailureError(null);
+        setStage('success');
+        onSuccess?.(receipt);
+        return;
+      }
+
+      if (verifyRes?.status === 'PENDING') {
+        const latestStatus = (verifyRes.latest_status || '').toUpperCase();
+        if (!latestStatus.includes('FAIL') && !latestStatus.includes('DECLIN') && !latestStatus.includes('DROP')) {
+          setFailureError({
+            status: 'PENDING',
+            code: 'PAYMENT_PENDING',
+            title: 'Payment Pending Verification',
+            message: 'Your payment is still being processed by your bank. Verification is still pending. Please wait a moment before trying again.',
+            reason: 'Payment status is currently PENDING at bank gateway.',
+            orderId: prevOrderId,
+            canRetry: true,
+          });
+          setStage('pending');
+          return;
+        }
+      }
+
+      // Safe to retry: previous order is confirmed USER_DROPPED or FAILED
+      setFailureError(null);
+      setStage('checkout');
+    } catch {
+      // Network check failed
+      Alert.alert(
+        'Verification Check Interrupted',
+        'Could not verify previous order status with server. Would you like to check again or return to checkout?',
+        [
+          { text: 'Check Again', onPress: () => handleRetryPayment() },
+          { text: 'Return to Checkout', onPress: () => { setFailureError(null); setStage('checkout'); } },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  const handleCancelAndExit = () => {
+    setFailureError(null);
+    onClose();
   };
 
   const handleShareReceipt = async () => {
@@ -442,6 +726,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: Math.max(insets.bottom, 20) + 90 },
@@ -547,7 +832,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
         {/* Impact Message Card */}
         <View style={styles.impactTrustCard}>
           <Text style={styles.impactTrustIcon}>🤝</Text>
-          <View style={{ flex: 1 }}>
+          <View style={styles.flexOneCol}>
             <Text style={styles.impactTrustTitle}>100% Transparent Non-Profit Mission</Text>
             <Text style={styles.impactTrustBody}>
               Your contribution of ₹{activeAmount.toLocaleString('en-IN')} directly supports
@@ -620,9 +905,11 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, 20) + 90 },
+          { paddingBottom: Math.max(insets.bottom, 20) + 120 },
         ]}
       >
         {/* Headline Section */}
@@ -873,20 +1160,111 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
 
               {/* UPI ID entry */}
               <View style={styles.upiIdEntryBlock}>
-                <Text style={styles.inputFieldLabel}>Or enter UPI ID / VPA</Text>
-                <View style={styles.upiInputWrapper}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => upiInputRef.current?.focus()}
+                >
+                  <Text style={styles.inputFieldLabel}>Or enter UPI ID / VPA</Text>
+                </TouchableOpacity>
+                <Pressable
+                  style={[
+                    styles.upiInputWrapper,
+                    upiFocused && styles.upiInputWrapperFocused,
+                    ((upiTouched || !!upiError) && upiId.trim().length > 0 && !validateUpiFormat(upiId.trim()).isValid) &&
+                      styles.upiInputWrapperError,
+                  ]}
+                  onPress={() => upiInputRef.current?.focus()}
+                  accessible={false}
+                >
                   <TextInput
+                    ref={upiInputRef}
                     style={styles.upiTextInput}
-                    placeholder={user?.mobile_number ? `${user.mobile_number}@upi` : 'user@okhdfcbank'}
+                    placeholder="9888880002@upi"
                     placeholderTextColor="#94A3B8"
                     value={upiId}
-                    onChangeText={setUpiId}
+                    onChangeText={handleUpiChange}
+                    onFocus={() => {
+                      setUpiFocused(true);
+                      setUpiError(null);
+                    }}
+                    onBlur={handleUpiBlur}
                     autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    returnKeyType="done"
+                    editable={!isSubmitting}
                   />
-                  <View style={styles.verifiedGreenCircle}>
-                    <Text style={styles.verifiedGreenCheck}>✓</Text>
+                  {validateUpiFormat(upiId.trim()).isValid ? (
+                    <View style={styles.formatValidPill}>
+                      <View style={styles.formatValidDot} />
+                      <Text style={styles.formatValidText}>Format valid</Text>
+                    </View>
+                  ) : null}
+                  {upiId.length > 0 ? (
+                    <TouchableOpacity
+                      style={styles.clearInputCircle}
+                      onPress={() => {
+                        setUpiId('');
+                        setUpiError(null);
+                        setUpiTouched(false);
+                        upiInputRef.current?.focus();
+                      }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityLabel="Clear UPI ID"
+                    >
+                      <Text style={styles.clearInputIcon}>✕</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </Pressable>
+
+                {/* Suffix suggestion chips when user types digits/name without @ */}
+                {upiId.trim().length >= 3 && !upiId.includes('@') && (
+                  <View style={styles.handleChipsContainer}>
+                    <Text style={styles.handleChipsLabel}>Tap to add:</Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      keyboardShouldPersistTaps="handled"
+                      contentContainerStyle={styles.handleChipsScroll}
+                    >
+                      {['@upi', '@okhdfcbank', '@okaxis', '@paytm', '@ybl'].map(suffix => (
+                        <TouchableOpacity
+                          key={suffix}
+                          style={styles.handleChip}
+                          onPress={() => {
+                            setUpiId(prev => prev.trim() + suffix);
+                            setUpiError(null);
+                            setUpiTouched(false);
+                            upiInputRef.current?.focus();
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.handleChipText}>{suffix}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
                   </View>
-                </View>
+                )}
+
+                {/* Format Valid Informational Notice (Neutral, not claiming account verification) */}
+                {validateUpiFormat(upiId.trim()).isValid && (
+                  <View style={styles.formatValidNoticeBox}>
+                    <Text style={styles.formatValidNoticeIcon}>ℹ️</Text>
+                    <Text style={styles.formatValidNoticeText}>
+                      Format looks valid. Account existence will be verified by payment provider during checkout.
+                    </Text>
+                  </View>
+                )}
+
+                {/* Inline Error Message */}
+                {(upiTouched || !!upiError) && upiId.trim().length > 0 && !validateUpiFormat(upiId.trim()).isValid && (
+                  <View style={styles.inlineErrorBox}>
+                    <Text style={styles.inlineErrorIcon}>⚠️</Text>
+                    <Text style={styles.inlineErrorText}>
+                      {upiError || validateUpiFormat(upiId.trim()).error || 'Please enter a valid UPI ID (e.g. 9888880002@upi)'}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
           )}
@@ -898,62 +1276,125 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
             <View style={styles.subFormContainer}>
               <Text style={styles.subFormHeading}>Card Details</Text>
 
-              <Text style={styles.inputFieldLabel}>Card Number</Text>
-              <View style={styles.cardInputWrapper}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => cardInputRef.current?.focus()}
+              >
+                <Text style={styles.inputFieldLabel}>Card Number</Text>
+              </TouchableOpacity>
+              <Pressable
+                style={[
+                  styles.cardInputWrapper,
+                  !!cardErrors.cardNumber && styles.inputErrorBorder,
+                ]}
+                onPress={() => cardInputRef.current?.focus()}
+                accessible={false}
+              >
                 <TextInput
+                  ref={cardInputRef}
                   style={styles.cardTextInput}
                   placeholder="1234 5678 9012 3456"
                   placeholderTextColor="#94A3B8"
                   keyboardType="numeric"
+                  maxLength={19}
                   value={cardNumber}
-                  onChangeText={setCardNumber}
+                  onChangeText={handleCardNumberChange}
+                  editable={!isSubmitting}
                 />
                 <View style={styles.cardBadgesGroup}>
                   <VisaBadge height={13} />
                   <MastercardBadge size={16} />
                   <RupayBadge height={12} />
                 </View>
-              </View>
+              </Pressable>
+              {!!cardErrors.cardNumber && (
+                <View style={styles.inlineErrorBox}>
+                  <Text style={styles.inlineErrorIcon}>⚠️</Text>
+                  <Text style={styles.inlineErrorText}>{cardErrors.cardNumber}</Text>
+                </View>
+              )}
 
               <View style={styles.cardRowTwoCol}>
-                <View style={{ flex: 1 }}>
+                <View style={styles.flexOneCol}>
                   <Text style={styles.inputFieldLabel}>Expiry Date</Text>
                   <TextInput
-                    style={styles.twoColTextInput}
+                    style={[
+                      styles.twoColTextInput,
+                      !!cardErrors.cardExpiry && styles.inputErrorBorder,
+                    ]}
                     placeholder="MM / YY"
                     placeholderTextColor="#94A3B8"
+                    keyboardType="numeric"
+                    maxLength={5}
                     value={cardExpiry}
-                    onChangeText={setCardExpiry}
+                    onChangeText={handleCardExpiryChange}
+                    editable={!isSubmitting}
                   />
+                  {!!cardErrors.cardExpiry && (
+                    <View style={styles.inlineErrorBox}>
+                      <Text style={styles.inlineErrorIcon}>⚠️</Text>
+                      <Text style={styles.inlineErrorText}>{cardErrors.cardExpiry}</Text>
+                    </View>
+                  )}
                 </View>
 
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.inputFieldLabel}>CVV</Text>
-                  <View style={styles.cvvInputWrapper}>
+                <View style={styles.flexOneCol}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => cvvInputRef.current?.focus()}
+                  >
+                    <Text style={styles.inputFieldLabel}>CVV</Text>
+                  </TouchableOpacity>
+                  <Pressable
+                    style={[
+                      styles.cvvInputWrapper,
+                      !!cardErrors.cardCvv && styles.inputErrorBorder,
+                    ]}
+                    onPress={() => cvvInputRef.current?.focus()}
+                    accessible={false}
+                  >
                     <TextInput
+                      ref={cvvInputRef}
                       style={styles.cvvTextInput}
                       placeholder="•••"
                       placeholderTextColor="#94A3B8"
                       keyboardType="numeric"
+                      maxLength={4}
                       secureTextEntry={!showCvv}
                       value={cardCvv}
-                      onChangeText={setCardCvv}
+                      onChangeText={handleCardCvvChange}
+                      editable={!isSubmitting}
                     />
                     <TouchableOpacity onPress={() => setShowCvv(!showCvv)}>
                       <Text style={styles.eyeIconText}>{showCvv ? '👁️' : '👁️'}</Text>
                     </TouchableOpacity>
-                  </View>
+                  </Pressable>
+                  {!!cardErrors.cardCvv && (
+                    <View style={styles.inlineErrorBox}>
+                      <Text style={styles.inlineErrorIcon}>⚠️</Text>
+                      <Text style={styles.inlineErrorText}>{cardErrors.cardCvv}</Text>
+                    </View>
+                  )}
                 </View>
               </View>
 
               <Text style={styles.inputFieldLabel}>Card Holder Name</Text>
               <TextInput
-                style={styles.cardHolderInput}
+                style={[
+                  styles.cardHolderInput,
+                  !!cardErrors.cardHolder && styles.inputErrorBorder,
+                ]}
                 placeholder={user?.full_name || 'Cardholder Name'}
                 placeholderTextColor="#94A3B8"
                 value={cardHolder}
-                onChangeText={setCardHolder}
+                onChangeText={handleCardHolderChange}
               />
+              {!!cardErrors.cardHolder && (
+                <View style={styles.inlineErrorBox}>
+                  <Text style={styles.inlineErrorIcon}>⚠️</Text>
+                  <Text style={styles.inlineErrorText}>{cardErrors.cardHolder}</Text>
+                </View>
+              )}
             </View>
           )}
 
@@ -1021,7 +1462,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
                 )}
               </View>
 
-              <Text style={[styles.inputFieldLabel, { marginTop: 12 }]}>Linked Mobile Number</Text>
+              <Text style={[styles.inputFieldLabel, styles.labelMarginTop]}>Linked Mobile Number</Text>
               <TextInput
                 style={styles.cardHolderInput}
                 placeholder={user?.mobile_number || '98XXXXXXXX'}
@@ -1056,8 +1497,9 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
         ]}
       >
         <TouchableOpacity
-          style={styles.payButton}
+          style={[styles.payButton, isSubmitting && styles.payButtonDisabled]}
           onPress={handleStartPayment}
+          disabled={isSubmitting}
           activeOpacity={0.85}
         >
           <Text style={styles.payButtonText}>
@@ -1173,7 +1615,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           ]}
         >
           <Text style={styles.secureNoticeIcon}>🛡️</Text>
-          <View style={{ flex: 1 }}>
+          <View style={styles.flexOneCol}>
             <Text style={styles.secureNoticeTitle}>Secure Transaction</Text>
             <Text style={styles.secureNoticeBody}>
               Your payment is processed through a secure payment gateway. HRSJM does not
@@ -1283,7 +1725,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           {/* Mini Item Card */}
           <View style={styles.successItemCard}>
             <Image source={{ uri: imageUrl }} style={styles.successItemThumb} />
-            <View style={{ flex: 1 }}>
+            <View style={styles.flexOneCol}>
               <Text style={styles.successItemTitle} numberOfLines={2}>
                 {title}
               </Text>
@@ -1476,7 +1918,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
             <View style={styles.secureReassureIconCircle}>
               <Text style={styles.secureReassureIcon}>🛡️</Text>
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={styles.flexOneCol}>
               <Text style={styles.secureReassureTitle}>Zero Account Risk Guarantee</Text>
               <Text style={styles.secureReassureBody}>
                 Your money is completely safe. No charges were made to your bank account or card. In the event of an unexpected bank hold, it will automatically reverse within 24–48 hours.
@@ -1523,16 +1965,320 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           ]}
         >
           <TouchableOpacity
-            style={styles.primaryRetryBtn}
-            onPress={() => setStage('checkout')}
+            style={[styles.primaryRetryBtn, isRetrying && styles.payButtonDisabled]}
+            onPress={handleRetryPayment}
+            disabled={isRetrying}
             activeOpacity={0.85}
           >
-            <Text style={styles.primaryRetryBtnText}>Try Again</Text>
+            <Text style={styles.primaryRetryBtnText}>
+              {isRetrying ? 'Checking Status...' : 'Try Again'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.cancelExitBtn}
-            onPress={onClose}
+            onPress={handleCancelAndExit}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.cancelExitBtnText}>Cancel & Exit</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  // ============================================================================
+  // STAGE 6: USER DROPPED / CANCELLED STAGE
+  // ============================================================================
+  const renderUserDroppedStage = () => {
+    const paymentMethodDisplay =
+      paymentMethod === 'upi'
+        ? selectedUpiApp === 'gpay'
+          ? 'UPI (Google Pay)'
+          : selectedUpiApp === 'phonepe'
+          ? 'UPI (PhonePe)'
+          : selectedUpiApp === 'paytm'
+          ? 'UPI (Paytm)'
+          : 'UPI (BHIM)'
+        : paymentMethod === 'card'
+        ? 'Debit / Credit Card'
+        : paymentMethod === 'netbanking'
+        ? selectedBank
+        : selectedWallet;
+
+    return (
+      <View style={styles.stageContainer}>
+        {/* Top Header */}
+        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
+          <View style={styles.headerLogoContainer}>
+            <Image source={HRSJM_EMBLEM} style={styles.headerEmblem} resizeMode="contain" />
+            <View style={styles.headerTextCol}>
+              <Text style={styles.headerBrandTitle}>HRSJM</Text>
+              <Text style={styles.headerHindiSub}>मानव अधिकार • सामाजिक न्याय</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.headerCloseCircleBtn}
+            onPress={handleCancelAndExit}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
+            <Text style={styles.headerCloseIcon}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom, 20) + 160 },
+          ]}
+        >
+          {/* Neutral Amber User Dropped Icon Aura Badge */}
+          <View style={styles.userDroppedAuraBox}>
+            <View style={styles.userDroppedCircleOuter}>
+              <View style={styles.userDroppedCircleInner}>
+                <Text style={styles.userDroppedIcon}>↩️</Text>
+              </View>
+            </View>
+          </View>
+
+          <Text style={styles.userDroppedHeading}>Payment Not Completed</Text>
+          <Text style={styles.userDroppedSubheading}>
+            You left or cancelled the payment before completing it. No successful payment has been confirmed. You can try again.
+          </Text>
+
+          {/* Transaction Attempt Card */}
+          <View style={styles.userDroppedAmountCard}>
+            <View style={styles.userDroppedAmountBadge}>
+              <Text style={styles.userDroppedAmountBadgeText}>TRANSACTION ATTEMPT</Text>
+            </View>
+            <Text style={styles.userDroppedAmountNumber}>
+              ₹{activeAmount.toLocaleString('en-IN')}
+            </Text>
+            <View style={styles.userDroppedSafeRow}>
+              <Text style={styles.userDroppedSafeIcon}>ℹ️</Text>
+              <Text style={styles.userDroppedAmountCaption}>
+                No successful payment has been confirmed.
+              </Text>
+            </View>
+          </View>
+
+          {/* Transaction Metadata Card */}
+          <View style={styles.receiptMetaCard}>
+            <View style={styles.receiptMetaRow}>
+              <Text style={styles.receiptMetaLabel}>Payment Status</Text>
+              <View style={styles.userDroppedBadge}>
+                <View style={styles.userDroppedBadgeDot} />
+                <Text style={styles.userDroppedBadgeText}>Not Completed</Text>
+              </View>
+            </View>
+
+            <View style={styles.receiptMetaRow}>
+              <Text style={styles.receiptMetaLabel}>Payment Method</Text>
+              <Text style={styles.receiptMetaValue}>{paymentMethodDisplay}</Text>
+            </View>
+
+            <View style={styles.receiptMetaRow}>
+              <Text style={styles.receiptMetaLabel}>Status Code</Text>
+              <Text style={styles.userDroppedMetaCodeValue}>
+                {failureError?.code || 'USER_DROPPED'}
+              </Text>
+            </View>
+
+            {/* Informational Session Note Box */}
+            <View style={styles.userDroppedNoticeBox}>
+              <View style={styles.userDroppedNoticeHeaderRow}>
+                <Text style={styles.userDroppedNoticeIcon}>ℹ️</Text>
+                <Text style={styles.userDroppedNoticeLabel}>Session Note</Text>
+              </View>
+              <Text style={styles.userDroppedNoticeText}>
+                You left or cancelled the payment session before completing it. If money was debited from your bank account, your bank or UPI provider will automatically refund it within 3–5 business days.
+              </Text>
+            </View>
+          </View>
+
+          {/* Security Reassurance Card */}
+          <View style={styles.userDroppedReassureCard}>
+            <View style={styles.userDroppedReassureIconCircle}>
+              <Text style={styles.userDroppedReassureIcon}>🛡️</Text>
+            </View>
+            <View style={styles.flexOneCol}>
+              <Text style={styles.userDroppedReassureTitle}>Zero Duplicate Charge Guarantee</Text>
+              <Text style={styles.userDroppedReassureBody}>
+                HRSJM never marks a donation as paid or issues an 80G receipt until the transaction is definitively verified. You can safely try again whenever you are ready.
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Sticky Bottom Actions */}
+        <View
+          style={[
+            styles.bottomActionBar,
+            { paddingBottom: Math.max(insets.bottom, 14) + 8 },
+          ]}
+        >
+          <TouchableOpacity
+            style={[styles.primaryRetryBtn, isRetrying && styles.payButtonDisabled]}
+            onPress={handleRetryPayment}
+            disabled={isRetrying}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryRetryBtnText}>
+              {isRetrying ? 'Checking Status...' : 'Try Again'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.cancelExitBtn}
+            onPress={handleCancelAndExit}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.cancelExitBtnText}>Cancel & Exit</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  // ============================================================================
+  // STAGE 7: PAYMENT PENDING VERIFICATION STAGE
+  // ============================================================================
+  const renderPendingStage = () => {
+    const paymentMethodDisplay =
+      paymentMethod === 'upi'
+        ? selectedUpiApp === 'gpay'
+          ? 'UPI (Google Pay)'
+          : selectedUpiApp === 'phonepe'
+          ? 'UPI (PhonePe)'
+          : selectedUpiApp === 'paytm'
+          ? 'UPI (Paytm)'
+          : 'UPI (BHIM)'
+        : paymentMethod === 'card'
+        ? 'Debit / Credit Card'
+        : paymentMethod === 'netbanking'
+        ? selectedBank
+        : selectedWallet;
+
+    return (
+      <View style={styles.stageContainer}>
+        {/* Top Header */}
+        <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
+          <View style={styles.headerLogoContainer}>
+            <Image source={HRSJM_EMBLEM} style={styles.headerEmblem} resizeMode="contain" />
+            <View style={styles.headerTextCol}>
+              <Text style={styles.headerBrandTitle}>HRSJM</Text>
+              <Text style={styles.headerHindiSub}>मानव अधिकार • सामाजिक न्याय</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.headerCloseCircleBtn}
+            onPress={handleCancelAndExit}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
+            <Text style={styles.headerCloseIcon}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom, 20) + 160 },
+          ]}
+        >
+          {/* Blue Pending Aura Badge */}
+          <View style={styles.pendingAuraBox}>
+            <View style={styles.pendingCircleOuter}>
+              <View style={styles.pendingCircleInner}>
+                <Text style={styles.pendingIcon}>⏳</Text>
+              </View>
+            </View>
+          </View>
+
+          <Text style={styles.pendingHeading}>Payment Pending Verification</Text>
+          <Text style={styles.pendingSubheading}>
+            {failureError?.message || 'Your payment is being processed by your bank. Verification is still pending. We will confirm your contribution as soon as it resolves.'}
+          </Text>
+
+          {/* Transaction Pending Card */}
+          <View style={styles.pendingAmountCard}>
+            <View style={styles.pendingAmountBadge}>
+              <Text style={styles.pendingAmountBadgeText}>TRANSACTION PENDING</Text>
+            </View>
+            <Text style={styles.pendingAmountNumber}>
+              ₹{activeAmount.toLocaleString('en-IN')}
+            </Text>
+            <View style={styles.pendingSafeRow}>
+              <Text style={styles.pendingSafeIcon}>⏳</Text>
+              <Text style={styles.pendingAmountCaption}>
+                Awaiting final confirmation from bank gateway.
+              </Text>
+            </View>
+          </View>
+
+          {/* Transaction Metadata Card */}
+          <View style={styles.receiptMetaCard}>
+            <View style={styles.receiptMetaRow}>
+              <Text style={styles.receiptMetaLabel}>Payment Status</Text>
+              <View style={styles.pendingBadge}>
+                <View style={styles.pendingBadgeDot} />
+                <Text style={styles.pendingBadgeText}>Pending</Text>
+              </View>
+            </View>
+
+            <View style={styles.receiptMetaRow}>
+              <Text style={styles.receiptMetaLabel}>Payment Method</Text>
+              <Text style={styles.receiptMetaValue}>{paymentMethodDisplay}</Text>
+            </View>
+
+            <View style={styles.receiptMetaRow}>
+              <Text style={styles.receiptMetaLabel}>Status Code</Text>
+              <Text style={styles.pendingMetaCodeValue}>
+                {failureError?.code || 'PAYMENT_PENDING'}
+              </Text>
+            </View>
+
+            {/* Verification In Progress Notice */}
+            <View style={styles.pendingNoticeBox}>
+              <View style={styles.pendingNoticeHeaderRow}>
+                <Text style={styles.pendingNoticeIcon}>⏱️</Text>
+                <Text style={styles.pendingNoticeLabel}>Verification In Progress</Text>
+              </View>
+              <Text style={styles.pendingNoticeText}>
+                Your payment request has been submitted to your bank. Please do not submit duplicate payments while verification is underway. Tap "Check Status" to refresh the verification.
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Sticky Bottom Actions */}
+        <View
+          style={[
+            styles.bottomActionBar,
+            { paddingBottom: Math.max(insets.bottom, 14) + 8 },
+          ]}
+        >
+          <TouchableOpacity
+            style={[styles.primaryRetryBtn, isRetrying && styles.payButtonDisabled]}
+            onPress={handleRetryPayment}
+            disabled={isRetrying}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryRetryBtnText}>
+              {isRetrying ? 'Checking Status...' : 'Check Status'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.cancelExitBtn}
+            onPress={handleCancelAndExit}
             activeOpacity={0.7}
           >
             <Text style={styles.cancelExitBtnText}>Cancel & Exit</Text>
@@ -1555,6 +2301,8 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       {stage === 'processing' && renderProcessingStage()}
       {stage === 'success' && renderSuccessStage()}
       {stage === 'failed' && renderFailedStage()}
+      {stage === 'user_dropped' && renderUserDroppedStage()}
+      {stage === 'pending' && renderPendingStage()}
     </Modal>
   );
 };
@@ -2166,37 +2914,129 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   upiIdEntryBlock: {
-    marginTop: 4,
+    marginTop: 14,
   },
   upiInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.2,
     borderColor: '#CBD5E1',
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
+  },
+  upiInputWrapperFocused: {
+    borderColor: '#0F2860',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  upiInputWrapperError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
   },
   upiTextInput: {
     flex: 1,
-    fontFamily: 'Inter-Regular',
-    fontSize: 13,
+    height: '100%',
+    minHeight: 46,
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
     color: '#0F172A',
-    padding: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
-  verifiedGreenCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#10B981',
+  clearInputCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 8,
   },
-  verifiedGreenCheck: {
-    color: '#FFFFFF',
+  clearInputIcon: {
     fontSize: 11,
-    fontWeight: '800',
+    color: '#64748B',
+    fontWeight: '700',
+  },
+  formatValidPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginLeft: 6,
+    gap: 4,
+  },
+  formatValidDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#64748B',
+  },
+  formatValidText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '600',
+  },
+  formatValidNoticeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginTop: 8,
+    gap: 6,
+  },
+  formatValidNoticeIcon: {
+    fontSize: 12,
+  },
+  formatValidNoticeText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 11.5,
+    color: '#64748B',
+    flex: 1,
+    lineHeight: 16,
+  },
+  handleChipsContainer: {
+    marginTop: 8,
+  },
+  handleChipsScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 2,
+  },
+  handleChipsLabel: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11,
+    color: '#64748B',
+    marginRight: 2,
+  },
+  handleChip: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  handleChipText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 11.5,
+    color: '#1D4ED8',
+    fontWeight: '600',
   },
   secureCalloutBox: {
     backgroundColor: '#EFF6FF',
@@ -2241,10 +3081,13 @@ const styles = StyleSheet.create({
   },
   cardTextInput: {
     flex: 1,
+    height: '100%',
+    minHeight: 40,
     fontFamily: 'Inter-Regular',
     fontSize: 13,
     color: '#0F172A',
-    padding: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   cardBadgesGroup: {
     flexDirection: 'row',
@@ -2279,10 +3122,13 @@ const styles = StyleSheet.create({
   },
   cvvTextInput: {
     flex: 1,
+    height: '100%',
+    minHeight: 40,
     fontFamily: 'Inter-Regular',
     fontSize: 13,
     color: '#0F172A',
-    padding: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   eyeIconText: {
     fontSize: 15,
@@ -3002,5 +3848,391 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#475569',
     fontWeight: '600',
+  },
+  flexOneCol: {
+    flex: 1,
+  },
+  labelMarginTop: {
+    marginTop: 12,
+  },
+  inputErrorBorder: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  inlineErrorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  inlineErrorIcon: {
+    fontSize: 12,
+    color: '#DC2626',
+  },
+  inlineErrorText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 11.5,
+    color: '#DC2626',
+    flex: 1,
+    lineHeight: 16,
+  },
+  payButtonDisabled: {
+    opacity: 0.6,
+  },
+
+  /* User Dropped Stage */
+  userDroppedAuraBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 18,
+  },
+  userDroppedCircleOuter: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#FDE68A',
+  },
+  userDroppedCircleInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F59E0B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  userDroppedIcon: {
+    fontSize: 26,
+    textAlign: 'center',
+  },
+  userDroppedHeading: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F2454',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  userDroppedSubheading: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 19,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  userDroppedAmountCard: {
+    backgroundColor: '#FFFBEB',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  userDroppedAmountBadge: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  userDroppedAmountBadgeText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#B45309',
+    letterSpacing: 0.5,
+  },
+  userDroppedAmountNumber: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#B45309',
+    letterSpacing: -0.5,
+  },
+  userDroppedSafeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+  },
+  userDroppedSafeIcon: {
+    fontSize: 12,
+  },
+  userDroppedAmountCaption: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: '#92400E',
+  },
+  userDroppedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 5,
+  },
+  userDroppedBadgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#D97706',
+  },
+  userDroppedBadgeText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 11,
+    color: '#92400E',
+    fontWeight: '700',
+  },
+  userDroppedMetaCodeValue: {
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#B45309',
+    letterSpacing: 0.3,
+  },
+  userDroppedNoticeBox: {
+    marginTop: 10,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  userDroppedNoticeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  userDroppedNoticeIcon: {
+    fontSize: 13,
+  },
+  userDroppedNoticeLabel: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 11.5,
+    color: '#64748B',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  userDroppedNoticeText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12.5,
+    color: '#334155',
+    lineHeight: 18,
+    marginTop: 2,
+    backgroundColor: '#FFFBEB',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  userDroppedReassureCard: {
+    flexDirection: 'row',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    marginBottom: 14,
+    gap: 12,
+    alignItems: 'flex-start',
+  },
+  userDroppedReassureIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  userDroppedReassureIcon: {
+    fontSize: 18,
+  },
+  userDroppedReassureTitle: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F2454',
+    marginBottom: 3,
+  },
+  userDroppedReassureBody: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 11.5,
+    color: '#475569',
+    lineHeight: 16.5,
+  },
+
+  /* Pending Stage */
+  pendingAuraBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 18,
+  },
+  pendingCircleOuter: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    backgroundColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#BFDBFE',
+  },
+  pendingCircleInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  pendingIcon: {
+    fontSize: 26,
+    textAlign: 'center',
+  },
+  pendingHeading: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F2454',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  pendingSubheading: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 19,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  pendingAmountCard: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  pendingAmountBadge: {
+    backgroundColor: '#DBEAFE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  pendingAmountBadgeText: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#1D4ED8',
+    letterSpacing: 0.5,
+  },
+  pendingAmountNumber: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#1D4ED8',
+    letterSpacing: -0.5,
+  },
+  pendingSafeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+  },
+  pendingSafeIcon: {
+    fontSize: 12,
+  },
+  pendingAmountCaption: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: '#1E40AF',
+  },
+  pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DBEAFE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 5,
+  },
+  pendingBadgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#2563EB',
+  },
+  pendingBadgeText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 11,
+    color: '#1E40AF',
+    fontWeight: '700',
+  },
+  pendingMetaCodeValue: {
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#1E40AF',
+    letterSpacing: 0.3,
+  },
+  pendingNoticeBox: {
+    marginTop: 10,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  pendingNoticeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  pendingNoticeIcon: {
+    fontSize: 13,
+  },
+  pendingNoticeLabel: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 11.5,
+    color: '#64748B',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  pendingNoticeText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12.5,
+    color: '#334155',
+    lineHeight: 18,
+    marginTop: 2,
+    backgroundColor: '#EFF6FF',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
   },
 });

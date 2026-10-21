@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../core/components/common/AppHeader';
 import { AppCard } from '../../../core/components/common/AppCard';
@@ -8,10 +8,42 @@ import { AdminColors } from '../../../core/theme/colors';
 import { Typography } from '../../../core/theme/typography';
 import { Spacing } from '../../../core/theme/spacing';
 import { useAuthStore } from '../../auth/store/authStore';
+import { GlobalPaymentModal, PaymentPayload } from '../../payments';
+import { causesService } from '../../member/services/causes.service';
+
+const PRESET_AMOUNTS = [500, 1000, 2500, 5000];
 
 export const DonorHomeScreen: React.FC = () => {
   const user = useAuthStore(state => state.user);
   const signOut = useAuthStore(state => state.signOut);
+  const [selectedAmount, setSelectedAmount] = useState<number>(1000);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+
+  const paymentPayload: PaymentPayload = {
+    purpose: 'donation',
+    title: 'HRSJM General Welfare Donation',
+    subtitle: 'Human Rights and Social Justice Mission',
+    category: 'Public Welfare Aid',
+    location: 'National / All India',
+    amount: selectedAmount,
+    donorName: user?.full_name || 'Donor Supporter',
+    donorMobile: user?.mobile_number || '',
+    donorEmail: user?.email || '',
+    entityId: `don-${Date.now()}`,
+  };
+
+  const handleDonate = () => {
+    setPaymentModalVisible(true);
+  };
+
+  const handleSuccess = (receipt: any) => {
+    causesService.recordDonation(
+      'General Welfare',
+      receipt?.amount || selectedAmount,
+      receipt?.paymentId,
+    );
+    setPaymentModalVisible(false);
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -23,6 +55,46 @@ export const DonorHomeScreen: React.FC = () => {
           </Text>
           <Text style={styles.welcomeSubtitle}>
             Human Rights and Social Justice Mission
+          </Text>
+        </AppCard>
+
+        {/* Quick Donation Card with Gateway */}
+        <AppCard style={styles.donationCard}>
+          <Text style={styles.donationCardTitle}>Support HRSJM Mission</Text>
+          <Text style={styles.donationCardSub}>
+            Your contributions directly fund legal aid, education, healthcare, and emergency social relief.
+          </Text>
+
+          <View style={styles.presetAmountsRow}>
+            {PRESET_AMOUNTS.map(amt => {
+              const active = selectedAmount === amt;
+              return (
+                <TouchableOpacity
+                  key={amt}
+                  style={[styles.presetChip, active && styles.presetChipActive]}
+                  onPress={() => setSelectedAmount(amt)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.presetChipText, active && styles.presetChipTextActive]}>
+                    ₹{amt.toLocaleString('en-IN')}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <TouchableOpacity
+            style={styles.donateCtaBtn}
+            onPress={handleDonate}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.donateCtaBtnText}>
+              Donate ₹{selectedAmount.toLocaleString('en-IN')} via Cashfree Gateway
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={styles.securityNote}>
+            🔒 100% Secure • 80G Tax Exemption Certificate Available
           </Text>
         </AppCard>
 
@@ -50,6 +122,15 @@ export const DonorHomeScreen: React.FC = () => {
           </View>
         ) : null}
       </ScrollView>
+
+      {/* Cashfree Payment Gateway Checkout Modal */}
+      <GlobalPaymentModal
+        visible={paymentModalVisible}
+        payload={paymentPayload}
+        initialStage="checkout"
+        onClose={() => setPaymentModalVisible(false)}
+        onSuccess={handleSuccess}
+      />
     </SafeAreaView>
   );
 };
@@ -78,6 +159,73 @@ const styles = StyleSheet.create({
     ...Typography.secondary,
     color: AdminColors.textSecondary,
   },
+  donationCard: {
+    padding: Spacing.lg,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  donationCardTitle: {
+    ...Typography.sectionHeader,
+    color: '#0F2860',
+    marginBottom: 4,
+  },
+  donationCardSub: {
+    ...Typography.body,
+    color: '#64748B',
+    marginBottom: 12,
+    fontSize: 12.5,
+  },
+  presetAmountsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  presetChip: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  presetChipActive: {
+    borderColor: '#123B7A',
+    backgroundColor: '#EAF1FB',
+  },
+  presetChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  presetChipTextActive: {
+    color: '#123B7A',
+  },
+  donateCtaBtn: {
+    backgroundColor: '#123B7A',
+    borderRadius: 10,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#123B7A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  donateCtaBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  securityNote: {
+    fontSize: 11,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 8,
+  },
   card: {
     padding: Spacing.lg,
   },
@@ -96,3 +244,4 @@ const styles = StyleSheet.create({
 });
 
 export default DonorHomeScreen;
+

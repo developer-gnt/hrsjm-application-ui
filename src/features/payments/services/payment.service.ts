@@ -1,15 +1,41 @@
 import { Platform } from 'react-native';
-import { apiClient } from '../../../core/api/client';
 import {
   PaymentPayload,
   PaymentReceiptDetails,
   PaymentMethodType,
+  PaymentResultStatus,
   CashfreeOrderSession,
   CashfreeVerifyResponse,
+  UPIAppType,
 } from '../types/payment.types';
 import { cashfreeApi } from '../api/cashfree.api';
-import { launchCashfreeWebCheckout } from '../hooks/useCashfreePayment';
+import { launchCashfreeWebCheckout, UPI_PACKAGE_NAMES } from '../hooks/useCashfreePayment';
 import { causesService } from '../../member/services/causes.service';
+
+export interface ExecutePaymentMethodDetails {
+  upiId?: string;
+  selectedUpiApp?: string;
+  cardNumber?: string;
+  cardHolderName?: string;
+  cardExpiry?: string;
+  cardCvv?: string;
+  bankName?: string;
+  walletName?: string;
+}
+
+export class PaymentOutcomeError extends Error {
+  constructor(
+    public readonly status: PaymentResultStatus,
+    public readonly code: string,
+    message: string,
+    public readonly reason?: string,
+    public readonly orderId?: string,
+    public readonly canRetry: boolean = true,
+  ) {
+    super(message);
+    this.name = 'PaymentOutcomeError';
+  }
+}
 
 export class GlobalPaymentService {
   /**
@@ -18,14 +44,7 @@ export class GlobalPaymentService {
   public async executePayment(
     payload: PaymentPayload,
     paymentMethodType: PaymentMethodType,
-    methodDetails: {
-      upiId?: string;
-      selectedUpiApp?: string;
-      cardNumber?: string;
-      cardHolderName?: string;
-      bankName?: string;
-      walletName?: string;
-    },
+    methodDetails: ExecutePaymentMethodDetails,
   ): Promise<PaymentReceiptDetails> {
     const idempotencyKey = `hrsjm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     let session: CashfreeOrderSession;
@@ -54,55 +73,246 @@ export class GlobalPaymentService {
         err?.response?.data?.message ||
         err?.message ||
         'Failed to initiate payment with Cashfree Payment Gateway.';
-      throw new Error(errorMsg);
+      throw new PaymentOutcomeError(
+        'FAILED',
+        'ORDER_INIT_FAILED',
+        errorMsg,
+        'Could not create order on payment gateway.',
+        undefined,
+        true,
+      );
     }
 
     if (!session?.order_id) {
-      throw new Error('Cashfree order creation did not return a valid order ID.');
+      throw new PaymentOutcomeError(
+        'FAILED',
+        'INVALID_ORDER_SESSION',
+        'Cashfree order creation did not return a valid order ID.',
+        'Invalid session received from payment service.',
+        undefined,
+        true,
+      );
     }
 
-    // 2. Launch Cashfree PG Checkout Interface
+    const isProduction = session.environment === 'PRODUCTION';
+    let sdkError: any = null;
+
+    // 2. Launch Cashfree PG Checkout Interface & Wait for SDK outcome
     if (Platform.OS === 'web' && session.payment_session_id) {
       try {
-        await launchCashfreeWebCheckout(session.payment_session_id);
-      } catch (e: any) {
-        // Fall through to verification polling
+        await launchCashfreeWebCheckout(session.payment_session_id, isProduction);
+      } catch {
+        // Fall through to backend verification
       }
     } else if (Platform.OS !== 'web' && session.payment_session_id) {
       try {
         const sdk = require('react-native-cashfree-pg-sdk');
         if (sdk?.CFPaymentGatewayService) {
-          const { CFSession, CFEnvironment } = require('cashfree-pg-api-contract');
-          const isProduction = session.environment === 'PRODUCTION';
+          const {
+            CFSession,
+            CFEnvironment,
+            CFUPI,
+            UPIMode,
+            CFUPIPayment,
+            Card,
+            CFCardPayment,
+          } = require('cashfree-pg-api-contract');
+
           const cfEnv = isProduction ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
           const cfSession = new CFSession(
             session.payment_session_id,
             session.order_id,
             cfEnv,
           );
-          sdk.CFPaymentGatewayService.doWebPayment(cfSession);
+
+          await new Promise<void>(resolve => {
+            let settled = false;
+            const finish = () => {
+              if (!settled) {
+                settled = true;
+                try {
+                  sdk.CFPaymentGatewayService.removeCallback();
+                } catch {
+                  // ignore
+                }
+                resolve();
+              }
+            };
+
+            try {
+              sdk.CFPaymentGatewayService.removeCallback();
+            } catch {
+              // ignore
+            }
+
+            sdk.CFPaymentGatewayService.setCallback({
+              onVerify: (_orderID: string) => {
+                finish();
+              },
+              onError: (error: any, _orderID: string) => {
+                sdkError = error;
+                finish();
+              },
+            });
+
+            // Dispatches payment with method-specific handling
+            try {
+              if (
+                paymentMethodType === 'upi' &&
+                methodDetails.selectedUpiApp &&
+                Platform.OS === 'android'
+              ) {
+                const appKey = methodDetails.selectedUpiApp.toLowerCase().replace(/\s/g, '') as UPIAppType;
+                const pkg = UPI_PACKAGE_NAMES[appKey] || UPI_PACKAGE_NAMES.gpay;
+                const upi = new CFUPI(UPIMode.INTENT, pkg);
+                const upiPayment = new CFUPIPayment(cfSession, upi);
+                sdk.CFPaymentGatewayService.makePayment(upiPayment);
+              } else if (paymentMethodType === 'upi' && methodDetails.upiId) {
+                const upi = new CFUPI(UPIMode.COLLECT, methodDetails.upiId.trim());
+                const upiPayment = new CFUPIPayment(cfSession, upi);
+                sdk.CFPaymentGatewayService.makePayment(upiPayment);
+              } else if (
+                paymentMethodType === 'card' &&
+                methodDetails.cardNumber &&
+                methodDetails.cardExpiry &&
+                methodDetails.cardCvv
+              ) {
+                const [mm, yy] = methodDetails.cardExpiry.replace(/\s/g, '').split('/');
+                const card = new Card(
+                  methodDetails.cardNumber.replace(/\s/g, ''),
+                  (methodDetails.cardHolderName || 'Card Holder').trim(),
+                  mm,
+                  yy,
+                  methodDetails.cardCvv.trim(),
+                  false,
+                );
+                const cardPayment = new CFCardPayment(cfSession, card);
+                sdk.CFPaymentGatewayService.makePayment(cardPayment);
+              } else {
+                sdk.CFPaymentGatewayService.doWebPayment(cfSession);
+              }
+            } catch {
+              finish();
+            }
+
+            // Failsafe timeout in case SDK lifecycle does not trigger callback
+            setTimeout(finish, 60000);
+          });
         }
       } catch {
-        // Continue to server verification
+        // Fallback to backend verification
       }
     }
 
     // 3. Reconcile and Verify with Backend Server
     let verifyResponse: CashfreeVerifyResponse | null = null;
-    const maxAttempts = 4;
+    let lastNetworkError: any = null;
+    const maxAttempts = sdkError ? 2 : 5;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         verifyResponse = await cashfreeApi.verifyOrder(session.order_id);
         if (verifyResponse?.status === 'SUCCESS') {
           break;
         }
-      } catch {
-        // Transient error or in-flight verification
+        const latStatus = (verifyResponse?.latest_status || '').toUpperCase();
+        if (latStatus === 'USER_DROPPED' || latStatus === 'FAILED' || latStatus.includes('DECLIN')) {
+          break;
+        }
+      } catch (err: any) {
+        lastNetworkError = err;
+        // Transient network error; continue polling
       }
 
       if (attempt < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
+    }
+
+    // Guard: Backend verification is the authoritative confirmation of success
+    if (verifyResponse?.status !== 'SUCCESS') {
+      const errCode = (
+        typeof sdkError?.getCode === 'function'
+          ? sdkError.getCode()
+          : typeof sdkError?.code === 'string'
+          ? sdkError.code
+          : ''
+      ).toUpperCase();
+
+      const errMsg = (
+        typeof sdkError?.getMessage === 'function'
+          ? sdkError.getMessage()
+          : typeof sdkError?.message === 'string'
+          ? sdkError.message
+          : ''
+      ).toUpperCase();
+
+      const errStatus = (
+        typeof sdkError?.getStatus === 'function'
+          ? sdkError.getStatus()
+          : typeof sdkError?.status === 'string'
+          ? sdkError.status
+          : ''
+      ).toUpperCase();
+
+      const latestStatus = (verifyResponse?.latest_status || '').toUpperCase();
+
+      const isUserDropped =
+        errCode.includes('USER_DROPPED') ||
+        errMsg.includes('USER_DROPPED') ||
+        errStatus.includes('USER_DROPPED') ||
+        latestStatus.includes('USER_DROPPED') ||
+        errCode.includes('CANCEL') ||
+        errMsg.includes('CANCEL');
+
+      if (isUserDropped) {
+        throw new PaymentOutcomeError(
+          'USER_DROPPED',
+          'USER_DROPPED',
+          'You left or cancelled the payment before completing it. No successful payment has been confirmed. You can try again.',
+          'The transaction session was closed or abandoned by the user before completion.',
+          session.order_id,
+          true,
+        );
+      }
+
+      // If backend verification returned PENDING and no explicit failure was recorded
+      if (verifyResponse?.status === 'PENDING' && !latestStatus.includes('FAIL') && !latestStatus.includes('DECLIN')) {
+        throw new PaymentOutcomeError(
+          'PENDING',
+          'PAYMENT_PENDING',
+          'Your payment is currently being processed by your bank. Verification is still pending. Please check status before attempting another payment.',
+          'Awaiting authoritative status confirmation from bank or UPI network.',
+          session.order_id,
+          true,
+        );
+      }
+
+      // If network failed during verification attempts
+      if (!verifyResponse && lastNetworkError) {
+        throw new PaymentOutcomeError(
+          'NETWORK_ERROR',
+          'NETWORK_TIMEOUT',
+          'Unable to reach payment verification server. Please check your internet connection before retrying.',
+          lastNetworkError?.message || 'Network connectivity failed during payment verification.',
+          session.order_id,
+          true,
+        );
+      }
+
+      // Genuine Gateway / Bank Decline
+      const declineMsg =
+        verifyResponse?.latest_message ||
+        verifyResponse?.message ||
+        (errMsg ? String(errMsg) : 'Payment authorization was declined by your bank or payment provider.');
+
+      throw new PaymentOutcomeError(
+        'FAILED',
+        errCode || 'PAYMENT_DECLINED',
+        declineMsg,
+        errMsg || 'Transaction authorization was declined by payment provider or bank.',
+        session.order_id,
+        true,
+      );
     }
 
     const now = new Date();
@@ -118,13 +328,13 @@ export class GlobalPaymentService {
     });
 
     const paymentId = String(
-      verifyResponse?.payment?.gateway_payment_id ||
-      verifyResponse?.payment?.id ||
-      `CF_${session.order_id}`,
+      verifyResponse.payment?.gateway_payment_id ||
+      verifyResponse.payment?.id ||
+      session.order_id,
     );
 
     const receiptNumber =
-      verifyResponse?.receipt?.receipt_number ||
+      verifyResponse.receipt?.receipt_number ||
       `HRSJM-REC-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
 
     if (payload.purpose === 'donation') {
@@ -149,10 +359,10 @@ export class GlobalPaymentService {
       paymentId,
       orderId: session.order_id,
       donationId: payload.purpose === 'donation' ? payload.entityId || session.order_id : undefined,
-      amount: payload.amount,
+      amount: Number(verifyResponse.payment?.amount || payload.amount),
       platformFee: 0,
       taxCharges: 0,
-      totalPayable: payload.amount,
+      totalPayable: Number(verifyResponse.payment?.amount || payload.amount),
       date: dateFormatted,
       time: timeFormatted,
       paymentMethod: methodLabel,

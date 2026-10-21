@@ -1,5 +1,5 @@
 import { apiClient } from '../../../core/api/client';
-import { PaymentMethodType, PaymentPayload, PaymentReceiptDetails } from '../types/payment.types';
+import { PaymentMethodType, PaymentPayload } from '../types/payment.types';
 
 export interface GatewayOrderResult {
   order_id: string;

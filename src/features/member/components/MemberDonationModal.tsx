@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MemberCause, DonationFormData, DonationReceiptResult } from '../types/causes.types';
 import { causesService } from '../services/causes.service';
 import { useAuthStore } from '../../auth/store/authStore';
+import { GlobalPaymentModal, PaymentPayload, PaymentReceiptDetails } from '../../payments';
 
 interface MemberDonationModalProps {
   visible: boolean;
@@ -52,6 +53,8 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
   const [needReceipt, setNeedReceipt] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [receiptResult, setReceiptResult] = useState<DonationReceiptResult | null>(null);
+  const [paymentModalVisible, setPaymentModalVisible] = useState<boolean>(false);
+  const [paymentPayload, setPaymentPayload] = useState<PaymentPayload | null>(null);
 
   if (!cause) return null;
 
@@ -109,25 +112,46 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const formData: DonationFormData = {
-        causeId: cause.id,
-        causeTitle: cause.title,
-        amount: currentAmount,
-        panNumber: panNumber.trim().toUpperCase() || undefined,
-        phone: phone.trim() || undefined,
-        email: email.trim() || undefined,
-        donorName: user?.full_name || 'Aman Shaikh',
-        need80GReceipt: needReceipt,
-      };
+    const payload: PaymentPayload = {
+      purpose: 'donation',
+      title: cause.title,
+      subtitle: 'Human Rights & Social Justice Mission',
+      category: cause.category,
+      location: cause.location,
+      imageUrl: cause.imageUrl,
+      amount: currentAmount,
+      donorName: user?.full_name || 'HRSJM Supporter',
+      donorMobile: phone.trim() || user?.mobile_number || '',
+      donorEmail: email.trim() || user?.email || '',
+      panNumber: panNumber.trim().toUpperCase() || undefined,
+      need80GReceipt: needReceipt,
+      entityId: cause.id,
+      targetAmount: cause.targetAmount,
+      raisedAmount: cause.raisedAmount,
+      maxAllowedAmount,
+    };
 
-      const receipt = await causesService.processDonation(formData);
-      setReceiptResult(receipt);
-      onSuccess?.(receipt);
-    } finally {
-      setIsSubmitting(false);
-    }
+    setPaymentPayload(payload);
+    setPaymentModalVisible(true);
+  };
+
+  const handlePaymentSuccess = (receipt: PaymentReceiptDetails) => {
+    setPaymentModalVisible(false);
+    const donatedAmount = receipt?.amount || currentAmount;
+    causesService.recordDonation(cause?.id, donatedAmount, receipt?.paymentId);
+    const formattedReceipt: DonationReceiptResult = {
+      receiptNumber: receipt?.receiptNumber || `HRSJM-REC-${Date.now()}`,
+      donationId: receipt?.orderId || `DON-${Date.now()}`,
+      causeTitle: cause?.title || 'Social Welfare Cause',
+      amount: donatedAmount,
+      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      paymentMode: 'Online (Cashfree PG)',
+      donorName: user?.full_name || 'HRSJM Donor',
+      panNumber: panNumber.trim().toUpperCase() || undefined,
+      is80GEligible: Boolean(panNumber && needReceipt),
+    };
+    setReceiptResult(formattedReceipt);
+    onSuccess?.(formattedReceipt);
   };
 
   const handleCloseAll = () => {
@@ -136,6 +160,7 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
   };
 
   return (
+    <>
     <Modal
       visible={visible}
       transparent
@@ -390,6 +415,16 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
         </View>
       </KeyboardAvoidingView>
     </Modal>
+
+    {/* Cashfree Payment Gateway Checkout Modal */}
+    <GlobalPaymentModal
+      visible={paymentModalVisible}
+      payload={paymentPayload}
+      initialStage="checkout"
+      onClose={() => setPaymentModalVisible(false)}
+      onSuccess={handlePaymentSuccess}
+    />
+    </>
   );
 };
 

@@ -25,6 +25,8 @@ import {
   pickNativeDocument,
   takePhotoWithNativeCamera,
 } from '../utils/filePicker';
+import { GlobalPaymentModal, PaymentPayload, PaymentReceiptDetails } from '../../payments';
+import { useAuthStore } from '../../auth/store/authStore';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -63,13 +65,27 @@ const PRESET_OPTIONS: Record<
 
 export function MembershipStep3Screen() {
   const navigation = useNavigation<NavProp>();
-  const { documents, updateDocuments, submitApplication, submitApplicationAsync } = useMembership();
+  const {
+    documents,
+    updateDocuments,
+    submitApplication,
+    submitApplicationAsync,
+    selectedPost,
+    selectedMembershipType,
+  } = useMembership();
+  const authUser = useAuthStore(state => state.user);
 
   const [errors, setErrors] = useState<UploadErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [activePickerType, setActivePickerType] = useState<DocCategory | null>(null);
   const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [paymentPayload, setPaymentPayload] = useState<PaymentPayload | null>(null);
+
+  const postFeeAmount = selectedPost?.feeAmount || 800;
+  const postTitle = selectedPost?.postName || selectedMembershipType || 'District Active Member';
+  const postValidity = selectedPost?.validity || '1 Year';
 
   // Custom upload state
   const [customFileName, setCustomFileName] = useState('');
@@ -223,6 +239,46 @@ export function MembershipStep3Screen() {
     }
   };
 
+  const handleProceedToPayment = () => {
+    if (!validateUploads()) return;
+
+    setPaymentPayload({
+      purpose: 'membership',
+      title: `Membership Fee - ${postTitle}`,
+      subtitle: 'Human Rights & Social Justice Mission',
+      category: 'New Membership Registration',
+      amount: postFeeAmount,
+      donorName: authUser?.full_name || 'Applicant',
+      donorMobile: authUser?.mobile_number || '',
+      donorEmail: authUser?.email || '',
+      entityId: `mem-app-${Date.now()}`,
+    });
+    setPaymentModalVisible(true);
+  };
+
+  const handlePaymentSuccess = async (receipt: PaymentReceiptDetails) => {
+    setPaymentModalVisible(false);
+    setSubmitting(true);
+    try {
+      let newRecord: any;
+      if (submitApplicationAsync) {
+        newRecord = await submitApplicationAsync({ documents });
+      } else {
+        newRecord = submitApplication({ documents });
+      }
+      setSubmitting(false);
+      navigation.navigate('MembershipSubmitted', {
+        applicationId: newRecord.applicationId,
+      });
+    } catch {
+      setSubmitting(false);
+      const newRecord = submitApplication({ documents });
+      navigation.navigate('MembershipSubmitted', {
+        applicationId: newRecord.applicationId,
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Top Header */}
@@ -305,6 +361,46 @@ export function MembershipStep3Screen() {
           />
         </View>
 
+        {/* Membership Registration Fee & Benefits Summary */}
+        <View style={styles.feeCard}>
+          <View style={styles.feeHeader}>
+            <View style={styles.feeIconCircle}>
+              <Icon name="shield-check" size={20} color={colors.primary} strokeWidth={2.2} />
+            </View>
+            <View style={styles.feeHeaderText}>
+              <Text style={styles.feeTitle}>Registration Fee & Benefits</Text>
+              <Text style={styles.feeCategory}>{postTitle} • {postValidity}</Text>
+            </View>
+            <View style={styles.feeBadge}>
+              <Text style={styles.feeBadgeText}>₹{postFeeAmount}</Text>
+            </View>
+          </View>
+
+          <View style={styles.feeDivider} />
+
+          <View style={styles.feeBenefitsList}>
+            <View style={styles.feeBenefitItem}>
+              <Icon name="check" size={13} color="#16A34A" strokeWidth={3} />
+              <Text style={styles.feeBenefitText}>Official Member Certificate & Identity Card</Text>
+            </View>
+            <View style={styles.feeBenefitItem}>
+              <Icon name="check" size={13} color="#16A34A" strokeWidth={3} />
+              <Text style={styles.feeBenefitText}>Appointment Letter & Unit Recognition</Text>
+            </View>
+            <View style={styles.feeBenefitItem}>
+              <Icon name="check" size={13} color="#16A34A" strokeWidth={3} />
+              <Text style={styles.feeBenefitText}>Official Tax-Exempt Receipt Voucher (80G)</Text>
+            </View>
+          </View>
+
+          <View style={styles.gatewayNotice}>
+            <Icon name="shield-check" size={12} color="#2563EB" strokeWidth={2.4} />
+            <Text style={styles.gatewayNoticeText}>
+              Instant verification via Cashfree (UPI, Cards, NetBanking)
+            </Text>
+          </View>
+        </View>
+
         {/* Action Buttons */}
         <View style={styles.actionsRow}>
           <TouchableOpacity
@@ -320,17 +416,30 @@ export function MembershipStep3Screen() {
           <TouchableOpacity
             style={styles.submitBtn}
             activeOpacity={0.85}
-            onPress={handleSubmit}
+            onPress={handleProceedToPayment}
             disabled={submitting}
             accessibilityRole="button"
-            accessibilityLabel="Submit Application">
+            accessibilityLabel={`Pay ₹${postFeeAmount} & Submit Application`}>
             {submitting ? (
               <ActivityIndicator size="small" color={colors.white} />
             ) : (
-              <Text style={styles.submitBtnText}>Submit Application</Text>
+              <View style={styles.btnContentRow}>
+                <Icon name="award" size={16} color={colors.white} strokeWidth={2.4} />
+                <Text style={styles.submitBtnText}>Pay ₹{postFeeAmount} & Submit</Text>
+              </View>
             )}
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={styles.payLaterBtn}
+          activeOpacity={0.7}
+          onPress={handleSubmit}
+          disabled={submitting}
+          accessibilityRole="button"
+          accessibilityLabel="Submit Application and Pay Fee Later">
+          <Text style={styles.payLaterBtnText}>or Submit Application & Pay Fee Later</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Interactive Document Picker Bottom Sheet */}
@@ -509,6 +618,16 @@ export function MembershipStep3Screen() {
           </View>
         </Modal>
       )}
+
+      {/* Cashfree Payment Gateway Checkout Modal */}
+      <GlobalPaymentModal
+        visible={paymentModalVisible}
+        payload={paymentPayload}
+        initialStage="checkout"
+        onClose={() => setPaymentModalVisible(false)}
+        onSuccess={handlePaymentSuccess}
+        onNavigateHome={() => navigation.navigate('UserHome' as any)}
+      />
     </SafeAreaView>
   );
 }
@@ -865,6 +984,112 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: colors.white,
+  },
+  // Membership Fee & Gateway Summary Card Styles
+  feeCard: {
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  feeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  feeIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#EAF1FB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  feeHeaderText: {
+    flex: 1,
+  },
+  feeTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F2860',
+  },
+  feeCategory: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  feeBadge: {
+    backgroundColor: '#FFF6D9',
+    borderColor: '#B88916',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  feeBadgeText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#926C05',
+  },
+  feeDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 10,
+  },
+  feeBenefitsList: {
+    gap: 6,
+    marginBottom: 8,
+  },
+  feeBenefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  feeBenefitText: {
+    fontSize: 12,
+    color: '#334155',
+    flex: 1,
+  },
+  gatewayNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  gatewayNoticeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1D4ED8',
+    flex: 1,
+  },
+  btnContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  payLaterBtn: {
+    marginTop: 10,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  payLaterBtnText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#64748B',
+    textDecorationLine: 'underline',
   },
 });
 

@@ -89,6 +89,13 @@ export {
   BarChart3,
   Wallet,
   FolderTree,
+  RefreshCw,
+  RotateCcw,
+  Landmark,
+  Zap,
+  Banknote,
+  HeartHandshake,
+  SlidersHorizontal,
 } from 'lucide-react-native';
 
 /**

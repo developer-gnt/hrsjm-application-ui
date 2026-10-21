@@ -59,7 +59,7 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
             <Text style={styles.attemptText}>Verification sync (Attempt {reconcileAttempt}/5)</Text>
           </View>
         )}
-        <ActivityIndicator size="small" color="#0F2860" style={{ marginTop: 14 }} />
+        <ActivityIndicator size="small" color="#0F2860" style={styles.indicatorMargin} />
       </View>
     );
   }
@@ -109,22 +109,83 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
     );
   }
 
+  if (stage === 'user_dropped') {
+    return (
+      <View style={[styles.card, styles.userDroppedCard]}>
+        <View style={styles.userDroppedIconBox}>
+          <Text style={styles.userDroppedIcon}>↩️</Text>
+        </View>
+        <Text style={styles.userDroppedTitle}>Payment Not Completed</Text>
+        <Text style={styles.subtitle}>
+          {errorMessage || 'You left or cancelled the payment before completing it. No successful payment has been confirmed. You can try again.'}
+        </Text>
+
+        <View style={styles.btnRow}>
+          {onRetry && (
+            <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.8}>
+              <Text style={styles.retryBtnText}>Try Again</Text>
+            </TouchableOpacity>
+          )}
+          {onDone && (
+            <TouchableOpacity style={styles.cancelExitBtn} onPress={onDone} activeOpacity={0.8}>
+              <Text style={styles.cancelExitBtnText}>Cancel & Exit</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  if (stage === 'pending') {
+    return (
+      <View style={[styles.card, styles.pendingCard]}>
+        <View style={styles.reconcileIconBox}>
+          <Text style={styles.reconcileIcon}>⏳</Text>
+        </View>
+        <Text style={styles.pendingTitle}>Payment Pending Verification</Text>
+        <Text style={styles.subtitle}>
+          {errorMessage || 'Your payment is being processed by your bank. Verification is still pending. Please check status before attempting another payment.'}
+        </Text>
+
+        <View style={styles.btnRow}>
+          {onRetry && (
+            <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.8}>
+              <Text style={styles.retryBtnText}>Check Status</Text>
+            </TouchableOpacity>
+          )}
+          {onDone && (
+            <TouchableOpacity style={styles.cancelExitBtn} onPress={onDone} activeOpacity={0.8}>
+              <Text style={styles.cancelExitBtnText}>Close</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
+  }
+
   if (stage === 'failed') {
     return (
       <View style={[styles.card, styles.failedCard]}>
         <View style={styles.failedIconBox}>
           <Text style={styles.failedIcon}>✕</Text>
         </View>
-        <Text style={styles.failedTitle}>Payment Incomplete or Declined</Text>
+        <Text style={styles.failedTitle}>Payment Unsuccessful</Text>
         <Text style={styles.subtitle}>
           {errorMessage || 'The payment could not be confirmed. If money was debited, it will be automatically reconciled.'}
         </Text>
 
-        {onRetry && (
-          <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.8}>
-            <Text style={styles.retryBtnText}>Try Again</Text>
-          </TouchableOpacity>
-        )}
+        <View style={styles.btnRow}>
+          {onRetry && (
+            <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.8}>
+              <Text style={styles.retryBtnText}>Try Again</Text>
+            </TouchableOpacity>
+          )}
+          {onDone && (
+            <TouchableOpacity style={styles.cancelExitBtn} onPress={onDone} activeOpacity={0.8}>
+              <Text style={styles.cancelExitBtnText}>Cancel & Exit</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     );
   }
@@ -151,9 +212,57 @@ const styles = StyleSheet.create({
     borderColor: '#A7F3D0',
     backgroundColor: '#F0FDF4',
   },
+  userDroppedCard: {
+    borderColor: '#FDE68A',
+    backgroundColor: '#FFFDF5',
+  },
+  pendingCard: {
+    borderColor: '#BFDBFE',
+    backgroundColor: '#F8FAFC',
+  },
   failedCard: {
     borderColor: '#FECACA',
     backgroundColor: '#FEF2F2',
+  },
+  userDroppedIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  userDroppedIcon: {
+    fontSize: 26,
+  },
+  userDroppedTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#92400E',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  pendingTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E3A8A',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  cancelExitBtn: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelExitBtnText: {
+    color: '#475569',
+    fontWeight: '600',
+    fontSize: 14,
   },
   spinnerContainer: {
     width: 64,
@@ -343,5 +452,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 14,
+  },
+  indicatorMargin: {
+    marginTop: 14,
   },
 });

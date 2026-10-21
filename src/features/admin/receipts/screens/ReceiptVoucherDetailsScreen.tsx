@@ -14,36 +14,54 @@ import {
   AdminStatusBadge,
   adminStatusTone,
 } from '../../../../core/components/admin/AdminStatusBadge';
-import { Pencil } from '../../../../core/components/icons';
+import {
+  Pencil,
+  Heart,
+  User,
+  RotateCcw,
+  TrendingUp,
+  CreditCard,
+  FileText,
+  Landmark,
+  Zap,
+  Banknote,
+} from '../../../../core/components/icons';
 import { can } from '../../../../core/permissions/can';
 import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import { AdminColors } from '../../../../core/theme/colors';
 import { Typography } from '../../../../core/theme/typography';
 import { Spacing, BorderRadius } from '../../../../core/theme/spacing';
-import { formatDate, formatDateTime, formatINR } from '../../../../core/utils';
+import { formatDateTime, formatINR } from '../../../../core/utils';
 import { useCancelReceipt, useReceiptDetail, useUpdateReceipt } from '../hooks/useReceipts';
 import { AccountPickerModal } from '../../accounting/components/AccountPickerModal';
 import { PaymentMethodSelector } from '../../accounting/components/PaymentMethodSelector';
 import type { AccountItem, PaymentMethod } from '../../accounting/types/accounting.types';
 import { AppRoutes } from '../../../../core/constants/routes';
 import type { MoreStackParamList } from '../../../../app/navigation/NavigationTypes';
+import {
+  classifyReceipt,
+  formatPaymentMethodBadge,
+} from '../utils/receiptClassification';
 
 type ReceiptVoucherDetailsScreenProps = NativeStackScreenProps<
   MoreStackParamList,
   typeof AppRoutes.RECEIPT_DETAILS
 >;
 
-const DataRow: React.FC<{ label: string; value: string | null | undefined }> = ({
-  label,
-  value,
-}) => (
+const DataRow: React.FC<{
+  label: string;
+  value: string | null | undefined;
+  highlight?: boolean;
+}> = ({ label, value, highlight }) => (
   <View style={styles.dataRow}>
     <Text style={styles.dataLabel}>{label}</Text>
-    <Text style={styles.dataValue}>{value || '—'}</Text>
+    <Text style={[styles.dataValue, highlight && styles.dataValueHighlight]} selectable>
+      {value || '—'}
+    </Text>
   </View>
 );
 
-/** Receipt voucher details: fields + posted journal + full edit modal + cancel with reversal. */
+/** Receipt voucher details: categorized source, contributor, payment & ledger entry. */
 export const ReceiptVoucherDetailsScreen: React.FC<
   ReceiptVoucherDetailsScreenProps
 > = ({ navigation, route }) => {
@@ -68,6 +86,17 @@ export const ReceiptVoucherDetailsScreen: React.FC<
   const [editError, setEditError] = useState<string | null>(null);
 
   const voucher = detail.data;
+
+  // Unconditional classification hook (before any early returns)
+  const classified = React.useMemo(() => {
+    if (!voucher) return null;
+    return classifyReceipt(voucher);
+  }, [voucher]);
+
+  const methodBadge = React.useMemo(() => {
+    if (!voucher) return null;
+    return formatPaymentMethodBadge(voucher.payment_method);
+  }, [voucher]);
 
   const handleOpenEdit = () => {
     if (!voucher) return;
@@ -173,7 +202,7 @@ export const ReceiptVoucherDetailsScreen: React.FC<
     );
   }
 
-  if (detail.isError || !voucher) {
+  if (detail.isError || !voucher || !classified) {
     return (
       <View style={styles.flex}>
         <AdminHeader
@@ -191,6 +220,7 @@ export const ReceiptVoucherDetailsScreen: React.FC<
   }
 
   const isPosted = voucher.status === 'POSTED';
+  const isCancelled = voucher.status === 'CANCELLED';
   const lines = voucher.accounting_entry?.lines ?? [];
 
   return (
@@ -202,22 +232,277 @@ export const ReceiptVoucherDetailsScreen: React.FC<
         onNavigate={target => navigation.navigate(target as any)}
       />
       <ScrollView contentContainerStyle={styles.content} bounces={false}>
+        {/* Top Hero Card matching Image 2 */}
         <AppCard variant="elevated">
-          <View style={styles.topRow}>
-            <Text style={styles.voucherNumber}>{voucher.voucher_number}</Text>
+          <View style={styles.heroTopRow}>
+            <View
+              style={[
+                styles.heroIconBox,
+                {
+                  backgroundColor: classified.iconBg,
+                  borderColor: classified.iconBorder,
+                },
+              ]}
+            >
+              {classified.iconType === 'heart' ? (
+                <Heart size={20} color={classified.iconColor} />
+              ) : classified.iconType === 'user' ? (
+                <User size={20} color={classified.iconColor} />
+              ) : classified.iconType === 'rotate-cw' ? (
+                <RotateCcw size={20} color={classified.iconColor} />
+              ) : (
+                <TrendingUp size={20} color={classified.iconColor} />
+              )}
+            </View>
+
+            <View style={styles.heroCategoryCol}>
+              <Text
+                style={[styles.heroCategoryTitle, { color: classified.badgeColor }]}
+              >
+                {classified.categoryLabel}
+              </Text>
+              <Text style={styles.heroCategorySubtitle}>
+                {classified.categorySubtitle}
+              </Text>
+            </View>
+
             <AdminStatusBadge
               label={voucher.status}
               tone={adminStatusTone(voucher.status)}
             />
           </View>
-          <Text style={[styles.amount, { color: AdminColors.success }]}>
-            {formatINR(voucher.amount)}
-          </Text>
+
+          <View style={styles.cardDivider} />
+
+          {/* Receipt No & Date Grid */}
+          <View style={styles.heroGrid}>
+            <View style={styles.heroGridCol}>
+              <Text style={styles.heroGridLabel}>Receipt No.</Text>
+              <Text style={styles.heroGridValue} selectable>
+                {voucher.voucher_number}
+              </Text>
+            </View>
+            <View style={styles.heroGridCol}>
+              <Text style={styles.heroGridLabel}>Date</Text>
+              <Text style={styles.heroGridValue}>
+                {formatDateTime(voucher.receipt_date || voucher.created_at).replace(', ', ' • ')}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.cardDivider} />
+
+          {/* Amount Received Row */}
+          <View style={styles.heroAmountRow}>
+            <View>
+              <Text style={styles.heroAmountLabel}>Amount Received</Text>
+              <Text
+                style={[
+                  styles.heroAmountValue,
+                  isCancelled && styles.amountCancelled,
+                ]}
+              >
+                {formatINR(voucher.amount)}
+              </Text>
+            </View>
+
+            {methodBadge && (
+              <View
+                style={[
+                  styles.heroMethodPill,
+                  {
+                    backgroundColor: methodBadge.bg,
+                    borderColor: methodBadge.border,
+                  },
+                ]}
+              >
+                {methodBadge.iconName === 'upi' ? (
+                  <Zap size={13} color={methodBadge.color} />
+                ) : methodBadge.iconName === 'cash' ? (
+                  <Banknote size={13} color={methodBadge.color} />
+                ) : methodBadge.iconName === 'cheque' ? (
+                  <FileText size={13} color={methodBadge.color} />
+                ) : methodBadge.iconName === 'card' ? (
+                  <CreditCard size={13} color={methodBadge.color} />
+                ) : (
+                  <Landmark size={13} color={methodBadge.color} />
+                )}
+                <Text
+                  style={[styles.heroMethodText, { color: methodBadge.color }]}
+                >
+                  {methodBadge.label}
+                </Text>
+              </View>
+            )}
+          </View>
         </AppCard>
 
+        {/* Middle Card: Source Context (Cause / Membership / General) */}
         <AppCard variant="elevated">
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Receipt Information</Text>
+            <View style={styles.titleWithIconRow}>
+              <View
+                style={[
+                  styles.sectionIconWrap,
+                  {
+                    backgroundColor: classified.iconBg,
+                    borderColor: classified.iconBorder,
+                  },
+                ]}
+              >
+                {classified.iconType === 'heart' ? (
+                  <Heart size={14} color={classified.iconColor} />
+                ) : classified.iconType === 'user' ? (
+                  <User size={14} color={classified.iconColor} />
+                ) : classified.iconType === 'rotate-cw' ? (
+                  <RotateCcw size={14} color={classified.iconColor} />
+                ) : (
+                  <Landmark size={14} color={classified.iconColor} />
+                )}
+              </View>
+              <Text style={styles.sectionTitle}>
+                {classified.category === 'CAUSE_DONATION'
+                  ? 'Donation for Cause'
+                  : classified.category === 'GENERAL_DONATION'
+                    ? 'General Donation'
+                    : classified.category === 'RENEW_MEMBERSHIP'
+                      ? 'Membership Renewal'
+                      : classified.category === 'NEW_MEMBERSHIP'
+                        ? 'Membership Registration'
+                        : 'Income Classification'}
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.categoryTagPill,
+                {
+                  backgroundColor: classified.badgeBg,
+                  borderColor: classified.badgeBorder,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.categoryTagPillText,
+                  { color: classified.badgeColor },
+                ]}
+              >
+                {classified.categoryLabel}
+              </Text>
+            </View>
+          </View>
+
+          {/* Context content based on category */}
+          {classified.category === 'CAUSE_DONATION' ? (
+            <>
+              <DataRow label="Supported Cause" value={classified.sourceTitle} highlight />
+              <DataRow label="Fund Purpose" value={classified.sourceDescription} />
+            </>
+          ) : classified.category === 'RENEW_MEMBERSHIP' ? (
+            <>
+              <DataRow label="Renewal Member" value={classified.payerName} highlight />
+              {classified.membershipNumber ? (
+                <DataRow label="Membership ID" value={classified.membershipNumber} />
+              ) : null}
+              <DataRow
+                label="Extension Period"
+                value={classified.renewalExtension || '1 Year Extension'}
+              />
+              <DataRow label="Status" value="Renewal Active & Verified" />
+            </>
+          ) : classified.category === 'NEW_MEMBERSHIP' ? (
+            <>
+              <DataRow label="New Member" value={classified.payerName} highlight />
+              {classified.membershipNumber ? (
+                <DataRow label="Assigned Member ID" value={classified.membershipNumber} />
+              ) : null}
+              <DataRow label="Plan / Category" value={classified.planName || 'Annual Membership'} />
+              <DataRow label="Registration Type" value="New Member Registration" />
+            </>
+          ) : classified.category === 'GENERAL_DONATION' ? (
+            <>
+              <DataRow label="Contribution" value="General Public Donation" highlight />
+              <DataRow label="Purpose" value="HRSJM Social Welfare & Educational Programs" />
+            </>
+          ) : (
+            <>
+              <DataRow label="Income Account" value={voucher.income_account?.account_name} highlight />
+              <DataRow label="Classification" value={classified.sourceDescription} />
+            </>
+          )}
+        </AppCard>
+
+        {/* Contributor Details Card */}
+        <AppCard variant="elevated">
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.titleWithIconRow}>
+              <View style={styles.sectionIconWrapUser}>
+                <User size={14} color="#2563EB" />
+              </View>
+              <Text style={styles.sectionTitle}>Contributor Details</Text>
+            </View>
+          </View>
+
+          <DataRow
+            label="Donor / Contributor"
+            value={classified.payerName}
+          />
+          {classified.payerContact ? (
+            <DataRow label="Contact Info" value={classified.payerContact} />
+          ) : null}
+          <DataRow
+            label="Contributor Type"
+            value={classified.contributorType || 'Registered Member / Contributor'}
+          />
+        </AppCard>
+
+        {/* Payment Details Card */}
+        <AppCard variant="elevated">
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.titleWithIconRow}>
+              <View style={styles.sectionIconWrapPayment}>
+                <CreditCard size={14} color="#0891B2" />
+              </View>
+              <Text style={styles.sectionTitle}>Payment Details</Text>
+            </View>
+          </View>
+
+          <DataRow
+            label="Gateway Payment ID"
+            value={classified.gatewayPaymentId || voucher.reference_number}
+          />
+          <DataRow
+            label="Payment Method"
+            value={methodBadge?.label || voucher.payment_method}
+          />
+          <DataRow
+            label="Received In"
+            value={voucher.received_in_account?.account_name || 'Bank Account'}
+          />
+          <DataRow
+            label="Transaction Reference"
+            value={voucher.reference_number}
+          />
+          <View style={styles.dataRow}>
+            <Text style={styles.dataLabel}>Payment Status</Text>
+            <View style={styles.successBadge}>
+              <Text style={styles.successBadgeText}>
+                {voucher.status === 'POSTED' ? 'Success' : voucher.status}
+              </Text>
+            </View>
+          </View>
+        </AppCard>
+
+        {/* Receipt Information Card (with Edit button) */}
+        <AppCard variant="elevated">
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.titleWithIconRow}>
+              <View style={styles.sectionIconWrapInfo}>
+                <FileText size={14} color="#475569" />
+              </View>
+              <Text style={styles.sectionTitle}>Receipt Information</Text>
+            </View>
             {isPosted && can(PermissionKeys.RECEIPT_ENTRY_UPDATE) && (
               <TouchableOpacity
                 style={styles.editHeaderBtn}
@@ -226,22 +511,22 @@ export const ReceiptVoucherDetailsScreen: React.FC<
                 accessibilityRole="button"
                 accessibilityLabel="Edit Receipt"
               >
-                <Pencil size={15} color={AdminColors.primary} />
+                <Pencil size={14} color={AdminColors.primary} />
                 <Text style={styles.editBtnText}>Edit</Text>
               </TouchableOpacity>
             )}
           </View>
 
-          <DataRow label="Date" value={formatDate(voucher.receipt_date)} />
           <DataRow label="Income Account" value={voucher.income_account?.account_name} />
-          <DataRow label="Received In" value={voucher.received_in_account?.account_name} />
           <DataRow label="Received From" value={voucher.received_from} />
-          <DataRow label="Method" value={voucher.payment_method} />
           <DataRow label="Reference" value={voucher.reference_number} />
-          <DataRow label="Created" value={formatDateTime(voucher.created_at)} />
-          <DataRow label="Description" value={voucher.description} />
+          <DataRow label="Created At" value={formatDateTime(voucher.created_at).replace(', ', ' • ')} />
+          {voucher.description ? (
+            <DataRow label="Narration / Note" value={voucher.description} />
+          ) : null}
         </AppCard>
 
+        {/* Ledger Double-Entry Lines */}
         {lines.length > 0 ? (
           <AppCard variant="elevated">
             <Text style={styles.sectionTitle}>Journal Entry</Text>
@@ -473,36 +758,167 @@ export const ReceiptVoucherDetailsScreen: React.FC<
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: AdminColors.background,
+    backgroundColor: '#F8FAFC',
   },
   content: {
     padding: Spacing.base,
     paddingBottom: Spacing.xxl,
     gap: Spacing.md,
   },
-  topRow: {
+  // Hero Top Card
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  heroIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  heroCategoryCol: {
+    flex: 1,
+    gap: 2,
+  },
+  heroCategoryTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  heroCategorySubtitle: {
+    fontSize: 11.5,
+    color: '#64748B',
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 12,
+  },
+  heroGrid: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  voucherNumber: {
-    ...Typography.sectionHeader,
-    color: AdminColors.textPrimary,
+  heroGridCol: {
+    flex: 1,
   },
-  amount: {
-    ...Typography.metricLarge,
-    marginTop: Spacing.sm,
+  heroGridLabel: {
+    fontSize: 11,
+    color: '#64748B',
+    marginBottom: 2,
   },
+  heroGridValue: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  heroAmountRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  heroAmountLabel: {
+    fontSize: 11.5,
+    color: '#64748B',
+    marginBottom: 2,
+  },
+  heroAmountValue: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#16A34A',
+    letterSpacing: -0.5,
+  },
+  amountCancelled: {
+    color: '#94A3B8',
+    textDecorationLine: 'line-through',
+  },
+  heroMethodPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  heroMethodText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  // Section Headers
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: Spacing.sm,
   },
+  titleWithIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sectionIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  sectionIconWrapUser: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EFF6FF',
+  },
+  sectionIconWrapPayment: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ECFEFF',
+  },
+  sectionIconWrapInfo: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F1F5F9',
+  },
   sectionTitle: {
-    ...Typography.sectionHeader,
-    color: AdminColors.textPrimary,
-    marginBottom: Spacing.sm,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  categoryTagPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  categoryTagPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  successBadge: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  successBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
   },
   editHeaderBtn: {
     flexDirection: 'row',
@@ -525,95 +941,105 @@ const styles = StyleSheet.create({
   dataRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     gap: Spacing.md,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderBottomWidth: 1,
-    borderBottomColor: AdminColors.divider,
+    borderBottomColor: '#F1F5F9',
   },
   dataLabel: {
-    ...Typography.secondary,
-    color: AdminColors.textSecondary,
+    fontSize: 12.5,
+    color: '#64748B',
   },
   dataValue: {
-    ...Typography.secondaryMedium,
-    color: AdminColors.textPrimary,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1E293B',
     flex: 1,
     textAlign: 'right',
   },
+  dataValueHighlight: {
+    color: '#0284C7',
+    fontWeight: '700',
+  },
   lineRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    alignItems: 'center',
+    paddingVertical: Spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: AdminColors.divider,
+    borderBottomColor: '#F1F5F9',
   },
   lineAccount: {
     flex: 1,
+    marginRight: Spacing.sm,
   },
   lineName: {
-    ...Typography.bodyMedium,
-    color: AdminColors.textPrimary,
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#1E293B',
   },
   lineAmount: {
-    ...Typography.bodyBold,
+    fontSize: 13,
+    fontWeight: '700',
   },
   debitText: {
-    color: AdminColors.error,
+    color: '#2563EB',
   },
   creditText: {
-    color: AdminColors.success,
+    color: '#16A34A',
   },
   cancelledNote: {
-    ...Typography.body,
-    color: AdminColors.textSecondary,
+    ...Typography.secondary,
+    color: '#DC2626',
+    fontStyle: 'italic',
   },
   actionsContainer: {
     gap: Spacing.sm,
     marginTop: Spacing.xs,
   },
-  modalBody: {
-    paddingVertical: Spacing.xs,
-  },
-  pickerRow: {
-    marginBottom: Spacing.md,
-  },
-  pickerLabel: {
-    ...Typography.secondaryMedium,
-    color: AdminColors.textPrimary,
-    marginBottom: 6,
-  },
-  pickerButton: {
-    minHeight: 46,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  pickerValue: {
-    ...Typography.body,
-    color: AdminColors.textPrimary,
-  },
-  modeSection: {
-    marginBottom: Spacing.md,
-  },
-  errorBanner: {
-    ...Typography.caption,
-    color: AdminColors.error,
-    backgroundColor: `${AdminColors.error}14`,
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.md,
-  },
   modalFooterRow: {
     flexDirection: 'row',
-    gap: Spacing.md,
-    width: '100%',
+    gap: Spacing.sm,
   },
   modalFooterCol: {
     flex: 1,
+  },
+  modalBody: {
+    gap: Spacing.md,
+  },
+  errorBanner: {
+    backgroundColor: '#FEF2F2',
+    color: '#DC2626',
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    fontSize: 13,
+    marginBottom: Spacing.sm,
+  },
+  pickerRow: {
+    gap: 4,
+    marginBottom: Spacing.sm,
+  },
+  pickerLabel: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  pickerButton: {
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  pickerValue: {
+    fontSize: 14,
+    color: '#0F172A',
+  },
+  modeSection: {
+    gap: 6,
+    marginBottom: Spacing.sm,
   },
 });
 
