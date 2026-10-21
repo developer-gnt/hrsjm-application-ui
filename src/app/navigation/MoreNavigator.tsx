@@ -32,6 +32,7 @@ import {
   AssistanceRequestsScreen,
   AssistanceDetailsScreen,
   AssistanceDocumentsScreen,
+  CreateSeekerScreen,
 } from '../../features/admin/assistance';
 import {
   SupportTicketsScreen,
@@ -612,6 +613,14 @@ export const MoreNavigator: React.FC = () => (
     <Stack.Screen
       name={AppRoutes.ASSISTANCE_REQUESTS}
       component={AssistanceRequestsScreen}
+    />
+    <Stack.Screen
+      name={AppRoutes.CREATE_ASSISTANCE_REQUEST}
+      component={CreateSeekerScreen as any}
+    />
+    <Stack.Screen
+      name={AppRoutes.ADD_SEEKER}
+      component={CreateSeekerScreen as any}
     />
     <Stack.Screen
       name={AppRoutes.ASSISTANCE_DETAILS}

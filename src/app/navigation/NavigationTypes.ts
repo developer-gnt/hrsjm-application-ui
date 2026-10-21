@@ -74,6 +74,8 @@ export type MoreStackParamList = {
   [AppRoutes.CREATE_BLOG]: undefined;
   [AppRoutes.EDIT_BLOG]: { blog: any };
   [AppRoutes.ASSISTANCE_REQUESTS]: undefined;
+  [AppRoutes.CREATE_ASSISTANCE_REQUEST]: undefined;
+  [AppRoutes.ADD_SEEKER]: undefined;
   [AppRoutes.ASSISTANCE_DETAILS]: { requestId: string };
   [AppRoutes.ASSISTANCE_DOCUMENTS]: { requestId: string; seekerName?: string };
   [AppRoutes.SUPPORT_TICKETS]: undefined;

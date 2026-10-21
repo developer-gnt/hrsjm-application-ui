@@ -26,6 +26,7 @@ import { MOCK_ACTIVE_MEMBERSHIP } from '../data/member-dashboard';
 import type { MemberMembershipRecord } from '../types/member-dashboard.types';
 import { getEventsList } from '../../../admin/content/events/services/events.service';
 import type { EventListItem } from '../../../admin/content/events/types/events.types';
+import { supportService } from '../../../admin/support/services/support.service';
 
 const MEMBER_HERO_IMAGE = require('../../../../assets/images/member-hero-rally.jpg');
 const DEFAULT_EVENT_IMAGE = require('../../../../assets/images/event-legal-awareness.jpg');
@@ -188,6 +189,13 @@ export const MemberHomeDashboardScreen: React.FC<
 
   const [dbEvents, setDbEvents] = useState<EventListItem[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState<boolean>(true);
+  const [impactStats, setImpactStats] = useState({
+    eventsAttended: 0,
+    complaintsSubmitted: 0,
+    causesSupported: 0,
+    hoursVolunteered: 0,
+    isLoading: true,
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -215,6 +223,46 @@ export const MemberHomeDashboardScreen: React.FC<
     };
   }, []);
 
+  // Fetch dynamic impact stats
+  useEffect(() => {
+    let isMounted = true;
+    const fetchImpactStats = async () => {
+      try {
+        const [ticketsData, eventsData] = await Promise.allSettled([
+          supportService.getStatsSummary({}),
+          getEventsList({ limit: 50 }),
+        ]);
+
+        if (!isMounted) return;
+
+        const complaints =
+          ticketsData.status === 'fulfilled'
+            ? (ticketsData.value.total ?? 0)
+            : 0;
+        const eventsCount =
+          eventsData.status === 'fulfilled'
+            ? (eventsData.value.events?.length ?? 0)
+            : 0;
+
+        setImpactStats({
+          eventsAttended: eventsCount,
+          complaintsSubmitted: complaints,
+          causesSupported: 0,
+          hoursVolunteered: 0,
+          isLoading: false,
+        });
+      } catch {
+        if (isMounted) {
+          setImpactStats(prev => ({ ...prev, isLoading: false }));
+        }
+      }
+    };
+    fetchImpactStats();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const upcomingEvents = useMemo(() => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -232,17 +280,31 @@ export const MemberHomeDashboardScreen: React.FC<
       })
       .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
   }, [dbEvents]);
+  // Quick actions – 3 items (Resources removed)
   const quickActions: QuickAction[] = [
     { title: 'Know Your Rights', icon: 'book-open', onPress: onOpenRights || (() => undefined) },
     { title: 'File a Complaint', icon: 'file-text', onPress: onOpenComplaint || (() => undefined) },
     { title: 'Events', icon: 'calendar', onPress: onOpenEvents || (() => undefined) },
-    { title: 'Resources', icon: 'download', onPress: onOpenResources || onOpenRights || (() => undefined) },
   ];
   const impactMetrics = [
-    { value: '3', label: 'Events\nAttended', icon: 'users' as const, onPress: onOpenEvents },
-    { value: '2', label: 'Causes\nSupported', icon: 'heart' as const, onPress: onOpenDonation },
-    { value: '1', label: 'Complaint\nSubmitted', icon: 'file-text' as const, onPress: onOpenTickets || onOpenComplaint },
-    { value: '12', label: 'Hours\nVolunteered', icon: 'clock' as const, onPress: onOpenEvents },
+    {
+      value: impactStats.isLoading ? '—' : String(impactStats.eventsAttended),
+      label: 'Events\nAttended',
+      icon: 'users' as const,
+      onPress: onOpenEvents,
+    },
+    {
+      value: impactStats.isLoading ? '—' : String(impactStats.causesSupported),
+      label: 'Causes\nSupported',
+      icon: 'heart' as const,
+      onPress: onOpenDonation,
+    },
+    {
+      value: impactStats.isLoading ? '—' : String(impactStats.complaintsSubmitted),
+      label: 'Complaint\nSubmitted',
+      icon: 'file-text' as const,
+      onPress: onOpenTickets || onOpenComplaint,
+    },
   ];
 
   const handleTabPress = (tab: HomeTab) => {
@@ -343,7 +405,7 @@ export const MemberHomeDashboardScreen: React.FC<
             </Pressable>
           </Pressable>
 
-          {/* Quick Actions (4 in a row) */}
+          {/* Quick Actions – 3 equal cards side by side */}
           <View style={styles.quickActionsRow}>
             {quickActions.map(action => (
               <Pressable
@@ -426,19 +488,31 @@ export const MemberHomeDashboardScreen: React.FC<
             )}
           </View>
 
-          {/* Recommendations Row */}
+          {/* Recommendations Row – dynamic data */}
           <View style={styles.recommendationsRow}>
             <RecommendationCard
-              icon="book-open"
-              title="Continue Learning"
-              description="Explore articles, guides and legal resources."
-              action="Browse Resources"
-              onPress={onOpenResources || onOpenRights || (() => undefined)}
+              icon="calendar"
+              title="Upcoming Events"
+              description={
+                impactStats.isLoading
+                  ? 'Loading…'
+                  : impactStats.eventsAttended > 0
+                  ? `${impactStats.eventsAttended} event${impactStats.eventsAttended === 1 ? '' : 's'} available to join.`
+                  : 'No upcoming events. Check back soon!'
+              }
+              action="Browse Events"
+              onPress={onOpenEvents || (() => undefined)}
             />
             <RecommendationCard
               icon="heart"
               title="Make a Difference"
-              description="Support our programs through donation."
+              description={
+                impactStats.isLoading
+                  ? 'Loading…'
+                  : impactStats.complaintsSubmitted > 0
+                  ? `${impactStats.complaintsSubmitted} ticket${impactStats.complaintsSubmitted === 1 ? '' : 's'} tracked. Keep supporting.`
+                  : 'Support our programs through donation.'
+              }
               action="Donate Now"
               onPress={onOpenDonation || (() => undefined)}
             />

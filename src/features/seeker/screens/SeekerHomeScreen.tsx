@@ -21,7 +21,7 @@ import { HomeEventCard } from '../../user/home/components/HomeEventCard';
 import { NewsCard } from '../../user/home/components/NewsCard';
 import { AppCard } from '../../../core/components/common/AppCard';
 import { AssistanceStatusBadge } from '../../admin/assistance/components/AssistanceStatusBadge';
-import { AddSeekerModal } from '../../admin/assistance/components/AddSeekerModal';
+import { CreateSeekerScreen } from '../../admin/assistance/screens/CreateSeekerScreen';
 import { AppFeedbackModal } from '../../../core/components/common/AppFeedbackModal';
 import { SeekerTimelineStepper } from '../components/SeekerTimelineStepper';
 import { AdminSidebar } from '../../../app/navigation/AdminSidebar';
@@ -79,12 +79,14 @@ export interface SeekerHomeScreenProps {
   onNavigateToEvents?: () => void;
   onNavigateToNews?: () => void;
   onNavigateToComplaint?: () => void;
+  onNavigateToApply?: () => void;
   onOpenNotifications?: () => void;
   onOpenProfile?: () => void;
 }
 
 export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
   navigation,
+  onNavigateToApply,
   onNavigateToRequests,
   onNavigateToSupport,
   onNavigateToRights,
@@ -101,8 +103,7 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
   const [latestNews, setLatestNews] = useState<HomeNewsItem[]>(LATEST_NEWS);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [isApplyModalVisible, setIsApplyModalVisible] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isApplyPageVisible, setIsApplyPageVisible] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
 
   const [feedbackConfig, setFeedbackConfig] = useState<{
@@ -167,32 +168,37 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
     loadDynamicEventsAndNews();
   };
 
-  const handleCreateRequest = async (payload: CreateAssistanceRequestPayload) => {
-    setIsSubmitting(true);
-    try {
-      await assistanceService.create(payload);
-      setIsApplyModalVisible(false);
-      setFeedbackConfig({
-        visible: true,
-        tone: 'success',
-        title: 'Application Submitted',
-        message:
-          'Your assistance request has been submitted successfully. Our field assessment team will review it.',
-      });
-      loadRequests();
-    } catch (err) {
-      setFeedbackConfig({
-        visible: true,
-        tone: 'error',
-        title: 'Submission Failed',
-        message: getApiErrorMessage(err, 'Failed to submit assistance application.'),
-      });
-    } finally {
-      setIsSubmitting(false);
+  const handleOpenApply = () => {
+    if (onNavigateToApply) {
+      onNavigateToApply();
+    } else if (navigation?.navigate) {
+      navigation.navigate('AddSeeker');
+    } else {
+      setIsApplyPageVisible(true);
     }
   };
 
   const latestRequest = requests.length > 0 ? requests[0] : null;
+
+  if (isApplyPageVisible) {
+    return (
+      <CreateSeekerScreen
+        navigation={navigation}
+        onBack={() => setIsApplyPageVisible(false)}
+        onSuccess={created => {
+          setIsApplyPageVisible(false);
+          loadRequests();
+          setFeedbackConfig({
+            visible: true,
+            tone: 'success',
+            title: 'Application Submitted',
+            message:
+              'Your assistance request has been submitted successfully. Our field assessment team will review it.',
+          });
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
@@ -224,8 +230,8 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Hero Banner with Compassion Message & Gold CTA */}
-        <HeroBanner onCtaPress={() => setIsApplyModalVisible(true)} />
+        {/* Hero Banner with Compassion Message */}
+        <HeroBanner showCta={false} />
 
         {/* Seeker Active Status / Immediate Aid Card */}
         <View style={styles.section}>
@@ -286,7 +292,7 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
                 </Text>
                 <TouchableOpacity
                   style={styles.applyNowBtn}
-                  onPress={() => setIsApplyModalVisible(true)}
+                  onPress={handleOpenApply}
                 >
                   <Text style={styles.applyNowBtnText}>+ Apply for Assistance</Text>
                 </TouchableOpacity>
@@ -301,7 +307,7 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
             actions={SEEKER_QUICK_ACTIONS}
             onPressAction={action => {
               if (action.id === 'apply-aid') {
-                setIsApplyModalVisible(true);
+                handleOpenApply();
               } else if (action.id === 'track-aid') {
                 if (onNavigateToRequests) {
                   onNavigateToRequests();
@@ -493,13 +499,7 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
         }}
       />
 
-      {/* New Assistance Request Modal */}
-      <AddSeekerModal
-        visible={isApplyModalVisible}
-        onClose={() => setIsApplyModalVisible(false)}
-        onSubmit={handleCreateRequest}
-        isSubmitting={isSubmitting}
-      />
+
 
       {/* Feedback Toast */}
       <AppFeedbackModal

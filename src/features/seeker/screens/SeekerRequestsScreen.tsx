@@ -15,7 +15,7 @@ import { HomeHeader } from '../../user/home/components/HomeHeader';
 import { AppCard } from '../../../core/components/common/AppCard';
 import { AppButton } from '../../../core/components/common/AppButton';
 import { AssistanceStatusBadge } from '../../admin/assistance/components/AssistanceStatusBadge';
-import { AddSeekerModal } from '../../admin/assistance/components/AddSeekerModal';
+import { CreateSeekerScreen } from '../../admin/assistance/screens/CreateSeekerScreen';
 import { AppFeedbackModal } from '../../../core/components/common/AppFeedbackModal';
 import { assistanceService } from '../../admin/assistance/services/assistance.service';
 import { getApiErrorMessage } from '../../../core/api/client';
@@ -47,8 +47,7 @@ export const SeekerRequestsScreen: React.FC<SeekerRequestsScreenProps> = ({
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isApplyModalVisible, setIsApplyModalVisible] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isApplyPageVisible, setIsApplyPageVisible] = useState(false);
 
   const [feedbackConfig, setFeedbackConfig] = useState<{
     visible: boolean;
@@ -83,29 +82,35 @@ export const SeekerRequestsScreen: React.FC<SeekerRequestsScreenProps> = ({
     loadRequests();
   };
 
-  const handleCreateRequest = async (payload: CreateAssistanceRequestPayload) => {
-    setIsSubmitting(true);
-    try {
-      await assistanceService.create(payload);
-      setIsApplyModalVisible(false);
-      setFeedbackConfig({
-        visible: true,
-        tone: 'success',
-        title: 'Application Submitted',
-        message: 'Your assistance request has been submitted successfully. Our team will review the details and verify documents.',
-      });
-      loadRequests();
-    } catch (err) {
-      setFeedbackConfig({
-        visible: true,
-        tone: 'error',
-        title: 'Submission Failed',
-        message: getApiErrorMessage(err, 'Failed to submit assistance application.'),
-      });
-    } finally {
-      setIsSubmitting(false);
+  const handleOpenApply = () => {
+    if (onApplyPress) {
+      onApplyPress();
+    } else if (navigation?.navigate) {
+      navigation.navigate('AddSeeker');
+    } else {
+      setIsApplyPageVisible(true);
     }
   };
+
+  if (isApplyPageVisible) {
+    return (
+      <CreateSeekerScreen
+        navigation={navigation}
+        onBack={() => setIsApplyPageVisible(false)}
+        onSuccess={created => {
+          setIsApplyPageVisible(false);
+          loadRequests();
+          setFeedbackConfig({
+            visible: true,
+            tone: 'success',
+            title: 'Application Submitted',
+            message:
+              'Your assistance request has been submitted successfully. Our team will review the details and verify documents.',
+          });
+        }}
+      />
+    );
+  }
 
   const filteredRequests = useMemo(() => {
     return requests.filter(r => {
@@ -142,7 +147,7 @@ export const SeekerRequestsScreen: React.FC<SeekerRequestsScreenProps> = ({
         rightAction={
           <TouchableOpacity
             style={styles.headerNewBtn}
-            onPress={() => (onApplyPress ? onApplyPress() : setIsApplyModalVisible(true))}
+            onPress={handleOpenApply}
           >
             <Text style={styles.headerNewBtnText}>+ Apply</Text>
           </TouchableOpacity>
@@ -276,7 +281,7 @@ export const SeekerRequestsScreen: React.FC<SeekerRequestsScreenProps> = ({
               </Text>
               <TouchableOpacity
                 style={styles.emptyApplyBtn}
-                onPress={() => setIsApplyModalVisible(true)}
+                onPress={handleOpenApply}
               >
                 <Text style={styles.emptyApplyBtnText}>+ Submit Application</Text>
               </TouchableOpacity>
@@ -285,12 +290,7 @@ export const SeekerRequestsScreen: React.FC<SeekerRequestsScreenProps> = ({
         }
       />
 
-      <AddSeekerModal
-        visible={isApplyModalVisible}
-        onClose={() => setIsApplyModalVisible(false)}
-        onSubmit={handleCreateRequest}
-        isSubmitting={isSubmitting}
-      />
+
 
       <AppFeedbackModal
         visible={feedbackConfig.visible}

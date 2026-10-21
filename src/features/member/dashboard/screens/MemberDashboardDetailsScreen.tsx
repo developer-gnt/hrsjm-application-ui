@@ -93,41 +93,41 @@ export const MemberDashboardDetailsScreen: React.FC<
   onOpenContact,
   showBottomNav = false,
 }) => {
-  const handleTabPress = (tab: HomeTab) => {
-    if (tab.id === 'home') onOpenHome?.();
-    else if (tab.id === 'about') onOpenAbout?.();
-    else if (tab.id === 'rights') onOpenRights?.();
-    else if (tab.id === 'events') onOpenEvents?.();
-    else if (tab.id === 'news') onOpenNews?.();
-    else if (tab.id === 'contact') onOpenContact?.();
-  };
+    const handleTabPress = (tab: HomeTab) => {
+      if (tab.id === 'home') onOpenHome?.();
+      else if (tab.id === 'about') onOpenAbout?.();
+      else if (tab.id === 'rights') onOpenRights?.();
+      else if (tab.id === 'events') onOpenEvents?.();
+      else if (tab.id === 'news') onOpenNews?.();
+      else if (tab.id === 'contact') onOpenContact?.();
+    };
 
-  return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <HomeHeader onBack={onBack} />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <MemberDashboardDetailsContent
-          membership={membership}
-          onOpenMembershipInfo={onOpenMembershipInfo}
-          onOpenComplaint={onOpenComplaint}
-          onOpenTickets={onOpenTickets}
-          onOpenDonation={onOpenDonation}
-          onOpenEvents={onOpenEvents}
-          onOpenRights={onOpenRights}
-          onOpenRight={onOpenRight}
-          onOpenEvent={onOpenEvent}
-        />
-      </ScrollView>
-      {showBottomNav && (
-        <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
-      )}
-    </SafeAreaView>
-  );
-};
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+        <HomeHeader onBack={onBack} />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <MemberDashboardDetailsContent
+            membership={membership}
+            onOpenMembershipInfo={onOpenMembershipInfo}
+            onOpenComplaint={onOpenComplaint}
+            onOpenTickets={onOpenTickets}
+            onOpenDonation={onOpenDonation}
+            onOpenEvents={onOpenEvents}
+            onOpenRights={onOpenRights}
+            onOpenRight={onOpenRight}
+            onOpenEvent={onOpenEvent}
+          />
+        </ScrollView>
+        {showBottomNav && (
+          <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+        )}
+      </SafeAreaView>
+    );
+  };
 
 export const MemberDashboardDetailsContent: React.FC<
   MemberDashboardDetailsContentProps
@@ -142,78 +142,348 @@ export const MemberDashboardDetailsContent: React.FC<
   onOpenRight,
   onOpenEvent,
 }) => {
-  const [activeTab, setActiveTab] = useState<MemberDashboardTab>('overview');
-  const [bookmarkedArticle, setBookmarkedArticle] = useState(false);
-  const [bookmarkedEvent, setBookmarkedEvent] = useState(false);
+    const [activeTab, setActiveTab] = useState<MemberDashboardTab>('overview');
+    const [bookmarkedArticle, setBookmarkedArticle] = useState(false);
+    const [bookmarkedEvent, setBookmarkedEvent] = useState(false);
 
-  const currentMembership = membership ?? MOCK_ACTIVE_MEMBERSHIP;
+    const currentMembership = membership ?? MOCK_ACTIVE_MEMBERSHIP;
 
-  const activityMetrics = [
-    {
-      id: 'events',
-      icon: 'calendar' as const,
-      title: 'Events Attended',
-      subtitle: '3 events',
-      onPress: onOpenEvents,
-    },
-    {
-      id: 'complaints',
-      icon: 'file-text' as const,
-      title: 'Complaints Submitted',
-      subtitle: '1 complaint',
-      onPress: onOpenTickets || onOpenComplaint,
-    },
-    {
-      id: 'donations',
-      icon: 'shield-check' as const,
-      title: 'Donations Made',
-      subtitle: '₹1,000',
-      onPress: onOpenDonation,
-    },
-    {
-      id: 'volunteer',
-      icon: 'clock' as const,
-      title: 'Volunteer Hours',
-      subtitle: '12 hours',
-      onPress: onOpenEvents,
-    },
-  ];
+    const activityMetrics = [
+      {
+        id: 'events',
+        icon: 'calendar' as const,
+        title: 'Events Attended',
+        subtitle: '3 events',
+        onPress: onOpenEvents,
+      },
+      {
+        id: 'complaints',
+        icon: 'file-text' as const,
+        title: 'Complaints Submitted',
+        subtitle: '1 complaint',
+        onPress: onOpenTickets || onOpenComplaint,
+      },
+      {
+        id: 'donations',
+        icon: 'shield-check' as const,
+        title: 'Donations Made',
+        subtitle: '₹1,000',
+        onPress: onOpenDonation,
+      },
+      {
+        id: 'volunteer',
+        icon: 'clock' as const,
+        title: 'Volunteer Hours',
+        subtitle: '12 hours',
+        onPress: onOpenEvents,
+      },
+    ];
 
-  return (
-    <View style={styles.container}>
-      {/* Top Rounded Pill Tabs */}
-      <View style={styles.tabsRow} accessibilityRole="tablist">
-        {DASHBOARD_TABS.map(tab => {
-          const selected = activeTab === tab.id;
-          return (
-            <Pressable
-              key={tab.id}
-              style={[styles.tabPill, selected && styles.activeTabPill]}
-              onPress={() => setActiveTab(tab.id)}
-              testID={`member-dashboard-tab-${tab.id}`}
-              accessibilityRole="tab"
-              accessibilityState={{ selected }}
-              accessibilityLabel={tab.label}
-            >
-              <Text
-                style={[
-                  styles.tabPillText,
-                  selected && styles.activeTabPillText,
-                ]}
+    return (
+      <View style={styles.container}>
+        {/* Top Rounded Pill Tabs */}
+        <View style={styles.tabsRow} accessibilityRole="tablist">
+          {DASHBOARD_TABS.map(tab => {
+            const selected = activeTab === tab.id;
+            return (
+              <Pressable
+                key={tab.id}
+                style={[styles.tabPill, selected && styles.activeTabPill]}
+                onPress={() => setActiveTab(tab.id)}
+                testID={`member-dashboard-tab-${tab.id}`}
+                accessibilityRole="tab"
+                accessibilityState={{ selected }}
+                accessibilityLabel={tab.label}
               >
-                {tab.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+                <Text
+                  style={[
+                    styles.tabPillText,
+                    selected && styles.activeTabPillText,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
-      {activeTab === 'overview' ? (
-        <View style={styles.content}>
-          {/* Section 1: Membership Details */}
-          <View style={styles.sectionBlock}>
+        {activeTab === 'overview' ? (
+          <View style={styles.content}>
+            {/* Section 1: Membership Details */}
+            <View style={styles.sectionBlock}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Membership Details</Text>
+                <Pressable
+                  style={styles.manageButton}
+                  onPress={onOpenMembershipInfo}
+                  accessibilityRole="button"
+                  accessibilityLabel="Manage membership"
+                >
+                  <Text style={styles.manageButtonText}>Manage</Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.membershipCard}>
+                <View style={styles.idCardIconContainer}>
+                  <AppIcon name="id-card" size={28} color="#0F2042" />
+                </View>
+                <View style={styles.membershipInfoCol}>
+                  <View style={styles.memberTypeRow}>
+                    <Text style={styles.memberTypeText}>
+                      {currentMembership.category || 'Individual Member'}
+                    </Text>
+                    <View style={styles.activeBadge}>
+                      <Text style={styles.activeBadgeText}>
+                        {currentMembership.status === 'active'
+                          ? 'Active'
+                          : currentMembership.status}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.memberMetaText}>
+                    Member ID: {currentMembership.memberId || 'HRSJM202600123'}
+                  </Text>
+                  <Text style={styles.memberMetaText}>
+                    Joined on: {currentMembership.joinedDate || '15 Sep 2026'}
+                  </Text>
+                  <Text style={styles.memberMetaText}>
+                    Valid till: {currentMembership.validUntil || '15 Sep 2027'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Section 2: My Activity */}
+            <View style={styles.sectionBlock}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>My Activity</Text>
+                <Pressable
+                  style={styles.viewAllRow}
+                  onPress={() => setActiveTab('activity')}
+                  accessibilityRole="button"
+                  accessibilityLabel="View all activity"
+                >
+                  <Text style={styles.viewAllText}>View All</Text>
+                  <AppIcon name="arrow-right" size={14} color="#0F2042" />
+                </Pressable>
+              </View>
+
+              <View style={styles.activityList}>
+                {activityMetrics.map(item => (
+                  <Pressable
+                    key={item.id}
+                    style={styles.activityCard}
+                    onPress={item.onPress}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.title}, ${item.subtitle}`}
+                  >
+                    <View style={styles.creamIconCircle}>
+                      <AppIcon name={item.icon} size={18} color="#0F2042" />
+                    </View>
+                    <View style={styles.activityCardContent}>
+                      <Text style={styles.activityCardTitle}>{item.title}</Text>
+                      <Text style={styles.activityCardSubtitle}>
+                        {item.subtitle}
+                      </Text>
+                    </View>
+                    <AppIcon name="chevron-right" size={16} color="#0F2042" />
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            {/* Section 3: Quick Actions */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionTitle}>Quick Actions</Text>
+              <View style={styles.quickActionsGrid}>
+                <View style={styles.quickActionsRow}>
+                  <Pressable
+                    style={styles.quickActionCard}
+                    onPress={onOpenComplaint}
+                    accessibilityRole="button"
+                    accessibilityLabel="File a Complaint"
+                  >
+                    <View style={styles.creamIconCircleSmall}>
+                      <AppIcon name="file-text" size={18} color="#0F2042" />
+                    </View>
+                    <Text style={styles.quickActionTitle} numberOfLines={2}>
+                      File a Complaint
+                    </Text>
+                    <AppIcon name="chevron-right" size={15} color="#0F2042" />
+                  </Pressable>
+                  <Pressable
+                    style={styles.quickActionCard}
+                    onPress={onOpenDonation}
+                    accessibilityRole="button"
+                    accessibilityLabel="Make a Donation"
+                  >
+                    <View style={styles.creamIconCircleSmall}>
+                      <AppIcon name="heart" size={18} color="#0F2042" />
+                    </View>
+                    <Text style={styles.quickActionTitle} numberOfLines={2}>
+                      Make a Donation
+                    </Text>
+                    <AppIcon name="chevron-right" size={15} color="#0F2042" />
+                  </Pressable>
+                </View>
+                <View style={styles.quickActionsRow}>
+                  <Pressable
+                    style={styles.quickActionCard}
+                    onPress={onOpenEvents}
+                    accessibilityRole="button"
+                    accessibilityLabel="Join an Event"
+                  >
+                    <View style={styles.creamIconCircleSmall}>
+                      <AppIcon name="users" size={18} color="#0F2042" />
+                    </View>
+                    <Text style={styles.quickActionTitle} numberOfLines={2}>
+                      Join an Event
+                    </Text>
+                    <AppIcon name="chevron-right" size={15} color="#0F2042" />
+                  </Pressable>
+                  <Pressable
+                    style={styles.quickActionCard}
+                    onPress={onOpenRights}
+                    accessibilityRole="button"
+                    accessibilityLabel="Download Resources"
+                  >
+                    <View style={styles.creamIconCircleSmall}>
+                      <AppIcon name="download" size={18} color="#0F2042" />
+                    </View>
+                    <Text style={styles.quickActionTitle} numberOfLines={2}>
+                      Download Resources
+                    </Text>
+                    <AppIcon name="chevron-right" size={15} color="#0F2042" />
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+
+            {/* Section 4: Recommended for You */}
+            <View style={styles.sectionBlock}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Recommended for You</Text>
+                <Pressable
+                  style={styles.viewAllRow}
+                  onPress={onOpenRights}
+                  accessibilityRole="button"
+                  accessibilityLabel="View all recommendations"
+                >
+                  <Text style={styles.viewAllText}>View All</Text>
+                  <AppIcon name="arrow-right" size={14} color="#0F2042" />
+                </Pressable>
+              </View>
+
+              <View style={styles.recommendedRow}>
+                {/* Card 1: Article */}
+                <Pressable
+                  style={styles.recommendedCard}
+                  onPress={() => onOpenRight?.('womens-rights')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Understanding Your Fundamental Rights article"
+                >
+                  <Image
+                    source={ARTICLE_IMAGE}
+                    style={styles.recommendedThumb}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.recommendedInfo}>
+                    <View style={styles.articleBadge}>
+                      <Text style={styles.articleBadgeText}>ARTICLE</Text>
+                    </View>
+                    <Text style={styles.recommendedTitle} numberOfLines={2}>
+                      Understanding Your Fundamental Rights
+                    </Text>
+                    <View style={styles.recommendedFooter}>
+                      <View style={styles.recommendedMetaRow}>
+                        <AppIcon name="clock" size={12} color="#64748B" />
+                        <Text style={styles.recommendedMetaText}>5 min read</Text>
+                      </View>
+                      <Pressable
+                        hitSlop={8}
+                        onPress={() => setBookmarkedArticle(prev => !prev)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Bookmark article"
+                      >
+                        <AppIcon
+                          name="bookmark"
+                          size={14}
+                          color={bookmarkedArticle ? AdminColors.accentGold : '#0F2042'}
+                        />
+                      </Pressable>
+                    </View>
+                  </View>
+                </Pressable>
+
+                {/* Card 2: Event */}
+                <Pressable
+                  style={styles.recommendedCard}
+                  onPress={onOpenEvents}
+                  accessibilityRole="button"
+                  accessibilityLabel="Community Legal Awareness Drive event"
+                >
+                  <Image
+                    source={EVENT_IMAGE}
+                    style={styles.recommendedThumb}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.recommendedInfo}>
+                    <View style={styles.eventBadge}>
+                      <Text style={styles.eventBadgeText}>EVENT</Text>
+                    </View>
+                    <Text style={styles.recommendedTitle} numberOfLines={2}>
+                      Community Legal Awareness Drive
+                    </Text>
+                    <View style={styles.recommendedFooter}>
+                      <View style={styles.recommendedMetaRow}>
+                        <AppIcon name="calendar" size={12} color="#64748B" />
+                        <Text style={styles.recommendedMetaText}>25 Oct 2026</Text>
+                      </View>
+                      <Pressable
+                        hitSlop={8}
+                        onPress={() => setBookmarkedEvent(prev => !prev)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Bookmark event"
+                      >
+                        <AppIcon
+                          name="bookmark"
+                          size={14}
+                          color={bookmarkedEvent ? AdminColors.accentGold : '#0F2042'}
+                        />
+                      </Pressable>
+                    </View>
+                  </View>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        ) : null}
+
+        {activeTab === 'activity' ? (
+          <View style={styles.content}>
+            <Text style={styles.sectionTitle}>My Activity</Text>
+            <EmptyPanel
+              title="Activity history unavailable"
+              description="No activity records are available because member activity data is not connected. Complaint and donation information is not shown without an authorized member service."
+            />
+          </View>
+        ) : null}
+
+        {activeTab === 'learning' ? (
+          <View style={styles.content}>
+            <Text style={styles.sectionTitle}>Rights Education</Text>
+            <Text style={[styles.bodyText, styles.learningIntro]}>
+              Browse the rights education content currently available in HRSJM.
+            </Text>
+            <RecommendedContent onOpenRight={onOpenRight ?? (() => { })} expanded />
+          </View>
+        ) : null}
+
+        {activeTab === 'membership' ? (
+          <View style={styles.content}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Membership Details</Text>
+              <Text style={styles.sectionTitle}>Membership</Text>
               <Pressable
                 style={styles.manageButton}
                 onPress={onOpenMembershipInfo}
@@ -252,290 +522,20 @@ export const MemberDashboardDetailsContent: React.FC<
                 </Text>
               </View>
             </View>
-          </View>
 
-          {/* Section 2: My Activity */}
-          <View style={styles.sectionBlock}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>My Activity</Text>
-              <Pressable
-                style={styles.viewAllRow}
-                onPress={() => setActiveTab('activity')}
-                accessibilityRole="button"
-                accessibilityLabel="View all activity"
-              >
-                <Text style={styles.viewAllText}>View All</Text>
-                <AppIcon name="arrow-right" size={14} color="#0F2042" />
-              </Pressable>
-            </View>
-
-            <View style={styles.activityList}>
-              {activityMetrics.map(item => (
-                <Pressable
-                  key={item.id}
-                  style={styles.activityCard}
-                  onPress={item.onPress}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${item.title}, ${item.subtitle}`}
-                >
-                  <View style={styles.creamIconCircle}>
-                    <AppIcon name={item.icon} size={18} color="#0F2042" />
-                  </View>
-                  <View style={styles.activityCardContent}>
-                    <Text style={styles.activityCardTitle}>{item.title}</Text>
-                    <Text style={styles.activityCardSubtitle}>
-                      {item.subtitle}
-                    </Text>
-                  </View>
-                  <AppIcon name="chevron-right" size={16} color="#0F2042" />
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          {/* Section 3: Quick Actions */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
-            <View style={styles.quickActionsGrid}>
-              <View style={styles.quickActionsRow}>
-                <Pressable
-                  style={styles.quickActionCard}
-                  onPress={onOpenComplaint}
-                  accessibilityRole="button"
-                  accessibilityLabel="File a Complaint"
-                >
-                  <View style={styles.creamIconCircleSmall}>
-                    <AppIcon name="file-text" size={18} color="#0F2042" />
-                  </View>
-                  <Text style={styles.quickActionTitle} numberOfLines={2}>
-                    File a Complaint
-                  </Text>
-                  <AppIcon name="chevron-right" size={15} color="#0F2042" />
-                </Pressable>
-                <Pressable
-                  style={styles.quickActionCard}
-                  onPress={onOpenDonation}
-                  accessibilityRole="button"
-                  accessibilityLabel="Make a Donation"
-                >
-                  <View style={styles.creamIconCircleSmall}>
-                    <AppIcon name="heart" size={18} color="#0F2042" />
-                  </View>
-                  <Text style={styles.quickActionTitle} numberOfLines={2}>
-                    Make a Donation
-                  </Text>
-                  <AppIcon name="chevron-right" size={15} color="#0F2042" />
-                </Pressable>
-              </View>
-              <View style={styles.quickActionsRow}>
-                <Pressable
-                  style={styles.quickActionCard}
-                  onPress={onOpenEvents}
-                  accessibilityRole="button"
-                  accessibilityLabel="Join an Event"
-                >
-                  <View style={styles.creamIconCircleSmall}>
-                    <AppIcon name="users" size={18} color="#0F2042" />
-                  </View>
-                  <Text style={styles.quickActionTitle} numberOfLines={2}>
-                    Join an Event
-                  </Text>
-                  <AppIcon name="chevron-right" size={15} color="#0F2042" />
-                </Pressable>
-                <Pressable
-                  style={styles.quickActionCard}
-                  onPress={onOpenRights}
-                  accessibilityRole="button"
-                  accessibilityLabel="Download Resources"
-                >
-                  <View style={styles.creamIconCircleSmall}>
-                    <AppIcon name="download" size={18} color="#0F2042" />
-                  </View>
-                  <Text style={styles.quickActionTitle} numberOfLines={2}>
-                    Download Resources
-                  </Text>
-                  <AppIcon name="chevron-right" size={15} color="#0F2042" />
-                </Pressable>
-              </View>
-            </View>
-          </View>
-
-          {/* Section 4: Recommended for You */}
-          <View style={styles.sectionBlock}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Recommended for You</Text>
-              <Pressable
-                style={styles.viewAllRow}
-                onPress={onOpenRights}
-                accessibilityRole="button"
-                accessibilityLabel="View all recommendations"
-              >
-                <Text style={styles.viewAllText}>View All</Text>
-                <AppIcon name="arrow-right" size={14} color="#0F2042" />
-              </Pressable>
-            </View>
-
-            <View style={styles.recommendedRow}>
-              {/* Card 1: Article */}
-              <Pressable
-                style={styles.recommendedCard}
-                onPress={() => onOpenRight?.('womens-rights')}
-                accessibilityRole="button"
-                accessibilityLabel="Understanding Your Fundamental Rights article"
-              >
-                <Image
-                  source={ARTICLE_IMAGE}
-                  style={styles.recommendedThumb}
-                  resizeMode="cover"
+            {!membership ? (
+              <View style={{ marginTop: Spacing.md }}>
+                <EmptyPanel
+                  title="No membership record available"
+                  description="The app does not currently connect to an authenticated membership record. Explore the membership information page for available details."
                 />
-                <View style={styles.recommendedInfo}>
-                  <View style={styles.articleBadge}>
-                    <Text style={styles.articleBadgeText}>ARTICLE</Text>
-                  </View>
-                  <Text style={styles.recommendedTitle} numberOfLines={2}>
-                    Understanding Your Fundamental Rights
-                  </Text>
-                  <View style={styles.recommendedFooter}>
-                    <View style={styles.recommendedMetaRow}>
-                      <AppIcon name="clock" size={12} color="#64748B" />
-                      <Text style={styles.recommendedMetaText}>5 min read</Text>
-                    </View>
-                    <Pressable
-                      hitSlop={8}
-                      onPress={() => setBookmarkedArticle(prev => !prev)}
-                      accessibilityRole="button"
-                      accessibilityLabel="Bookmark article"
-                    >
-                      <AppIcon
-                        name="bookmark"
-                        size={14}
-                        color={bookmarkedArticle ? AdminColors.accentGold : '#0F2042'}
-                      />
-                    </Pressable>
-                  </View>
-                </View>
-              </Pressable>
-
-              {/* Card 2: Event */}
-              <Pressable
-                style={styles.recommendedCard}
-                onPress={onOpenEvents}
-                accessibilityRole="button"
-                accessibilityLabel="Community Legal Awareness Drive event"
-              >
-                <Image
-                  source={EVENT_IMAGE}
-                  style={styles.recommendedThumb}
-                  resizeMode="cover"
-                />
-                <View style={styles.recommendedInfo}>
-                  <View style={styles.eventBadge}>
-                    <Text style={styles.eventBadgeText}>EVENT</Text>
-                  </View>
-                  <Text style={styles.recommendedTitle} numberOfLines={2}>
-                    Community Legal Awareness Drive
-                  </Text>
-                  <View style={styles.recommendedFooter}>
-                    <View style={styles.recommendedMetaRow}>
-                      <AppIcon name="calendar" size={12} color="#64748B" />
-                      <Text style={styles.recommendedMetaText}>25 Oct 2026</Text>
-                    </View>
-                    <Pressable
-                      hitSlop={8}
-                      onPress={() => setBookmarkedEvent(prev => !prev)}
-                      accessibilityRole="button"
-                      accessibilityLabel="Bookmark event"
-                    >
-                      <AppIcon
-                        name="bookmark"
-                        size={14}
-                        color={bookmarkedEvent ? AdminColors.accentGold : '#0F2042'}
-                      />
-                    </Pressable>
-                  </View>
-                </View>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      ) : null}
-
-      {activeTab === 'activity' ? (
-        <View style={styles.content}>
-          <Text style={styles.sectionTitle}>My Activity</Text>
-          <EmptyPanel
-            title="Activity history unavailable"
-            description="No activity records are available because member activity data is not connected. Complaint and donation information is not shown without an authorized member service."
-          />
-        </View>
-      ) : null}
-
-      {activeTab === 'learning' ? (
-        <View style={styles.content}>
-          <Text style={styles.sectionTitle}>Rights Education</Text>
-          <Text style={[styles.bodyText, styles.learningIntro]}>
-            Browse the rights education content currently available in HRSJM.
-          </Text>
-          <RecommendedContent onOpenRight={onOpenRight ?? (() => {})} expanded />
-        </View>
-      ) : null}
-
-      {activeTab === 'membership' ? (
-        <View style={styles.content}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Membership</Text>
-            <Pressable
-              style={styles.manageButton}
-              onPress={onOpenMembershipInfo}
-              accessibilityRole="button"
-              accessibilityLabel="Manage membership"
-            >
-              <Text style={styles.manageButtonText}>Manage</Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.membershipCard}>
-            <View style={styles.idCardIconContainer}>
-              <AppIcon name="id-card" size={28} color="#0F2042" />
-            </View>
-            <View style={styles.membershipInfoCol}>
-              <View style={styles.memberTypeRow}>
-                <Text style={styles.memberTypeText}>
-                  {currentMembership.category || 'Individual Member'}
-                </Text>
-                <View style={styles.activeBadge}>
-                  <Text style={styles.activeBadgeText}>
-                    {currentMembership.status === 'active'
-                      ? 'Active'
-                      : currentMembership.status}
-                  </Text>
-                </View>
               </View>
-              <Text style={styles.memberMetaText}>
-                Member ID: {currentMembership.memberId || 'HRSJM202600123'}
-              </Text>
-              <Text style={styles.memberMetaText}>
-                Joined on: {currentMembership.joinedDate || '15 Sep 2026'}
-              </Text>
-              <Text style={styles.memberMetaText}>
-                Valid till: {currentMembership.validUntil || '15 Sep 2027'}
-              </Text>
-            </View>
+            ) : null}
           </View>
-
-          {!membership ? (
-            <View style={{ marginTop: Spacing.md }}>
-              <EmptyPanel
-                title="No membership record available"
-                description="The app does not currently connect to an authenticated membership record. Explore the membership information page for available details."
-              />
-            </View>
-          ) : null}
-        </View>
-      ) : null}
-    </View>
-  );
-};
+        ) : null}
+      </View>
+    );
+  };
 
 const RecommendedContent: React.FC<{
   onOpenRight: (rightId: string) => void;
