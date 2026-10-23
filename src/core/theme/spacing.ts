@@ -23,6 +23,7 @@ export const BorderRadius = {
   sm: 6,
   md: 8,
   base: 10,
+  input: 10,  // standard form input border radius
   lg: 12,     // 10-14px standard card and button radius (docs/design.md §8)
   card: 12,   // --radius-card: 12px
   button: 12, // --radius-button: 12px

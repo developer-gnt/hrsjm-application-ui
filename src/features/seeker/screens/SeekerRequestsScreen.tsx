@@ -21,7 +21,7 @@ import { assistanceService } from '../../admin/assistance/services/assistance.se
 import { getApiErrorMessage } from '../../../core/api/client';
 import { SeekerTimelineStepper } from '../components/SeekerTimelineStepper';
 import { AdminColors } from '../../../core/theme/colors';
-import { Typography } from '../../../core/theme/typography';
+import { Typography, FontFamilies } from '../../../core/theme/typography';
 import { Spacing, BorderRadius } from '../../../core/theme/spacing';
 import type {
   AssistanceRequest,

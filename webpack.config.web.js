@@ -18,6 +18,13 @@ module.exports = {
     port: 8089,
     historyApiFallback: true,
     hot: true,
+    compress: true,
+    client: {
+      overlay: {
+        errors: true,
+        warnings: false,
+      },
+    },
     proxy: [
       {
         context: '/api',
@@ -25,6 +32,11 @@ module.exports = {
         changeOrigin: true,
       },
     ],
+  },
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+    },
   },
   resolve: {
     alias: {
