@@ -15,6 +15,14 @@ interface TicketCardProps {
 }
 
 function TicketCardBase({ ticket, onPress }: TicketCardProps) {
+  const categoryMatch = ticket.subject.match(/^\[(.*?)\]/);
+  const category = categoryMatch ? categoryMatch[1] : 'General';
+  const cleanSubject = categoryMatch ? ticket.subject.replace(/^\[.*?\]\s*/, '') : ticket.subject;
+
+  const isUpdated =
+    ticket.updated_at &&
+    new Date(ticket.updated_at).getTime() - new Date(ticket.created_at).getTime() > 60000;
+
   return (
     <AppCard style={styles.card}>
       <TouchableOpacity onPress={onPress} activeOpacity={0.88}>
@@ -31,9 +39,11 @@ function TicketCardBase({ ticket, onPress }: TicketCardProps) {
                   {shortTicketId(ticket.id)}
                 </Text>
               </View>
-              <Text style={styles.dateText}>
-                {formatDate(ticket.created_at)}
-              </Text>
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryBadgeText} numberOfLines={1}>
+                  {category}
+                </Text>
+              </View>
             </View>
           </View>
           <TicketStatusBadge status={ticket.status} />
@@ -41,21 +51,31 @@ function TicketCardBase({ ticket, onPress }: TicketCardProps) {
 
         {/* Subject & Description Snippet */}
         <View style={styles.subjectContainer}>
-          <Text style={styles.subjectTag}>SUBJECT / INQUIRY</Text>
           <Text style={styles.subject} numberOfLines={2}>
-            {ticket.subject}
+            {cleanSubject}
           </Text>
         </View>
 
-        {/* Bottom Action Row */}
+        {/* Date Metadata & Bottom Action Row */}
         <View style={styles.actionRow}>
+          <View style={styles.datesContainer}>
+            <Text style={styles.dateText}>
+              Submitted {formatDate(ticket.created_at)}
+            </Text>
+            {isUpdated ? (
+              <Text style={styles.updatedDateText}>
+                • Updated {formatDate(ticket.updated_at)}
+              </Text>
+            ) : null}
+          </View>
+
           <TouchableOpacity
             style={styles.actionButton}
             onPress={onPress}
             activeOpacity={0.8}
           >
             <Text style={styles.actionButtonText}>
-              View Ticket & Conversation →
+              View Details →
             </Text>
           </TouchableOpacity>
         </View>
@@ -110,8 +130,26 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 11,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  updatedDateText: {
+    fontSize: 11,
     color: '#94A3B8',
     fontWeight: '500',
+  },
+  categoryBadge: {
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#E0E7FF',
+    paddingHorizontal: 7,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+  },
+  categoryBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#4338CA',
   },
   subjectContainer: {
     backgroundColor: '#F8FAFC',
@@ -120,13 +158,6 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.xs,
     borderWidth: 1,
     borderColor: '#EDF2F7',
-  },
-  subjectTag: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: '#6D28D9',
-    letterSpacing: 0.5,
-    marginBottom: 2,
   },
   subject: {
     fontSize: 13.5,
@@ -139,17 +170,28 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xs,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  datesContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 4,
   },
   actionButton: {
     backgroundColor: '#0F2C59',
-    paddingVertical: 9,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: BorderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionButtonText: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.3,

@@ -41,6 +41,11 @@ export const ApiRoutes = {
     ID_CARD: (id: string | number) => `/membership-id/memberships/${id}/card`,
   },
 
+  // Renewals
+  RENEWALS: {
+    ADMIN_LIST: '/admin/renewals',
+  },
+
   // Admin
   ADMIN: {
     DASHBOARD: '/admin/dashboard',

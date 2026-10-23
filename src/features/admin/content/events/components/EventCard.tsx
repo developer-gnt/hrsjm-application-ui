@@ -11,17 +11,21 @@ import {
   BorderRadius,
   Typography,
   Spacing,
+  Shadows,
 } from '../../../../../core/theme';
 import { AppBadge, AppCard } from '../../../../../core/components';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  EllipsisVertical,
+} from '../../../../../core/components/icons';
 import { formatDate } from '../../../../../core/utils';
 import type { EventListItem } from '../types/events.types';
 import { EventStatusBadge } from './EventStatusBadge';
 
 /**
- * TEMPORARY local time formatting helpers.
- * The backend timezone/time contract is not confirmed yet (spec section 42);
- * move these into the shared date utilities once it is, and keep date display
- * on the centralized formatDate utility in the meantime.
+ * Local time formatting helper.
  */
 const formatTime = (isoDateTime: string): string =>
   new Date(isoDateTime).toLocaleTimeString('en-US', {
@@ -34,20 +38,7 @@ const formatTimeRange = (startAt: string, endAt?: string): string =>
   endAt ? `${formatTime(startAt)} - ${formatTime(endAt)}` : formatTime(startAt);
 
 /**
- * Compact admin-table column proportions shared by the list header row and
- * every event row, so labels always align with the data columns.
- */
-const COL_FLEX = {
-  details: 2.3,
-  dateTime: 1.25,
-  status: 0.85,
-  action: 0.65,
-} as const;
-
-/**
- * Category chip tones rotate through approved token pairs (reference shows a
- * distinct pastel chip per category). Deterministic per category name; replace
- * with backend category metadata when the contract is confirmed.
+ * Category chip tones rotate through approved token pairs.
  */
 const CATEGORY_CHIP_TONES = [
   { bg: AdminColors.primaryLight, text: AdminColors.primary },
@@ -66,39 +57,16 @@ const categoryChipTone = (category: string): { bg: string; text: string } => {
   return CATEGORY_CHIP_TONES[hash % CATEGORY_CHIP_TONES.length];
 };
 
-/** Column labels above the event rows (reference "table header"). */
+/** Empty header placeholder to preserve backward compatibility for EventsScreen */
 export const EventListHeader: React.FC = () => {
-  return (
-    <View style={styles.listHeader} accessible accessibilityRole="header">
-      <View style={styles.colDetails}>
-        <Text style={styles.listHeaderText} numberOfLines={1}>
-          Event Details
-        </Text>
-      </View>
-      <View style={styles.colDateTime}>
-        <Text style={styles.listHeaderText} numberOfLines={1}>
-          Date & Time
-        </Text>
-      </View>
-      <View style={styles.colStatus}>
-        <Text style={styles.listHeaderText} numberOfLines={1}>
-          Status
-        </Text>
-      </View>
-      <View style={styles.colAction}>
-        <Text style={[styles.listHeaderText, styles.actionHeaderText]} numberOfLines={1}>
-          Action
-        </Text>
-      </View>
-    </View>
-  );
+  return null;
 };
 
 interface EventCardProps {
   event: EventListItem;
-  /** Fired when the row or the View action is pressed (Event Details in the next phase). */
+  /** Fired when the card or the View action is pressed */
   onPress?: (event: EventListItem) => void;
-  /** Fired when the three-dot action menu is pressed. */
+  /** Fired when the three-dot action menu is pressed */
   onMorePress?: (event: EventListItem) => void;
 }
 
@@ -112,89 +80,96 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress, onMorePres
   const chipTone = event.category ? categoryChipTone(event.category) : null;
 
   return (
-    <AppCard style={styles.card} padding="sm" onPress={handleView}>
-      <View style={styles.row}>
-        {/* Event details: thumbnail + title/category/location */}
-        <View style={styles.colDetails}>
-          <View style={styles.detailsRow}>
-            {coverUri ? (
-              <Image
-                source={{ uri: coverUri }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-                onError={() => setImageFailed(true)}
+    <AppCard style={styles.card} padding="md" onPress={handleView}>
+      <View style={styles.cardContent}>
+        {/* 1. 60x60 Thumbnail on the left */}
+        <View style={styles.thumbnailWrapper}>
+          {coverUri ? (
+            <Image
+              source={{ uri: coverUri }}
+              style={styles.thumbnail}
+              resizeMode="cover"
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <View style={[styles.thumbnail, styles.thumbnailFallback]}>
+              <Calendar size={22} color={AdminColors.primary} strokeWidth={2} />
+            </View>
+          )}
+        </View>
+
+        {/* 2. Content area */}
+        <View style={styles.contentArea}>
+          {/* Title and small category badge together */}
+          <View style={styles.titleRow}>
+            <Text style={styles.title} numberOfLines={2}>
+              {event.title}
+            </Text>
+            {event.category && chipTone ? (
+              <AppBadge
+                label={event.category}
+                customBg={chipTone.bg}
+                customTextColor={chipTone.text}
+                style={styles.categoryBadge}
+                textStyle={styles.categoryBadgeText}
               />
-            ) : (
-              <View style={[styles.thumbnail, styles.thumbnailFallback]}>
-                <Text style={styles.thumbnailFallbackIcon}>📅</Text>
-              </View>
-            )}
-            <View style={styles.detailsText}>
-              <Text style={styles.title} numberOfLines={2}>
-                {event.title}
-              </Text>
-              {event.category && chipTone ? (
-                <AppBadge
-                  label={event.category}
-                  customBg={chipTone.bg}
-                  customTextColor={chipTone.text}
-                  style={styles.categoryChip}
-                  textStyle={styles.categoryChipText}
-                />
-              ) : null}
-              {event.location ? (
-                <View style={styles.locationRow}>
-                  <Text style={styles.locationPin}>📍</Text>
-                  <Text style={styles.location} numberOfLines={1}>
-                    {event.location}
-                  </Text>
-                </View>
-              ) : null}
+            ) : null}
+          </View>
+
+          {/* Date and time on the same line with small icons */}
+          <View style={styles.dateTimeRow}>
+            <View style={styles.metaItem}>
+              <Calendar size={11} color={AdminColors.textMuted} strokeWidth={2} />
+              <Text style={styles.metaText}>{formatDate(event.startAt)}</Text>
+            </View>
+            <Text style={styles.metaBullet}>•</Text>
+            <View style={styles.metaItem}>
+              <Clock size={11} color={AdminColors.textMuted} strokeWidth={2} />
+              <Text style={styles.metaText}>{formatTimeRange(event.startAt, event.endAt)}</Text>
             </View>
           </View>
+
+          {/* Location on the next line */}
+          {event.location ? (
+            <View style={styles.locationRow}>
+              <MapPin size={11} color={AdminColors.textMuted} strokeWidth={2} />
+              <Text style={styles.locationText} numberOfLines={1}>
+                {event.location}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
-        {/* Date & time */}
-        <View style={styles.colDateTime}>
-          <Text
-            style={styles.dateText}
-            adjustsFontSizeToFit
-            minimumFontScale={0.8}
-            numberOfLines={1}
-          >
-            {formatDate(event.startAt)}
-          </Text>
-          <Text style={styles.timeText} numberOfLines={1}>
-            {formatTimeRange(event.startAt, event.endAt)}
-          </Text>
-        </View>
+        {/* 3. Event status badge, View action, and three-dot menu on the right */}
+        <View style={styles.rightSection}>
+          <EventStatusBadge
+            status={event.status}
+            style={styles.statusBadge}
+            textStyle={styles.statusBadgeText}
+          />
+          <View style={styles.actionGroup}>
+            <TouchableOpacity
+              style={styles.viewButton}
+              onPress={handleView}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${event.title}`}
+            >
+              <Text style={styles.viewButtonText} numberOfLines={1}>
+                View
+              </Text>
+            </TouchableOpacity>
 
-        {/* Status */}
-        <View style={styles.colStatus}>
-          <EventStatusBadge status={event.status} style={styles.statusBadge} textStyle={styles.statusText} />
-        </View>
-
-        {/* Action */}
-        <View style={styles.colAction}>
-          <TouchableOpacity
-            style={styles.viewButton}
-            onPress={handleView}
-            accessibilityRole="button"
-            accessibilityLabel={`View ${event.title}`}
-          >
-            <Text style={styles.viewButtonText} adjustsFontSizeToFit numberOfLines={1}>
-              View
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.moreButton}
-            onPress={handleMore}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel={`More actions for ${event.title}`}
-          >
-            <Text style={styles.moreIcon}>⋮</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.moreButton}
+              onPress={handleMore}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`More actions for ${event.title}`}
+            >
+              <EllipsisVertical size={16} color={AdminColors.textMuted} strokeWidth={2.2} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </AppCard>
@@ -203,151 +178,141 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress, onMorePres
 
 const styles = StyleSheet.create({
   card: {
-    marginVertical: Spacing.xs,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: AdminColors.border,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.xs,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 10,
-    backgroundColor: '#F1F5F9',
-    borderRadius: BorderRadius.md,
+    marginVertical: 4,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.xs,
-    gap: Spacing.xs,
+    borderColor: '#DCE4EC',
+    borderRadius: BorderRadius.card,
+    backgroundColor: '#FFFFFF',
+    padding: 12,
   },
-  listHeaderText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#334155',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-  },
-  actionHeaderText: {
-    textAlign: 'right',
-    paddingRight: Spacing.xs,
-  },
-
-  // Shared column flex proportions (must match list header).
-  colDetails: {
-    flex: COL_FLEX.details,
-  },
-  colDateTime: {
-    flex: COL_FLEX.dateTime,
-  },
-  colStatus: {
-    flex: COL_FLEX.status,
-    alignItems: 'flex-start',
-  },
-  colAction: {
-    flex: COL_FLEX.action,
+  cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 2,
+    gap: 12,
   },
-
-  detailsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+  thumbnailWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    backgroundColor: '#EDF2F7',
+    flexShrink: 0,
   },
   thumbnail: {
-    width: 32,
-    height: 32,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: AdminColors.background,
+    width: 60,
+    height: 60,
+    borderRadius: BorderRadius.md,
   },
   thumbnailFallback: {
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#EDF2F7',
+    borderWidth: 1,
+    borderColor: '#DBE5EE',
   },
-  thumbnailFallbackIcon: {
-    fontSize: 13,
-  },
-  detailsText: {
+  contentArea: {
     flex: 1,
     minWidth: 0,
-    marginLeft: Spacing.sm,
-    gap: 2,
+    justifyContent: 'center',
+    gap: 3,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
   },
   title: {
-    ...Typography.badge,
-    fontSize: 10,
-    lineHeight: 12.5,
+    fontSize: 13.5,
+    fontWeight: '700',
     color: AdminColors.textPrimary,
+    lineHeight: 18,
+    flexShrink: 1,
   },
-  categoryChip: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.sm,
+  categoryBadge: {
+    paddingHorizontal: 6,
     paddingVertical: 1,
+    borderRadius: BorderRadius.xs,
+    alignSelf: 'center',
   },
-  categoryChipText: {
-    fontSize: 8,
-    lineHeight: 10.5,
+  categoryBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    lineHeight: 12,
+    textTransform: 'none',
+  },
+  dateTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 1,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  metaText: {
+    fontSize: 11,
+    color: AdminColors.textSecondary,
+    fontWeight: '500',
+  },
+  metaBullet: {
+    fontSize: 9,
+    color: AdminColors.textMuted,
+    marginHorizontal: 1,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 3,
+    marginTop: 1,
   },
-  locationPin: {
-    fontSize: 8,
-    marginRight: 2,
-  },
-  location: {
-    ...Typography.caption,
-    color: AdminColors.textSecondary,
+  locationText: {
+    fontSize: 11,
+    color: AdminColors.textMuted,
+    fontWeight: '500',
     flexShrink: 1,
   },
-
-  dateText: {
-    ...Typography.badge,
-    fontSize: 11,
-    fontWeight: '600',
-    color: AdminColors.textPrimary,
-  },
-  timeText: {
-    ...Typography.caption,
-    fontSize: 10,
-    lineHeight: 13,
-    color: AdminColors.textSecondary,
-    marginTop: 2,
-  },
-
-  statusBadge: {
-    paddingHorizontal: 5,
+  rightSection: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    alignSelf: 'stretch',
+    flexShrink: 0,
     paddingVertical: 2,
+    gap: 8,
   },
-  statusText: {
-    fontSize: 9,
-    lineHeight: 11,
+  statusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.xs,
   },
-
+  statusBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    lineHeight: 12,
+    textTransform: 'none',
+  },
+  actionGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   viewButton: {
     backgroundColor: AdminColors.primaryLight,
     borderRadius: BorderRadius.sm,
-    paddingVertical: 3,
-    paddingHorizontal: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
   },
   viewButtonText: {
-    ...Typography.caption,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     color: AdminColors.primary,
   },
   moreButton: {
-    padding: 1,
-  },
-  moreIcon: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: AdminColors.textMuted,
+    padding: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

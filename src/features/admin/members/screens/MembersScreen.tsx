@@ -39,9 +39,10 @@ import { MemberStatusTabs } from '../components/MemberStatusTabs';
 import { MemberListHeader } from '../components/MemberListHeader';
 import { MemberRow } from '../components/MemberRow';
 import { MemberFilterSheet } from '../components/MemberFilterSheet';
-import { MemberActionsSheet } from '../components/MemberActionsSheet';
+import { MemberActionsSheet, type MenuAnchor } from '../components/MemberActionsSheet';
 import { MembersStateView, MembersLoadingState } from '../components/MembersStateView';
 import { AddMemberModal } from '../components/AddMemberModal';
+import { AddMemberScreen } from './AddMemberScreen';
 import { EditMemberModal } from '../components/EditMemberModal';
 import { MemberProfileModal } from '../components/MemberProfileModal';
 import {
@@ -121,7 +122,9 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
 
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [actionsMember, setActionsMember] = useState<Member | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [isAddMemberView, setIsAddMemberView] = useState(false);
   const [editMember, setEditMember] = useState<Member | null>(null);
   const [viewMember, setViewMember] = useState<Member | null>(null);
   const [page, setPage] = useState(1);
@@ -308,6 +311,11 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
 
   const isSelectionMode = members.selectedIds.size > 0;
 
+  const handleOpenActions = useCallback((member: Member, anchor?: MenuAnchor) => {
+    setActionsMember(member);
+    setMenuAnchor(anchor ?? null);
+  }, []);
+
   const renderMemberRow = useCallback(
     ({ item }: { item: Member }) => (
       <MemberRow
@@ -317,10 +325,10 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
         wide={isWide}
         onToggleSelect={members.toggleMemberSelected}
         onLongPress={members.toggleMemberSelected}
-        onOpenActions={setActionsMember}
+        onOpenActions={handleOpenActions}
       />
     ),
-    [members.selectedIds, isSelectionMode, members.toggleMemberSelected, isWide]
+    [members.selectedIds, isSelectionMode, members.toggleMemberSelected, isWide, handleOpenActions]
   );
 
   const renderStateViews = (): React.ReactNode => {
@@ -369,7 +377,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
           title="No members yet"
           description="Approved members will appear here once registrations begin."
           actionTitle="Add Member"
-          onAction={() => setAddModalVisible(true)}
+          onAction={() => setIsAddMemberView(true)}
         />
       );
     }
@@ -382,7 +390,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
     <View>
       <View>
         <MembersPageHeader
-          onAddMember={() => setAddModalVisible(true)}
+          onAddMember={() => setIsAddMemberView(true)}
           onViewApplications={handleViewApplications}
         />
         <View style={styles.sectionGap}>
@@ -441,6 +449,36 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
       {renderStateViews()}
     </View>
   );
+
+  if (isAddMemberView) {
+    return (
+      <View style={styles.screen}>
+        <AddMemberScreen
+          onBack={() => setIsAddMemberView(false)}
+          onSubmit={async (payload) => {
+            try {
+              await handleAddMember(payload);
+              setIsAddMemberView(false);
+            } catch {
+              // Errors are presented via handleAddMember feedback modal
+            }
+          }}
+          isSubmitting={createMemberMutation.isPending}
+          onNavigate={onNavigate}
+        />
+        <AppFeedbackModal
+          visible={feedback.visible}
+          tone={feedback.tone}
+          title={feedback.title}
+          message={feedback.message}
+          badgeText={feedback.badgeText}
+          primaryAction={feedback.primaryAction}
+          secondaryAction={feedback.secondaryAction}
+          onClose={closeFeedback}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
@@ -505,7 +543,11 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
       />
       <MemberActionsSheet
         member={actionsMember}
-        onClose={() => setActionsMember(null)}
+        anchor={menuAnchor}
+        onClose={() => {
+          setActionsMember(null);
+          setMenuAnchor(null);
+        }}
         onSelectAction={handleMemberAction}
       />
 

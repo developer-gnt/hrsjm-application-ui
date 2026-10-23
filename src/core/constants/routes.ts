@@ -20,6 +20,7 @@ export const AppRoutes = {
 
   // Admin Members & Directory Sub-routes
   MEMBERS_DIRECTORY: 'MembersDirectory',
+  ADD_MEMBER: 'AddMember',
 
   // Admin More / Financial Sub-routes
   MORE_MENU: 'MoreMenu',

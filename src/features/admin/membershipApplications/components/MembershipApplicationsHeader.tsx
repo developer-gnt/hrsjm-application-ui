@@ -11,6 +11,7 @@ import {
   Spacing,
   BorderRadius,
 } from '../../../../core';
+import { Menu, Bell } from '../../../../core/components/icons';
 
 const HRSJM_LOGO = require('../../../../assets/hrsjm_logo.png');
 
@@ -40,11 +41,7 @@ export const MembershipApplicationsHeader: React.FC<MembershipApplicationsHeader
           accessibilityRole="button"
           accessibilityLabel="Open Navigation Menu"
         >
-          <View style={styles.hamburgerIcon}>
-            <View style={styles.hamburgerBar} />
-            <View style={[styles.hamburgerBar, styles.hamburgerBarMiddle]} />
-            <View style={styles.hamburgerBar} />
-          </View>
+          <Menu size={20} color="#334155" strokeWidth={2.2} />
         </TouchableOpacity>
 
         <View style={styles.centerBrand}>
@@ -64,11 +61,7 @@ export const MembershipApplicationsHeader: React.FC<MembershipApplicationsHeader
             accessibilityRole="button"
             accessibilityLabel="Notifications"
           >
-            <View style={styles.bellIcon}>
-              <View style={styles.bellDome} />
-              <View style={styles.bellBase} />
-              <View style={styles.bellClapper} />
-            </View>
+            <Bell size={22} color="#1E293B" strokeWidth={2} />
             <View style={styles.unreadBadge}>
               <Text style={styles.unreadBadgeText}>3</Text>
             </View>

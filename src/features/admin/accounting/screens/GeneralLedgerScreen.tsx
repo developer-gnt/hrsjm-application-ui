@@ -50,6 +50,7 @@ import { formatINR } from '../../../../core/utils/currency';
 import { useLedger } from '../hooks/useLedger';
 import type { LedgerTransaction } from '../types/accounting.types';
 import { AppRoutes } from '../../../../core/constants/routes';
+import { getCategoryBadge } from './ChartOfAccountsScreen';
 
 interface GeneralLedgerScreenProps {
   accountId?: string;
@@ -527,21 +528,30 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
                     </Text>
 
                     <View style={styles.txMetaRow}>
-                      <View
-                        style={[
-                          styles.badgeType,
-                          isCredit ? styles.badgeTypeCredit : styles.badgeTypeExpense,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.badgeTypeText,
-                            { color: isCredit ? '#16A34A' : '#DC2626' },
-                          ]}
-                        >
-                          {isCredit ? 'CREDIT' : 'EXPENSE'}
-                        </Text>
-                      </View>
+                      {(() => {
+                        const catBadge = getCategoryBadge(item.category_tag || item.entry_type, isCredit);
+                        return (
+                          <View
+                            style={[
+                              styles.badgeType,
+                              {
+                                backgroundColor: catBadge.bg,
+                                borderColor: catBadge.border,
+                                borderWidth: 1,
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.badgeTypeText,
+                                { color: catBadge.text, fontWeight: '700' },
+                              ]}
+                            >
+                              {catBadge.label}
+                            </Text>
+                          </View>
+                        );
+                      })()}
 
                       {item.payment_method && (
                         <View style={styles.badgeMethod}>
@@ -586,9 +596,12 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
 
                     <View style={styles.balancePill}>
                       <Text style={styles.balancePillText} numberOfLines={1}>
-                        Bal: {formatINR(item.running_balance || 0, { noDecimals: true })}
+                        Cl: {formatINR(item.closing_balance ?? item.running_balance ?? 0, { noDecimals: true })}
                       </Text>
                     </View>
+                    <Text style={styles.openingBalSubtext} numberOfLines={1}>
+                      Op: {formatINR(item.opening_balance ?? 0, { noDecimals: true })}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -1429,6 +1442,13 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontWeight: '700',
     color: '#475569',
+  },
+  openingBalSubtext: {
+    fontSize: 9.5,
+    color: '#64748B',
+    marginTop: 3,
+    textAlign: 'right',
+    fontWeight: '500',
   },
 
   emptyContainer: {

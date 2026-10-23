@@ -329,7 +329,7 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
         onReset={handleResetFilters}
       />
 
-      {(showBottomNav || Boolean(onBottomTabPress)) && (
+      {showBottomNav && (
         <MembershipApplicationsBottomNav
           bottomInset={insets.bottom}
           activeKey="applications"

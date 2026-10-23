@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import {
   FlatList,
+  Platform,
   RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
@@ -16,11 +18,10 @@ import { AppSearchBar } from '../../../../core/components/common/AppSearchBar';
 import { SkeletonList } from '../../../../core/components/common/AppSkeleton';
 import { AdminFilterTabs } from '../../../../core/components/admin/AdminFilterTabs';
 import { useAuth } from '../../../../core/auth/AuthContext';
-import { can } from '../../../../core/permissions/permissions';
 import { BrandColors } from '../../../../core/theme/colors';
 import { Typography } from '../../../../core/theme/typography';
 import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
-import { Plus, ListFilter, X } from '../../../../core/components/icons';
+import { Plus, ListFilter, Filter, X, MessageSquare, SearchX } from '../../../../core/components/icons';
 import type { AppStackParamList, TabsParamList } from '../../../../core/navigation/types';
 import { TicketCard } from '../components/TicketCard';
 import { TicketFilters } from '../components/TicketFilters';
@@ -29,6 +30,37 @@ import { CreateTicketModal } from '../components/CreateTicketModal';
 import { TICKET_TABS } from '../support.utils';
 import { useSupportTickets } from '../hooks/useSupportTickets';
 import { AppEmptyState, AppErrorState, AppPagination } from '../../../../core';
+import Svg, { Path } from 'react-native-svg';
+
+function EmptyTicketIllustration() {
+  return (
+    <Svg width={72} height={60} viewBox="0 0 72 60" fill="none">
+      {/* 3 Radiating Burst Lines at top */}
+      <Path d="M36 4V10" stroke="#64748B" strokeWidth="2.4" strokeLinecap="round" />
+      <Path d="M25 7L28 12" stroke="#64748B" strokeWidth="2.4" strokeLinecap="round" />
+      <Path d="M47 7L44 12" stroke="#64748B" strokeWidth="2.4" strokeLinecap="round" />
+
+      {/* Ticket Body with side notches tilted ~-8 deg */}
+      <Path
+        d="M21 21 C21 18 23 16 26 16 L46 16 C49 16 51 18 51 21 L51 25.5 C48.8 25.5 47 27.3 47 29.5 C47 31.7 48.8 33.5 51 33.5 L51 38 C51 41 49 43 46 43 L26 43 C23 43 21 41 21 38 L21 33.5 C23.2 33.5 25 31.7 25 29.5 C25 27.3 23.2 25.5 21 25.5 Z"
+        stroke="#475569"
+        strokeWidth="2.4"
+        strokeLinejoin="round"
+        fill="#FFFFFF"
+        transform="rotate(-8 36 30)"
+      />
+      {/* Dashed line inside ticket */}
+      <Path
+        d="M36 19 L36 40"
+        stroke="#94A3B8"
+        strokeWidth="2"
+        strokeDasharray="2 3"
+        strokeLinecap="round"
+        transform="rotate(-8 36 30)"
+      />
+    </Svg>
+  );
+}
 
 type TabProps = BottomTabScreenProps<TabsParamList, 'ComplaintsTab'>;
 type NavProp = CompositeNavigationProp<
@@ -39,6 +71,9 @@ type NavProp = CompositeNavigationProp<
 export function SupportTicketsScreen() {
   const navigation = useNavigation<NavProp>();
   const { user } = useAuth();
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 420;
+
   const {
     filteredItems,
     stats,
@@ -74,21 +109,22 @@ export function SupportTicketsScreen() {
     setPage(1);
   }, [activeTab, searchQuery, filterState]);
 
-  if (!can(user, 'support.manage')) {
+  if (!user) {
     return (
       <View style={styles.flex}>
         <AdminHeader />
         <View style={styles.center}>
           <AppEmptyState
-            title="Access Restricted"
-            message="You do not have permission to view support tickets."
+            title="Sign In Required"
+            message="Please log in to review and submit support tickets."
           />
         </View>
       </View>
     );
   }
 
-  const tabs = TICKET_TABS.map(tab => ({
+  // 4 Authorized tabs per wireframe & Master Prompt: All, Open, In Progress, Resolved
+  const tabs = TICKET_TABS.filter(tab => tab.key !== 'CLOSED').map(tab => ({
     ...tab,
     count:
       tab.key === 'ALL'
@@ -97,14 +133,17 @@ export function SupportTicketsScreen() {
           ? stats.open
           : tab.key === 'UNDER_REVIEW'
             ? stats.inProgress
-            : tab.key === 'RESOLVED'
-              ? stats.resolved
-              : (stats.closed ?? 0),
+            : stats.resolved,
   }));
 
   const hasActiveFilterChips =
     (filterState.category && filterState.category !== 'ALL') ||
     (filterState.dateRange && filterState.dateRange !== 'ALL');
+
+  const isFiltered =
+    Boolean(searchQuery.trim()) ||
+    activeTab !== 'ALL' ||
+    hasActiveFilterChips;
 
   return (
     <View style={styles.flex}>
@@ -115,10 +154,12 @@ export function SupportTicketsScreen() {
         data={paginatedItems}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <TicketCard
-            ticket={item}
-            onPress={() => navigation.navigate('TicketDetails', { ticketId: item.id })}
-          />
+          <View style={styles.cardWrapper}>
+            <TicketCard
+              ticket={item}
+              onPress={() => navigation.navigate('TicketDetails', { ticketId: item.id })}
+            />
+          </View>
         )}
         refreshControl={
           <RefreshControl
@@ -132,23 +173,27 @@ export function SupportTicketsScreen() {
         onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <View>
-            {/* Page Context Banner & Action Header */}
+            {/* Page Context Banner & Action Header matching Donation Seekers layout */}
             <View style={styles.headerArea}>
-              <View style={styles.headerTitleCol}>
-                <Text style={styles.pageTitle}>Complaints & Support</Text>
-                <Text style={styles.pageSubtitle}>
-                  Review, track and resolve support tickets.
-                </Text>
-              </View>
+              <View style={styles.titleRow}>
+                <View style={styles.titleBlock}>
+                  <Text style={styles.pageTitle}>Complaints & Support</Text>
+                  <Text style={styles.pageSubtitle}>
+                    Review, track and resolve support tickets.
+                  </Text>
+                </View>
 
-              <TouchableOpacity
-                style={styles.addBtn}
-                onPress={() => setCreateModalVisible(true)}
-                activeOpacity={0.85}
-              >
-                <Plus size={15} color="#FFFFFF" strokeWidth={2.5} />
-                <Text style={styles.addBtnText}>New Complaint</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => setCreateModalVisible(true)}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="New Complaint"
+                >
+                  <Text style={styles.addButtonPlus}>+</Text>
+                  <Text style={styles.addButtonText}>New Complaint</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* 4-Column Executive KPI Cards */}
@@ -161,28 +206,23 @@ export function SupportTicketsScreen() {
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   placeholder="Search by ticket ID, subject..."
+                  containerStyle={styles.searchBarContainer}
+                  inputStyle={styles.searchBarInput}
                 />
               </View>
               <TouchableOpacity
                 onPress={() => setFiltersVisible(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Open filters"
-                style={[
-                  styles.filtersButton,
-                  activeFiltersCount > 0 && styles.filtersButtonActive,
-                ]}
+                style={styles.filtersButton}
                 activeOpacity={0.85}
               >
-                <ListFilter
-                  size={15}
-                  color={activeFiltersCount > 0 ? '#1D4ED8' : '#0F2C59'}
+                <Filter
+                  size={16}
+                  color="#06294D"
+                  strokeWidth={2.2}
                 />
-                <Text
-                  style={[
-                    styles.filtersText,
-                    activeFiltersCount > 0 && styles.filtersTextActive,
-                  ]}
-                >
+                <Text style={styles.filtersText}>
                   Filters{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ''}
                 </Text>
               </TouchableOpacity>
@@ -215,44 +255,96 @@ export function SupportTicketsScreen() {
               </View>
             ) : null}
 
-            {/* Filter Tabs */}
+            {/* Status Filter Tabs matching reference screenshot */}
             <View style={styles.tabsContainer}>
-              <AdminFilterTabs
-                tabs={tabs}
-                activeKey={activeTab}
-                onSelect={setActiveTab}
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={tabs}
+                keyExtractor={item => item.key}
+                contentContainerStyle={styles.tabsRow}
+                renderItem={({ item: tab }) => {
+                  const isActive = activeTab === tab.key;
+                  return (
+                    <TouchableOpacity
+                      key={tab.key}
+                      onPress={() => setActiveTab(tab.key)}
+                      activeOpacity={0.8}
+                      style={[
+                        styles.tabPill,
+                        isActive ? styles.tabPillActive : styles.tabPillInactive,
+                      ]}
+                    >
+                      {isActive ? <View style={styles.tabGoldDot} /> : null}
+                      <Text
+                        style={[
+                          styles.tabLabel,
+                          isActive ? styles.tabLabelActive : styles.tabLabelInactive,
+                        ]}
+                      >
+                        {tab.label} ({tab.count})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }}
               />
             </View>
           </View>
         }
         ListEmptyComponent={
           initialLoading ? (
-            <SkeletonList count={4} />
+            <View style={styles.stateWrapper}>
+              <SkeletonList count={4} />
+            </View>
           ) : error ? (
-            <AppErrorState
-              title="Unable to load support tickets"
-              message={error}
-              onRetry={refresh}
-            />
+            <View style={styles.stateWrapper}>
+              <AppErrorState
+                title="Unable to load support tickets"
+                message={error}
+                onRetry={refresh}
+              />
+            </View>
+          ) : isFiltered ? (
+            <View style={styles.stateWrapper}>
+              <AppEmptyState
+                icon={<SearchX size={44} color="#64748B" />}
+                title="No complaints found"
+                message="There are no tickets matching your current search or filters."
+                actionLabel="Clear Filters"
+                onAction={clearFilters}
+              />
+            </View>
           ) : (
-            <AppEmptyState
-              title="No Support Tickets"
-              message="There are no tickets matching your current filters."
-              actionLabel="Clear Filters"
-              onAction={clearFilters}
-            />
+            <View style={styles.emptyCardContainer}>
+              <EmptyTicketIllustration />
+              <Text style={styles.emptyTitle}>No complaints yet</Text>
+              <Text style={styles.emptyDescription}>
+                Your submitted complaints will appear here.
+              </Text>
+              <TouchableOpacity
+                style={styles.emptyCreateBtn}
+                onPress={() => setCreateModalVisible(true)}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Create Complaint"
+              >
+                <Text style={styles.emptyCreateBtnText}>Create Complaint</Text>
+              </TouchableOpacity>
+            </View>
           )
         }
         ListFooterComponent={
           filteredItems.length > 0 ? (
-            <AppPagination
-              currentPage={page}
-              totalItems={filteredItems.length}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-              itemLabel="tickets"
-            />
+            <View style={styles.paginationWrapper}>
+              <AppPagination
+                currentPage={page}
+                totalItems={filteredItems.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                itemLabel="tickets"
+              />
+            </View>
           ) : undefined
         }
         contentContainerStyle={styles.listContent}
@@ -299,77 +391,95 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerArea: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: Spacing.base,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: Spacing.sm,
   },
-  headerTitleCol: {
+  titleBlock: {
     flex: 1,
   },
   pageTitle: {
     ...Typography.display,
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     color: '#0B2F52',
   },
   pageSubtitle: {
     ...Typography.body,
-    fontSize: 12.5,
+    fontSize: 13,
     color: '#718096',
     marginTop: 2,
+    lineHeight: 18,
   },
-  addBtn: {
+  addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     backgroundColor: '#FAD465',
-    paddingHorizontal: 13,
+    paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: BorderRadius.button,
-    ...Shadows.card,
+    elevation: 2,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
   },
-  addBtnText: {
-    ...Typography.button,
-    color: '#011F39',
-    fontSize: 12.5,
+  addButtonPlus: {
+    fontSize: 16,
     fontWeight: '700',
+    color: '#011F39',
+    lineHeight: 18,
+  },
+  addButtonText: {
+    ...Typography.button,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#011F39',
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.base,
     marginBottom: Spacing.sm,
-    gap: 8,
+    gap: 10,
   },
   searchContainer: {
     flex: 1,
+  },
+  searchBarContainer: {
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+  },
+  searchBarInput: {
+    fontSize: 13,
+    color: '#0F172A',
   },
   filtersButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#DCE4EC',
-    paddingHorizontal: 12,
+    borderWidth: 1.5,
+    borderColor: '#06294D',
+    paddingHorizontal: 14,
     height: 44,
-    borderRadius: BorderRadius.button,
-  },
-  filtersButtonActive: {
-    backgroundColor: '#EDF2F7',
-    borderColor: '#DBE5EE',
+    borderRadius: 12,
   },
   filtersText: {
     ...Typography.body,
     fontSize: 13,
     fontWeight: '700',
-    color: '#0B2F52',
-  },
-  filtersTextActive: {
     color: '#06294D',
   },
   activeFilterPillsRow: {
@@ -406,8 +516,99 @@ const styles = StyleSheet.create({
   tabsContainer: {
     marginBottom: Spacing.md,
   },
-  listContent: {
+  tabsRow: {
     paddingHorizontal: Spacing.base,
+    gap: 8,
+  },
+  tabPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 36,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+  },
+  tabPillActive: {
+    backgroundColor: '#06294D',
+  },
+  tabPillInactive: {
+    backgroundColor: '#E8F1FC',
+  },
+  tabGoldDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFD447',
+    marginRight: 6,
+  },
+  tabLabel: {
+    fontSize: 12.5,
+    ...(Platform.OS === 'android' ? { includeFontPadding: false } : {}),
+  },
+  tabLabelActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  tabLabelInactive: {
+    color: '#06294D',
+    fontWeight: '700',
+  },
+  cardWrapper: {
+    paddingHorizontal: Spacing.base,
+  },
+  stateWrapper: {
+    paddingHorizontal: Spacing.base,
+  },
+  paginationWrapper: {
+    paddingHorizontal: Spacing.base,
+  },
+  emptyCardContainer: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#DCEBFA',
+    borderStyle: 'dashed',
+    borderRadius: 24,
+    marginHorizontal: Spacing.base,
+    paddingVertical: 36,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    ...Typography.sectionHeader,
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#06294D',
+    textAlign: 'center',
+    marginTop: 14,
+  },
+  emptyDescription: {
+    ...Typography.body,
+    fontSize: 13.5,
+    color: '#718096',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 18,
+  },
+  emptyCreateBtn: {
+    backgroundColor: '#FAD465',
+    paddingHorizontal: 28,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+  },
+  emptyCreateBtnText: {
+    color: '#06294D',
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+  listContent: {
     paddingBottom: Spacing.xxl * 2,
   },
   loadingMore: {

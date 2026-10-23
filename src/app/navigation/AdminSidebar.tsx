@@ -73,7 +73,7 @@ export const ADMIN_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[
   {
     groupTitle: 'FINANCE & ACCOUNTS',
     items: [
-      { id: 'payments', icon: '💰', title: 'Payment Verification', target: AppRoutes.PAYMENT_VERIFICATION },
+      // { id: 'payments', icon: '💰', title: 'Payment Verification', target: AppRoutes.PAYMENT_VERIFICATION },
       { id: 'expenses', icon: '🧾', title: 'Expenses', target: AppRoutes.EXPENSE_VOUCHERS },
       { id: 'receipts', icon: '📥', title: 'Income Receipts', target: AppRoutes.RECEIPT_VOUCHERS },
       { id: 'accounting', icon: '📚', title: 'Accounting & Ledger', target: AppRoutes.ACCOUNTING },

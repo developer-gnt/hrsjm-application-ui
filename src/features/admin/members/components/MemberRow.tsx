@@ -5,12 +5,13 @@ import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
 import { Typography } from '../../../../core/theme/typography';
 import { AppCheckbox } from '../../../../core/components/common/AppCheckbox';
 import { PressableScale } from '../../../../core/components/common/PressableScale';
-import { EllipsisVertical } from '../../../../core/components/icons';
+import { EllipsisVertical, Calendar, User } from '../../../../core/components/icons';
 import { formatDate } from '../../../../core/utils/date';
 import { Member } from '../types';
 import { formatRemainingValidity } from '../utils/members.utils';
 import { Avatar } from './Avatar';
 import { MemberStatusBadge } from './MemberStatusBadge';
+import type { MenuAnchor } from './MemberActionsSheet';
 
 interface MemberRowProps {
   member: Member;
@@ -20,7 +21,7 @@ interface MemberRowProps {
   wide: boolean;
   onToggleSelect: (id: string) => void;
   onLongPress?: (id: string) => void;
-  onOpenActions: (member: Member) => void;
+  onOpenActions: (member: Member, anchor?: MenuAnchor) => void;
 }
 
 const AVATAR_SIZE = 40;
@@ -79,6 +80,36 @@ const MemberRowComponent: React.FC<MemberRowProps> = ({
   onOpenActions,
 }) => {
   const isSelecting = selectionMode || selected;
+  const wideMenuRef = useRef<any>(null);
+  const narrowMenuRef = useRef<any>(null);
+
+  const handleOpenWideActions = () => {
+    if (wideMenuRef.current?.measureInWindow) {
+      wideMenuRef.current.measureInWindow((x: number, y: number, width: number, height: number) => {
+        if (width > 0 && height > 0) {
+          onOpenActions(member, { x, y, width, height });
+        } else {
+          onOpenActions(member);
+        }
+      });
+    } else {
+      onOpenActions(member);
+    }
+  };
+
+  const handleOpenNarrowActions = () => {
+    if (narrowMenuRef.current?.measureInWindow) {
+      narrowMenuRef.current.measureInWindow((x: number, y: number, width: number, height: number) => {
+        if (width > 0 && height > 0) {
+          onOpenActions(member, { x, y, width, height });
+        } else {
+          onOpenActions(member);
+        }
+      });
+    } else {
+      onOpenActions(member);
+    }
+  };
 
   const handlePress = () => {
     if (isSelecting) {
@@ -153,15 +184,17 @@ const MemberRowComponent: React.FC<MemberRowProps> = ({
           </View>
 
           <View style={styles.menuColumn}>
-            <PressableScale
-              onPress={() => onOpenActions(member)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel={`More actions for ${member.name}`}
-              style={styles.menuButton}
-            >
-              <EllipsisVertical size={20} color={BrandColors.textMuted} strokeWidth={2} />
-            </PressableScale>
+            <View ref={wideMenuRef} collapsable={false}>
+              <PressableScale
+                onPress={handleOpenWideActions}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel={`More actions for ${member.name}`}
+                style={styles.menuButton}
+              >
+                <EllipsisVertical size={20} color={BrandColors.textMuted} strokeWidth={2} />
+              </PressableScale>
+            </View>
           </View>
         </View>
       </PressableScale>
@@ -179,48 +212,63 @@ const MemberRowComponent: React.FC<MemberRowProps> = ({
       testID={`member-row-${member.id}`}
     >
       <View style={[styles.card, selected && styles.cardSelected]}>
-        <View style={styles.narrowHeaderRow}>
+        <View style={styles.narrowRow}>
           {isSelecting && (
-            <AppCheckbox
-              checked={selected}
-              onPress={() => onToggleSelect(member.id)}
-              accessibilityLabel={`Select ${member.name}`}
-            />
+            <View style={styles.checkboxWrapper}>
+              <AppCheckbox
+                checked={selected}
+                onPress={() => onToggleSelect(member.id)}
+                accessibilityLabel={`Select ${member.name}`}
+              />
+            </View>
           )}
-          <Avatar name={member.name} source={member.photo} size={AVATAR_SIZE} />
-          <View style={styles.narrowNameStack}>
+
+          {/* Left: Avatar circle with initials */}
+          <Avatar name={member.name} source={member.photo} size={48} />
+
+          {/* Center Column: Name, Member ID, Phone */}
+          <View style={styles.centerCol}>
             <Text style={styles.name} numberOfLines={1}>
               {member.name}
             </Text>
+            <Text style={styles.idText} numberOfLines={1}>
+              ID: {member.membershipId}
+            </Text>
+            <Text style={styles.phoneText} numberOfLines={1}>
+              {member.phone || '-'}
+            </Text>
           </View>
-          <MemberStatusBadge status={member.status} />
-          <PressableScale
-            onPress={() => onOpenActions(member)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel={`More actions for ${member.name}`}
-            style={styles.menuButton}
-          >
-            <EllipsisVertical size={20} color={BrandColors.textMuted} strokeWidth={2} />
-          </PressableScale>
-        </View>
 
-        <View
-          style={[
-            styles.narrowDetailStack,
-            isSelecting ? styles.narrowDetailStackSelecting : styles.narrowDetailStackNormal,
-          ]}
-        >
-          <Text style={styles.contact} numberOfLines={1}>
-            {member.phone} · {member.email}
-          </Text>
-          <Text style={styles.meta} numberOfLines={1}>
-            {member.membershipId} · Joined: {formatDate(member.joinedDate)}
-          </Text>
-          <View style={styles.narrowValidityRow}>
-            <Text style={styles.meta}>Valid till {formatDate(member.validTill)}</Text>
-            <Text style={styles.dotSeparator}>·</Text>
-            <ValidityAnimatedText validTill={member.validTill} />
+          {/* Right Column: Status badge, Valid till, Joined */}
+          <View style={styles.rightCol}>
+            <View style={styles.badgeWrapper}>
+              <MemberStatusBadge status={member.status} />
+            </View>
+            <View style={styles.metaRow}>
+              <Calendar size={12} color="#64748B" strokeWidth={2} />
+              <Text style={styles.metaDateText} numberOfLines={1}>
+                Valid till: {formatDate(member.validTill)}
+              </Text>
+            </View>
+            <View style={styles.metaRow}>
+              <User size={12} color="#64748B" strokeWidth={2} />
+              <Text style={styles.metaDateText} numberOfLines={1}>
+                Joined: {formatDate(member.joinedDate)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Far Right Action Menu Box */}
+          <View ref={narrowMenuRef} collapsable={false} style={styles.actionCol}>
+            <PressableScale
+              onPress={handleOpenNarrowActions}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`More actions for ${member.name}`}
+              style={styles.actionBoxButton}
+            >
+              <EllipsisVertical size={20} color="#0B2545" strokeWidth={2.2} />
+            </PressableScale>
           </View>
         </View>
       </View>
@@ -232,11 +280,12 @@ export const MemberRow = memo(MemberRowComponent);
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: BrandColors.surface,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: BrandColors.border,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     ...Shadows.card,
   },
   cardSelected: {
@@ -246,6 +295,7 @@ const styles = StyleSheet.create({
   cardWide: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    padding: Spacing.md,
   },
 
   // Wide grid cells (flex values match MemberListHeader)
@@ -280,35 +330,72 @@ const styles = StyleSheet.create({
     gap: 1,
   },
 
-  // Narrow stacked layout
-  narrowHeaderRow: {
+  // Narrow layout matching wireframe
+  narrowRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
+    gap: 12,
   },
-  narrowNameStack: {
-    flex: 1,
+  checkboxWrapper: {
+    marginRight: 4,
   },
-  narrowDetailStack: {
-    marginTop: Spacing.sm,
+  centerCol: {
+    flex: 1.15,
+    justifyContent: 'center',
+    gap: 2,
+  },
+  idText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+    lineHeight: 16,
+  },
+  phoneText: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#64748B',
+    lineHeight: 16,
+  },
+  rightCol: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
     gap: 3,
   },
-  narrowDetailStackNormal: {
-    paddingLeft: AVATAR_SIZE + Spacing.md,
+  badgeWrapper: {
+    marginBottom: 2,
   },
-  narrowDetailStackSelecting: {
-    paddingLeft: AVATAR_SIZE + Spacing.md + 20 + Spacing.md,
-  },
-  narrowValidityRow: {
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
+  metaDateText: {
+    fontSize: 11,
+    fontWeight: '400',
+    color: '#64748B',
+    lineHeight: 15,
+  },
+  actionCol: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionBoxButton: {
+    width: 36,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
 
   // Text styles
   name: {
-    ...Typography.rowTitle,
-    color: BrandColors.textPrimary,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#06294D',
+    lineHeight: 20,
   },
   contact: {
     fontSize: 13,
@@ -332,10 +419,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
-  },
-  dotSeparator: {
-    ...Typography.secondary,
-    color: BrandColors.textMuted,
   },
   menuButton: {
     width: 28,

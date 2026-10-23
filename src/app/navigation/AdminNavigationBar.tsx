@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -138,7 +139,19 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
             canPreventDefault: true,
           });
 
-          if (!isFocused && !event.defaultPrevented) {
+          if (event.defaultPrevented) {
+            return;
+          }
+
+          if (tabDef.name === AppRoutes.ADMIN_MORE_TAB) {
+            // Tapping More always displays the Settings / More Menu options screen
+            navigation.navigate(AppRoutes.ADMIN_MORE_TAB, {
+              screen: 'MoreMenu',
+            } as any);
+            return;
+          }
+
+          if (!isFocused) {
             navigation.navigate(route.name);
           }
         };
@@ -199,6 +212,16 @@ export const AdminNavigationBar: React.FC = () => {
           key={tab.name}
           name={tab.name}
           component={tab.component}
+          listeners={({ navigation }) => ({
+            tabPress: () => {
+              if (tab.name === AppRoutes.ADMIN_MORE_TAB) {
+                // When More tab is pressed, ensure it resets and navigates to MoreMenu/Settings
+                (navigation as any).navigate(AppRoutes.ADMIN_MORE_TAB, {
+                  screen: 'MoreMenu',
+                });
+              }
+            },
+          })}
         />
       ))}
     </Tab.Navigator>
@@ -229,6 +252,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 4,
     minHeight: 50,
+    // Remove default web focus box ring & touch highlight
+    ...(Platform.OS === 'web'
+      ? ({
+          outline: 'none',
+          outlineStyle: 'none',
+          outlineWidth: 0,
+          userSelect: 'none',
+          WebkitTapHighlightColor: 'transparent',
+        } as any)
+      : {}),
   },
   iconPill: {
     paddingHorizontal: 12,
@@ -237,6 +270,14 @@ const styles = StyleSheet.create({
     minHeight: 28,
     alignItems: 'center',
     justifyContent: 'center',
+    ...(Platform.OS === 'web'
+      ? ({
+          outline: 'none',
+          outlineStyle: 'none',
+          outlineWidth: 0,
+          WebkitTapHighlightColor: 'transparent',
+        } as any)
+      : {}),
   },
   iconPillActive: {
     backgroundColor: BrandColors.goldSoft,

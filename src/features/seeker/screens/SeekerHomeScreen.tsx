@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AdminColors, Spacing, BorderRadius, Typography } from '../../../core/theme';
+import { AdminColors, Spacing, BorderRadius, Typography, FontFamilies } from '../../../core/theme';
 import { AdminHeader } from '../../../app/navigation/AdminHeader';
 import { HeroBanner } from '../../user/home/components/HeroBanner';
 import { QuickActionsRow } from '../../user/home/components/QuickActionCard';

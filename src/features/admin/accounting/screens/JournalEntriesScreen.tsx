@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdminColors, BorderRadius, Spacing, Typography, FontFamilies } from '../../../../core/theme';
 import {
   AppEmptyState,

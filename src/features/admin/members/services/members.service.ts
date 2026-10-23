@@ -384,6 +384,7 @@ export interface MembershipCategoryItem {
   description?: string;
   validity_days?: number;
   status: string;
+  free_renewal_years?: number | string;
 }
 
 export interface CreateMemberPayload {

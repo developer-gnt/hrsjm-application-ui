@@ -143,4 +143,31 @@ describe('MembersScreen (mock-data UI build)', () => {
     expect(text).not.toContain('Aman Shaikh');
     expect(text).toContain('Expiring Soon');
   });
+
+  test('opens complete page Add Member screen when clicking Add Member', async () => {
+    const tree = await renderScreen();
+
+    const addMemberBtn = tree.root.findAll(
+      node => node.props && node.props.title === 'Add Member'
+    )[0];
+    expect(addMemberBtn).toBeDefined();
+
+    await ReactTestRenderer.act(async () => {
+      addMemberBtn.props.onPress();
+    });
+
+    const fullPageText = renderedText(tree);
+    expect(fullPageText).toContain('Add New Member');
+    expect(fullPageText).toContain('General Membership');
+    expect(fullPageText).toContain('Letter Pad Post');
+    expect(fullPageText).toContain('National Level Post');
+    expect(fullPageText).toContain('Account Details');
+    expect(fullPageText).toContain('Next');
+
+    // Click back to return to directory
+    const backBtn = tree.root.find(
+      node => node.props && typeof node.props.children === 'string' && node.props.children.includes('Members Directory')
+    );
+    expect(backBtn).toBeDefined();
+  });
 });

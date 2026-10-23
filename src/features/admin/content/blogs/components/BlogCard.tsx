@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import {
   AdminColors,
@@ -12,45 +13,29 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import { AppCard } from '../../../../../core/components';
+import { Eye, EllipsisVertical } from '../../../../../core/components/icons';
 import type { BlogListItem, BlogStatus } from '../types/blog.types';
 
 /**
- * Compact admin-table column proportions shared by the list header row and
- * every blog row, so labels always align with the data columns.
+ * Column proportions for desktop table header and row alignment.
  */
 export const BLOG_COL_FLEX = {
-  details: 2.6,
-  category: 0.9,
-  date: 0.8,
-  status: 1.0,
-  views: 0.9,
-  action: 0.95,
+  details: 3.2,
+  category: 1.0,
+  date: 0.95,
+  status: 1.05,
+  views: 0.8,
+  action: 1.0,
 } as const;
 
-/**
- * Category chip tones per the reference (subtle pastel per category).
- * Fixed mapping — replace with backend category metadata when confirmed.
- */
-const CATEGORY_CHIP_TONES: Record<string, { bg: string; text: string }> = {
-  'Know Your Rights': { bg: AdminColors.successLight, text: AdminColors.success },
-  'Social Justice': { bg: AdminColors.statusPendingLight, text: AdminColors.statusPending },
-  'Relief Work': { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
-  Education: { bg: AdminColors.accentGoldLight, text: AdminColors.accentGold },
-  Environment: { bg: AdminColors.successLight, text: AdminColors.success },
-  'Women Rights': { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
-  Guides: { bg: AdminColors.infoLight, text: AdminColors.info },
-  Events: { bg: AdminColors.primaryLight, text: AdminColors.primary },
-};
-
-const categoryChipTone = (category: string): { bg: string; text: string } =>
-  CATEGORY_CHIP_TONES[category] ?? { bg: AdminColors.primaryLight, text: AdminColors.primary };
-
-/** Status badge tones per the reference: Published green, Draft amber, Archived red. */
-export const BLOG_STATUS_TONES: Record<BlogStatus, { bg: string; text: string }> = {
-  PUBLISHED: { bg: AdminColors.statusActiveLight, text: AdminColors.statusActive },
-  DRAFT: { bg: AdminColors.warningLight, text: AdminColors.warning },
-  ARCHIVED: { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
+/** Status badge styles per the reference wireframe: dot indicator + matching tones. */
+export const BLOG_STATUS_TONES: Record<
+  BlogStatus,
+  { bg: string; text: string; dot: string }
+> = {
+  PUBLISHED: { bg: '#E8F8F0', text: '#16A34A', dot: '#16A34A' },
+  DRAFT: { bg: '#FEF3C7', text: '#D97706', dot: '#D97706' },
+  ARCHIVED: { bg: '#FEE2E2', text: '#DC2626', dot: '#DC2626' },
 };
 
 export const BLOG_STATUS_LABELS: Record<BlogStatus, string> = {
@@ -70,70 +55,70 @@ export const formatBlogViews = (views: number): string => {
 };
 
 /**
- * Single-line category chip (same inline approach as the News row so long
- * labels shrink to one line instead of wrapping). Exported for the details
- * screen, which shows the same chip under the headline.
+ * Category pill chip matching reference wireframe (pale blue background, navy text).
  */
 export const BlogCategoryChip: React.FC<{ category: string }> = ({ category }) => {
-  const tone = categoryChipTone(category);
-
   return (
-    <View style={[styles.categoryChip, { backgroundColor: tone.bg }]}>
-      <Text
-        style={[styles.categoryChipText, { color: tone.text }]}
-        adjustsFontSizeToFit
-        minimumFontScale={0.72}
-        numberOfLines={1}
-      >
+    <View style={styles.categoryChip}>
+      <Text style={styles.categoryChipText} numberOfLines={1}>
         {category}
       </Text>
     </View>
   );
 };
 
-/** Column labels above the blog rows (reference "table header"). */
+/** Column labels above the blog rows for desktop/tablet widths. */
 export const BlogListHeader: React.FC = () => {
+  const { width } = useWindowDimensions();
+  if (width < 680) {
+    return null;
+  }
+
   return (
     <View style={styles.listHeader} accessible accessibilityRole="header">
       <View style={styles.colDetails}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={styles.listHeaderText} numberOfLines={1}>
           Blog Details
         </Text>
       </View>
       <View style={styles.colCategory}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={styles.listHeaderText} numberOfLines={1}>
           Category
         </Text>
       </View>
+      <View style={styles.colDividerSpace} />
       <View style={styles.colDate}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={styles.listHeaderText} numberOfLines={1}>
           Date ↓
         </Text>
       </View>
+      <View style={styles.colDividerSpace} />
       <View style={styles.colStatus}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={styles.listHeaderText} numberOfLines={1}>
           Status
         </Text>
       </View>
+      <View style={styles.colDividerSpace} />
       <View style={styles.colViews}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={styles.listHeaderText} numberOfLines={1}>
           Views
         </Text>
       </View>
+      <View style={styles.colDividerSpace} />
       <View style={styles.colAction}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          Action
+        <Text style={styles.listHeaderText} numberOfLines={1}>
+          Actions
         </Text>
       </View>
     </View>
   );
 };
 
-interface BlogCardProps {
+export interface BlogCardProps {
   blog: BlogListItem;
   /** Fired when the row body is pressed (opens Blog Details). */
   onPress?: (blog: BlogListItem) => void;
-  /** Fired when the row Edit button is pressed (placeholder until Edit Blog exists). */
+  /** Fired when the row Edit button is pressed. */
   onEditPress?: (blog: BlogListItem) => void;
   /** Fired when the three-dot action menu is pressed. */
   onMorePress?: (blog: BlogListItem) => void;
@@ -146,32 +131,130 @@ export const BlogCard: React.FC<BlogCardProps> = ({
   onMorePress,
 }) => {
   const [imageFailed, setImageFailed] = useState(false);
-  const thumbnailUri = blog.thumbnailUrl && !imageFailed ? blog.thumbnailUrl : undefined;
+  const { width } = useWindowDimensions();
+  const isMobile = width < 680;
 
-  const badgeTone = BLOG_STATUS_TONES[blog.status];
+  const thumbnailUri = blog.thumbnailUrl && !imageFailed ? blog.thumbnailUrl : undefined;
+  const badgeTone = BLOG_STATUS_TONES[blog.status] ?? BLOG_STATUS_TONES.PUBLISHED;
 
   const handlePress = () => onPress?.(blog);
   const handleEdit = () => (onEditPress ? onEditPress(blog) : onPress?.(blog));
   const handleMore = () => onMorePress?.(blog);
 
+  // Render thumbnail
+  const renderThumbnail = (sizeStyle: any) => (
+    thumbnailUri ? (
+      <Image
+        source={{ uri: thumbnailUri }}
+        style={[styles.thumbnail, sizeStyle]}
+        resizeMode="cover"
+        onError={() => setImageFailed(true)}
+      />
+    ) : (
+      <View style={[styles.thumbnail, styles.thumbnailFallback, sizeStyle]}>
+        <Text style={styles.thumbnailFallbackIcon}>📝</Text>
+      </View>
+    )
+  );
+
+  // Render Status Badge with dot indicator
+  const renderStatusBadge = () => (
+    <View style={[styles.statusBadge, { backgroundColor: badgeTone.bg }]}>
+      <View style={[styles.statusDot, { backgroundColor: badgeTone.dot }]} />
+      <Text style={[styles.statusText, { color: badgeTone.text }]} numberOfLines={1}>
+        {BLOG_STATUS_LABELS[blog.status] ?? blog.status}
+      </Text>
+    </View>
+  );
+
+  // Render Action buttons (Edit + 3-dot)
+  const renderActions = () => (
+    <View style={styles.actionsGroup}>
+      <TouchableOpacity
+        style={styles.actionButton}
+        onPress={handleEdit}
+        accessibilityRole="button"
+        accessibilityLabel={`Edit ${blog.title}`}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.actionButtonText}>Edit</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.moreButton}
+        onPress={handleMore}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel={`More actions for ${blog.title}`}
+        activeOpacity={0.8}
+      >
+        <EllipsisVertical size={16} color="#06294D" strokeWidth={2.2} />
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Mobile layout (< 680px)
+  if (isMobile) {
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={handlePress}
+        activeOpacity={0.92}
+        accessibilityRole="button"
+        accessibilityLabel={`Blog article: ${blog.title}`}
+      >
+        {/* Top: Thumbnail + Title & Excerpt */}
+        <View style={styles.mobileTopRow}>
+          {renderThumbnail(styles.mobileThumbnail)}
+          <View style={styles.detailsText}>
+            <Text style={styles.title} numberOfLines={2}>
+              {blog.title}
+            </Text>
+            <Text style={styles.excerpt} numberOfLines={2}>
+              {blog.excerpt}
+            </Text>
+          </View>
+        </View>
+
+        {/* Middle: Category, Date/Time, Status */}
+        <View style={styles.mobileMetaRow}>
+          <BlogCategoryChip category={blog.category} />
+          <View style={styles.dateBlock}>
+            <Text style={styles.dateText} numberOfLines={1}>
+              {blog.date}
+            </Text>
+            <Text style={styles.timeText} numberOfLines={1}>
+              {blog.time}
+            </Text>
+          </View>
+          {renderStatusBadge()}
+        </View>
+
+        {/* Bottom: Views + Actions */}
+        <View style={styles.mobileFooterRow}>
+          <View style={styles.viewsRow}>
+            <Eye size={16} color="#06294D" strokeWidth={2} />
+            <Text style={styles.viewsText}>{formatBlogViews(blog.views)}</Text>
+          </View>
+          {renderActions()}
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  // Desktop / Tablet layout (>= 680px) matching approved wireframe
   return (
-    <AppCard style={styles.card} padding="sm" onPress={handlePress}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={handlePress}
+      activeOpacity={0.92}
+      accessibilityRole="button"
+      accessibilityLabel={`Blog article: ${blog.title}`}
+    >
       <View style={styles.row}>
-        {/* Blog details: thumbnail + title + excerpt */}
+        {/* 1. Blog details: thumbnail + title + excerpt */}
         <View style={styles.colDetails}>
           <View style={styles.detailsRow}>
-            {thumbnailUri ? (
-              <Image
-                source={{ uri: thumbnailUri }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-                onError={() => setImageFailed(true)}
-              />
-            ) : (
-              <View style={[styles.thumbnail, styles.thumbnailFallback]}>
-                <Text style={styles.thumbnailFallbackIcon}>📝</Text>
-              </View>
-            )}
+            {renderThumbnail(styles.desktopThumbnail)}
             <View style={styles.detailsText}>
               <Text style={styles.title} numberOfLines={2}>
                 {blog.title}
@@ -183,235 +266,283 @@ export const BlogCard: React.FC<BlogCardProps> = ({
           </View>
         </View>
 
-        {/* Category */}
+        {/* 2. Category badge */}
         <View style={styles.colCategory}>
           <BlogCategoryChip category={blog.category} />
         </View>
 
-        {/* Date */}
+        {/* Subtle vertical divider */}
+        <View style={styles.verticalDivider} />
+
+        {/* 3. Date & Time */}
         <View style={styles.colDate}>
-          <Text
-            style={styles.dateText}
-            adjustsFontSizeToFit
-            minimumFontScale={0.75}
-            numberOfLines={1}
-          >
+          <Text style={styles.dateText} numberOfLines={1}>
             {blog.date}
           </Text>
-          <Text style={styles.timeText} adjustsFontSizeToFit minimumFontScale={0.75} numberOfLines={1}>
+          <Text style={styles.timeText} numberOfLines={1}>
             {blog.time}
           </Text>
         </View>
 
-        {/* Status */}
+        {/* Subtle vertical divider */}
+        <View style={styles.verticalDivider} />
+
+        {/* 4. Publication Status badge */}
         <View style={styles.colStatus}>
-          <View style={[styles.statusBadge, { backgroundColor: badgeTone.bg }]}>
-            <Text
-              style={[styles.statusText, { color: badgeTone.text }]}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              numberOfLines={1}
-            >
-              {BLOG_STATUS_LABELS[blog.status]}
-            </Text>
-          </View>
+          {renderStatusBadge()}
         </View>
 
-        {/* Views */}
+        {/* Subtle vertical divider */}
+        <View style={styles.verticalDivider} />
+
+        {/* 5. View count */}
         <View style={styles.colViews}>
           <View style={styles.viewsRow}>
-            <Text style={styles.viewsIcon}>👁</Text>
-            <Text style={styles.viewsText} adjustsFontSizeToFit numberOfLines={1}>
-              {formatBlogViews(blog.views)}
-            </Text>
+            <Eye size={16} color="#06294D" strokeWidth={2} />
+            <Text style={styles.viewsText}>{formatBlogViews(blog.views)}</Text>
           </View>
         </View>
 
-        {/* Action: Edit + three-dot menu */}
+        {/* Subtle vertical divider */}
+        <View style={styles.verticalDivider} />
+
+        {/* 6. Edit button + three-dot overflow menu */}
         <View style={styles.colAction}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleEdit}
-            accessibilityRole="button"
-            accessibilityLabel={`Edit ${blog.title}`}
-          >
-            <Text style={styles.actionButtonText} adjustsFontSizeToFit numberOfLines={1}>
-              Edit
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.moreButton}
-            onPress={handleMore}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel={`More actions for ${blog.title}`}
-          >
-            <Text style={styles.moreIcon}>⋮</Text>
-          </TouchableOpacity>
+          {renderActions()}
         </View>
       </View>
-    </AppCard>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    marginVertical: Spacing.xs,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: AdminColors.border,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DCE4EC',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginVertical: 6,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.xs,
+    alignItems: 'center',
   },
   listHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.md + Spacing.sm,
-    paddingVertical: Spacing.xs,
-    gap: Spacing.xs,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginBottom: 4,
   },
   listHeaderText: {
     ...Typography.caption,
-    fontWeight: '600',
-    color: AdminColors.textMuted,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#06294D',
   },
 
-  // Shared column flex proportions (must match list header).
+  // Shared column flex proportions
   colDetails: {
     flex: BLOG_COL_FLEX.details,
+    paddingRight: 10,
   },
   colCategory: {
     flex: BLOG_COL_FLEX.category,
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   colDate: {
     flex: BLOG_COL_FLEX.date,
+    justifyContent: 'center',
+    paddingLeft: 4,
   },
   colStatus: {
     flex: BLOG_COL_FLEX.status,
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   colViews: {
     flex: BLOG_COL_FLEX.views,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   colAction: {
     flex: BLOG_COL_FLEX.action,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 2,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  colDividerSpace: {
+    width: 17,
+  },
+
+  verticalDivider: {
+    width: 1,
+    height: 38,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 8,
   },
 
   detailsRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    gap: 12,
   },
   thumbnail: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.md,
-    backgroundColor: AdminColors.background,
+    borderRadius: 12,
+    backgroundColor: '#EDF2F7',
+  },
+  desktopThumbnail: {
+    width: 64,
+    height: 64,
+  },
+  mobileThumbnail: {
+    width: 58,
+    height: 58,
   },
   thumbnailFallback: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   thumbnailFallbackIcon: {
-    fontSize: 16,
+    fontSize: 22,
   },
   detailsText: {
     flex: 1,
     minWidth: 0,
-    marginLeft: 6,
-    gap: 2,
+    justifyContent: 'center',
   },
   title: {
     ...Typography.bodyMedium,
-    fontSize: 11,
-    lineHeight: 14,
-    color: AdminColors.textPrimary,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '700',
+    color: '#06294D',
   },
   excerpt: {
     ...Typography.caption,
-    fontSize: 9.5,
-    lineHeight: 12.5,
-    color: AdminColors.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#718096',
+    marginTop: 3,
   },
 
   categoryChip: {
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    backgroundColor: '#EDF2F7',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    alignSelf: 'center',
   },
   categoryChipText: {
     ...Typography.caption,
-    fontSize: 7.5,
-    lineHeight: 10,
+    fontSize: 12.5,
+    lineHeight: 16,
     fontWeight: '600',
+    color: '#06294D',
   },
 
+  dateBlock: {
+    justifyContent: 'center',
+  },
   dateText: {
-    ...Typography.badge,
-    fontSize: 10.5,
-    fontWeight: '500',
-    color: AdminColors.textPrimary,
+    fontSize: 13.5,
+    lineHeight: 18,
+    fontWeight: '700',
+    color: '#06294D',
   },
   timeText: {
-    ...Typography.caption,
-    fontSize: 9.5,
-    lineHeight: 12,
-    color: AdminColors.textSecondary,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '400',
+    color: '#718096',
     marginTop: 2,
   },
 
   statusBadge: {
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    alignSelf: 'center',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
   },
   statusText: {
-    fontSize: 8.5,
-    lineHeight: 10.5,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
   },
 
   viewsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-  },
-  viewsIcon: {
-    fontSize: 8.5,
+    gap: 6,
   },
   viewsText: {
-    ...Typography.caption,
-    fontSize: 9.5,
-    fontWeight: '500',
-    color: AdminColors.textPrimary,
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#06294D',
   },
 
+  actionsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   actionButton: {
-    backgroundColor: AdminColors.primaryLight,
-    borderRadius: BorderRadius.sm,
-    paddingVertical: 3,
-    paddingHorizontal: 7,
+    backgroundColor: '#EDF2F7',
+    borderRadius: 8,
+    height: 36,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionButtonText: {
-    ...Typography.caption,
-    fontWeight: '600',
-    color: AdminColors.primary,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#06294D',
   },
   moreButton: {
-    padding: 1,
+    backgroundColor: '#EDF2F7',
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  moreIcon: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: AdminColors.textMuted,
+
+  // Mobile specific styles
+  mobileTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  mobileMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E2E8F0',
+    marginBottom: 10,
+  },
+  mobileFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 });

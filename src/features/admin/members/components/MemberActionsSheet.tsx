@@ -1,9 +1,16 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { BrandColors, StatusTones } from '../../../../core/theme/colors';
-import { Spacing } from '../../../../core/theme/spacing';
-import { Typography } from '../../../../core/theme/typography';
-import { PressableScale } from '../../../../core/components/common/PressableScale';
+import React, { useEffect, useRef } from 'react';
+import {
+  Animated,
+  Easing,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import {
   AppIconComponent,
   Eye,
@@ -13,11 +20,18 @@ import {
   UserX,
 } from '../../../../core/components/icons';
 import { Member } from '../types';
-import { Avatar } from './Avatar';
-import { AppBottomSheet } from './AppBottomSheet';
 
-interface MemberActionsSheetProps {
+export interface MenuAnchor {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface MemberActionsSheetProps {
   member: Member | null;
+  anchor?: MenuAnchor | null;
+  visible?: boolean;
   onClose: () => void;
   onSelectAction?: (key: string, member: Member) => void;
 }
@@ -25,169 +39,241 @@ interface MemberActionsSheetProps {
 interface ActionItem {
   key: string;
   label: string;
-  description: string;
   Icon: AppIconComponent;
   destructive?: boolean;
 }
 
-/** Row action menu for the three-dot control, presented as a bottom sheet. */
+/**
+ * Compact floating contextual popup menu (popover/overflow menu) anchored
+ * to the three-dot button of a member card.
+ */
 export const MemberActionsSheet: React.FC<MemberActionsSheetProps> = ({
   member,
+  anchor,
+  visible = true,
   onClose,
   onSelectAction,
 }) => {
-  if (!member) return null;
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
-  // Account-level action: only INACTIVE accounts can be activated; every
-  // live account (ACTIVE / EXPIRING_SOON membership) can be deactivated.
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.94)).current;
+
+  useEffect(() => {
+    if (member && visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 140,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 140,
+          easing: Easing.out(Easing.back(1.2)),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      fadeAnim.setValue(0);
+      scaleAnim.setValue(0.94);
+    }
+  }, [member, visible, fadeAnim, scaleAnim]);
+
+  // Support Escape key to close popup on web
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const globalScope = typeof globalThis !== 'undefined' ? (globalThis as any) : null;
+      if (globalScope?.addEventListener) {
+        const handleKeyDown = (e: any) => {
+          if (e?.key === 'Escape') {
+            onClose();
+          }
+        };
+        globalScope.addEventListener('keydown', handleKeyDown);
+        return () => globalScope.removeEventListener('keydown', handleKeyDown);
+      }
+    }
+  }, [onClose]);
+
+  if (!member || !visible) return null;
+
   const isActive = member.status !== 'INACTIVE';
 
   const actions: ActionItem[] = [
     {
       key: 'view',
       label: 'View Profile',
-      description: 'See full member details and KYC status',
       Icon: Eye,
     },
     {
       key: 'edit',
       label: 'Edit Member',
-      description: 'Update member information',
       Icon: Pencil,
     },
     {
       key: 'reset-password',
       label: 'Reset Password',
-      description: 'Send a password reset to this member',
       Icon: KeyRound,
     },
     isActive
       ? {
           key: 'deactivate',
           label: 'Deactivate',
-          description: 'Suspend this member account',
           Icon: UserX,
           destructive: true,
         }
       : {
           key: 'activate',
           label: 'Activate',
-          description: 'Restore this member account',
           Icon: UserCheck,
         },
   ];
 
-  return (
-    <AppBottomSheet visible onClose={onClose} title="Member actions">
-      <View style={styles.memberSummary}>
-        <Avatar name={member.name} source={member.photo} size={40} />
-        <View style={styles.summaryTextBlock}>
-          <Text style={styles.summaryName} numberOfLines={1}>
-            {member.name}
-          </Text>
-          <Text style={styles.summaryMeta} numberOfLines={1}>
-            {member.membershipId} · {member.phone}
-          </Text>
-        </View>
-      </View>
+  const POPUP_WIDTH = 195;
+  const POPUP_HEIGHT = 186;
+  const MARGIN = 10;
 
-      {actions.map(({ key, label, description, Icon, destructive }) => (
-        <PressableScale
-          key={key}
-          onPress={() => {
-            onClose();
-            onSelectAction?.(key, member);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={label}
-          testID={`member-action-${key}`}
-          style={styles.actionRow}
-        >
-          <View
-            style={[
-              styles.actionIconContainer,
-              destructive && styles.actionIconContainerDestructive,
-            ]}
-          >
-            <Icon
-              size={18}
-              color={destructive ? BrandColors.danger : BrandColors.navy}
-              strokeWidth={2}
-            />
-          </View>
-          <View style={styles.actionTextBlock}>
-            <Text
-              style={[styles.actionLabel, destructive && styles.actionLabelDestructive]}
-              numberOfLines={1}
+  // Horizontal positioning: align right edge of popup with right edge of anchor button
+  let left = anchor
+    ? anchor.x + anchor.width - POPUP_WIDTH
+    : windowWidth - POPUP_WIDTH - MARGIN;
+
+  if (left < MARGIN) {
+    left = MARGIN;
+  } else if (left + POPUP_WIDTH > windowWidth - MARGIN) {
+    left = windowWidth - POPUP_WIDTH - MARGIN;
+  }
+
+  // Vertical positioning: prefer below anchor; if overflows screen, flip above anchor
+  let top = anchor ? anchor.y + anchor.height + 4 : 120;
+
+  if (top + POPUP_HEIGHT > windowHeight - MARGIN) {
+    if (anchor && anchor.y - POPUP_HEIGHT - 4 >= MARGIN) {
+      top = anchor.y - POPUP_HEIGHT - 4;
+    } else {
+      top = Math.max(MARGIN, windowHeight - POPUP_HEIGHT - MARGIN);
+    }
+  }
+
+  return (
+    <Modal
+      transparent
+      visible
+      animationType="none"
+      onRequestClose={onClose}
+    >
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.backdrop}>
+          <TouchableWithoutFeedback>
+            <Animated.View
+              style={[
+                styles.popup,
+                {
+                  top,
+                  left,
+                  width: POPUP_WIDTH,
+                  opacity: fadeAnim,
+                  transform: [{ scale: scaleAnim }],
+                },
+              ]}
+              testID="member-actions-popup"
             >
-              {label}
-            </Text>
-            <Text style={styles.actionDescription} numberOfLines={1}>
-              {description}
-            </Text>
-          </View>
-        </PressableScale>
-      ))}
-    </AppBottomSheet>
+              {actions.map(({ key, label, Icon, destructive }) => (
+                <TouchableOpacity
+                  key={key}
+                  style={styles.actionRow}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    onClose();
+                    onSelectAction?.(key, member);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={label}
+                  testID={`member-action-${key}`}
+                >
+                  <View
+                    style={[
+                      styles.iconCircle,
+                      destructive && styles.iconCircleDestructive,
+                    ]}
+                  >
+                    <Icon
+                      size={15}
+                      color={destructive ? '#EF4444' : '#06294D'}
+                      strokeWidth={2}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.actionLabel,
+                      destructive && styles.actionLabelDestructive,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </Animated.View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
   );
 };
 
+export const MemberActionsMenu = MemberActionsSheet;
+
 const styles = StyleSheet.create({
-  memberSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    borderRadius: 12,
-    backgroundColor: BrandColors.background,
-    marginBottom: Spacing.base,
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'transparent',
   },
-  summaryTextBlock: {
-    flex: 1,
-    gap: 2,
-  },
-  summaryName: {
-    ...Typography.rowTitle,
-    color: BrandColors.textPrimary,
-  },
-  summaryMeta: {
-    ...Typography.secondary,
-    color: BrandColors.textMuted,
+  popup: {
+    position: 'absolute',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 8,
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm + 2,
-    paddingHorizontal: Spacing.xs,
+    gap: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 8,
+    borderRadius: 10,
   },
-  actionIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: BrandColors.softBlue,
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EEF4FB',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionIconContainerDestructive: {
-    backgroundColor: StatusTones.danger.bg,
-  },
-  actionTextBlock: {
-    flex: 1,
-    gap: 1,
+  iconCircleDestructive: {
+    backgroundColor: '#FDEEEF',
   },
   actionLabel: {
-    ...Typography.bodyMedium,
-    color: BrandColors.textPrimary,
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#06294D',
+    letterSpacing: 0.1,
   },
   actionLabelDestructive: {
-    color: BrandColors.danger,
-  },
-  actionDescription: {
-    ...Typography.secondary,
-    color: BrandColors.textMuted,
+    color: '#EF4444',
   },
 });
 
 export default MemberActionsSheet;
+

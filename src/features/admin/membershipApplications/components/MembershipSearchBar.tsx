@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { BorderRadius, Spacing } from '../../../../core';
+import { Search, ListFilter, X } from '../../../../core/components/icons';
 
 interface MembershipSearchBarProps {
   query: string;
@@ -25,10 +26,10 @@ export const MembershipSearchBar: React.FC<MembershipSearchBarProps> = ({
     <View style={styles.container}>
       {/* Search Input Box */}
       <View style={styles.inputWrapper}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Search size={18} color="#64748B" strokeWidth={2} style={styles.searchIcon} />
         <TextInput
           style={styles.input}
-          placeholder="Search by name, application ID, phone or email..."
+          placeholder="Search by name, application ID, phone..."
           placeholderTextColor="#94A3B8"
           value={query}
           onChangeText={onChangeQuery}
@@ -43,7 +44,7 @@ export const MembershipSearchBar: React.FC<MembershipSearchBarProps> = ({
             activeOpacity={0.7}
             accessibilityLabel="Clear search text"
           >
-            <Text style={styles.clearIcon}>✕</Text>
+            <X size={14} color="#64748B" strokeWidth={2.2} />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -56,11 +57,11 @@ export const MembershipSearchBar: React.FC<MembershipSearchBarProps> = ({
         accessibilityRole="button"
         accessibilityLabel="Open Filters"
       >
-        <View style={styles.filterIconLines}>
-          <View style={[styles.filterBar, styles.filterBarTop, hasActiveFilters && styles.filterBarActive]} />
-          <View style={[styles.filterBar, styles.filterBarMid, hasActiveFilters && styles.filterBarActive]} />
-          <View style={[styles.filterBar, styles.filterBarBot, hasActiveFilters && styles.filterBarActive]} />
-        </View>
+        <ListFilter
+          size={18}
+          color={hasActiveFilters ? '#FFFFFF' : '#06294D'}
+          strokeWidth={2}
+        />
         <Text style={[styles.filterButtonText, hasActiveFilters && styles.filterButtonTextActive]}>
           Filters
         </Text>
@@ -85,13 +86,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     paddingHorizontal: 12,
     height: 44,
   },
   searchIcon: {
-    fontSize: 14,
-    color: '#94A3B8',
     marginRight: 8,
   },
   input: {
@@ -108,53 +107,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 4,
   },
-  clearIcon: {
-    fontSize: 10,
-    color: '#64748B',
-    fontWeight: '700',
-  },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     paddingHorizontal: 14,
     height: 44,
     gap: 8,
     position: 'relative',
   },
   filterButtonActive: {
-    backgroundColor: '#0F2860',
-    borderColor: '#0F2860',
-  },
-  filterIconLines: {
-    height: 12,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  filterBar: {
-    height: 2,
-    backgroundColor: '#1E3A8A',
-    borderRadius: 1,
-  },
-  filterBarActive: {
-    backgroundColor: '#FFFFFF',
-  },
-  filterBarTop: {
-    width: 14,
-  },
-  filterBarMid: {
-    width: 10,
-  },
-  filterBarBot: {
-    width: 16,
+    backgroundColor: '#06294D',
+    borderColor: '#06294D',
   },
   filterButtonText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#1E3A8A',
+    color: '#06294D',
   },
   filterButtonTextActive: {
     color: '#FFFFFF',
@@ -169,3 +141,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#EAB308',
   },
 });
+
