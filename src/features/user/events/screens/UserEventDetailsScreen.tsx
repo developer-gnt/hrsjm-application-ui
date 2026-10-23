@@ -166,7 +166,7 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
           accessibilityLabel="Register for Event"
         >
           <Text style={styles.registerText}>Register for Event</Text>
-          <AppIcon name="arrow-right" size={18} color="#082245" />
+          <AppIcon name="arrow-right" size={18} color={AdminColors.primaryDark} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   description: {
-    color: '#4B5563',
+    color: AdminColors.textSecondary,
     fontSize: 13.5,
     lineHeight: 20,
     marginTop: Spacing.xs + 2,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#EAE6DC',
+    borderColor: AdminColors.border,
   },
   infoCell: {
     flex: 1,
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   infoLabel: {
-    color: '#6B7280',
+    color: AdminColors.textMuted,
     fontSize: 12,
     fontWeight: '500',
     marginBottom: 2,
@@ -343,11 +343,11 @@ const styles = StyleSheet.create({
   },
   infoDivider: {
     width: 1,
-    backgroundColor: '#EAE6DC',
+    backgroundColor: AdminColors.border,
     marginHorizontal: Spacing.sm,
   },
   mapLink: {
-    color: '#2563EB',
+    color: '#174A78',
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '600',
@@ -365,9 +365,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E8E4DA',
+    borderColor: AdminColors.border,
     borderRadius: 10,
-    backgroundColor: '#FCFBF7',
+    backgroundColor: AdminColors.cardSurface,
     paddingVertical: 8,
     paddingHorizontal: 2,
     gap: 4,
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs + 2,
   },
   bodyText: {
-    color: '#4B5563',
+    color: AdminColors.textSecondary,
     fontSize: 13.5,
     lineHeight: 20,
   },
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   topicText: {
-    color: '#374151',
+    color: AdminColors.textSecondary,
     fontSize: 13.5,
     lineHeight: 19,
     fontWeight: '500',
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     backgroundColor: AdminColors.accentGold,
   },
   registerText: {
-    color: '#082245',
+    color: AdminColors.primaryDark,
     fontSize: 15,
     fontWeight: '700',
   },

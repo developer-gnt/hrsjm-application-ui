@@ -29,46 +29,61 @@ export const AboutFonts = {
     web: "'Playfair Display', Georgia, 'Times New Roman', serif",
     default: "'Playfair Display', Georgia, 'Times New Roman', serif",
   }),
+  sans: Platform.select({
+    ios: 'System',
+    android: 'sans-serif',
+    web: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    default: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  }),
+  quote: Platform.select({
+    ios: 'Georgia',
+    android: 'serif',
+    web: "'Caveat', 'Playfair Display', cursive, serif",
+    default: "'Caveat', 'Playfair Display', cursive, serif",
+  }),
 } as const;
 
-/** Spec §3 palette + the derived tones the reference shows. */
+/** Spec §2 & docs/design.md tokens. */
 export const AboutColors = {
-  primaryNavy: '#0B2D4D',
-  secondaryNavy: '#123A5F',
-  accentGold: '#F2B83F',
-  goldSoft: '#FDF3DC',
+  primaryNavy: '#06294D',
+  secondaryNavy: '#123F68',
+  navy950: '#011F39',
+  navy700: '#174A78',
+  accentGold: '#FAD465',
+  accentGoldDark: '#E9B82E',
+  goldSoft: '#FFF9E6',
 
-  /** Page background (reference: off-white). */
-  offWhite: '#FCFBF9',
-  /** Card surfaces (reference: warm cream cards on the off-white page). */
+  /** Page background (design.md: color-ivory-50). */
+  offWhite: '#FAF7F0',
+  /** Card surfaces. */
   warmCream: '#FAF7F0',
   surface: '#FFFFFF',
 
-  bodyText: '#33465A',
-  mutedText: '#66768A',
-  border: '#E8E3D9',
-  /** Light neutral chip (header back-button circle). */
-  softChip: '#F1F2EE',
+  bodyText: '#34516D',
+  mutedText: '#718096',
+  border: '#DCE4EC',
+  /** Light neutral chip / pale blue (color-blue-100). */
+  softChip: '#EDF2F7',
 
   textOnDark: '#FFFFFF',
   textOnDarkMuted: 'rgba(255, 255, 255, 0.78)',
-  textOnGold: '#0B2D4D',
+  textOnGold: '#011F39',
 
-  /** Hero/CTA image overlay treatment (keeps content readable). */
-  scrim: 'rgba(11, 45, 77, 0.55)',
+  /** Hero/CTA image overlay treatment per design.md (color-overlay: #031B31 / rgba(3, 27, 49, 0.65)). */
+  scrim: 'rgba(3, 27, 49, 0.65)',
 } as const;
 
 export type AboutColorKey = keyof typeof AboutColors;
 
 /**
- * Card/block radii: 16 for content cards, 24 for the large hero/CTA blocks
- * (spec: large blocks 18–24 where shown; the high-res reference shows
- * clearly-rounded cards at ~16).
+ * Card/block radii per design.md Section 8:
+ * Cards: 10–14px (standard 12px), Buttons: 12px, Hero/Banners: 20px.
  */
 export const AboutRadius = {
-  md: 14,
-  lg: 16,
-  xl: 24,
+  sm: 8,
+  md: 12,
+  lg: 12,
+  xl: 20,
   pill: 9999,
 } as const;
 

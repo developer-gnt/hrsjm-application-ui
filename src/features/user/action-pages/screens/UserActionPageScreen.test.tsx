@@ -99,4 +99,80 @@ describe('UserActionPageScreen', () => {
     expect(paymentModal.props.payload.amount).toBe(500);
     expect(paymentModal.props.payload.purpose).toBe('donation');
   });
+
+  it('updates donation payload when selecting a cause card and a different amount', async () => {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <SafeAreaProvider initialMetrics={initialMetrics}>
+          <UserActionPageScreen pageId="donate" onBack={jest.fn()} />
+        </SafeAreaProvider>,
+      );
+    });
+
+    // Select "Community Activities" cause
+    const communityCauseButton = renderer.root.findByProps({
+      accessibilityLabel: 'Cause: Community Activities',
+    });
+    expect(communityCauseButton).toBeDefined();
+
+    await ReactTestRenderer.act(async () => {
+      communityCauseButton.props.onPress();
+    });
+
+    // Select ₹1,000 amount chip
+    const amount1000Button = renderer.root.findAllByProps({
+      accessibilityRole: 'radio',
+    }).find(node => {
+      const texts = node.findAllByType('Text' as any);
+      return texts.some((t: any) => t.props.children === '₹1,000');
+    });
+    expect(amount1000Button).toBeDefined();
+
+    await ReactTestRenderer.act(async () => {
+      amount1000Button?.props.onPress();
+    });
+
+    // Press the Donate Now button
+    const donateButton = renderer.root.findByProps({
+      accessibilityLabel: 'Donate Now ₹1,000',
+    });
+    expect(donateButton).toBeDefined();
+
+    await ReactTestRenderer.act(async () => {
+      donateButton.props.onPress();
+    });
+
+    const paymentModal = renderer.root.findByType(GlobalPaymentModal);
+    expect(paymentModal.props.visible).toBe(true);
+    expect(paymentModal.props.payload.amount).toBe(1000);
+    expect(paymentModal.props.payload.category).toBe('Community Activities');
+    expect(paymentModal.props.payload.title).toBe('HRSJM Donation - Community Activities');
+    expect(paymentModal.props.payload.purpose).toBe('donation');
+  });
+
+  it('opens payment gateway when clicking the bottom CTA banner Donate Now button', async () => {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(
+        <SafeAreaProvider initialMetrics={initialMetrics}>
+          <UserActionPageScreen pageId="donate" onBack={jest.fn()} />
+        </SafeAreaProvider>,
+      );
+    });
+
+    const ctaBannerButton = renderer.root.findByProps({
+      accessibilityLabel: 'Donate Now',
+    });
+    expect(ctaBannerButton).toBeDefined();
+
+    await ReactTestRenderer.act(async () => {
+      ctaBannerButton.props.onPress();
+    });
+
+    const paymentModal = renderer.root.findByType(GlobalPaymentModal);
+    expect(paymentModal.props.visible).toBe(true);
+    expect(paymentModal.props.payload.purpose).toBe('donation');
+    expect(paymentModal.props.payload.amount).toBe(500);
+  });
 });

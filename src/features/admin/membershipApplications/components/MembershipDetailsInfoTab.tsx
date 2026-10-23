@@ -23,6 +23,7 @@ export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> =
     { label: 'Phone Number', value: application.phone || 'Not provided' },
     { label: 'Email Address', value: application.email || 'Not provided' },
     { label: 'Address', value: application.address || 'Not specified' },
+    { label: 'Nearby Police Station', value: application.policeStation || 'Not specified' },
     { label: 'Occupation', value: application.occupation || 'Not specified' },
     { label: 'Membership Type', value: application.membershipType },
   ];

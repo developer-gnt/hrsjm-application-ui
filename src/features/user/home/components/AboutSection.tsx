@@ -38,7 +38,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
           accessible={false}
         />
         <View style={styles.playBadge}>
-          <AppIcon name="play" size={12} color="#0B2F5B" />
+          <AppIcon name="play" size={12} color={AdminColors.primaryDark} />
         </View>
       </TouchableOpacity>
     </View>
@@ -58,14 +58,14 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     lineHeight: 18,
-    color: '#4B5563',
+    color: AdminColors.textSecondary,
   },
   media: {
     width: 98,
     height: 72,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#E5E7EB',
+    backgroundColor: AdminColors.primaryLight,
   },
   mediaSlot: {
     width: '100%',

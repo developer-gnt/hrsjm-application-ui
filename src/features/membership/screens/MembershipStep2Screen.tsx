@@ -89,7 +89,7 @@ const COUNTRIES = ['India', 'United States', 'United Kingdom', 'Canada', 'United
 
 export function MembershipStep2Screen() {
   const navigation = useNavigation<NavProp>();
-  const { addressInfo, updateAddressInfo } = useMembership();
+  const { addressInfo, updateAddressInfo, personalInfo, updatePersonalInfo } = useMembership();
 
   const [errors, setErrors] = useState<AddressErrors>({});
   const [stateModalVisible, setStateModalVisible] = useState(false);
@@ -354,6 +354,26 @@ export function MembershipStep2Screen() {
                   <Text style={styles.selectText}>{addressInfo.country || 'India'}</Text>
                   <Icon name="chevron-down" size={14} color="#64748B" strokeWidth={2.2} />
                 </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Nearby Police Station */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Nearby Police Station</Text>
+              <View style={styles.inputWrap}>
+                <Icon name="shield-check" size={16} color="#64748B" strokeWidth={2} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter nearby police station"
+                  placeholderTextColor="#94A3B8"
+                  value={addressInfo.policeStation || personalInfo.policeStation || ''}
+                  onChangeText={text => {
+                    updateAddressInfo({ policeStation: text });
+                    updatePersonalInfo({ policeStation: text });
+                  }}
+                  autoCapitalize="words"
+                  accessibilityLabel="Nearby Police Station"
+                />
               </View>
             </View>
           </View>

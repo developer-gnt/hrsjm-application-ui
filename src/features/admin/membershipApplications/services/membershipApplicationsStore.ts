@@ -150,6 +150,13 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
         uploadDate: docDate,
       },
       {
+        id: `doc-${backend.id || 'app'}-qualification`,
+        title: 'Educational Qualification Proof (Degree / Certificate)',
+        fileName: `qualification_${cleanName}.pdf`,
+        fileSize: '2.0 MB',
+        uploadDate: docDate,
+      },
+      {
         id: `doc-${backend.id || 'app'}-photo`,
         title: 'Passport Size Photograph',
         fileName: `photograph_${cleanName}.jpg`,
@@ -246,6 +253,13 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
       user.father_or_husband_name ||
       '—',
     address,
+    policeStation:
+      personal.police_station?.trim() ||
+      personal.nearby_police_station?.trim() ||
+      appData.police_station?.trim() ||
+      appData.nearby_police_station?.trim() ||
+      backend.police_station?.trim() ||
+      undefined,
     occupation: personal.occupation || user.occupation || '—',
     documents,
     activityLog,

@@ -323,6 +323,14 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
     }
   }, [visible, payload, user, onClose, initialStage]);
 
+  // Ensure activeAmount strictly syncs with payload.amount whenever modal is visible or payload changes
+  useEffect(() => {
+    if (visible && payload?.amount !== undefined && payload.amount > 0) {
+      setActiveAmount(payload.amount);
+      setCustomAmountText(String(payload.amount));
+    }
+  }, [visible, payload?.amount]);
+
   // Handle processing spinner
   useEffect(() => {
     if (stage === 'processing') {
@@ -875,11 +883,17 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       {/* Top Header */}
       <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
         <TouchableOpacity
-          onPress={() => setStage('amount_selection')}
+          onPress={() => {
+            if (payload?.purpose === 'membership') {
+              onClose();
+            } else {
+              setStage('amount_selection');
+            }
+          }}
           style={styles.backButton}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           accessibilityRole="button"
-          accessibilityLabel="Go back to amount selection"
+          accessibilityLabel={payload?.purpose === 'membership' ? 'Close payment' : 'Go back to amount selection'}
         >
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
@@ -916,7 +930,11 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
         {/* Headline Section */}
         <View style={styles.headlineSection}>
           <Text style={styles.headlineTitle}>Secure Payment</Text>
-          <Text style={styles.headlineSub}>Complete your donation securely.</Text>
+          <Text style={styles.headlineSub}>
+            {payload?.purpose === 'membership'
+              ? 'Complete your membership registration fee securely.'
+              : 'Complete your donation securely.'}
+          </Text>
         </View>
 
         {/* Item Preview Card */}
@@ -935,16 +953,20 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
 
             <View style={styles.amountEditRow}>
               <View>
-                <Text style={styles.amountSubLabel}>Donation Amount</Text>
+                <Text style={styles.amountSubLabel}>
+                  {payload?.purpose === 'membership' ? 'Registration Fee' : 'Donation Amount'}
+                </Text>
                 <Text style={styles.amountLargeValue}>₹{activeAmount.toLocaleString('en-IN')}</Text>
               </View>
-              <TouchableOpacity
-                style={styles.editAmountBtn}
-                onPress={() => setStage('amount_selection')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.editAmountBtnText}>Edit Amount</Text>
-              </TouchableOpacity>
+              {payload?.purpose !== 'membership' && (
+                <TouchableOpacity
+                  style={styles.editAmountBtn}
+                  onPress={() => setStage('amount_selection')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.editAmountBtnText}>Edit Amount</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -953,7 +975,9 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
         <View style={styles.summaryCard}>
           <Text style={styles.cardSectionHeading}>Payment Summary</Text>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Donation Amount</Text>
+            <Text style={styles.summaryLabel}>
+              {payload?.purpose === 'membership' ? 'Registration Fee' : 'Donation Amount'}
+            </Text>
             <Text style={styles.summaryValue}>₹{activeAmount.toLocaleString('en-IN')}</Text>
           </View>
           <View style={styles.summaryRow}>

@@ -45,6 +45,13 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
           uploadDate: docDate,
         },
         {
+          id: `doc-${application.id}-qualification`,
+          title: 'Educational Qualification Proof (Degree / Certificate)',
+          fileName: `qualification_${applicantSlug}.pdf`,
+          fileSize: '2.0 MB',
+          uploadDate: docDate,
+        },
+        {
           id: `doc-${application.id}-photo`,
           title: 'Passport Size Photograph',
           fileName: `photograph_${applicantSlug}.jpg`,

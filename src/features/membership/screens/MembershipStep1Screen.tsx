@@ -22,6 +22,7 @@ import { MembershipProgressBar } from '../components/MembershipProgressBar';
 import { AppBottomSheet } from '../../../core/components/common/AppBottomSheet';
 import { DatePickerSheet } from '../components/DatePickerSheet';
 import { ImagePickerSheet } from '../components/ImagePickerSheet';
+import { useAuthStore } from '../../auth/store/authStore';
 import type { MembershipPostData } from '../data/membershipCategoriesData';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
@@ -32,6 +33,9 @@ interface FormErrors {
   gender?: string;
   mobileNumber?: string;
   email?: string;
+  policeStation?: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 const GENDER_OPTIONS: Array<'Male' | 'Female' | 'Other'> = ['Male', 'Female', 'Other'];
@@ -50,6 +54,7 @@ export function MembershipStep1Screen() {
 
   const routePost = route?.params?.post as MembershipPostData | undefined;
   const activePost = routePost || selectedPost;
+  const authUser = useAuthStore(state => state.user);
 
   React.useEffect(() => {
     if (routePost) {
@@ -61,7 +66,16 @@ export function MembershipStep1Screen() {
     }
   }, [routePost]);
 
+  // Keep name in placeholder: if personalInfo.fullName was pre-filled with authUser's full name, clear it so placeholder shows
+  React.useEffect(() => {
+    if (authUser?.full_name && personalInfo.fullName === authUser.full_name) {
+      updatePersonalInfo({ fullName: '' });
+    }
+  }, [authUser?.full_name]);
+
   const [errors, setErrors] = useState<FormErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [genderModalVisible, setGenderModalVisible] = useState(false);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
@@ -77,10 +91,11 @@ export function MembershipStep1Screen() {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // 1. Full Name validation
-    if (!personalInfo.fullName || personalInfo.fullName.trim().length === 0) {
+    // 1. Full Name validation (effective name uses input or falls back to authUser full_name)
+    const effectiveName = (personalInfo.fullName || authUser?.full_name || '').trim();
+    if (!effectiveName) {
       newErrors.fullName = 'Full name is required';
-    } else if (personalInfo.fullName.trim().length < 3) {
+    } else if (effectiveName.length < 3) {
       newErrors.fullName = 'Full name must be at least 3 characters';
     }
 
@@ -114,12 +129,36 @@ export function MembershipStep1Screen() {
       }
     }
 
+    // 6. Nearby Police Station validation
+    if (!personalInfo.policeStation || personalInfo.policeStation.trim().length === 0) {
+      newErrors.policeStation = 'Nearby police station is required';
+    } else if (personalInfo.policeStation.trim().length < 3) {
+      newErrors.policeStation = 'Police station must be at least 3 characters';
+    }
+
+    // 7. Password validation
+    if (!personalInfo.password || personalInfo.password.trim().length === 0) {
+      newErrors.password = 'Password is required';
+    } else if (personalInfo.password.trim().length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    // 8. Confirm Password validation
+    if (!personalInfo.confirmPassword || personalInfo.confirmPassword.trim().length === 0) {
+      newErrors.confirmPassword = 'Confirm password is required';
+    } else if (personalInfo.confirmPassword !== personalInfo.password) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleContinue = () => {
     if (validateForm()) {
+      if (!personalInfo.fullName && authUser?.full_name) {
+        updatePersonalInfo({ fullName: authUser.full_name });
+      }
       navigation.navigate('MembershipStep2Address');
     }
   };
@@ -257,7 +296,7 @@ export function MembershipStep1Screen() {
                 <Icon name="person" size={18} color="#64748B" strokeWidth={2} />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Enter your full name"
+                  placeholder={authUser?.full_name || 'Enter your full name'}
                   placeholderTextColor="#94A3B8"
                   value={personalInfo.fullName}
                   onChangeText={text => {
@@ -391,6 +430,121 @@ export function MembershipStep1Screen() {
               </View>
               {errors.email ? (
                 <Text style={styles.errorText}>{errors.email}</Text>
+              ) : null}
+            </View>
+
+            {/* 6. Nearby Police Station */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>
+                Nearby Police Station <Text style={styles.requiredStar}>*</Text>
+              </Text>
+              <View
+                style={[
+                  styles.inputWrap,
+                  errors.policeStation ? styles.inputError : undefined,
+                ]}>
+                <Icon name="shield-check" size={18} color="#64748B" strokeWidth={2} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter nearby police station"
+                  placeholderTextColor="#94A3B8"
+                  value={personalInfo.policeStation || ''}
+                  onChangeText={text => {
+                    updatePersonalInfo({ policeStation: text });
+                    if (errors.policeStation) setErrors(prev => ({ ...prev, policeStation: undefined }));
+                  }}
+                  autoCapitalize="words"
+                  accessibilityLabel="Nearby Police Station"
+                />
+              </View>
+              {errors.policeStation ? (
+                <Text style={styles.errorText}>{errors.policeStation}</Text>
+              ) : null}
+            </View>
+
+            {/* 7. Password */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>
+                Password <Text style={styles.requiredStar}>*</Text>
+              </Text>
+              <View
+                style={[
+                  styles.inputWrap,
+                  errors.password ? styles.inputError : undefined,
+                ]}>
+                <Icon name="lock" size={18} color="#64748B" strokeWidth={2} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter password (min. 6 characters)"
+                  placeholderTextColor="#94A3B8"
+                  value={personalInfo.password || ''}
+                  onChangeText={text => {
+                    updatePersonalInfo({ password: text });
+                    if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
+                  }}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  accessibilityLabel="Password"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeToggleBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+                  <Icon
+                    name={showPassword ? 'eye-off' : 'eye'}
+                    size={18}
+                    color="#64748B"
+                    strokeWidth={2}
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.password ? (
+                <Text style={styles.errorText}>{errors.password}</Text>
+              ) : null}
+            </View>
+
+            {/* 8. Confirm Password */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>
+                Confirm Password <Text style={styles.requiredStar}>*</Text>
+              </Text>
+              <View
+                style={[
+                  styles.inputWrap,
+                  errors.confirmPassword ? styles.inputError : undefined,
+                ]}>
+                <Icon name="lock" size={18} color="#64748B" strokeWidth={2} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Re-enter your password"
+                  placeholderTextColor="#94A3B8"
+                  value={personalInfo.confirmPassword || ''}
+                  onChangeText={text => {
+                    updatePersonalInfo({ confirmPassword: text });
+                    if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: undefined }));
+                  }}
+                  secureTextEntry={!showConfirmPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  accessibilityLabel="Confirm Password"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={styles.eyeToggleBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}>
+                  <Icon
+                    name={showConfirmPassword ? 'eye-off' : 'eye'}
+                    size={18}
+                    color="#64748B"
+                    strokeWidth={2}
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.confirmPassword ? (
+                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
               ) : null}
             </View>
           </View>
@@ -759,6 +913,11 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: '600',
     color: '#E6F4EA',
+  },
+  eyeToggleBtn: {
+    padding: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

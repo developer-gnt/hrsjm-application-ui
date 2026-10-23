@@ -63,17 +63,61 @@ const FeatureCard: React.FC<{
   description: string;
   icon: React.ComponentProps<typeof AppIcon>['name'];
   compact?: boolean;
-}> = ({ title, description, icon, compact = false }) => (
-  <View style={[styles.featureCard, compact && styles.compactFeatureCard]}>
-    <View style={styles.featureIcon}>
-      <AppIcon name={icon} size={20} color={AdminColors.primaryDark} />
+  selected?: boolean;
+  selectable?: boolean;
+  onPress?: () => void;
+}> = ({
+  title,
+  description,
+  icon,
+  compact = false,
+  selected = false,
+  selectable = false,
+  onPress,
+}) => {
+  const cardContent = (
+    <View
+      style={[
+        styles.featureCard,
+        compact && styles.compactFeatureCard,
+        selected && styles.featureCardSelected,
+      ]}
+    >
+      <View style={[styles.featureIcon, selected && styles.featureIconSelected]}>
+        <AppIcon name={icon} size={20} color={AdminColors.primaryDark} />
+      </View>
+      <View style={styles.featureCopy}>
+        <Text
+          style={[styles.featureTitle, selected && styles.featureTitleSelected]}
+        >
+          {title}
+        </Text>
+        <Text style={styles.featureDescription}>{description}</Text>
+      </View>
+      {selected ? (
+        <View style={styles.selectedBadge}>
+          <AppIcon name="check" size={13} color="#FFFFFF" />
+        </View>
+      ) : null}
     </View>
-    <View style={styles.featureCopy}>
-      <Text style={styles.featureTitle}>{title}</Text>
-      <Text style={styles.featureDescription}>{description}</Text>
-    </View>
-  </View>
-);
+  );
+
+  if (selectable && onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="radio"
+        accessibilityState={{ selected }}
+        accessibilityLabel={`Cause: ${title}`}
+        style={styles.featureCardPressable}
+      >
+        {cardContent}
+      </Pressable>
+    );
+  }
+
+  return cardContent;
+};
 
 export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
   pageId,
@@ -100,6 +144,9 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
 
   const content = ACTION_PAGE_CONTENT[pageId];
   const { width } = useWindowDimensions();
+  const [selectedCause, setSelectedCause] = useState<string>(
+    content.cards?.[0]?.title || 'Awareness & Education',
+  );
   const [selectedAmount, setSelectedAmount] = useState<number | 'custom'>(500);
   const [customAmountInput, setCustomAmountInput] = useState('');
   const customAmount =
@@ -128,15 +175,19 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
 
   const paymentPayload: PaymentPayload = {
     purpose: 'donation',
-    title: 'HRSJM General Donation',
+    title:
+      pageId === 'donate' && selectedCause
+        ? `HRSJM Donation - ${selectedCause}`
+        : 'HRSJM General Donation',
     subtitle: 'Human Rights & Social Justice Mission',
     amount: resolvedDonationAmount,
     donorName: authUser?.full_name || 'Donor',
     donorMobile: authUser?.mobile_number || '',
     donorEmail: authUser?.email || '',
-    category: 'General Public Aid',
+    category:
+      pageId === 'donate' && selectedCause ? selectedCause : 'General Public Aid',
     location: 'National / All India',
-    entityId: `don-gen-${Date.now()}`,
+    entityId: `don-${(selectedCause || 'gen').toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`,
   };
 
   const handleDonatePress = () => {
@@ -278,18 +329,29 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
           <View style={styles.palePanel}>
             <SectionTitle title={content.cardsTitle} />
             <View style={styles.featureGrid}>
-              {content.cards.map(card => (
-                <View
-                  key={card.title}
-                  style={[styles.gridCell, { width: gridCardWidth }]}
-                >
-                  <FeatureCard
-                    title={card.title}
-                    description={card.description}
-                    icon={card.icon}
-                  />
-                </View>
-              ))}
+              {content.cards.map(card => {
+                const isCauseSelected =
+                  pageId === 'donate' && selectedCause === card.title;
+                return (
+                  <View
+                    key={card.title}
+                    style={[styles.gridCell, { width: gridCardWidth }]}
+                  >
+                    <FeatureCard
+                      title={card.title}
+                      description={card.description}
+                      icon={card.icon}
+                      selected={isCauseSelected}
+                      selectable={pageId === 'donate'}
+                      onPress={
+                        pageId === 'donate'
+                          ? () => setSelectedCause(card.title)
+                          : undefined
+                      }
+                    />
+                  </View>
+                );
+              })}
             </View>
           </View>
         )}
@@ -469,7 +531,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
         onSuccess={(receipt) => {
           const donatedAmount = receipt?.amount || resolvedDonationAmount;
           causesService.recordDonation(
-            'General Public Aid',
+            selectedCause || 'General Public Aid',
             donatedAmount,
             receipt?.paymentId,
           );
@@ -565,6 +627,9 @@ const styles = StyleSheet.create({
   gridCell: {
     minHeight: 102,
   },
+  featureCardPressable: {
+    flex: 1,
+  },
   featureCard: {
     flex: 1,
     minHeight: 102,
@@ -574,6 +639,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: AdminColors.border,
     ...Shadows.card,
+  },
+  featureCardSelected: {
+    borderColor: AdminColors.accentGold,
+    borderWidth: 2,
+    backgroundColor: '#FFFDF6',
   },
   compactFeatureCard: {
     minHeight: 118,
@@ -587,6 +657,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: Spacing.xs,
   },
+  featureIconSelected: {
+    backgroundColor: AdminColors.accentGoldLight,
+  },
+  selectedBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: AdminColors.accentGold,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   featureCopy: {
     flex: 1,
   },
@@ -595,6 +679,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 15,
     fontWeight: '700',
+  },
+  featureTitleSelected: {
+    color: AdminColors.primaryDark,
+    fontWeight: '800',
   },
   featureDescription: {
     color: AdminColors.textSecondary,

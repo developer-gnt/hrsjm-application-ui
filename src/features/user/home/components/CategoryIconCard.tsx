@@ -33,7 +33,7 @@ export const CategoryIconCard: React.FC<CategoryIconCardProps> = ({
     accessibilityLabel={item.title}
   >
     <View style={styles.iconCircle}>
-      <AppIcon name={item.icon} size={20} color="#0B2F5B" />
+      <AppIcon name={item.icon} size={20} color={AdminColors.primaryDark} />
     </View>
     <Text style={styles.label}>{REFERENCE_LABELS[item.title] ?? item.title}</Text>
   </TouchableOpacity>
@@ -84,11 +84,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     paddingHorizontal: 2,
-    borderRadius: 14,
+    borderRadius: 12,
     minHeight: 84,
-    backgroundColor: '#FCFBF7',
+    backgroundColor: AdminColors.cardSurface,
     borderWidth: 1,
-    borderColor: '#E8E4DA',
+    borderColor: AdminColors.border,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FEF3DE',
+    backgroundColor: AdminColors.accentGoldLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     lineHeight: 13.5,
     fontWeight: '600',
-    color: '#0B2F5B',
+    color: AdminColors.textPrimary,
     textAlign: 'center',
     marginTop: 6,
   },

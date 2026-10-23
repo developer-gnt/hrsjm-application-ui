@@ -443,6 +443,11 @@ export function useCashfreePayment(options?: UseCashfreePaymentOptions) {
         } else {
           session = await cashfreeApi.createMembershipOrder({
             membershipPaymentId: payload.entityId || idempotencyKey,
+            amount: payload.amount,
+            customerName: payload.donorName || 'HRSJM Member',
+            customerMobile: payload.donorMobile,
+            customerEmail: payload.donorEmail,
+            membershipType: payload.title || 'Membership Registration Fee',
             idempotencyKey,
           });
         }
