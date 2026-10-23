@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BorderRadius, Spacing } from '../../../../core';
+import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core';
 import { usersStore } from '../services/usersStore';
 import { UserItem, UserType, UserStatus } from '../types/user.types';
 import { UsersHeader } from '../components/UsersHeader';
@@ -555,7 +555,7 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: AdminColors.background,
   },
   scroll: {
     flex: 1,
@@ -586,24 +586,24 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0F2860',
+    color: '#011F39',
   },
   topEditBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F2860',
+    backgroundColor: '#FAD465',
     paddingHorizontal: 16,
     paddingVertical: 7,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.button,
     gap: 6,
   },
   topEditBtnIcon: {
-    color: '#FFFFFF',
+    color: '#011F39',
     fontSize: 13,
     fontWeight: '700',
   },
   topEditBtnText: {
-    color: '#FFFFFF',
+    color: '#011F39',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -621,13 +621,13 @@ const styles = StyleSheet.create({
     width: 82,
     height: 82,
     borderRadius: 41,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#EDF2F7',
   },
   avatarInitialsCircle: {
     width: 82,
     height: 82,
     borderRadius: 41,
-    backgroundColor: '#0F2860',
+    backgroundColor: '#06294D',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -640,14 +640,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileHeaderName: {
+    fontFamily: FontFamilies.serif,
     fontSize: 22,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontWeight: '700',
+    color: AdminColors.textPrimary,
     marginBottom: 2,
   },
   profileHeaderMeta: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#718096',
     marginBottom: 2,
   },
   badgesRow: {
@@ -695,11 +696,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.card,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
+    borderColor: '#DCE4EC',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 3,
@@ -709,7 +710,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#FFF9E6',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -723,29 +724,30 @@ const styles = StyleSheet.create({
   metricLabel: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#64748B',
+    color: '#718096',
     marginBottom: 2,
   },
   metricValue: {
+    fontFamily: FontFamilies.serif,
     fontSize: 13,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontWeight: '700',
+    color: '#0B2F52',
   },
   metricSubValue: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#718096',
     marginTop: 1,
   },
 
   /* Unified Table Card */
   infoTableCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.card,
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.xs,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
+    borderColor: '#DCE4EC',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 4,

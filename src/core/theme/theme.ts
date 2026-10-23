@@ -1,39 +1,41 @@
 import { Platform } from 'react-native';
+import { DesignTokens } from './colors';
 
-// Admin design system tokens.
-// Palette locked to the approved design (Donation Seekers mockup, Oct 2026).
+// Design system tokens calibrated to docs/design.md.
 export const colors = {
-  primary: '#1B3B8C',
-  primaryDark: '#0F2860',
-  primaryLight: '#E9F0FC',
-  accentGold: '#F0A12F',
+  primary: DesignTokens.navy900, // #06294D
+  primaryDark: DesignTokens.navy950, // #011F39
+  primaryLight: DesignTokens.blue100, // #EDF2F7
+  accentGold: DesignTokens.gold500, // #FAD465
+  goldDark: DesignTokens.gold600, // #E9B82E
+  goldIcon: DesignTokens.gold700, // #C9971A
 
-  active: '#23A45F',
-  warning: '#F5A623',
-  danger: '#E5484D',
-  info: '#3D6FE8',
+  active: DesignTokens.statusSuccess,
+  warning: DesignTokens.statusWarning,
+  danger: DesignTokens.statusDanger,
+  info: DesignTokens.statusInfo,
 
-  background: '#F7F8FB',
-  card: '#FFFFFF',
+  background: DesignTokens.ivory50, // #FAF7F0
+  card: DesignTokens.white, // #FFFFFF
 
-  textPrimary: '#16274B',
-  textSecondary: '#6B7280',
-  textMuted: '#9AA3B2',
+  textPrimary: DesignTokens.textPrimary, // #0B2F52
+  textSecondary: DesignTokens.textBody, // #34516D
+  textMuted: DesignTokens.textMuted, // #718096
 
-  border: '#E9EBF2',
-  divider: '#EEF0F5',
+  border: DesignTokens.border, // #DCE4EC
+  divider: DesignTokens.divider, // #DBE5EE
 
-  white: '#FFFFFF',
+  white: DesignTokens.white,
 
   // Approved-design accents
-  periwinkle: '#7688D8',
-  goldText: '#C08A00',
-  goldSoft: '#FDF4DE',
-  greenSoft: '#E7F6EE',
-  redSoft: '#FDECEC',
-  blueSoft: '#EAF1FE',
-  viewBlue: '#2F6FEC',
-  tableHeader: '#F8F9FC',
+  periwinkle: DesignTokens.navy700,
+  goldText: '#8F6600',
+  goldSoft: DesignTokens.goldSoft,
+  greenSoft: DesignTokens.statusSuccessLight,
+  redSoft: DesignTokens.statusDangerLight,
+  blueSoft: DesignTokens.blue100,
+  viewBlue: DesignTokens.navy700,
+  tableHeader: DesignTokens.ivory50,
 } as const;
 
 export const typography = {
@@ -46,12 +48,11 @@ export const typography = {
   metric: { fontSize: 20, fontWeight: '700' as const },
 } as const;
 
-// The approved design uses a serif display face for the wordmark, page
-// titles and stat numbers. Georgia is available on iOS out of the box;
-// Android maps the generic 'serif' family to Noto Serif.
+// The approved design uses Playfair Display / serif for headlines, page titles, and stats.
 export const fontSerif = Platform.select({
   ios: 'Georgia',
   android: 'serif',
+  web: "'Playfair Display', Georgia, serif",
   default: 'serif',
 }) as string;
 
@@ -68,7 +69,7 @@ export const spacing = {
 
 export const radius = {
   sm: 8,
-  md: 12,
+  md: 12, // 12px standard card and button radius per design.md
   lg: 16,
   round: 999,
 } as const;
@@ -76,10 +77,10 @@ export const radius = {
 export type StatusTone = 'success' | 'info' | 'warning' | 'danger' | 'neutral' | 'gold';
 
 export const toneColors: Record<StatusTone, { bg: string; fg: string }> = {
-  success: { bg: '#D1FAE5', fg: '#047857' },
-  info: { bg: '#DBEAFE', fg: '#1D4ED8' },
-  warning: { bg: '#FEF3C7', fg: '#B45309' },
-  danger: { bg: '#FEE2E2', fg: '#B91C1C' },
-  neutral: { bg: '#E2E8F0', fg: '#334155' },
-  gold: { bg: '#FDF0CE', fg: '#A67B08' },
+  success: { bg: DesignTokens.statusSuccessLight, fg: '#15803D' },
+  info: { bg: DesignTokens.blue100, fg: DesignTokens.navy900 },
+  warning: { bg: DesignTokens.statusWarningLight, fg: '#B45309' },
+  danger: { bg: DesignTokens.statusDangerLight, fg: '#B91C1C' },
+  neutral: { bg: DesignTokens.blue100, fg: DesignTokens.textBody },
+  gold: { bg: DesignTokens.goldSoft, fg: '#8F6600' },
 };

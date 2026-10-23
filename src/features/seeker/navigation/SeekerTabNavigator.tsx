@@ -172,7 +172,7 @@ const SeekerCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) 
     >
       {SEEKER_TABS.map((tabDef, index) => {
         const isFocused = state.index === index;
-        const iconColor = isFocused ? '#D97706' : '#1B3F8F'; // Matches User & Member bottom bar branding
+        const iconColor = isFocused ? '#E9B82E' : '#718096'; // Gold accent & muted navy per docs/design.md
         const IconComponent = tabDef.Icon;
 
         const onPress = () => {
@@ -398,13 +398,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#DBE5EE',
     paddingTop: 8,
     paddingHorizontal: 4,
     elevation: 8,
-    shadowColor: '#0F2860',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 6,
   },
   tabItem: {
@@ -425,11 +425,11 @@ const styles = StyleSheet.create({
   },
   tabLabelActive: {
     fontWeight: '700',
-    color: '#D97706',
+    color: '#E9B82E',
   },
   tabLabelInactive: {
     fontWeight: '600',
-    color: '#1B3F8F',
+    color: '#718096',
   },
 });
 

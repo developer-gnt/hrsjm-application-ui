@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BorderRadius, Spacing } from '../../../../core';
+import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core';
 import { usersStore } from '../services/usersStore';
 import { UserItem, UserType, UserStatus, UserVerificationDocument } from '../types/user.types';
 import { UsersHeader } from '../components/UsersHeader';
@@ -670,7 +670,7 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: AdminColors.background,
   },
   flex: {
     flex: 1,
@@ -697,28 +697,29 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#0F2860',
+    color: '#011F39',
     marginLeft: 4,
   },
   pageTitle: {
+    fontFamily: FontFamilies.serif,
     fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontWeight: '700',
+    color: AdminColors.textPrimary,
     marginBottom: 4,
   },
   pageSubtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#718096',
     marginBottom: Spacing.base,
     lineHeight: 20,
   },
   userCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.card,
     padding: Spacing.base,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
+    borderColor: '#DCE4EC',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
@@ -733,7 +734,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#0F2860',
+    backgroundColor: '#06294D',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
@@ -747,9 +748,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
+    fontFamily: FontFamilies.serif,
     fontSize: 18,
     fontWeight: '700',
-    color: '#0F172A',
+    color: AdminColors.textPrimary,
     marginBottom: 2,
   },
   userMetaText: {
@@ -846,12 +848,12 @@ const styles = StyleSheet.create({
   },
   docCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.card,
     padding: Spacing.base,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
     marginBottom: 10,
-    shadowColor: '#000',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
@@ -865,7 +867,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: BorderRadius.lg,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FFF9E6',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
@@ -879,7 +881,7 @@ const styles = StyleSheet.create({
   docTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#0B2F52',
     marginBottom: 2,
   },
   docFileName: {
@@ -890,7 +892,7 @@ const styles = StyleSheet.create({
   },
   docMeta: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#718096',
   },
   docStatusBadge: {
     paddingHorizontal: 10,
@@ -898,17 +900,17 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   badgeVerified: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#EAF7EE',
   },
   badgePending: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: '#FEF6E7',
   },
   docStatusText: {
     fontSize: 11,
     fontWeight: '700',
   },
   textVerified: {
-    color: '#059669',
+    color: '#16A34A',
   },
   textPending: {
     color: '#D97706',
@@ -919,35 +921,35 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: '#F8FAFC',
+    borderTopColor: '#DBE5EE',
   },
   viewDocBtn: {
     flex: 1,
     height: 38,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.button,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#DBE5EE',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#EDF2F7',
   },
   viewDocBtnText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#334155',
+    color: '#06294D',
   },
   toggleDocBtn: {
     flex: 1.5,
     height: 38,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
   approveDocBtn: {
-    backgroundColor: '#0F2860',
+    backgroundColor: '#FAD465',
   },
   rejectDocBtn: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#FDEEEF',
     borderWidth: 1,
     borderColor: '#FECACA',
   },
@@ -956,7 +958,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   approveDocText: {
-    color: '#FFFFFF',
+    color: '#011F39',
   },
   rejectDocText: {
     color: '#DC2626',

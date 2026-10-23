@@ -5,7 +5,7 @@ import { AppHeader } from '../../../core/components/common/AppHeader';
 import { AppCard } from '../../../core/components/common/AppCard';
 import { AppButton } from '../../../core/components/common/AppButton';
 import { AdminColors } from '../../../core/theme/colors';
-import { Typography } from '../../../core/theme/typography';
+import { Typography, FontFamilies } from '../../../core/theme/typography';
 import { Spacing } from '../../../core/theme/spacing';
 import { useAuthStore } from '../../auth/store/authStore';
 import { GlobalPaymentModal, PaymentPayload } from '../../payments';
@@ -138,21 +138,23 @@ export const DonorHomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   container: {
     padding: Spacing.base,
     gap: 14,
   },
   welcomeCard: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#A7F3D0',
+    backgroundColor: '#EDF2F7',
+    borderColor: '#DBE5EE',
     borderWidth: 1,
     padding: Spacing.lg,
   },
   welcomeTitle: {
-    ...Typography.screenTitle,
-    color: '#047857',
+    fontFamily: FontFamilies.display,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0B2F52',
     marginBottom: 4,
   },
   welcomeSubtitle: {
@@ -163,16 +165,19 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
+    borderRadius: 12,
   },
   donationCardTitle: {
-    ...Typography.sectionHeader,
-    color: '#0F2860',
+    fontFamily: FontFamilies.display,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0B2F52',
     marginBottom: 4,
   },
   donationCardSub: {
     ...Typography.body,
-    color: '#64748B',
+    color: '#718096',
     marginBottom: 12,
     fontSize: 12.5,
   },
@@ -186,37 +191,37 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: '#CBD5E1',
+    borderColor: '#DCE4EC',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
   },
   presetChipActive: {
-    borderColor: '#123B7A',
-    backgroundColor: '#EAF1FB',
+    borderColor: '#06294D',
+    backgroundColor: '#06294D',
   },
   presetChipText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#475569',
+    color: '#34516D',
   },
   presetChipTextActive: {
-    color: '#123B7A',
+    color: '#FFFFFF',
   },
   donateCtaBtn: {
-    backgroundColor: '#123B7A',
-    borderRadius: 10,
+    backgroundColor: '#FAD465',
+    borderRadius: 12,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#123B7A',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
     elevation: 3,
   },
   donateCtaBtnText: {
-    color: '#FFFFFF',
+    color: '#011F39',
     fontSize: 14,
     fontWeight: '700',
   },

@@ -430,7 +430,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: AdminColors.cardSurface,
+    backgroundColor: '#FAF7F0',
   },
   scroll: {
     flex: 1,

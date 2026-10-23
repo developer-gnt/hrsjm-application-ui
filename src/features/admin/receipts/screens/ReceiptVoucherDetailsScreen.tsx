@@ -29,7 +29,7 @@ import {
 import { can } from '../../../../core/permissions/can';
 import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import { AdminColors } from '../../../../core/theme/colors';
-import { Typography } from '../../../../core/theme/typography';
+import { Typography, FontFamilies } from '../../../../core/theme/typography';
 import { Spacing, BorderRadius } from '../../../../core/theme/spacing';
 import { formatDateTime, formatINR } from '../../../../core/utils';
 import { useCancelReceipt, useReceiptDetail, useUpdateReceipt } from '../hooks/useReceipts';
@@ -758,7 +758,7 @@ export const ReceiptVoucherDetailsScreen: React.FC<
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   content: {
     padding: Spacing.base,
@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
   },
   cardDivider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#DBE5EE',
     marginVertical: 12,
   },
   heroGrid: {
@@ -813,7 +813,7 @@ const styles = StyleSheet.create({
   heroGridValue: {
     fontSize: 13.5,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#0B2F52',
   },
   heroAmountRow: {
     flexDirection: 'row',
@@ -826,8 +826,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   heroAmountValue: {
+    fontFamily: FontFamilies.display,
     fontSize: 26,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#16A34A',
     letterSpacing: -0.5,
   },

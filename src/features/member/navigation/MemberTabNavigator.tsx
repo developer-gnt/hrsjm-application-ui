@@ -166,7 +166,7 @@ const MemberCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) 
           }
         };
 
-        const iconColor = isFocused ? '#D97706' : '#1B3F8F';
+        const iconColor = isFocused ? '#E9B82E' : '#718096';
 
         return (
           <TouchableOpacity
@@ -581,13 +581,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#DBE5EE',
     paddingTop: 8,
     paddingHorizontal: 8,
     elevation: 8,
-    shadowColor: '#0F2860',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 6,
   },
   tabItem: {
@@ -609,11 +609,11 @@ const styles = StyleSheet.create({
   tabLabelActive: {
     fontFamily: 'Inter-SemiBold',
     fontWeight: '700',
-    color: '#D97706',
+    color: '#E9B82E',
   },
   tabLabelInactive: {
     fontFamily: 'Inter-Medium',
     fontWeight: '600',
-    color: '#1B3F8F',
+    color: '#718096',
   },
 });

@@ -339,6 +339,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
           />
           <AppButton
             title="Add Donation"
+            variant="gold"
             size="md"
             icon={<Text style={styles.addIcon}>＋</Text>}
             onPress={() => setAddModalVisible(true)}
@@ -622,8 +623,9 @@ const styles = StyleSheet.create({
     marginRight: Spacing.sm,
   },
   pageTitle: {
-    fontSize: 28,
-    fontWeight: '800',
+    ...Typography.display,
+    fontSize: 26,
+    fontWeight: '700',
     color: AdminColors.primaryDark,
   },
   pageSubtitle: {
@@ -638,12 +640,12 @@ const styles = StyleSheet.create({
   addButton: {
     marginLeft: Spacing.sm,
     minHeight: 44,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.button,
   },
   addIcon: {
     fontSize: 16,
     fontWeight: '700',
-    color: AdminColors.textOnDark,
+    color: '#011F39',
   },
   tabsRow: {
     flexDirection: 'row',

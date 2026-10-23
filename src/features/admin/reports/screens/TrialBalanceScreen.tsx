@@ -213,7 +213,7 @@ export const TrialBalanceScreen: React.FC<TrialBalanceScreenProps> = ({
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   kpiGrid: {
     flexDirection: 'row',

@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BorderRadius, Spacing } from '../../../core';
+import { BorderRadius, Spacing, FontFamilies } from '../../../core';
 import {
   CalendarDurationIcon,
   GreenCheckIcon,
@@ -127,13 +127,13 @@ export const MembershipPostCard: React.FC<MembershipPostCardProps> = ({
 const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.card,
     padding: 12,
     marginHorizontal: Spacing.sm,
     marginVertical: 6,
     borderWidth: 1,
-    borderColor: '#E8EFF8',
-    shadowColor: '#0F2860',
+    borderColor: '#DCE4EC',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 5,
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: '#DBE5EE',
   },
   topLeftGroup: {
     flexDirection: 'row',
@@ -160,20 +160,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: '#DBE5EE',
   },
   postTitleWrapper: {
     flex: 1,
   },
   postNameText: {
     fontSize: 13.5,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontWeight: '700',
+    color: '#0B2F52',
     lineHeight: 17,
   },
   qualificationText: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#718096',
     marginTop: 2,
     fontWeight: '500',
   },
@@ -182,14 +182,15 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   feeText: {
+    fontFamily: FontFamilies.display,
     fontSize: 15,
-    fontWeight: '800',
-    color: '#059669',
+    fontWeight: '700',
+    color: '#16A34A',
     letterSpacing: 0.2,
   },
   validityText: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#718096',
     marginTop: 1,
     fontWeight: '500',
   },
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
   },
   checklistItemText: {
     fontSize: 10.5,
-    color: '#334155',
+    color: '#34516D',
     lineHeight: 14.5,
     flex: 1,
     fontWeight: '500',
@@ -238,17 +239,17 @@ const styles = StyleSheet.create({
   },
   durationLabelText: {
     fontSize: 9.5,
-    color: '#64748B',
+    color: '#718096',
     fontWeight: '500',
   },
   durationValueText: {
     fontSize: 10.5,
     fontWeight: '700',
-    color: '#0F2860',
+    color: '#0B2F52',
   },
   verticalDivider: {
     width: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#DBE5EE',
     marginHorizontal: 4,
   },
   rightColumn: {
@@ -265,7 +266,7 @@ const styles = StyleSheet.create({
   kitHeaderText: {
     fontSize: 10.5,
     fontWeight: '700',
-    color: '#0F2860',
+    color: '#0B2F52',
   },
   kitListContainer: {
     gap: 3,
@@ -273,26 +274,25 @@ const styles = StyleSheet.create({
   },
   kitItemText: {
     fontSize: 10,
-    color: '#475569',
+    color: '#718096',
     lineHeight: 13.5,
   },
   applyButton: {
-    backgroundColor: '#059669',
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingHorizontal: 16,
-    borderRadius: BorderRadius.xs,
+    borderRadius: BorderRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
   applyButtonNavy: {
-    backgroundColor: '#0F2860',
+    backgroundColor: '#06294D',
   },
   applyButtonGreen: {
-    backgroundColor: '#059669',
+    backgroundColor: '#FAD465',
   },
   applyButtonText: {
     fontSize: 11.5,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#011F39',
   },
 });

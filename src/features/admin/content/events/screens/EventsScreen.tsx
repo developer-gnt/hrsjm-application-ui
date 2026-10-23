@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AdminColors,
   BorderRadius,
+  FontFamilies,
   Spacing,
   Typography,
 } from '../../../../../core/theme';
@@ -363,6 +364,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
         {allowCreate && (
           <AppButton
             title="Add Event"
+            variant="gold"
             size="sm"
             onPress={handleAddEvent}
             icon={<Text style={styles.addIcon}>+</Text>}
@@ -498,10 +500,11 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   pageTitle: {
-    ...Typography.screenTitle,
-    fontSize: 20,
-    lineHeight: 25,
-    color: AdminColors.primaryDark,
+    fontFamily: FontFamilies.serif,
+    fontSize: 22,
+    lineHeight: 28,
+    color: AdminColors.textPrimary,
+    fontWeight: '700',
   },
   pageSubtitle: {
     ...Typography.secondary,
@@ -514,17 +517,18 @@ const styles = StyleSheet.create({
     minHeight: 34,
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.button,
   },
   addIcon: {
-    color: AdminColors.textOnDark,
+    color: '#011F39',
     fontSize: 16,
     fontWeight: '700',
     marginTop: -1,
   },
   addButtonText: {
     ...Typography.secondaryMedium,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#011F39',
   },
   statsSection: {
     marginTop: Spacing.md,

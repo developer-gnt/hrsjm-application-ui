@@ -489,13 +489,13 @@ const styles = StyleSheet.create({
   band: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: '#DBE5EE',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 10,
-    shadowColor: '#000',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 2,
@@ -510,13 +510,13 @@ const styles = StyleSheet.create({
   },
   menuIcon: {
     fontSize: 22,
-    color: '#1E293B',
+    color: '#0B2F52',
     fontWeight: '700',
     lineHeight: 24,
   },
   backIcon: {
     fontSize: 22,
-    color: '#1E293B',
+    color: '#0B2F52',
     fontWeight: '700',
     lineHeight: 24,
   },
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
     ...Typography.screenTitle,
     fontSize: 18,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#0B2F52',
   },
   rightRow: {
     flexDirection: 'row',
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -4,
-    backgroundColor: '#EF4444',
+    backgroundColor: '#DC2626',
     borderRadius: 10,
     minWidth: 16,
     height: 16,
@@ -581,16 +581,16 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 17,
     borderWidth: 1.5,
-    borderColor: '#3B82F6',
+    borderColor: '#FAD465', // Gold accent border per docs/design.md
   },
   chevron: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#718096',
     fontWeight: '700',
   },
   dropdownBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    backgroundColor: 'rgba(1, 31, 57, 0.4)',
   },
   dropdownMenu: {
     position: 'absolute',
@@ -599,13 +599,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingVertical: 6,
-    shadowColor: '#000',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
   },
   dropdownHeader: {
     paddingHorizontal: 14,
@@ -614,16 +614,16 @@ const styles = StyleSheet.create({
   dropdownName: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#0B2F52',
   },
   dropdownEmail: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#718096',
     marginTop: 1,
   },
   dropdownDivider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#DBE5EE',
     marginVertical: 4,
   },
   dropdownItem: {
@@ -639,10 +639,10 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#334155',
+    color: '#34516D',
   },
   signOutText: {
-    color: '#EF4444',
+    color: '#DC2626',
     fontWeight: '600',
   },
 });

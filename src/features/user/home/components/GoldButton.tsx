@@ -20,7 +20,7 @@ export const GoldButton: React.FC<GoldButtonProps> = ({
   label,
   onPress,
   compact = false,
-  textColor = AdminColors.textOnDark,
+  textColor = AdminColors.primaryDark,
   backgroundColor = AdminColors.accentGold,
 }) => (
   <TouchableOpacity
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: AdminColors.accentGold,
-    borderRadius: BorderRadius.base,
+    borderRadius: BorderRadius.button, // 12px per docs/design.md
     paddingHorizontal: Spacing.base,
     paddingVertical: 10,
   },
@@ -60,8 +60,8 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     lineHeight: 17,
-    fontWeight: '600',
-    color: AdminColors.textOnDark,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
   },
   labelCompact: {
     fontSize: 11.5,

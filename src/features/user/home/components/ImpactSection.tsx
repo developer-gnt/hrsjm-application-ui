@@ -39,7 +39,7 @@ export const ImpactSection: React.FC<ImpactSectionProps> = ({
           <AppIcon
             name={metric.icon}
             size={24}
-            color="#EAA532"
+            color="#FAD465"
             strokeWidth={1.8}
           />
           <Text style={styles.value}>
@@ -54,7 +54,7 @@ export const ImpactSection: React.FC<ImpactSectionProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: '#06274D',
+    backgroundColor: '#06294D',
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     paddingTop: Spacing.lg,

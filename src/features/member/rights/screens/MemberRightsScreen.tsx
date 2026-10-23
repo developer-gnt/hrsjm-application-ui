@@ -581,7 +581,7 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: AdminColors.background,
   },
   scroll: {
     flex: 1,
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
   heroCard: {
     margin: Spacing.base,
     padding: Spacing.lg,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#06294D',
     borderRadius: BorderRadius.xl,
     ...Shadows.card,
   },
@@ -898,9 +898,9 @@ const styles = StyleSheet.create({
   highlightPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#EDF2F7',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DBE5EE',
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: BorderRadius.full,
@@ -908,11 +908,11 @@ const styles = StyleSheet.create({
   },
   highlightPillDot: {
     fontSize: 10,
-    color: '#94A3B8',
+    color: '#718096',
   },
   highlightPillText: {
     fontSize: 10.5,
-    color: '#475569',
+    color: '#34516D',
     fontWeight: '500',
   },
   cardFooter: {
@@ -920,19 +920,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: '#DBE5EE',
     paddingTop: Spacing.sm,
   },
   readGuideText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1E3A8A',
+    color: '#06294D',
   },
   arrowCircle: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#FFF9E6',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -946,15 +946,16 @@ const styles = StyleSheet.create({
   insightsHeader: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#334155',
+    color: '#0B2F52',
+    fontFamily: FontFamilies.serif,
     marginBottom: Spacing.xs,
   },
   insightCard: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
     padding: Spacing.md,
     gap: Spacing.sm,
     ...Shadows.subtle,
@@ -963,7 +964,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFF9E6',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AdminColors, BorderRadius, Spacing, Typography, Shadows } from '../../../../core/theme';
+import { AdminColors, BorderRadius, Spacing, Typography, Shadows, FontFamilies } from '../../../../core/theme';
 import { formatDate, formatINR } from '../../../../core/utils';
 import {
   AdminStatusBadge,
@@ -77,11 +77,11 @@ export const ExpenseVoucherCard: React.FC<ExpenseVoucherCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.card,
     padding: Spacing.base,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
+    borderColor: '#DCE4EC',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
@@ -108,17 +108,17 @@ const styles = StyleSheet.create({
   voucherNumber: {
     fontSize: 14.5,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#0B2F52',
     letterSpacing: -0.2,
   },
   date: {
     fontSize: 11.5,
-    color: '#64748B',
+    color: '#718096',
     marginTop: 1,
   },
   divider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#DBE5EE',
     marginVertical: 10,
   },
   bottomRow: {
@@ -133,20 +133,20 @@ const styles = StyleSheet.create({
   accountName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#0B2F52',
     marginBottom: 2,
   },
   paidTo: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#34516D',
   },
   paidToHighlight: {
     fontWeight: '600',
-    color: '#334155',
+    color: '#0B2F52',
   },
   referenceText: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#718096',
     marginTop: 2,
   },
   amountBox: {
@@ -154,37 +154,38 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   amount: {
+    fontFamily: FontFamilies.display,
     fontSize: 17,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#DC2626',
     letterSpacing: -0.2,
   },
   amountCancelled: {
-    color: '#94A3B8',
+    color: '#718096',
     textDecorationLine: 'line-through',
   },
   methodPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#EDF2F7',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DBE5EE',
     maxWidth: 130,
   },
   methodDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#06294D',
   },
   methodText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#475569',
+    color: '#06294D',
   },
 });
 

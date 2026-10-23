@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AdminColors, BorderRadius, Spacing } from '../../../../core/theme';
+import { AdminColors, BorderRadius, Spacing, FontFamilies } from '../../../../core/theme';
 import { formatINR } from '../../../../core/utils';
 import type { JournalEntryItem } from '../types/accounting.types';
 
@@ -94,11 +94,11 @@ export const JournalEntryCard: React.FC<JournalEntryCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.card,
     padding: Spacing.md,
     marginBottom: Spacing.xs,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
   },
   headerRow: {
     flexDirection: 'row',
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   entryNumberBadge: {
-    backgroundColor: '#EBF1FF',
+    backgroundColor: '#EDF2F7',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   entryNumberText: {
     fontSize: 12,
     fontWeight: '800',
-    color: AdminColors.primary,
+    color: '#06294D',
   },
   headerRight: {
     flexDirection: 'row',
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#718096',
   },
   statusBadge: {
     paddingHorizontal: 7,
@@ -133,10 +133,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   statusBadgePosted: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#EAF7EE',
   },
   statusBadgeReversed: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#FDEEEF',
   },
   statusBadgeText: {
     fontSize: 10,
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   narrationText: {
     fontSize: 12,
-    color: '#1E293B',
+    color: '#34516D',
     marginBottom: 8,
     lineHeight: 16,
   },
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: '#F8FAFC',
+    borderTopColor: '#DBE5EE',
   },
   metaBlock: {
     flexDirection: 'row',
@@ -169,15 +169,15 @@ const styles = StyleSheet.create({
   refTag: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#64748B',
-    backgroundColor: '#F1F5F9',
+    color: '#06294D',
+    backgroundColor: '#EDF2F7',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   linesCountTag: {
     fontSize: 10,
-    color: '#94A3B8',
+    color: '#718096',
     paddingVertical: 2,
   },
   amountBlock: {
@@ -185,12 +185,13 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     fontSize: 9,
-    color: '#94A3B8',
+    color: '#718096',
     textTransform: 'uppercase',
   },
   amountValue: {
+    fontFamily: FontFamilies.display,
     fontSize: 14,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontWeight: '700',
+    color: '#0B2F52',
   },
 });

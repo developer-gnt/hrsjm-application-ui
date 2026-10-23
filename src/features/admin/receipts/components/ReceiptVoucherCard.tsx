@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { formatDateTime, formatINR } from '../../../../core/utils';
+import { FontFamilies, BorderRadius } from '../../../../core/theme';
 import {
   Heart,
   User,
@@ -232,11 +233,11 @@ export const ReceiptVoucherCard: React.FC<ReceiptVoucherCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: BorderRadius.card,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
+    borderColor: '#DCE4EC',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -275,12 +276,12 @@ const styles = StyleSheet.create({
   voucherNumber: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#0B2F52',
     letterSpacing: -0.2,
   },
   dateText: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#718096',
   },
   rightCol: {
     alignItems: 'flex-end',
@@ -312,8 +313,9 @@ const styles = StyleSheet.create({
     color: '#DC2626',
   },
   amountText: {
+    fontFamily: FontFamilies.display,
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#16A34A',
     letterSpacing: -0.2,
   },

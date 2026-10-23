@@ -25,7 +25,7 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from 'react-native-svg';
-import { AdminColors, BorderRadius, Shadows, Spacing } from '../../../../core/theme';
+import { AdminColors, BorderRadius, Shadows, Spacing, Typography, FontFamilies } from '../../../../core/theme';
 import { AppEmptyState } from '../../../../core/components';
 import {
   ArrowDownLeft,
@@ -991,7 +991,7 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   safeArea: {
     flex: 1,
@@ -1003,7 +1003,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   pageHeaderText: {
     flex: 1,
@@ -1018,13 +1018,15 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   pageTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0F2C59',
+    fontFamily: FontFamilies.display,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0B2F52',
   },
   pageSubtitle: {
-    fontSize: 11,
-    color: '#64748B',
+    ...Typography.body,
+    fontSize: 11.5,
+    color: '#34516D',
     marginTop: 2,
   },
   datePill: {
@@ -1035,14 +1037,14 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
     gap: 5,
     ...Shadows.subtle,
   },
   datePillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#0F2C59',
+    color: '#0B2F52',
   },
 
   // Scroll Header
@@ -1068,23 +1070,23 @@ const styles = StyleSheet.create({
   },
   kpiCard: {
     width: '48.5%',
-    borderRadius: 16,
+    borderRadius: BorderRadius.card,
     padding: 13,
     marginBottom: 10,
     borderWidth: 1,
     ...Shadows.subtle,
   },
   kpiCardCredit: {
-    backgroundColor: '#F0F6FF',
-    borderColor: '#DBEAFE',
+    backgroundColor: '#EDF2F7',
+    borderColor: '#DBE5EE',
   },
   kpiCardExpense: {
     backgroundColor: '#FEF2F2',
     borderColor: '#FEE2E2',
   },
   kpiCardOpening: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FEF3C7',
+    backgroundColor: '#FFF9E6',
+    borderColor: '#FAD465',
   },
   kpiCardClosing: {
     backgroundColor: '#FAF5FF',
@@ -1099,32 +1101,33 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   kpiIconCredit: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#DBE5EE',
   },
   kpiIconExpense: {
     backgroundColor: '#FEE2E2',
   },
   kpiIconOpening: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FAD465',
   },
   kpiIconClosing: {
     backgroundColor: '#F3E8FF',
   },
   kpiLabel: {
     fontSize: 12,
-    color: '#0F2C59',
+    color: '#0B2F52',
     fontWeight: '700',
     marginTop: 6,
   },
   kpiValue: {
+    fontFamily: FontFamilies.display,
     fontSize: 19,
-    fontWeight: '800',
-    color: '#0F2C59',
+    fontWeight: '700',
+    color: '#0B2F52',
     letterSpacing: -0.3,
     marginTop: 2,
   },
   kpiValueCredit: {
-    color: '#0F3E8C',
+    color: '#06294D',
   },
   kpiValueExpense: {
     color: '#DC2626',
@@ -1234,18 +1237,18 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
     gap: 6,
     ...Shadows.subtle,
   },
   modeTabPillActive: {
-    backgroundColor: '#0F2C59',
-    borderColor: '#0F2C59',
+    backgroundColor: '#06294D',
+    borderColor: '#06294D',
   },
   modeTabPillText: {
     fontSize: 11.5,
     fontWeight: '600',
-    color: '#475569',
+    color: '#34516D',
   },
   modeTabPillTextActive: {
     color: '#FFFFFF',
@@ -1257,7 +1260,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   pillBadgeInactive: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#EDF2F7',
   },
   pillBadgeActive: {
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
@@ -1265,7 +1268,7 @@ const styles = StyleSheet.create({
   pillBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#475569',
+    color: '#34516D',
   },
   pillBadgeTextActive: {
     color: '#FFFFFF',
@@ -1283,7 +1286,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
     gap: 8,
     height: 40,
     ...Shadows.subtle,
@@ -1291,7 +1294,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 12,
-    color: '#0F2C59',
+    color: '#0B2F52',
     paddingVertical: 0,
   },
 
@@ -1300,29 +1303,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: BorderRadius.card,
     paddingVertical: 12,
     paddingHorizontal: 12,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E8EDF5',
+    borderColor: '#DCE4EC',
     ...Shadows.subtle,
   },
   dateBlock: {
     width: 48,
     height: 50,
     borderRadius: 12,
-    backgroundColor: '#F0F6FF',
+    backgroundColor: '#EDF2F7',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
     borderWidth: 1,
-    borderColor: '#E0EBF7',
+    borderColor: '#DBE5EE',
   },
   dateBlockDay: {
+    fontFamily: FontFamilies.display,
     fontSize: 18,
-    fontWeight: '800',
-    color: '#0F2C59',
+    fontWeight: '700',
+    color: '#0B2F52',
     lineHeight: 20,
   },
   dateBlockMonth: {

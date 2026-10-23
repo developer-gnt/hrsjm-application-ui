@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MemberCause } from '../types/causes.types';
 import { causesService } from '../services/causes.service';
 import { GlobalPaymentModal } from '../../payments';
+import { FontFamilies } from '../../../core/theme';
 
 interface MemberCauseDetailsScreenProps {
   cause: MemberCause;
@@ -384,25 +385,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   categoryTag: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter',
     fontSize: 12,
     fontWeight: '700',
-    color: '#1B3F8F',
-    backgroundColor: '#EEF3FC',
+    color: '#06294D',
+    backgroundColor: '#EDF2F7',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
   locationTag: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter',
     fontSize: 12,
-    color: '#64748B',
+    color: '#718096',
   },
   causeMainTitle: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: FontFamilies.display,
     fontSize: 18,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#0B2F52',
     lineHeight: 25,
     marginBottom: 10,
   },
@@ -438,10 +439,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   sectionHeading: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontFamily: FontFamilies.display,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0B2F52',
     marginBottom: 12,
   },
   fundAmountsRow: {
@@ -451,16 +452,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   fundRaisedBig: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: FontFamilies.display,
     fontSize: 20,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontWeight: '700',
+    color: '#06294D',
     lineHeight: 24,
   },
   fundSubtitle: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: FontFamilies.sans,
     fontSize: 12,
-    color: '#64748B',
+    color: '#718096',
     marginTop: 2,
   },
   percentBadge: {
@@ -472,25 +473,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   percentBadgeText: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter',
     fontSize: 13,
     fontWeight: '800',
-    color: '#1B3F8F',
+    color: '#06294D',
   },
   progressTrack: {
     height: 8,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#EDF2F7',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 12,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#1B3F8F',
+    backgroundColor: '#FAD465',
     borderRadius: 4,
   },
   progressFillCompleted: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#16A34A',
   },
   donorInfoRow: {
     flexDirection: 'row',
@@ -534,16 +535,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   impactValue: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontFamily: FontFamilies.display,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#06294D',
     lineHeight: 18,
   },
   impactLabel: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: FontFamilies.sans,
     fontSize: 11,
-    color: '#64748B',
+    color: '#718096',
     marginTop: 2,
   },
   storyText: {
@@ -608,43 +609,43 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   bottomBarRaisedText: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: FontFamilies.display,
     fontSize: 17,
     fontWeight: '800',
-    color: '#0F2860',
+    color: '#0B2F52',
     lineHeight: 21,
   },
   bottomBarGoalText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter',
     fontSize: 11,
-    color: '#64748B',
+    color: '#718096',
   },
   donateCtaBtn: {
     height: 48,
     paddingHorizontal: 24,
     borderRadius: 12,
-    backgroundColor: '#1B3F8F',
+    backgroundColor: '#FAD465',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#1B3F8F',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.12,
     shadowRadius: 5,
     elevation: 4,
   },
   donateCtaBtnCompleted: {
-    backgroundColor: '#0F2860',
+    backgroundColor: '#06294D',
   },
   donateCtaIcon: {
     fontSize: 14,
   },
   donateCtaText: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter',
     fontSize: 14,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#011F39',
     letterSpacing: 0.3,
   },
 });

@@ -241,31 +241,33 @@ export const MembershipCategoriesScreen: React.FC<MembershipCategoriesScreenProp
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#FAF7F0',
   },
   mainShell: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   scrollView: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   scrollContent: {
     paddingTop: Spacing.sm,
   },
   sectionHeaderBanner: {
-    backgroundColor: '#DCE6F5',
+    backgroundColor: '#EDF2F7',
     paddingVertical: 7,
     paddingHorizontal: Spacing.base,
     marginHorizontal: Spacing.sm,
     marginVertical: Spacing.xs,
     borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: '#DBE5EE',
   },
   sectionHeaderText: {
     fontSize: 13.5,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontWeight: '700',
+    color: '#06294D',
     letterSpacing: 0.2,
   },
   postsGroupContainer: {

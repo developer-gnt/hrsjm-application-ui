@@ -435,9 +435,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   filterBadgeText: {
-    color: colors.white,
+    color: '#011F39',
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   tabsRow: {
     flexDirection: 'row',

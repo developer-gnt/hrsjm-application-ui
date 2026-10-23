@@ -9,8 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AdminColors, BorderRadius, Spacing } from '../../../../core/theme';
+import { AdminColors, BorderRadius, Spacing, Typography, FontFamilies } from '../../../../core/theme';
 import {
   AppEmptyState,
   AppErrorState,
@@ -217,7 +216,7 @@ export const JournalEntriesScreen: React.FC<JournalEntriesScreenProps> = ({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   safeArea: {
     flex: 1,
@@ -240,19 +239,21 @@ const styles = StyleSheet.create({
   },
   backChevron: {
     fontSize: 26,
-    color: '#0F2C59',
+    color: '#0B2F52',
     fontWeight: '300',
     marginTop: -4,
   },
   pageTitle: {
+    fontFamily: FontFamilies.display,
     fontSize: 20,
-    fontWeight: '800',
-    color: '#0F2C59',
+    fontWeight: '700',
+    color: '#0B2F52',
     letterSpacing: -0.2,
   },
   pageSubtitle: {
-    fontSize: 11,
-    color: '#64748B',
+    ...Typography.body,
+    fontSize: 11.5,
+    color: '#34516D',
     marginTop: 2,
   },
   filterSection: {
@@ -272,16 +273,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
   },
   tabChipSelected: {
-    backgroundColor: AdminColors.primary,
-    borderColor: AdminColors.primary,
+    backgroundColor: '#06294D',
+    borderColor: '#06294D',
   },
   tabChipText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#34516D',
   },
   tabChipTextSelected: {
     color: '#FFFFFF',

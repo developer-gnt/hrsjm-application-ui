@@ -118,7 +118,7 @@ export const ExpenseVouchersScreen: React.FC<ExpenseVouchersScreenProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Record Expense"
           >
-            <Plus size={15} color="#FFFFFF" strokeWidth={2.5} />
+            <Plus size={15} color="#011F39" strokeWidth={2.5} />
             <Text style={styles.addCtaText}>Record Expense</Text>
           </TouchableOpacity>
         )}
@@ -291,7 +291,7 @@ const ListSeparator: React.FC = () => <View style={styles.separator} />;
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   headerContainer: {
     gap: 12,
@@ -308,14 +308,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pageTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0F172A',
+    ...Typography.display,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#0B2F52',
     letterSpacing: -0.3,
   },
   pageSubtitle: {
+    ...Typography.body,
     fontSize: 12.5,
-    color: '#64748B',
+    color: '#34516D',
     marginTop: 2,
     lineHeight: 16,
   },
@@ -323,13 +325,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: AdminColors.primary,
-    paddingHorizontal: 12,
+    backgroundColor: '#FAD465',
+    paddingHorizontal: 13,
     paddingVertical: 8,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.button,
+    elevation: 2,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
   },
   addCtaText: {
-    color: '#FFFFFF',
+    ...Typography.button,
+    color: '#011F39',
     fontWeight: '700',
     fontSize: 12.5,
   },
@@ -352,16 +360,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
   },
   methodChipSelected: {
-    backgroundColor: '#1E293B',
-    borderColor: '#1E293B',
+    backgroundColor: '#06294D',
+    borderColor: '#06294D',
   },
   methodChipText: {
     fontSize: 11.5,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#34516D',
   },
   methodChipTextSelected: {
     color: '#FFFFFF',

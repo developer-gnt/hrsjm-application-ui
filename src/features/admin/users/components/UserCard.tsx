@@ -409,8 +409,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#64748B',
+    borderColor: '#DCE4EC',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
@@ -450,9 +450,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   userName: {
+    fontFamily: 'serif',
     fontSize: 16,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontWeight: '700',
+    color: '#0B2F52',
     marginBottom: 3,
   },
   metaRow: {

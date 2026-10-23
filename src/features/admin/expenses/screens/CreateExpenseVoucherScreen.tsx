@@ -247,7 +247,7 @@ export const CreateExpenseVoucherScreen: React.FC<
         <AppButton
           title="Record Expense"
           onPress={handleCreate}
-          variant="primary"
+          variant="gold"
           size="lg"
           loading={createMutation.isPending}
           disabled={createMutation.isPending}

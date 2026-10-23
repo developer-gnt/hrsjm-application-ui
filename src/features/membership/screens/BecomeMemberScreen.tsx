@@ -146,15 +146,15 @@ export const BecomeMemberScreen: React.FC<BecomeMemberScreenProps> = ({
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   mainShell: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAF7F0',
   },
   scrollView: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAF7F0',
   },
   scrollContent: {
     paddingBottom: 32,

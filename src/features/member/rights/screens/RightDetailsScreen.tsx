@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
-    backgroundColor: AdminColors.cardSurface,
+    backgroundColor: AdminColors.background,
   },
   scrollContent: {
     paddingBottom: Spacing.xl,
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   },
   heroOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(9, 24, 60, 0.72)',
+    backgroundColor: 'rgba(1, 31, 57, 0.72)',
   },
   heroCopy: {
     flex: 1,
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
   },
   tabs: {
     flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#EDF2F7',
     borderRadius: BorderRadius.full,
     padding: 3,
   },
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
   },
   quoteCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFFBEB',
+    backgroundColor: '#FFF9E6',
     borderLeftWidth: 3,
     borderLeftColor: AdminColors.accentGold,
     borderRadius: BorderRadius.base,
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     width: '48%',
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.card,
     padding: Spacing.md,
     justifyContent: 'space-between',
     minHeight: 110,
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
   },
   relatedCard: {
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
   },
   cardHeaderRow: {
     flexDirection: 'row',
@@ -647,10 +647,10 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   frameworkCard: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: BorderRadius.lg,
+    backgroundColor: '#EDF2F7',
+    borderRadius: BorderRadius.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DBE5EE',
     padding: Spacing.md,
   },
   frameworkLeft: {

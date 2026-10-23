@@ -377,7 +377,7 @@ export function MembershipStep2Screen() {
               accessibilityRole="button"
               accessibilityLabel="Continue to Document Upload">
               <Text style={styles.continueBtnText}>Continue</Text>
-              <Icon name="arrow-right" size={18} color={colors.white} strokeWidth={2.4} />
+              <Icon name="arrow-right" size={18} color="#011F39" strokeWidth={2.4} />
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -670,20 +670,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0F2860',
+    backgroundColor: '#FAD465',
     borderRadius: radius.md,
     height: 48,
     gap: 8,
-    shadowColor: '#0F2860',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 2,
   },
   continueBtnText: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.white,
+    color: '#011F39',
   },
   modalContainer: {
     paddingBottom: spacing.lg,

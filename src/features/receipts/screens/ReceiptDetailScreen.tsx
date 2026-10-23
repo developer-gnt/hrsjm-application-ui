@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   amountBox: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#EDF2F7',
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,

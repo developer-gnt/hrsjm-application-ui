@@ -174,8 +174,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                     label="Join the Movement"
                     compact
                     onPress={onCtaPress}
-                    textColor="#082245"
-                    backgroundColor="#EAA532"
+                    textColor="#011F39"
+                    backgroundColor="#FAD465"
                   />
                 </View>
               )}
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
-    backgroundColor: '#082245',
+    backgroundColor: '#011F39',
   },
   track: {
     flexDirection: 'row',
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     color: AdminColors.textOnDark,
   },
   headlineGold: {
-    color: '#EAA532',
+    color: '#FAD465',
   },
   supporting: {
     fontSize: 11,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   dotActive: {
-    backgroundColor: '#EAA532',
+    backgroundColor: '#FAD465',
     opacity: 1,
     width: 8,
     height: 8,

@@ -203,7 +203,7 @@ export const CreateReceiptVoucherScreen: React.FC<
         <AppButton
           title="Record Receipt"
           onPress={handleCreate}
-          variant="primary"
+          variant="gold"
           size="lg"
           loading={createMutation.isPending}
           disabled={createMutation.isPending}

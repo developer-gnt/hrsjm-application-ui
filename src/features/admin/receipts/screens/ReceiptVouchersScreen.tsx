@@ -28,7 +28,7 @@ import { PermissionDenied } from '../../../../core/permissions/permission.guard'
 import { can } from '../../../../core/permissions/can';
 import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import { useDebouncedValue } from '../../../../core/hooks/useDebouncedValue';
-import { AdminColors, BrandColors, Spacing, BorderRadius } from '../../../../core/theme';
+import { AdminColors, BrandColors, Spacing, BorderRadius, Typography, FontFamilies } from '../../../../core/theme';
 import { AppRoutes } from '../../../../core/constants/routes';
 import { useReceiptsPaginated, useReceiptStats } from '../hooks/useReceipts';
 import { ReceiptVoucherCard } from '../components/ReceiptVoucherCard';
@@ -158,7 +158,7 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Record Income"
           >
-            <Plus size={15} color="#FFFFFF" strokeWidth={2.5} />
+            <Plus size={15} color="#011F39" strokeWidth={2.5} />
             <Text style={styles.addCtaText}>Record Income</Text>
           </TouchableOpacity>
         )}
@@ -580,7 +580,7 @@ const ListSeparator: React.FC = () => <View style={styles.separator} />;
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#F7F9FC',
+    backgroundColor: '#FAF7F0',
   },
   headerContainer: {
     gap: 12,
@@ -597,27 +597,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pageTitle: {
+    fontFamily: FontFamilies.display,
     fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontWeight: '700',
+    color: '#0B2F52',
     letterSpacing: -0.4,
   },
   pageSubtitle: {
-    fontSize: 13,
-    color: '#64748B',
+    ...Typography.body,
+    fontSize: 12.5,
+    color: '#34516D',
     marginTop: 2,
   },
   addCtaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: BrandColors.navy,
-    paddingHorizontal: 12,
+    backgroundColor: '#FAD465',
+    paddingHorizontal: 13,
     paddingVertical: 8,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.button,
+    elevation: 2,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
   },
   addCtaText: {
-    color: '#FFFFFF',
+    ...Typography.button,
+    color: '#011F39',
     fontWeight: '700',
     fontSize: 12.5,
   },
@@ -634,10 +642,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
     paddingHorizontal: 12,
     height: 48,
-    shadowColor: '#0F172A',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 4,
@@ -646,7 +654,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 13.5,
-    color: '#0F172A',
+    color: '#0B2F52',
     paddingVertical: 0,
   },
   filterActionBtn: {
@@ -655,7 +663,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#0F172A',

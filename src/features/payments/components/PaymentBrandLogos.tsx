@@ -318,28 +318,24 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   gpayText: {
-    fontFamily: 'Poppins-Bold',
     fontSize: 14,
     fontWeight: '700',
     color: '#5F6368',
     marginLeft: 2,
   },
   phonePeText: {
-    fontFamily: 'Inter-Bold',
     fontSize: 12,
     fontWeight: '800',
     color: '#5F259F',
     letterSpacing: -0.2,
   },
   paytmText: {
-    fontFamily: 'Poppins-Bold',
     fontSize: 13,
     fontWeight: '900',
     color: '#002970',
     letterSpacing: -0.3,
   },
   bhimText: {
-    fontFamily: 'Inter-Bold',
     fontSize: 12,
     fontWeight: '900',
     color: '#1E293B',
@@ -351,7 +347,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   visaText: {
-    fontFamily: 'Poppins-Bold',
     fontWeight: '900',
     color: '#1A1F71',
     letterSpacing: 0.5,
@@ -363,9 +358,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   rupayText: {
-    fontFamily: 'Poppins-Bold',
     fontWeight: '900',
-    color: '#0F2860',
+    color: '#06294D',
     letterSpacing: -0.2,
   },
   radioCircle: {
@@ -377,18 +371,18 @@ const styles = StyleSheet.create({
   },
   radioCircleSelected: {
     borderWidth: 2,
-    borderColor: '#EAA43A',
+    borderColor: '#E9B82E',
     backgroundColor: '#FFFFFF',
   },
   radioCircleUnselected: {
     borderWidth: 1.5,
-    borderColor: '#CBD5E1',
+    borderColor: '#DCE4EC',
     backgroundColor: '#FFFFFF',
   },
   radioInnerDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#EAA43A',
+    backgroundColor: '#E9B82E',
   },
 });

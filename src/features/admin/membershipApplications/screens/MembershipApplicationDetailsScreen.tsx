@@ -204,7 +204,7 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   scrollContent: {
     paddingBottom: 24,
@@ -219,18 +219,21 @@ const styles = StyleSheet.create({
   tabButton: {
     flex: 1,
     paddingVertical: 9,
-    borderRadius: BorderRadius.md,
-    backgroundColor: '#EEF3FC',
+    borderRadius: BorderRadius.button,
+    backgroundColor: '#EDF2F7',
+    borderWidth: 1,
+    borderColor: '#DBE5EE',
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabButtonActive: {
-    backgroundColor: '#0F2860',
+    backgroundColor: '#06294D',
+    borderColor: '#06294D',
   },
   tabText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0F2860',
+    color: '#34516D',
   },
   tabTextActive: {
     color: '#FFFFFF',
@@ -244,20 +247,20 @@ const styles = StyleSheet.create({
   notFoundTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0F2860',
+    color: '#0B2F52',
     marginBottom: 6,
   },
   notFoundText: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#718096',
     textAlign: 'center',
     marginBottom: Spacing.lg,
   },
   returnButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: BorderRadius.md,
-    backgroundColor: '#0F2860',
+    borderRadius: BorderRadius.button,
+    backgroundColor: '#06294D',
   },
   returnButtonText: {
     fontSize: 14,

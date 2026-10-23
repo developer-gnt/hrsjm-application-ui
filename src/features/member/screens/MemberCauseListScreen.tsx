@@ -17,6 +17,7 @@ import { CauseCard } from '../components/CauseCard';
 import { GlobalPaymentModal, PaymentPayload } from '../../payments';
 import { MemberCause, CauseCategoryKey } from '../types/causes.types';
 import { causesService } from '../services/causes.service';
+import { FontFamilies } from '../../../core/theme';
 
 interface FilterTabItem {
   key: CauseCategoryKey;
@@ -375,8 +376,8 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor="#1B3F8F"
-              colors={['#1B3F8F']}
+              tintColor="#06294D"
+              colors={['#06294D']}
             />
           }
         />
@@ -464,16 +465,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   pageMainTitle: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: FontFamilies.display,
     fontSize: 24,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#0B2F52',
     lineHeight: 30,
   },
   pageSubtitle: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter',
     fontSize: 13,
-    color: '#64748B',
+    color: '#34516D',
     marginTop: 2,
   },
   kpiGridContainer: {
@@ -515,16 +516,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   kpiGridValue: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: FontFamilies.display,
     fontSize: 16,
     fontWeight: '800',
-    color: '#0F2860',
+    color: '#0B2F52',
     lineHeight: 20,
   },
   kpiGridLabel: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter',
     fontSize: 11,
-    color: '#64748B',
+    color: '#718096',
     marginTop: 1,
   },
   searchBarRow: {
@@ -591,14 +592,14 @@ const styles = StyleSheet.create({
     borderColor: '#D8E5F8',
   },
   categoryTabActive: {
-    backgroundColor: '#1B3F8F',
-    borderColor: '#1B3F8F',
+    backgroundColor: '#06294D',
+    borderColor: '#06294D',
   },
   categoryTabText: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter',
     fontSize: 12,
     fontWeight: '700',
-    color: '#0F2860',
+    color: '#06294D',
   },
   categoryTabTextActive: {
     color: '#FFFFFF',
@@ -611,15 +612,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   listSectionTitle: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: FontFamilies.display,
     fontSize: 15,
     fontWeight: '700',
-    color: '#0F2860',
+    color: '#0B2F52',
   },
   listCountBadge: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter',
     fontSize: 12,
-    color: '#64748B',
+    color: '#718096',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -632,17 +633,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emptyTitle: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: FontFamilies.display,
     fontSize: 17,
     fontWeight: '700',
-    color: '#0F2860',
+    color: '#0B2F52',
     marginBottom: 6,
     textAlign: 'center',
   },
   emptyDesc: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter',
     fontSize: 13,
-    color: '#64748B',
+    color: '#718096',
     textAlign: 'center',
     lineHeight: 18,
     marginBottom: 18,
@@ -651,13 +652,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#1B3F8F',
+    backgroundColor: '#FAD465',
   },
   resetFiltersBtnText: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter',
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#011F39',
   },
   skeletonContainer: {
     paddingHorizontal: 16,

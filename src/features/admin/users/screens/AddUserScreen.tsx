@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BorderRadius, Spacing } from '../../../../core';
+import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core';
 import { usersStore } from '../services/usersStore';
 import { UserType, UserGender } from '../types/user.types';
 import { UsersHeader } from '../components/UsersHeader';
@@ -641,7 +641,7 @@ export const AddUserScreen: React.FC<AddUserScreenProps> = ({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: AdminColors.background,
   },
   flex: {
     flex: 1,
@@ -668,28 +668,29 @@ const styles = StyleSheet.create({
   backText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0F2860',
+    color: '#011F39',
   },
   pageTitle: {
+    fontFamily: FontFamilies.serif,
     fontSize: 22,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontWeight: '700',
+    color: AdminColors.textPrimary,
     letterSpacing: 0.2,
   },
   pageSubtitle: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#718096',
     marginTop: 2,
     marginBottom: Spacing.base,
     fontWeight: '500',
   },
   formCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.card,
     padding: Spacing.base,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
+    borderColor: '#DCE4EC',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
@@ -701,25 +702,25 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 12.5,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#0B2F52',
     marginBottom: 6,
   },
   requiredAsterisk: {
-    color: '#EF4444',
+    color: '#DC2626',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#EDF2F7',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: BorderRadius.lg,
+    borderColor: '#DCE4EC',
+    borderRadius: BorderRadius.input,
     paddingHorizontal: 12,
     height: 44,
   },
   inputContainerError: {
-    borderColor: '#EF4444',
-    backgroundColor: '#FEF2F2',
+    borderColor: '#DC2626',
+    backgroundColor: '#FDEEEF',
   },
   fieldIconWrap: {
     marginRight: 8,
@@ -735,25 +736,25 @@ const styles = StyleSheet.create({
   countryCodeText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#0B2F52',
   },
   textInput: {
     flex: 1,
     fontSize: 13,
-    color: '#0F172A',
+    color: '#0B2F52',
     paddingVertical: 0,
   },
   selectText: {
     flex: 1,
     fontSize: 13,
-    color: '#0F172A',
+    color: '#0B2F52',
   },
   selectPlaceholder: {
-    color: '#94A3B8',
+    color: '#718096',
   },
   chevronIcon: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#718096',
   },
   calendarIcon: {
     fontSize: 14,
@@ -766,18 +767,19 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 11,
-    color: '#EF4444',
+    color: '#DC2626',
     marginTop: 4,
     fontWeight: '600',
   },
   sectionHeader: {
+    fontFamily: FontFamilies.serif,
     fontSize: 14,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontWeight: '700',
+    color: '#0B2F52',
     marginTop: 10,
     marginBottom: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: '#DBE5EE',
     paddingTop: 12,
   },
   twoColumnRow: {
@@ -795,27 +797,27 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#EDF2F7',
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#DBE5EE',
     paddingVertical: 12,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButtonText: {
     fontSize: 13.5,
     fontWeight: '700',
-    color: '#1E3A8A',
+    color: '#06294D',
   },
   createButton: {
     flex: 1,
-    backgroundColor: '#0F2860',
+    backgroundColor: '#FAD465',
     paddingVertical: 12,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0F2860',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -824,7 +826,7 @@ const styles = StyleSheet.create({
   createButtonText: {
     fontSize: 13.5,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#011F39',
   },
   bottomNavHost: {
     position: 'absolute',

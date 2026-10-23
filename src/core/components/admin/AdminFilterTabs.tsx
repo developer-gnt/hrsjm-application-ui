@@ -124,18 +124,18 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   chipActive: {
-    backgroundColor: '#123B7A',
-    borderColor: '#123B7A',
-    shadowColor: '#123B7A',
+    backgroundColor: '#06294D',
+    borderColor: '#06294D',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 3,
   },
   chipInactive: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
-    shadowColor: '#000',
+    borderColor: '#DCE4EC',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 2,
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   labelInactive: {
-    color: '#334155',
+    color: '#34516D',
     fontWeight: '600',
   },
   countPill: {
@@ -164,10 +164,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   countPillActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.28)',
+    backgroundColor: 'rgba(250, 212, 101, 0.25)',
   },
   countPillInactive: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#EDF2F7',
   },
   countText: {
     fontSize: 11,
@@ -176,10 +176,10 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'android' ? { includeFontPadding: false } : {}),
   },
   countTextActive: {
-    color: '#FFFFFF',
+    color: '#FAD465',
   },
   countTextInactive: {
-    color: '#475569',
+    color: '#718096',
   },
 });
 

@@ -13,6 +13,7 @@ import { useMembership } from '../context/MembershipContext';
 import { ApplicationStatusStepper } from '../components/stepper';
 import { GlobalPaymentModal, PaymentPayload } from '../../payments';
 import { useAuthStore } from '../../auth/store/authStore';
+import { FontFamilies } from '../../../core/theme';
 
 export type ApplicationInnerStatus =
   | 'applied'
@@ -726,9 +727,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   headerTitle: {
+    fontFamily: FontFamilies.display,
     fontSize: 17,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#0B2F52',
     textAlign: 'center',
   },
   headerRightSpace: {
@@ -744,7 +746,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   scrollContent: {
     paddingHorizontal: 16,

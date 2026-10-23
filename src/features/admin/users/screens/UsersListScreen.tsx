@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BorderRadius, Spacing } from '../../../../core';
+import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core';
 import { usersStore } from '../services/usersStore';
 import { UserItem, UserTypeTabKey, UserStatus, UserFilterOptions } from '../types/user.types';
 import { UsersHeader } from '../components/UsersHeader';
@@ -361,7 +361,7 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: AdminColors.background,
   },
   scroll: {
     flex: 1,
@@ -387,14 +387,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pageTitle: {
+    fontFamily: FontFamilies.serif,
     fontSize: 24,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontWeight: '700',
+    color: AdminColors.textPrimary,
     letterSpacing: 0.2,
   },
   pageSubtitle: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#718096',
     marginTop: 2,
     lineHeight: 16,
     fontWeight: '500',
@@ -406,12 +407,12 @@ const styles = StyleSheet.create({
   addUserButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F2860',
+    backgroundColor: '#FAD465',
     paddingVertical: 7,
     paddingHorizontal: 12,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.button,
     gap: 4,
-    shadowColor: '#0F2860',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -421,30 +422,30 @@ const styles = StyleSheet.create({
   addUserPlus: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#011F39',
     lineHeight: 16,
   },
   addUserText: {
     fontSize: 12.5,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#011F39',
   },
   signUpButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#EDF2F7',
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#DBE5EE',
     paddingVertical: 5,
     paddingHorizontal: 12,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.button,
     justifyContent: 'center',
     width: '100%',
   },
   signUpButtonText: {
     fontSize: 11.5,
     fontWeight: '700',
-    color: '#1E3A8A',
+    color: '#06294D',
   },
   activeFiltersBar: {
     marginVertical: 6,
@@ -456,9 +457,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   activeFilterPill: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#EDF2F7',
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#DBE5EE',
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: BorderRadius.md,
@@ -466,7 +467,7 @@ const styles = StyleSheet.create({
   activeFilterPillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#1E40AF',
+    color: '#06294D',
   },
   clearAllBtn: {
     paddingVertical: 4,

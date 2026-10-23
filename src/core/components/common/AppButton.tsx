@@ -114,7 +114,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
         };
       case 'gold':
         return {
-          color: AdminColors.textOnDark,
+          color: AdminColors.primaryDark, // Navy text on gold button per docs/design.md §7 & §14
         };
       case 'primary':
       default:
@@ -184,6 +184,8 @@ export const AppButton: React.FC<AppButtonProps> = ({
           color={
             variant === 'outline' || variant === 'secondary' || variant === 'ghost' || variant === 'text'
               ? AdminColors.primary
+              : variant === 'gold'
+              ? AdminColors.primaryDark
               : '#FFFFFF'
           }
         />
@@ -211,7 +213,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
 
 const styles = StyleSheet.create({
   baseButton: {
-    borderRadius: BorderRadius.base,
+    borderRadius: BorderRadius.button, // 12px per docs/design.md
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

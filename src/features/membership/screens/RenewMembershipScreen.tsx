@@ -22,7 +22,7 @@ import {
   navigateToMembershipApplications,
   navigateToProfile,
 } from '../../../core/navigation/appRouter';
-import { BorderRadius, Spacing } from '../../../core';
+import { BorderRadius, Spacing, FontFamilies } from '../../../core';
 
 interface RenewMembershipScreenProps {
   onBack?: () => void;
@@ -196,15 +196,15 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#FAF7F0',
   },
   mainShell: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAF7F0',
   },
   scrollView: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   scrollContent: {
     paddingTop: Spacing.xs,
@@ -215,9 +215,10 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xs,
   },
   pageTitleText: {
+    fontFamily: FontFamilies.display,
     fontSize: 22,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontWeight: '700',
+    color: '#0B2F52',
     letterSpacing: -0.2,
   },
 });
