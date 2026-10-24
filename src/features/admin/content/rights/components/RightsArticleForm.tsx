@@ -171,31 +171,6 @@ interface RightsArticleFormProps {
   onTabPress?: (tab: string) => void;
 }
 
-/** Toolbar button (UI-only control, per the reference rich-text toolbar). */
-const ToolbarButton: React.FC<{
-  label: string;
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
-}> = ({ label, bold, italic, underline }) => (
-  <TouchableOpacity
-    style={styles.toolbarButton}
-    disabled
-    accessibilityLabel={`Text style: ${label}`}
-  >
-    <Text
-      style={[
-        styles.toolbarIcon,
-        bold && styles.toolbarBold,
-        italic && styles.toolbarItalic,
-        underline && styles.toolbarUnderline,
-      ]}
-    >
-      {label}
-    </Text>
-  </TouchableOpacity>
-);
-
 export const RightsArticleForm: React.FC<RightsArticleFormProps> = ({
   mode = 'create',
   articleId,
@@ -600,27 +575,13 @@ export const RightsArticleForm: React.FC<RightsArticleFormProps> = ({
               ) : null}
             </View>
 
-            {/* Article content (toolbar + editor, per the reference) */}
+            {/* Article content (clean multiline text area) */}
             <View style={styles.fieldBlock}>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Article Content</Text>
                 <Text style={styles.requiredStar}>*</Text>
               </View>
-              <View style={[styles.editorContainer, errors.content && styles.inputError]}>
-                <View style={styles.editorToolbar}>
-                  <ToolbarButton label="B" bold />
-                  <ToolbarButton label="I" italic />
-                  <ToolbarButton label="U" bold underline />
-                  <View style={styles.toolbarDivider} />
-                  <ToolbarButton label="•≡" />
-                  <ToolbarButton label="⋮≡" />
-                  <View style={styles.toolbarDivider} />
-                  <ToolbarButton label="🔗" />
-                  <ToolbarButton label="🖼️" />
-                  <View style={styles.toolbarFlex} />
-                  <ToolbarButton label="↩" />
-                  <ToolbarButton label="↪" />
-                </View>
+              <View style={[styles.textAreaContainer, errors.content && styles.inputError]}>
                 <TextInput
                   value={form.content}
                   onChangeText={value => updateField('content', value.slice(0, CONTENT_MAX_LENGTH))}
@@ -628,7 +589,7 @@ export const RightsArticleForm: React.FC<RightsArticleFormProps> = ({
                   placeholderTextColor={AdminColors.textMuted}
                   multiline
                   textAlignVertical="top"
-                  style={styles.editorBody}
+                  style={[styles.textArea, styles.contentTextArea]}
                   accessibilityLabel="Article Content"
                 />
                 <Text style={styles.counterText}>
@@ -783,11 +744,12 @@ export const RightsArticleForm: React.FC<RightsArticleFormProps> = ({
               />
               <AppButton
                 title={isEdit ? 'Update Article' : 'Publish Article'}
-                variant="primary"
+                variant="gold"
                 size="md"
                 onPress={handlePublishPress}
-                icon={<Text style={styles.buttonIcon}>✈️</Text>}
-                style={styles.bottomButton}
+                icon={<Text style={styles.goldButtonIcon}>✈️</Text>}
+                style={[styles.bottomButton, styles.publishGoldBtn]}
+                textStyle={styles.publishGoldBtnText}
               />
             </View>
           </ScrollView>
@@ -1049,6 +1011,9 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     textAlignVertical: 'top',
   },
+  contentTextArea: {
+    minHeight: 180,
+  },
   counterText: {
     ...Typography.caption,
     color: AdminColors.textMuted,
@@ -1056,59 +1021,22 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xs,
   },
 
-  editorContainer: {
-    backgroundColor: AdminColors.cardSurface,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    borderRadius: BorderRadius.base,
-    overflow: 'hidden',
+  publishGoldBtn: {
+    backgroundColor: '#FAD465',
+    borderColor: '#E9B82E',
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  editorToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: Spacing.xs,
-    backgroundColor: AdminColors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: AdminColors.border,
-  },
-  toolbarButton: {
-    minWidth: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: BorderRadius.sm,
-  },
-  toolbarIcon: {
-    fontSize: 13,
-    color: AdminColors.textPrimary,
-  },
-  toolbarBold: {
+  publishGoldBtnText: {
+    color: '#011F39',
     fontWeight: '700',
+    fontSize: 14,
   },
-  toolbarItalic: {
-    fontStyle: 'italic',
-  },
-  toolbarUnderline: {
-    textDecorationLine: 'underline',
-  },
-  toolbarDivider: {
-    width: 1,
-    height: 18,
-    backgroundColor: AdminColors.border,
-    marginHorizontal: 2,
-  },
-  toolbarFlex: {
-    flex: 1,
-  },
-  editorBody: {
-    ...Typography.body,
-    color: AdminColors.textPrimary,
-    minHeight: 120,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    textAlignVertical: 'top',
+  goldButtonIcon: {
+    fontSize: 14,
   },
 
   authorText: {

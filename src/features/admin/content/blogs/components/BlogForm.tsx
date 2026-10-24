@@ -770,7 +770,7 @@ export const BlogForm: React.FC<BlogFormProps> = ({
               />
               <AppButton
                 title={isEdit ? 'Update Blog' : 'Create Blog'}
-                variant="primary"
+                variant="gold"
                 size="md"
                 onPress={handleCreatePress}
                 loading={isSubmitting}

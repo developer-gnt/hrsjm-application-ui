@@ -64,12 +64,12 @@ export const AppSearchBar: React.FC<AppSearchBarProps> = ({
             cx={11}
             cy={11}
             r={7}
-            stroke="#123B7A"
+            stroke="#06294D"
             strokeWidth={2.2}
           />
           <Path
             d="M20 20L16.5 16.5"
-            stroke="#123B7A"
+            stroke="#06294D"
             strokeWidth={2.2}
             strokeLinecap="round"
           />
@@ -79,8 +79,9 @@ export const AppSearchBar: React.FC<AppSearchBarProps> = ({
         value={internalValue}
         onChangeText={handleChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#64748B"
+        placeholderTextColor="#718096"
         style={[styles.input, inputStyle]}
+        numberOfLines={1}
         returnKeyType="search"
         clearButtonMode="never"
         autoCapitalize="none"
@@ -107,7 +108,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1.2,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
     borderRadius: 12,
     paddingHorizontal: 14,
     height: 48,
@@ -124,9 +125,10 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    minWidth: 0,
     fontSize: 14,
     fontWeight: '500',
-    color: '#0F172A',
+    color: '#0B2F52',
     paddingVertical: 0,
     height: '100%',
   },

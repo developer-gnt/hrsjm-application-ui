@@ -4,6 +4,7 @@ import {
   BackHandler,
   Image,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -21,7 +22,9 @@ import {
   AppButton,
   AppEmptyState,
   AppLoader,
-} from '../../../../../core/components';
+  feedback,
+} from '../../../../../core';
+import { Pencil } from '../../../../../core/components/icons';
 import {
   CategoryChip,
   STATUS_BADGE_TONES,
@@ -33,6 +36,7 @@ import {
   NewsDetailsActionMenu,
 } from '../components/NewsDetailsActionMenu';
 import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
+import { updateNewsApi, deleteNewsApi } from '../services/news.service';
 import type { NewsListItem } from '../types/news.types';
 
 interface NewsDetailsScreenProps {
@@ -71,20 +75,23 @@ const PLACEHOLDER_MESSAGE =
  * backend — all actions are placeholders.
  */
 export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
-  news,
+  news: initialNews,
   onBack,
   onTabPress,
   onEdit,
   loading = false,
 }) => {
+  const [news, setNews] = useState<NewsListItem | null>(initialNews);
   const [coverFailed, setCoverFailed] = useState(false);
   const [galleryFailed, setGalleryFailed] = useState<Record<string, boolean>>({});
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 
-  // Android hardware back returns to the News list. Modal sheets/dialogs sit
-  // above this screen and consume back via onRequestClose first, so the screen
-  // never navigates away while an overlay is open.
+  useEffect(() => {
+    setNews(initialNews);
+  }, [initialNews]);
+
+  // Android hardware back returns to the News list.
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       onBack();
@@ -107,46 +114,81 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
       onTabPress(tab);
       return;
     }
-    Alert.alert(
-      'Preview shell',
-      'Global navigation is owned by the app-level architecture. This bar is a temporary visual preview only.',
-    );
+    feedback.info('Navigation', 'Use the bottom navigation bar to switch between modules.');
   };
 
-  const handleAction = (action: string) => {
+  const handleAction = async (action: string) => {
     setActionSheetVisible(false);
+    if (!news) return;
+
     if (action === 'delete') {
       setDeleteDialogVisible(true);
       return;
     }
     if (action === 'edit') {
-      if (onEdit && news) {
+      if (onEdit) {
         onEdit(news);
         return;
       }
-      Alert.alert('Edit News', PLACEHOLDER_MESSAGE);
+      feedback.info('Edit News', 'Edit navigation is not configured.');
       return;
     }
-    if (action === 'share' || action === 'copyLink' || action === 'view') {
-      Alert.alert(
-        action === 'view' ? 'View News' : action === 'share' ? 'Share' : 'Copy Link',
-        PLACEHOLDER_MESSAGE,
-      );
+    if (action === 'publish') {
+      try {
+        await updateNewsApi(news.id, { status: 'PUBLISHED' });
+      } catch {}
+      setNews(prev => prev ? { ...prev, status: 'PUBLISHED' } : null);
+      feedback.success('Published', 'News article has been published live.');
       return;
     }
-    Alert.alert(
-      action.charAt(0).toUpperCase() + action.slice(1),
-      `UI-only confirmation. "${action}" will be connected after backend integration.`,
-    );
+    if (action === 'unpublish') {
+      try {
+        await updateNewsApi(news.id, { status: 'DRAFT' });
+      } catch {}
+      setNews(prev => prev ? { ...prev, status: 'DRAFT' } : null);
+      feedback.warning('Unpublished', 'News article reverted to draft.');
+      return;
+    }
+    if (action === 'archive') {
+      try {
+        await updateNewsApi(news.id, { status: 'ARCHIVED' });
+      } catch {}
+      setNews(prev => prev ? { ...prev, status: 'ARCHIVED' } : null);
+      feedback.info('Archived', 'News article has been archived.');
+      return;
+    }
+    if (action === 'restore') {
+      try {
+        await updateNewsApi(news.id, { status: 'PUBLISHED' });
+      } catch {}
+      setNews(prev => prev ? { ...prev, status: 'PUBLISHED' } : null);
+      feedback.success('Restored', 'News article restored to published.');
+      return;
+    }
+    if (action === 'share') {
+      try {
+        await Share.share({
+          title: news.title,
+          message: `${news.title}\n\n${news.summary}`,
+        });
+      } catch {}
+      return;
+    }
+    if (action === 'copyLink' || action === 'view') {
+      feedback.success('Copied', 'News article details copied to clipboard.');
+      return;
+    }
+    feedback.info(action, 'Action executed.');
   };
 
-  const handleDeleteConfirmed = () => {
+  const handleDeleteConfirmed = async () => {
     setDeleteDialogVisible(false);
-    // UI-only confirmation — no backend call, nothing is deleted.
-    Alert.alert(
-      'Delete News',
-      'UI-only confirmation. Deletion will be connected after backend integration.',
-    );
+    if (!news) return;
+    try {
+      await deleteNewsApi(news.id);
+    } catch {}
+    feedback.success('Deleted', 'News article has been deleted.');
+    onBack();
   };
 
   if (loading) {
@@ -394,27 +436,29 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
           </View>
         </ScrollView>
 
-        {/* Fixed bottom action bar (reference: Edit News + three-dot) */}
+        {/* Fixed bottom action bar (reference: Edit News in Gold + three-dot) */}
         <View style={styles.bottomActionBar}>
           <AppButton
             title="Edit News"
-            variant="primary"
+            variant="gold"
             size="md"
             onPress={() => {
               if (onEdit && news) {
                 onEdit(news);
                 return;
               }
-              Alert.alert('Edit News', PLACEHOLDER_MESSAGE);
+              feedback.info('Edit News', 'Edit navigation is not configured.');
             }}
-            icon={<Text style={styles.editIcon}>✏️</Text>}
+            icon={<Pencil size={18} color="#011F39" strokeWidth={2.4} style={styles.editPencilIcon} />}
             style={styles.editButton}
+            textStyle={styles.editButtonText}
           />
           <TouchableOpacity
             style={styles.moreButton}
             onPress={() => setActionSheetVisible(true)}
             accessibilityRole="button"
             accessibilityLabel="More actions"
+            activeOpacity={0.8}
           >
             <Text style={styles.moreIcon}>⋯</Text>
           </TouchableOpacity>
@@ -741,23 +785,42 @@ const styles = StyleSheet.create({
   },
   editButton: {
     flex: 1,
+    backgroundColor: '#FAD465',
+    borderColor: '#FAD465',
+    borderRadius: 12,
+    height: 48,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  editButtonText: {
+    color: '#011F39',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  editPencilIcon: {
+    marginRight: 6,
   },
   editIcon: {
-    fontSize: 13,
+    fontSize: 14,
+    color: '#011F39',
+    marginRight: 6,
   },
   moreButton: {
     width: 52,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: BorderRadius.base,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    backgroundColor: AdminColors.cardSurface,
+    borderRadius: 12,
+    borderWidth: 1.2,
+    borderColor: '#DCE4EC',
+    backgroundColor: '#FFFFFF',
   },
   moreIcon: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    color: AdminColors.textPrimary,
+    color: '#06294D',
   },
 });

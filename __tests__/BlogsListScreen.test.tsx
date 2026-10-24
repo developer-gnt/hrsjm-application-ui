@@ -100,11 +100,11 @@ describe('BlogsListScreen Functional Verification (Phase 3)', () => {
     expect(allTexts).toContain('Create, manage and publish blog articles.');
     expect(allTexts).toContain('Add Blog');
 
-    // Trigger Add Blog button
-    const addBtn = root.findByProps({ accessibilityLabel: 'Add Blog' });
-    expect(addBtn).toBeDefined();
+    // Trigger Add Blog button (header or FAB)
+    const addBtns = root.findAllByProps({ accessibilityLabel: 'Add Blog' });
+    expect(addBtns.length).toBeGreaterThan(0);
     act(() => {
-      addBtn.props.onPress();
+      addBtns[0].props.onPress();
     });
     expect(onAddBlogMock).toHaveBeenCalledTimes(1);
   });
@@ -137,11 +137,11 @@ describe('BlogsListScreen Functional Verification (Phase 3)', () => {
     });
 
     const root = renderer!.root;
-    const editButtons = root.findAllByProps({ accessibilityLabel: `Edit ${mockBlogItems[0].title}` });
-    expect(editButtons.length).toBeGreaterThan(0);
+    const cards = root.findAllByType(BlogCard);
+    expect(cards.length).toBeGreaterThan(0);
 
     act(() => {
-      editButtons[0].props.onPress();
+      cards[0].props.onEditPress(mockBlogItems[0]);
     });
     expect(onEditBlogMock).toHaveBeenCalledWith(mockBlogItems[0]);
   });

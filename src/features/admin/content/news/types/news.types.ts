@@ -94,7 +94,7 @@ export interface CreateNewsFormState {
   publishDate: string | null;
   /** 24h HH:mm string. */
   publishTime: string | null;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: NewsStatus;
   /** UI-only preference; no backend field exists yet. */
   allowComments: boolean;
 }

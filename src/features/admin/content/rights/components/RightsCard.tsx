@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Image,
   StyleSheet,
@@ -12,55 +12,69 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import { AppCard } from '../../../../../core/components';
+import { Eye, EllipsisVertical } from '../../../../../core/components/icons';
 import type { RightsListItem, RightsStatus } from '../types/rights.types';
 
 /**
- * Compact admin-table column proportions shared by the list header row and
- * every article row, so labels always align with the data columns.
+ * Column proportions for table header and article card alignment matching reference screenshot.
  */
 export const RIGHTS_COL_FLEX = {
-  details: 2.6,
-  category: 0.9,
-  date: 0.8,
+  details: 3.0,
+  category: 1.1,
+  date: 1.0,
   status: 1.0,
-  views: 0.9,
-  action: 0.95,
+  views: 0.75,
+  action: 0.45,
 } as const;
 
-/**
- * Category chip tones per the reference (subtle pastel per category).
- * Fixed mapping using the existing theme tokens — replace with backend
- * category metadata when confirmed.
- */
-const CATEGORY_CHIP_TONES: Record<string, { bg: string; text: string }> = {
-  Constitution: { bg: AdminColors.infoLight, text: AdminColors.info },
-  'Women Rights': { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
-  'Child Rights': { bg: AdminColors.primaryLight, text: AdminColors.primary },
-  'Senior Citizens': { bg: AdminColors.accentGoldLight, text: AdminColors.accentGold },
-  'Labour Rights': { bg: AdminColors.statusExpiringLight, text: AdminColors.statusExpiring },
-  'Minority Rights': { bg: AdminColors.statusPendingLight, text: AdminColors.statusPending },
-  Property: { bg: AdminColors.successLight, text: AdminColors.success },
-  Environment: { bg: AdminColors.successLight, text: AdminColors.success },
+/** Category chip tones: pale-blue surface with navy text per approved screenshot. */
+export const RightsCategoryChip: React.FC<{ category: string }> = ({ category }) => {
+  return (
+    <View style={styles.categoryChip}>
+      <Text style={styles.categoryChipText} numberOfLines={2}>
+        {category}
+      </Text>
+    </View>
+  );
 };
 
-const categoryChipTone = (category: string): { bg: string; text: string } =>
-  CATEGORY_CHIP_TONES[category] ?? { bg: AdminColors.primaryLight, text: AdminColors.primary };
-
-/** Status badge tones per the reference: Published green, Draft amber, Archived red. */
-export const RIGHTS_STATUS_TONES: Record<RightsStatus, { bg: string; text: string }> = {
-  PUBLISHED: { bg: AdminColors.statusActiveLight, text: AdminColors.statusActive },
-  DRAFT: { bg: AdminColors.warningLight, text: AdminColors.warning },
-  ARCHIVED: { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
-};
-
+/** Status labels per rights status */
 export const RIGHTS_STATUS_LABELS: Record<RightsStatus, string> = {
   PUBLISHED: 'Published',
   DRAFT: 'Draft',
   ARCHIVED: 'Archived',
 };
 
-/** Raw count -> compact display (2100 -> "2.1K", 980 -> "980"). */
+/** Status badge styles with semantic dot indicator matching wireframe. */
+export const RIGHTS_STATUS_TONES: Record<
+  RightsStatus,
+  { bg: string; text: string; dot: string; label: string; border?: string }
+> = {
+  PUBLISHED: {
+    bg: '#E8F8F0',
+    text: '#16A34A',
+    dot: '#16A34A',
+    label: 'Published',
+    border: '#A7F3D0',
+  },
+  DRAFT: {
+    bg: '#FEF3C7',
+    text: '#D97706',
+    dot: '#D97706',
+    label: 'Draft',
+    border: '#FDE68A',
+  },
+  ARCHIVED: {
+    bg: '#FEE2E2',
+    text: '#DC2626',
+    dot: '#DC2626',
+    label: 'Archived',
+    border: '#FECACA',
+  },
+};
+
+export const RIGHTS_STATUS_CONFIG = RIGHTS_STATUS_TONES;
+
 export const formatRightsViews = (views: number): string => {
   if (views < 1000) {
     return String(views);
@@ -70,58 +84,37 @@ export const formatRightsViews = (views: number): string => {
   return `${text}K`;
 };
 
-/**
- * Single-line category chip (same inline approach as the Blog/News rows so
- * long labels shrink to one line instead of wrapping).
- */
-export const RightsCategoryChip: React.FC<{ category: string }> = ({ category }) => {
-  const tone = categoryChipTone(category);
-
-  return (
-    <View style={[styles.categoryChip, { backgroundColor: tone.bg }]}>
-      <Text
-        style={[styles.categoryChipText, { color: tone.text }]}
-        adjustsFontSizeToFit
-        minimumFontScale={0.72}
-        numberOfLines={1}
-      >
-        {category}
-      </Text>
-    </View>
-  );
-};
-
-/** Column labels above the article rows (reference "table header"). */
+/** Table column header row matching reference screenshot. */
 export const RightsListHeader: React.FC = () => {
   return (
     <View style={styles.listHeader} accessible accessibilityRole="header">
       <View style={styles.colDetails}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          Title
+        <Text style={styles.listHeaderText} numberOfLines={1}>
+          Rights Details
         </Text>
       </View>
       <View style={styles.colCategory}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={styles.listHeaderText} numberOfLines={1}>
           Category
         </Text>
       </View>
       <View style={styles.colDate}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          Last Updated ↓
+        <Text style={styles.listHeaderText} numberOfLines={1}>
+          Last Updated
         </Text>
       </View>
       <View style={styles.colStatus}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={styles.listHeaderText} numberOfLines={1}>
           Status
         </Text>
       </View>
       <View style={styles.colViews}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={styles.listHeaderText} numberOfLines={1}>
           Views
         </Text>
       </View>
       <View style={styles.colAction}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={styles.listHeaderText} numberOfLines={1}>
           Action
         </Text>
       </View>
@@ -129,295 +122,309 @@ export const RightsListHeader: React.FC = () => {
   );
 };
 
-interface RightsCardProps {
+export interface RightsCardProps {
   article: RightsListItem;
   /** Fired when the row body is pressed. */
   onPress?: (article: RightsListItem) => void;
-  /** Fired when the row Edit button is pressed. */
-  onEditPress?: (article: RightsListItem) => void;
   /** Fired when the three-dot action menu is pressed. */
-  onMorePress?: (article: RightsListItem) => void;
+  onMorePress?: (
+    article: RightsListItem,
+    anchor?: { x: number; y: number; width: number; height: number },
+  ) => void;
 }
 
 export const RightsCard: React.FC<RightsCardProps> = ({
   article,
   onPress,
-  onEditPress,
   onMorePress,
 }) => {
   const [imageFailed, setImageFailed] = useState(false);
+  const moreButtonRef = useRef<any>(null);
+
   const thumbnailUri =
     article.thumbnailUrl && !imageFailed ? article.thumbnailUrl : undefined;
 
-  const badgeTone = RIGHTS_STATUS_TONES[article.status];
+  const statusConfig =
+    RIGHTS_STATUS_CONFIG[article.status] ?? RIGHTS_STATUS_CONFIG.PUBLISHED;
 
   const handlePress = () => onPress?.(article);
-  const handleEdit = () => (onEditPress ? onEditPress(article) : onPress?.(article));
-  const handleMore = () => onMorePress?.(article);
+
+  const handleMore = () => {
+    if (moreButtonRef.current && typeof moreButtonRef.current.measureInWindow === 'function') {
+      let called = false;
+      try {
+        moreButtonRef.current.measureInWindow((x: number, y: number, width: number, height: number) => {
+          called = true;
+          onMorePress?.(article, { x, y, width, height });
+        });
+      } catch {
+        // ignore
+      }
+      if (!called) {
+        onMorePress?.(article);
+      }
+    } else {
+      onMorePress?.(article);
+    }
+  };
 
   return (
-    <AppCard style={styles.card} padding="sm" onPress={handlePress}>
-      <View style={styles.row}>
-        {/* Article details: thumbnail + title + description */}
-        <View style={styles.colDetails}>
-          <View style={styles.detailsRow}>
-            {thumbnailUri ? (
-              <Image
-                source={{ uri: thumbnailUri }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-                onError={() => setImageFailed(true)}
-              />
-            ) : (
-              <View style={[styles.thumbnail, styles.thumbnailFallback]}>
-                <Text style={styles.thumbnailFallbackIcon}>⚖️</Text>
-              </View>
-            )}
-            <View style={styles.detailsText}>
-              <Text style={styles.title} numberOfLines={2}>
-                {article.title}
-              </Text>
-              <Text style={styles.description} numberOfLines={2}>
-                {article.description}
-              </Text>
-            </View>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={handlePress}
+      activeOpacity={0.92}
+      accessibilityRole="button"
+      accessibilityLabel={`Rights article: ${article.title}`}
+    >
+      {/* Top area: Thumbnail + (Title & Excerpt) + Right Action Button */}
+      <View style={styles.topRow}>
+        {thumbnailUri ? (
+          <Image
+            source={{ uri: thumbnailUri }}
+            style={styles.thumbnail}
+            resizeMode="cover"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <View style={[styles.thumbnail, styles.thumbnailFallback]}>
+            <Text style={styles.thumbnailFallbackIcon}>⚖️</Text>
           </View>
-        </View>
+        )}
 
-        {/* Category */}
-        <View style={styles.colCategory}>
-          <RightsCategoryChip category={article.category} />
-        </View>
-
-        {/* Last updated */}
-        <View style={styles.colDate}>
-          <Text
-            style={styles.dateText}
-            adjustsFontSizeToFit
-            minimumFontScale={0.75}
-            numberOfLines={1}
-          >
-            {article.lastUpdatedDate}
+        <View style={styles.detailsText}>
+          <Text style={styles.title} numberOfLines={1}>
+            {article.title}
           </Text>
-          <Text
-            style={styles.timeText}
-            adjustsFontSizeToFit
-            minimumFontScale={0.75}
-            numberOfLines={1}
-          >
-            {article.lastUpdatedTime}
+          <Text style={styles.description} numberOfLines={2}>
+            {article.description}
           </Text>
         </View>
 
-        {/* Status */}
-        <View style={styles.colStatus}>
-          <View style={[styles.statusBadge, { backgroundColor: badgeTone.bg }]}>
-            <Text
-              style={[styles.statusText, { color: badgeTone.text }]}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-              numberOfLines={1}
-            >
-              {RIGHTS_STATUS_LABELS[article.status]}
-            </Text>
-          </View>
-        </View>
-
-        {/* Views */}
-        <View style={styles.colViews}>
-          <View style={styles.viewsRow}>
-            <Text style={styles.viewsIcon}>👁</Text>
-            <Text style={styles.viewsText} adjustsFontSizeToFit numberOfLines={1}>
-              {formatRightsViews(article.views)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Action: Edit + three-dot menu */}
-        <View style={styles.colAction}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleEdit}
-            accessibilityRole="button"
-            accessibilityLabel={`Edit ${article.title}`}
-          >
-            <Text style={styles.actionButtonText} adjustsFontSizeToFit numberOfLines={1}>
-              Edit
-            </Text>
-          </TouchableOpacity>
+        <View ref={moreButtonRef} collapsable={false} style={styles.actionContainer}>
           <TouchableOpacity
             style={styles.moreButton}
             onPress={handleMore}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel={`More actions for ${article.title}`}
+            accessibilityLabel={`Actions for ${article.title}`}
+            activeOpacity={0.8}
           >
-            <Text style={styles.moreIcon}>⋮</Text>
+            <EllipsisVertical size={18} color="#06294D" strokeWidth={2.4} />
           </TouchableOpacity>
         </View>
       </View>
-    </AppCard>
+
+      {/* Metadata area: Category | Date & Time | Status badge | Views */}
+      <View style={styles.metaRow}>
+        <RightsCategoryChip category={article.category} />
+
+        <View style={styles.metaDivider} />
+
+        <View style={styles.dateBlock}>
+          <Text style={styles.dateText} numberOfLines={1}>
+            {article.lastUpdatedDate}
+          </Text>
+          <Text style={styles.timeText} numberOfLines={1}>
+            {article.lastUpdatedTime}
+          </Text>
+        </View>
+
+        <View style={styles.metaDivider} />
+
+        <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
+          <View style={[styles.statusDot, { backgroundColor: statusConfig.dot }]} />
+          <Text style={[styles.statusText, { color: statusConfig.text }]} numberOfLines={1}>
+            {statusConfig.label}
+          </Text>
+        </View>
+
+        <View style={styles.viewsRow}>
+          <Eye size={16} color="#06294D" strokeWidth={2} />
+          <Text style={styles.viewsText} numberOfLines={1}>
+            {formatRightsViews(article.views)}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    marginVertical: Spacing.xs,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: AdminColors.border,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DCE4EC',
+    padding: 13,
+    marginVertical: 6,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.xs,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md + Spacing.sm,
-    paddingVertical: Spacing.xs,
-    gap: Spacing.xs,
-  },
-  listHeaderText: {
-    ...Typography.caption,
-    fontWeight: '600',
-    color: AdminColors.textMuted,
-  },
-
-  // Shared column flex proportions (must match list header).
-  colDetails: {
-    flex: RIGHTS_COL_FLEX.details,
-  },
-  colCategory: {
-    flex: RIGHTS_COL_FLEX.category,
-    alignItems: 'flex-start',
-  },
-  colDate: {
-    flex: RIGHTS_COL_FLEX.date,
-  },
-  colStatus: {
-    flex: RIGHTS_COL_FLEX.status,
-    alignItems: 'flex-start',
-  },
-  colViews: {
-    flex: RIGHTS_COL_FLEX.views,
-  },
-  colAction: {
-    flex: RIGHTS_COL_FLEX.action,
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 2,
-  },
-
-  detailsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
   },
   thumbnail: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.md,
-    backgroundColor: AdminColors.background,
+    width: 64,
+    height: 64,
+    borderRadius: 14,
+    backgroundColor: '#EDF2F7',
   },
   thumbnailFallback: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   thumbnailFallbackIcon: {
-    fontSize: 16,
+    fontSize: 26,
   },
   detailsText: {
     flex: 1,
-    minWidth: 0,
-    marginLeft: 6,
-    gap: 2,
+    marginLeft: 12,
+    marginRight: 8,
+    justifyContent: 'center',
   },
   title: {
-    ...Typography.bodyMedium,
-    fontSize: 11,
-    lineHeight: 14,
-    color: AdminColors.textPrimary,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '800',
+    color: '#011F39',
+    letterSpacing: -0.2,
   },
   description: {
-    ...Typography.caption,
-    fontSize: 9.5,
-    lineHeight: 12.5,
-    color: AdminColors.textSecondary,
+    fontSize: 12.5,
+    lineHeight: 17,
+    color: '#718096',
+    marginTop: 3,
   },
-
+  actionContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  moreButton: {
+    backgroundColor: '#F0F4F8',
+    width: 36,
+    height: 44,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 11,
+    paddingTop: 9,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E2E8F0',
+  },
   categoryChip: {
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    backgroundColor: '#E8F2FA',
+    borderRadius: 8,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   categoryChipText: {
-    ...Typography.caption,
-    fontSize: 7.5,
-    lineHeight: 10,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
+    color: '#0B2F52',
+    textAlign: 'center',
   },
-
+  metaDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#DCE4EC',
+    marginHorizontal: 8,
+  },
+  dateBlock: {
+    justifyContent: 'center',
+  },
   dateText: {
-    ...Typography.badge,
-    fontSize: 10.5,
-    fontWeight: '500',
-    color: AdminColors.textPrimary,
+    fontSize: 11.5,
+    lineHeight: 15,
+    fontWeight: '600',
+    color: '#0B2F52',
   },
   timeText: {
-    ...Typography.caption,
-    fontSize: 9.5,
-    lineHeight: 12,
-    color: AdminColors.textSecondary,
-    marginTop: 2,
+    fontSize: 10.5,
+    lineHeight: 13,
+    color: '#718096',
   },
-
   statusBadge: {
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    marginRight: 6,
   },
   statusText: {
-    fontSize: 8.5,
-    lineHeight: 10.5,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
   },
-
   viewsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-  },
-  viewsIcon: {
-    fontSize: 8.5,
+    gap: 5,
+    marginLeft: 'auto',
   },
   viewsText: {
-    ...Typography.caption,
-    fontSize: 9.5,
-    fontWeight: '500',
-    color: AdminColors.textPrimary,
-  },
-
-  actionButton: {
-    backgroundColor: AdminColors.primaryLight,
-    borderRadius: BorderRadius.sm,
-    paddingVertical: 3,
-    paddingHorizontal: 7,
-  },
-  actionButtonText: {
-    ...Typography.caption,
+    fontSize: 12.5,
     fontWeight: '600',
-    color: AdminColors.primary,
+    color: '#06294D',
   },
-  moreButton: {
-    padding: 1,
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 4,
   },
-  moreIcon: {
-    fontSize: 11,
+  listHeaderText: {
+    fontSize: 12.5,
     fontWeight: '700',
-    color: AdminColors.textMuted,
+    color: '#06294D',
+  },
+  colDetails: {
+    flex: RIGHTS_COL_FLEX.details,
+    paddingRight: 8,
+  },
+  colCategory: {
+    flex: RIGHTS_COL_FLEX.category,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  colDate: {
+    flex: RIGHTS_COL_FLEX.date,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  colStatus: {
+    flex: RIGHTS_COL_FLEX.status,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  colViews: {
+    flex: RIGHTS_COL_FLEX.views,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  colAction: {
+    flex: RIGHTS_COL_FLEX.action,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
 });

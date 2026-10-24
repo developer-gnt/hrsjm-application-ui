@@ -104,28 +104,43 @@ export const getBlogsList = async (
   if (params?.page) queryParams.page = params.page;
   if (params?.limit) queryParams.limit = params.limit;
 
-  const res = await apiClient.get<BackendBlogsListResponse>(
+  const res = await apiClient.get<any>(
     ApiRoutes.BLOGS.BASE,
     { params: queryParams },
   );
 
-  const rawData = res.data;
+  const rawData: any = (res as any)?.data?.items
+    ? (res as any).data
+    : ((res as any)?.data ?? res);
+
+  const items: BackendBlogItem[] = Array.isArray(rawData?.items)
+    ? rawData.items
+    : Array.isArray(rawData)
+      ? rawData
+      : [];
+
+  const rawStats = rawData?.stats;
+  const stats: BlogStatsSummary = (rawStats && (rawStats.total > 0 || rawStats.published > 0 || rawStats.drafts > 0))
+    ? rawStats
+    : {
+        total: items.length,
+        published: items.filter(b => b.status === 'PUBLISHED').length,
+        drafts: items.filter(b => b.status === 'DRAFT').length,
+        archived: items.filter(b => b.status === 'ARCHIVED').length,
+      };
+
   return {
-    blogs: (rawData.items || []).map(mapBackendBlogToUi),
-    stats: rawData.stats || {
-      total: 0,
-      published: 0,
-      drafts: 0,
-      archived: 0,
-    },
+    blogs: items.map(mapBackendBlogToUi),
+    stats,
   };
 };
 
 export const getBlogDetails = async (id: string): Promise<BlogListItem> => {
-  const res = await apiClient.get<BackendBlogItem>(
+  const res = await apiClient.get<any>(
     ApiRoutes.BLOGS.DETAILS(id),
   );
-  return mapBackendBlogToUi(res.data);
+  const data: BackendBlogItem = (res as any)?.data?.data ?? (res as any)?.data ?? res;
+  return mapBackendBlogToUi(data);
 };
 
 export const createBlogApi = async (
@@ -148,11 +163,12 @@ export const createBlogApi = async (
     allow_comments: form.allowComments,
   };
 
-  const res = await apiClient.post<BackendBlogItem>(
+  const res = await apiClient.post<any>(
     ApiRoutes.BLOGS.BASE,
     payload,
   );
-  return mapBackendBlogToUi(res.data);
+  const data: BackendBlogItem = (res as any)?.data?.data ?? (res as any)?.data ?? res;
+  return mapBackendBlogToUi(data);
 };
 
 export const updateBlogApi = async (
@@ -173,11 +189,12 @@ export const updateBlogApi = async (
   if (form.featured !== undefined) payload.featured = form.featured;
   if (form.allowComments !== undefined) payload.allow_comments = form.allowComments;
 
-  const res = await apiClient.patch<BackendBlogItem>(
+  const res = await apiClient.patch<any>(
     ApiRoutes.BLOGS.DETAILS(id),
     payload,
   );
-  return mapBackendBlogToUi(res.data);
+  const data: BackendBlogItem = (res as any)?.data?.data ?? (res as any)?.data ?? res;
+  return mapBackendBlogToUi(data);
 };
 
 export const deleteBlogApi = async (id: string): Promise<void> => {

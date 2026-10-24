@@ -10,6 +10,8 @@ import {
   AdminColors,
   Spacing,
   BorderRadius,
+  FontFamilies,
+  Typography,
 } from '../../../../core';
 import { Menu, Bell } from '../../../../core/components/icons';
 
@@ -258,33 +260,41 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   pageTitle: {
+    fontFamily: FontFamilies.display,
     fontSize: 24,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontWeight: '700',
+    color: AdminColors.textPrimary,
     letterSpacing: -0.3,
   },
   pageSubtitle: {
+    ...Typography.body,
     fontSize: 13,
-    color: '#64748B',
+    color: AdminColors.textSecondary,
     marginTop: 3,
     lineHeight: 18,
   },
   signupButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F2860',
+    backgroundColor: AdminColors.accentGold,
     paddingVertical: 7,
     paddingHorizontal: 12,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.button,
     gap: 5,
     marginTop: 2,
+    elevation: 2,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
   },
   signupButtonIcon: {
     fontSize: 12,
+    color: AdminColors.primaryDark,
   },
   signupButtonText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: AdminColors.primaryDark,
   },
 });

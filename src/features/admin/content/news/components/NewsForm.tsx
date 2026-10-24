@@ -40,6 +40,7 @@ import type {
   CreateNewsFieldErrors,
   CreateNewsFormState,
   NewsListItem,
+  NewsStatus,
 } from '../types/news.types';
 
 export type NewsFormMode = 'create' | 'edit';
@@ -144,7 +145,7 @@ interface PrimaryConfirmConfig {
   title: string;
   message: string;
   confirmLabel: string;
-  targetStatus: 'DRAFT' | 'PUBLISHED';
+  targetStatus: NewsStatus;
 }
 
 interface FieldShellProps {
@@ -290,11 +291,6 @@ export const NewsForm: React.FC<NewsFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null);
 
-  // Content Selection tracking for rich text formatting
-  const [contentSelection, setContentSelection] = useState<{ start: number; end: number }>({
-    start: 0,
-    end: 0,
-  });
 
   // Picker/overlay visibility
   const [imageChooserVisible, setImageChooserVisible] = useState(false);
@@ -370,65 +366,6 @@ export const NewsForm: React.FC<NewsFormProps> = ({
     return true;
   };
 
-  /** Applies rich markdown/formatting tokens to the content input. */
-  const applyFormat = (
-    type: 'bold' | 'italic' | 'underline' | 'bullet' | 'number' | 'link' | 'heading',
-  ) => {
-    const currentContent = form.content || '';
-    const { start, end } = contentSelection;
-    const selectedText = currentContent.slice(start, end);
-    const before = currentContent.slice(0, start);
-    const after = currentContent.slice(end);
-    let inserted = '';
-
-    switch (type) {
-      case 'bold':
-        inserted = selectedText ? `**${selectedText}**` : '**Bold Text**';
-        break;
-      case 'italic':
-        inserted = selectedText ? `*${selectedText}*` : '*Italic Text*';
-        break;
-      case 'underline':
-        inserted = selectedText ? `<u>${selectedText}</u>` : '<u>Underlined Text</u>';
-        break;
-      case 'bullet':
-        if (selectedText) {
-          inserted = selectedText
-            .split('\n')
-            .map(line => (line.startsWith('• ') ? line : `• ${line}`))
-            .join('\n');
-        } else {
-          const prefix = before.length > 0 && !before.endsWith('\n') ? '\n' : '';
-          inserted = `${prefix}• `;
-        }
-        break;
-      case 'number':
-        if (selectedText) {
-          inserted = selectedText
-            .split('\n')
-            .map((line, idx) => `${idx + 1}. ${line.replace(/^\d+\.\s*/, '')}`)
-            .join('\n');
-        } else {
-          const prefix = before.length > 0 && !before.endsWith('\n') ? '\n' : '';
-          inserted = `${prefix}1. `;
-        }
-        break;
-      case 'link':
-        inserted = selectedText ? `[${selectedText}](https://example.com)` : '[Link Title](https://example.com)';
-        break;
-      case 'heading':
-        if (selectedText) {
-          inserted = `\n## ${selectedText}\n`;
-        } else {
-          const prefix = before.length > 0 && !before.endsWith('\n') ? '\n\n' : '';
-          inserted = `${prefix}## Subheading\n`;
-        }
-        break;
-    }
-
-    const newContent = before + inserted + after;
-    updateField('content', newContent);
-  };
 
   // Draft Save Handler (connected to backend)
   const handleSaveDraft = async () => {
@@ -668,98 +605,18 @@ export const NewsForm: React.FC<NewsFormProps> = ({
               </FieldShell>
             </NewsFormSection>
 
-            {/* 2. Content with Interactive Rich Toolbar */}
+            {/* 2. Content */}
             <NewsFormSection icon="📝" title="Content">
               <FieldShell
                 label="Content"
                 required
                 error={errors.content}
-                helperText="Use the formatting toolbar to style headings, bold text, italics, lists, and links."
               >
-                {/* Active Formatting Toolbar */}
-                <View style={styles.toolbar}>
-                  {/* Heading Style Button */}
-                  <TouchableOpacity
-                    style={styles.toolbarParagraph}
-                    onPress={() => applyFormat('heading')}
-                    activeOpacity={0.7}
-                    accessibilityLabel="Insert Subheading"
-                  >
-                    <Text style={styles.toolbarParagraphText}>Heading</Text>
-                    <Text style={styles.toolbarChevron}>⌄</Text>
-                  </TouchableOpacity>
-
-                  <View style={styles.toolbarDivider} />
-
-                  {/* Bold */}
-                  <TouchableOpacity
-                    style={styles.toolbarButton}
-                    onPress={() => applyFormat('bold')}
-                    activeOpacity={0.6}
-                    accessibilityLabel="Bold Text"
-                  >
-                    <Text style={[styles.toolbarIcon, styles.toolbarBold]}>B</Text>
-                  </TouchableOpacity>
-
-                  {/* Italic */}
-                  <TouchableOpacity
-                    style={styles.toolbarButton}
-                    onPress={() => applyFormat('italic')}
-                    activeOpacity={0.6}
-                    accessibilityLabel="Italic Text"
-                  >
-                    <Text style={[styles.toolbarIcon, styles.toolbarItalic]}>I</Text>
-                  </TouchableOpacity>
-
-                  {/* Underline */}
-                  <TouchableOpacity
-                    style={styles.toolbarButton}
-                    onPress={() => applyFormat('underline')}
-                    activeOpacity={0.6}
-                    accessibilityLabel="Underline Text"
-                  >
-                    <Text style={[styles.toolbarIcon, styles.toolbarUnderline]}>U</Text>
-                  </TouchableOpacity>
-
-                  <View style={styles.toolbarDivider} />
-
-                  {/* Bullet List */}
-                  <TouchableOpacity
-                    style={styles.toolbarButton}
-                    onPress={() => applyFormat('bullet')}
-                    activeOpacity={0.6}
-                    accessibilityLabel="Bullet List"
-                  >
-                    <Text style={styles.toolbarIcon}>•</Text>
-                  </TouchableOpacity>
-
-                  {/* Numbered List */}
-                  <TouchableOpacity
-                    style={styles.toolbarButton}
-                    onPress={() => applyFormat('number')}
-                    activeOpacity={0.6}
-                    accessibilityLabel="Numbered List"
-                  >
-                    <Text style={styles.toolbarIcon}>1.</Text>
-                  </TouchableOpacity>
-
-                  {/* Hyperlink */}
-                  <TouchableOpacity
-                    style={styles.toolbarButton}
-                    onPress={() => applyFormat('link')}
-                    activeOpacity={0.6}
-                    accessibilityLabel="Insert Link"
-                  >
-                    <Text style={styles.toolbarIcon}>🔗</Text>
-                  </TouchableOpacity>
-                </View>
-
                 {/* Content TextArea */}
                 <TextInput
                   value={form.content}
                   onChangeText={value => updateField('content', value)}
-                  onSelectionChange={e => setContentSelection(e.nativeEvent.selection)}
-                  placeholder="Write the full news content here... Supports markdown headings, lists, and links."
+                  placeholder="Write the full content here..."
                   placeholderTextColor={AdminColors.textMuted}
                   multiline
                   textAlignVertical="top"
@@ -970,7 +827,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
               />
               <AppButton
                 title={primaryAction.label}
-                variant="primary"
+                variant="gold"
                 size="md"
                 onPress={primaryAction.onPress}
                 loading={isSubmitting}
@@ -1200,8 +1057,7 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     minHeight: 180,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
+    borderRadius: BorderRadius.base,
   },
 
   // Rich Formatting Toolbar

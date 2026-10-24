@@ -135,16 +135,30 @@ export const getRightsList = async (
     { params: queryParams },
   );
 
-  const payload: BackendRightsListResponse = res.data?.data || res.data;
+  const payload: any = (res as any)?.data?.items
+    ? (res as any).data
+    : ((res as any)?.data ?? res);
+
+  const items: BackendRightItem[] = Array.isArray(payload?.items)
+    ? payload.items
+    : Array.isArray(payload)
+      ? payload
+      : [];
+
+  const rawStats = payload?.stats;
+  const stats: RightsStatsSummary = (rawStats && (rawStats.total > 0 || rawStats.published > 0 || rawStats.drafts > 0))
+    ? rawStats
+    : {
+        total: items.length,
+        published: items.filter(r => r.status === 'PUBLISHED').length,
+        drafts: items.filter(r => r.status === 'DRAFT').length,
+        archived: items.filter(r => r.status === 'ARCHIVED').length,
+      };
+
   return {
-    rights: (payload.items || []).map(mapBackendRightToUi),
-    stats: payload.stats || {
-      total: 0,
-      published: 0,
-      drafts: 0,
-      archived: 0,
-    },
-    totalCount: payload.totalCount ?? (payload.items?.length || 0),
+    rights: items.map(mapBackendRightToUi),
+    stats,
+    totalCount: payload?.totalCount ?? items.length,
   };
 };
 
@@ -152,7 +166,7 @@ export const getRightDetails = async (idOrSlug: string): Promise<RightsArticle> 
   const res = await apiClient.get<any>(
     ApiRoutes.RIGHTS.DETAILS(idOrSlug),
   );
-  const payload: BackendRightItem = res.data?.data || res.data;
+  const payload: BackendRightItem = (res as any)?.data?.data ?? (res as any)?.data ?? res;
   return mapBackendRightToUi(payload);
 };
 
@@ -176,13 +190,13 @@ export const createRightApi = async (
     ApiRoutes.RIGHTS.BASE,
     payload,
   );
-  const data = res.data?.data || res.data;
+  const data = (res as any)?.data?.data ?? (res as any)?.data ?? res;
   return mapBackendRightToUi(data);
 };
 
 export const updateRightApi = async (
   id: string,
-  form: Partial<RightsArticleFormState> & { status?: RightsStatus },
+  form: Partial<Omit<RightsArticleFormState, 'status'>> & { status?: RightsStatus },
 ): Promise<RightsArticle> => {
   const payload: any = {};
   if (form.title) payload.title = form.title;
@@ -200,7 +214,7 @@ export const updateRightApi = async (
     ApiRoutes.RIGHTS.DETAILS(id),
     payload,
   );
-  const data = res.data?.data || res.data;
+  const data = (res as any)?.data?.data ?? (res as any)?.data ?? res;
   return mapBackendRightToUi(data);
 };
 

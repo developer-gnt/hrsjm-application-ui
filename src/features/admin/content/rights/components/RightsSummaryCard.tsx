@@ -1,117 +1,141 @@
 import React from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { AdminColors, BorderRadius, Spacing, Typography } from '../../../../../core/theme';
+import { FileText, Clock, Check, X, type AppIconComponent } from '../../../../../core/components/icons';
 import type { RightsStatsSummary } from '../types/rights.types';
 
 interface StatCardConfig {
   key: keyof RightsStatsSummary;
   label: string;
-  icon: string;
-  backgroundColor: string;
+  Icon: AppIconComponent;
+  surfaceBg: string;
+  iconBg: string;
+  numberColor?: string;
+  labelColor?: string;
 }
 
-/** Card order/tones per the reference: Total (blue), Drafts (amber), Published (green), Archived (red). */
+/** 4 Cards in 2x2 grid matching reference screenshot: Total Articles, Drafts, Published, Archived. */
 const STAT_CARDS: StatCardConfig[] = [
   {
     key: 'total',
     label: 'Total Articles',
-    icon: '📄',
-    backgroundColor: AdminColors.primaryLight,
+    Icon: FileText,
+    surfaceBg: '#EFF6FF',
+    iconBg: '#06294D',
+    numberColor: '#0B2F52',
+    labelColor: '#34516D',
   },
   {
     key: 'drafts',
     label: 'Drafts',
-    icon: '🕐',
-    backgroundColor: AdminColors.warningLight,
+    Icon: Clock,
+    surfaceBg: '#FFF7ED',
+    iconBg: '#EA580C',
+    numberColor: '#0B2F52',
+    labelColor: '#34516D',
   },
   {
     key: 'published',
     label: 'Published',
-    icon: '✅',
-    backgroundColor: AdminColors.statusActiveLight,
+    Icon: Check,
+    surfaceBg: '#F0FDF4',
+    iconBg: '#16A34A',
+    numberColor: '#16A34A',
+    labelColor: '#15803D',
   },
   {
     key: 'archived',
     label: 'Archived',
-    icon: '❌',
-    backgroundColor: AdminColors.statusInactiveLight,
+    Icon: X,
+    surfaceBg: '#FEF2F2',
+    iconBg: '#DC2626',
+    numberColor: '#DC2626',
+    labelColor: '#B91C1C',
   },
 ];
 
-/**
- * Summary/stat row for the Know Your Rights screen.
- * Values are UI demonstration data for now (reference numbers, not backend
- * values) and will be fed by the backend once the Rights API is confirmed.
- */
+const STAT_ROWS: [StatCardConfig[], StatCardConfig[]] = [
+  [STAT_CARDS[0], STAT_CARDS[1]],
+  [STAT_CARDS[2], STAT_CARDS[3]],
+];
+
 export const RightsSummaryCard: React.FC<{
   stats: RightsStatsSummary;
   style?: ViewStyle;
 }> = ({ stats, style }) => {
   return (
-    <View style={[styles.row, style]}>
-      {STAT_CARDS.map(card => {
-        const value = stats[card.key];
+    <View style={[styles.container, style]}>
+      {STAT_ROWS.map((row, rowIndex) => (
+        <View key={rowIndex} style={styles.row}>
+          {row.map(card => {
+            const value = stats[card.key] ?? 0;
+            const IconComponent = card.Icon;
 
-        return (
-          <View
-            key={card.key}
-            style={[styles.card, { backgroundColor: card.backgroundColor }]}
-            accessible
-            accessibilityLabel={`${card.label}: ${value}`}
-            accessibilityRole="text"
-          >
-            <View style={styles.iconChip}>
-              <Text style={styles.icon}>{card.icon}</Text>
-            </View>
-            <Text style={styles.value}>{value}</Text>
-            <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit>
-              {card.label}
-            </Text>
-          </View>
-        );
-      })}
+            return (
+              <View
+                key={card.key}
+                style={[styles.card, { backgroundColor: card.surfaceBg }]}
+                accessible
+                accessibilityLabel={`${card.label}: ${value}`}
+                accessibilityRole="text"
+              >
+                <View style={[styles.iconCircle, { backgroundColor: card.iconBg }]}>
+                  <IconComponent size={17} color="#FFFFFF" strokeWidth={2.4} />
+                </View>
+                <Text style={[styles.value, card.numberColor ? { color: card.numberColor } : null]}>
+                  {value}
+                </Text>
+                <Text
+                  style={[styles.label, card.labelColor ? { color: card.labelColor } : null]}
+                  numberOfLines={1}
+                >
+                  {card.label}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      ))}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    gap: 12,
+  },
   row: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    gap: 12,
   },
   card: {
     flex: 1,
-    minHeight: 94,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xs,
+    minHeight: 104,
+    borderRadius: 14,
+    padding: 14,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconChip: {
-    width: 22,
-    height: 22,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: AdminColors.cardSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.xs,
-  },
-  icon: {
-    fontSize: 12,
+    marginBottom: 8,
   },
   value: {
-    ...Typography.metric,
-    fontSize: 19,
-    lineHeight: 24,
-    color: AdminColors.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0B2F52',
+    lineHeight: 26,
   },
   label: {
-    ...Typography.caption,
-    fontSize: 9,
-    lineHeight: 12,
-    color: AdminColors.textSecondary,
-    textAlign: 'center',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#34516D',
     marginTop: 2,
   },
 });

@@ -158,7 +158,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerIconWrap}>
-              <Calendar size={18} color="#FFFFFF" />
+              <Calendar size={18} color={BrandColors.gold} />
             </View>
             <View style={styles.headerTextWrap}>
               <Text style={styles.headerTitle}>{title}</Text>
@@ -385,6 +385,8 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     backgroundColor: BrandColors.surface,
     borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: BrandColors.border,
     overflow: 'hidden',
     ...Shadows.elevated,
   },
@@ -400,7 +402,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: BrandColors.navy,
+    backgroundColor: 'rgba(250, 212, 101, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -414,7 +416,7 @@ const styles = StyleSheet.create({
   },
   headerSelected: {
     fontSize: 12,
-    color: '#93C5FD',
+    color: BrandColors.gold,
     marginTop: 1,
     fontWeight: '600',
   },
@@ -506,8 +508,8 @@ const styles = StyleSheet.create({
     backgroundColor: BrandColors.navy,
   },
   dayButtonToday: {
-    borderWidth: 1,
-    borderColor: BrandColors.navy,
+    borderWidth: 1.5,
+    borderColor: BrandColors.goldDark,
   },
   dayText: {
     fontSize: 13,
@@ -608,7 +610,7 @@ const styles = StyleSheet.create({
   },
   footerClearText: {
     fontSize: 13,
-    color: BrandColors.danger,
+    color: BrandColors.textMuted,
     fontWeight: '600',
   },
   footerRightBtns: {
@@ -619,7 +621,7 @@ const styles = StyleSheet.create({
   footerCancelBtn: {
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 6,
+    borderRadius: BorderRadius.button,
   },
   footerCancelText: {
     fontSize: 13,
@@ -627,10 +629,10 @@ const styles = StyleSheet.create({
     color: BrandColors.textSecondary,
   },
   footerConfirmBtn: {
-    backgroundColor: BrandColors.navy,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
+    backgroundColor: BrandColors.gold,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    borderRadius: BorderRadius.button,
   },
   footerConfirmBtnDisabled: {
     opacity: 0.5,
@@ -638,7 +640,7 @@ const styles = StyleSheet.create({
   footerConfirmText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: BrandColors.navyDark,
   },
 });
 

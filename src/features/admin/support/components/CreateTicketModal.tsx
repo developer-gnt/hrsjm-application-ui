@@ -307,7 +307,7 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
                 disabled={submitting}
               >
                 {submitting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#011F39" />
                 ) : (
                   <Text style={styles.submitBtnText}>Submit Complaint</Text>
                 )}
@@ -503,10 +503,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 46,
     borderRadius: BorderRadius.lg,
-    backgroundColor: '#0F2C59',
-    shadowColor: '#0F2C59',
+    backgroundColor: '#FAD465', // HRSJM Gold as per UI/UX
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 3,
     elevation: 2,
   },
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
   submitBtnText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#011F39', // Navy text on gold background
   },
 });
 

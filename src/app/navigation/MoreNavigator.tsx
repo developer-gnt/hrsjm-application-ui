@@ -523,6 +523,9 @@ export const MoreNavigator: React.FC = () => (
           onAddNews={() =>
             navigation.navigate(AppRoutes.CREATE_NEWS as any)
           }
+          onEditNews={news =>
+            navigation.navigate(AppRoutes.EDIT_NEWS as any, { news })
+          }
         />
       )}
     </Stack.Screen>

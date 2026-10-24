@@ -181,21 +181,21 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Page Title & Date Range Header */}
+        {/* Page Title & Subtitle */}
         <View style={styles.pageHeader}>
-          <View style={styles.pageHeaderLeft}>
-            <Text style={styles.pageTitle}>Reports</Text>
-            <Text style={styles.pageSubtitle}>
-              Insights and analytics of platform activities.
-            </Text>
-          </View>
-          <View style={styles.dateSelectorWrap}>
-            <ReportDateSelector
-              selectedPreset={selectedPreset}
-              onSelectPreset={handleSelectPreset}
-              subText=""
-            />
-          </View>
+          <Text style={styles.pageTitle}>Reports</Text>
+          <Text style={styles.pageSubtitle}>
+            Insights and analytics of platform activities.
+          </Text>
+        </View>
+
+        {/* Date Range Selector Bar */}
+        <View style={styles.dateSelectorSection}>
+          <ReportDateSelector
+            selectedPreset={selectedPreset}
+            onSelectPreset={handleSelectPreset}
+            subText=""
+          />
         </View>
 
         {/* 1. TOP 4 KPI METRIC CARDS */}
@@ -973,30 +973,24 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxl + 40,
   },
   pageHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.md,
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  pageHeaderLeft: {
-    flex: 1,
-    minWidth: 180,
+    marginBottom: Spacing.sm,
   },
   pageTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
-    color: '#0F2C59',
+    color: '#0B2F52',
+    lineHeight: 28,
     letterSpacing: -0.3,
   },
   pageSubtitle: {
-    fontSize: 12,
-    color: '#64748B',
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#718096',
     marginTop: 2,
   },
-  dateSelectorWrap: {
-    alignSelf: 'flex-start',
+  dateSelectorSection: {
+    marginHorizontal: -Spacing.base,
+    marginBottom: Spacing.md,
   },
 
   /* Top 4 KPI Cards */

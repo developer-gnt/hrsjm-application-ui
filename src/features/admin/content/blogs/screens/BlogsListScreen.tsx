@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -24,6 +25,7 @@ import {
   SkeletonCard,
   feedback,
 } from '../../../../../core';
+import { Plus } from '../../../../../core/components/icons';
 import { BlogCard, BlogListHeader } from '../components/BlogCard';
 import { BlogFilterSheet } from '../components/BlogFilterSheet';
 import { BlogStatusTabs } from '../components/BlogStatusTabs';
@@ -133,6 +135,12 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
   const [activeDateRange, setActiveDateRange] = useState('ANY');
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [actionMenuBlog, setActionMenuBlog] = useState<BlogListItem | null>(null);
+  const [actionMenuAnchor, setActionMenuAnchor] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
   const [actionMenuVisible, setActionMenuVisible] = useState(false);
 
   const {
@@ -212,8 +220,12 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
     onEditBlog?.(blog);
   };
 
-  const handleBlogMenu = (blog: BlogListItem) => {
+  const handleBlogMenu = (
+    blog: BlogListItem,
+    anchor?: { x: number; y: number; width: number; height: number },
+  ) => {
     setActionMenuBlog(blog);
+    setActionMenuAnchor(anchor || null);
     setActionMenuVisible(true);
   };
 
@@ -236,8 +248,25 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
         await updateBlog(current.id, { status: 'PUBLISHED' });
         feedback.success('Restored', 'Article restored to published.');
       } else if (actionKey === 'delete') {
-        await deleteBlog(current.id);
-        feedback.success('Deleted', 'Article has been removed.');
+        Alert.alert(
+          'Delete Blog',
+          `Are you sure you want to delete "${current.title}"? This action cannot be undone.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await deleteBlog(current.id);
+                  feedback.success('Deleted', 'Article has been removed.');
+                } catch (err: any) {
+                  feedback.error('Error', err?.message || 'Delete failed.');
+                }
+              },
+            },
+          ],
+        );
       }
     } catch (err: any) {
       feedback.error('Error', err?.message || 'Action failed.');
@@ -395,6 +424,17 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
         />
+
+        {/* Floating Action Button for Create Blog */}
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={handleAddBlog}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Add Blog"
+        >
+          <Plus size={26} color="#011F39" strokeWidth={2.6} />
+        </TouchableOpacity>
       </SafeAreaView>
 
       <BlogFilterSheet
@@ -409,10 +449,12 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
       <BlogActionMenu
         visible={actionMenuVisible}
         blog={actionMenuBlog}
+        anchor={actionMenuAnchor}
         onAction={handleActionMenuSelect}
         onClose={() => {
           setActionMenuVisible(false);
           setActionMenuBlog(null);
+          setActionMenuAnchor(null);
         }}
       />
     </View>
@@ -551,5 +593,22 @@ const styles = StyleSheet.create({
   emptyContainer: {
     flexGrow: 1,
     justifyContent: 'center',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FAD465',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 99,
   },
 });

@@ -6,8 +6,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AdminColors,
   BorderRadius,
@@ -16,22 +16,12 @@ import {
 } from '../../../../../core/theme';
 import type { BlogListItem, BlogStatus } from '../types/blog.types';
 
-/**
- * Three-dot action menu for a blog row, rendered as a bottom action sheet that
- * matches the News details action menu pattern. ALL actions are UI-only
- * placeholders in this phase — no backend calls, no endpoints, nothing is
- * persisted. The placeholder copy says so.
- *
- * Implemented as a Modal instead of Alert.alert because Android renders at
- * most three Alert buttons, which silently dropped Delete/Cancel.
- */
-
-const PLACEHOLDER_MESSAGE =
-  'This is a UI placeholder. It will be connected after backend integration.';
-
-const showPlaceholder = (action: string) => {
-  Alert.alert(action, PLACEHOLDER_MESSAGE);
-};
+export interface BlogActionMenuAnchor {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 interface BlogActionRow {
   key: string;
@@ -40,7 +30,7 @@ interface BlogActionRow {
   destructive?: boolean;
 }
 
-/** Actions per status per the reference (Archived rows offer Restore). */
+/** Actions per status matching the approved wireframe. */
 const actionsForStatus = (status: BlogStatus): BlogActionRow[] => {
   const rows: BlogActionRow[] = [{ key: 'edit', icon: '✏️', label: 'Edit' }];
 
@@ -50,7 +40,10 @@ const actionsForStatus = (status: BlogStatus): BlogActionRow[] => {
       { key: 'archive', icon: '📦', label: 'Archive' },
     );
   } else if (status === 'DRAFT') {
-    rows.push({ key: 'publish', icon: '📣', label: 'Publish' });
+    rows.push(
+      { key: 'publish', icon: '📣', label: 'Publish' },
+      { key: 'archive', icon: '📦', label: 'Archive' },
+    );
   } else {
     rows.push({ key: 'restore', icon: '♻️', label: 'Restore' });
   }
@@ -61,12 +54,11 @@ const actionsForStatus = (status: BlogStatus): BlogActionRow[] => {
 
 interface BlogActionMenuProps {
   visible: boolean;
-  /** Blog whose menu is open; kept mounted during the close animation. */
+  /** Blog whose menu is open. */
   blog: BlogListItem | null;
-  /**
-   * Optional handler for a pressed action key ('edit', 'unpublish', ...).
-   * When not provided, every action shows the UI-only placeholder alert.
-   */
+  /** Position of the trigger button on screen. */
+  anchor?: BlogActionMenuAnchor | null;
+  /** Callback when an action key is pressed. */
   onAction?: (action: string) => void;
   onClose: () => void;
 }
@@ -74,10 +66,13 @@ interface BlogActionMenuProps {
 export const BlogActionMenu: React.FC<BlogActionMenuProps> = ({
   visible,
   blog,
+  anchor,
   onAction,
   onClose,
 }) => {
-  if (!blog) {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  if (!blog || !visible) {
     return null;
   }
 
@@ -85,52 +80,75 @@ export const BlogActionMenu: React.FC<BlogActionMenuProps> = ({
     onClose();
     if (onAction) {
       onAction(row.key);
-      return;
     }
-    showPlaceholder(row.label);
   };
 
+  const rows = actionsForStatus(blog.status);
+  const MENU_WIDTH = 160;
+  const MENU_HEIGHT = rows.length * 42 + 16;
+  const MARGIN = 12;
+
+  // Horizontal positioning: align right edge of popup with right edge of anchor button
+  let left = anchor
+    ? anchor.x + anchor.width - MENU_WIDTH
+    : windowWidth - MENU_WIDTH - MARGIN;
+
+  if (left < MARGIN) {
+    left = MARGIN;
+  } else if (left + MENU_WIDTH > windowWidth - MARGIN) {
+    left = windowWidth - MENU_WIDTH - MARGIN;
+  }
+
+  // Vertical positioning: prefer below anchor; if overflowing bottom, flip above anchor
+  let top = anchor ? anchor.y + anchor.height + 4 : 120;
+
+  if (top + MENU_HEIGHT > windowHeight - MARGIN) {
+    if (anchor && anchor.y - MENU_HEIGHT - 4 >= MARGIN) {
+      top = anchor.y - MENU_HEIGHT - 4;
+    } else {
+      top = Math.max(MARGIN, windowHeight - MENU_HEIGHT - MARGIN);
+    }
+  }
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <TouchableOpacity
-          style={styles.backdropTouch}
-          onPress={onClose}
-          accessibilityLabel="Close actions"
-        />
-        <SafeAreaView style={styles.sheetContainer} edges={['bottom', 'left', 'right']}>
-          <View style={styles.sheet}>
-            <View style={styles.dragHandle} />
-            <Text style={styles.sheetTitle} numberOfLines={1} ellipsizeMode="tail">
-              {blog.title}
-            </Text>
-
-            {actionsForStatus(blog.status).map(row => (
-              <TouchableOpacity
-                key={row.key}
-                style={styles.actionRow}
-                onPress={() => handleAction(row)}
-                accessibilityRole="button"
-                accessibilityLabel={row.label}
-              >
-                <Text style={styles.actionIcon}>{row.icon}</Text>
-                <Text style={[styles.actionLabel, row.destructive && styles.actionLabelDanger]}>
-                  {row.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity
+        style={styles.backdrop}
+        activeOpacity={1}
+        onPress={onClose}
+        accessibilityLabel="Close actions"
+      >
+        <View
+          style={[styles.menuCard, { top, left, width: MENU_WIDTH }]}
+          onStartShouldSetResponder={() => true}
+        >
+          {rows.map(row => (
             <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={onClose}
+              key={row.key}
+              style={styles.actionRow}
+              onPress={() => handleAction(row)}
               accessibilityRole="button"
-              accessibilityLabel="Cancel actions"
+              accessibilityLabel={row.label}
+              activeOpacity={0.7}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.actionIcon}>{row.icon}</Text>
+              <Text
+                style={[
+                  styles.actionLabel,
+                  row.destructive && styles.actionLabelDanger,
+                ]}
+              >
+                {row.label}
+              </Text>
             </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </View>
+          ))}
+        </View>
+      </TouchableOpacity>
     </Modal>
   );
 };
@@ -138,67 +156,42 @@ export const BlogActionMenu: React.FC<BlogActionMenuProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 40, 96, 0.45)',
-    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
   },
-  backdropTouch: {
-    flex: 1,
-  },
-  sheetContainer: {
-    backgroundColor: AdminColors.cardSurface,
-  },
-  sheet: {
-    backgroundColor: AdminColors.cardSurface,
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.xs,
-    paddingBottom: Spacing.md,
-  },
-  dragHandle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: BorderRadius.full,
-    backgroundColor: AdminColors.border,
-    marginBottom: Spacing.sm,
-  },
-  sheetTitle: {
-    ...Typography.bodyBold,
-    color: AdminColors.textPrimary,
-    marginBottom: Spacing.xs,
+  menuCard: {
+    position: 'absolute',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 9999,
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AdminColors.divider,
+    gap: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
   actionIcon: {
     fontSize: 16,
+    width: 20,
+    textAlign: 'center',
   },
   actionLabel: {
-    ...Typography.body,
-    color: AdminColors.textPrimary,
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#06294D',
   },
   actionLabelDanger: {
-    color: AdminColors.error,
-  },
-  cancelButton: {
-    marginTop: Spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-    borderRadius: BorderRadius.base,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    backgroundColor: AdminColors.cardSurface,
-  },
-  cancelButtonText: {
-    ...Typography.bodyMedium,
-    fontWeight: '600',
-    color: AdminColors.textPrimary,
+    color: '#EF4444',
   },
 });

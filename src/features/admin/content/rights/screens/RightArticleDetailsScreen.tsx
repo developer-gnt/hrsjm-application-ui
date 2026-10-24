@@ -17,6 +17,7 @@ import {
   Typography,
 } from '../../../../../core/theme';
 import { AppAvatar, AppEmptyState, AppLoader } from '../../../../../core/components';
+import { feedback } from '../../../../../core';
 import {
   RightsCategoryChip,
   RIGHTS_STATUS_TONES,
@@ -27,7 +28,11 @@ import { RightsDetailsActionMenu } from '../components/RightsDetailsActionMenu';
 import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { AdminShellHeader } from '../../events/preview/AdminShellHeader';
 import { AdminShellTabBar } from '../../events/preview/AdminShellTabBar';
-import { deleteRightApi } from '../services/rights.service';
+import {
+  deleteRightApi,
+  updateRightApi,
+  incrementRightViewsApi,
+} from '../services/rights.service';
 import type { RightsArticle } from '../types/rights.types';
 
 const PLACEHOLDER_MESSAGE =
@@ -58,17 +63,8 @@ interface RightArticleDetailsScreenProps {
   loading?: boolean;
 }
 
-/**
- * Right Article Details screen (UI-only phase).
- *
- * Renders the selected sample article following the reference: page header
- * with back + three-dot anchored action menu, large rounded cover image,
- * navy headline, category/status/date/views metadata row, author block, and
- * the Article Content card with numbered Key Highlights. NO backend —
- * actions are placeholders.
- */
 export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps> = ({
-  article,
+  article: initialArticle,
   onBack,
   onTabPress,
   onEdit,
@@ -76,12 +72,15 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
   loading = false,
   showBottomNav = false,
 }) => {
+  const [article, setArticle] = useState<RightsArticle | null>(initialArticle);
   const [coverFailed, setCoverFailed] = useState(false);
   const [actionMenuVisible, setActionMenuVisible] = useState(false);
 
-  // Android hardware back returns to the Know Your Rights list. The action
-  // menu sits above this screen and consumes back via onRequestClose first,
-  // so the screen never navigates away while the menu is open.
+  useEffect(() => {
+    setArticle(initialArticle);
+  }, [initialArticle]);
+
+  // Android hardware back returns to the Know Your Rights list.
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       onBack();
@@ -90,9 +89,18 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
     return () => subscription.remove();
   }, [onBack]);
 
-  // Reset the cover fallback whenever a different article is opened.
+  // Reset the cover fallback and increment views on mount
   useEffect(() => {
     setCoverFailed(false);
+    if (article?.id) {
+      incrementRightViewsApi(article.id)
+        .then(newViews => {
+          if (newViews > 0) {
+            setArticle(prev => (prev ? { ...prev, views: newViews } : null));
+          }
+        })
+        .catch(() => {});
+    }
   }, [article?.id]);
 
   const handleShellTabPress = (tab: string) => {
@@ -110,46 +118,64 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
   };
 
   // The dropdown menu closes itself before calling this
-  const handleAction = (action: string) => {
+  const handleAction = async (action: string) => {
+    if (!article) return;
+
     if (action === 'edit') {
-      if (onEdit && article) {
+      if (onEdit) {
         onEdit(article);
         return;
       }
-      Alert.alert('Edit Article', PLACEHOLDER_MESSAGE);
+      feedback.info('Edit Article', PLACEHOLDER_MESSAGE);
       return;
     }
-    if (action === 'delete') {
-      if (!article) return;
-      Alert.alert(
-        'Delete Rights Guide',
-        `Are you sure you want to delete "${article.title}"?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await deleteRightApi(article.id);
-                if (onDelete) {
-                  onDelete(article);
-                } else {
-                  onBack();
+
+    try {
+      if (action === 'publish') {
+        const updated = await updateRightApi(article.id, { status: 'PUBLISHED' });
+        setArticle(updated);
+        feedback.success('Published', 'Article has been published live.');
+      } else if (action === 'unpublish') {
+        const updated = await updateRightApi(article.id, { status: 'DRAFT' });
+        setArticle(updated);
+        feedback.warning('Unpublished', 'Article reverted to draft mode.');
+      } else if (action === 'archive') {
+        const updated = await updateRightApi(article.id, { status: 'ARCHIVED' });
+        setArticle(updated);
+        feedback.info('Archived', 'Article has been archived.');
+      } else if (action === 'restore') {
+        const updated = await updateRightApi(article.id, { status: 'PUBLISHED' });
+        setArticle(updated);
+        feedback.success('Restored', 'Article restored to published.');
+      } else if (action === 'delete') {
+        Alert.alert(
+          'Delete Rights Guide',
+          `Are you sure you want to delete "${article.title}"?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await deleteRightApi(article.id);
+                  feedback.success('Deleted', 'Article has been removed.');
+                  if (onDelete) {
+                    onDelete(article);
+                  } else {
+                    onBack();
+                  }
+                } catch (err: any) {
+                  feedback.error('Error', err?.response?.data?.message || err?.message || 'Failed to delete article');
                 }
-              } catch (err: any) {
-                Alert.alert('Error', err?.response?.data?.message || err?.message || 'Failed to delete article');
-              }
+              },
             },
-          },
-        ],
-      );
-      return;
+          ],
+        );
+      }
+    } catch (err: any) {
+      feedback.error('Error', err?.message || 'Action failed.');
     }
-    Alert.alert(
-      action.charAt(0).toUpperCase() + action.slice(1),
-      `Action "${action}" completed.`,
-    );
   };
 
   if (loading) {

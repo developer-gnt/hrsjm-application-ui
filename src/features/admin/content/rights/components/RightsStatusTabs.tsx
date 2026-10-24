@@ -14,11 +14,6 @@ interface RightsStatusTabsProps {
   onTabChange: (tab: RightsStatusFilter) => void;
 }
 
-/**
- * Status tab pills above the article rows (All / Published / Drafts /
- * Archived). Same pill language as the Blog/News/Events status tabs; counts
- * are demo values per the reference.
- */
 export const RightsStatusTabs: React.FC<RightsStatusTabsProps> = ({
   tabs,
   activeTab,
@@ -41,6 +36,7 @@ export const RightsStatusTabs: React.FC<RightsStatusTabsProps> = ({
             accessibilityRole="button"
             accessibilityState={{ selected: isActive }}
             accessibilityLabel={`${tab.label} articles, ${tab.count}`}
+            activeOpacity={0.8}
           >
             <Text style={[styles.tabText, isActive && styles.tabTextActive]} numberOfLines={1}>
               {tab.label} ({tab.count})
@@ -55,27 +51,29 @@ export const RightsStatusTabs: React.FC<RightsStatusTabsProps> = ({
 const styles = StyleSheet.create({
   tabsRow: {
     flexDirection: 'row',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.xs,
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
   },
   tab: {
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.full,
-    backgroundColor: AdminColors.cardSurface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: AdminColors.border,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DCE4EC',
   },
   tabActive: {
-    backgroundColor: AdminColors.primary,
-    borderColor: AdminColors.primary,
+    backgroundColor: '#06294D',
+    borderColor: '#06294D',
   },
   tabText: {
-    ...Typography.badge,
-    color: AdminColors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#06294D',
   },
   tabTextActive: {
-    color: AdminColors.textOnDark,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });

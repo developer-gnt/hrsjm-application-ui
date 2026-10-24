@@ -101,6 +101,12 @@ export const SETTING_SECTIONS: SettingSection[] = [
         description: 'Publish and manage educational articles and field stories.',
         route: AppRoutes.BLOGS,
       },
+      {
+        icon: '⚖️',
+        title: 'Know Your Rights',
+        description: 'Publish and manage legal and human rights educational resources.',
+        route: AppRoutes.KNOW_YOUR_RIGHTS,
+      },
       // {
       //   icon: '💰',
       //   title: 'Payment Verification',

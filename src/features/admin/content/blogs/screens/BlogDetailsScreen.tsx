@@ -17,6 +17,7 @@ import {
   Typography,
 } from '../../../../../core/theme';
 import { AppBadge, AppEmptyState, AppLoader } from '../../../../../core/components';
+import { feedback } from '../../../../../core';
 import {
   BlogCategoryChip,
   BLOG_STATUS_LABELS,
@@ -25,7 +26,20 @@ import {
 } from '../components/BlogCard';
 import { BlogActionMenu } from '../components/BlogActionMenu';
 import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
+import {
+  updateBlogApi,
+  deleteBlogApi,
+  incrementBlogViewsApi,
+} from '../services/blogs.service';
 import type { BlogListItem } from '../types/blog.types';
+
+const splitAuthor = (author: string): { name: string; role: string | null } => {
+  const separator = author.indexOf(' ');
+  if (separator <= 0) {
+    return { name: author, role: null };
+  }
+  return { name: author.slice(0, separator), role: author.slice(separator + 1) };
+};
 
 interface BlogDetailsScreenProps {
   /** The blog row selected on the Blogs list. */
@@ -43,6 +57,7 @@ interface BlogDetailsScreenProps {
    * a placeholder alert is shown instead (Edit Blog is a later phase).
    */
   onEdit?: (blog: BlogListItem) => void;
+  onDelete?: (blog: BlogListItem) => void;
   /**
    * Prepared for the backend phase: renders AppLoader when true. The UI-only
    * phase never sets it (no fake network delays).
@@ -50,44 +65,23 @@ interface BlogDetailsScreenProps {
   loading?: boolean;
 }
 
-const PLACEHOLDER_MESSAGE =
-  'This is a UI placeholder. It will be connected after backend integration.';
-
-/**
- * Two-line author group per the reference ("HRSJM" / "Admin"): splits the
- * author display string at its first space. Single-word authors render
- * without a role line.
- */
-const splitAuthor = (author: string): { name: string; role: string | null } => {
-  const separator = author.indexOf(' ');
-  if (separator <= 0) {
-    return { name: author, role: null };
-  }
-  return { name: author.slice(0, separator), role: author.slice(separator + 1) };
-};
-
-/**
- * Blog Details screen (UI-only phase).
- *
- * Renders the selected sample blog following the reference: cover image,
- * full headline, category + status badges, three metadata groups with
- * dividers, and the Blog Content section. The three-dot button opens the same
- * bottom action sheet used on the Blogs list. NO backend — actions are
- * placeholders.
- */
 export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
-  blog,
+  blog: initialBlog,
   onBack,
   onTabPress,
   onEdit,
+  onDelete,
   loading = false,
 }) => {
+  const [blog, setBlog] = useState<BlogListItem | null>(initialBlog);
   const [coverFailed, setCoverFailed] = useState(false);
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
 
-  // Android hardware back returns to the Blogs list. The action sheet sits
-  // above this screen and consumes back via onRequestClose first, so the
-  // screen never navigates away while the sheet is open.
+  useEffect(() => {
+    setBlog(initialBlog);
+  }, [initialBlog]);
+
+  // Android hardware back returns to the Blogs list.
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       onBack();
@@ -96,26 +90,78 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
     return () => subscription.remove();
   }, [onBack]);
 
-  // Reset the cover fallback whenever a different blog is opened.
+  // Reset the cover fallback and increment view count on mount
   useEffect(() => {
     setCoverFailed(false);
+    if (blog?.id) {
+      incrementBlogViewsApi(blog.id)
+        .then(newViews => {
+          if (newViews > 0) {
+            setBlog(prev => (prev ? { ...prev, views: newViews } : null));
+          }
+        })
+        .catch(() => {});
+    }
   }, [blog?.id]);
 
-  // The action sheet closes itself before calling this; all actions are
-  // UI-only placeholders until the backend contract lands.
-  const handleAction = (action: string) => {
+  const handleAction = async (action: string) => {
+    if (!blog) return;
+
     if (action === 'edit') {
-      if (onEdit && blog) {
+      if (onEdit) {
         onEdit(blog);
         return;
       }
-      Alert.alert('Edit Blog', PLACEHOLDER_MESSAGE);
+      feedback.info('Edit Blog', 'Edit navigation is not configured.');
       return;
     }
-    Alert.alert(
-      action.charAt(0).toUpperCase() + action.slice(1),
-      `UI-only confirmation. "${action}" will be connected after backend integration.`,
-    );
+
+    try {
+      if (action === 'publish') {
+        const updated = await updateBlogApi(blog.id, { status: 'PUBLISHED' });
+        setBlog(updated);
+        feedback.success('Published', 'Article has been published successfully.');
+      } else if (action === 'unpublish') {
+        const updated = await updateBlogApi(blog.id, { status: 'DRAFT' });
+        setBlog(updated);
+        feedback.warning('Unpublished', 'Article reverted to draft mode.');
+      } else if (action === 'archive') {
+        const updated = await updateBlogApi(blog.id, { status: 'ARCHIVED' });
+        setBlog(updated);
+        feedback.info('Archived', 'Article has been archived.');
+      } else if (action === 'restore') {
+        const updated = await updateBlogApi(blog.id, { status: 'PUBLISHED' });
+        setBlog(updated);
+        feedback.success('Restored', 'Article restored to published.');
+      } else if (action === 'delete') {
+        Alert.alert(
+          'Delete Blog',
+          `Are you sure you want to delete "${blog.title}"? This action cannot be undone.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await deleteBlogApi(blog.id);
+                  feedback.success('Deleted', 'Article has been removed.');
+                  if (onDelete) {
+                    onDelete(blog);
+                  } else {
+                    onBack();
+                  }
+                } catch (err: any) {
+                  feedback.error('Error', err?.message || 'Delete failed.');
+                }
+              },
+            },
+          ],
+        );
+      }
+    } catch (err: any) {
+      feedback.error('Error', err?.message || 'Action failed.');
+    }
   };
 
   if (loading) {

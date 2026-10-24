@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Image,
   StyleSheet,
@@ -118,10 +118,13 @@ export interface BlogCardProps {
   blog: BlogListItem;
   /** Fired when the row body is pressed (opens Blog Details). */
   onPress?: (blog: BlogListItem) => void;
-  /** Fired when the row Edit button is pressed. */
+  /** Fired when the row Edit button is pressed (kept for backwards compatibility). */
   onEditPress?: (blog: BlogListItem) => void;
   /** Fired when the three-dot action menu is pressed. */
-  onMorePress?: (blog: BlogListItem) => void;
+  onMorePress?: (
+    blog: BlogListItem,
+    anchor?: { x: number; y: number; width: number; height: number },
+  ) => void;
 }
 
 export const BlogCard: React.FC<BlogCardProps> = ({
@@ -131,6 +134,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
   onMorePress,
 }) => {
   const [imageFailed, setImageFailed] = useState(false);
+  const moreButtonRef = useRef<any>(null);
   const { width } = useWindowDimensions();
   const isMobile = width < 680;
 
@@ -139,7 +143,15 @@ export const BlogCard: React.FC<BlogCardProps> = ({
 
   const handlePress = () => onPress?.(blog);
   const handleEdit = () => (onEditPress ? onEditPress(blog) : onPress?.(blog));
-  const handleMore = () => onMorePress?.(blog);
+  const handleMore = () => {
+    if (moreButtonRef.current && typeof moreButtonRef.current.measureInWindow === 'function') {
+      moreButtonRef.current.measureInWindow((x: number, y: number, width: number, height: number) => {
+        onMorePress?.(blog, { x, y, width, height });
+      });
+    } else {
+      onMorePress?.(blog);
+    }
+  };
 
   // Render thumbnail
   const renderThumbnail = (sizeStyle: any) => (
@@ -167,18 +179,9 @@ export const BlogCard: React.FC<BlogCardProps> = ({
     </View>
   );
 
-  // Render Action buttons (Edit + 3-dot)
+  // Render Action button (three-dot menu only; standalone Edit button removed)
   const renderActions = () => (
-    <View style={styles.actionsGroup}>
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={handleEdit}
-        accessibilityRole="button"
-        accessibilityLabel={`Edit ${blog.title}`}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.actionButtonText}>Edit</Text>
-      </TouchableOpacity>
+    <View ref={moreButtonRef} collapsable={false} style={styles.actionsGroup}>
       <TouchableOpacity
         style={styles.moreButton}
         onPress={handleMore}

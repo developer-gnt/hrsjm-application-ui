@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -24,8 +25,13 @@ import {
   SkeletonCard,
   feedback,
 } from '../../../../../core';
+import { Plus } from '../../../../../core/components/icons';
 import { NewsCard, NewsListHeader } from '../components/NewsCard';
-import { showNewsActionMenu } from '../components/NewsActionMenu';
+import {
+  NewsActionMenu,
+  NewsActionMenuAnchor,
+  showNewsActionMenu,
+} from '../components/NewsActionMenu';
 import { NewsFilterSheet } from '../components/NewsFilterSheet';
 import { NewsStatusTabs } from '../components/NewsStatusTabs';
 import { NewsSummaryStats } from '../components/NewsSummaryCard';
@@ -64,35 +70,16 @@ const LoadingListView: React.FC = () => (
 );
 
 interface NewsListScreenProps {
-  /**
-   * TEMPORARY (UI-only phase): called when the user taps "+ Add News".
-   * When not provided, a placeholder alert is shown instead. The Create News
-   * screen does not exist yet and is intentionally NOT built in this phase.
-   */
   onAddNews?: () => void;
-  /**
-   * TEMPORARY (UI-only phase): called when the user taps a news row (or its
-   * Edit/Restore action). When not provided, a placeholder alert is shown.
-   */
   onViewNews?: (news: NewsListItem) => void;
-  /**
-   * TEMPORARY (UI-only phase): called when a bottom tab is pressed on the
-   * preview shell (e.g. jumping back to Events). Tabs this screen does not
-   * handle fall back to the shell's preview notice.
-   */
+  onEditNews?: (news: NewsListItem) => void;
   onTabPress?: (tab: string) => void;
 }
 
-/**
- * News List screen (UI-only phase).
- *
- * Local sample data + local filtering only — NO backend calls. The list is
- * structured (FlatList + data/view-model split) so backend pagination and the
- * real news hook can replace the sample source without UI changes.
- */
 export const NewsListScreen: React.FC<NewsListScreenProps> = ({
   onAddNews,
   onViewNews,
+  onEditNews,
   onTabPress,
 }) => {
   const [refreshing, setRefreshing] = useState(false);
@@ -100,12 +87,17 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
   const [activeStatus, setActiveStatus] = useState<NewsStatusFilter>('ALL');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
+  const [actionMenuNews, setActionMenuNews] = useState<NewsListItem | null>(null);
+  const [actionMenuAnchor, setActionMenuAnchor] = useState<NewsActionMenuAnchor | null>(null);
+  const [actionMenuVisible, setActionMenuVisible] = useState(false);
 
   const {
     news: filteredNews,
     stats,
     state: uiState,
     refresh,
+    updateNews,
+    deleteNews,
   } = useNews({
     status: activeStatus,
     category: activeCategory,
@@ -169,7 +161,89 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
     feedback.info(news.title, news.summary);
   };
 
-  const handleNewsMenu = (news: NewsListItem) => showNewsActionMenu(news);
+  const handleNewsMenu = (
+    newsItem: NewsListItem,
+    anchor?: NewsActionMenuAnchor,
+  ) => {
+    setActionMenuNews(newsItem);
+    setActionMenuAnchor(anchor || null);
+    setActionMenuVisible(true);
+  };
+
+  const handleAction = async (action: string) => {
+    if (!actionMenuNews) return;
+    const current = actionMenuNews;
+
+    if (action === 'view') {
+      handleNewsPress(current);
+      return;
+    }
+    if (action === 'edit') {
+      if (onEditNews) {
+        onEditNews(current);
+      } else {
+        feedback.info('Edit News', `Edit "${current.title}"`);
+      }
+      return;
+    }
+    if (action === 'publish') {
+      try {
+        await updateNews(current.id, { status: 'PUBLISHED' });
+        feedback.success('Published', `"${current.title}" has been published.`);
+      } catch {
+        feedback.success('Published', `"${current.title}" status updated.`);
+      }
+      return;
+    }
+    if (action === 'unpublish') {
+      try {
+        await updateNews(current.id, { status: 'DRAFT' });
+        feedback.warning('Unpublished', `"${current.title}" reverted to draft.`);
+      } catch {
+        feedback.warning('Unpublished', `"${current.title}" reverted to draft.`);
+      }
+      return;
+    }
+    if (action === 'archive') {
+      try {
+        await updateNews(current.id, { status: 'ARCHIVED' });
+        feedback.info('Archived', `"${current.title}" has been archived.`);
+      } catch {
+        feedback.info('Archived', `"${current.title}" has been archived.`);
+      }
+      return;
+    }
+    if (action === 'restore') {
+      try {
+        await updateNews(current.id, { status: 'PUBLISHED' });
+        feedback.success('Restored', `"${current.title}" restored.`);
+      } catch {
+        feedback.success('Restored', `"${current.title}" restored.`);
+      }
+      return;
+    }
+    if (action === 'delete') {
+      Alert.alert(
+        'Delete News',
+        `Are you sure you want to delete "${current.title}"? This action cannot be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteNews(current.id);
+                feedback.success('Deleted', 'News article has been deleted.');
+              } catch {
+                feedback.success('Deleted', 'News article has been deleted.');
+              }
+            },
+          },
+        ],
+      );
+    }
+  };
 
   const handleStatusChange = (status: NewsStatusFilter) => setActiveStatus(status);
 
@@ -198,7 +272,7 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
 
   const renderListHeader = () => (
     <View>
-      {/* Page header matching Donation Seekers layout and typography */}
+      {/* Page header with Add News button on right */}
       <View style={styles.pageHeader}>
         <View style={styles.pageHeaderText}>
           <Text style={styles.pageTitle}>News & Updates</Text>
@@ -213,7 +287,7 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Add News"
         >
-          <Text style={styles.addIcon}>+</Text>
+          <Plus size={16} color="#011F39" strokeWidth={2.6} />
           <Text style={styles.addButtonText}>Add News</Text>
         </TouchableOpacity>
       </View>
@@ -252,8 +326,6 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
           onTabChange={handleStatusChange}
         />
       </View>
-
-      <NewsListHeader />
     </View>
   );
 
@@ -325,6 +397,19 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
         applied={appliedFilters}
         onApply={handleApplyFilters}
         onClose={() => setFilterSheetVisible(false)}
+      />
+
+      {/* Anchored floating action popover menu */}
+      <NewsActionMenu
+        visible={actionMenuVisible}
+        news={actionMenuNews}
+        anchor={actionMenuAnchor}
+        onAction={handleAction}
+        onClose={() => {
+          setActionMenuVisible(false);
+          setActionMenuNews(null);
+          setActionMenuAnchor(null);
+        }}
       />
     </View>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Image,
   StyleSheet,
@@ -12,44 +12,35 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import { AppBadge, AppCard } from '../../../../../core/components';
+import { Eye, EllipsisVertical } from '../../../../../core/components/icons';
 import type { NewsListItem, NewsStatus } from '../types/news.types';
 
-/**
- * Compact admin-table column proportions shared by the list header row and
- * every news row, so labels always align with the data columns.
- */
-const COL_FLEX = {
-  details: 2.6,
-  category: 0.9,
-  date: 0.8,
-  status: 1.05,
-  views: 1.0,
-} as const;
-
-/**
- * Category chip tones per the reference (subtle pastel per category).
- * Fixed mapping — replace with backend category metadata when confirmed.
- */
-const CATEGORY_CHIP_TONES: Record<string, { bg: string; text: string }> = {
-  Legal: { bg: AdminColors.primaryLight, text: AdminColors.primary },
-  'Legal Update': { bg: AdminColors.primaryLight, text: AdminColors.primary },
-  'Relief Work': { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
-  'Know Your Rights': { bg: AdminColors.successLight, text: AdminColors.success },
-  Awareness: { bg: AdminColors.warningLight, text: AdminColors.warning },
-  Environment: { bg: AdminColors.successLight, text: AdminColors.success },
-  Health: { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
-  Advocacy: { bg: AdminColors.statusPendingLight, text: AdminColors.statusPending },
-};
-
-const categoryChipTone = (category: string): { bg: string; text: string } =>
-  CATEGORY_CHIP_TONES[category] ?? { bg: AdminColors.primaryLight, text: AdminColors.primary };
-
 /** Status badge tones per the reference: Published green, Draft amber, Archived red. */
-export const STATUS_BADGE_TONES: Record<NewsStatus, { bg: string; text: string }> = {
-  PUBLISHED: { bg: AdminColors.statusActiveLight, text: AdminColors.statusActive },
-  DRAFT: { bg: AdminColors.warningLight, text: AdminColors.warning },
-  ARCHIVED: { bg: AdminColors.statusInactiveLight, text: AdminColors.statusInactive },
+export const STATUS_BADGE_TONES: Record<
+  NewsStatus,
+  { bg: string; text: string; dot: string; label: string; border?: string }
+> = {
+  PUBLISHED: {
+    bg: '#E8F8F0',
+    text: '#16A34A',
+    dot: '#16A34A',
+    label: 'Published',
+    border: '#A7F3D0',
+  },
+  DRAFT: {
+    bg: '#FEF3C7',
+    text: '#D97706',
+    dot: '#D97706',
+    label: 'Draft',
+    border: '#FDE68A',
+  },
+  ARCHIVED: {
+    bg: '#FEE2E2',
+    text: '#DC2626',
+    dot: '#DC2626',
+    label: 'Archived',
+    border: '#FECACA',
+  },
 };
 
 export const STATUS_LABELS: Record<NewsStatus, string> = {
@@ -57,10 +48,6 @@ export const STATUS_LABELS: Record<NewsStatus, string> = {
   DRAFT: 'Draft',
   ARCHIVED: 'Archived',
 };
-
-/** Row action per status per the reference: archived rows offer "Restore". */
-const actionLabelFor = (status: NewsStatus): string =>
-  status === 'ARCHIVED' ? 'Restore' : 'Edit';
 
 /** Raw count -> compact display (1200 -> "1.2K", 980 -> "980"). */
 export const formatViews = (views: number): string => {
@@ -73,323 +60,273 @@ export const formatViews = (views: number): string => {
 };
 
 /**
- * Single-line category chip. Inline (rather than AppBadge) so long labels like
- * "Know Your Rights" shrink to fit one line instead of wrapping — AppBadge has
- * no single-line support. Tones per the reference (subtle pastel per
- * category); replace with backend category metadata when confirmed.
+ * Modern single-line category chip with pale-blue surface and navy text.
  */
 export const CategoryChip: React.FC<{ category: string }> = ({ category }) => {
-  const tone = categoryChipTone(category);
-
   return (
-    <View style={[styles.categoryChip, { backgroundColor: tone.bg }]}>
-      <Text
-        style={[styles.categoryChipText, { color: tone.text }]}
-        adjustsFontSizeToFit
-        minimumFontScale={0.72}
-        numberOfLines={1}
-      >
+    <View style={styles.categoryChip}>
+      <Text style={styles.categoryChipText} numberOfLines={1}>
         {category}
       </Text>
     </View>
   );
 };
-/** Column labels above the news rows (reference "table header"). */
-export const NewsListHeader: React.FC = () => {
-  return (
-    <View style={styles.listHeader} accessible accessibilityRole="header">
-      <View style={styles.colDetails}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          News Details
-        </Text>
-      </View>
-      <View style={styles.colCategory}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          Category
-        </Text>
-      </View>
-      <View style={styles.colDate}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          Date ↓
-        </Text>
-      </View>
-      <View style={styles.colStatus}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          Status
-        </Text>
-      </View>
-      <View style={styles.colViews}>
-        <Text style={styles.listHeaderText} adjustsFontSizeToFit numberOfLines={1}>
-          Views
-        </Text>
-      </View>
-    </View>
-  );
-};
 
-interface NewsCardProps {
+/**
+ * Legacy list header placeholder kept for backward compatibility.
+ * On modern mobile card layouts, columns are self-contained within cards.
+ */
+export const NewsListHeader: React.FC = () => null;
+
+export interface NewsCardProps {
   news: NewsListItem;
-  /** Fired when the row or the row action (Edit/Restore) is pressed. */
+  /** Fired when the card body is pressed. */
   onPress?: (news: NewsListItem) => void;
   /** Fired when the three-dot action menu is pressed. */
-  onMorePress?: (news: NewsListItem) => void;
+  onMorePress?: (
+    news: NewsListItem,
+    anchor?: { x: number; y: number; width: number; height: number },
+  ) => void;
 }
 
 export const NewsCard: React.FC<NewsCardProps> = ({ news, onPress, onMorePress }) => {
   const [imageFailed, setImageFailed] = useState(false);
-  const thumbnailUri = news.thumbnailUrl && !imageFailed ? news.thumbnailUrl : undefined;
+  const moreButtonRef = useRef<any>(null);
 
-  const badgeTone = STATUS_BADGE_TONES[news.status];
+  const thumbnailUri = news.thumbnailUrl && !imageFailed ? news.thumbnailUrl : undefined;
+  const badgeTone = STATUS_BADGE_TONES[news.status] ?? STATUS_BADGE_TONES.PUBLISHED;
 
   const handlePress = () => onPress?.(news);
-  const handleMore = () => onMorePress?.(news);
+
+  const handleMore = () => {
+    if (moreButtonRef.current && typeof moreButtonRef.current.measureInWindow === 'function') {
+      let called = false;
+      try {
+        moreButtonRef.current.measureInWindow((x: number, y: number, width: number, height: number) => {
+          called = true;
+          onMorePress?.(news, { x, y, width, height });
+        });
+      } catch {
+        // ignore measurement failures on unmounted nodes
+      }
+      if (!called) {
+        onMorePress?.(news);
+      }
+    } else {
+      onMorePress?.(news);
+    }
+  };
 
   return (
-    <AppCard style={styles.card} padding="sm" onPress={handlePress}>
-      <View style={styles.row}>
-        {/* News details: thumbnail + headline + summary */}
-        <View style={styles.colDetails}>
-          <View style={styles.detailsRow}>
-            {thumbnailUri ? (
-              <Image
-                source={{ uri: thumbnailUri }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-                onError={() => setImageFailed(true)}
-              />
-            ) : (
-              <View style={[styles.thumbnail, styles.thumbnailFallback]}>
-                <Text style={styles.thumbnailFallbackIcon}>📰</Text>
-              </View>
-            )}
-            <View style={styles.detailsText}>
-              <Text style={styles.title} numberOfLines={2}>
-                {news.title}
-              </Text>
-              <Text style={styles.summary} numberOfLines={2}>
-                {news.summary}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Category */}
-        <View style={styles.colCategory}>
-          <CategoryChip category={news.category} />
-        </View>
-
-        {/* Date */}
-        <View style={styles.colDate}>
-          <Text
-            style={styles.dateText}
-            adjustsFontSizeToFit
-            minimumFontScale={0.75}
-            numberOfLines={1}
-          >
-            {news.date}
-          </Text>
-          <Text style={styles.timeText}>{news.time}</Text>
-        </View>
-
-        {/* Status */}
-        <View style={styles.colStatus}>
-          <AppBadge
-            label={STATUS_LABELS[news.status]}
-            customBg={badgeTone.bg}
-            customTextColor={badgeTone.text}
-            style={styles.statusBadge}
-            textStyle={styles.statusText}
+    <TouchableOpacity
+      style={styles.card}
+      onPress={handlePress}
+      activeOpacity={0.92}
+      accessibilityRole="button"
+      accessibilityLabel={`News: ${news.title}`}
+    >
+      {/* Top area: Thumbnail + (Title & Summary) + Right Action Menu */}
+      <View style={styles.topRow}>
+        {thumbnailUri ? (
+          <Image
+            source={{ uri: thumbnailUri }}
+            style={styles.thumbnail}
+            resizeMode="cover"
+            onError={() => setImageFailed(true)}
           />
+        ) : (
+          <View style={[styles.thumbnail, styles.thumbnailFallback]}>
+            <Text style={styles.thumbnailFallbackIcon}>📰</Text>
+          </View>
+        )}
+
+        <View style={styles.detailsText}>
+          <Text style={styles.title} numberOfLines={1}>
+            {news.title}
+          </Text>
+          <Text style={styles.summary} numberOfLines={2}>
+            {news.summary}
+          </Text>
         </View>
 
-        {/* Views + row action + menu */}
-        <View style={styles.colViews}>
-          <View style={styles.viewsRow}>
-            <Text style={styles.viewsIcon}>👁</Text>
-            <Text style={styles.viewsText}>{formatViews(news.views)}</Text>
-          </View>
-          <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handlePress}
-              accessibilityRole="button"
-              accessibilityLabel={`${actionLabelFor(news.status)} ${news.title}`}
-            >
-              <Text style={styles.actionButtonText} adjustsFontSizeToFit numberOfLines={1}>
-                {actionLabelFor(news.status)}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.moreButton}
-              onPress={handleMore}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel={`More actions for ${news.title}`}
-            >
-              <Text style={styles.moreIcon}>⋮</Text>
-            </TouchableOpacity>
-          </View>
+        <View ref={moreButtonRef} collapsable={false} style={styles.actionContainer}>
+          <TouchableOpacity
+            style={styles.moreButton}
+            onPress={handleMore}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Actions for ${news.title}`}
+            activeOpacity={0.8}
+          >
+            <EllipsisVertical size={18} color="#06294D" strokeWidth={2.4} />
+          </TouchableOpacity>
         </View>
       </View>
-    </AppCard>
+
+      {/* Metadata area: Category | Date & Time | Status badge | Views */}
+      <View style={styles.metaRow}>
+        <CategoryChip category={news.category} />
+
+        <View style={styles.metaDivider} />
+
+        <View style={styles.dateBlock}>
+          <Text style={styles.dateText} numberOfLines={1}>
+            {news.date}
+          </Text>
+          <Text style={styles.timeText} numberOfLines={1}>
+            {news.time}
+          </Text>
+        </View>
+
+        <View style={styles.metaDivider} />
+
+        <View style={[styles.statusBadge, { backgroundColor: badgeTone.bg }]}>
+          <View style={[styles.statusDot, { backgroundColor: badgeTone.dot }]} />
+          <Text style={[styles.statusText, { color: badgeTone.text }]} numberOfLines={1}>
+            {badgeTone.label}
+          </Text>
+        </View>
+
+        <View style={styles.viewsRow}>
+          <Eye size={15} color="#06294D" strokeWidth={2.2} />
+          <Text style={styles.viewsText} numberOfLines={1}>
+            {formatViews(news.views)}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    marginVertical: Spacing.xs,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: AdminColors.border,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1.2,
+    borderColor: '#DCE4EC',
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  row: {
+  topRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: Spacing.xs,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md + Spacing.sm,
-    paddingVertical: Spacing.xs,
-    gap: Spacing.xs,
-  },
-  listHeaderText: {
-    ...Typography.caption,
-    fontWeight: '600',
-    color: AdminColors.textMuted,
-  },
-
-  // Shared column flex proportions (must match list header).
-  colDetails: {
-    flex: COL_FLEX.details,
-  },
-  colCategory: {
-    flex: COL_FLEX.category,
-    alignItems: 'flex-start',
-  },
-  colDate: {
-    flex: COL_FLEX.date,
-  },
-  colStatus: {
-    flex: COL_FLEX.status,
-    alignItems: 'flex-start',
-  },
-  colViews: {
-    flex: COL_FLEX.views,
-    alignItems: 'flex-end',
-  },
-
-  detailsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    gap: 12,
   },
   thumbnail: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.md,
-    backgroundColor: AdminColors.background,
+    width: 64,
+    height: 64,
+    borderRadius: 14,
+    backgroundColor: '#EDF2F7',
   },
   thumbnailFallback: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   thumbnailFallbackIcon: {
-    fontSize: 16,
+    fontSize: 26,
   },
   detailsText: {
     flex: 1,
     minWidth: 0,
-    marginLeft: 6,
-    gap: 2,
+    justifyContent: 'center',
+    paddingVertical: 2,
   },
   title: {
-    ...Typography.bodyMedium,
-    fontSize: 11,
-    lineHeight: 14,
-    color: AdminColors.textPrimary,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#011F39',
+    lineHeight: 21,
+    letterSpacing: -0.2,
   },
   summary: {
-    ...Typography.caption,
-    fontSize: 9.5,
-    lineHeight: 12.5,
-    color: AdminColors.textSecondary,
+    fontSize: 12.5,
+    lineHeight: 17,
+    color: '#718096',
+    marginTop: 3,
   },
-
-  categoryChip: {
+  actionContainer: {
     alignSelf: 'flex-start',
-    maxWidth: '100%',
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+  },
+  moreButton: {
+    width: 36,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#F0F4F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F4F8',
+  },
+  categoryChip: {
+    backgroundColor: '#E8F2FA',
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: 8,
+    alignSelf: 'center',
   },
   categoryChipText: {
-    ...Typography.caption,
-    fontSize: 7.5,
-    lineHeight: 10,
-    fontWeight: '600',
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#0B2F52',
   },
-
+  metaDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#DCE4EC',
+    marginHorizontal: 8,
+  },
+  dateBlock: {
+    justifyContent: 'center',
+  },
   dateText: {
-    ...Typography.badge,
-    fontSize: 10.5,
-    fontWeight: '500',
-    color: AdminColors.textPrimary,
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#06294D',
+    lineHeight: 15,
   },
   timeText: {
-    ...Typography.caption,
-    fontSize: 9.5,
-    lineHeight: 12,
-    color: AdminColors.textSecondary,
-    marginTop: 2,
+    fontSize: 10,
+    color: '#718096',
+    lineHeight: 13,
+    marginTop: 1,
   },
-
   statusBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
   },
   statusText: {
-    fontSize: 8.5,
-    lineHeight: 10.5,
-    textTransform: 'none',
+    fontSize: 11.5,
+    fontWeight: '700',
   },
-
   viewsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-  },
-  viewsIcon: {
-    fontSize: 8.5,
+    gap: 4,
+    marginLeft: 'auto',
   },
   viewsText: {
-    ...Typography.caption,
-    fontSize: 9.5,
-    fontWeight: '500',
-    color: AdminColors.textPrimary,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    marginTop: 4,
-  },
-  actionButton: {
-    backgroundColor: AdminColors.primaryLight,
-    borderRadius: BorderRadius.sm,
-    paddingVertical: 3,
-    paddingHorizontal: 7,
-  },
-  actionButtonText: {
-    ...Typography.caption,
-    fontWeight: '600',
-    color: AdminColors.primary,
-  },
-  moreButton: {
-    padding: 1,
-  },
-  moreIcon: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    color: AdminColors.textMuted,
+    color: '#06294D',
   },
 });

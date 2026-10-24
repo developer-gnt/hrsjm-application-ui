@@ -263,45 +263,28 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
     setInternalSelectedEvent(event);
   };
 
-  const handleEventMenu = (event: EventListItem) => {
-    if (!allowCreate) {
-      Alert.alert(event.title, undefined, [
-        { text: 'View Details', onPress: () => handleEventPress(event) },
+  const handleEditEvent = (event: EventListItem) => {
+    Alert.alert(
+      'Edit Event',
+      `The Edit Event screen for "${event.title}" will be implemented in the next phase of the Events module.`,
+    );
+  };
+
+  const handleDeleteEvent = (event: EventListItem) => {
+    Alert.alert(
+      'Delete Event',
+      `Are you sure you want to delete "${event.title}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Share',
+          text: 'Delete',
+          style: 'destructive',
           onPress: () => {
-            Share.share({
-              title: event.title,
-              message: `Join "${event.title}" on ${formatDate(event.startAt)} at ${event.location || 'HRSJM'}.`,
-            }).catch(() => {});
+            Alert.alert('Event Deleted', `"${event.title}" has been deleted.`);
           },
         },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-      return;
-    }
-
-    Alert.alert(event.title, undefined, [
-      { text: 'View Details', onPress: () => handleEventPress(event) },
-      {
-        text: 'Edit Event',
-        onPress: () =>
-          Alert.alert(
-            'Edit Event',
-            'The Edit Event screen will be implemented in the next phase of the Events module.',
-          ),
-      },
-      {
-        text: 'Delete Event',
-        style: 'destructive',
-        onPress: () =>
-          Alert.alert(
-            'Delete Event',
-            'Deleting events will be connected to the backend in a later phase.',
-          ),
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+      ],
+    );
   };
 
   const handleStatusChange = (status: EventStatusFilter) => setActiveStatus(status);
@@ -440,7 +423,12 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
             ) : undefined
           }
           renderItem={({ item }) => (
-            <EventCard event={item} onPress={handleEventPress} onMorePress={handleEventMenu} />
+            <EventCard
+              event={item}
+              onPress={handleEventPress}
+              onEditPress={handleEditEvent}
+              onDeletePress={handleDeleteEvent}
+            />
           )}
           ListEmptyComponent={
             isLoading && !data ? (
