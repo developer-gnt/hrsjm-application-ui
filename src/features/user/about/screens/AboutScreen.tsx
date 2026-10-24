@@ -135,10 +135,12 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
         />
       ) : (
         <HomeHeader
+          activeNav="about"
           onBack={onBack}
           unreadCount={3}
           showNotificationDot
           notificationDotColor={AdminColors.accentGold}
+          onOpenDonate={() => onNavigate?.('donations')}
           onPressSearch={() => onNavigate?.('search') || showComingSoon('Search')}
           onPressNotifications={() => onNavigate?.('notifications') || showComingSoon('Notifications')}
         />

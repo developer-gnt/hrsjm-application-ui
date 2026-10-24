@@ -14,7 +14,7 @@ export const AboutVisionMissionSection: React.FC = () => {
     <View>
       <View style={styles.heading}>
         <View style={styles.accentLine} />
-        <Text style={styles.title}>Our Vision & Mission</Text>
+        <Text style={styles.title}>Our Vision and Mission</Text>
         <Text style={styles.subtitle}>
           Guiding principles driving our commitment to equality and social justice
         </Text>

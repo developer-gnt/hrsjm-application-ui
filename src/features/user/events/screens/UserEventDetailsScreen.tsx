@@ -60,6 +60,7 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
         onBack={onBack}
+        activeNav="events"
         rightAction={
           <TouchableOpacity
             style={styles.headerButton}

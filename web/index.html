@@ -12,12 +12,52 @@
       rel="stylesheet"
     />
     <style>
+      :root {
+        --color-navy-950: #011F39;
+        --color-navy-900: #06294D;
+        --color-navy-800: #123F68;
+        --color-navy-700: #174A78;
+
+        --color-blue-100: #EDF2F7;
+        --color-blue-200: #DBE5EE;
+
+        --color-gold-500: #FAD465;
+        --color-gold-600: #E9B82E;
+        --color-gold-700: #C9971A;
+
+        --color-ivory-50: #FAF7F0;
+        --color-white: #FFFFFF;
+
+        --color-text-primary: #0B2F52;
+        --color-text-body: #34516D;
+        --color-text-muted: #718096;
+        --color-border: #DCE4EC;
+        --color-overlay: #031B31;
+
+        --font-display: "Playfair Display", Georgia, serif;
+        --font-body: "Inter", Arial, sans-serif;
+        --font-quote: "Caveat", cursive;
+
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-5: 24px;
+        --space-6: 32px;
+        --space-7: 48px;
+        --space-8: 64px;
+        --space-9: 80px;
+        --space-10: 96px;
+
+        --radius-card: 12px;
+        --radius-button: 12px;
+        --container-width: 1200px;
+      }
       *,
       *::before,
       *::after {
         box-sizing: border-box;
       }
-      /* Frame the preview like a phone viewport on desktop browsers */
       html,
       body {
         margin: 0;
@@ -29,36 +69,21 @@
         text-rendering: optimizeLegibility;
       }
       #root {
-        max-width: 480px;
-        /* Fixed constraint: top bar and bottom nav stay fixed, content
-           scrolls between them. dvh keeps the mobile browser URL bar
-           from covering the nav; vh is the fallback. */
+        max-width: 1200px;
         height: 100vh;
         height: 100dvh;
         margin: 0 auto;
         background: #FAF7F0;
-        box-shadow: 0 0 35px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 0 45px rgba(0, 0, 0, 0.45);
         position: relative;
         overflow: hidden;
-        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
       }
-      /* The react-native-web app wrapper must stretch to the root so
-         flex: 1 screens constrain and the bottom nav stays fixed. */
       #root > div {
         height: 100%;
-        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      }
-      /* React Native Web Text elements inherit base font by default unless overridden */
-      [dir="auto"],
-      div,
-      span,
-      p,
-      a,
-      button,
-      input,
-      select,
-      textarea {
-        font-family: inherit;
+        display: flex;
+        flex-direction: column;
       }
     </style>
   </head>

@@ -51,6 +51,28 @@ export const DesignTokens = {
 export type DesignTokenKey = keyof typeof DesignTokens;
 
 /**
+ * Exact CSS color token names from docs/design.md §2 & §13
+ */
+export const ColorTokens = {
+  'color-navy-950': DesignTokens.navy950,
+  'color-navy-900': DesignTokens.navy900,
+  'color-navy-800': DesignTokens.navy800,
+  'color-navy-700': DesignTokens.navy700,
+  'color-blue-100': DesignTokens.blue100,
+  'color-blue-200': DesignTokens.blue200,
+  'color-gold-500': DesignTokens.gold500,
+  'color-gold-600': DesignTokens.gold600,
+  'color-gold-700': DesignTokens.gold700,
+  'color-ivory-50': DesignTokens.ivory50,
+  'color-white': DesignTokens.white,
+  'color-text-primary': DesignTokens.textPrimary,
+  'color-text-body': DesignTokens.textBody,
+  'color-text-muted': DesignTokens.textMuted,
+  'color-border': DesignTokens.border,
+  'color-overlay': DesignTokens.overlay,
+} as const;
+
+/**
  * Universal application colors consumed throughout Admin, Member, Seeker, and User views.
  */
 export const AdminColors = {

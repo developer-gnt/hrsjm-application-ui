@@ -244,12 +244,6 @@ const USER_TABS: UserTabItem[] = [
     Icon: MessageSquare,
     component: UserNewsScreenComponent,
   },
-  {
-    name: 'UserProfile',
-    label: 'Profile',
-    Icon: User,
-    component: UserProfileScreenComponent,
-  },
 ];
 
 const UserCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
@@ -279,7 +273,7 @@ const UserCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) =>
           }
         };
 
-        const iconColor = isFocused ? '#E9B82E' : '#718096';
+        const iconColor = isFocused ? '#E9B82E' : '#06294D';
 
         return (
           <TouchableOpacity
@@ -292,7 +286,7 @@ const UserCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) =>
             style={styles.tabItem}
           >
             <View style={styles.iconBox}>
-              <Icon size={22} color={iconColor} />
+              <Icon size={22} color={iconColor} strokeWidth={1.8} />
             </View>
             <Text
               style={[
@@ -325,6 +319,12 @@ export const UserTabNavigator: React.FC = () => {
           component={tab.component}
         />
       ))}
+
+      <Tab.Screen
+        name="UserProfile"
+        options={{ tabBarButton: () => null }}
+        component={UserProfileScreenComponent}
+      />
 
       <Tab.Screen
         name="ContactUs"
@@ -680,14 +680,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tabLabelActive: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter',
     fontWeight: '700',
-    color: '#E9B82E',
+    color: '#E9B82E', // color-gold-600
   },
   tabLabelInactive: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter',
     fontWeight: '600',
-    color: '#718096',
+    color: '#06294D',
   },
 });
 

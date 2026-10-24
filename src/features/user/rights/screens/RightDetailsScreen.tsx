@@ -47,7 +47,7 @@ export interface RightDetailsScreenProps {
 const TABS: { id: SectionId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'keyAreas', label: 'Key Areas' },
-  { id: 'support', label: 'Support & Help' },
+  { id: 'support', label: 'Support and Help' },
   { id: 'work', label: "HRSJM's Work" },
 ];
 
@@ -502,7 +502,7 @@ const RightsDetailsContentView: React.FC<{
 
         {!compactTopics && content.helpOptions?.length ? (
           <View onLayout={event => setSectionLayout('support', event)}>
-            <SectionTitle title="Get Help & Support" />
+            <SectionTitle title="Get Help and Support" />
             <View style={styles.helpGrid}>
               {content.helpOptions.map(item => (
                 <CompactCard
@@ -611,7 +611,16 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
         onBack={onBack}
+        activeNav="rights"
         onPressNotifications={() => undefined}
+        onNavigateNav={(id: string) => {
+          if (id === 'home') onOpenHome?.();
+          else if (id === 'about') onOpenAbout?.();
+          else if (id === 'rights') onOpenRights();
+          else if (id === 'events') onOpenEvents?.();
+          else if (id === 'news') onOpenNews?.();
+          else if (id === 'contact') onOpenContact?.();
+        }}
       />
       <ScrollView
         ref={scrollRef}
@@ -827,10 +836,9 @@ const styles = StyleSheet.create({
   },
   quoteText: {
     color: AdminColors.primaryDark,
-    fontFamily: UserFontFamilies.heading,
-    fontSize: 13,
-    lineHeight: 18.5,
-    fontStyle: 'italic',
+    fontFamily: UserFontFamilies.quote,
+    fontSize: 18,
+    lineHeight: 22,
     fontWeight: '600',
   },
   quoteUnderline: {

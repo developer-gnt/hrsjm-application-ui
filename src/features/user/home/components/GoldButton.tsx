@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AdminColors, BorderRadius, Spacing } from '../../../../core/theme';
+import { AdminColors, BorderRadius, Spacing, UserFontFamilies } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 
 interface GoldButtonProps {
@@ -58,6 +58,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   label: {
+    fontFamily: UserFontFamilies.sans,
     fontSize: 13,
     lineHeight: 17,
     fontWeight: '700',

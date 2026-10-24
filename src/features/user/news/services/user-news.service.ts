@@ -58,7 +58,7 @@ export const mapRawToUserNewsArticle = (
   if (catLower.includes('human') || catLower.includes('rights')) {
     validCategory = 'Human Rights';
   } else if (catLower.includes('women') || catLower.includes('child')) {
-    validCategory = 'Women & Child';
+    validCategory = 'Women and Child';
   } else if (catLower.includes('community') || catLower.includes('relief')) {
     validCategory = 'Community';
   }

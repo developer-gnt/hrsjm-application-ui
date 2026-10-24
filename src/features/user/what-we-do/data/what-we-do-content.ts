@@ -94,7 +94,7 @@ export const WHAT_WE_DO_CONTENT: Record<WhatWeDoId, WhatWeDoContent> = {
   },
   'workshops-training': {
     id: 'workshops-training',
-    title: 'Workshops & Training',
+    title: 'Workshops and Training',
     heroDescription:
       'Creating opportunities to learn, develop practical skills and strengthen community participation.',
     heroImage: COMMUNITY_IMAGE,
@@ -223,7 +223,7 @@ export const WHAT_WE_DO_CONTENT: Record<WhatWeDoId, WhatWeDoContent> = {
   },
   'advocacy-awareness': {
     id: 'advocacy-awareness',
-    title: 'Advocacy & Awareness',
+    title: 'Advocacy and Awareness',
     heroDescription:
       'Promoting informed dialogue, public awareness and constructive engagement with institutions and community stakeholders.',
     heroImage: SOLIDARITY_IMAGE,
@@ -266,7 +266,7 @@ export const WHAT_WE_DO_CONTENT: Record<WhatWeDoId, WhatWeDoContent> = {
   },
   'research-rights-education': {
     id: 'research-rights-education',
-    title: 'Research & Rights Education',
+    title: 'Research and Rights Education',
     heroDescription:
       'Supporting informed action through research, documentation and accessible human-rights education resources.',
     heroImage: ORGANIZATION_IMAGE,
@@ -279,7 +279,7 @@ export const WHAT_WE_DO_CONTENT: Record<WhatWeDoId, WhatWeDoContent> = {
         icon: 'book-open',
       },
       {
-        title: 'Research & Documentation',
+        title: 'Research and Documentation',
         description: 'Collect and analyse evidence on rights issues and community trends.',
         icon: 'doc-search',
       },
@@ -289,7 +289,7 @@ export const WHAT_WE_DO_CONTENT: Record<WhatWeDoId, WhatWeDoContent> = {
         icon: 'file-text',
       },
       {
-        title: 'Reports & Publications',
+        title: 'Reports and Publications',
         description: 'Publish findings that inform action, policy and awareness.',
         icon: 'briefcase',
       },
@@ -322,7 +322,7 @@ export const WHAT_WE_DO_CONTENT: Record<WhatWeDoId, WhatWeDoContent> = {
         icon: 'scale',
       },
       {
-        title: 'Rights & Remedies',
+        title: 'Rights and Remedies',
         description: 'Explain options for recourse, support and safe action.',
         icon: 'shield-check',
       },
@@ -370,7 +370,7 @@ export const WHAT_WE_DO_CONTENT: Record<WhatWeDoId, WhatWeDoContent> = {
         icon: 'heart-pulse',
       },
       {
-        title: 'Women & Child Welfare',
+        title: 'Women and Child Welfare',
         description: 'Support community wellbeing and protection for vulnerable groups.',
         icon: 'heart-hands',
       },

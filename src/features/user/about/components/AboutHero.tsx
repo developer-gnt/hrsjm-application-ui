@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(6, 39, 77, 0.18)',
+    backgroundColor: 'rgba(3, 27, 49, 0.45)',
   },
   content: {
     position: 'absolute',

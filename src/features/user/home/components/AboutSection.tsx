@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AdminColors, BorderRadius, Spacing } from '../../../../core/theme';
+import { AdminColors, BorderRadius, Spacing, UserFontFamilies } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { SectionHeader } from './SectionHeader';
 import { ABOUT_DESCRIPTION } from '../data/home-preview-data';
@@ -56,9 +56,10 @@ const styles = StyleSheet.create({
   },
   description: {
     flex: 1,
+    fontFamily: UserFontFamilies.sans,
     fontSize: 12,
     lineHeight: 18,
-    color: AdminColors.textSecondary,
+    color: '#475569',
   },
   media: {
     width: 98,

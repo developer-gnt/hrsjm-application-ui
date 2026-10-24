@@ -30,7 +30,7 @@ export const MEMBER_QUICK_ACTIONS: HomeQuickAction[] = [
   { id: 'complaint', label: 'File a Complaint', icon: 'file-text' },
   { id: 'donate', label: 'Donate Now', icon: 'heart' },
   { id: 'renew', label: 'Renew Membership', icon: 'refresh' },
-  { id: 'events', label: 'Events & Activities', icon: 'calendar' },
+  { id: 'events', label: 'Events and Activities', icon: 'calendar' },
 ];
 
 export const SEEKER_QUICK_ACTIONS: HomeQuickAction[] = [
@@ -41,7 +41,7 @@ export const SEEKER_QUICK_ACTIONS: HomeQuickAction[] = [
 ];
 
 export const ABOUT_DESCRIPTION =
-  'Human Rights & Social Justice Mission (HRSJM) works for human rights, dignity, equality and social justice through awareness, advocacy, education and community support.';
+  'Human Rights and Social Justice Mission (HRSJM) works for human rights, dignity, equality and social justice through awareness, advocacy, education and community support.';
 
 export const RIGHTS_CATEGORIES: RightsCategory[] = [
   { id: 'human-rights', title: 'Human Rights', icon: 'scale' },
@@ -62,12 +62,12 @@ export const WHAT_WE_DO_ITEMS: WhatWeDoHomeItem[] = [
   },
   {
     id: 'workshops-training',
-    title: 'Workshops & Training',
+    title: 'Workshops and Training',
     icon: 'users',
   },
   {
     id: 'research-rights-education',
-    title: 'Research & Education',
+    title: 'Research and Education',
     icon: 'doc-search',
   },
   {

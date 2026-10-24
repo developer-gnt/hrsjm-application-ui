@@ -2,7 +2,7 @@ import type { ImageSourcePropType } from 'react-native';
 
 export const USER_NEWS_CATEGORIES = [
   'Human Rights',
-  'Women & Child',
+  'Women and Child',
   'Legal Awareness',
   'Community',
 ] as const;
@@ -130,7 +130,7 @@ export const USER_NEWS_ARTICLES: UserNewsArticle[] = [
   },
   {
     id: 'womens-rights-awareness-program',
-    category: 'Women & Child',
+    category: 'Women and Child',
     contentType: 'Program',
     title: 'HRSJM Conducts Women’s Rights Awareness Program',
     excerpt:
@@ -147,9 +147,9 @@ export const USER_NEWS_ARTICLES: UserNewsArticle[] = [
       'Awareness and community discussion',
       'Support resources and guidance',
     ],
-    relatedTopics: ['Women & Child', 'Safety', 'Human Rights', 'Community Support'],
+    relatedTopics: ['Women and Child', 'Safety', 'Human Rights', 'Community Support'],
     body: [
-      'This sample content is included to demonstrate a Women & Child article detail. It is not a claim that a program took place.',
+      'This sample content is included to demonstrate a Women and Child article detail. It is not a claim that a program took place.',
       'Verified editorial content can provide practical information about rights, safety and support options in an accessible format.',
     ],
     isDemo: true,

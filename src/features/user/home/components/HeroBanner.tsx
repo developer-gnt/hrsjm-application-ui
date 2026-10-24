@@ -28,7 +28,7 @@ const HEADLINE_LINES = ['For Human Rights,', 'Dignity and a'];
 const HEADLINE_GOLD_LINE = 'More Just Society.';
 const SUPPORTING_TEXT =
   'We work for equal rights, social justice and stronger communities across India.';
-const SCRIPT_LINES = ['People', 'Rights', 'Justice', 'Change'];
+const SCRIPT_LINES = ['People.', 'Rights.', 'Justice.', 'Change.'];
 const AUTOPLAY_INTERVAL_MS = 4500;
 const TRANSITION_DURATION_MS = 360;
 
@@ -72,7 +72,10 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   showCta = true,
 }) => {
   const { width } = useWindowDimensions();
-  const height = Math.round(Math.min(295, Math.max(250, width * 0.68)));
+  const isDesktop = width >= 768;
+  const height = isDesktop
+    ? Math.min(380, Math.max(340, Math.round(width * 0.36)))
+    : Math.round(Math.min(320, Math.max(260, width * 0.72)));
   const trackOffset = useRef(new Animated.Value(-width)).current;
   const trackPosition = useRef(1);
   const transitioning = useRef(false);
@@ -157,22 +160,25 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
         {LOOP_SLIDES.map((slide, index) => (
           <View key={`${slide.id}-${index}`} style={[styles.slide, { width, height }]}>
             <Image source={slide.image} style={styles.background} resizeMode="cover" />
+            <View style={styles.darkOverlay} />
 
-            <View style={styles.content}>
-              <Text style={styles.headline}>
+            <View style={[styles.content, isDesktop && styles.contentDesktop]}>
+              <Text style={[styles.headline, isDesktop && styles.headlineDesktop]}>
                 {slide.headlineLines.map(line => (
                   <Text key={line}>{`${line}\n`}</Text>
                 ))}
                 <Text style={styles.headlineGold}>{slide.goldLine}</Text>
               </Text>
 
-              <Text style={styles.supporting}>{slide.supporting}</Text>
+              <Text style={[styles.supporting, isDesktop && styles.supportingDesktop]}>
+                {slide.supporting}
+              </Text>
 
               {showCta && (
                 <View style={styles.cta}>
                   <GoldButton
                     label="Join the Movement"
-                    compact
+                    compact={!isDesktop}
                     onPress={onCtaPress}
                     textColor="#011F39"
                     backgroundColor="#FAD465"
@@ -209,15 +215,16 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 const styles = StyleSheet.create({
   container: {
     overflow: 'hidden',
-    borderBottomLeftRadius: 22,
-    borderBottomRightRadius: 22,
-    backgroundColor: '#011F39',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    backgroundColor: '#011F39', // color-navy-950
   },
   track: {
     flexDirection: 'row',
   },
   slide: {
     overflow: 'hidden',
+    position: 'relative',
   },
   background: {
     position: 'absolute',
@@ -227,44 +234,76 @@ const styles = StyleSheet.create({
     width: '108%',
     height: '100%',
   },
+  darkOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(3, 27, 49, 0.58)', // color-overlay with transparency
+  },
   content: {
-    width: '63%',
+    width: '68%',
     paddingHorizontal: Spacing.base,
-    paddingTop: 18,
+    paddingTop: 16,
+    zIndex: 2,
+  },
+  contentDesktop: {
+    width: '56%',
+    paddingHorizontal: 28,
+    paddingTop: 36,
+  },
+  eyebrow: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FAD465', // color-gold-500
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    marginBottom: 5,
+    fontFamily: 'Inter',
   },
   headline: {
     fontFamily: UserFontFamilies.heading,
-    fontSize: 21,
-    lineHeight: 27,
+    fontSize: 25,
+    lineHeight: 30,
     fontWeight: '700',
-    color: AdminColors.textOnDark,
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
+  },
+  headlineDesktop: {
+    fontSize: 34,
+    lineHeight: 40,
   },
   headlineGold: {
     color: '#FAD465',
+    fontFamily: UserFontFamilies.heading,
+    fontWeight: '700',
   },
   supporting: {
-    fontSize: 11,
-    lineHeight: 15.5,
-    color: AdminColors.textOnDark,
+    fontSize: 13,
+    lineHeight: 18,
+    color: 'rgba(255, 255, 255, 0.95)',
     marginTop: 8,
-    maxWidth: 220,
-    opacity: 0.95,
+    maxWidth: 270,
+    fontFamily: 'Inter',
+  },
+  supportingDesktop: {
+    fontSize: 14.5,
+    lineHeight: 21,
+    maxWidth: 380,
+    marginTop: 12,
   },
   cta: {
     marginTop: 14,
   },
   script: {
     position: 'absolute',
-    right: 8,
-    bottom: 34,
-    fontFamily: Platform.select({ ios: 'Snell Roundhand', default: 'cursive' }),
+    right: 14,
+    bottom: 22,
+    fontFamily: UserFontFamilies.quote,
     fontStyle: 'italic',
-    fontSize: 13.5,
-    lineHeight: 16,
-    color: AdminColors.textOnDark,
+    fontSize: 22,
+    lineHeight: 25,
+    color: '#FFFFFF',
     textAlign: 'right',
-    transform: [{ rotate: '-63deg' }],
-    opacity: 0.9,
+    opacity: 0.95,
+    zIndex: 2,
   },
   dots: {
     position: 'absolute',
@@ -273,6 +312,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    zIndex: 3,
   },
   dot: {
     width: 6,

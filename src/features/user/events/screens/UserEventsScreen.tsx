@@ -21,8 +21,7 @@ import {
   UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
-import { ContactHeader } from '../../contact/components/ContactHeader';
-import { AdminHeader } from '../../../../app/navigation/AdminHeader';
+import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeTab } from '../../home/types/home.types';
 import {
@@ -54,18 +53,18 @@ type EventCategoryFilter = 'All' | UserEventCategory;
 type EventLocationFilter = 'All Locations' | string;
 
 const CATEGORY_COLORS: Record<string, { background: string; text: string }> = {
-  Workshop: { background: '#FFF1C9', text: '#8A5A00' },
-  Awareness: { background: '#FCE9DF', text: '#9C4F2E' },
-  'Awareness Camp': { background: '#FCE9DF', text: '#9C4F2E' },
-  Community: { background: '#E7F4E8', text: '#397047' },
-  Education: { background: '#E8F0FB', text: '#315A90' },
-  Seminar: { background: '#E8F0FB', text: '#315A90' },
-  'Relief Activity': { background: '#FFF1C9', text: '#8A5A00' },
-  'Health Camp': { background: '#E7F4E8', text: '#397047' },
+  Workshop: { background: '#FFF9E6', text: '#0B2F52' }, // gold soft + navy primary
+  Awareness: { background: '#EDF2F7', text: '#0B2F52' }, // blue-100 + navy primary
+  'Awareness Camp': { background: '#EDF2F7', text: '#0B2F52' },
+  Community: { background: '#FFF9E6', text: '#0B2F52' },
+  Education: { background: '#EDF2F7', text: '#0B2F52' },
+  Seminar: { background: '#EDF2F7', text: '#0B2F52' },
+  'Relief Activity': { background: '#FFF9E6', text: '#0B2F52' },
+  'Health Camp': { background: '#EDF2F7', text: '#0B2F52' },
 };
 
 const getCategoryColor = (category: string) => {
-  return CATEGORY_COLORS[category] || { background: '#E8F0FB', text: '#315A90' };
+  return CATEGORY_COLORS[category] || { background: '#EDF2F7', text: '#0B2F52' };
 };
 
 const MONTHS: Record<string, number> = {
@@ -323,10 +322,9 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <AdminHeader
-        showMenu={false}
-        showBack={Boolean(showBackButton && onBack)}
-        onBack={onBack}
+      <HomeHeader
+        activeNav="events"
+        onBack={showBackButton && onBack ? onBack : undefined}
       />
 
       <ScrollView

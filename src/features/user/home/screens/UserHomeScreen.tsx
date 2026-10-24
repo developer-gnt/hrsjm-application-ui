@@ -205,6 +205,8 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
+        activeNav="home"
+        onOpenDonate={() => onOpenActionPage?.('donate')}
         onPressSearch={() => onOpenRights?.()}
         onPressNotifications={() => {
           if (onOpenNotifications) {
@@ -387,7 +389,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
         <View style={styles.section}>
           <View style={styles.sectionInset}>
             <SectionHeader
-              title="Articles & Blogs"
+              title="Articles and Blogs"
               linkLabel="View All"
               onLinkPress={() => {
                 if (onOpenBlogs) {

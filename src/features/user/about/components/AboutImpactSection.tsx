@@ -122,7 +122,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 18,
-    backgroundColor: AdminColors.cardSurface,
+    backgroundColor: '#FFF9E6',
+    borderWidth: 1.5,
+    borderColor: '#C9971A',
   },
   value: {
     fontFamily: UserFontFamilies.heading,

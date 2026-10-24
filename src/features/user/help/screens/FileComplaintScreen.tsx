@@ -928,7 +928,17 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <HomeHeader onBack={handleStepBack} />
+      <HomeHeader
+        onBack={handleStepBack}
+        onNavigateNav={(id: string) => {
+          if (id === 'home') onOpenHome?.();
+          else if (id === 'about') onOpenAbout?.();
+          else if (id === 'rights') onOpenRights?.();
+          else if (id === 'events') onOpenEvents?.();
+          else if (id === 'news') onOpenNews?.();
+          else if (id === 'contact') onOpenContact?.();
+        }}
+      />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -956,7 +966,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="View existing tickets"
               >
-                <AppIcon name="file-text" size={14} color="#1E40AF" />
+                <AppIcon name="file-text" size={14} color={AdminColors.primaryDark} />
                 <Text style={styles.trackTicketsText}>My Tickets</Text>
               </TouchableOpacity>
             ) : null}
@@ -1240,9 +1250,9 @@ const styles = StyleSheet.create({
   attachmentItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
     borderRadius: BorderRadius.base,
     paddingHorizontal: Spacing.md,
     paddingVertical: 10,
@@ -1252,7 +1262,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 6,
-    backgroundColor: '#EAF1FE',
+    backgroundColor: '#EDF2F7',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1506,9 +1516,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#EDF2F7',
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#DBE5EE',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: BorderRadius.full,
@@ -1517,13 +1527,13 @@ const styles = StyleSheet.create({
   trackTicketsText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1E40AF',
+    color: AdminColors.primaryDark,
   },
   countryCodePill: {
     paddingRight: 8,
     marginRight: 4,
     borderRightWidth: 1,
-    borderRightColor: '#CBD5E1',
+    borderRightColor: '#DCE4EC',
     justifyContent: 'center',
   },
   countryCodeText: {

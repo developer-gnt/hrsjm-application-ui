@@ -145,7 +145,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
   const content = ACTION_PAGE_CONTENT[pageId];
   const { width } = useWindowDimensions();
   const [selectedCause, setSelectedCause] = useState<string>(
-    content.cards?.[0]?.title || 'Awareness & Education',
+    content.cards?.[0]?.title || 'Awareness and Education',
   );
   const [selectedAmount, setSelectedAmount] = useState<number | 'custom'>(500);
   const [customAmountInput, setCustomAmountInput] = useState('');
@@ -179,7 +179,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
       pageId === 'donate' && selectedCause
         ? `HRSJM Donation - ${selectedCause}`
         : 'HRSJM General Donation',
-    subtitle: 'Human Rights & Social Justice Mission',
+    subtitle: 'Human Rights and Social Justice Mission',
     amount: resolvedDonationAmount,
     donorName: authUser?.full_name || 'Donor',
     donorMobile: authUser?.mobile_number || '',
@@ -251,6 +251,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
+        activeNav={pageId === 'join' ? 'join' : undefined}
         onBack={onBack}
         onPressSearch={() => showPendingAction('Search')}
         onPressNotifications={() => showPendingAction('Notifications')}
