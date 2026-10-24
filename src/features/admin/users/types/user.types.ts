@@ -18,6 +18,7 @@ export interface UserVerificationDocument {
 export interface UserItem {
   id: string;
   memberId?: string;
+  applicationNumber?: string;
   name: string;
   email: string;
   phone: string;

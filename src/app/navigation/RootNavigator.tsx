@@ -58,8 +58,8 @@ export const RootNavigator: React.FC = () => {
 
   let activeRoleType: 'member' | 'user' | 'seeker' | 'default' = 'default';
   if (isMember) activeRoleType = 'member';
-  else if (isUser) activeRoleType = 'user';
   else if (isSeeker) activeRoleType = 'seeker';
+  else if (isUser) activeRoleType = 'user';
 
   return (
     <NavigationContainer>

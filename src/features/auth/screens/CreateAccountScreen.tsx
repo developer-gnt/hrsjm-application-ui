@@ -12,6 +12,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -27,6 +28,7 @@ import {
 import { DobDatePickerModal } from '../components/DobDatePickerModal';
 import { getRegistrationState, updateRegistrationState } from '../state/registrationState';
 import { navigateToCreateAccountAdditional } from '../../../core/navigation/appRouter';
+import { authService } from '../services/auth.service';
 
 const HRSJM_LOGO = require('../../../assets/hrsjm_logo.png');
 const HERO_BG = require('../../../assets/create_account_hero.jpg');
@@ -66,6 +68,143 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   const [dob, setDob] = useState(() => regState.dob || '');
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
 
+  // Field validation and database check states
+  const [errors, setErrors] = useState<{
+    fullName?: string;
+    email?: string;
+    phone?: string;
+  }>({});
+  const [isValidating, setIsValidating] = useState(false);
+  const [checkingPhone, setCheckingPhone] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+
+  // Validation Rules
+  const validateFullName = (name: string): string | null => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return 'Full name is required';
+    }
+    if (trimmed.length < 2) {
+      return 'Full name must be at least 2 characters';
+    }
+    const nameRegex = /^[a-zA-Z\s.'-]+$/;
+    if (!nameRegex.test(trimmed)) {
+      return 'Full name can only contain letters and spaces (no numbers or symbols)';
+    }
+    if (trimmed.length > 70) {
+      return 'Full name cannot exceed 70 characters';
+    }
+    return null;
+  };
+
+  const validateEmail = (emailStr: string): string | null => {
+    const trimmed = emailStr.trim();
+    if (!trimmed) {
+      return 'Email address is required';
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(trimmed)) {
+      return 'Please enter a valid email address (e.g. name@example.com)';
+    }
+    return null;
+  };
+
+  const validatePhone = (phoneStr: string): string | null => {
+    const digitsOnly = phoneStr.replace(/\D/g, '');
+    if (!digitsOnly) {
+      return 'Mobile number is required';
+    }
+    if (digitsOnly.length !== 10) {
+      return 'Mobile number must be exactly 10 digits';
+    }
+    if (!/^[6-9]\d{9}$/.test(digitsOnly)) {
+      return 'Mobile number must start with 6, 7, 8, or 9';
+    }
+    return null;
+  };
+
+  // Change Handlers
+  const handleFullNameChange = (text: string) => {
+    setFullName(text);
+    updateRegistrationState({ fullName: text });
+    if (errors.fullName) {
+      setErrors((prev) => ({ ...prev, fullName: undefined }));
+    }
+  };
+
+  const handleFullNameBlur = () => {
+    const err = validateFullName(fullName);
+    if (err) {
+      setErrors((prev) => ({ ...prev, fullName: err }));
+    }
+  };
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    updateRegistrationState({ email: text });
+    if (errors.email) {
+      setErrors((prev) => ({ ...prev, email: undefined }));
+    }
+  };
+
+  const handleEmailBlur = async () => {
+    const err = validateEmail(email);
+    if (err) {
+      setErrors((prev) => ({ ...prev, email: err }));
+      return;
+    }
+    // Pre-check database for email duplication
+    try {
+      setCheckingEmail(true);
+      const res = await authService.checkDuplicates(undefined, email.trim().toLowerCase());
+      if (res.email_taken) {
+        setErrors((prev) => ({
+          ...prev,
+          email: res.email_message || 'Email address is already registered in the database.',
+        }));
+      }
+    } catch {
+      // Ignore background check failure
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  const handlePhoneChange = (text: string) => {
+    // Sanitize to only numeric digits
+    const digitsOnly = text.replace(/\D/g, '').slice(0, 10);
+    setPhone(digitsOnly);
+    updateRegistrationState({
+      phone: digitsOnly ? `${countryCode} ${digitsOnly}` : '',
+    });
+    if (errors.phone) {
+      setErrors((prev) => ({ ...prev, phone: undefined }));
+    }
+  };
+
+  const handlePhoneBlur = async () => {
+    const err = validatePhone(phone);
+    if (err) {
+      setErrors((prev) => ({ ...prev, phone: err }));
+      return;
+    }
+    // Pre-check database for mobile duplication
+    try {
+      setCheckingPhone(true);
+      const res = await authService.checkDuplicates(phone.replace(/\D/g, ''), undefined);
+      if (res.mobile_taken) {
+        setErrors((prev) => ({
+          ...prev,
+          phone: res.mobile_message || 'Mobile number is already registered in the database.',
+        }));
+      }
+    } catch {
+      // Ignore background check failure
+    } finally {
+      setCheckingPhone(false);
+    }
+  };
+
   // Sizing calculations for responsive layout
   const isTabletOrDesktop = width > 520;
   const contentMaxWidth = isTabletOrDesktop ? 440 : width;
@@ -80,21 +219,86 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
     }
   };
 
-  const handleContinue = () => {
-    const formattedPhone = phone.trim()
-      ? `${countryCode} ${phone.trim()}`
-      : '';
-    updateRegistrationState({
-      fullName: fullName.trim(),
-      email: email.trim(),
-      phone: formattedPhone,
-      countryCode,
-      dob: dob.trim(),
-    });
-    if (onContinue) {
-      onContinue({ fullName: fullName.trim(), email: email.trim(), phone: phone.trim(), countryCode, dob: dob.trim() });
-    } else {
-      navigateToCreateAccountAdditional();
+  const handleContinue = async () => {
+    // 1. Synchronous format validation
+    const nameErr = validateFullName(fullName);
+    const emailErr = validateEmail(email);
+    const phoneErr = validatePhone(phone);
+
+    if (nameErr || emailErr || phoneErr) {
+      setErrors({
+        fullName: nameErr || undefined,
+        email: emailErr || undefined,
+        phone: phoneErr || undefined,
+      });
+      return;
+    }
+
+    // 2. Database Duplication Check
+    setIsValidating(true);
+    try {
+      const cleanMobile = phone.replace(/\D/g, '').slice(-10);
+      const cleanEmail = email.trim().toLowerCase();
+
+      const dupRes = await authService.checkDuplicates(cleanMobile, cleanEmail);
+
+      if (!dupRes.available) {
+        setErrors({
+          phone: dupRes.mobile_taken
+            ? dupRes.mobile_message || 'Mobile number is already registered in the database.'
+            : undefined,
+          email: dupRes.email_taken
+            ? dupRes.email_message || 'Email address is already registered in the database.'
+            : undefined,
+        });
+        return;
+      }
+
+      // Both format validation and database duplication checks passed!
+      setErrors({});
+      const formattedPhone = `${countryCode} ${cleanMobile}`;
+      updateRegistrationState({
+        fullName: fullName.trim(),
+        email: cleanEmail,
+        phone: formattedPhone,
+        countryCode,
+        dob: dob.trim(),
+      });
+      if (onContinue) {
+        onContinue({
+          fullName: fullName.trim(),
+          email: cleanEmail,
+          phone: cleanMobile,
+          countryCode,
+          dob: dob.trim(),
+        });
+      } else {
+        navigateToCreateAccountAdditional();
+      }
+    } catch (err: any) {
+      // In case of network check failure, proceed with standard registration pipeline
+      const cleanMobile = phone.replace(/\D/g, '').slice(-10);
+      const cleanEmail = email.trim().toLowerCase();
+      updateRegistrationState({
+        fullName: fullName.trim(),
+        email: cleanEmail,
+        phone: `${countryCode} ${cleanMobile}`,
+        countryCode,
+        dob: dob.trim(),
+      });
+      if (onContinue) {
+        onContinue({
+          fullName: fullName.trim(),
+          email: cleanEmail,
+          phone: cleanMobile,
+          countryCode,
+          dob: dob.trim(),
+        });
+      } else {
+        navigateToCreateAccountAdditional();
+      }
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -194,96 +398,136 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
               </Text>
 
               {/* Field 1: Full Name */}
-              <View style={styles.inputField}>
-                <View style={styles.inputLeftIcon}>
-                  <UserOutlineIcon size={18} color="#475569" />
+              <View style={styles.fieldWrapper}>
+                <View
+                  style={[
+                    styles.inputField,
+                    errors.fullName ? styles.inputFieldError : null,
+                  ]}
+                >
+                  <View style={styles.inputLeftIcon}>
+                    <UserOutlineIcon
+                      size={18}
+                      color={errors.fullName ? '#DC2626' : '#475569'}
+                    />
+                  </View>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Full Name *"
+                    placeholderTextColor="#94A3B8"
+                    value={fullName}
+                    onChangeText={handleFullNameChange}
+                    onBlur={handleFullNameBlur}
+                    autoCapitalize="words"
+                    accessibilityLabel="Full Name"
+                  />
                 </View>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Full Name *"
-                  placeholderTextColor="#94A3B8"
-                  value={fullName}
-                  onChangeText={(text) => {
-                    setFullName(text);
-                    updateRegistrationState({ fullName: text });
-                  }}
-                  autoCapitalize="words"
-                  accessibilityLabel="Full Name"
-                />
+                {errors.fullName && (
+                  <Text style={styles.fieldErrorText}>{errors.fullName}</Text>
+                )}
               </View>
 
               {/* Field 2: Email Address */}
-              <View style={styles.inputField}>
-                <View style={styles.inputLeftIcon}>
-                  <MailOutlineIcon size={18} color="#475569" />
+              <View style={styles.fieldWrapper}>
+                <View
+                  style={[
+                    styles.inputField,
+                    errors.email ? styles.inputFieldError : null,
+                  ]}
+                >
+                  <View style={styles.inputLeftIcon}>
+                    <MailOutlineIcon
+                      size={18}
+                      color={errors.email ? '#DC2626' : '#475569'}
+                    />
+                  </View>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Email Address *"
+                    placeholderTextColor="#94A3B8"
+                    value={email}
+                    onChangeText={handleEmailChange}
+                    onBlur={handleEmailBlur}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    accessibilityLabel="Email Address"
+                  />
+                  {checkingEmail && (
+                    <ActivityIndicator size="small" color="#EAA224" style={{ marginLeft: 6 }} />
+                  )}
                 </View>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Email Address *"
-                  placeholderTextColor="#94A3B8"
-                  value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    updateRegistrationState({ email: text });
-                  }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  accessibilityLabel="Email Address"
-                />
+                {errors.email && (
+                  <Text style={styles.fieldErrorText}>{errors.email}</Text>
+                )}
               </View>
 
               {/* Field 3: Mobile Number with Flag +91 */}
-              <View style={styles.inputField}>
-                <View style={styles.inputLeftIcon}>
-                  <PhoneOutlineIcon size={18} color="#475569" />
+              <View style={styles.fieldWrapper}>
+                <View
+                  style={[
+                    styles.inputField,
+                    errors.phone ? styles.inputFieldError : null,
+                  ]}
+                >
+                  <View style={styles.inputLeftIcon}>
+                    <PhoneOutlineIcon
+                      size={18}
+                      color={errors.phone ? '#DC2626' : '#475569'}
+                    />
+                  </View>
+                  <View style={styles.countryPicker}>
+                    <Text style={styles.flagEmoji}>🇮🇳</Text>
+                    <Text style={styles.countryCodeText}>{countryCode}</Text>
+                    <ChevronDownIcon size={10} color="#64748B" />
+                  </View>
+                  <View style={styles.verticalDivider} />
+                  <TextInput
+                    style={[styles.textInput, styles.phoneInput]}
+                    placeholder="Mobile Number *"
+                    placeholderTextColor="#94A3B8"
+                    value={phone}
+                    onChangeText={handlePhoneChange}
+                    onBlur={handlePhoneBlur}
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    accessibilityLabel="Mobile Number"
+                  />
+                  {checkingPhone && (
+                    <ActivityIndicator size="small" color="#EAA224" style={{ marginLeft: 6 }} />
+                  )}
                 </View>
-                <View style={styles.countryPicker}>
-                  <Text style={styles.flagEmoji}>🇮🇳</Text>
-                  <Text style={styles.countryCodeText}>{countryCode}</Text>
-                  <ChevronDownIcon size={10} color="#64748B" />
-                </View>
-                <View style={styles.verticalDivider} />
-                <TextInput
-                  style={[styles.textInput, styles.phoneInput]}
-                  placeholder="Mobile Number *"
-                  placeholderTextColor="#94A3B8"
-                  value={phone}
-                  onChangeText={(text) => {
-                    setPhone(text);
-                    updateRegistrationState({
-                      phone: text ? `${countryCode} ${text}` : '',
-                    });
-                  }}
-                  keyboardType="phone-pad"
-                  maxLength={10}
-                  accessibilityLabel="Mobile Number"
-                />
+                {errors.phone && (
+                  <Text style={styles.fieldErrorText}>{errors.phone}</Text>
+                )}
               </View>
 
               {/* Field 4: Date of Birth with Calendar Picker */}
-              <TouchableOpacity
-                style={styles.inputField}
-                onPress={() => setIsDatePickerVisible(true)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="Select Date of Birth"
-              >
-                <View style={styles.inputLeftIcon}>
-                  <CalendarOutlineIcon size={18} color="#475569" />
-                </View>
-                <Text
-                  style={[
-                    styles.textInput,
-                    styles.dobText,
-                    !dob && styles.placeholderText,
-                  ]}
+              <View style={styles.fieldWrapper}>
+                <TouchableOpacity
+                  style={styles.inputField}
+                  onPress={() => setIsDatePickerVisible(true)}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select Date of Birth"
                 >
-                  {dob || 'Date of Birth'}
-                </Text>
-                <View style={styles.inputRightIcon}>
-                  <CalendarOutlineIcon size={18} color="#94A3B8" />
-                </View>
-              </TouchableOpacity>
+                  <View style={styles.inputLeftIcon}>
+                    <CalendarOutlineIcon size={18} color="#475569" />
+                  </View>
+                  <Text
+                    style={[
+                      styles.textInput,
+                      styles.dobText,
+                      !dob && styles.placeholderText,
+                    ]}
+                  >
+                    {dob || 'Date of Birth (Optional)'}
+                  </Text>
+                  <View style={styles.inputRightIcon}>
+                    <CalendarOutlineIcon size={18} color="#94A3B8" />
+                  </View>
+                </TouchableOpacity>
+              </View>
 
               {/* DOB Calendar Picker Modal */}
               <DobDatePickerModal
@@ -298,16 +542,26 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
 
               {/* Continue Button */}
               <TouchableOpacity
-                style={styles.continueButton}
+                style={[
+                  styles.continueButton,
+                  isValidating && styles.continueButtonDisabled,
+                ]}
                 onPress={handleContinue}
+                disabled={isValidating}
                 activeOpacity={0.85}
                 accessibilityRole="button"
                 accessibilityLabel="Continue"
               >
-                <Text style={styles.continueButtonText}>Continue</Text>
-                <View style={styles.continueArrowWrapper}>
-                  <ArrowRightIcon size={16} color="#0F2860" />
-                </View>
+                {isValidating ? (
+                  <ActivityIndicator size="small" color="#0F2860" />
+                ) : (
+                  <>
+                    <Text style={styles.continueButtonText}>Continue</Text>
+                    <View style={styles.continueArrowWrapper}>
+                      <ArrowRightIcon size={16} color="#0F2860" />
+                    </View>
+                  </>
+                )}
               </TouchableOpacity>
 
               {/* OR Divider */}
@@ -497,6 +751,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 18,
   },
+  fieldWrapper: {
+    marginBottom: 13,
+  },
   inputField: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -506,7 +763,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     height: 48,
-    marginBottom: 13,
+    marginBottom: 0,
+  },
+  inputFieldError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  fieldErrorText: {
+    fontSize: 11.5,
+    color: '#DC2626',
+    marginTop: 4,
+    marginLeft: 4,
+    fontWeight: '500',
   },
   inputLeftIcon: {
     marginRight: 10,
@@ -569,6 +837,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 2,
+  },
+  continueButtonDisabled: {
+    opacity: 0.65,
   },
   continueButtonText: {
     fontSize: 15,

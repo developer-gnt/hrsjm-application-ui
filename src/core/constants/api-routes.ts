@@ -9,6 +9,7 @@ export const ApiRoutes = {
     LOGOUT: '/auth/logout',
     REFRESH: '/auth/refresh',
     CHANGE_PASSWORD: '/auth/change-password',
+    CHECK_DUPLICATES: '/auth/check-duplicates',
   },
 
   // Users
@@ -39,6 +40,7 @@ export const ApiRoutes = {
     RENEWAL_HISTORY: (id: string | number) => `/memberships/${id}/renewal-history`,
     CATEGORIES: '/membership-categories',
     ID_CARD: (id: string | number) => `/membership-id/memberships/${id}/card`,
+    RESET_PASSWORD: (id: string | number) => `/memberships/${id}/reset-password`,
   },
 
   // Renewals

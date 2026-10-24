@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  Platform,
 } from 'react-native';
 import { BorderRadius, Spacing } from '../../../../core';
 import { UserItem, UserType, UserStatus } from '../types/user.types';
@@ -192,18 +193,26 @@ export const UserCard: React.FC<UserCardProps> = ({
           </Text>
         </View>
 
-        {/* Role Badge matching Reference Image 1 (placed under phone!) */}
-        <View style={[styles.roleBadge, { backgroundColor: typeConfig.bg }]}>
-          <View style={styles.roleBadgeIconWrap}>
-            {typeConfig.isGroup ? (
-              <UsersGroupIcon size={12} color={typeConfig.text} />
-            ) : (
-              <UserOutlineIcon size={12} color={typeConfig.text} />
-            )}
+        {/* Role Badge & Application Number */}
+        <View style={styles.badgeAndRefRow}>
+          <View style={[styles.roleBadge, { backgroundColor: typeConfig.bg }]}>
+            <View style={styles.roleBadgeIconWrap}>
+              {typeConfig.isGroup ? (
+                <UsersGroupIcon size={12} color={typeConfig.text} />
+              ) : (
+                <UserOutlineIcon size={12} color={typeConfig.text} />
+              )}
+            </View>
+            <Text style={[styles.roleBadgeText, { color: typeConfig.text }]}>
+              {typeConfig.label}
+            </Text>
           </View>
-          <Text style={[styles.roleBadgeText, { color: typeConfig.text }]}>
-            {typeConfig.label}
-          </Text>
+
+          {user.applicationNumber ? (
+            <View style={styles.appNumberPill}>
+              <Text style={styles.appNumberPillText}>{user.applicationNumber}</Text>
+            </View>
+          ) : null}
         </View>
       </View>
 
@@ -653,5 +662,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#64748B',
+  },
+  badgeAndRefRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  appNumberPill: {
+    backgroundColor: '#F0F5FA',
+    borderWidth: 1,
+    borderColor: '#D4E4F7',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  appNumberPillText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#0F2860',
+    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' }),
   },
 });

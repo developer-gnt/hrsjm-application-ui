@@ -297,10 +297,18 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
               </View>
               <View style={styles.metricTextWrap}>
                 <Text style={styles.metricLabel}>
-                  {isMember && user.memberId ? 'Member ID' : 'User ID'}
+                  {isMember && user.memberId
+                    ? 'Member ID'
+                    : user.applicationNumber
+                    ? 'Application No.'
+                    : 'User ID'}
                 </Text>
                 <Text style={styles.metricValue} numberOfLines={1}>
-                  {isMember && user.memberId ? user.memberId : `#${user.id}`}
+                  {isMember && user.memberId
+                    ? user.memberId
+                    : user.applicationNumber
+                    ? user.applicationNumber
+                    : `#${user.id}`}
                 </Text>
               </View>
             </View>

@@ -37,6 +37,7 @@ export interface RegistrationState {
   uploadedFileSize?: string;
   uploadedFileUri?: string;
   hasUploadedDocument?: boolean;
+  applicationNumber?: string;
 }
 
 const DEFAULT_REGISTRATION_STATE: RegistrationState = {

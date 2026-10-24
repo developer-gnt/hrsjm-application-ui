@@ -30,6 +30,9 @@ interface MembershipFilterModalProps {
 
 const MEMBERSHIP_TYPES = [
   'All Types',
+  'Donation Seeker',
+  'District Unit',
+  'State Unit',
   'Individual Membership',
   'Family Membership',
   'Life Membership',

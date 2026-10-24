@@ -31,6 +31,7 @@ import {
   membershipApplicationsStore,
   createApplicationFromRegistration,
 } from '../../admin/membershipApplications';
+import { usersStore } from '../../admin/users/services/usersStore';
 import { AdminColors } from '../../../core/theme/colors';
 
 type RegisterScreenProps = NativeStackScreenProps<AuthStackParamList, 'Register'>;
@@ -82,14 +83,24 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
       Alert.alert('Invalid Mobile', 'Please enter a valid 10-digit mobile number.');
       return;
     }
-    if (formData.fullName.trim().length < 2) {
+    const trimmedName = formData.fullName.trim();
+    if (trimmedName.length < 2) {
       Alert.alert('Invalid Name', 'Please enter your full name (minimum 2 characters).');
+      return;
+    }
+    if (!/^[a-zA-Z\s.'-]+$/.test(trimmedName)) {
+      Alert.alert('Invalid Name', 'Full name can only contain letters and spaces (no numbers or symbols).');
+      return;
+    }
+    const trimmedEmail = formData.email.trim();
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmedEmail)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address (e.g. name@example.com).');
       return;
     }
 
     updateRegistrationState({
-      fullName: formData.fullName.trim(),
-      email: formData.email.trim(),
+      fullName: trimmedName,
+      email: trimmedEmail,
       phone: `${formData.countryCode || '+91'} ${cleanMobile}`,
       countryCode: formData.countryCode || '+91',
       dob: formData.dob.trim(),
@@ -162,18 +173,18 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         role_name: roleName,
       });
 
-      // 2. Also register into Admin Membership Applications store for administrative review
-      if (state.accountType === 'member') {
-        const docTitleMap: Record<string, string> = {
-          aadhaar: 'Aadhaar Card',
-          pan: 'PAN Card',
-          passport: 'Passport',
-          driving: 'Driving Licence',
-          voter: 'Voter ID',
-          other: 'Other Document',
-        };
-        const docTitle = docTitleMap[selectedDoc] || 'Document';
+      // 2. Also register into Admin stores for administrative review
+      const docTitleMap: Record<string, string> = {
+        aadhaar: 'Aadhaar Card',
+        pan: 'PAN Card',
+        passport: 'Passport',
+        driving: 'Driving Licence',
+        voter: 'Voter ID',
+        other: 'Other Document',
+      };
+      const docTitle = docTitleMap[selectedDoc] || 'Document';
 
+      if (state.accountType === 'member') {
         const newApp = createApplicationFromRegistration({
           fullName: state.fullName,
           email: state.email,
@@ -187,6 +198,17 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
           documents: state.documents,
         });
         membershipApplicationsStore.addApplication(newApp);
+      } else if (state.accountType === 'seeker') {
+        // Register user into admin verification list with pending status
+        usersStore.registerUserFromRegistration({
+          ...state,
+          accountType: 'seeker',
+          accountTypeLabel: 'Donation Seeker',
+          selectedDocTitle: docTitle,
+          uploadedFileName: uploadedFile.name,
+          uploadedFileSize: uploadedFile.formattedSize,
+          uploadedFileUri: uploadedFile.uri,
+        });
       }
 
       setStep(3); // Go to Complete

@@ -3,10 +3,14 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
+  Text,
   View,
   type ScrollViewInstance,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '../../../auth/store/authStore';
+import { usersStore } from '../../../admin/users/services/usersStore';
 import { AdminColors, Spacing } from '../../../../core/theme';
 import { HomeHeader } from '../components/HomeHeader';
 import { HeroBanner } from '../components/HeroBanner';
@@ -132,6 +136,29 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   const [latestNews, setLatestNews] = useState<HomeNewsItem[]>(LATEST_NEWS);
   const [blogs, setBlogs] = useState<HomeBlogItem[]>(DEFAULT_HOME_BLOGS);
   const [upcomingEvents, setUpcomingEvents] = useState<HomeEvent[]>(UPCOMING_EVENTS);
+  const [hasPendingSeekerApp, setHasPendingSeekerApp] = useState(false);
+  const [pendingSeekerAppNumber, setPendingSeekerAppNumber] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const authUser = useAuthStore.getState().user;
+      const phone = authUser?.mobile_number?.replace(/\D/g, '');
+      const email = authUser?.email?.toLowerCase();
+      const allUsers = usersStore.getAllUsers();
+      const matched = allUsers.find(
+        u =>
+          u.userType === 'seeker' &&
+          u.status === 'pending' &&
+          ((phone && u.phone && u.phone.replace(/\D/g, '').includes(phone)) ||
+            (email && u.email && u.email.toLowerCase() === email))
+      );
+      if (matched) {
+        setHasPendingSeekerApp(true);
+      }
+    } catch {
+      // test safe
+    }
+  }, []);
 
   const loadDynamicData = React.useCallback(async () => {
     try {
@@ -239,6 +266,22 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
         }}
         ref={scrollRef}
       >
+        {hasPendingSeekerApp && (
+          <View style={styles.seekerPendingBanner}>
+            <View style={styles.seekerPendingIconBox}>
+              <Text style={styles.seekerPendingEmoji}>🤲</Text>
+            </View>
+            <View style={styles.seekerPendingTextBox}>
+              <Text style={styles.seekerPendingTitle}>
+                Donation Seeker Application Under Review
+              </Text>
+              <Text style={styles.seekerPendingDesc}>
+                Your application and verification documents are being reviewed by the admin. You are currently browsing as a General User. Once approved, your role will update to Donation Seeker and your seeker dashboard will unlock automatically.
+              </Text>
+            </View>
+          </View>
+        )}
+
         <HeroBanner
           onCtaPress={() => {
             if (hasApplied && !isReapplying) {
@@ -456,5 +499,74 @@ const styles = StyleSheet.create({
   },
   updatesList: {
     gap: Spacing.sm,
+  },
+  seekerPendingBanner: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 6,
+    backgroundColor: '#FFFDF5',
+    borderWidth: 1.5,
+    borderColor: '#F59E0B',
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  seekerPendingIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seekerPendingEmoji: {
+    fontSize: 20,
+  },
+  seekerPendingTextBox: {
+    flex: 1,
+  },
+  seekerPendingTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#92400E',
+    marginBottom: 4,
+  },
+  seekerPendingDesc: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: '#78350F',
+  },
+  seekerPendingTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+  },
+  seekerAppBadge: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  seekerAppBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#92400E',
+    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' }),
+  },
+  seekerPendingBoldRef: {
+    fontWeight: '700',
+    color: '#92400E',
   },
 });
