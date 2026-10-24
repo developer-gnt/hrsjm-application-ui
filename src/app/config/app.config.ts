@@ -8,6 +8,6 @@ export const APP_CONFIG = {
   // Android emulator reaches the host machine via 10.0.2.2. Physical devices
   // must use the LAN IP of the dev machine; release builds the production host.
   // Backend port comes from HRSJM-back-api APP_PORT (default 3000).
-  apiBaseUrl: 'http://localhost:3000/api/v1',
+  apiBaseUrl: 'http://194.164.151.17:3000/api/v1',
   requestTimeoutMs: 15000,
 } as const;

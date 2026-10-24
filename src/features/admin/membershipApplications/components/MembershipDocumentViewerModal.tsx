@@ -125,19 +125,19 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
       fileLower.endsWith('.png') ||
       document.uri?.startsWith('data:image'));
 
-  const applicantName = applicant?.applicantName || 'Mubasshir Farooqui';
+  const applicantName = applicant?.applicantName || 'Applicant';
   const hindiName = getHindiName(applicantName);
-  const dob = applicant?.dob || '14/08/1994';
+  const dob = applicant?.dob || '—';
   const gender = applicant?.gender
     ? applicant.gender.toLowerCase() === 'female'
       ? 'FEMALE / महिला'
       : 'MALE / पुरुष'
-    : 'MALE / पुरुष';
-  const phone = applicant?.phone || '+91 88502 48290';
+    : '—';
+  const phone = applicant?.phone || '—';
   const last4 = getLast4Digits(phone);
-  const address = applicant?.address || 'Plot No. 12, Kurla West, Mumbai, Maharashtra - 400070';
-  const appId = applicant?.applicationId || 'HRSJM-SEK-0001';
-  const appType = applicant?.membershipType || 'Donation Seeker';
+  const address = applicant?.address || '—';
+  const appId = applicant?.applicationId || '—';
+  const appType = applicant?.membershipType || 'Membership Application';
   const photoUri = applicant?.avatarUrl || (hasDirectImage ? document.uri : undefined);
 
   const initials = applicantName

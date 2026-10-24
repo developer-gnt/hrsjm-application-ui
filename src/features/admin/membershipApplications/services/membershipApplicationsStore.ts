@@ -3,11 +3,7 @@ import {
   ApplicationStatsData,
   ApplicationStatus,
 } from '../types/membershipApplications.types';
-import {
-  INITIAL_APPLICATIONS,
-  INITIAL_APPLICATION_STATS,
-  TEST_SEED_APPLICATIONS,
-} from './membershipApplications.data';
+import { TEST_SEED_APPLICATIONS } from './membershipApplications.data';
 import { apiClient } from '../../../../core/api/client';
 import { ApiRoutes } from '../../../../core/constants/api-routes';
 import { useAuthStore } from '../../../auth/store/authStore';
@@ -92,9 +88,7 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
     personal.address ||
     appData.address ||
     user.address ||
-    (isSeekerApp
-      ? 'Plot No. 12, CST Road, Kurla West, Mumbai, Maharashtra 400070'
-      : 'A-304, Kurla West, Mumbai, Maharashtra 400070');
+    undefined;
 
   // Map documents
   let documents: any[] = [];
@@ -141,43 +135,6 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
   }
 
   const avatarUrl = user.avatar || personal.avatar || personal.profilePhotoUri || appData.avatar || undefined;
-
-  // Ensure documents are available for verification
-  if (documents.length === 0) {
-    const docDate = submittedAt.split(',')[0] || 'Recently';
-    const cleanName = (name || 'applicant').toLowerCase().replace(/\s+/g, '_');
-    documents = [
-      {
-        id: `doc-${backend.id || 'app'}-aadhaar`,
-        title: 'Aadhaar Card (Identity Proof)',
-        fileName: `aadhaar_card_${cleanName}.pdf`,
-        fileSize: '1.8 MB',
-        uploadDate: docDate,
-      },
-      {
-        id: `doc-${backend.id || 'app'}-address`,
-        title: 'Address Proof (Residence Verification)',
-        fileName: `address_proof_${cleanName}.pdf`,
-        fileSize: '1.5 MB',
-        uploadDate: docDate,
-      },
-      {
-        id: `doc-${backend.id || 'app'}-qualification`,
-        title: 'Educational Qualification Proof (Degree / Certificate)',
-        fileName: `qualification_${cleanName}.pdf`,
-        fileSize: '2.0 MB',
-        uploadDate: docDate,
-      },
-      {
-        id: `doc-${backend.id || 'app'}-photo`,
-        title: 'Passport Size Photograph',
-        fileName: `photograph_${cleanName}.jpg`,
-        fileSize: '850 KB',
-        uploadDate: docDate,
-        uri: avatarUrl,
-      },
-    ];
-  }
 
   const activityLog: Array<{
     id: string;
@@ -254,29 +211,25 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
       personal.gender ||
       appData.gender ||
       user.gender ||
-      'Male',
+      undefined,
     dob:
       personal.dob ||
       appData.dob ||
       user.dob ||
-      user.date_of_birth
-        ? personal.dob ||
-          appData.dob ||
-          (user.dob
-            ? user.dob
-            : new Date(user.date_of_birth).toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-              }))
-        : (isSeekerApp ? '14 Aug 1994' : '15 Jan 1992'),
+      (user.date_of_birth
+        ? new Date(user.date_of_birth).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          })
+        : undefined),
     fatherName:
       personal.father_or_husband_name ||
       personal.fatherName ||
       appData.father_name ||
       appData.fatherName ||
       user.father_or_husband_name ||
-      (isSeekerApp ? 'Farooq Farooqui' : 'Salim Shaikh'),
+      undefined,
     address,
     policeStation:
       personal.police_station?.trim() ||
@@ -289,7 +242,7 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
       personal.occupation ||
       appData.occupation ||
       user.occupation ||
-      (isSeekerApp ? 'Daily Wage Earner' : 'Self-Employed'),
+      undefined,
     documents,
     activityLog,
   };
@@ -299,7 +252,7 @@ class MembershipApplicationsStore {
   private applications: MembershipApplicationItem[] =
     process.env.NODE_ENV === 'test'
       ? [...TEST_SEED_APPLICATIONS]
-      : [...INITIAL_APPLICATIONS];
+      : [];
   private baseStats: ApplicationStatsData =
     process.env.NODE_ENV === 'test'
       ? {
@@ -312,7 +265,12 @@ class MembershipApplicationsStore {
           rejected: TEST_SEED_APPLICATIONS.filter(a => a.status === 'rejected')
             .length,
         }
-      : { ...INITIAL_APPLICATION_STATS };
+      : {
+          total: 0,
+          underReview: 0,
+          approved: 0,
+          rejected: 0,
+        };
   private isLoading = false;
   private listeners: Set<() => void> = new Set();
 
@@ -385,15 +343,7 @@ class MembershipApplicationsStore {
                     fileSize: d.fileSize || '1.5 MB',
                     uploadDate: d.uploadedAt || 'Recently',
                     uri: d.fileUri,
-                  })) || [
-                    {
-                      id: 'doc-aadhaar',
-                      title: 'Aadhaar Card',
-                      fileName: 'aadhaar_card.pdf',
-                      fileSize: '1.5 MB',
-                      uploadDate: 'Recently',
-                    },
-                  ],
+                  })) || [],
                   activityLog: [
                     {
                       id: `log-reg-${u.id}`,
@@ -481,34 +431,6 @@ class MembershipApplicationsStore {
               }
             }
 
-            if (userDocs.length === 0) {
-              const cleanName = (userRec.personalInfo?.fullName || 'applicant').toLowerCase().replace(/\s+/g, '_');
-              userDocs.push(
-                {
-                  id: 'doc-id-1',
-                  title: 'Aadhaar Card (Identity Proof)',
-                  fileName: `aadhaar_card_${cleanName}.pdf`,
-                  fileSize: '1.8 MB',
-                  uploadDate: userRec.submittedAt ? String(userRec.submittedAt).split(',')[0] : 'Recently',
-                },
-                {
-                  id: 'doc-id-2',
-                  title: 'Address Proof (Residence Verification)',
-                  fileName: `address_proof_${cleanName}.pdf`,
-                  fileSize: '1.5 MB',
-                  uploadDate: userRec.submittedAt ? String(userRec.submittedAt).split(',')[0] : 'Recently',
-                },
-                {
-                  id: 'doc-id-3',
-                  title: 'Passport Size Photograph',
-                  fileName: `photograph_${cleanName}.jpg`,
-                  fileSize: '820 KB',
-                  uploadDate: userRec.submittedAt ? String(userRec.submittedAt).split(',')[0] : 'Recently',
-                  uri: userRec.documents?.photograph?.fileUri || userRec.personalInfo?.profilePhotoUri,
-                }
-              );
-            }
-
             const userAppItem: MembershipApplicationItem = {
               id: userRec.id || `app-${Date.now()}`,
               applicationId: appId,
@@ -522,11 +444,11 @@ class MembershipApplicationsStore {
                 ? `${userRec.personalInfo?.countryCode || '+91'} ${userRec.personalInfo?.mobileNumber}`
                 : undefined,
               email: userRec.personalInfo?.email || undefined,
-              gender: userRec.personalInfo?.gender || 'Not specified',
-              dob: userRec.personalInfo?.dateOfBirth || 'Not specified',
-              fatherName: 'Not specified',
-              address: addressParts.join(', ') || 'Not specified',
-              occupation: 'Member',
+              gender: userRec.personalInfo?.gender || undefined,
+              dob: userRec.personalInfo?.dateOfBirth || undefined,
+              fatherName: userRec.personalInfo?.fatherOrHusbandName || undefined,
+              address: addressParts.join(', ') || undefined,
+              occupation: userRec.personalInfo?.occupation || undefined,
               documents: userDocs,
               activityLog: [
                 {
@@ -625,7 +547,7 @@ class MembershipApplicationsStore {
     this.applications =
       process.env.NODE_ENV === 'test'
         ? [...TEST_SEED_APPLICATIONS]
-        : [...INITIAL_APPLICATIONS];
+        : [];
     this.recalculateStatsFromItems();
     this.notify();
   }
