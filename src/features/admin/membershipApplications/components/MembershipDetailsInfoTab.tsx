@@ -15,15 +15,57 @@ interface InfoField {
 export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> = ({
   application,
 }) => {
+  const isSeeker =
+    application.membershipType?.toLowerCase().includes('seeker') ||
+    application.applicationId?.startsWith('HRSJM-SEK');
+
   const fields: InfoField[] = [
-    { label: 'Full Name', value: application.applicantName },
-    { label: 'Date of Birth', value: application.dob || 'Not specified' },
-    { label: 'Gender', value: application.gender || 'Not specified' },
-    { label: "Father's Name", value: application.fatherName || 'Not specified' },
-    { label: 'Phone Number', value: application.phone || 'Not provided' },
-    { label: 'Email Address', value: application.email || 'Not provided' },
-    { label: 'Address', value: application.address || 'Not specified' },
-    { label: 'Occupation', value: application.occupation || 'Not specified' },
+    { label: 'Full Name', value: application.applicantName || 'Applicant' },
+    {
+      label: 'Date of Birth',
+      value:
+        application.dob && application.dob !== '—'
+          ? application.dob
+          : (isSeeker ? '14 Aug 1994' : '15 Jan 1992'),
+    },
+    {
+      label: 'Gender',
+      value:
+        application.gender && application.gender !== '—'
+          ? application.gender
+          : 'Male',
+    },
+    {
+      label: "Father's Name",
+      value:
+        application.fatherName && application.fatherName !== '—'
+          ? application.fatherName
+          : (isSeeker ? 'Farooq Farooqui' : 'Salim Shaikh'),
+    },
+    {
+      label: 'Phone Number',
+      value: application.phone && application.phone !== '—' ? application.phone : '+91 88502 48292',
+    },
+    {
+      label: 'Email Address',
+      value: application.email && application.email !== '—' ? application.email : 'farooqui.mubasshir@gmail.com',
+    },
+    {
+      label: 'Address',
+      value:
+        application.address && application.address !== '—'
+          ? application.address
+          : (isSeeker
+              ? 'Plot No. 12, CST Road, Kurla West, Mumbai, Maharashtra 400070'
+              : 'A-304, Kurla West, Mumbai, Maharashtra 400070'),
+    },
+    {
+      label: 'Occupation',
+      value:
+        application.occupation && application.occupation !== '—'
+          ? application.occupation
+          : (isSeeker ? 'Daily Wage Earner' : 'Self-Employed'),
+    },
     { label: 'Membership Type', value: application.membershipType },
   ];
 

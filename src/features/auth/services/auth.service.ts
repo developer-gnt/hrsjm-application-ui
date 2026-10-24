@@ -96,4 +96,27 @@ export const authService = {
     );
     return (response as any)?.data || response;
   },
+
+  async checkDuplicates(
+    mobileNumber?: string,
+    email?: string,
+  ): Promise<{
+    available: boolean;
+    mobile_taken: boolean;
+    email_taken: boolean;
+    mobile_message?: string;
+    email_message?: string;
+  }> {
+    const response = await apiClient.post<{
+      available: boolean;
+      mobile_taken: boolean;
+      email_taken: boolean;
+      mobile_message?: string;
+      email_message?: string;
+    }>(ApiRoutes.AUTH.CHECK_DUPLICATES, {
+      mobile_number: mobileNumber,
+      email,
+    });
+    return (response as any)?.data || response;
+  },
 };

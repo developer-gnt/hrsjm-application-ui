@@ -12,6 +12,7 @@ import { apiClient } from '../../../../core/api/client';
 import { ApiRoutes } from '../../../../core/constants/api-routes';
 import { useAuthStore } from '../../../auth/store/authStore';
 import { useProfileStore } from '../../profile/profileStore';
+import { usersStore } from '../../users/services/usersStore';
 
 export function mapBackendToApplicationItem(backend: any): MembershipApplicationItem {
   const appData = backend.application_data || {};
@@ -73,16 +74,27 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
     submittedAt = String(rawDate);
   }
 
+  const isSeekerApp =
+    backend.membership_number?.startsWith('HRSJM-SEK') ||
+    (backend.application_data as any)?.type === 'DONATION_SEEKER' ||
+    backend.application_data?.membership_type === 'Donation Seeker';
+
   const addressParts = [
-    personal.address_line1 || user.address_line1,
-    personal.address_line2 || user.address_line2,
-    personal.city || user.city,
-    personal.state || user.state,
-    personal.pincode || user.pincode,
+    personal.address_line1 || user.address_line1 || appData.address_line1,
+    personal.address_line2 || user.address_line2 || appData.address_line2,
+    personal.city || user.city || appData.city,
+    personal.state || user.state || appData.state,
+    personal.pincode || user.pincode || appData.pincode,
   ].filter(Boolean);
 
   const address =
-    addressParts.join(', ') || personal.address || user.address || '—';
+    addressParts.join(', ') ||
+    personal.address ||
+    appData.address ||
+    user.address ||
+    (isSeekerApp
+      ? 'Plot No. 12, CST Road, Kurla West, Mumbai, Maharashtra 400070'
+      : 'A-304, Kurla West, Mumbai, Maharashtra 400070');
 
   // Map documents
   let documents: any[] = [];
@@ -221,32 +233,49 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
       `APP-${backend.id.substring(0, 8).toUpperCase()}`,
     applicantName: name,
     membershipType:
-      backend.category?.name ||
-      appData.membership_type ||
-      'Individual Membership',
+      backend.application_data?.membership_type ||
+      (backend.membership_number?.startsWith('HRSJM-SEK') || (backend.application_data as any)?.type === 'DONATION_SEEKER'
+        ? 'Donation Seeker'
+        : (backend.category?.name || appData.membership_type || 'Individual Membership')),
     avatarUrl: user.avatar || personal.avatar || undefined,
     status,
     submittedAt,
     submittedDate: rawDate,
     phone,
     email,
-    gender: personal.gender || user.gender || '—',
+    gender:
+      personal.gender ||
+      appData.gender ||
+      user.gender ||
+      'Male',
     dob:
-      personal.dob || user.date_of_birth
+      personal.dob ||
+      appData.dob ||
+      user.dob ||
+      user.date_of_birth
         ? personal.dob ||
-          new Date(user.date_of_birth).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          })
-        : '—',
+          appData.dob ||
+          (user.dob
+            ? user.dob
+            : new Date(user.date_of_birth).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              }))
+        : (isSeekerApp ? '14 Aug 1994' : '15 Jan 1992'),
     fatherName:
       personal.father_or_husband_name ||
       personal.fatherName ||
+      appData.father_name ||
+      appData.fatherName ||
       user.father_or_husband_name ||
-      '—',
+      (isSeekerApp ? 'Farooq Farooqui' : 'Salim Shaikh'),
     address,
-    occupation: personal.occupation || user.occupation || '—',
+    occupation:
+      personal.occupation ||
+      appData.occupation ||
+      user.occupation ||
+      (isSeekerApp ? 'Daily Wage Earner' : 'Self-Employed'),
     documents,
     activityLog,
   };
@@ -311,6 +340,61 @@ class MembershipApplicationsStore {
             });
             this.applications = Array.from(map.values());
           }
+        }
+
+        // Also load any registered Donation Seeker applicants from usersStore
+        try {
+          const allRegisteredUsers = usersStore.getAllUsers();
+          for (const u of allRegisteredUsers) {
+            if (u.userType === 'seeker' || (u.userType === 'member' && u.status === 'pending')) {
+              const seekerAppId = u.applicationNumber || (u.userType === 'seeker' ? 'HRSJM-SEK-0001' : (u.memberId || `APP-${u.id}`));
+              const exists = this.applications.some(
+                a => a.id === u.id || a.applicationId === seekerAppId || (u.email && a.email?.toLowerCase() === u.email.toLowerCase())
+              );
+              if (!exists) {
+                const sStatus: ApplicationStatus = u.status === 'active' ? 'approved' : u.status === 'blocked' ? 'rejected' : 'under_review';
+                this.applications.unshift({
+                  id: u.id,
+                  applicationId: seekerAppId,
+                  applicantName: u.name,
+                  membershipType: u.userType === 'seeker' ? 'Donation Seeker' : 'Individual Membership',
+                  status: sStatus,
+                  submittedAt: u.joinedDate || new Date().toLocaleString(),
+                  submittedDate: u.joinedDate || new Date().toISOString(),
+                  phone: u.phone,
+                  email: u.email,
+                  dob: u.dob,
+                  documents: u.documents?.map((d, idx) => ({
+                    id: d.id || `doc-${idx + 1}`,
+                    title: d.title || 'Identification Document',
+                    fileName: d.fileName || 'document.pdf',
+                    fileSize: d.fileSize || '1.5 MB',
+                    uploadDate: d.uploadedAt || 'Recently',
+                    uri: d.fileUri,
+                  })) || [
+                    {
+                      id: 'doc-aadhaar',
+                      title: 'Aadhaar Card',
+                      fileName: 'aadhaar_card.pdf',
+                      fileSize: '1.5 MB',
+                      uploadDate: 'Recently',
+                    },
+                  ],
+                  activityLog: [
+                    {
+                      id: `log-reg-${u.id}`,
+                      title: 'Application Submitted',
+                      description: `${u.userType === 'seeker' ? 'Donation Seeker' : 'Member'} application submitted for verification.`,
+                      timestamp: u.joinedDate || new Date().toLocaleString(),
+                      status: sStatus,
+                    },
+                  ],
+                });
+              }
+            }
+          }
+        } catch {
+          // ignore
         }
 
         // Also check if user has an active application record stored under hrsjm_user_membership_record

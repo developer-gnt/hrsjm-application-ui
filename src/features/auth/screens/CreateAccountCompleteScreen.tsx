@@ -28,6 +28,7 @@ import {
   RegistrationState,
 } from '../state/registrationState';
 import { usersStore } from '../../admin/users/services/usersStore';
+import { membershipApplicationsStore } from '../../admin/membershipApplications/services/membershipApplicationsStore';
 
 interface StepItem {
   number: number;
@@ -76,12 +77,35 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
     ...(propData || {}),
   };
 
+  // Determine application number for Donation Seeker / Member (format: HRSJM-SEK-0001)
+  const applicationNumber = React.useMemo(() => {
+    if (regData.applicationNumber) {
+      return regData.applicationNumber;
+    }
+    const phone = regData.phone?.replace(/\D/g, '');
+    const email = regData.email?.toLowerCase();
+    const allUsers = usersStore.getAllUsers();
+    const existing = allUsers.find(
+      u =>
+        (phone && u.phone && u.phone.replace(/\D/g, '').includes(phone)) ||
+        (email && u.email && u.email.toLowerCase() === email)
+    );
+    if (existing?.applicationNumber) {
+      return existing.applicationNumber;
+    }
+    const seekerIndex = allUsers.filter(u => u.userType === 'seeker').length + 1;
+    return `HRSJM-SEK-${String(seekerIndex).padStart(4, '0')}`;
+  }, [regData.applicationNumber, regData.phone, regData.email]);
+
   // Automatically register user in dynamic usersStore if not already registered
   React.useEffect(() => {
     if (regData.fullName && (regData.email || regData.phone)) {
-      usersStore.registerUserFromRegistration(regData);
+      usersStore.registerUserFromRegistration({
+        ...regData,
+        applicationNumber,
+      });
     }
-  }, [regData.fullName, regData.email, regData.phone, regData.accountType]);
+  }, [regData.fullName, regData.email, regData.phone, regData.accountType, applicationNumber]);
 
   // Determine if this account type requires verification
   const isGeneralUser = regData.accountType === 'general';
@@ -258,6 +282,8 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
             <Text style={styles.welcomeMessage}>
               {isGeneralUser
                 ? `Welcome to HRSJM! Your account has been\ncreated successfully. You can now explore\nthe app and its features.`
+                : regData.accountType === 'seeker'
+                ? `Welcome to HRSJM! Your Donation Seeker\napplication was submitted to Admin for review.\nYou can explore as a General User until approved.`
                 : `Welcome to HRSJM! Your account has been\ncreated and your document has been submitted\nfor verification.`}
             </Text>
           </View>
@@ -281,8 +307,49 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
                 )}
               </View>
 
+              {/* Prominent Application Reference Callout for Seeker / Verification Accounts */}
+              {!isGeneralUser && (
+                <View style={styles.appRefBox}>
+                  <View style={styles.appRefLeft}>
+                    <View style={styles.appRefIconCircle}>
+                      <FileTextOutlineIcon size={18} color="#0F2860" />
+                    </View>
+                    <View style={styles.appRefTextWrap}>
+                      <Text style={styles.appRefLabel}>
+                        {regData.accountType === 'seeker' ? 'SEEKER APPLICATION NUMBER' : 'APPLICATION NUMBER'}
+                      </Text>
+                      <Text style={styles.appRefCode}>{applicationNumber}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.appRefTag}>
+                    <Text style={styles.appRefTagText}>Pending Review</Text>
+                  </View>
+                </View>
+              )}
+
               {/* Fields List */}
               <View style={styles.fieldsList}>
+                {/* 0. Application Number (for Seeker / Verification Accounts) */}
+                {!isGeneralUser && (
+                  <>
+                    <View style={styles.fieldRow}>
+                      <View style={styles.fieldLeft}>
+                        <View style={styles.fieldIconWrapper}>
+                          <FileTextOutlineIcon size={18} color="#0F2860" />
+                        </View>
+                        <Text style={styles.fieldLabel}>Application No.</Text>
+                      </View>
+                      <View style={styles.appNumberBadge}>
+                        <Text style={styles.appNumberValueText} numberOfLines={1}>
+                          {applicationNumber}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.divider} />
+                  </>
+                )}
+
                 {/* 1. Full Name */}
                 <View style={styles.fieldRow}>
                   <View style={styles.fieldLeft}>
@@ -438,7 +505,9 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
                 <InfoCircleFilledIcon size={22} color="#0284C7" />
               </View>
               <Text style={styles.infoMessageText}>
-                We will review your details and document. You will be notified once your account is verified. You can still explore the app in the meantime.
+                {regData.accountType === 'seeker'
+                  ? 'Your Donation Seeker application (${applicationNumber}) has been submitted to Admin for verification. You can explore as a General User until approved. Once approved, your role will update to Donation Seeker and your seeker dashboard will unlock automatically.'
+                  : 'We will review your details and document. You will be notified once your account is verified. You can still explore the app in the meantime.'}
               </Text>
             </View>
           </View>
@@ -453,7 +522,9 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
               accessibilityRole="button"
               accessibilityLabel="Go to Dashboard"
             >
-              <Text style={styles.dashboardButtonText}>Go to Dashboard</Text>
+              <Text style={styles.dashboardButtonText}>
+                {regData.accountType === 'seeker' ? 'Go to Dashboard (General User)' : 'Go to Dashboard'}
+              </Text>
               <View style={styles.arrowIconWrapper}>
                 <ArrowRightIcon size={18} color="#0F2860" />
               </View>
@@ -1062,5 +1133,79 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0F2860',
     letterSpacing: 0.1,
+  },
+  /* Application Reference Box */
+  appRefBox: {
+    backgroundColor: '#F0F5FA',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#CBE0F5',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  appRefLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  appRefIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D4E4F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appRefTextWrap: {
+    flex: 1,
+  },
+  appRefLabel: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#64748B',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  appRefCode: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F2860',
+    letterSpacing: 0.5,
+    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' }),
+  },
+  appRefTag: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  appRefTagText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#B45309',
+  },
+  appNumberBadge: {
+    backgroundColor: '#F0F5FA',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: '#D0E1F5',
+  },
+  appNumberValueText: {
+    fontSize: 13,
+    color: '#0F2860',
+    fontWeight: '700',
+    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' }),
   },
 });

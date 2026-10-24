@@ -167,4 +167,26 @@ describe('My Status Inner Pages (Application Status)', () => {
     expect(rootText).toContain('My Application');
     expect(rootText).not.toContain('statusButtonsCard');
   });
+
+  it('7. Donation Seeker: does NOT render Membership Registration Fee or payment card', async () => {
+    const renderer = await renderComponent(
+      <ApplicationStatusScreen initialStatus="applied" applicationId="HRSJM-SEK-0001" />
+    );
+
+    const rootText = JSON.stringify(renderer.toJSON());
+    expect(rootText).toContain('HRSJM-SEK-0001');
+    expect(rootText).not.toContain('Membership Registration Fee');
+    expect(rootText).not.toContain('Pay Membership Fee');
+    expect(rootText).not.toContain('₹800');
+  });
+
+  it('8. Regular Member: renders Membership Registration Fee card when activeStatus is applied', async () => {
+    const renderer = await renderComponent(
+      <ApplicationStatusScreen initialStatus="applied" applicationId="APP-20261012-001" />
+    );
+
+    const rootText = JSON.stringify(renderer.toJSON());
+    expect(rootText).toContain('Membership Registration Fee');
+    expect(rootText).toContain('₹800');
+  });
 });

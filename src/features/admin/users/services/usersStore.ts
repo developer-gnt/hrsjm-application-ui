@@ -240,6 +240,13 @@ class UsersStore {
       });
     }
 
+    const seekerCount = this.users.filter(u => u.userType === 'seeker').length + 1;
+    const applicationNumber =
+      data.applicationNumber ||
+      (mappedType === 'seeker'
+        ? `HRSJM-SEK-${String(seekerCount).padStart(4, '0')}`
+        : undefined);
+
     if (existingIndex >= 0) {
       const existingUser = this.users[existingIndex];
       const updatedUser: UserItem = {
@@ -250,6 +257,7 @@ class UsersStore {
         dob: data.dob || existingUser.dob,
         userType: mappedType,
         status: mappedStatus,
+        applicationNumber: existingUser.applicationNumber || applicationNumber,
         documents: documents.length > 0 ? documents : existingUser.documents,
       };
       this.users[existingIndex] = updatedUser;
@@ -267,6 +275,7 @@ class UsersStore {
     const newUser: UserItem = {
       id: userId,
       memberId,
+      applicationNumber,
       name: fullName,
       email,
       phone,
