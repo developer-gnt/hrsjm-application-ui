@@ -1,30 +1,46 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { BorderRadius, Shadows } from '../../../../core/theme/spacing';
 import { formatDate } from '../../../../core/utils';
 import type { AssistanceRequestItem } from '../types/dashboard.types';
 
 interface RecentApplicationsCardProps {
-  rows: Array<Pick<AssistanceRequestItem, 'id' | 'created_at' | 'status'>>;
+  rows: Array<
+    Pick<AssistanceRequestItem, 'id' | 'created_at' | 'status'> & {
+      full_name?: string;
+    }
+  >;
   onViewAll?: () => void;
 }
 
-const DEFAULT_ROWS = [
-  { id: 'APP20260915001', created_at: '2026-09-28', status: 'APPROVED' },
-  { id: 'APP20260914023', created_at: '2026-09-27', status: 'UNDER_REVIEW' },
-  { id: 'APP20260913012', created_at: '2026-09-26', status: 'APPROVED' },
-  { id: 'APP20260912008', created_at: '2026-09-25', status: 'PENDING' },
+const DEFAULT_ROWS: Array<
+  Pick<AssistanceRequestItem, 'id' | 'created_at' | 'status'> & {
+    full_name?: string;
+  }
+> = [
+  { id: '3e19d710', full_name: 'Amina Sheikh', created_at: '2026-09-28', status: 'APPROVED' },
+  { id: 'c5ac70b3', full_name: 'Tariq Mehmood', created_at: '2026-09-27', status: 'UNDER_REVIEW' },
+  { id: '8f4219d1', full_name: 'Zoya Siddiqui', created_at: '2026-09-26', status: 'APPROVED' },
+  { id: '5a109c2b', full_name: 'Farhan Akhtar', created_at: '2026-09-25', status: 'PENDING' },
 ];
 
 const STATUS_CONFIG: Record<
   string,
-  { label: string; bg: string; text: string }
+  { label: string; bg: string; text: string; border: string }
 > = {
-  APPROVED: { label: 'Approved', bg: '#DCFCE7', text: '#16A34A' },
-  UNDER_REVIEW: { label: 'Review', bg: '#FEF3C7', text: '#D97706' },
-  PENDING: { label: 'Pending', bg: '#DBEAFE', text: '#2563EB' },
-  REJECTED: { label: 'Rejected', bg: '#FEE2E2', text: '#DC2626' },
+  APPROVED: { label: 'Approved', bg: '#ECFDF5', text: '#059669', border: '#A7F3D0' },
+  UNDER_REVIEW: { label: 'Review', bg: '#FFFBEB', text: '#D97706', border: '#FDE68A' },
+  PENDING: { label: 'Pending', bg: '#EFF6FF', text: '#2563EB', border: '#BFDBFE' },
+  REJECTED: { label: 'Rejected', bg: '#FEF2F2', text: '#DC2626', border: '#FECACA' },
+  CLOSED: { label: 'Closed', bg: '#F8FAFC', text: '#64748B', border: '#E2E8F0' },
+};
+
+const formatAppCode = (id?: string): string => {
+  if (!id) return '#APP-001';
+  if (id.startsWith('APP-')) return `#${id}`;
+  if (id.startsWith('APP')) return `#APP-${id.slice(3, 8)}`;
+  const clean = id.replace(/-/g, '').slice(-5).toUpperCase();
+  return `#APP-${clean}`;
 };
 
 export const RecentApplicationsCard: React.FC<RecentApplicationsCardProps> = ({
@@ -40,7 +56,11 @@ export const RecentApplicationsCard: React.FC<RecentApplicationsCardProps> = ({
           Recent Applications
         </Text>
         {onViewAll ? (
-          <TouchableOpacity onPress={onViewAll} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+          <TouchableOpacity
+            onPress={onViewAll}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.7}
+          >
             <Text style={styles.viewAll}>View All</Text>
           </TouchableOpacity>
         ) : null}
@@ -50,14 +70,22 @@ export const RecentApplicationsCard: React.FC<RecentApplicationsCardProps> = ({
         {displayList.map(row => {
           const statusConfig = STATUS_CONFIG[row.status] || {
             label: row.status.replace(/_/g, ' '),
-            bg: '#F1F5F9',
-            text: '#475569',
+            bg: '#F8FAFC',
+            text: '#64748B',
+            border: '#E2E8F0',
           };
+
+          const appCode = formatAppCode(row.id);
+          const hasName = Boolean(row.full_name && row.full_name.trim());
+          const primaryText = hasName ? row.full_name!.trim() : `Application ${appCode}`;
+          const secondaryText = hasName
+            ? `${appCode} · ${formatDate(row.created_at)}`
+            : formatDate(row.created_at);
 
           return (
             <View key={row.id} style={styles.row}>
               <View style={styles.iconBox}>
-                <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
                   <Path
                     d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z"
                     stroke="#2563EB"
@@ -88,15 +116,20 @@ export const RecentApplicationsCard: React.FC<RecentApplicationsCardProps> = ({
               </View>
 
               <View style={styles.appInfo}>
-                <Text style={styles.appId} numberOfLines={1}>
-                  {row.id}
+                <Text style={styles.primaryText} numberOfLines={1}>
+                  {primaryText}
                 </Text>
-                <Text style={styles.appDate} numberOfLines={1}>
-                  {formatDate(row.created_at)}
+                <Text style={styles.secondaryText} numberOfLines={1}>
+                  {secondaryText}
                 </Text>
               </View>
 
-              <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: statusConfig.bg, borderColor: statusConfig.border },
+                ]}
+              >
                 <Text
                   style={[styles.statusBadgeText, { color: statusConfig.text }]}
                   numberOfLines={1}
@@ -114,67 +147,75 @@ export const RecentApplicationsCard: React.FC<RecentApplicationsCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xl,
-    padding: 10,
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    ...Shadows.card,
+    borderColor: '#E2E8F0',
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   title: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#0F2C59',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#06294D',
+    letterSpacing: -0.2,
   },
   viewAll: {
-    fontSize: 10.5,
+    fontSize: 12,
     fontWeight: '700',
     color: '#2563EB',
   },
   rows: {
-    gap: 8,
+    gap: 10,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
   },
   iconBox: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
   appInfo: {
     flex: 1,
   },
-  appId: {
-    fontSize: 9.5,
+  primaryText: {
+    fontSize: 13,
     fontWeight: '700',
-    color: '#0F2C59',
+    color: '#06294D',
   },
-  appDate: {
-    fontSize: 8.5,
+  secondaryText: {
+    fontSize: 11,
     fontWeight: '500',
     color: '#64748B',
-    marginTop: 1,
+    marginTop: 2,
   },
   statusBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 999,
+    borderWidth: 1,
   },
   statusBadgeText: {
-    fontSize: 8.5,
+    fontSize: 10.5,
     fontWeight: '700',
   },
 });
+

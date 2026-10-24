@@ -374,6 +374,25 @@ export const membersService = {
     );
     return res.data;
   },
+
+  /**
+   * Reset member password in database (creates secure token or sets password).
+   */
+  async resetPassword(
+    id: string,
+    newPassword?: string
+  ): Promise<{ success: boolean; message: string; reset_token?: string; user_id?: string; member_name?: string }> {
+    const res = await apiClient.post<{
+      success: boolean;
+      message: string;
+      reset_token?: string;
+      user_id?: string;
+      member_name?: string;
+    }>(ApiRoutes.MEMBERSHIPS.RESET_PASSWORD(id), {
+      new_password: newPassword,
+    });
+    return res.data;
+  },
 };
 
 export interface MembershipCategoryItem {
@@ -384,6 +403,7 @@ export interface MembershipCategoryItem {
   description?: string;
   validity_days?: number;
   status: string;
+  free_renewal_years?: number | string;
 }
 
 export interface CreateMemberPayload {

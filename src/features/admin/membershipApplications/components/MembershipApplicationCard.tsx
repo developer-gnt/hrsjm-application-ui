@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { BorderRadius, Spacing } from '../../../../core';
+import { FileText, ChevronRight } from '../../../../core/components/icons';
 import { MembershipApplicationItem } from '../types/membershipApplications.types';
 
 interface MembershipApplicationCardProps {
@@ -92,7 +93,7 @@ export const MembershipApplicationCard: React.FC<MembershipApplicationCardProps>
             {application.membershipType}
           </Text>
           <View style={styles.appIdRow}>
-            <Text style={styles.docIcon}>📄</Text>
+            <FileText size={12} color="#2563EB" strokeWidth={2} />
             <Text style={styles.applicationId} numberOfLines={1}>
               {application.applicationId}
             </Text>
@@ -110,9 +111,9 @@ export const MembershipApplicationCard: React.FC<MembershipApplicationCardProps>
           </Text>
         </View>
 
-        {/* Far Right: Right Arrow Chevron */}
+        {/* Far Right: Chevron */}
         <View style={styles.arrowContainer}>
-          <Text style={styles.chevron}>›</Text>
+          <ChevronRight size={18} color="#94A3B8" strokeWidth={2.2} />
         </View>
       </View>
     </TouchableOpacity>
@@ -211,52 +212,51 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statusBadge: {
-    paddingVertical: 2,
+    paddingVertical: 3,
     paddingHorizontal: 8,
-    borderRadius: BorderRadius.sm,
+    borderRadius: 999,
+    borderWidth: 1,
   },
   badgeApproved: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
   },
   textApproved: {
-    color: '#15803D',
+    color: '#059669',
   },
   badgeUnderReview: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
   },
   textUnderReview: {
-    color: '#B45309',
+    color: '#D97706',
   },
   badgeRejected: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
   },
   textRejected: {
     color: '#DC2626',
   },
   badgeSubmitted: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
   },
   textSubmitted: {
-    color: '#4338CA',
+    color: '#2563EB',
   },
   statusText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '700',
   },
   submittedDate: {
     fontSize: 10,
-    color: '#475569',
+    color: '#64748B',
     fontWeight: '500',
   },
   arrowContainer: {
     marginLeft: 6,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  chevron: {
-    fontSize: 22,
-    color: '#0F2860',
-    fontWeight: '700',
-    lineHeight: 22,
   },
 });

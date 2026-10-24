@@ -3,6 +3,10 @@
  * Jest global mocks for native modules used across auth, storage, navigation, and UI components.
  */
 
+if (typeof navigator === 'undefined') {
+  global.navigator = { userAgent: 'node' };
+}
+
 jest.setTimeout(15000);
 
 jest.mock('@react-native-documents/picker', () => ({

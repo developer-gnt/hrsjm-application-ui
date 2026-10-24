@@ -146,6 +146,19 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
       <MembershipDocumentViewerModal
         visible={viewerVisible}
         document={selectedDoc}
+        applicant={{
+          applicantName: application.applicantName,
+          applicationId: application.applicationId,
+          membershipType: application.membershipType,
+          dob: application.dob,
+          gender: application.gender,
+          phone: application.phone,
+          email: application.email,
+          address: application.address,
+          fatherName: application.fatherName,
+          occupation: application.occupation,
+          avatarUrl: application.avatarUrl,
+        }}
         onClose={() => setViewerVisible(false)}
       />
     </View>

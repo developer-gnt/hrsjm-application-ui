@@ -78,10 +78,22 @@ export function AssistanceRequestsScreen({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
+  const fundraiseAidItems = React.useMemo(() => {
+    return filteredItems.filter(item => {
+      const reasonLower = (item.reason || '').toLowerCase();
+      const descLower = (item.description || '').toLowerCase();
+      // Exclude profile / account creation verifications from fundraising list
+      if (reasonLower.includes('account verification') || descLower.includes('registration pending')) {
+        return false;
+      }
+      return true;
+    });
+  }, [filteredItems]);
+
   const paginatedItems = React.useMemo(() => {
     const startIndex = (page - 1) * pageSize;
-    return filteredItems.slice(startIndex, startIndex + pageSize);
-  }, [filteredItems, page, pageSize]);
+    return fundraiseAidItems.slice(startIndex, startIndex + pageSize);
+  }, [fundraiseAidItems, page, pageSize]);
 
   React.useEffect(() => {
     setPage(1);

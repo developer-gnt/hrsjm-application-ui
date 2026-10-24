@@ -1,10 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { BrandColors } from '../../../../core/theme/colors';
-import { Spacing } from '../../../../core/theme/spacing';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Spacing, BorderRadius } from '../../../../core/theme/spacing';
 import { Typography } from '../../../../core/theme/typography';
-import { AppButton } from '../../../../core/components/common/AppButton';
-import { Plus, FileText } from '../../../../core/components/icons';
 
 interface MembersPageHeaderProps {
   title?: string;
@@ -13,75 +10,93 @@ interface MembersPageHeaderProps {
   onViewApplications?: () => void;
 }
 
-/** Page title block with Add Member and Applications actions. */
+const AddButton = TouchableOpacity as React.ComponentType<any>;
+
+/**
+ * Members Page Header matching the Donation Seekers reference layout:
+ * - Heading "Members" on the left
+ * - Yellow "+ Add Member" button on the right, aligned horizontally with the heading
+ * - Description "Manage and view all registered members." directly below
+ */
 export const MembersPageHeader: React.FC<MembersPageHeaderProps> = ({
   title = 'Members',
   subtitle = 'Manage and view all registered members.',
   onAddMember,
-  onViewApplications,
 }) => {
   return (
-    <View style={styles.container}>
-      <View style={styles.textBlock}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
-      </View>
-      <View style={styles.actionButtons}>
-        {onViewApplications ? (
-          <AppButton
-            title="Applications"
-            variant="outline"
-            size="sm"
-            onPress={onViewApplications}
-            icon={<FileText size={16} color={BrandColors.navy} strokeWidth={2} />}
-            style={styles.applicationsButton}
-          />
+    <View style={styles.headerArea}>
+      <View style={styles.titleRow}>
+        <Text style={styles.pageTitle}>{title}</Text>
+        {onAddMember ? (
+          <AddButton
+            title="Add Member"
+            onPress={onAddMember}
+            accessibilityRole="button"
+            accessibilityLabel="Add Member"
+            style={styles.addButton}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.addButtonPlus}>+</Text>
+            <Text style={styles.addButtonText}>Add Member</Text>
+          </AddButton>
         ) : null}
-        <AppButton
-          title="Add Member"
-          size="sm"
-          onPress={onAddMember ?? (() => undefined)}
-          icon={<Plus size={18} color={BrandColors.surface} strokeWidth={2.4} />}
-          style={styles.addButton}
-        />
       </View>
+      {subtitle ? <Text style={styles.pageSubtitle}>{subtitle}</Text> : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  headerArea: {
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
   },
-  textBlock: {
-    flex: 1,
+  pageTitle: {
+    ...Typography.display,
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#0B2F52',
   },
-  title: {
-    ...Typography.pageTitle,
-    color: BrandColors.textPrimary,
-  },
-  subtitle: {
+  pageSubtitle: {
     ...Typography.body,
-    color: BrandColors.textSecondary,
-    marginTop: 2,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  applicationsButton: {
-    borderColor: BrandColors.border,
-    minHeight: 40,
-    paddingHorizontal: Spacing.sm,
+    fontSize: 13,
+    color: '#718096',
+    marginTop: 4,
+    lineHeight: 18,
   },
   addButton: {
-    backgroundColor: BrandColors.navy,
-    minHeight: 40,
-    paddingHorizontal: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FAD465',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: BorderRadius.button,
+    elevation: 2,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+  },
+  addButtonPlus: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#011F39',
+    lineHeight: 18,
+  },
+  addButtonText: {
+    ...Typography.button,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#011F39',
   },
 });
 
 export default MembersPageHeader;
+

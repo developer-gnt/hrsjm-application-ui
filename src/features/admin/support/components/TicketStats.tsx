@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Spacing } from '../../../../core/theme/spacing';
 import { AdminStatCard } from '../../../../core/components/admin/AdminStatCard';
-import { MessageSquare, Clock3, UserCheck, Check } from '../../../../core/components/icons';
+import { MessageSquare, Clock3, Share2, Check } from '../../../../core/components/icons';
 import type { TicketStats } from '../hooks/useSupportTickets';
 
 interface TicketStatsRowProps {
@@ -36,7 +36,7 @@ export function TicketStatsRow({ stats, loading = false }: TicketStatsRowProps) 
           value={stats.inProgress ?? 0}
           sublabel="Active"
           tone="gold"
-          Icon={UserCheck}
+          Icon={Share2}
           loading={loading}
         />
         <AdminStatCard

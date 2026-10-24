@@ -60,6 +60,7 @@ export const INITIAL_DEV_USERS: UserItem[] = [
   {
     id: 'user-003',
     memberId: 'HRSJM00125',
+    applicationNumber: 'HRSJM-SEK-0001',
     name: 'Imran Ansari',
     email: 'imran.ansari@example.com',
     phone: '+91 98765 43212',

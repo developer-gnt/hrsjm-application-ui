@@ -13,11 +13,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core';
+import { apiClient } from '../../../../core/api/client';
+import { useAuthStore } from '../../../auth/store/authStore';
 import { usersStore } from '../services/usersStore';
 import { UserItem, UserType, UserStatus, UserVerificationDocument } from '../types/user.types';
 import { UsersHeader } from '../components/UsersHeader';
 import { UsersBottomNav } from '../components/UsersBottomNav';
 import { ChevronLeftIcon } from '../../../auth/components/AuthIcons';
+import { MembershipDocumentViewerModal } from '../../membershipApplications/components/MembershipDocumentViewerModal';
 
 interface UserVerificationScreenProps {
   userId?: string;
@@ -133,6 +136,25 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
     if (adminNotes.trim()) {
       usersStore.updateUser(user.id, { remarks: adminNotes.trim() });
     }
+
+    if (user.userType === 'seeker') {
+      apiClient.post(`/users/${user.id}/approve-seeker`).catch(() => {});
+
+      // If active auth user is this user, upgrade their roles to DONATION_SEEKER
+      const authUser = useAuthStore.getState().user;
+      if (
+        authUser &&
+        (authUser.id === user.id ||
+          (authUser.mobile_number && user.phone && authUser.mobile_number.replace(/\D/g, '') === user.phone.replace(/\D/g, '')) ||
+          (authUser.email && user.email && authUser.email.toLowerCase() === user.email.toLowerCase()))
+      ) {
+        useAuthStore.getState().setUser({
+          ...authUser,
+          roles: [{ id: 'role-seeker', name: 'DONATION_SEEKER' }],
+        });
+      }
+    }
+
     setShowApproveModal(false);
     if (onSuccess) onSuccess();
     else if (onBack) onBack();
@@ -257,6 +279,15 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
                     <Text style={styles.metaLabel}>MEMBER ID</Text>
                     <Text style={styles.metaValueHighlight}>
                       {user.memberId}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {user.applicationNumber ? (
+                  <View style={styles.metaCol}>
+                    <Text style={styles.metaLabel}>APPLICATION NO.</Text>
+                    <Text style={styles.metaValueHighlight}>
+                      {user.applicationNumber}
                     </Text>
                   </View>
                 ) : null}

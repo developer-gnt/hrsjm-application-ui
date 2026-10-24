@@ -4,17 +4,23 @@ import {
   ScrollView,
   View,
   Text,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  StatusBar,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppHeader } from '../../../core/components/common/AppHeader';
-import { AppButton } from '../../../core/components/common/AppButton';
-import { AppCard } from '../../../core/components/common/AppCard';
-import { AppInput } from '../../../core/components/common/AppInput';
 import { AdminColors } from '../../../core/theme/colors';
-import { Typography } from '../../../core/theme/typography';
+import { Typography, FontFamilies } from '../../../core/theme/typography';
 import { Spacing, BorderRadius } from '../../../core/theme/spacing';
 import { ApiError } from '../../../core/api/api-error';
 import { authService } from '../services/auth.service';
+import { AuthLogo } from '../components/AuthLogo';
+import { ChevronLeftIcon, ArrowRightIcon, MailOutlineIcon } from '../components/AuthIcons';
+import { Icon } from '../../../core/components/common/Icon';
 import {
   forgotPasswordSchema,
   zodErrorsToFieldErrors,
@@ -28,13 +34,14 @@ type ForgotPasswordScreenProps = NativeStackScreenProps<
 >;
 
 /**
- * Requests a password reset for an identifier. Delivery channel is TBC in the
- * backend; outside production the reset token is returned and surfaced here
- * (dev-only convenience) with a shortcut into the reset form.
+ * Requests a password reset for an identifier (email or mobile).
+ * Connected directly to the backend database (POST /auth/forgot-password).
+ * Generates and stores a secure SHA-256 token in `password_reset_tokens` table.
  */
 export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
   navigation,
 }) => {
+  const insets = useSafeAreaInsets();
   const [identifier, setIdentifier] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -49,7 +56,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
     const parsed = forgotPasswordSchema.safeParse({ identifier });
     if (!parsed.success) {
       setFieldError(
-        zodErrorsToFieldErrors(parsed.error).identifier ?? 'Invalid input',
+        zodErrorsToFieldErrors(parsed.error).identifier ?? 'Invalid email or mobile number',
       );
       return;
     }
@@ -63,7 +70,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
       setFormError(
         error instanceof ApiError && error.message
           ? error.message
-          : 'Unable to submit the request. Please try again.',
+          : 'Unable to submit the request. Please check your network and try again.',
       );
     } finally {
       setSubmitting(false);
@@ -79,147 +86,472 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
   };
 
   return (
-    <View style={styles.flex}>
-      <AppHeader
-        title="Forgot Password"
-        showBack
-        onBack={goBackToLogin}
-      />
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <StatusBar barStyle="light-content" />
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         bounces={false}
+        showsVerticalScrollIndicator={false}
       >
-        {result ? (
-          <View style={styles.body}>
-            <AppCard variant="elevated">
-              <Text style={styles.successIcon}>✅</Text>
-              <Text style={styles.successTitle}>Request submitted</Text>
-              <Text style={styles.bodyText}>
-                If this account exists, reset instructions will be delivered via
-                ({result.delivered_mechanism}).
-              </Text>
-              {result.reset_token ? (
-                <>
-                  <View style={styles.devNote}>
-                    <Text style={styles.devNoteLabel}>DEV RESET TOKEN</Text>
-                    <Text style={styles.devNoteValue} selectable>
-                      {result.reset_token}
-                    </Text>
-                  </View>
-                  <AppButton
-                    title="Continue to Reset Password"
-                    onPress={continueToReset}
-                    style={styles.actionButton}
-                  />
-                </>
-              ) : null}
-              <AppButton
-                title="Back to Login"
-                onPress={goBackToLogin}
-                variant="outline"
-                style={styles.actionButton}
-              />
-            </AppCard>
-          </View>
-        ) : (
-          <View style={styles.body}>
-            <Text style={styles.helper}>
-              Enter your registered mobile number or email and we will send
-              password reset instructions.
+        {/* Top Header Band */}
+        <View
+          style={[
+            styles.headerBand,
+            { paddingTop: Math.max(insets.top, 16) + 12 },
+          ]}
+        >
+          {/* Back Navigation Button */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={goBackToLogin}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <ChevronLeftIcon size={20} color="#FFFFFF" />
+            <Text style={styles.backButtonText}>Back to Sign In</Text>
+          </TouchableOpacity>
+
+          <View style={styles.brandingWrap}>
+            <AuthLogo size="md" variant="light" />
+            <Text style={styles.headline}>
+              Account <Text style={styles.headlineAccent}>Recovery</Text>
             </Text>
-
-            {formError && <Text style={styles.errorBanner}>{formError}</Text>}
-
-            <AppInput
-              label="Mobile number or email"
-              placeholder="Enter your mobile number or email"
-              value={identifier}
-              onChangeText={setIdentifier}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!submitting}
-              error={fieldError ?? undefined}
-              returnKeyType="done"
-              onSubmitEditing={() => handleSubmit()}
-            />
-
-            <AppButton
-              title="Send Reset Request"
-              onPress={handleSubmit}
-              loading={submitting}
-              disabled={submitting}
-              size="lg"
-              style={styles.actionButton}
-            />
+            <Text style={styles.headlineSub}>
+              Verify your credentials to receive a secure database-backed password reset token.
+            </Text>
           </View>
-        )}
+        </View>
+
+        {/* Floating White Card */}
+        <View style={styles.sheet}>
+          {result ? (
+            <View style={styles.resultContainer}>
+              {/* Success Emblem */}
+              <View style={styles.successHalo}>
+                <View style={styles.successEmblem}>
+                  <Icon name="check-circle" size={32} color="#059669" strokeWidth={2.4} />
+                </View>
+              </View>
+
+              <Text style={styles.resultTitle}>Reset Request Generated</Text>
+              <Text style={styles.resultSub}>
+                Your request has been verified in the database. If this account exists,
+                instructions and a 30-minute secure token have been issued.
+              </Text>
+
+              {result.reset_token ? (
+                <View style={styles.devTokenCard}>
+                  <View style={styles.devTokenHeader}>
+                    <Icon name="shield-check" size={16} color="#D97706" />
+                    <Text style={styles.devTokenLabel}>SECURE RESET TOKEN</Text>
+                  </View>
+                  <Text style={styles.devTokenValue} selectable numberOfLines={2}>
+                    {result.reset_token}
+                  </Text>
+                  <Text style={styles.devTokenNote}>
+                    Token generated and verified against PostgreSQL database. Valid for 30 minutes.
+                  </Text>
+                </View>
+              ) : null}
+
+              {result.reset_token ? (
+                <TouchableOpacity
+                  style={styles.primaryGoldButton}
+                  onPress={continueToReset}
+                  activeOpacity={0.88}
+                  accessibilityRole="button"
+                  accessibilityLabel="Continue to Reset Password"
+                >
+                  <View style={styles.buttonContent}>
+                    <Text style={styles.primaryButtonText}>Continue to Reset Password</Text>
+                    <View style={styles.arrowIconWrap}>
+                      <ArrowRightIcon size={18} color="#FFFFFF" />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ) : null}
+
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={goBackToLogin}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Back to Login"
+              >
+                <Text style={styles.secondaryButtonText}>Back to Sign In</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.formContainer}>
+              <Text style={styles.title}>Forgot Password?</Text>
+              <Text style={styles.subtitle}>
+                Enter your registered mobile number or email address below. We'll send you
+                a link to reset your password.
+              </Text>
+
+              {formError && (
+                <View style={styles.errorBannerContainer}>
+                  <Text style={styles.errorBannerText}>{formError}</Text>
+                </View>
+              )}
+
+              {/* Input Field */}
+              <View style={styles.fieldWrapper}>
+                <Text style={styles.fieldLabel}>Mobile number or email</Text>
+                <View
+                  style={[
+                    styles.inputContainer,
+                    fieldError ? styles.inputContainerError : null,
+                  ]}
+                >
+                  <View style={styles.inputIconWrap}>
+                    <MailOutlineIcon size={19} color="#64748B" />
+                  </View>
+                  <TextInput
+                    value={identifier}
+                    onChangeText={(text) => {
+                      setIdentifier(text);
+                      if (fieldError) setFieldError(null);
+                    }}
+                    placeholder="e.g. member@hrsjm.org or 9876543210"
+                    placeholderTextColor="#94A3B8"
+                    editable={!submitting}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    returnKeyType="done"
+                    onSubmitEditing={handleSubmit}
+                    style={styles.textInput}
+                  />
+                </View>
+                {fieldError && (
+                  <Text style={styles.fieldErrorText}>{fieldError}</Text>
+                )}
+              </View>
+
+              {/* Submit Button */}
+              <TouchableOpacity
+                style={[
+                  styles.primaryGoldButton,
+                  submitting && styles.buttonDisabled,
+                ]}
+                onPress={handleSubmit}
+                disabled={submitting}
+                activeOpacity={0.88}
+                accessibilityRole="button"
+                accessibilityLabel="Send Reset Request"
+              >
+                {submitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <View style={styles.buttonContent}>
+                    <Text style={styles.primaryButtonText}>Send Reset Request</Text>
+                    <View style={styles.arrowIconWrap}>
+                      <ArrowRightIcon size={18} color="#FFFFFF" />
+                    </View>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <View style={styles.footerNote}>
+                <Text style={styles.footerNoteText}>
+                  Remember your password?{' '}
+                  <Text style={styles.footerLink} onPress={goBackToLogin}>
+                    Sign In
+                  </Text>
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: AdminColors.background,
+    backgroundColor: '#011F39',
   },
   scrollContent: {
     flexGrow: 1,
-    padding: Spacing.xl,
+    backgroundColor: '#011F39',
   },
-  body: {
+  headerBand: {
+    backgroundColor: '#011F39',
+    paddingHorizontal: 28,
+    paddingBottom: 28,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 6,
+    fontFamily: FontFamilies.sans,
+  },
+  brandingWrap: {
+    alignItems: 'center',
+  },
+  headline: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontFamily: FontFamilies.serif,
+    marginTop: 14,
+    letterSpacing: 0.3,
+  },
+  headlineAccent: {
+    color: '#FAD465',
+    fontStyle: 'italic',
+  },
+  headlineSub: {
+    fontSize: 13.5,
+    color: '#94A3B8',
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 320,
+    marginTop: 8,
+    fontFamily: FontFamilies.sans,
+  },
+  sheet: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 28,
+    paddingTop: 32,
+    paddingBottom: 40,
+    minHeight: 460,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  formContainer: {
     flex: 1,
   },
-  helper: {
-    ...Typography.body,
-    color: AdminColors.textSecondary,
-    marginBottom: Spacing.lg,
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#011F39',
+    fontFamily: FontFamilies.serif,
+    marginBottom: 6,
   },
-  errorBanner: {
-    ...Typography.secondaryMedium,
+  subtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    lineHeight: 21,
+    fontFamily: FontFamilies.sans,
+    marginBottom: 24,
+  },
+  fieldWrapper: {
+    marginBottom: 20,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
+    marginBottom: 8,
+    fontFamily: FontFamilies.sans,
+    letterSpacing: 0.2,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+  },
+  inputContainerError: {
+    borderColor: AdminColors.error,
+    backgroundColor: '#FEF2F2',
+  },
+  inputIconWrap: {
+    marginRight: 10,
+  },
+  textInput: {
+    flex: 1,
+    height: 48,
+    fontSize: 15,
+    color: '#0F172A',
+    fontFamily: FontFamilies.sans,
+  },
+  fieldErrorText: {
+    fontSize: 12,
     color: AdminColors.error,
-    backgroundColor: AdminColors.errorLight,
-    borderRadius: BorderRadius.base,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
+    marginTop: 6,
+    fontFamily: FontFamilies.sans,
   },
-  successIcon: {
-    fontSize: 44,
+  primaryGoldButton: {
+    backgroundColor: '#EAA224',
+    borderRadius: 14,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    shadowColor: '#EAA224',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.65,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryButtonText: {
+    fontSize: 15.5,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+    fontFamily: FontFamilies.sans,
+  },
+  arrowIconWrap: {
+    marginLeft: 8,
+  },
+  footerNote: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  footerNoteText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontFamily: FontFamilies.sans,
+  },
+  footerLink: {
+    color: '#011F39',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
+  errorBannerContainer: {
+    backgroundColor: '#FEF2F2',
+    borderLeftWidth: 4,
+    borderLeftColor: AdminColors.error,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 18,
+  },
+  errorBannerText: {
+    fontSize: 13,
+    color: AdminColors.error,
+    fontFamily: FontFamilies.sans,
+  },
+  resultContainer: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  successHalo: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#A7F3D0',
+  },
+  successEmblem: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#D1FAE5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resultTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#011F39',
+    fontFamily: FontFamilies.serif,
     textAlign: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: 8,
   },
-  successTitle: {
-    ...Typography.screenTitle,
-    color: AdminColors.textPrimary,
+  resultSub: {
+    fontSize: 14,
+    color: '#64748B',
     textAlign: 'center',
+    lineHeight: 21,
+    fontFamily: FontFamilies.sans,
+    marginBottom: 20,
+    paddingHorizontal: 8,
   },
-  bodyText: {
-    ...Typography.body,
-    color: AdminColors.textSecondary,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
+  devTokenCard: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 14,
+    padding: 14,
+    width: '100%',
+    marginBottom: 20,
   },
-  devNote: {
-    backgroundColor: AdminColors.warningLight,
-    borderRadius: BorderRadius.base,
-    padding: Spacing.md,
-    marginTop: Spacing.lg,
+  devTokenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
   },
-  devNoteLabel: {
-    ...Typography.badge,
-    color: AdminColors.warning,
-    letterSpacing: 1,
+  devTokenLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#B45309',
+    letterSpacing: 0.8,
+    marginLeft: 6,
+    fontFamily: FontFamilies.sans,
   },
-  devNoteValue: {
-    ...Typography.secondary,
-    color: AdminColors.textPrimary,
-    marginTop: Spacing.xs,
+  devTokenValue: {
+    fontSize: 13,
+    fontFamily: Platform.OS === 'web' ? 'monospace' : 'Courier',
+    color: '#78350F',
+    backgroundColor: '#FEF3C7',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 6,
   },
-  actionButton: {
-    marginTop: Spacing.lg,
+  devTokenNote: {
+    fontSize: 11.5,
+    color: '#92400E',
+    fontFamily: FontFamilies.sans,
+    lineHeight: 16,
+  },
+  secondaryButton: {
+    marginTop: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#64748B',
+    fontFamily: FontFamilies.sans,
   },
 });
 

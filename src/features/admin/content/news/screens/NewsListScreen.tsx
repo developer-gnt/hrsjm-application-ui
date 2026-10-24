@@ -198,28 +198,24 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
 
   const renderListHeader = () => (
     <View>
-      {/* Page header: title/subtitle + Add News */}
+      {/* Page header matching Donation Seekers layout and typography */}
       <View style={styles.pageHeader}>
         <View style={styles.pageHeaderText}>
-          <Text style={styles.pageTitle}>News</Text>
-          <Text
-            style={styles.pageSubtitle}
-            adjustsFontSizeToFit
-            minimumFontScale={0.8}
-            numberOfLines={1}
-          >
+          <Text style={styles.pageTitle}>News & Updates</Text>
+          <Text style={styles.pageSubtitle}>
             Manage and publish news, updates and announcements.
           </Text>
         </View>
-        <AppButton
-          title="Add News"
-          variant="gold"
-          size="sm"
-          onPress={handleAddNews}
-          icon={<Text style={styles.addIcon}>+</Text>}
-          textStyle={styles.addButtonText}
+        <TouchableOpacity
           style={styles.addButton}
-        />
+          onPress={handleAddNews}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Add News"
+        >
+          <Text style={styles.addIcon}>+</Text>
+          <Text style={styles.addButtonText}>Add News</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.statsSection}>
@@ -346,42 +342,53 @@ const styles = StyleSheet.create({
   pageHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.sm,
-    gap: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xs,
+    gap: Spacing.sm,
   },
   pageHeaderText: {
     flex: 1,
     minWidth: 0,
   },
   pageTitle: {
-    fontFamily: FontFamilies.serif,
-    fontSize: 22,
-    lineHeight: 28,
-    color: AdminColors.textPrimary,
+    ...Typography.display,
+    fontSize: 24,
     fontWeight: '700',
+    color: '#0B2F52',
+    lineHeight: 28,
   },
   pageSubtitle: {
-    ...Typography.secondary,
-    fontSize: 11,
-    lineHeight: 15,
-    color: AdminColors.textSecondary,
+    ...Typography.body,
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#718096',
     marginTop: 2,
   },
   addButton: {
-    minHeight: 34,
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FAD465',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     borderRadius: BorderRadius.button,
+    elevation: 2,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
   },
   addIcon: {
-    color: '#011F39',
     fontSize: 16,
     fontWeight: '700',
-    marginTop: -1,
+    color: '#011F39',
+    lineHeight: 18,
   },
   addButtonText: {
-    ...Typography.secondaryMedium,
+    ...Typography.button,
+    fontSize: 13,
     fontWeight: '700',
     color: '#011F39',
   },

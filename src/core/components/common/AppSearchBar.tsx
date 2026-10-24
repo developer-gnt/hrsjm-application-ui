@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text, ViewStyle } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, ViewStyle, TextStyle } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { debounce } from '../../utils/debounce';
 
@@ -10,6 +10,7 @@ export interface AppSearchBarProps {
   onChangeText?: (text: string) => void;
   debounceMs?: number;
   containerStyle?: ViewStyle;
+  inputStyle?: TextStyle;
 }
 
 export const AppSearchBar: React.FC<AppSearchBarProps> = ({
@@ -19,6 +20,7 @@ export const AppSearchBar: React.FC<AppSearchBarProps> = ({
   onChangeText,
   debounceMs = 400,
   containerStyle,
+  inputStyle,
 }) => {
   const [internalValue, setInternalValue] = useState(controlledValue || '');
 
@@ -78,7 +80,7 @@ export const AppSearchBar: React.FC<AppSearchBarProps> = ({
         onChangeText={handleChangeText}
         placeholder={placeholder}
         placeholderTextColor="#64748B"
-        style={styles.input}
+        style={[styles.input, inputStyle]}
         returnKeyType="search"
         clearButtonMode="never"
         autoCapitalize="none"

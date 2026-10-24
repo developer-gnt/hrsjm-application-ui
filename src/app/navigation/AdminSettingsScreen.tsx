@@ -101,13 +101,13 @@ export const SETTING_SECTIONS: SettingSection[] = [
         description: 'Publish and manage educational articles and field stories.',
         route: AppRoutes.BLOGS,
       },
-      {
-        icon: '💰',
-        title: 'Payment Verification',
-        description:
-          'Verify offline and online membership fee payments.',
-        route: AppRoutes.PAYMENT_VERIFICATION,
-      },
+      // {
+      //   icon: '💰',
+      //   title: 'Payment Verification',
+      //   description:
+      //     'Verify offline and online membership fee payments.',
+      //   route: AppRoutes.PAYMENT_VERIFICATION,
+      // },
       {
         icon: '🧾',
         title: 'Expenses',

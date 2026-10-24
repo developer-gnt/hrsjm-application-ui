@@ -21,6 +21,7 @@ export {
   // Controls
   Search,
   ListFilter,
+  Filter,
   Plus,
   EllipsisVertical,
   Check,
@@ -34,6 +35,7 @@ export {
   Users,
   UserCheck,
   UserX,
+  Clock,
   Clock3,
   UserPlus,
 
@@ -86,6 +88,7 @@ export {
   ArrowUpRight,
   ArrowDownLeft,
   ArrowUp,
+  ArrowRight,
   BarChart3,
   Wallet,
   FolderTree,

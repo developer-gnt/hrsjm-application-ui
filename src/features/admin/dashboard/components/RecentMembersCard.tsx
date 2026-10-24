@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { BorderRadius, Shadows } from '../../../../core/theme/spacing';
 import { formatDate } from '../../../../core/utils';
 import type { AdminMemberItem } from '../types/dashboard.types';
 
@@ -34,14 +33,25 @@ const initialsOf = (fullName?: string | null): string => {
 };
 
 const getDisplayName = (member: any): string => {
-  return member?.full_name || member?.fullName || member?.name || member?.mobile_number || 'Member';
+  const raw = member?.full_name || member?.fullName || member?.name;
+  if (raw && raw.trim() && raw.trim().toLowerCase() !== 'member') {
+    return raw.trim();
+  }
+  if (member?.email) {
+    return member.email.split('@')[0];
+  }
+  if (member?.mobile_number) {
+    return `Member ${member.mobile_number.slice(-4)}`;
+  }
+  return 'HRSJM Member';
 };
 
 export const RecentMembersCard: React.FC<RecentMembersCardProps> = ({
   members,
   onViewAll,
 }) => {
-  const displayList = Array.isArray(members) && members.length > 0 ? members.slice(0, 4) : DEFAULT_MEMBERS;
+  const displayList =
+    Array.isArray(members) && members.length > 0 ? members.slice(0, 4) : DEFAULT_MEMBERS;
 
   return (
     <View style={styles.card}>
@@ -50,7 +60,11 @@ export const RecentMembersCard: React.FC<RecentMembersCardProps> = ({
           Recent Members
         </Text>
         {onViewAll ? (
-          <TouchableOpacity onPress={onViewAll} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+          <TouchableOpacity
+            onPress={onViewAll}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.7}
+          >
             <Text style={styles.viewAll}>View All</Text>
           </TouchableOpacity>
         ) : null}
@@ -60,6 +74,8 @@ export const RecentMembersCard: React.FC<RecentMembersCardProps> = ({
         {displayList.map(member => {
           const displayName = getDisplayName(member);
           const initials = initialsOf(displayName);
+          const isActive = member?.status === 'ACTIVE' || !member?.status;
+
           return (
             <View key={member.id} style={styles.row}>
               <View style={styles.avatar}>
@@ -71,13 +87,23 @@ export const RecentMembersCard: React.FC<RecentMembersCardProps> = ({
                   {displayName}
                 </Text>
                 <Text style={styles.memberDate} numberOfLines={1}>
-                  {member?.created_at ? formatDate(member.created_at) : '—'}
+                  {member?.created_at ? `Joined ${formatDate(member.created_at)}` : 'Active'}
                 </Text>
               </View>
 
-              <View style={styles.activeBadge}>
-                <Text style={styles.activeBadgeText}>
-                  {member?.status === 'ACTIVE' || !member?.status ? 'Active' : member.status}
+              <View
+                style={[
+                  styles.activeBadge,
+                  !isActive && styles.inactiveBadge,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.activeBadgeText,
+                    !isActive && styles.inactiveBadgeText,
+                  ]}
+                >
+                  {isActive ? 'Active' : member.status}
                 </Text>
               </View>
             </View>
@@ -90,48 +116,54 @@ export const RecentMembersCard: React.FC<RecentMembersCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xl,
-    padding: 10,
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    ...Shadows.card,
+    borderColor: '#E2E8F0',
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   title: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#0F2C59',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#06294D',
+    letterSpacing: -0.2,
   },
   viewAll: {
-    fontSize: 10.5,
+    fontSize: 12,
     fontWeight: '700',
     color: '#2563EB',
   },
   rows: {
-    gap: 8,
+    gap: 10,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
   },
   avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#DBEAFE',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '800',
     color: '#1D4ED8',
   },
@@ -139,25 +171,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   memberName: {
-    fontSize: 10.5,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#0F2C59',
+    color: '#06294D',
   },
   memberDate: {
-    fontSize: 8.5,
+    fontSize: 11,
     fontWeight: '500',
     color: '#64748B',
-    marginTop: 1,
+    marginTop: 2,
   },
   activeBadge: {
-    backgroundColor: '#DCFCE7',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 999,
   },
   activeBadgeText: {
-    fontSize: 8.5,
+    fontSize: 10.5,
     fontWeight: '700',
-    color: '#16A34A',
+    color: '#059669',
+  },
+  inactiveBadge: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+  },
+  inactiveBadgeText: {
+    color: '#64748B',
   },
 });
+

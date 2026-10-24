@@ -39,9 +39,10 @@ import { MemberStatusTabs } from '../components/MemberStatusTabs';
 import { MemberListHeader } from '../components/MemberListHeader';
 import { MemberRow } from '../components/MemberRow';
 import { MemberFilterSheet } from '../components/MemberFilterSheet';
-import { MemberActionsSheet } from '../components/MemberActionsSheet';
+import { MemberActionsSheet, type MenuAnchor } from '../components/MemberActionsSheet';
 import { MembersStateView, MembersLoadingState } from '../components/MembersStateView';
 import { AddMemberModal } from '../components/AddMemberModal';
+import { AddMemberScreen } from './AddMemberScreen';
 import { EditMemberModal } from '../components/EditMemberModal';
 import { MemberProfileModal } from '../components/MemberProfileModal';
 import {
@@ -50,7 +51,7 @@ import {
   useUpdateMember,
   MembersPreviewState,
 } from '../hooks/useMembers';
-import type {
+import membersService, {
   CreateMemberPayload,
   UpdateMemberPayload,
 } from '../services/members.service';
@@ -121,7 +122,9 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
 
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [actionsMember, setActionsMember] = useState<Member | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [isAddMemberView, setIsAddMemberView] = useState(false);
   const [editMember, setEditMember] = useState<Member | null>(null);
   const [viewMember, setViewMember] = useState<Member | null>(null);
   const [page, setPage] = useState(1);
@@ -235,27 +238,27 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
       if (key === 'deactivate') {
         showFeedback({
           tone: 'warning',
-          title: 'Suspend Member',
-          message: `Are you sure you want to suspend ${member.name}'s membership account?`,
-          badgeText: 'SUSPENSION',
+          title: 'Deactivate Member Account',
+          message: `Are you sure you want to deactivate ${member.name}'s account? In the database, their account status will be set to INACTIVE and all active login sessions will be terminated immediately. They will not be able to log in.`,
+          badgeText: 'DEACTIVATE',
           secondaryAction: { text: 'Cancel' },
           primaryAction: {
-            text: 'Suspend Account',
+            text: 'Deactivate Account',
             variant: 'destructive',
             onPress: async () => {
               try {
                 await members.handleUpdateStatus(member.id, 'SUSPENDED');
                 showFeedback({
                   tone: 'success',
-                  title: 'Member Suspended',
-                  message: `${member.name} has been suspended.`,
-                  badgeText: 'SUSPENDED',
+                  title: 'Account Deactivated',
+                  message: `${member.name}'s account has been deactivated in the database. Login access is now blocked.`,
+                  badgeText: 'BLOCKED',
                 });
               } catch (e: any) {
                 showFeedback({
                   tone: 'error',
                   title: 'Action Failed',
-                  message: e?.message || 'Failed to update member status.',
+                  message: e?.message || 'Failed to update member status in database.',
                 });
               }
             },
@@ -264,8 +267,8 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
       } else if (key === 'activate') {
         showFeedback({
           tone: 'info',
-          title: 'Activate Member',
-          message: `Are you sure you want to restore and activate ${member.name}'s membership?`,
+          title: 'Activate Member Account',
+          message: `Are you sure you want to restore and activate ${member.name}'s membership and login account?`,
           badgeText: 'ACTIVATION',
           secondaryAction: { text: 'Cancel' },
           primaryAction: {
@@ -275,8 +278,8 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
                 await members.handleUpdateStatus(member.id, 'ACTIVE');
                 showFeedback({
                   tone: 'success',
-                  title: 'Member Activated',
-                  message: `${member.name} has been successfully activated.`,
+                  title: 'Account Activated',
+                  message: `${member.name}'s account has been activated in the database. Login access is restored.`,
                   badgeText: 'ACTIVE',
                 });
               } catch (e: any) {
@@ -296,10 +299,32 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
       } else if (key === 'reset-password') {
         showFeedback({
           tone: 'info',
-          title: 'Reset Password',
-          message: `A secure password reset link will be sent to ${member.email || member.phone}.`,
+          title: 'Reset Member Password',
+          message: `Are you sure you want to reset the password for ${member.name} (${member.membershipId})? A secure password reset token will be created in the database and linked to ${member.email || member.phone}.`,
           badgeText: 'SECURITY',
-          primaryAction: { text: 'Send Link' },
+          secondaryAction: { text: 'Cancel' },
+          primaryAction: {
+            text: 'Reset Password',
+            onPress: async () => {
+              try {
+                const res = await membersService.resetPassword(member.id);
+                showFeedback({
+                  tone: 'success',
+                  title: 'Password Reset Initiated',
+                  message:
+                    res.message ||
+                    `Password reset request generated and saved in database for ${member.name}.`,
+                  badgeText: 'DATABASE CONNECTED',
+                });
+              } catch (e: any) {
+                showFeedback({
+                  tone: 'error',
+                  title: 'Reset Failed',
+                  message: e?.message || 'Failed to initiate password reset in database.',
+                });
+              }
+            },
+          },
         });
       }
     },
@@ -307,6 +332,11 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   );
 
   const isSelectionMode = members.selectedIds.size > 0;
+
+  const handleOpenActions = useCallback((member: Member, anchor?: MenuAnchor) => {
+    setActionsMember(member);
+    setMenuAnchor(anchor ?? null);
+  }, []);
 
   const renderMemberRow = useCallback(
     ({ item }: { item: Member }) => (
@@ -317,10 +347,10 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
         wide={isWide}
         onToggleSelect={members.toggleMemberSelected}
         onLongPress={members.toggleMemberSelected}
-        onOpenActions={setActionsMember}
+        onOpenActions={handleOpenActions}
       />
     ),
-    [members.selectedIds, isSelectionMode, members.toggleMemberSelected, isWide]
+    [members.selectedIds, isSelectionMode, members.toggleMemberSelected, isWide, handleOpenActions]
   );
 
   const renderStateViews = (): React.ReactNode => {
@@ -369,7 +399,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
           title="No members yet"
           description="Approved members will appear here once registrations begin."
           actionTitle="Add Member"
-          onAction={() => setAddModalVisible(true)}
+          onAction={() => setIsAddMemberView(true)}
         />
       );
     }
@@ -382,7 +412,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
     <View>
       <View>
         <MembersPageHeader
-          onAddMember={() => setAddModalVisible(true)}
+          onAddMember={() => setIsAddMemberView(true)}
           onViewApplications={handleViewApplications}
         />
         <View style={styles.sectionGap}>
@@ -441,6 +471,36 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
       {renderStateViews()}
     </View>
   );
+
+  if (isAddMemberView) {
+    return (
+      <View style={styles.screen}>
+        <AddMemberScreen
+          onBack={() => setIsAddMemberView(false)}
+          onSubmit={async (payload) => {
+            try {
+              await handleAddMember(payload);
+              setIsAddMemberView(false);
+            } catch {
+              // Errors are presented via handleAddMember feedback modal
+            }
+          }}
+          isSubmitting={createMemberMutation.isPending}
+          onNavigate={onNavigate}
+        />
+        <AppFeedbackModal
+          visible={feedback.visible}
+          tone={feedback.tone}
+          title={feedback.title}
+          message={feedback.message}
+          badgeText={feedback.badgeText}
+          primaryAction={feedback.primaryAction}
+          secondaryAction={feedback.secondaryAction}
+          onClose={closeFeedback}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
@@ -505,7 +565,11 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
       />
       <MemberActionsSheet
         member={actionsMember}
-        onClose={() => setActionsMember(null)}
+        anchor={menuAnchor}
+        onClose={() => {
+          setActionsMember(null);
+          setMenuAnchor(null);
+        }}
         onSelectAction={handleMemberAction}
       />
 

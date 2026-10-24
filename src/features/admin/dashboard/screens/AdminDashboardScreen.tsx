@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -36,6 +37,7 @@ import { MembershipGrowthCard } from '../components/MembershipGrowthCard';
 import { StatusDonutCard } from '../components/StatusDonutCard';
 import { RecentMembersCard } from '../components/RecentMembersCard';
 import { RecentApplicationsCard } from '../components/RecentApplicationsCard';
+import { AdminCalendarModal } from '../components/AdminCalendarModal';
 
 const MORE_TAB = 'AdminMoreTab' as const;
 
@@ -59,6 +61,10 @@ export const AdminDashboardScreen: React.FC<{
   const [selectedMonthOption, setSelectedMonthOption] = useState(monthOptions[0]);
   const [selectedRangeMonths, setSelectedRangeMonths] = useState(6);
   const [monthPickerVisible, setMonthPickerVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>('2026-10-23');
+
+  const { width } = useWindowDimensions();
+  const isMobile = width < 680;
 
   const dashboardQuery = useDashboard(selectedMonthOption.value, selectedRangeMonths);
   const recentMembersQuery = useRecentMembers();
@@ -140,7 +146,7 @@ export const AdminDashboardScreen: React.FC<{
             <SkeletonCard height={180} lines={1} />
             <SkeletonCard height={180} lines={1} />
           </View>
-          <View style={styles.twoColumnRow}>
+          <View style={isMobile ? styles.singleColumn : styles.twoColumnRow}>
             <SkeletonCard height={180} lines={1} />
             <SkeletonCard height={180} lines={1} />
           </View>
@@ -176,7 +182,7 @@ export const AdminDashboardScreen: React.FC<{
 
   const eventsStats = eventsQuery.data?.stats;
   const totalEvents = dashboard.events?.total ?? eventsStats?.total ?? eventsQuery.data?.events.length ?? 0;
-  const upcomingEvents = dashboard.events?.upcoming ?? eventsStats?.upcoming ?? 0;
+   const upcomingEvents = dashboard.events?.upcoming ?? eventsStats?.upcoming ?? 0;
   const eventsThisMonth = dashboard.events?.thisMonth ?? 0;
 
   return (
@@ -275,77 +281,36 @@ export const AdminDashboardScreen: React.FC<{
           />
         </View>
 
-        {/* 2 Recent Lists Side-by-Side */}
-        <View style={styles.twoColumnRow}>
-          <RecentMembersCard
-            members={recentMembersQuery.data ?? []}
-            onViewAll={() => jumpToTab('AdminMembersTab')}
-          />
+        {/* 2 Recent Lists (Stacked on Mobile, 2-Column on Tablet/Desktop) */}
+        <View style={isMobile ? styles.singleColumn : styles.twoColumnRow}>
+          <View style={isMobile ? undefined : styles.twoColumnItem}>
+            <RecentMembersCard
+              members={recentMembersQuery.data ?? []}
+              onViewAll={() => jumpToTab('AdminMembersTab')}
+            />
+          </View>
 
-          <RecentApplicationsCard
-            rows={toRecentApplicationRows(recentApplicationsQuery.data ?? [])}
-            onViewAll={() => jumpToTab('AdminApplicationsTab')}
-          />
+          <View style={isMobile ? undefined : styles.twoColumnItem}>
+            <RecentApplicationsCard
+              rows={toRecentApplicationRows(recentApplicationsQuery.data ?? [])}
+              onViewAll={() => jumpToTab('AdminApplicationsTab')}
+            />
+          </View>
         </View>
       </ScrollView>
 
-      {/* Month Selection Modal */}
-      <Modal
+      {/* Complete Interactive Calendar & Period Modal */}
+      <AdminCalendarModal
         visible={monthPickerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setMonthPickerVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setMonthPickerVisible(false)}
-        >
-          <View style={styles.monthModalCard}>
-            <View style={styles.monthModalHeader}>
-              <Text style={styles.monthModalTitle}>Select Period</Text>
-              <TouchableOpacity
-                onPress={() => setMonthPickerVisible(false)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={styles.closeIcon}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.monthList}>
-              {monthOptions.map((option: { label: string; value: string }) => {
-                const isSelected = selectedMonthOption.value === option.value;
-                return (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.monthOption,
-                      isSelected && styles.monthOptionActive,
-                    ]}
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      setSelectedMonthOption(option);
-                      setMonthPickerVisible(false);
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.monthOptionText,
-                        isSelected && styles.monthOptionTextActive,
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                    {isSelected ? (
-                      <Text style={styles.monthCheck}>✓</Text>
-                    ) : null}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        onClose={() => setMonthPickerVisible(false)}
+        selectedMonthOption={selectedMonthOption}
+        onSelectMonthOption={setSelectedMonthOption}
+        monthOptions={monthOptions}
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+        events={eventsQuery.data?.events ?? []}
+        onNavigateToEvents={() => handleDrawerNavigate('Events')}
+      />
     </View>
   );
 };
@@ -421,6 +386,13 @@ const styles = StyleSheet.create({
   twoColumnRow: {
     flexDirection: 'row',
     gap: 10,
+  },
+  twoColumnItem: {
+    flex: 1,
+  },
+  singleColumn: {
+    flexDirection: 'column',
+    gap: 12,
   },
   skeletonTitle: {
     width: 180,

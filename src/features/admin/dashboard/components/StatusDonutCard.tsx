@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle as SvgCircle } from 'react-native-svg';
-import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
 
 export interface DonutSegment {
   label: string;
@@ -26,8 +25,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 const DEFAULT_PALETTE = ['#16A34A', '#F59E0B', '#3B82F6', '#EF4444'];
 
-const RADIUS = 30;
-const STROKE = 9;
+const RADIUS = 28;
+const STROKE = 8;
 const SIZE = (RADIUS + STROKE / 2) * 2;
 
 export const StatusDonutCard: React.FC<StatusDonutCardProps> = ({
@@ -93,7 +92,7 @@ export const StatusDonutCard: React.FC<StatusDonutCardProps> = ({
 
         <View style={styles.center} pointerEvents="none">
           <Text style={styles.centerValue}>{total}</Text>
-          <Text style={styles.centerLabel}>Total</Text>
+          <Text style={styles.centerLabel}>TOTAL</Text>
         </View>
       </View>
 
@@ -117,20 +116,25 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xl,
-    padding: 10,
+    borderRadius: 16,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
     alignItems: 'center',
-    ...Shadows.card,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   title: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#0F2C59',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#06294D',
     marginBottom: 8,
     textAlign: 'center',
     width: '100%',
+    letterSpacing: -0.2,
   },
   chartWrap: {
     position: 'relative',
@@ -143,26 +147,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   centerValue: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '800',
-    color: '#0F2C59',
-    lineHeight: 16,
+    color: '#06294D',
+    lineHeight: 18,
   },
   centerLabel: {
-    fontSize: 8,
-    fontWeight: '600',
+    fontSize: 8.5,
+    fontWeight: '700',
     color: '#64748B',
+    letterSpacing: 0.5,
   },
   legendGrid: {
     width: '100%',
-    gap: 3,
+    gap: 4,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    gap: 4,
+    gap: 6,
   },
   dot: {
     width: 6,
@@ -170,14 +175,15 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   legendLabel: {
-    fontSize: 9.5,
-    fontWeight: '500',
+    fontSize: 10.5,
+    fontWeight: '600',
     color: '#475569',
     flex: 1,
   },
   legendCount: {
-    fontSize: 9.5,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#0F2C59',
+    color: '#06294D',
   },
 });
+

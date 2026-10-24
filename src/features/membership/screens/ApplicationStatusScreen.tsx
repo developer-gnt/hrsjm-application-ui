@@ -208,8 +208,12 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
   const config = STATUS_CONFIGS[activeStatus] || STATUS_CONFIGS.applied;
 
   // Dynamic application data with exact reference fallback values
-  const appType = currentApp?.membershipType || 'Membership Application';
-  const appId = currentApp?.applicationId || 'APP-20261012-001';
+  const isTargetSeeker = Boolean(targetAppId && targetAppId.startsWith('HRSJM-SEK'));
+  const appType =
+    (isTargetSeeker && (!currentApp || !currentApp.membershipType.toLowerCase().includes('seeker')))
+      ? 'Donation Seeker'
+      : (currentApp?.membershipType || 'Membership Application');
+  const appId = targetAppId || currentApp?.applicationId || 'APP-20261012-001';
   const appliedOn = currentApp?.submittedAt || '12 Oct 2026, 10:30 AM';
   const underReviewOn = currentApp?.underReviewAt || currentApp?.submittedAt || 'Recently';
   const approvedOn = currentApp?.approvedAt || '15 Oct 2026, 04:20 PM';
@@ -223,6 +227,18 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
     approved: approvedOn,
     rejected: rejectedOn,
   };
+
+  const isDonationSeeker = Boolean(
+    isTargetSeeker ||
+    appType.toLowerCase().includes('seeker') ||
+    appId.startsWith('HRSJM-SEK') ||
+    (currentApp?.membershipType && currentApp.membershipType.toLowerCase().includes('seeker'))
+  );
+
+  const bannerSubtitle =
+    isDonationSeeker && activeStatus === 'approved'
+      ? 'Your application has been approved.\nYour donation seeker account is now active.'
+      : config.bannerSubtitle;
 
   const handleBackToStatus = () => {
     const navState = navigation.getState?.();
@@ -355,7 +371,7 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
               <Text style={[styles.bannerTitle, { color: config.titleColor }]}>
                 {config.bannerTitle}
               </Text>
-              <Text style={styles.bannerSubtitle}>{config.bannerSubtitle}</Text>
+              <Text style={styles.bannerSubtitle}>{bannerSubtitle}</Text>
             </View>
           </View>
 
@@ -623,8 +639,8 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
             </TouchableOpacity>
           )}
 
-          {/* Membership Fee & Payment Action Card */}
-          {activeStatus !== 'rejected' && (
+          {/* Membership Fee & Payment Action Card (Members only, never Donation Seekers) */}
+          {!isDonationSeeker && activeStatus !== 'rejected' && (
             <View style={styles.feeStatusCard}>
               <View style={styles.feeStatusRow}>
                 <View style={styles.feeStatusLeft}>

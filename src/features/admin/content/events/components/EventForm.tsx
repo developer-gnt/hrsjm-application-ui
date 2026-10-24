@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   BackHandler,
   KeyboardAvoidingView,
@@ -11,52 +12,51 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
-import {
-  AdminColors,
-  BorderRadius,
-  Spacing,
-  Typography,
-} from '../../../../../core/theme';
-import { AppButton, AppInput } from '../../../../../core/components';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
+import { DatePickerModal } from '../../../../../core/components/common/DatePickerModal';
+import { Calendar, Clock, MapPin } from '../../../../../core/components/icons';
+import { formatDate } from '../../../../../core/utils';
 import { EventFormField } from './EventFormField';
-import { EventFormSection } from './EventFormSection';
-import { EventPickerSheet } from './EventPickerSheet';
-import { EventSelectField } from './EventSelectField';
 import { EventImagePicker } from './EventImagePicker';
-import { EventTagInput } from './EventTagInput';
+import { EventPickerSheet } from './EventPickerSheet';
 import { EventFormToast } from './EventFormToast';
-import { EventDateTimeFields } from './EventDateTimeFields';
-import { EventLocationFields } from './EventLocationFields';
-import { EventRegistrationFields } from './EventRegistrationFields';
-import {
-  SAMPLE_EVENT_CATEGORIES,
-  SAMPLE_EVENT_TYPE_OPTIONS,
-  SAMPLE_LANGUAGE_OPTIONS,
-  SAMPLE_TARGET_AUDIENCE_OPTIONS,
-} from '../data/sample-events';
 import type {
   CreateEventFieldErrors,
   CreateEventFormState,
 } from '../types/events.types';
 import { useCreateEvent, useUpdateEvent } from '../hooks/useEvents';
 
-/** How long the edit-mode success toast stays before returning to Event Details. */
-const EDIT_SUCCESS_REDIRECT_MS = 1800;
+/** How long the success toast stays before navigating back. */
+const SUCCESS_REDIRECT_MS = 1400;
 
-const SHORT_INFO_MAX_LENGTH = 200;
+/** Time interval options (every 30 minutes). */
+const TIME_OPTIONS: string[] = Array.from({ length: 48 }, (_, index) => {
+  const hours = String(Math.floor(index / 2)).padStart(2, '0');
+  const minutes = index % 2 === 0 ? '00' : '30';
+  return `${hours}:${minutes}`;
+});
 
-/** Empty form used as the Create Event starting point and dirty-state baseline. */
+/** Formats "14:30" to "02:30 PM". */
+const formatTimeLabel = (hhmm: string): string => {
+  if (!hhmm) return '';
+  const parts = hhmm.split(':');
+  if (parts.length < 2) return hhmm;
+  const hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return hhmm;
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 === 0 ? 12 : hours % 12;
+  return `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${period}`;
+};
+
+/** Empty form used as the Create Event starting point. */
 export const EMPTY_EVENT_FORM: CreateEventFormState = {
   title: '',
   description: '',
   coverImageUri: null,
-  category: null,
-  eventType: null,
+  category: 'Community',
+  eventType: 'IN_PERSON',
   eventDate: null,
   startTime: null,
   endDate: null,
@@ -64,22 +64,19 @@ export const EMPTY_EVENT_FORM: CreateEventFormState = {
   allDay: false,
   location: '',
   address: '',
-  registrationRequired: true,
-  totalSeats: '',
+  registrationRequired: false,
+  totalSeats: '100',
   perPersonLimit: '1',
-  organizedBy: '',
+  organizedBy: 'HRSJM Mission',
   targetAudience: null,
   language: null,
   shortInformation: '',
   tags: [],
-  status: 'DRAFT',
+  status: 'PUBLISH',
 };
 
 /**
- * Local frontend validation for fields marked required in the PRD.
- * Backend validation remains authoritative once the contract exists — these
- * rules are intentionally limited to the PRD's frontend list. Shared by the
- * Create Event and Edit Event screens.
+ * Validates fields according to the approved Create Event wireframe & backend requirements.
  */
 const validateForm = (form: CreateEventFormState): CreateEventFieldErrors => {
   const errors: CreateEventFieldErrors = {};
@@ -93,101 +90,23 @@ const validateForm = (form: CreateEventFormState): CreateEventFieldErrors => {
   if (!form.coverImageUri) {
     errors.coverImageUri = 'Cover image is required';
   }
-  if (!form.category) {
-    errors.category = 'Category is required';
-  }
-  if (!form.eventType) {
-    errors.eventType = 'Event type is required';
-  }
   if (!form.eventDate) {
     errors.eventDate = 'Event date is required';
   }
-  if (!form.endDate) {
-    errors.endDate = 'End date is required';
+  if (!form.startTime) {
+    errors.startTime = 'Start time is required';
   }
-  if (!form.allDay) {
-    if (!form.startTime) {
-      errors.startTime = 'Start time is required';
-    }
-    if (!form.endTime) {
-      errors.endTime = 'End time is required';
-    }
-    if (form.eventDate && form.endDate && form.eventDate === form.endDate) {
-      if (form.startTime && form.endTime && form.endTime < form.startTime) {
-        errors.endTime = 'End time must be after start time';
-      }
-    }
+  if (!form.endTime) {
+    errors.endTime = 'End time is required';
   }
-  if (form.eventDate && form.endDate && form.endDate < form.eventDate) {
-    errors.endDate = 'End date cannot be before the event date';
+  if (form.startTime && form.endTime && form.endTime <= form.startTime) {
+    errors.endTime = 'End time must be after start time';
   }
   if (!form.location.trim()) {
-    errors.location = 'Location is required';
+    errors.location = 'Event location is required';
   }
-  if (form.registrationRequired) {
-    const seats = Number(form.totalSeats);
-    if (!form.totalSeats.trim()) {
-      errors.totalSeats = 'Total seats is required';
-    } else if (!Number.isInteger(seats) || seats <= 0) {
-      errors.totalSeats = 'Enter a valid number of seats';
-    }
-  }
+
   return errors;
-};
-
-interface EventFormPreviewHeaderProps {
-  title: string;
-  /** Screen the back arrow returns to, for the accessibility label. */
-  backDestination: string;
-  onBack: () => void;
-}
-
-/**
- * TEMPORARY PREVIEW COMPONENT — NOT THE REAL GLOBAL HEADER.
- *
- * Reproduces the HRSJM Admin app-shell header (back / title / bell / avatar)
- * from the reference design so the event form screens can be reviewed in
- * context. The real global header, navigation and branding assets are owned
- * by the app-level architecture (Mubasshir) and will replace this file.
- *
- * DELETE THIS FILE when the real Admin shell is integrated.
- */
-const EventFormPreviewHeader: React.FC<EventFormPreviewHeaderProps> = ({
-  title,
-  backDestination,
-  onBack,
-}) => {
-  const insets = useSafeAreaInsets();
-
-  return (
-    <View
-      style={[
-        styles.previewHeader,
-        { paddingTop: Math.max(insets.top, Spacing.sm) },
-      ]}
-    >
-      <TouchableOpacity
-        style={styles.previewBackButton}
-        onPress={onBack}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        accessibilityRole="button"
-        accessibilityLabel={`Go back to ${backDestination}`}
-      >
-        <Text style={styles.previewBackIcon}>←</Text>
-      </TouchableOpacity>
-      <Text style={styles.previewTitle}>{title}</Text>
-
-      <View style={styles.previewRight}>
-        <Text style={styles.previewBell}>🔔</Text>
-        <View style={styles.previewBadge}>
-          <Text style={styles.previewBadgeText}>3</Text>
-        </View>
-        <View style={styles.previewAvatar}>
-          <Text style={styles.previewAvatarText}>AD</Text>
-        </View>
-      </View>
-    </View>
-  );
 };
 
 export type EventFormMode = 'create' | 'edit';
@@ -200,22 +119,22 @@ interface EventFormProps {
   title: string;
   /** Page subtitle under the title. */
   subtitle: string;
-  /** Starting field values; also the baseline for dirty-state detection. */
+  /** Starting field values. */
   initialForm: CreateEventFormState;
-  /** Primary action label ("Save Event" / "Save Changes"). */
+  /** Primary action label ("Create Event" / "Save Changes"). */
   saveLabel: string;
-  /** Label of the description field (create: "Description", edit reference: "Short Description"). */
+  /** Label of the description field (defaults to 'Description'). */
   descriptionLabel?: string;
-  /** Screen the back arrow returns to, for the accessibility label. */
-  backDestination: string;
-  /** Leave the screen (after confirmation when the form is dirty). */
+  /** Screen the back arrow returns to. */
+  backDestination?: string;
+  /** Leave the screen. */
   onCancel: () => void;
-  /** Edit mode only: fired after the validated-save toast so the host can navigate back. */
+  /** Edit mode only: fired after save completes. */
   onSaved?: () => void;
 }
 
 /**
- * Shared Create/Edit Event form connected to the HRSJM Events API.
+ * Create/Edit Event form strictly reproducing the approved wireframe.
  */
 export const EventForm: React.FC<EventFormProps> = ({
   mode,
@@ -225,7 +144,6 @@ export const EventForm: React.FC<EventFormProps> = ({
   initialForm,
   saveLabel,
   descriptionLabel = 'Description',
-  backDestination,
   onCancel,
   onSaved,
 }) => {
@@ -234,23 +152,20 @@ export const EventForm: React.FC<EventFormProps> = ({
   const [submitted, setSubmitted] = useState(false);
   const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null);
 
+  // Pickers state
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [startTimePickerVisible, setStartTimePickerVisible] = useState(false);
+  const [endTimePickerVisible, setEndTimePickerVisible] = useState(false);
+
   const createEventMutation = useCreateEvent();
   const updateEventMutation = useUpdateEvent();
   const isSaving = createEventMutation.isPending || updateEventMutation.isPending;
-
-  // Picker visibility
-  const [categoryPicker, setCategoryPicker] = useState(false);
-  const [typePicker, setTypePicker] = useState(false);
-  const [audiencePicker, setAudiencePicker] = useState(false);
-  const [languagePicker, setLanguagePicker] = useState(false);
 
   const isDirty = useMemo(
     () => JSON.stringify(form) !== JSON.stringify(initialForm),
     [form, initialForm],
   );
 
-  // True once a validated save has started the return to Event Details
-  // (edit mode): further save presses and cancel confirmations are no-ops.
   const completingRef = useRef(false);
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -268,7 +183,6 @@ export const EventForm: React.FC<EventFormProps> = ({
     value: CreateEventFormState[K],
   ) => {
     setForm(previous => ({ ...previous, [field]: value }));
-    // Clear the field error as soon as the user edits it after a failed submit.
     if (submitted && errors[field]) {
       setErrors(previous => {
         const next = { ...previous };
@@ -278,15 +192,10 @@ export const EventForm: React.FC<EventFormProps> = ({
     }
   };
 
-  // Guards against stacking "Discard changes?" dialogs: while one is visible,
-  // further hardware-back presses do nothing until the user resolves it.
   const discardDialogVisibleRef = useRef(false);
 
-  // Android hardware back: confirm before leaving with unsaved changes.
   const requestCancel = () => {
-    if (discardDialogVisibleRef.current) {
-      return;
-    }
+    if (discardDialogVisibleRef.current) return;
     if (completingRef.current || !isDirty) {
       onCancel();
       return;
@@ -321,15 +230,13 @@ export const EventForm: React.FC<EventFormProps> = ({
   }, [isDirty, onCancel]);
 
   const handleSave = async () => {
-    if (completingRef.current || isSaving) {
-      return;
-    }
+    if (completingRef.current || isSaving) return;
     setSubmitted(true);
     const validationErrors = validateForm(form);
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) {
-      setToast({ message: 'Please fix the highlighted fields.', variant: 'error' });
+      setToast({ message: 'Please fill in all required fields.', variant: 'error' });
       return;
     }
 
@@ -337,22 +244,16 @@ export const EventForm: React.FC<EventFormProps> = ({
       if (mode === 'edit' && eventId) {
         await updateEventMutation.mutateAsync({ id: eventId, form });
         completingRef.current = true;
-        setToast({
-          message: 'Event updated successfully.',
-          variant: 'success',
-        });
+        setToast({ message: 'Event updated successfully.', variant: 'success' });
         redirectTimerRef.current = setTimeout(() => {
           if (onSaved) onSaved();
           else onCancel();
-        }, EDIT_SUCCESS_REDIRECT_MS);
+        }, SUCCESS_REDIRECT_MS);
       } else {
         await createEventMutation.mutateAsync(form);
         completingRef.current = true;
-        setToast({
-          message: `Event ${form.status === 'DRAFT' ? 'saved as draft' : 'published'} successfully.`,
-          variant: 'success',
-        });
-        redirectTimerRef.current = setTimeout(onCancel, EDIT_SUCCESS_REDIRECT_MS);
+        setToast({ message: 'Event created successfully.', variant: 'success' });
+        redirectTimerRef.current = setTimeout(onCancel, SUCCESS_REDIRECT_MS);
       }
     } catch (err: any) {
       const errorMsg =
@@ -368,6 +269,7 @@ export const EventForm: React.FC<EventFormProps> = ({
 
   return (
     <View style={styles.root}>
+      {/* 1. Shared Header */}
       <AdminHeader showBack title={title} onBack={requestCancel} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
@@ -380,286 +282,195 @@ export const EventForm: React.FC<EventFormProps> = ({
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Page title block */}
+            {/* 2. Page Introduction */}
             <View style={styles.pageHeader}>
               <Text style={styles.pageTitle}>{title}</Text>
               <Text style={styles.pageSubtitle}>{subtitle}</Text>
             </View>
 
-            {/* 1. Basic Information */}
-            <EventFormSection title="Basic Information">
-              <EventFormField label="Event Title" required>
-                <AppInput
+            {/* 3. Section 1: Basic Information */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Basic Information</Text>
+
+              <EventFormField label="Event Title" required error={errors.title}>
+                <TextInput
                   value={form.title}
                   onChangeText={value => updateField('title', value)}
                   placeholder="Enter event title"
-                  error={errors.title}
+                  placeholderTextColor="#94A3B8"
+                  style={[styles.input, errors.title ? styles.inputError : null]}
                   accessibilityLabel="Event Title"
                 />
               </EventFormField>
 
-              <EventFormField label={descriptionLabel} required>
+              <EventFormField label={descriptionLabel} required error={errors.description}>
                 <TextInput
                   value={form.description}
                   onChangeText={value => updateField('description', value)}
                   placeholder="Write event description..."
-                  placeholderTextColor={AdminColors.textMuted}
+                  placeholderTextColor="#94A3B8"
                   multiline
                   textAlignVertical="top"
-                  style={[
-                    styles.textArea,
-                    errors.description ? styles.textAreaError : null,
-                  ]}
-                  accessibilityLabel={descriptionLabel}
+                  style={[styles.textArea, errors.description ? styles.inputError : null]}
+                  accessibilityLabel="Description"
                 />
-                <View style={styles.richToolbar}>
-                  {['B', 'I', 'U', '⋮≡', '🔗'].map((glyph, index) => (
-                    <TouchableOpacity
-                      key={glyph}
-                      style={styles.richToolButton}
-                      disabled
-                      accessibilityRole="button"
-                      accessibilityLabel={['Bold', 'Italic', 'Underline', 'List', 'Link'][index]}
-                    >
-                      <Text style={styles.richToolIcon}>{glyph}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                {errors.description ? (
-                  <Text style={styles.fieldError}>{errors.description}</Text>
-                ) : null}
               </EventFormField>
+            </View>
 
-              <EventFormField label="Cover Image" required>
+            {/* 4. Section 2: Event Image */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Event Image</Text>
+
+              <EventFormField label="Cover Image" required error={errors.coverImageUri}>
                 <EventImagePicker
                   value={form.coverImageUri}
                   error={errors.coverImageUri}
                   onChange={value => updateField('coverImageUri', value)}
                 />
-                {errors.coverImageUri ? (
-                  <Text style={styles.fieldError}>{errors.coverImageUri}</Text>
-                ) : null}
+              </EventFormField>
+            </View>
+
+            {/* 5. Section 3: Event Details */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Event Details</Text>
+
+              {/* Event Date */}
+              <EventFormField label="Event Date" required error={errors.eventDate}>
+                <TouchableOpacity
+                  style={[styles.inputWithIcon, errors.eventDate ? styles.inputError : null]}
+                  onPress={() => setDatePickerVisible(true)}
+                  activeOpacity={0.75}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select event date"
+                >
+                  <Calendar size={18} color="#94A3B8" strokeWidth={2} style={styles.leadingIcon} />
+                  <Text style={form.eventDate ? styles.inputValue : styles.inputPlaceholder}>
+                    {form.eventDate ? formatDate(form.eventDate) : 'Select event date'}
+                  </Text>
+                </TouchableOpacity>
               </EventFormField>
 
-              <EventFormField label="Category" required>
-                <EventSelectField
-                  value={form.category}
-                  placeholder="Select category"
-                  error={Boolean(errors.category)}
-                  onPress={() => setCategoryPicker(true)}
-                />
-                {errors.category ? (
-                  <Text style={styles.fieldError}>{errors.category}</Text>
-                ) : null}
-              </EventFormField>
-
-              <EventFormField label="Event Type" required>
-                <EventSelectField
-                  value={form.eventType}
-                  placeholder="Select event type"
-                  error={Boolean(errors.eventType)}
-                  onPress={() => setTypePicker(true)}
-                />
-                {errors.eventType ? (
-                  <Text style={styles.fieldError}>{errors.eventType}</Text>
-                ) : null}
-              </EventFormField>
-            </EventFormSection>
-
-            {/* 2. Date & Time */}
-            <EventFormSection title="Date & Time">
-              <EventDateTimeFields
-                values={form}
-                errors={errors}
-                onChangeField={updateField}
-              />
-            </EventFormSection>
-
-            {/* 3. Location Details */}
-            <EventFormSection title="Location Details">
-              <EventLocationFields
-                values={form}
-                errors={errors}
-                onChangeField={updateField}
-              />
-            </EventFormSection>
-
-            {/* 4. Registration Details */}
-            <EventFormSection title="Registration Details">
-              <EventRegistrationFields
-                values={form}
-                errors={errors}
-                onToggleRegistration={value => updateField('registrationRequired', value)}
-                onChangeField={updateField}
-              />
-            </EventFormSection>
-
-            {/* 5. Additional Information */}
-            <EventFormSection title="Additional Information">
-              <EventFormField label="Organized By">
-                <AppInput
-                  value={form.organizedBy}
-                  onChangeText={value => updateField('organizedBy', value)}
-                  placeholder="Enter organizer name"
-                  accessibilityLabel="Organized By"
-                />
-              </EventFormField>
-
-              <View style={styles.gridRow}>
-                <View style={styles.fieldHalf}>
-                  <EventFormField label="Target Audience">
-                    <EventSelectField
-                      value={form.targetAudience}
-                      placeholder="Select target audience"
-                      onPress={() => setAudiencePicker(true)}
-                    />
+              {/* Start Time & End Time in 2-column row */}
+              <View style={styles.twoColumnRow}>
+                <View style={styles.columnHalf}>
+                  <EventFormField label="Start Time" required error={errors.startTime}>
+                    <TouchableOpacity
+                      style={[styles.inputWithIcon, errors.startTime ? styles.inputError : null]}
+                      onPress={() => setStartTimePickerVisible(true)}
+                      activeOpacity={0.75}
+                      accessibilityRole="button"
+                      accessibilityLabel="Select start time"
+                    >
+                      <Clock size={18} color="#94A3B8" strokeWidth={2} style={styles.leadingIcon} />
+                      <Text
+                        style={form.startTime ? styles.inputValue : styles.inputPlaceholder}
+                        numberOfLines={1}
+                      >
+                        {form.startTime ? formatTimeLabel(form.startTime) : 'Select start time'}
+                      </Text>
+                    </TouchableOpacity>
                   </EventFormField>
                 </View>
-                <View style={styles.fieldHalf}>
-                  <EventFormField label="Language">
-                    <EventSelectField
-                      value={form.language}
-                      placeholder="Select language"
-                      onPress={() => setLanguagePicker(true)}
-                    />
+
+                <View style={styles.columnHalf}>
+                  <EventFormField label="End Time" required error={errors.endTime}>
+                    <TouchableOpacity
+                      style={[styles.inputWithIcon, errors.endTime ? styles.inputError : null]}
+                      onPress={() => setEndTimePickerVisible(true)}
+                      activeOpacity={0.75}
+                      accessibilityRole="button"
+                      accessibilityLabel="Select end time"
+                    >
+                      <Clock size={18} color="#94A3B8" strokeWidth={2} style={styles.leadingIcon} />
+                      <Text
+                        style={form.endTime ? styles.inputValue : styles.inputPlaceholder}
+                        numberOfLines={1}
+                      >
+                        {form.endTime ? formatTimeLabel(form.endTime) : 'Select end time'}
+                      </Text>
+                    </TouchableOpacity>
                   </EventFormField>
                 </View>
               </View>
 
-              <EventFormField label="Short Information" optionalHint>
-                <TextInput
-                  value={form.shortInformation}
-                  onChangeText={value => updateField('shortInformation', value.slice(0, SHORT_INFO_MAX_LENGTH))}
-                  placeholder="Add short summary for event card..."
-                  placeholderTextColor={AdminColors.textMuted}
-                  multiline
-                  textAlignVertical="top"
-                  style={styles.textArea}
-                  accessibilityLabel="Short Information"
-                />
-                <Text style={styles.charCounter}>
-                  {form.shortInformation.length}/{SHORT_INFO_MAX_LENGTH}
-                </Text>
+              {/* Event Location */}
+              <EventFormField label="Event Location" required error={errors.location}>
+                <View style={[styles.inputWithIcon, errors.location ? styles.inputError : null]}>
+                  <MapPin size={18} color="#94A3B8" strokeWidth={2} style={styles.leadingIcon} />
+                  <TextInput
+                    value={form.location}
+                    onChangeText={value => updateField('location', value)}
+                    placeholder="Enter event location"
+                    placeholderTextColor="#94A3B8"
+                    style={styles.inlineInput}
+                    accessibilityLabel="Event Location"
+                  />
+                </View>
               </EventFormField>
+            </View>
 
-              <EventFormField label="Tags" optionalHint>
-                <EventTagInput
-                  tags={form.tags}
-                  onChange={value => updateField('tags', value)}
-                />
-              </EventFormField>
-            </EventFormSection>
-
-            {/* 6. Status */}
-            <EventFormSection title="Status">
-              <View style={styles.statusRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.statusCard,
-                    form.status === 'DRAFT' ? styles.statusCardSelected : null,
-                  ]}
-                  onPress={() => updateField('status', 'DRAFT')}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: form.status === 'DRAFT' }}
-                  accessibilityLabel="Draft"
-                >
-                  <Text style={styles.statusIcon}>✏️</Text>
-                  <Text style={styles.statusTitle}>Draft</Text>
-                  <Text style={styles.statusDescription}>Save as draft</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.statusCard,
-                    form.status === 'PUBLISH' ? styles.statusCardSelected : null,
-                  ]}
-                  onPress={() => updateField('status', 'PUBLISH')}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: form.status === 'PUBLISH' }}
-                  accessibilityLabel="Publish"
-                >
-                  <Text style={styles.statusIcon}>📣</Text>
-                  <Text style={styles.statusTitle}>Publish</Text>
-                  <Text style={styles.statusDescription}>Publish after review</Text>
-                </TouchableOpacity>
-              </View>
-            </EventFormSection>
-
-            {/* 7. Preview */}
-            <EventFormSection title="Preview">
-              <View style={styles.previewNote}>
-                <Text style={styles.previewNoteIcon}>ⓘ</Text>
-                <Text style={styles.previewNoteText}>
-                  You can preview how this event will look to users after saving
-                  as draft or publish.
-                </Text>
-              </View>
-            </EventFormSection>
-
-            {/* 8. Bottom Actions */}
-            <View style={styles.bottomActions}>
-              <AppButton
-                title="Cancel"
-                variant="outline"
-                size="md"
-                onPress={requestCancel}
-                disabled={isSaving}
-                style={styles.bottomButton}
-              />
-              <AppButton
-                title={saveLabel}
-                variant="primary"
-                size="md"
+            {/* 6. Form Submission Action */}
+            <View style={styles.submitSection}>
+              <TouchableOpacity
+                style={[styles.submitButton, isSaving ? styles.submitButtonDisabled : null]}
                 onPress={handleSave}
-                loading={isSaving}
                 disabled={isSaving}
-                style={styles.bottomButton}
-              />
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={mode === 'edit' ? saveLabel || 'Save Changes' : 'Create Event'}
+              >
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#06294D" />
+                ) : (
+                  <Text style={styles.submitButtonText}>
+                    {mode === 'edit' ? saveLabel || 'Save Changes' : 'Create Event'}
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
 
+      {/* Date Picker Modal */}
+      <DatePickerModal
+        visible={datePickerVisible}
+        value={form.eventDate || ''}
+        onSelect={date => {
+          updateField('eventDate', date);
+          updateField('endDate', date);
+          setDatePickerVisible(false);
+        }}
+        onClose={() => setDatePickerVisible(false)}
+      />
+
+      {/* Start Time Picker Sheet */}
+      <EventPickerSheet
+        visible={startTimePickerVisible}
+        title="Select Start Time"
+        options={TIME_OPTIONS}
+        selected={form.startTime}
+        itemLabel={formatTimeLabel}
+        onSelect={value => updateField('startTime', value)}
+        onClose={() => setStartTimePickerVisible(false)}
+      />
+
+      {/* End Time Picker Sheet */}
+      <EventPickerSheet
+        visible={endTimePickerVisible}
+        title="Select End Time"
+        options={TIME_OPTIONS}
+        selected={form.endTime}
+        itemLabel={formatTimeLabel}
+        onSelect={value => updateField('endTime', value)}
+        onClose={() => setEndTimePickerVisible(false)}
+      />
+
+      {/* Success/Error Toast */}
       <EventFormToast
         message={toast?.message ?? null}
         variant={toast?.variant ?? 'success'}
         onDismiss={() => setToast(null)}
-      />
-
-      <EventPickerSheet
-        visible={categoryPicker}
-        title="Select Category"
-        hint="Demo options only — not backend values"
-        options={SAMPLE_EVENT_CATEGORIES}
-        selected={form.category}
-        onSelect={value => updateField('category', value)}
-        onClose={() => setCategoryPicker(false)}
-      />
-      <EventPickerSheet
-        visible={typePicker}
-        title="Select Event Type"
-        hint="Demo options only — not backend values"
-        options={SAMPLE_EVENT_TYPE_OPTIONS}
-        selected={form.eventType}
-        onSelect={value => updateField('eventType', value)}
-        onClose={() => setTypePicker(false)}
-      />
-      <EventPickerSheet
-        visible={audiencePicker}
-        title="Select Target Audience"
-        hint="Demo options only — not backend values"
-        options={SAMPLE_TARGET_AUDIENCE_OPTIONS}
-        selected={form.targetAudience}
-        onSelect={value => updateField('targetAudience', value)}
-        onClose={() => setAudiencePicker(false)}
-      />
-      <EventPickerSheet
-        visible={languagePicker}
-        title="Select Language"
-        hint="Demo options only — not backend values"
-        options={SAMPLE_LANGUAGE_OPTIONS}
-        selected={form.language}
-        onSelect={value => updateField('language', value)}
-        onClose={() => setLanguagePicker(false)}
       />
     </View>
   );
@@ -668,215 +479,139 @@ export const EventForm: React.FC<EventFormProps> = ({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: AdminColors.cardSurface,
+    backgroundColor: '#FAF7F0',
+  },
+  safeArea: {
+    flex: 1,
   },
   flex: {
     flex: 1,
   },
-  safeArea: {
-    flex: 1,
-    backgroundColor: AdminColors.background,
-  },
   scrollContent: {
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 130, // Generous padding so content and button clear the bottom navigation!
   },
-
-  // Temporary preview header (same shell as details screen)
-  previewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: AdminColors.cardSurface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AdminColors.border,
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.sm,
-    minHeight: 54,
-  },
-  previewBackButton: {
-    padding: Spacing.xs,
-    marginRight: Spacing.sm,
-  },
-  previewBackIcon: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: AdminColors.textPrimary,
-    // The ← glyph is drawn on the baseline inside its line box, which leaves
-    // it visibly below the title's optical center — nudge it up to align.
-    transform: [{ translateY: -4 }],
-  },
-  previewTitle: {
-    ...Typography.sectionHeader,
-    color: AdminColors.textPrimary,
-    flex: 1,
-  },
-  previewRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  previewBell: {
-    fontSize: 16,
-    marginRight: Spacing.sm,
-  },
-  previewBadge: {
-    position: 'absolute',
-    top: -4,
-    right: 18,
-    width: 14,
-    height: 14,
-    borderRadius: BorderRadius.full,
-    backgroundColor: AdminColors.statusInactive,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  previewBadgeText: {
-    fontSize: 8,
-    lineHeight: 10,
-    fontWeight: '700',
-    color: AdminColors.textOnDark,
-  },
-  previewAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: BorderRadius.full,
-    backgroundColor: AdminColors.primaryLight,
-    borderWidth: 1,
-    borderColor: AdminColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: Spacing.lg,
-  },
-  previewAvatarText: {
-    ...Typography.badge,
-    color: AdminColors.primary,
-  },
-
   pageHeader: {
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.md,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   pageTitle: {
-    ...Typography.screenTitle,
-    color: AdminColors.primaryDark,
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#06294D',
+    letterSpacing: -0.3,
   },
   pageSubtitle: {
-    ...Typography.secondary,
-    color: AdminColors.textSecondary,
-    marginTop: 2,
+    fontSize: 13.5,
+    color: '#718096',
+    lineHeight: 18,
+    marginTop: 4,
   },
-
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DCE4EC',
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#06294D',
+    marginBottom: 14,
+  },
+  input: {
+    height: 46,
+    borderWidth: 1,
+    borderColor: '#DCE4EC',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: '#0B2F52',
+    backgroundColor: '#FFFFFF',
+  },
+  inputError: {
+    borderColor: '#DC2626',
+    borderWidth: 1.5,
+  },
   textArea: {
-    backgroundColor: AdminColors.cardSurface,
+    height: 120,
     borderWidth: 1,
-    borderColor: AdminColors.border,
-    borderRadius: BorderRadius.base,
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
-    minHeight: 110,
-    ...Typography.body,
-    color: AdminColors.textPrimary,
+    borderColor: '#DCE4EC',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    color: '#0B2F52',
+    backgroundColor: '#FFFFFF',
   },
-  textAreaError: {
-    borderColor: AdminColors.error,
-  },
-  richToolbar: {
+  inputWithIcon: {
+    height: 46,
+    borderWidth: 1,
+    borderColor: '#DCE4EC',
+    borderRadius: 10,
+    paddingHorizontal: 12,
     flexDirection: 'row',
-    gap: Spacing.sm,
-    marginTop: Spacing.xs,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
-  richToolButton: {
-    width: 34,
-    height: 34,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    backgroundColor: AdminColors.cardSurface,
+  leadingIcon: {
+    marginRight: 10,
+  },
+  inlineInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 14,
+    color: '#0B2F52',
+    paddingVertical: 0,
+  },
+  inputPlaceholder: {
+    fontSize: 14,
+    color: '#94A3B8',
+  },
+  inputValue: {
+    fontSize: 14,
+    color: '#0B2F52',
+    fontWeight: '500',
+  },
+  twoColumnRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  columnHalf: {
+    flex: 1,
+  },
+  submitSection: {
+    paddingHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  submitButton: {
+    backgroundColor: '#FAD465',
+    height: 48,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  richToolIcon: {
-    fontSize: 13,
+  submitButtonDisabled: {
+    opacity: 0.65,
+  },
+  submitButtonText: {
+    color: '#06294D',
+    fontSize: 15,
     fontWeight: '700',
-    color: AdminColors.textSecondary,
-  },
-  fieldError: {
-    ...Typography.secondary,
-    color: AdminColors.error,
-    marginTop: Spacing.xs,
-  },
-  charCounter: {
-    ...Typography.caption,
-    color: AdminColors.textMuted,
-    textAlign: 'right',
-    marginTop: Spacing.xs,
-  },
-
-  gridRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  fieldHalf: {
-    flex: 1,
-  },
-
-  statusRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  statusCard: {
-    flex: 1,
-    alignItems: 'center',
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    backgroundColor: AdminColors.cardSurface,
-  },
-  statusCardSelected: {
-    borderColor: AdminColors.primary,
-    backgroundColor: AdminColors.primaryLight,
-  },
-  statusIcon: {
-    fontSize: 18,
-    marginBottom: Spacing.xs,
-  },
-  statusTitle: {
-    ...Typography.bodyBold,
-    color: AdminColors.textPrimary,
-  },
-  statusDescription: {
-    ...Typography.caption,
-    color: AdminColors.textSecondary,
-    textAlign: 'center',
-    marginTop: 2,
-  },
-
-  previewNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: AdminColors.primaryLight,
-  },
-  previewNoteIcon: {
-    fontSize: 14,
-    color: AdminColors.primary,
-    fontWeight: '700',
-  },
-  previewNoteText: {
-    ...Typography.secondary,
-    color: AdminColors.primary,
-    flex: 1,
-  },
-
-  bottomActions: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.lg,
-  },
-  bottomButton: {
-    flex: 1,
   },
 });
+
+export default EventForm;

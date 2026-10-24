@@ -170,7 +170,11 @@ export function MyApplicationScreen() {
                       </View>
 
                       <View style={styles.fieldItem}>
-                        <Text style={styles.fieldLabel}>Membership Type</Text>
+                        <Text style={styles.fieldLabel}>
+                          {item.membershipType?.toLowerCase().includes('seeker')
+                            ? 'Application Type'
+                            : 'Membership Type'}
+                        </Text>
                         <Text style={styles.fieldValue}>{item.membershipType}</Text>
                       </View>
                     </View>

@@ -92,9 +92,10 @@ export const formatActivityEvent = (event: string): string => {
 /** Derives the recent-applications rows for the dashboard card. */
 export const toRecentApplicationRows = (
   items: AssistanceRequestItem[],
-): Array<Pick<AssistanceRequestItem, 'id' | 'created_at' | 'status'>> =>
+): Array<Pick<AssistanceRequestItem, 'id' | 'created_at' | 'status'> & { full_name?: string }> =>
   items.map((item) => ({
     id: item.id,
     created_at: item.created_at,
     status: item.status,
+    full_name: item.full_name,
   }));

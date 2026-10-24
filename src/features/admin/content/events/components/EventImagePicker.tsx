@@ -13,6 +13,7 @@ import {
   Typography,
 } from '../../../../../core/theme';
 import { AppMediaUploadSheet } from '../../../../../core/components/common/AppMediaUploadSheet';
+import { ImageIcon } from '../../../../../core/components/icons';
 
 interface EventImagePickerProps {
   value: string | null;
@@ -45,7 +46,9 @@ export const EventImagePicker: React.FC<EventImagePickerProps> = ({ value, error
           </>
         ) : (
           <View style={styles.emptyContent} pointerEvents="none">
-            <Text style={styles.emptyIcon}>🖼️</Text>
+            <View style={styles.emptyIconContainer}>
+              <ImageIcon size={38} color="#94A3B8" strokeWidth={1.6} />
+            </View>
             <Text style={styles.emptyTitle}>Tap to upload event image</Text>
             <Text style={styles.emptySubtitle}>Camera, Gallery, or Presets (JPG, PNG)</Text>
           </View>
@@ -66,34 +69,37 @@ export const EventImagePicker: React.FC<EventImagePickerProps> = ({ value, error
 
 const styles = StyleSheet.create({
   dropzone: {
-    height: 150,
-    borderRadius: BorderRadius.lg,
+    height: 146,
+    borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: AdminColors.border,
+    borderColor: '#CBE3F9',
     borderStyle: 'dashed',
-    backgroundColor: AdminColors.background,
+    backgroundColor: '#FAFCFF',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   dropzoneError: {
-    borderColor: AdminColors.error,
+    borderColor: '#DC2626',
   },
   emptyContent: {
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  emptyIcon: {
-    fontSize: 26,
-    marginBottom: Spacing.sm,
+  emptyIconContainer: {
+    marginBottom: 8,
   },
   emptyTitle: {
-    ...Typography.bodyMedium,
-    color: AdminColors.textPrimary,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#06294D',
+    textAlign: 'center',
   },
   emptySubtitle: {
-    ...Typography.secondary,
-    color: AdminColors.textMuted,
-    marginTop: 2,
+    fontSize: 12,
+    color: '#718096',
+    marginTop: 4,
+    textAlign: 'center',
   },
   previewImage: {
     width: '100%',

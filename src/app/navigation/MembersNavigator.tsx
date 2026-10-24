@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppRoutes } from '../../core/constants/routes';
 import { MembersScreen } from '../../features/admin/members/screens/MembersScreen';
+import { AddMemberScreen } from '../../features/admin/members/screens/AddMemberScreen';
 import {
   MembershipApplicationsScreen,
   MembershipApplicationDetailsScreen,
@@ -13,7 +14,7 @@ const Stack = createNativeStackNavigator<MembersStackParamList>();
 /**
  * Members tab navigator:
  * Connects the Member Directory (MembersScreen), Membership Applications list,
- * and Application Details review within the Members tab stack.
+ * Application Details review, and Add Member full page within the Members tab stack.
  */
 export const MembersNavigator: React.FC = () => (
   <Stack.Navigator
@@ -23,6 +24,10 @@ export const MembersNavigator: React.FC = () => (
     <Stack.Screen
       name={AppRoutes.MEMBERS_DIRECTORY}
       component={MembersScreen}
+    />
+    <Stack.Screen
+      name={AppRoutes.ADD_MEMBER}
+      component={AddMemberScreen}
     />
     <Stack.Screen
       name={AppRoutes.MEMBERSHIP_APPLICATIONS}

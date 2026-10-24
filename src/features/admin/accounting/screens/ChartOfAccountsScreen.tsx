@@ -64,7 +64,35 @@ interface ChartOfAccountsScreenProps {
 }
 
 type MainMode = 'PASSBOOK' | 'CREDIT' | 'EXPENSE' | 'LEDGER' | 'ANALYTICS';
+type SubCategoryFilter =
+  | 'ALL'
+  | 'DONATION'
+  | 'MEMBERSHIP'
+  | 'RENEWAL'
+  | 'EXPENSE'
+  | 'RECEIPT';
 type DimensionTab = 'Date Wise' | 'Category Wise' | 'Member Wise' | 'Support Type';
+
+export const getCategoryBadge = (tag?: string, isCredit = true) => {
+  switch (tag) {
+    case 'CAUSE_FUND':
+      return { label: 'CAUSE FUND', bg: '#EDE9FE', text: '#6D28D9', border: '#DDD6FE' };
+    case 'DONATION':
+      return { label: 'DONATION', bg: '#FEF3C7', text: '#B45309', border: '#FDE68A' };
+    case 'MEMBERSHIP_FEE':
+      return { label: 'MEMBERSHIP', bg: '#DBEAFE', text: '#1D4ED8', border: '#BFDBFE' };
+    case 'RENEWAL_FEE':
+      return { label: 'RENEWAL', bg: '#CCFBF1', text: '#0F766E', border: '#99F6E4' };
+    case 'EXPENSE':
+      return { label: 'EXPENSE', bg: '#FEE2E2', text: '#DC2626', border: '#FECACA' };
+    case 'RECEIPT':
+      return { label: 'RECEIPT', bg: '#DCFCE7', text: '#15803D', border: '#BBF7D0' };
+    default:
+      return isCredit
+        ? { label: 'CREDIT', bg: '#DCFCE7', text: '#15803D', border: '#BBF7D0' }
+        : { label: 'EXPENSE', bg: '#FEE2E2', text: '#DC2626', border: '#FECACA' };
+  }
+};
 
 export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
   onBack,
@@ -72,6 +100,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
 }) => {
   const { width } = useWindowDimensions();
   const [activeMode, setActiveMode] = useState<MainMode>('PASSBOOK');
+  const [subFilter, setSubFilter] = useState<SubCategoryFilter>('ALL');
   const [activeDimensionTab, setActiveDimensionTab] = useState<DimensionTab>('Date Wise');
   const [searchQuery, setSearchQuery] = useState('');
   const [monthPickerVisible, setMonthPickerVisible] = useState(false);
@@ -107,7 +136,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
     toDate,
   });
 
-  // Filtered transactions for Passbook (Credit / Expense / All)
+  // Filtered transactions for Passbook (Credit / Expense / All + Sub-category filter)
   const filteredTransactions = useMemo(() => {
     let list = transactions;
 
@@ -115,6 +144,41 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
       list = list.filter((t) => (t.credit || 0) > 0);
     } else if (activeMode === 'EXPENSE') {
       list = list.filter((t) => (t.debit || 0) > 0);
+    }
+
+    if (subFilter === 'DONATION') {
+      list = list.filter(
+        (t) =>
+          t.category_tag === 'DONATION' ||
+          t.category_tag === 'CAUSE_FUND' ||
+          t.entry_type === 'DONATION' ||
+          t.entry_type === 'CAUSE_FUND',
+      );
+    } else if (subFilter === 'MEMBERSHIP') {
+      list = list.filter(
+        (t) =>
+          t.category_tag === 'MEMBERSHIP_FEE' ||
+          t.entry_type === 'MEMBERSHIP_FEE',
+      );
+    } else if (subFilter === 'RENEWAL') {
+      list = list.filter(
+        (t) =>
+          t.category_tag === 'RENEWAL_FEE' ||
+          t.entry_type === 'RENEWAL_FEE',
+      );
+    } else if (subFilter === 'EXPENSE') {
+      list = list.filter(
+        (t) =>
+          t.category_tag === 'EXPENSE' ||
+          t.entry_type === 'EXPENSE' ||
+          (t.debit || 0) > 0,
+      );
+    } else if (subFilter === 'RECEIPT') {
+      list = list.filter(
+        (t) =>
+          t.category_tag === 'RECEIPT' ||
+          t.entry_type === 'RECEIPT',
+      );
     }
 
     if (searchQuery.trim()) {
@@ -131,7 +195,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
     }
 
     return list;
-  }, [transactions, activeMode, searchQuery]);
+  }, [transactions, activeMode, subFilter, searchQuery]);
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -145,6 +209,48 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
   const totalCount = transactions.length;
   const creditCount = transactions.filter((t) => (t.credit || 0) > 0).length;
   const expenseCount = transactions.filter((t) => (t.debit || 0) > 0).length;
+
+  const donationCount = useMemo(
+    () =>
+      transactions.filter(
+        (t) =>
+          t.category_tag === 'DONATION' ||
+          t.category_tag === 'CAUSE_FUND' ||
+          t.entry_type === 'DONATION' ||
+          t.entry_type === 'CAUSE_FUND',
+      ).length,
+    [transactions],
+  );
+
+  const membershipCount = useMemo(
+    () =>
+      transactions.filter(
+        (t) =>
+          t.category_tag === 'MEMBERSHIP_FEE' ||
+          t.entry_type === 'MEMBERSHIP_FEE',
+      ).length,
+    [transactions],
+  );
+
+  const renewalCount = useMemo(
+    () =>
+      transactions.filter(
+        (t) =>
+          t.category_tag === 'RENEWAL_FEE' ||
+          t.entry_type === 'RENEWAL_FEE',
+      ).length,
+    [transactions],
+  );
+
+  const receiptCount = useMemo(
+    () =>
+      transactions.filter(
+        (t) =>
+          t.category_tag === 'RECEIPT' ||
+          t.entry_type === 'RECEIPT',
+      ).length,
+    [transactions],
+  );
 
   // Figures
   const openingBal = summary.opening_balance || 0;
@@ -423,6 +529,75 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
         </TouchableOpacity>
       </ScrollView>
 
+      {/* Sub-Category Quick Filter Chips */}
+      {(activeMode === 'PASSBOOK' || activeMode === 'CREDIT' || activeMode === 'EXPENSE') && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.subFilterScroll}
+        >
+          <TouchableOpacity
+            style={[styles.subFilterChip, subFilter === 'ALL' && styles.subFilterChipActive]}
+            onPress={() => setSubFilter('ALL')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.subFilterText, subFilter === 'ALL' && styles.subFilterTextActive]}>
+              All ({transactions.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.subFilterChip, subFilter === 'DONATION' && styles.subFilterChipActive]}
+            onPress={() => setSubFilter('DONATION')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.subFilterText, subFilter === 'DONATION' && styles.subFilterTextActive]}>
+              Donations & Cause ({donationCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.subFilterChip, subFilter === 'MEMBERSHIP' && styles.subFilterChipActive]}
+            onPress={() => setSubFilter('MEMBERSHIP')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.subFilterText, subFilter === 'MEMBERSHIP' && styles.subFilterTextActive]}>
+              Membership Fees ({membershipCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.subFilterChip, subFilter === 'RENEWAL' && styles.subFilterChipActive]}
+            onPress={() => setSubFilter('RENEWAL')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.subFilterText, subFilter === 'RENEWAL' && styles.subFilterTextActive]}>
+              Renewals ({renewalCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.subFilterChip, subFilter === 'EXPENSE' && styles.subFilterChipActive]}
+            onPress={() => setSubFilter('EXPENSE')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.subFilterText, subFilter === 'EXPENSE' && styles.subFilterTextActive]}>
+              Expenses ({expenseCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.subFilterChip, subFilter === 'RECEIPT' && styles.subFilterChipActive]}
+            onPress={() => setSubFilter('RECEIPT')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.subFilterText, subFilter === 'RECEIPT' && styles.subFilterTextActive]}>
+              Receipts ({receiptCount})
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+
       {/* Clean Search Input (Only on Passbook / Credit / Expense tabs) */}
       {showSearch && (
         <View style={styles.searchContainer}>
@@ -543,21 +718,30 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
                     </Text>
 
                     <View style={styles.txMetaRow}>
-                      <View
-                        style={[
-                          styles.badgeType,
-                          isCredit ? styles.badgeTypeCredit : styles.badgeTypeExpense,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.badgeTypeText,
-                            { color: isCredit ? '#16A34A' : '#DC2626' },
-                          ]}
-                        >
-                          {isCredit ? 'CREDIT' : 'EXPENSE'}
-                        </Text>
-                      </View>
+                      {(() => {
+                        const catBadge = getCategoryBadge(item.category_tag || item.entry_type, isCredit);
+                        return (
+                          <View
+                            style={[
+                              styles.badgeType,
+                              {
+                                backgroundColor: catBadge.bg,
+                                borderColor: catBadge.border,
+                                borderWidth: 1,
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.badgeTypeText,
+                                { color: catBadge.text, fontWeight: '700' },
+                              ]}
+                            >
+                              {catBadge.label}
+                            </Text>
+                          </View>
+                        );
+                      })()}
 
                       {item.payment_method && (
                         <View style={styles.badgeMethod}>
@@ -579,7 +763,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
                     ) : null}
                   </View>
 
-                  {/* Right Amount & Balance */}
+                  {/* Right Amount & Balance (Both Opening & Closing Shown) */}
                   <View style={styles.txAmountCol}>
                     <View style={styles.amountMenuRow}>
                       <Text
@@ -602,9 +786,12 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
 
                     <View style={styles.balancePill}>
                       <Text style={styles.balancePillText} numberOfLines={1}>
-                        Bal: {formatINR(item.running_balance || 0, { noDecimals: true })}
+                        Cl: {formatINR(item.closing_balance ?? item.running_balance ?? 0, { noDecimals: true })}
                       </Text>
                     </View>
+                    <Text style={styles.openingBalSubtext} numberOfLines={1}>
+                      Op: {formatINR(item.opening_balance ?? 0, { noDecimals: true })}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -927,26 +1114,91 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
 
               {selectedTx && (
                 <View style={styles.modalBody}>
-                  <View style={styles.modalAmountBox}>
-                    <Text style={styles.modalAmountLabel}>
-                      {(selectedTx.credit || 0) > 0 ? 'Credit Inflow' : 'Expense Outflow'}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.modalAmountVal,
-                        {
-                          color:
-                            (selectedTx.credit || 0) > 0 ? '#16A34A' : '#DC2626',
-                        },
-                      ]}
-                    >
-                      {(selectedTx.credit || 0) > 0 ? '+' : '-'}
-                      {formatINR(
-                        (selectedTx.credit || 0) > 0 ? selectedTx.credit : selectedTx.debit,
-                      )}
-                    </Text>
-                    <Text style={styles.modalRunningBal}>
-                      Balance after entry: {formatINR(selectedTx.running_balance || 0)}
+                  {/* Balance Flow Transition Card */}
+                  <View style={styles.modalBalanceTransitionBox}>
+                    <View style={styles.modalTransitionItem}>
+                      <Text style={styles.modalTransitionLabel}>Opening</Text>
+                      <Text style={styles.modalTransitionVal}>
+                        {formatINR(selectedTx.opening_balance ?? 0, { noDecimals: true })}
+                      </Text>
+                      <Text style={styles.modalTransitionSub}>Before Entry</Text>
+                    </View>
+
+                    <View style={styles.modalTransitionCenter}>
+                      <Text
+                        style={[
+                          styles.modalTransitionMovement,
+                          {
+                            color:
+                              (selectedTx.credit || 0) > 0 ? '#16A34A' : '#DC2626',
+                          },
+                        ]}
+                      >
+                        {(selectedTx.credit || 0) > 0 ? '+ ' : '- '}
+                        {formatINR(
+                          (selectedTx.credit || 0) > 0
+                            ? selectedTx.credit
+                            : selectedTx.debit,
+                          { noDecimals: true },
+                        )}
+                      </Text>
+                      <Text style={styles.modalTransitionArrow}>➔</Text>
+                    </View>
+
+                    <View style={styles.modalTransitionItem}>
+                      <Text style={styles.modalTransitionLabel}>Closing</Text>
+                      <Text
+                        style={[
+                          styles.modalTransitionVal,
+                          { color: '#0F2C59', fontWeight: '800' },
+                        ]}
+                      >
+                        {formatINR(
+                          selectedTx.closing_balance ??
+                            selectedTx.running_balance ??
+                            0,
+                          { noDecimals: true },
+                        )}
+                      </Text>
+                      <Text style={styles.modalTransitionSub}>After Entry</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.modalDetailRow}>
+                    <Text style={styles.modalDetailLabel}>Category / Stream</Text>
+                    {(() => {
+                      const badge = getCategoryBadge(
+                        selectedTx.category_tag || selectedTx.entry_type,
+                        (selectedTx.credit || 0) > 0,
+                      );
+                      return (
+                        <View
+                          style={[
+                            styles.badgeType,
+                            {
+                              backgroundColor: badge.bg,
+                              borderColor: badge.border,
+                              borderWidth: 1,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.badgeTypeText,
+                              { color: badge.text, fontWeight: '700' },
+                            ]}
+                          >
+                            {badge.label}
+                          </Text>
+                        </View>
+                      );
+                    })()}
+                  </View>
+
+                  <View style={styles.modalDetailRow}>
+                    <Text style={styles.modalDetailLabel}>Voucher / Ref #</Text>
+                    <Text style={styles.modalDetailValueBold}>
+                      {selectedTx.entry_number || selectedTx.reference_id || '—'}
                     </Text>
                   </View>
 
@@ -961,7 +1213,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
 
                   <View style={styles.modalDetailRow}>
                     <Text style={styles.modalDetailLabel}>
-                      {(selectedTx.credit || 0) > 0 ? 'Received From' : 'Paid To / Account'}
+                      {(selectedTx.credit || 0) > 0 ? 'Received From' : 'Paid To / Vendor'}
                     </Text>
                     <Text style={styles.modalDetailValueBold}>
                       {selectedTx.account_name || selectedTx.paid_to || selectedTx.received_from}
@@ -972,7 +1224,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
                     <View style={styles.modalDetailRow}>
                       <Text style={styles.modalDetailLabel}>Payment Mode</Text>
                       <Text style={styles.modalDetailValue}>
-                        {selectedTx.payment_method.replace('_', ' ')}
+                        {selectedTx.payment_method.replace(/_/g, ' ')}
                       </Text>
                     </View>
                   )}
@@ -1460,6 +1712,85 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontWeight: '700',
     color: '#475569',
+  },
+  openingBalSubtext: {
+    fontSize: 9.5,
+    color: '#64748B',
+    marginTop: 3,
+    textAlign: 'right',
+    fontWeight: '500',
+  },
+  subFilterScroll: {
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+    marginBottom: 4,
+  },
+  subFilterChip: {
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  subFilterChipActive: {
+    backgroundColor: '#0F2C59',
+    borderColor: '#0F2C59',
+  },
+  subFilterText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  subFilterTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  modalBalanceTransitionBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 12,
+    marginBottom: 14,
+  },
+  modalTransitionItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  modalTransitionCenter: {
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  modalTransitionLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  modalTransitionVal: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  modalTransitionSub: {
+    fontSize: 9,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  modalTransitionMovement: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  modalTransitionArrow: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginTop: 1,
   },
 
   emptyContainer: {

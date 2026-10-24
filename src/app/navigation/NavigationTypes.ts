@@ -17,10 +17,10 @@ export type AuthStackParamList = {
 /** Bottom tabs of the authenticated admin area (spec: 5 tabs). */
 export type AdminTabParamList = {
   [AppRoutes.ADMIN_DASHBOARD_TAB]: undefined;
-  [AppRoutes.ADMIN_MEMBERS_TAB]: undefined;
-  [AppRoutes.ADMIN_APPLICATIONS_TAB]: undefined;
-  [AppRoutes.ADMIN_COMPLAINTS_TAB]: undefined;
-  [AppRoutes.ADMIN_MORE_TAB]: undefined;
+  [AppRoutes.ADMIN_MEMBERS_TAB]: undefined | { screen?: string; params?: any };
+  [AppRoutes.ADMIN_APPLICATIONS_TAB]: undefined | { screen?: string; params?: any };
+  [AppRoutes.ADMIN_COMPLAINTS_TAB]: undefined | { screen?: string; params?: any };
+  [AppRoutes.ADMIN_MORE_TAB]: undefined | { screen?: string; params?: any };
 };
 
 /**
@@ -29,6 +29,7 @@ export type AdminTabParamList = {
  */
 export type MembersStackParamList = {
   [AppRoutes.MEMBERS_DIRECTORY]: undefined;
+  [AppRoutes.ADD_MEMBER]: undefined;
   [AppRoutes.MEMBERSHIP_APPLICATIONS]: undefined;
   [AppRoutes.MEMBERSHIP_APPLICATION_DETAILS]: { applicationId: string };
 };

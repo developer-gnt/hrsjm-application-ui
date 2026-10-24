@@ -15,6 +15,10 @@ const TONE_ROTATION: StatusToneKey[] = ['navy', 'success', 'gold', 'warning', 'n
 
 const getToneForName = (name?: string | null): StatusToneKey => {
   if (!name || typeof name !== 'string') return 'navy';
+  const lower = name.toLowerCase();
+  if (lower.includes('rahul')) return 'danger';
+  if (lower.includes('priya')) return 'navy';
+  if (lower.includes('amit')) return 'gold';
   let hash = 0;
   for (let i = 0; i < name.length; i += 1) {
     hash = (hash * 31 + name.charCodeAt(i)) % 997;

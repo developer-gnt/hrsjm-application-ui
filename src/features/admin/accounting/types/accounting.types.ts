@@ -100,6 +100,9 @@ export interface LedgerTransaction {
   debit: number;
   credit: number;
   running_balance: number;
+  opening_balance?: number;
+  closing_balance?: number;
+  category_tag?: string;
   payment_method?: string | null;
   paid_to?: string | null;
   received_from?: string | null;

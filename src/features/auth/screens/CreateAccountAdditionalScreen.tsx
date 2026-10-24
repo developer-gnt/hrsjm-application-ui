@@ -14,7 +14,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ChevronLeftIcon,
   UserOutlineIcon,
-  UsersGroupIcon,
   HeartHandIcon,
   CheckCircleFilledIcon,
   LockOutlineIcon,
@@ -28,7 +27,7 @@ import {
   navigateToCreateAccountComplete,
 } from '../../../core/navigation/appRouter';
 
-export type AccountTypeOption = 'general' | 'member' | 'seeker';
+export type AccountTypeOption = 'general' | 'seeker';
 
 interface CreateAccountAdditionalScreenProps {
   onBack?: () => void;
@@ -51,7 +50,6 @@ const STEPS: StepItem[] = [
 
 const ACCOUNT_TYPE_LABELS: Record<AccountTypeOption, string> = {
   general: 'General User',
-  member: 'Member',
   seeker: 'Donation Seeker',
 };
 
@@ -66,10 +64,11 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
   const contentMaxWidth = isTabletOrDesktop ? 440 : width;
   const currentStep = 2; // Step 2: Account Type
 
-  // Phase 2: Account Type state (read from registration state)
-  const [selectedAccountType, setSelectedAccountType] = useState<AccountTypeOption>(
-    () => (getRegistrationState().accountType as AccountTypeOption) || 'general'
-  );
+  // Phase 2: Account Type state (read from registration state, default to general)
+  const [selectedAccountType, setSelectedAccountType] = useState<AccountTypeOption>(() => {
+    const saved = getRegistrationState().accountType as AccountTypeOption;
+    return saved === 'seeker' ? 'seeker' : 'general';
+  });
 
   // Phase 3: Password state
   const [password, setPassword] = useState('');
@@ -258,9 +257,8 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
               Please select the option that best describes you.
             </Text>
 
-            {/* 3 Account Cards Grid (2-column layout) */}
+            {/* Account Cards Grid (2-column layout: General User & Donation Seeker) */}
             <View style={styles.cardsGrid}>
-              {/* Row 1: General User & Member */}
               <View style={styles.cardsRow}>
                 {/* Card 1: General User */}
                 <TouchableOpacity
@@ -293,41 +291,7 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
                   </Text>
                 </TouchableOpacity>
 
-                {/* Card 2: Member */}
-                <TouchableOpacity
-                  style={[
-                    styles.accountCard,
-                    selectedAccountType === 'member' && styles.accountCardSelected,
-                  ]}
-                  onPress={() => {
-                    setSelectedAccountType('member');
-                    updateRegistrationState({
-                      accountType: 'member',
-                      accountTypeLabel: 'Member',
-                    });
-                  }}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Member Account Type"
-                >
-                  {selectedAccountType === 'member' && (
-                    <View style={styles.checkBadge}>
-                      <CheckCircleFilledIcon size={18} color="#EAA224" />
-                    </View>
-                  )}
-                  <View style={styles.cardIconWrapper}>
-                    <UsersGroupIcon size={26} color="#0F2860" />
-                  </View>
-                  <Text style={styles.cardTitle}>Member</Text>
-                  <Text style={styles.cardDescription}>
-                    Join as a member{'\n'}of HRSJM
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Row 2: Donation Seeker (left-aligned) */}
-              <View style={styles.cardsRow}>
-                {/* Card 3: Donation Seeker */}
+                {/* Card 2: Donation Seeker */}
                 <TouchableOpacity
                   style={[
                     styles.accountCard,
@@ -357,9 +321,6 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
                     Request support for{'\n'}approved causes
                   </Text>
                 </TouchableOpacity>
-
-                {/* Empty invisible placeholder to keep 2-column grid alignment */}
-                <View style={styles.cardPlaceholder} />
               </View>
             </View>
           </View>

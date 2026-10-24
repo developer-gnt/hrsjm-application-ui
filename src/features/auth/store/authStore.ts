@@ -31,6 +31,9 @@ interface AuthState {
    * fresh pair via POST /auth/refresh. Returns whether a session was restored. */
   restoreSession: () => Promise<boolean>;
 
+  /** Sets or updates the active user profile in state. */
+  setUser: (user: UserProfile | null) => void;
+
   /** Revokes the refresh token server-side (idempotent) and clears local state. */
   signOut: () => Promise<void>;
 
@@ -47,6 +50,10 @@ const loadPermissions = async (): Promise<void> => {
 export const useAuthStore = create<AuthState>()(set => ({
   user: null,
   status: 'idle',
+
+  setUser: (user: UserProfile | null) => {
+    set({ user });
+  },
 
   signIn: async (identifier, password, rememberMe = true) => {
     set({ status: 'authenticating' });

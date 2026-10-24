@@ -97,10 +97,15 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
         subject: subject.trim(),
         description: description.trim(),
       };
-      await supportService.create(payload);
+      const created = await supportService.create(payload);
+      const ticketRef = created?.id
+        ? `#${created.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`
+        : '';
       feedback.success(
         'Complaint Submitted',
-        'Your support ticket has been submitted successfully and routed to our support team.',
+        ticketRef
+          ? `Your ticket ${ticketRef} has been submitted successfully and routed to our support team.`
+          : 'Your support ticket has been submitted successfully and routed to our support team.',
       );
       resetForm();
       onSuccess();
