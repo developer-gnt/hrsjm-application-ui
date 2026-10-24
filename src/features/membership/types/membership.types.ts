@@ -10,6 +10,9 @@ export interface PersonalInfo {
   countryCode: string; // e.g. '+91'
   mobileNumber: string;
   email: string;
+  policeStation?: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 export interface AddressInfo {
@@ -19,10 +22,11 @@ export interface AddressInfo {
   state: string;
   pincode: string;
   country: string;
+  policeStation?: string;
 }
 
 export interface DocumentItem {
-  type: 'identity' | 'address' | 'photo';
+  type: 'identity' | 'address' | 'photo' | 'qualification';
   name: string;
   fileName?: string;
   fileSize?: string;
@@ -34,6 +38,7 @@ export interface DocumentItem {
 export interface DocumentUploads {
   identityProof?: DocumentItem;
   addressProof?: DocumentItem;
+  qualificationProof?: DocumentItem;
   photograph?: DocumentItem;
 }
 

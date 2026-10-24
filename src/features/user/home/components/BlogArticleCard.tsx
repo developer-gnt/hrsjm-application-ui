@@ -86,7 +86,7 @@ export const BlogArticleCard: React.FC<BlogArticleCardProps> = ({
             <AppIcon
               name="arrow-right"
               size={13}
-              color={AdminColors.textOnDark}
+              color={AdminColors.primaryDark}
             />
           </View>
         </View>
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: Spacing.xs,
     left: Spacing.xs,
-    backgroundColor: 'rgba(27, 63, 143, 0.88)',
+    backgroundColor: 'rgba(6, 41, 77, 0.90)',
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: BorderRadius.xs,

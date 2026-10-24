@@ -52,7 +52,7 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
           name={action.icon}
           size={22}
           strokeWidth={1.8}
-          color={emphasized ? '#EAA532' : '#0B2F5B'}
+          color={emphasized ? AdminColors.accentGold : AdminColors.primaryDark}
         />
       </View>
       <Text style={[styles.label, emphasized && styles.labelEmphasized]}>
@@ -95,13 +95,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     paddingHorizontal: 4,
-    borderRadius: 14,
+    borderRadius: 12,
     minHeight: 84,
   },
   cardLight: {
-    backgroundColor: '#FCFBF7',
+    backgroundColor: AdminColors.cardSurface,
     borderWidth: 1,
-    borderColor: '#E8E4DA',
+    borderColor: AdminColors.border,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -109,9 +109,9 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardEmphasized: {
-    backgroundColor: '#082245',
+    backgroundColor: AdminColors.primaryDark,
     borderWidth: 1,
-    borderColor: '#082245',
+    borderColor: AdminColors.primaryDark,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 14,
     fontWeight: '600',
-    color: '#0B2F5B',
+    color: AdminColors.textPrimary,
     textAlign: 'center',
     marginTop: 6,
   },

@@ -34,9 +34,10 @@ interface UploadErrors {
   identity?: string;
   address?: string;
   photo?: string;
+  qualification?: string;
 }
 
-type DocCategory = 'identity' | 'address' | 'photo';
+type DocCategory = 'identity' | 'address' | 'qualification' | 'photo';
 
 // Sample official document presets for quick testing
 const PRESET_OPTIONS: Record<
@@ -55,6 +56,12 @@ const PRESET_OPTIONS: Record<
     { name: 'Registered Rent Agreement', fileName: 'rent_agreement_notarized.pdf', size: '3.5 MB' },
     { name: 'Bank Passbook / Statement', fileName: 'bank_statement_last_month.pdf', size: '1.6 MB' },
     { name: 'LPG Gas Connection Bill', fileName: 'lpg_gas_bill_aug.pdf', size: '1.4 MB' },
+  ],
+  qualification: [
+    { name: 'Graduation / Degree Certificate', fileName: 'degree_certificate.pdf', size: '2.2 MB' },
+    { name: 'Highest Qualification Marksheet', fileName: 'qualification_marksheet.pdf', size: '1.9 MB' },
+    { name: 'Diploma / Educational Certificate', fileName: 'diploma_certificate.pdf', size: '1.6 MB' },
+    { name: '10th / 12th Board Passing Certificate', fileName: 'board_passing_cert.pdf', size: '1.4 MB' },
   ],
   photo: [
     { name: 'Passport Size Photograph', fileName: 'passport_size_white_bg.jpg', size: '850 KB' },
@@ -119,6 +126,18 @@ export function MembershipStep3Screen() {
         },
       });
       if (errors.address) setErrors(prev => ({ ...prev, address: undefined }));
+    } else if (type === 'qualification') {
+      updateDocuments({
+        qualificationProof: {
+          type: 'qualification',
+          name: docData.name,
+          fileName: docData.fileName,
+          fileSize: docData.fileSize || '2.0 MB',
+          isUploaded: true,
+          fileUri: docData.uri,
+        },
+      });
+      if (errors.qualification) setErrors(prev => ({ ...prev, qualification: undefined }));
     } else if (type === 'photo') {
       updateDocuments({
         photograph: {
@@ -143,7 +162,11 @@ export function MembershipStep3Screen() {
       const result = await takePhotoWithNativeCamera(type === 'photo' ? 'front' : 'back');
       if (result && (result.uri || result.fileName)) {
         applyUploadedDocument(type, {
-          name: type === 'photo' ? 'Photograph' : `${type === 'identity' ? 'Identity' : 'Address'} Proof (Camera)`,
+          name: type === 'photo'
+            ? 'Photograph'
+            : type === 'qualification'
+              ? 'Qualification Proof (Camera)'
+              : `${type === 'identity' ? 'Identity' : 'Address'} Proof (Camera)`,
           fileName: result.fileName,
           fileSize: result.fileSize,
           uri: result.uri,
@@ -163,7 +186,11 @@ export function MembershipStep3Screen() {
       const result = await pickNativeDocument();
       if (result && (result.uri || result.fileName)) {
         applyUploadedDocument(type, {
-          name: type === 'photo' ? 'Photograph' : `${type === 'identity' ? 'Identity' : 'Address'} Proof`,
+          name: type === 'photo'
+            ? 'Photograph'
+            : type === 'qualification'
+              ? 'Qualification Certificate'
+              : `${type === 'identity' ? 'Identity' : 'Address'} Proof`,
           fileName: result.fileName,
           fileSize: result.fileSize,
           uri: result.uri,
@@ -193,6 +220,8 @@ export function MembershipStep3Screen() {
       updateDocuments({ identityProof: undefined });
     } else if (type === 'address') {
       updateDocuments({ addressProof: undefined });
+    } else if (type === 'qualification') {
+      updateDocuments({ qualificationProof: undefined });
     } else if (type === 'photo') {
       updateDocuments({ photograph: undefined });
     }
@@ -206,6 +235,9 @@ export function MembershipStep3Screen() {
     }
     if (!documents.addressProof?.isUploaded) {
       newErrors.address = 'Please upload your address proof';
+    }
+    if (!documents.qualificationProof?.isUploaded) {
+      newErrors.qualification = 'Please upload your qualification proof';
     }
     if (!documents.photograph?.isUploaded) {
       newErrors.photo = 'Please upload your photograph';
@@ -300,7 +332,7 @@ export function MembershipStep3Screen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Document Upload</Text>
           <Text style={styles.sectionSubtitle}>
-            Please upload the required documents (3 documents).
+            Please upload the required documents (4 documents).
           </Text>
         </View>
 
@@ -342,9 +374,27 @@ export function MembershipStep3Screen() {
             onPreview={() => setPreviewDoc(documents.addressProof || null)}
           />
 
-          {/* Document 3: Photograph */}
+          {/* Document 3: Qualification Proof */}
           <DocumentUploadCard
             index={3}
+            title="Qualification Proof"
+            subtitle="Graduation Degree, Diploma or Highest Certificate"
+            document={documents.qualificationProof}
+            error={errors.qualification}
+            onUpload={() => {
+              setCustomFileName('my_qualification_proof');
+              setCustomFileType('PDF');
+              setActivePickerType('qualification');
+            }}
+            onCameraPress={() => handleLaunchNativeCamera('qualification')}
+            onFilePress={() => handleLaunchNativeFilePicker('qualification')}
+            onRemove={() => handleRemove('qualification')}
+            onPreview={() => setPreviewDoc(documents.qualificationProof || null)}
+          />
+
+          {/* Document 4: Photograph */}
+          <DocumentUploadCard
+            index={4}
             title="Photograph"
             subtitle="Recent passport size photograph"
             document={documents.photograph}

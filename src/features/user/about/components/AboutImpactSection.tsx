@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     backgroundColor: AdminColors.accentGoldLight,
     borderWidth: 1,
-    borderColor: '#FBE5A5',
+    borderColor: AdminColors.border,
   },
   iconCircle: {
     width: 36,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 18,
-    backgroundColor: '#FFF0C8',
+    backgroundColor: AdminColors.cardSurface,
   },
   value: {
     fontFamily: UserFontFamilies.heading,

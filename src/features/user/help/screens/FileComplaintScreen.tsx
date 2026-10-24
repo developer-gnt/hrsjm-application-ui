@@ -78,6 +78,7 @@ type FormState = {
   mobile: string;
   email: string;
   address: string;
+  policeStation: string;
   city: string;
   state: string;
 };
@@ -91,6 +92,7 @@ const emptyForm: FormState = {
   mobile: '',
   email: '',
   address: '',
+  policeStation: '',
   city: '',
   state: '',
 };
@@ -658,6 +660,16 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
           <AppIcon name="map-pin" size={16} color={AdminColors.primaryDark} />
         }
       />
+      <AppInput
+        label="Nearby Police Station"
+        placeholder="Enter nearby police station"
+        value={form.policeStation}
+        onChangeText={value => updateField('policeStation', value)}
+        accessibilityLabel="Nearby police station"
+        leftIcon={
+          <AppIcon name="shield-check" size={16} color={AdminColors.primaryDark} />
+        }
+      />
 
       <View style={styles.twoColumnRow}>
         <View style={styles.columnField}>
@@ -831,6 +843,12 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
           </Text>
         </View>
         <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Nearby Police Station</Text>
+          <Text style={styles.summaryValue}>
+            {form.policeStation || 'Not provided'}
+          </Text>
+        </View>
+        <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>City</Text>
           <Text style={styles.summaryValue}>{form.city || 'Not provided'}</Text>
         </View>
@@ -880,7 +898,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
               const ticket = await supportTicketsStore.createTicket({
                 category: form.helpType || selectedHelpTopic?.title || 'Human Rights Grievance',
                 subject: form.subject || 'Complaint / Grievance',
-                description: `${form.description}\n\nComplainant: ${form.fullName}\nPhone: +91${form.mobile}\nEmail: ${form.email || 'N/A'}\nLocation: ${form.city || ''}, ${form.state || ''}`,
+                description: `${form.description}\n\nComplainant: ${form.fullName}\nPhone: +91${form.mobile}\nEmail: ${form.email || 'N/A'}\nAddress: ${form.address || 'N/A'}\nNearby Police Station: ${form.policeStation || 'N/A'}\nLocation: ${form.city || ''}, ${form.state || ''}`,
                 attachments: attachments.map((a, idx) => ({
                   id: `att-${Date.now()}-${idx}`,
                   name: a.name || 'document',

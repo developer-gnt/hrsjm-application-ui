@@ -47,7 +47,7 @@ export const NewsArticleCard: React.FC<NewsArticleCardProps> = ({
     </View>
     {!compact ? (
       <View style={styles.arrow}>
-        <AppIcon name="arrow-right" size={15} color={AdminColors.textOnDark} />
+        <AppIcon name="arrow-right" size={15} color={AdminColors.primaryDark} />
       </View>
     ) : null}
   </TouchableOpacity>
@@ -59,9 +59,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: AdminColors.cardSurface,
-    borderColor: 'rgba(6, 29, 64, 0.06)',
+    borderColor: AdminColors.border,
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 12,
     marginBottom: 12,
     marginHorizontal: Spacing.base,
     padding: 8,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderRadius: 6,
     backgroundColor: AdminColors.accentGoldLight,
-    color: '#8A5A00',
+    color: '#C9971A',
     fontSize: 10.5,
     fontWeight: '600',
     lineHeight: 13,

@@ -85,7 +85,7 @@ const IconBubble: React.FC<{
   name: RightsContentCard['icon'];
   tint?: string;
   size?: number;
-}> = ({ name, tint = '#FCEFC9', size = 42 }) => (
+}> = ({ name, tint = AdminColors.accentGoldLight, size = 42 }) => (
   <View
     style={[
       styles.iconBubble,
@@ -114,7 +114,7 @@ const InfoCard: React.FC<{
   <TouchableOpacity
     style={[
       styles.infoCard,
-      { backgroundColor: item.color ?? '#EEF4FF' },
+      { backgroundColor: item.color ?? AdminColors.primaryLight },
     ]}
     onPress={onPress}
     activeOpacity={0.8}
@@ -153,7 +153,7 @@ const TopicRow: React.FC<{
       item.description ? `${item.title}. ${item.description}` : item.title
     }
   >
-    <IconBubble name={item.icon} tint="#EEF4FF" size={32} />
+    <IconBubble name={item.icon} tint={AdminColors.primaryLight} size={32} />
     <View style={styles.topicCopy}>
       <Text style={styles.topicTitle}>{item.title}</Text>
       {item.description ? (
@@ -178,10 +178,10 @@ const CompactCard: React.FC<{
   const bubbleTint =
     item.iconColor ??
     (variant === 'help'
-      ? '#EEF4FF'
+      ? AdminColors.primaryLight
       : variant === 'resource'
-        ? '#E9F0FF'
-        : '#FCEFC9');
+        ? '#DBE5EE'
+        : AdminColors.accentGoldLight);
 
   return (
     <TouchableOpacity
@@ -346,7 +346,7 @@ const RightsDetailsContentView: React.FC<{
               <View style={styles.quoteUnderline} />
             </View>
             <View style={styles.quoteArtwork} pointerEvents="none">
-              <AppIcon name="users" size={58} color="#E9C97B" />
+              <AppIcon name="users" size={58} color={AdminColors.accentGold} />
             </View>
           </View>
         ) : null}
@@ -472,8 +472,8 @@ const RightsDetailsContentView: React.FC<{
                       id: right.id,
                       title: right.title,
                       icon: right.icon,
-                      color: '#FFFFFF',
-                      iconColor: '#FCEFC9',
+                      color: AdminColors.cardSurface,
+                      iconColor: AdminColors.accentGoldLight,
                     }}
                     variant="related"
                     onPress={() => onOpenRight(right.id)}
@@ -815,10 +815,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: BorderRadius.md,
-    backgroundColor: '#FFF8E8',
+    backgroundColor: AdminColors.accentGoldLight,
     position: 'relative',
     borderWidth: 1,
-    borderColor: '#FCE9B8',
+    borderColor: AdminColors.border,
   },
   quoteCopy: {
     flex: 1,
@@ -867,9 +867,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#E7EBF2',
+    borderColor: AdminColors.border,
     borderRadius: BorderRadius.md,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdminColors.cardSurface,
   },
   topicCopy: {
     flex: 1,
@@ -939,7 +939,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     backgroundColor: 'rgba(255,255,255,0.92)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: AdminColors.border,
   },
   frameworkCard: {
     minHeight: 96,
@@ -949,9 +949,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     padding: 10,
     borderRadius: BorderRadius.md,
-    backgroundColor: '#F2F4F8',
+    backgroundColor: AdminColors.primaryLight,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: AdminColors.border,
   },
   frameworkImage: {
     width: 80,
@@ -960,7 +960,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     borderRadius: BorderRadius.sm,
-    backgroundColor: '#263A55',
+    backgroundColor: AdminColors.primaryDark,
   },
   frameworkImageAsset: {
     width: '100%',
@@ -993,7 +993,7 @@ const styles = StyleSheet.create({
   compactCard: {
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: '#E7EBF2',
+    borderColor: AdminColors.border,
     justifyContent: 'flex-start',
   },
   compactCardCopy: {

@@ -154,7 +154,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
                 accessibilityLabel="Go back"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <AppIcon name="chevron-left" size={20} color="#0B2F5B" />
+                <AppIcon name="chevron-left" size={20} color={AdminColors.primaryDark} />
               </TouchableOpacity>
             ) : null}
 
@@ -195,7 +195,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path
                   d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22ZM18 16V11C18 7.93 16.37 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.64 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z"
-                  stroke="#112E51"
+                  stroke={AdminColors.primaryDark}
                   strokeWidth={1.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: AdminColors.border,
     paddingHorizontal: 16,
     paddingBottom: 10,
     shadowColor: '#000000',
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   brandTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#0B2F5B',
+    color: AdminColors.primaryDark,
     letterSpacing: 0.5,
   },
   spacer: {

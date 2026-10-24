@@ -63,6 +63,9 @@ const INITIAL_PERSONAL_INFO: PersonalInfo = {
   countryCode: '+91',
   mobileNumber: '',
   email: '',
+  policeStation: '',
+  password: '',
+  confirmPassword: '',
 };
 
 const INITIAL_ADDRESS_INFO: AddressInfo = {
@@ -72,6 +75,7 @@ const INITIAL_ADDRESS_INFO: AddressInfo = {
   state: '',
   pincode: '',
   country: 'India',
+  policeStation: '',
 };
 
 const INITIAL_DOCUMENTS: DocumentUploads = {};
@@ -441,6 +445,16 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         uri: effectiveDocuments.addressProof.fileUri,
       });
     }
+    if (effectiveDocuments.qualificationProof?.isUploaded) {
+      uploadedDocs.push({
+        id: 'doc-qualification',
+        title: 'Qualification Proof',
+        fileName: effectiveDocuments.qualificationProof.fileName || effectiveDocuments.qualificationProof.name || 'qualification_certificate.pdf',
+        fileSize: effectiveDocuments.qualificationProof.fileSize || '2.0 MB',
+        uploadDate: formattedDate,
+        uri: effectiveDocuments.qualificationProof.fileUri,
+      });
+    }
     if (effectiveDocuments.photograph?.isUploaded) {
       uploadedDocs.push({
         id: 'doc-photo',
@@ -470,6 +484,14 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
           fileSize: '1.5 MB',
           uploadDate: formattedDate,
           uri: effectiveDocuments.addressProof?.fileUri,
+        },
+        {
+          id: 'doc-qualification',
+          title: 'Educational Qualification Proof (Degree / Certificate)',
+          fileName: `qualification_${cleanName}.pdf`,
+          fileSize: '1.9 MB',
+          uploadDate: formattedDate,
+          uri: effectiveDocuments.qualificationProof?.fileUri,
         },
         {
           id: 'doc-photo',
@@ -532,6 +554,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       dob: effectivePersonalInfo.dateOfBirth || 'Not specified',
       fatherName: 'Not specified',
       address: fullAddress || 'Not specified',
+      policeStation: effectivePersonalInfo.policeStation || effectiveAddressInfo.policeStation || undefined,
       occupation: 'Member',
       documents: uploadedDocs.map(d => ({ ...d, uri: sanitizeUri(d.uri) })),
       activityLog: [
@@ -659,6 +682,8 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       full_name: effectivePersonalInfo.fullName.trim() || authUser?.full_name || 'Applicant',
       mobile_number: cleanMobile,
       email: validEmail,
+      password: effectivePersonalInfo.password?.trim() || undefined,
+      police_station: effectivePersonalInfo.policeStation?.trim() || effectiveAddressInfo.policeStation?.trim() || undefined,
       personal_details: {
         dob: effectivePersonalInfo.dateOfBirth,
         gender: effectivePersonalInfo.gender,
@@ -669,11 +694,13 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         state: effectiveAddressInfo.state,
         pincode: effectiveAddressInfo.pincode,
         country: effectiveAddressInfo.country,
+        police_station: effectivePersonalInfo.policeStation?.trim() || effectiveAddressInfo.policeStation?.trim() || undefined,
       },
       application_data: {
         application_id: adminAppItem.applicationId,
         membership_type: categoryTitle,
         documents: docsForBackend,
+        police_station: effectivePersonalInfo.policeStation?.trim() || effectiveAddressInfo.policeStation?.trim() || undefined,
       },
     });
 
@@ -742,6 +769,16 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         uri: effectiveDocuments.addressProof.fileUri,
       });
     }
+    if (effectiveDocuments.qualificationProof?.isUploaded) {
+      uploadedDocs.push({
+        id: 'doc-qualification',
+        title: 'Qualification Proof',
+        fileName: effectiveDocuments.qualificationProof.fileName || effectiveDocuments.qualificationProof.name || 'qualification_certificate.pdf',
+        fileSize: effectiveDocuments.qualificationProof.fileSize || '2.0 MB',
+        uploadDate: formattedDate,
+        uri: effectiveDocuments.qualificationProof.fileUri,
+      });
+    }
     if (effectiveDocuments.photograph?.isUploaded) {
       uploadedDocs.push({
         id: 'doc-photo',
@@ -771,6 +808,14 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
           fileSize: '1.5 MB',
           uploadDate: formattedDate,
           uri: effectiveDocuments.addressProof?.fileUri,
+        },
+        {
+          id: 'doc-qualification',
+          title: 'Educational Qualification Proof (Degree / Certificate)',
+          fileName: `qualification_${cleanName}.pdf`,
+          fileSize: '1.9 MB',
+          uploadDate: formattedDate,
+          uri: effectiveDocuments.qualificationProof?.fileUri,
         },
         {
           id: 'doc-photo',
@@ -824,6 +869,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       dob: effectivePersonalInfo.dateOfBirth || 'Not specified',
       fatherName: 'Not specified',
       address: fullAddress || 'Not specified',
+      policeStation: effectivePersonalInfo.policeStation || effectiveAddressInfo.policeStation || undefined,
       occupation: 'Member',
       documents: uploadedDocs,
       activityLog: [

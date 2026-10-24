@@ -100,12 +100,12 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   missionCard: {
-    backgroundColor: '#EEF4FF',
-    borderColor: '#D7E3F7',
+    backgroundColor: AdminColors.primaryLight,
+    borderColor: AdminColors.border,
   },
   visionCard: {
-    backgroundColor: '#FFF8E8',
-    borderColor: '#FBE5A5',
+    backgroundColor: AdminColors.accentGoldLight,
+    borderColor: AdminColors.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -121,10 +121,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   missionIconCircle: {
-    backgroundColor: '#DCE9FF',
+    backgroundColor: '#DBE5EE',
   },
   visionIconCircle: {
-    backgroundColor: '#FCE9B8',
+    backgroundColor: '#FAD465',
   },
   cardTitle: {
     color: AdminColors.primaryDark,

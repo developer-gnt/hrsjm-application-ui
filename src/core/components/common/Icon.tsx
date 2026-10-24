@@ -49,7 +49,10 @@ export type IconName =
   | 'globe'
   | 'rotate-ccw'
   | 'refresh-cw'
-  | 'building';
+  | 'building'
+  | 'lock'
+  | 'eye'
+  | 'eye-off';
 
 interface IconProps extends Omit<SvgProps, 'viewBox'> {
   name: IconName;
@@ -313,6 +316,24 @@ const paths: Record<IconName, React.ReactNode> = {
   whatsapp: (
     <G>
       <Path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    </G>
+  ),
+  lock: (
+    <G>
+      <Rect x={3} y={11} width={18} height={11} rx={2} ry={2} />
+      <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </G>
+  ),
+  eye: (
+    <G>
+      <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <Circle cx={12} cy={12} r={3} />
+    </G>
+  ),
+  'eye-off': (
+    <G>
+      <Path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <Path d="m1 1 22 22" />
     </G>
   ),
 };

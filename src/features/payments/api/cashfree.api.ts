@@ -17,7 +17,12 @@ export interface CreateDonationOrderParams {
 }
 
 export interface CreateMembershipOrderParams {
-  membershipPaymentId: string;
+  membershipPaymentId?: string;
+  amount?: number;
+  customerName?: string;
+  customerMobile?: string;
+  customerEmail?: string;
+  membershipType?: string;
   idempotencyKey?: string;
 }
 
@@ -79,7 +84,7 @@ export const cashfreeApi = {
   },
 
   /**
-   * Initiates Cashfree PG order for an existing membership payment
+   * Initiates Cashfree PG order for an existing or new membership payment
    */
   async createMembershipOrder(
     params: CreateMembershipOrderParams,
@@ -94,6 +99,11 @@ export const cashfreeApi = {
       {
         purpose: 'membership',
         reference_id: params.membershipPaymentId,
+        amount: params.amount,
+        customer_name: params.customerName,
+        customer_phone: params.customerMobile,
+        customer_email: params.customerEmail,
+        order_note: params.membershipType,
       },
       { headers },
     );
