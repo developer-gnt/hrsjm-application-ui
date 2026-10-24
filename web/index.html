@@ -12,6 +12,101 @@
       rel="stylesheet"
     />
     <style>
+      /* Normal Ampersand (&) overrides:
+       * Playfair Display's default & is an ornate cursive 'et' ligature.
+       * We target U+0026 with clean modern ampersand glyphs (Inter / Segoe UI / Arial)
+       * across all weights and styles so all headings & displays render standard '&'.
+       */
+      @font-face {
+        font-family: 'NormalAmpersand';
+        src: local('Inter SemiBold'), local('Inter-SemiBold'), local('Inter Bold'), local('Inter-Bold'), local('Inter'),
+             local('Segoe UI Semibold'), local('Segoe UI Bold'), local('Segoe UI'),
+             local('Arial Bold'), local('Arial'),
+             url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype');
+        font-weight: 600 900;
+        font-style: normal;
+        unicode-range: U+0026;
+      }
+      @font-face {
+        font-family: 'NormalAmpersand';
+        src: local('Inter Regular'), local('Inter-Regular'), local('Inter'),
+             local('Segoe UI'),
+             local('Arial'),
+             url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype');
+        font-weight: 100 500;
+        font-style: normal;
+        unicode-range: U+0026;
+      }
+      @font-face {
+        font-family: 'NormalAmpersand';
+        src: local('Inter SemiBold'), local('Inter-SemiBold'), local('Inter Bold'), local('Inter-Bold'), local('Inter'),
+             local('Segoe UI Semibold'), local('Segoe UI Bold'), local('Segoe UI'),
+             local('Arial Bold'), local('Arial'),
+             url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype');
+        font-weight: 600 900;
+        font-style: italic;
+        unicode-range: U+0026;
+      }
+      @font-face {
+        font-family: 'NormalAmpersand';
+        src: local('Inter Regular'), local('Inter-Regular'), local('Inter'),
+             local('Segoe UI'),
+             local('Arial'),
+             url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype');
+        font-weight: 100 500;
+        font-style: italic;
+        unicode-range: U+0026;
+      }
+
+      @font-face {
+        font-family: 'Playfair Display';
+        src: local('Inter SemiBold'), local('Inter-SemiBold'), local('Inter Bold'), local('Inter-Bold'), local('Inter'),
+             local('Segoe UI Semibold'), local('Segoe UI Bold'), local('Segoe UI'),
+             local('Arial Bold'), local('Arial'),
+             url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype');
+        font-weight: 600 900;
+        font-style: normal;
+        unicode-range: U+0026;
+      }
+      @font-face {
+        font-family: 'Playfair Display';
+        src: local('Inter Regular'), local('Inter-Regular'), local('Inter'),
+             local('Segoe UI'),
+             local('Arial'),
+             url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype');
+        font-weight: 100 500;
+        font-style: normal;
+        unicode-range: U+0026;
+      }
+      @font-face {
+        font-family: 'Playfair Display';
+        src: local('Inter SemiBold'), local('Inter-SemiBold'), local('Inter Bold'), local('Inter-Bold'), local('Inter'),
+             local('Segoe UI Semibold'), local('Segoe UI Bold'), local('Segoe UI'),
+             local('Arial Bold'), local('Arial'),
+             url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype');
+        font-weight: 600 900;
+        font-style: italic;
+        unicode-range: U+0026;
+      }
+      @font-face {
+        font-family: 'Playfair Display';
+        src: local('Inter Regular'), local('Inter-Regular'), local('Inter'),
+             local('Segoe UI'),
+             local('Arial'),
+             url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype');
+        font-weight: 100 500;
+        font-style: italic;
+        unicode-range: U+0026;
+      }
+
+      @font-face {
+        font-family: 'Caveat';
+        src: local('Inter Regular'), local('Inter-Regular'), local('Inter'),
+             local('Segoe UI'), local('Arial'),
+             url(https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype');
+        unicode-range: U+0026;
+      }
+
       :root {
         --color-navy-950: #011F39;
         --color-navy-900: #06294D;
@@ -34,9 +129,9 @@
         --color-border: #DCE4EC;
         --color-overlay: #031B31;
 
-        --font-display: "Playfair Display", Georgia, serif;
+        --font-display: "NormalAmpersand", "Playfair Display", Georgia, serif;
         --font-body: "Inter", Arial, sans-serif;
-        --font-quote: "Caveat", cursive;
+        --font-quote: "NormalAmpersand", "Caveat", cursive;
 
         --space-1: 4px;
         --space-2: 8px;

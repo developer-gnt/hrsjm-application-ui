@@ -26,8 +26,8 @@ export const AboutFonts = {
   serif: Platform.select({
     ios: 'Georgia',
     android: 'serif',
-    web: "'Playfair Display', Georgia, 'Times New Roman', serif",
-    default: "'Playfair Display', Georgia, 'Times New Roman', serif",
+    web: "'NormalAmpersand', 'Playfair Display', Georgia, 'Times New Roman', serif",
+    default: "'NormalAmpersand', 'Playfair Display', Georgia, 'Times New Roman', serif",
   }),
   sans: Platform.select({
     ios: 'System',
@@ -38,8 +38,8 @@ export const AboutFonts = {
   quote: Platform.select({
     ios: 'Georgia',
     android: 'serif',
-    web: "'Caveat', 'Playfair Display', cursive, serif",
-    default: "'Caveat', 'Playfair Display', cursive, serif",
+    web: "'NormalAmpersand', 'Caveat', 'Playfair Display', cursive, serif",
+    default: "'NormalAmpersand', 'Caveat', 'Playfair Display', cursive, serif",
   }),
 } as const;
 

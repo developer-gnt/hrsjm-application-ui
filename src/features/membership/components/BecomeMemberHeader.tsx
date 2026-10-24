@@ -50,16 +50,8 @@ export const BecomeMemberHeader: React.FC<BecomeMemberHeaderProps> = ({
         </View>
       </View>
 
-      {/* Right Search Button */}
-      <TouchableOpacity
-        style={styles.circleButton}
-        onPress={onSearchPress}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel="Search"
-      >
-        <SearchIcon size={17} color="#0F2860" />
-      </TouchableOpacity>
+      {/* Right Placeholder to balance back button */}
+      <View style={styles.rightPlaceholder} />
     </View>
   );
 };
@@ -72,6 +64,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingBottom: Spacing.sm,
     backgroundColor: '#FFFFFF',
+  },
+  rightPlaceholder: {
+    width: 38,
   },
   circleButton: {
     width: 38,

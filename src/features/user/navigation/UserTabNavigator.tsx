@@ -127,9 +127,13 @@ const UserAboutScreenComponent: React.FC<any> = ({ navigation }) => {
       onOpenContact={() => navigation.navigate('ContactUs')}
       onOpenEvents={() => navigation.navigate('UserEvents')}
       onOpenNews={() => navigation.navigate('UserNews')}
+      onOpenMyApplication={() => navigation.navigate('MyApplication')}
+      onOpenStatus={() => navigation.navigate('MyApplication')}
       onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail', { contentId })}
       onNavigate={(target) => {
-        if (target === 'donations') {
+        if (target === 'my-application' || target === 'MyApplication' || target === 'status') {
+          navigation.navigate('MyApplication');
+        } else if (target === 'donations') {
           navigation.navigate('UserActionPage', { pageId: 'donate' });
         } else if (target === 'membership' || target === 'membership-categories') {
           if (hasApplied && !isReapplying) {

@@ -36,6 +36,8 @@ export interface AboutScreenProps {
   onBack?: () => void;
   /** Navigate to an in-app route (used by the closing CTA). */
   onNavigate?: (target: string) => void;
+  onOpenMyApplication?: () => void;
+  onOpenStatus?: () => void;
   onOpenRights?: () => void;
   onOpenContact?: () => void;
   onOpenEvents?: () => void;
@@ -61,6 +63,8 @@ const SectionHeading: React.FC<{
 export const AboutScreen: React.FC<AboutScreenProps> = ({
   onBack,
   onNavigate,
+  onOpenMyApplication,
+  onOpenStatus,
   onOpenRights,
   onOpenContact,
   onOpenEvents,
@@ -191,7 +195,17 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
         <View style={styles.ctaSection}>
           <AboutFinalCta
             content={ABOUT_CONTENT.finalCta}
-            onPress={() => onNavigate?.(AppRoutes.DONATIONS) || showComingSoon(ABOUT_CONTENT.finalCta.buttonLabel)}
+            onPress={() => {
+              if (onOpenMyApplication) {
+                onOpenMyApplication();
+              } else if (onOpenStatus) {
+                onOpenStatus();
+              } else if (onNavigate) {
+                onNavigate('MyApplication');
+              } else {
+                showComingSoon(ABOUT_CONTENT.finalCta.buttonLabel);
+              }
+            }}
           />
         </View>
       </ScrollView>

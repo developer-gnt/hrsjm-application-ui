@@ -140,7 +140,7 @@ export const SeekerRequestsScreen: React.FC<SeekerRequestsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safe} edges={['left', 'right']}>
-      <HomeHeader onBack={() => navigation?.navigate?.('SeekerHome')} />
+      <HomeHeader onBack={() => navigation?.navigate?.('SeekerHome')} hideDonate />
       <AppHeader
         title="Aid Application Tracker"
         subtitle="Track status and timeline of your requests"

@@ -44,6 +44,8 @@ export interface HomeHeaderProps {
   onOpenDonate?: () => void;
   onNavigateNav?: (id: string) => void;
   showSearchAndBell?: boolean;
+  /** Whether to hide the Donate CTA button (e.g. for seeker screens) */
+  hideDonate?: boolean;
 }
 
 const SECONDARY_NAV_ITEMS = [
@@ -74,6 +76,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onOpenDonate,
   onNavigateNav,
   showSearchAndBell = true,
+  hideDonate = false,
 }) => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
@@ -85,6 +88,22 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   const [profileModalVisible, setProfileModalVisible] = useState(false);
 
   const effectiveUnreadCount = unreadCount ?? 3;
+
+  const roleNames = (user?.roles ?? []).map(r => (r.name || '').toUpperCase());
+  const isSeekerRole =
+    roleNames.includes('SEEKER') ||
+    roleNames.includes('DONATION_SEEKER') ||
+    (user as any)?.role === 'SEEKER' ||
+    (user as any)?.role === 'DONATION_SEEKER';
+  const shouldHideDonate = Boolean(hideDonate || isSeekerRole);
+
+  const initials = (user?.full_name ?? user?.email ?? 'Member')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part: string) => part[0]?.toUpperCase())
+    .join('') || 'U';
 
   const handleOpenSearch = () => {
     if (onPressSearch) {
@@ -241,36 +260,18 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               <View style={styles.customRightAction}>{rightAction}</View>
             ) : (
               <>
-                {/* Main Call to Action: Gold Donate button per docs/design.md §5 */}
-                <TouchableOpacity
-                  style={styles.ctaButton}
-                  onPress={handleDonatePress}
-                  activeOpacity={0.82}
-                  accessibilityRole="button"
-                  accessibilityLabel="Donate to HRSJM"
-                >
-                  <Text style={styles.ctaButtonText}>Donate</Text>
-                </TouchableOpacity>
-
-                {/* Search Icon */}
-                <TouchableOpacity
-                  style={styles.iconButton}
-                  onPress={handleOpenSearch}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="Search"
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Svg width={21} height={21} viewBox="0 0 24 24" fill="none">
-                    <Path
-                      d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z"
-                      stroke={AdminColors.primaryDark}
-                      strokeWidth={1.9}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                </TouchableOpacity>
+                {/* Main Call to Action: Gold Donate button per docs/design.md §5 (Shown for User and Member, hidden for Seeker) */}
+                {!shouldHideDonate && (
+                  <TouchableOpacity
+                    style={styles.ctaButton}
+                    onPress={handleDonatePress}
+                    activeOpacity={0.82}
+                    accessibilityRole="button"
+                    accessibilityLabel="Donate to HRSJM"
+                  >
+                    <Text style={styles.ctaButtonText}>Donate</Text>
+                  </TouchableOpacity>
+                )}
 
                 {/* Notification Bell */}
                 <TouchableOpacity
@@ -297,6 +298,24 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
                       </Text>
                     </View>
                   ) : null}
+                </TouchableOpacity>
+
+                {/* Profile Icon with Dropdown and Sign Out */}
+                <TouchableOpacity
+                  style={styles.avatarButton}
+                  onPress={() => setDropdownVisible(true)}
+                  activeOpacity={0.75}
+                  accessibilityRole="button"
+                  accessibilityLabel="User profile and account options"
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <View style={styles.avatarCircle}>
+                    {user?.avatar ? (
+                      <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+                    ) : (
+                      <Text style={styles.avatarText}>{initials}</Text>
+                    )}
+                  </View>
                 </TouchableOpacity>
               </>
             )}
@@ -523,17 +542,31 @@ const styles = StyleSheet.create({
     lineHeight: 11,
   },
   avatarButton: {
-    flexDirection: 'row',
+    marginLeft: 2,
     alignItems: 'center',
-    gap: 2,
-    paddingVertical: 1,
+    justifyContent: 'center',
   },
-  avatarImage: {
+  avatarCircle: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#FAD465', // Gold accent border per docs/design.md
+    backgroundColor: '#08294D',
+    borderWidth: 1.5,
+    borderColor: '#FAD465',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   dropdownCaret: {
     fontSize: 8,

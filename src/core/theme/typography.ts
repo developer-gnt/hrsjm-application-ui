@@ -10,14 +10,14 @@ export const FontFamilies = {
   display: Platform.select({
     ios: 'Playfair Display',
     android: 'serif',
-    web: 'Playfair Display, Georgia, "Times New Roman", serif',
-    default: 'Playfair Display, Georgia, serif',
+    web: 'NormalAmpersand, "Playfair Display", Georgia, "Times New Roman", serif',
+    default: 'NormalAmpersand, "Playfair Display", Georgia, serif',
   }),
   serif: Platform.select({
     ios: 'Playfair Display',
     android: 'serif',
-    web: 'Playfair Display, Georgia, "Times New Roman", serif',
-    default: 'Playfair Display, Georgia, serif',
+    web: 'NormalAmpersand, "Playfair Display", Georgia, "Times New Roman", serif',
+    default: 'NormalAmpersand, "Playfair Display", Georgia, serif',
   }),
   sans: Platform.select({
     ios: 'Inter',
@@ -28,8 +28,8 @@ export const FontFamilies = {
   quote: Platform.select({
     ios: 'Caveat',
     android: 'cursive',
-    web: 'Caveat, cursive',
-    default: 'Caveat, cursive',
+    web: 'NormalAmpersand, Caveat, cursive',
+    default: 'NormalAmpersand, Caveat, cursive',
   }),
 } as const;
 
@@ -242,6 +242,6 @@ export const Typography = {
 
 export const FontFamily = {
   sans: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-  serif: '"Playfair Display", Georgia, serif',
-  quote: '"Caveat", cursive',
+  serif: 'NormalAmpersand, "Playfair Display", Georgia, serif',
+  quote: 'NormalAmpersand, "Caveat", cursive',
 };

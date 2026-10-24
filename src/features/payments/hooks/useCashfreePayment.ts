@@ -170,12 +170,15 @@ export async function launchCashfreeWebCheckout(
   paymentSessionId: string,
   isProduction = false,
 ): Promise<void> {
-  if (Platform.OS !== 'web') return;
+  if (Platform.OS !== 'web' || !paymentSessionId) return;
 
   const globalObj = typeof globalThis !== 'undefined' ? (globalThis as any) : null;
   const win = globalObj?.window;
   const doc = globalObj?.document;
   if (!win || !doc) return;
+
+  const sessionId = paymentSessionId.trim();
+  if (!sessionId) return;
 
   const loadSdk = (): Promise<any> => {
     return new Promise((resolve, reject) => {
@@ -202,15 +205,13 @@ export async function launchCashfreeWebCheckout(
     const CashfreeFactory = await loadSdk();
     if (CashfreeFactory) {
       const cashfree = CashfreeFactory({ mode: isProduction ? 'production' : 'sandbox' });
-      await cashfree.checkout({ paymentSessionId, redirectTarget: '_modal' });
+      await cashfree.checkout({
+        paymentSessionId: sessionId,
+        redirectTarget: '_modal',
+      });
     }
-  } catch {
-    const checkoutUrl = isProduction
-      ? `https://api.cashfree.com/pg/view/sessions/${paymentSessionId}`
-      : `https://sandbox.cashfree.com/pg/view/sessions/${paymentSessionId}`;
-    if (win.open) {
-      win.open(checkoutUrl, '_blank');
-    }
+  } catch (err) {
+    console.warn('Cashfree web checkout launch error:', err);
   }
 }
 
