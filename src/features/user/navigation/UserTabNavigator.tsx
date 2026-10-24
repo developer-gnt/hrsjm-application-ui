@@ -244,6 +244,12 @@ const USER_TABS: UserTabItem[] = [
     Icon: MessageSquare,
     component: UserNewsScreenComponent,
   },
+  {
+    name: 'UserProfile',
+    label: 'Profile',
+    Icon: User,
+    component: UserProfileScreenComponent,
+  },
 ];
 
 const UserCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
@@ -319,12 +325,6 @@ export const UserTabNavigator: React.FC = () => {
           component={tab.component}
         />
       ))}
-
-      <Tab.Screen
-        name="UserProfile"
-        options={{ tabBarButton: () => null }}
-        component={UserProfileScreenComponent}
-      />
 
       <Tab.Screen
         name="ContactUs"

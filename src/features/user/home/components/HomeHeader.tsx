@@ -235,59 +235,13 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             </TouchableOpacity>
           </View>
 
-          {/* Right: Search + Notification Bell (matching mobile home screen reference) */}
+          {/* Right: Donate CTA + Search + Notification Bell */}
           <View style={styles.rightRow}>
             {rightAction ? (
               <View style={styles.customRightAction}>{rightAction}</View>
-            ) : showSearchAndBell !== false ? (
-              <>
-                <TouchableOpacity
-                  style={styles.iconButton}
-                  onPress={handleOpenSearch}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="Search"
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                    <Path
-                      d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z"
-                      stroke={AdminColors.primaryDark}
-                      strokeWidth={1.9}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.bellButton}
-                  onPress={handleOpenNotifications}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Notifications, ${effectiveUnreadCount} unread`}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                    <Path
-                      d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22ZM18 16V11C18 7.93 16.37 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.64 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z"
-                      stroke={AdminColors.primaryDark}
-                      strokeWidth={1.9}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                  {effectiveUnreadCount > 0 ? (
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>
-                        {effectiveUnreadCount > 9 ? '9+' : effectiveUnreadCount}
-                      </Text>
-                    </View>
-                  ) : null}
-                </TouchableOpacity>
-              </>
             ) : (
               <>
+                {/* Main Call to Action: Gold Donate button per docs/design.md §5 */}
                 <TouchableOpacity
                   style={styles.ctaButton}
                   onPress={handleDonatePress}
@@ -298,6 +252,27 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
                   <Text style={styles.ctaButtonText}>Donate</Text>
                 </TouchableOpacity>
 
+                {/* Search Icon */}
+                <TouchableOpacity
+                  style={styles.iconButton}
+                  onPress={handleOpenSearch}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Search"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Svg width={21} height={21} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z"
+                      stroke={AdminColors.primaryDark}
+                      strokeWidth={1.9}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                </TouchableOpacity>
+
+                {/* Notification Bell */}
                 <TouchableOpacity
                   style={styles.bellButton}
                   onPress={handleOpenNotifications}
@@ -306,11 +281,11 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
                   accessibilityLabel={`Notifications, ${effectiveUnreadCount} unread`}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                  <Svg width={21} height={21} viewBox="0 0 24 24" fill="none">
                     <Path
                       d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22ZM18 16V11C18 7.93 16.37 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.64 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z"
                       stroke={AdminColors.primaryDark}
-                      strokeWidth={1.8}
+                      strokeWidth={1.9}
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
@@ -322,20 +297,6 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
                       </Text>
                     </View>
                   ) : null}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.avatarButton}
-                  onPress={() => setDropdownVisible(true)}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Open user profile menu"
-                >
-                  <Image
-                    source={{ uri: user?.avatar || DEFAULT_ADMIN_AVATAR }}
-                    style={styles.avatarImage}
-                  />
-                  <Text style={styles.dropdownCaret}>▼</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -507,7 +468,7 @@ const styles = StyleSheet.create({
   rightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
     flexShrink: 0,
   },
   iconButton: {
