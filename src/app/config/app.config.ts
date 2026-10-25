@@ -1,13 +1,23 @@
 /**
- * Application-level configuration. Imported by core (leaf module — no imports
- * back into src) so there is exactly one place to change environment settings.
+ * Application-level configuration.
+ * Simply change CURRENT_ENV to 'local' or 'production'.
  */
+export type AppEnvironment = 'local' | 'production';
+
+// Switch between 'local' and 'production' here:
+export const CURRENT_ENV: AppEnvironment = 'local';
+
+const API_BASE_URLS: Record<AppEnvironment, string> = {
+  // Local development backend
+  local: 'http://localhost:3000/api/v1',
+  // Production VPS backend (Hostinger hPanel VPS)
+  production: 'http://194.164.151.17:3000/api/v1',
+};
+
 export const APP_CONFIG = {
   appName: 'HRSJM Admin',
   version: '1.0.0',
-  // Android emulator reaches the host machine via 10.0.2.2. Physical devices
-  // must use the LAN IP of the dev machine; release builds the production host.
-  // Backend port comes from HRSJM-back-api APP_PORT (default 3000).
-  apiBaseUrl: 'http://194.164.151.17:3000/api/v1',
+  env: CURRENT_ENV,
+  apiBaseUrl: API_BASE_URLS[CURRENT_ENV],
   requestTimeoutMs: 15000,
 } as const;

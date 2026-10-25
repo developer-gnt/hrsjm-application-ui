@@ -7,6 +7,12 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
+// Environment mode: 'local' (default 127.0.0.1:3000) or 'production' (194.164.151.17:3000)
+const APP_ENV = process.env.APP_ENV || 'local';
+const BACKEND_TARGET =
+  process.env.BACKEND_PROXY_TARGET ||
+  (APP_ENV === 'production' ? 'http://194.164.151.17:3000' : 'http://127.0.0.1:3000');
+
 module.exports = {
   mode: 'development',
   entry: path.resolve(__dirname, 'index.web.js'),
@@ -28,7 +34,7 @@ module.exports = {
     proxy: [
       {
         context: '/api',
-        target: 'http://127.0.0.1:3000',
+        target: BACKEND_TARGET,
         changeOrigin: true,
       },
     ],

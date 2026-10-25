@@ -90,5 +90,7 @@ export function isClosed(status: TicketStatus): boolean {
 }
 
 export function shortTicketId(id: string): string {
-  return `#${id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+  if (!id) return '';
+  if (id.startsWith('HRSJM-CMP-')) return id;
+  return `HRSJM-CMP-${id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
 }
