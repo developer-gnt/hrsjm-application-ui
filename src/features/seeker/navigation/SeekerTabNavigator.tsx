@@ -110,7 +110,7 @@ const SeekerSupportWrapper: React.FC<any> = ({ navigation }) => {
 const SeekerProfileWrapper: React.FC<any> = ({ navigation }) => {
   return (
     <ProfileScreen
-      headerComponent={<HomeHeader />}
+      headerComponent={<HomeHeader hideDonate />}
       onNavigate={(target) => navigation.navigate(target)}
       onEditPersonal={() => navigation.navigate('EditPersonalInfo')}
       onEditAdminDetails={() => navigation.navigate('AdminDetails')}

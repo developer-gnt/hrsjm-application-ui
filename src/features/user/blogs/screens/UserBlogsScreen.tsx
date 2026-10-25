@@ -188,7 +188,7 @@ export const UserBlogsScreen: React.FC<UserBlogsScreenProps> = ({
           style={styles.searchInput}
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Search articles, guides & blogs..."
+          placeholder="Search articles, guides and blogs..."
           placeholderTextColor={AdminColors.textMuted}
           returnKeyType="search"
           accessibilityLabel="Search articles and blogs"
@@ -298,7 +298,7 @@ export const UserBlogsScreen: React.FC<UserBlogsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <HomeHeader onBack={onBack} />
+      <HomeHeader onBack={onBack} activeNav="news" />
 
       <FlatList
         data={!searchQuery && selectedCategory === 'ALL' && featuredBlog ? regularBlogs : filteredBlogs}

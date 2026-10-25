@@ -83,7 +83,7 @@ export const ABOUT_CONTENT = {
   },
 
   missionVision: {
-    heading: 'Our Mission & Vision',
+    heading: 'Our Mission and Vision',
     mission: {
       title: 'Our Mission',
       body: 'To protect human rights, promote social justice and empower communities through awareness, advocacy, education and support.',
@@ -97,7 +97,7 @@ export const ABOUT_CONTENT = {
   },
 
   values: {
-    heading: 'Our Values & Principles',
+    heading: 'Our Values and Principles',
     lead: 'Our work is guided by strong values that keep people and justice at the centre of everything we do.',
     items: [
       {

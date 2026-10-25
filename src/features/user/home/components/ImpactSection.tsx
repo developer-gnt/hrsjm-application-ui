@@ -36,12 +36,14 @@ export const ImpactSection: React.FC<ImpactSectionProps> = ({
     <View style={styles.statsRow}>
       {IMPACT_METRICS.map(metric => (
         <View key={metric.key} style={styles.stat}>
-          <AppIcon
-            name={metric.icon}
-            size={24}
-            color="#FAD465"
-            strokeWidth={1.8}
-          />
+          <View style={styles.iconCircle}>
+            <AppIcon
+              name={metric.icon}
+              size={22}
+              color="#FAD465"
+              strokeWidth={1.8}
+            />
+          </View>
           <Text style={styles.value}>
             {formatImpactNumber(stats[metric.key])}
           </Text>
@@ -54,38 +56,52 @@ export const ImpactSection: React.FC<ImpactSectionProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: '#06294D',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    backgroundColor: '#06294D', // color-navy-900
+    borderRadius: 14,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.xl,
     paddingHorizontal: Spacing.base,
+    marginHorizontal: Spacing.base,
+    borderWidth: 1,
+    borderColor: 'rgba(219, 229, 238, 0.15)',
   },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginTop: Spacing.sm,
+    marginTop: Spacing.md,
   },
   stat: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 2,
+    paddingHorizontal: 4,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: '#C9971A', // color-gold-700
+    backgroundColor: 'rgba(250, 212, 101, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   value: {
     fontFamily: UserFontFamilies.heading,
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: '700',
     color: '#FFFFFF',
     marginTop: 8,
     textAlign: 'center',
   },
   label: {
-    fontSize: 11,
-    lineHeight: 14,
-    color: 'rgba(255, 255, 255, 0.82)',
-    marginTop: 3,
+    fontSize: 11.5,
+    lineHeight: 15,
+    fontWeight: '500',
+    color: '#EDF2F7', // color-blue-100
+    marginTop: 4,
     textAlign: 'center',
+    fontFamily: 'Inter',
   },
 });

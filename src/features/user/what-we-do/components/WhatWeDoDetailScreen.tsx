@@ -84,6 +84,7 @@ export const WhatWeDoDetailScreen: React.FC<WhatWeDoDetailScreenProps> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
+        activeNav="what-we-do"
         onBack={onBack}
         showNotificationDot
         notificationDotColor={AdminColors.accentGold}

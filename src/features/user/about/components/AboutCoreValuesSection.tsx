@@ -12,7 +12,7 @@ import { AppIcon } from '../../components';
 const CORE_VALUES = [
   {
     id: 'justice-equality',
-    title: 'Justice & Equality',
+    title: 'Justice and Equality',
     description: 'Equal protection, fairness, and non-discrimination under law for every person.',
     icon: 'scale',
     bgColor: '#FFF9E6',
@@ -28,7 +28,7 @@ const CORE_VALUES = [
   },
   {
     id: 'integrity-trust',
-    title: 'Integrity & Trust',
+    title: 'Integrity and Trust',
     description: 'Highest standards of ethical accountability, open communication, and truth.',
     icon: 'shield-check',
     bgColor: '#FAF7F0',
@@ -36,7 +36,7 @@ const CORE_VALUES = [
   },
   {
     id: 'compassion-dignity',
-    title: 'Compassion & Dignity',
+    title: 'Compassion and Dignity',
     description: 'Empathy-driven service upholding human dignity at the center of every action.',
     icon: 'heart-hands',
     bgColor: '#FFF9E6',

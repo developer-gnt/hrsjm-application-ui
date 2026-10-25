@@ -104,7 +104,17 @@ export const MemberDashboardDetailsScreen: React.FC<
 
     return (
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <HomeHeader onBack={onBack} />
+        <HomeHeader
+          onBack={onBack}
+          onNavigateNav={(id: string) => {
+            if (id === 'home') onOpenHome?.();
+            else if (id === 'about') onOpenAbout?.();
+            else if (id === 'rights') onOpenRights?.();
+            else if (id === 'events') onOpenEvents?.();
+            else if (id === 'news') onOpenNews?.();
+            else if (id === 'contact') onOpenContact?.();
+          }}
+        />
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
@@ -646,7 +656,7 @@ const RecommendedContent: React.FC<{
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F0',
   },
   scroll: {
     flex: 1,
@@ -673,18 +683,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: '#F1F4F9',
+    backgroundColor: '#EDF2F7',
   },
   activeTabPill: {
-    backgroundColor: '#EAA532',
+    backgroundColor: '#FAD465',
   },
   tabPillText: {
-    color: '#1A2438',
+    color: '#0B2F52',
     fontSize: 12.5,
     fontWeight: '600',
   },
   activeTabPillText: {
-    color: '#0F172A',
+    color: '#011F39',
     fontWeight: '700',
   },
   content: {
@@ -700,20 +710,20 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    color: '#0F2042',
+    color: '#0B2F52',
     fontFamily: FontFamilies.serif,
     fontSize: 21,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
   manageButton: {
-    backgroundColor: '#EEF2F6',
+    backgroundColor: '#EDF2F7',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 8,
   },
   manageButtonText: {
-    color: '#0F2042',
+    color: '#0B2F52',
     fontSize: 12.5,
     fontWeight: '600',
   },
@@ -723,7 +733,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   viewAllText: {
-    color: '#0F2042',
+    color: '#0B2F52',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -731,7 +741,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E8EEF5',
+    borderColor: '#DCE4EC',
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -741,7 +751,7 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: '#FEF3DE',
+    backgroundColor: '#FFF9E6',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
@@ -757,22 +767,22 @@ const styles = StyleSheet.create({
   memberTypeText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#0F2042',
+    color: '#0B2F52',
   },
   activeBadge: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#FFF9E6',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
     marginLeft: 8,
   },
   activeBadgeText: {
-    color: '#15803D',
+    color: '#C9971A',
     fontSize: 11,
     fontWeight: '600',
   },
   memberMetaText: {
-    color: '#64748B',
+    color: '#718096',
     fontSize: 12.5,
     lineHeight: 18,
   },
@@ -783,7 +793,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E8EEF5',
+    borderColor: '#DCE4EC',
     paddingHorizontal: 14,
     paddingVertical: 12,
     flexDirection: 'row',
@@ -794,7 +804,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FEF3DE',
+    backgroundColor: '#FFF9E6',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -805,11 +815,11 @@ const styles = StyleSheet.create({
   activityCardTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#0F2042',
+    color: '#0B2F52',
   },
   activityCardSubtitle: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#718096',
     marginTop: 2,
   },
   quickActionsGrid: {
@@ -825,7 +835,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E8EEF5',
+    borderColor: '#DCE4EC',
     paddingHorizontal: 10,
     paddingVertical: 12,
     flexDirection: 'row',
@@ -837,7 +847,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FEF3DE',
+    backgroundColor: '#FFF9E6',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
@@ -846,7 +856,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12.5,
     fontWeight: '600',
-    color: '#0F2042',
+    color: '#0B2F52',
     marginRight: 4,
   },
   recommendedRow: {
@@ -858,7 +868,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E8EEF5',
+    borderColor: '#DCE4EC',
     padding: 8,
     flexDirection: 'row',
     alignItems: 'center',
@@ -878,27 +888,27 @@ const styles = StyleSheet.create({
     height: 72,
   },
   articleBadge: {
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#EDF2F7',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
     alignSelf: 'flex-start',
   },
   articleBadgeText: {
-    color: '#6D28D9',
+    color: '#06294D',
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   eventBadge: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFF9E6',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
     alignSelf: 'flex-start',
   },
   eventBadgeText: {
-    color: '#B45309',
+    color: '#C9971A',
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -906,7 +916,7 @@ const styles = StyleSheet.create({
   recommendedTitle: {
     fontSize: 11.5,
     fontWeight: '700',
-    color: '#0F2042',
+    color: '#0B2F52',
     lineHeight: 15,
     marginTop: 2,
   },
@@ -923,7 +933,7 @@ const styles = StyleSheet.create({
   },
   recommendedMetaText: {
     fontSize: 10,
-    color: '#64748B',
+    color: '#718096',
   },
   bodyText: {
     color: AdminColors.textSecondary,

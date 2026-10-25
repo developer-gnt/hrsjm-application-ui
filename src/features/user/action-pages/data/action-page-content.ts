@@ -52,7 +52,7 @@ export const ACTION_PAGE_CONTENT: Record<ActionPageId, ActionPageContent> = {
     cardsTitle: 'Where Your Donation Helps',
     cards: [
       {
-        title: 'Awareness & Education',
+        title: 'Awareness and Education',
         description: 'Support learning initiatives and awareness.',
         icon: 'book-open',
       },
@@ -67,7 +67,7 @@ export const ACTION_PAGE_CONTENT: Record<ActionPageId, ActionPageContent> = {
         icon: 'scale',
       },
       {
-        title: 'Programmes & Initiatives',
+        title: 'Programmes and Initiatives',
         description: 'Support approved activities and initiatives.',
         icon: 'heart',
       },

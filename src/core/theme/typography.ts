@@ -8,28 +8,28 @@ import { Platform, TextStyle } from 'react-native';
  */
 export const FontFamilies = {
   display: Platform.select({
-    ios: 'Georgia',
+    ios: 'Playfair Display',
     android: 'serif',
-    web: "'Playfair Display', Georgia, 'Times New Roman', serif",
-    default: 'serif',
+    web: 'NormalAmpersand, "Playfair Display", Georgia, "Times New Roman", serif',
+    default: 'NormalAmpersand, "Playfair Display", Georgia, serif',
   }),
   serif: Platform.select({
-    ios: 'Georgia',
+    ios: 'Playfair Display',
     android: 'serif',
-    web: "'Playfair Display', Georgia, 'Times New Roman', serif",
-    default: 'serif',
+    web: 'NormalAmpersand, "Playfair Display", Georgia, "Times New Roman", serif',
+    default: 'NormalAmpersand, "Playfair Display", Georgia, serif',
   }),
   sans: Platform.select({
     ios: 'Inter',
     android: 'sans-serif',
-    web: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    default: 'sans-serif',
+    web: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    default: 'Inter, sans-serif',
   }),
   quote: Platform.select({
-    ios: 'Snell Roundhand',
+    ios: 'Caveat',
     android: 'cursive',
-    web: "'Caveat', cursive",
-    default: 'cursive',
+    web: 'NormalAmpersand, Caveat, cursive',
+    default: 'NormalAmpersand, Caveat, cursive',
   }),
 } as const;
 
@@ -115,49 +115,67 @@ export const Typography = {
     textTransform: 'uppercase',
   } as TextStyle,
 
-  // Primary body text (Inter 400 14-16px)
+  // Primary body text (Inter 400 14-16px / 1.5-1.7)
   body: {
     fontFamily: FontFamilies.sans,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '400',
-    lineHeight: 21,
+    lineHeight: 23,
   } as TextStyle,
 
   bodyMedium: {
     fontFamily: FontFamilies.sans,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
-    lineHeight: 21,
+    lineHeight: 22,
   } as TextStyle,
 
   bodyBold: {
     fontFamily: FontFamilies.sans,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    lineHeight: 21,
+    lineHeight: 22,
   } as TextStyle,
 
-  // Button text (Inter 600-700 13-15px)
+  // Button text (Inter 600-700 13-15px / 1.2)
   button: {
     fontFamily: FontFamilies.sans,
     fontSize: 14,
     fontWeight: '700',
+    lineHeight: 17,
+  } as TextStyle,
+
+  // Eyebrow and section labels (Inter 600-700 11-13px / 1.4; letter spacing 0.12-0.18em)
+  label: {
+    fontFamily: FontFamilies.sans,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 17,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+  } as TextStyle,
+
+  // Small / Breadcrumbs and secondary details (Inter 400-500 12-13px / 1.4-1.5)
+  small: {
+    fontFamily: FontFamilies.sans,
+    fontSize: 12.5,
+    fontWeight: '500',
     lineHeight: 18,
   } as TextStyle,
 
   // Secondary descriptions, captions, and breadcrumbs
   secondary: {
     fontFamily: FontFamilies.sans,
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '400',
-    lineHeight: 17,
+    lineHeight: 18,
   } as TextStyle,
 
   secondaryMedium: {
     fontFamily: FontFamilies.sans,
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '500',
-    lineHeight: 17,
+    lineHeight: 18,
   } as TextStyle,
 
   badge: {
@@ -200,13 +218,6 @@ export const Typography = {
     fontStyle: 'italic',
   } as TextStyle,
 
-  label: {
-    fontFamily: FontFamilies.sans,
-    fontSize: 11,
-    fontWeight: '600',
-    lineHeight: 14,
-  } as TextStyle,
-
   rowTitle: {
     fontFamily: FontFamilies.sans,
     fontSize: 15,
@@ -231,6 +242,6 @@ export const Typography = {
 
 export const FontFamily = {
   sans: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-  serif: '"Playfair Display", Georgia, serif',
-  quote: '"Caveat", cursive',
+  serif: 'NormalAmpersand, "Playfair Display", Georgia, serif',
+  quote: 'NormalAmpersand, "Caveat", cursive',
 };

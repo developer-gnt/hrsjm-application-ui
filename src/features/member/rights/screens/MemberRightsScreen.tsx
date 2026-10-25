@@ -68,96 +68,96 @@ const RIGHT_METADATA: Record<
     categoryLabel: 'Universal Protection',
     legalReference: 'UDHR 1948 • NHRC Guidelines',
     highlights: ['Life with Dignity', 'Freedom from Torture', 'Universal Equality'],
-    accentColor: '#B45309',
-    badgeBg: '#FEF3C7',
+    accentColor: '#C9971A', // color-gold-700
+    badgeBg: '#FFF9E6',
   },
   'civil-rights': {
     category: 'CIVIL_JUSTICE',
     categoryLabel: 'Civil & Justice',
     legalReference: 'Articles 14–18 • Equal Protection',
     highlights: ['Equal Treatment', 'Non-Discrimination', 'Access to Law'],
-    accentColor: '#1D4ED8',
-    badgeBg: '#DBEAFE',
+    accentColor: '#174A78', // color-navy-700
+    badgeBg: '#EDF2F7', // color-blue-100
   },
   'fundamental-rights': {
     category: 'CONSTITUTIONAL',
     categoryLabel: 'Constitutional',
     legalReference: 'Part III of Constitution • Articles 12–35',
     highlights: ['Right to Equality', 'Right to Freedom', 'Article 32 Writs'],
-    accentColor: '#92400E',
-    badgeBg: '#FDE68A',
+    accentColor: '#06294D', // color-navy-900
+    badgeBg: '#FFF9E6',
   },
   'womens-rights': {
     category: 'WOMEN_CHILD',
     categoryLabel: 'Women & Child',
     legalReference: 'DV Act 2005 • Article 15(3) • POSH Act',
     highlights: ['Workplace Safety', 'Protection from Violence', 'Equal Inheritance'],
-    accentColor: '#BE185D',
-    badgeBg: '#FCE7F3',
+    accentColor: '#06294D', // color-navy-900
+    badgeBg: '#EDF2F7', // color-blue-100
   },
   'childrens-rights': {
     category: 'WOMEN_CHILD',
     categoryLabel: 'Women & Child',
     legalReference: 'POCSO Act 2012 • Articles 21A & 24',
     highlights: ['Free Education', 'No Child Labour', 'Nutrition & Care'],
-    accentColor: '#047857',
-    badgeBg: '#D1FAE5',
+    accentColor: '#174A78', // color-navy-700
+    badgeBg: '#EDF2F7',
   },
   'senior-citizen-rights': {
     category: 'LABOUR_WELFARE',
     categoryLabel: 'Labour & Welfare',
     legalReference: 'Maintenance & Welfare Act, 2007',
     highlights: ['Parental Support', 'Special Healthcare', 'Legal Protection'],
-    accentColor: '#B45309',
-    badgeBg: '#FEF3C7',
+    accentColor: '#C9971A',
+    badgeBg: '#FFF9E6',
   },
   'minority-rights': {
     category: 'CIVIL_JUSTICE',
     categoryLabel: 'Civil & Justice',
     legalReference: 'Articles 29 & 30 • Cultural & Educational',
     highlights: ['Language Preservation', 'Community Institutions', 'Non-Discrimination'],
-    accentColor: '#6D28D9',
-    badgeBg: '#EDE9FE',
+    accentColor: '#06294D',
+    badgeBg: '#DBE5EE',
   },
   'labour-rights': {
     category: 'LABOUR_WELFARE',
     categoryLabel: 'Labour & Welfare',
     legalReference: 'Factories Act 1948 • Minimum Wages Act',
     highlights: ['Fair Compensation', 'Safe Workplace', 'Right to Unionize'],
-    accentColor: '#B91C1C',
-    badgeBg: '#FEE2E2',
+    accentColor: '#C9971A',
+    badgeBg: '#FFF9E6',
   },
   'right-to-education': {
     category: 'CONSTITUTIONAL',
     categoryLabel: 'Constitutional',
     legalReference: 'RTE Act 2009 • Article 21A',
     highlights: ['Free & Compulsory', 'Age 6 to 14 Years', 'Zero Discrimination'],
-    accentColor: '#047857',
-    badgeBg: '#D1FAE5',
+    accentColor: '#174A78',
+    badgeBg: '#EDF2F7',
   },
   'right-to-information': {
     category: 'CIVIL_JUSTICE',
     categoryLabel: 'Civil & Justice',
     legalReference: 'RTI Act 2005 • Public Accountability',
     highlights: ['Access Public Files', 'Citizen Transparency', '30-Day Reply Window'],
-    accentColor: '#0284C7',
-    badgeBg: '#E0F2FE',
+    accentColor: '#06294D',
+    badgeBg: '#EDF2F7',
   },
   'freedom-of-speech': {
     category: 'CONSTITUTIONAL',
     categoryLabel: 'Constitutional',
     legalReference: 'Article 19(1)(a) • Expression & Press',
     highlights: ['Freedom of Thought', 'Free Press', 'Peaceful Assembly'],
-    accentColor: '#D97706',
-    badgeBg: '#FEF3C7',
+    accentColor: '#C9971A',
+    badgeBg: '#FFF9E6',
   },
   'civil-liberties': {
     category: 'CIVIL_JUSTICE',
     categoryLabel: 'Civil & Justice',
     legalReference: 'Article 21 • Personal Liberty & Privacy',
     highlights: ['Right to Privacy', 'Due Process of Law', 'Bodily Autonomy'],
-    accentColor: '#4338CA',
-    badgeBg: '#E0E7FF',
+    accentColor: '#174A78',
+    badgeBg: '#DBE5EE',
   },
 };
 
@@ -272,6 +272,7 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
+        activeNav="rights"
         onBack={onBack}
         unreadCount={3}
       />

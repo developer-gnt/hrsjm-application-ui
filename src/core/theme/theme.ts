@@ -52,8 +52,8 @@ export const typography = {
 export const fontSerif = Platform.select({
   ios: 'Georgia',
   android: 'serif',
-  web: "'Playfair Display', Georgia, serif",
-  default: 'serif',
+  web: "'NormalAmpersand', 'Playfair Display', Georgia, serif",
+  default: "'NormalAmpersand', serif",
 }) as string;
 
 export const serif = { fontFamily: fontSerif } as const;

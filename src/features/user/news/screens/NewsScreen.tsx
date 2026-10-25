@@ -502,6 +502,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
+        activeNav="news"
         onBack={showBack ? (onBack || handleBack) : undefined}
         onPressSearch={() => searchRef.current?.focus()}
       />

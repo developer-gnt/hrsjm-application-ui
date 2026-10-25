@@ -324,7 +324,17 @@ export const MemberHomeDashboardScreen: React.FC<
           onPressNotifications={onOpenNotifications}
         />
       ) : (
-        <HomeHeader onBack={onBack} />
+        <HomeHeader
+          onBack={onBack}
+          onNavigateNav={(id: string) => {
+            if (id === 'home') onOpenHome?.();
+            else if (id === 'about') onOpenAbout?.();
+            else if (id === 'rights') onOpenRights?.();
+            else if (id === 'events') onOpenEvents?.();
+            else if (id === 'news') onOpenNews?.();
+            else if (id === 'contact') onOpenContact?.();
+          }}
+        />
       )}
       <ScrollView
         style={styles.scroll}
@@ -560,7 +570,7 @@ const styles = StyleSheet.create({
   hero: {
     height: 224,
     overflow: 'hidden',
-    backgroundColor: '#041A35',
+    backgroundColor: '#011F39',
   },
   heroImage: {
     ...StyleSheet.absoluteFill,
@@ -569,7 +579,7 @@ const styles = StyleSheet.create({
   },
   heroOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(4, 26, 53, 0.4)',
+    backgroundColor: 'rgba(3, 27, 49, 0.52)',
   },
   heroCopy: {
     flex: 1,
@@ -585,7 +595,7 @@ const styles = StyleSheet.create({
     lineHeight: 23,
   },
   heroName: {
-    color: '#E5A93C',
+    color: '#FAD465',
     fontFamily: FontFamilies.serif,
     fontSize: 27,
     fontWeight: '700',
@@ -613,7 +623,7 @@ const styles = StyleSheet.create({
     opacity: 0.95,
   },
   sheetContainer: {
-    backgroundColor: AdminColors.background,
+    backgroundColor: '#FAF7F0',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     marginTop: -20,
@@ -624,7 +634,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: '#E8EDF5',
+    borderColor: '#DCE4EC',
     paddingVertical: 12,
     paddingHorizontal: 14,
     flexDirection: 'row',
@@ -644,7 +654,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#EAA532',
+    backgroundColor: '#FAD465',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -662,7 +672,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   statusCategory: {
-    color: '#64748B',
+    color: '#718096',
     fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
@@ -675,8 +685,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
+    borderColor: '#DCE4EC',
+    backgroundColor: '#EDF2F7',
     gap: 4,
     flexShrink: 0,
   },
@@ -695,7 +705,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: '#E8EDF5',
+    borderColor: '#DCE4EC',
     paddingVertical: 14,
     paddingHorizontal: 4,
     alignItems: 'center',
@@ -707,7 +717,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFF9E6',
+    borderWidth: 1.5,
+    borderColor: '#C9971A',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -723,7 +735,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: '#E8EDF5',
+    borderColor: '#DCE4EC',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 18,
@@ -751,7 +763,9 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFF9E6',
+    borderWidth: 1.5,
+    borderColor: '#C9971A',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -763,7 +777,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   impactLabel: {
-    color: '#64748B',
+    color: '#718096',
     fontSize: 11,
     lineHeight: 14,
     textAlign: 'center',
@@ -815,7 +829,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#EDF2F7',
+    borderColor: '#DCE4EC',
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -827,7 +841,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: '#041A35',
+    backgroundColor: '#011F39',
   },
   eventImage: {
     width: '100%',
@@ -850,13 +864,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   eventDayText: {
-    color: '#0A2540',
+    color: '#06294D',
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 18,
   },
   eventMonthText: {
-    color: '#475569',
+    color: '#718096',
     fontSize: 10.5,
     fontWeight: '600',
     lineHeight: 13,

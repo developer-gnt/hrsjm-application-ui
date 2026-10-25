@@ -23,7 +23,7 @@ import {
   UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
-import { ContactHeader } from '../../contact/components/ContactHeader';
+import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeTab } from '../../home/types/home.types';
 import type { UserEvent } from '../data/user-events';
@@ -282,7 +282,7 @@ export const RegisterForEventScreen: React.FC<RegisterForEventScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <ContactHeader onBack={requestBack} />
+      <HomeHeader activeNav="events" onBack={requestBack} />
       {isRegistered ? (
         renderSuccess()
       ) : (

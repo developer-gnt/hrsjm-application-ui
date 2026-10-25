@@ -11,6 +11,7 @@ import {
   AdminColors,
   BorderRadius,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon, ImageSlot } from '../../components';
 import type { HomeNewsItem } from '../types/home.types';
@@ -96,23 +97,28 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   category: {
+    fontFamily: UserFontFamilies.sans,
     fontSize: 8,
     lineHeight: 10,
     fontWeight: '700',
     letterSpacing: 0.8,
-    color: AdminColors.textMuted,
+    color: '#64748B',
+    textTransform: 'uppercase',
   },
   title: {
-    fontSize: 10.5,
-    lineHeight: 13,
-    fontWeight: '600',
-    color: AdminColors.primaryDark,
+    fontFamily: UserFontFamilies.sans,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    color: '#06294D',
     marginTop: 2,
   },
   date: {
-    fontSize: 8,
-    lineHeight: 10,
-    color: AdminColors.textMuted,
+    fontFamily: UserFontFamilies.sans,
+    fontSize: 8.5,
+    lineHeight: 11,
+    fontWeight: '500',
+    color: '#64748B',
     marginTop: 3,
   },
   arrow: {

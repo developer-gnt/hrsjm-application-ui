@@ -127,9 +127,13 @@ const UserAboutScreenComponent: React.FC<any> = ({ navigation }) => {
       onOpenContact={() => navigation.navigate('ContactUs')}
       onOpenEvents={() => navigation.navigate('UserEvents')}
       onOpenNews={() => navigation.navigate('UserNews')}
+      onOpenMyApplication={() => navigation.navigate('MyApplication')}
+      onOpenStatus={() => navigation.navigate('MyApplication')}
       onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail', { contentId })}
       onNavigate={(target) => {
-        if (target === 'donations') {
+        if (target === 'my-application' || target === 'MyApplication' || target === 'status') {
+          navigation.navigate('MyApplication');
+        } else if (target === 'donations') {
           navigation.navigate('UserActionPage', { pageId: 'donate' });
         } else if (target === 'membership' || target === 'membership-categories') {
           if (hasApplied && !isReapplying) {
@@ -279,7 +283,7 @@ const UserCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) =>
           }
         };
 
-        const iconColor = isFocused ? '#E9B82E' : '#718096';
+        const iconColor = isFocused ? '#E9B82E' : '#06294D';
 
         return (
           <TouchableOpacity
@@ -292,7 +296,7 @@ const UserCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) =>
             style={styles.tabItem}
           >
             <View style={styles.iconBox}>
-              <Icon size={22} color={iconColor} />
+              <Icon size={22} color={iconColor} strokeWidth={1.8} />
             </View>
             <Text
               style={[
@@ -680,14 +684,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tabLabelActive: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter',
     fontWeight: '700',
-    color: '#E9B82E',
+    color: '#E9B82E', // color-gold-600
   },
   tabLabelInactive: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter',
     fontWeight: '600',
-    color: '#718096',
+    color: '#06294D',
   },
 });
 

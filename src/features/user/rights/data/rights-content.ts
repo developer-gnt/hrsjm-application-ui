@@ -143,7 +143,7 @@ const womensRightsContent: RightDetailsContent = {
   keyAreas: [
     {
       id: 'safety-protection',
-      title: 'Safety & Protection',
+      title: 'Safety and Protection',
       description: 'Freedom from violence, harassment and exploitation.',
       icon: 'shield-check',
       color: '#FFF9E6',
@@ -159,7 +159,7 @@ const womensRightsContent: RightDetailsContent = {
     },
     {
       id: 'employment-equal-pay',
-      title: 'Employment & Equal Pay',
+      title: 'Employment and Equal Pay',
       description: 'Fair work opportunities and equal wages.',
       icon: 'briefcase',
       color: '#FAF7F0',
@@ -199,10 +199,10 @@ const womensRightsContent: RightDetailsContent = {
     { id: 'awareness', title: 'Awareness Campaigns', icon: 'megaphone' },
     {
       id: 'legal-support',
-      title: 'Legal Support & Counselling',
+      title: 'Legal Support and Counselling',
       icon: 'users',
     },
-    { id: 'workshops', title: 'Workshops & Training', icon: 'graduation-cap' },
+    { id: 'workshops', title: 'Workshops and Training', icon: 'graduation-cap' },
     { id: 'community', title: 'Community Initiatives', icon: 'users' },
   ],
   resources: [
@@ -246,7 +246,7 @@ const womensRightsContent: RightDetailsContent = {
     },
     {
       id: 'property-inheritance',
-      title: 'Property & Inheritance',
+      title: 'Property and Inheritance',
       description: 'Right to own, inherit and manage property.',
       icon: 'home',
       color: '#FFF9E6',

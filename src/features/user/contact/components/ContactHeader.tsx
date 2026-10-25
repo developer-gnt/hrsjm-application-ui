@@ -20,6 +20,7 @@ export const ContactHeader: React.FC<ContactHeaderProps> = ({
 }) => {
   return (
     <HomeHeader
+      activeNav="contact"
       onBack={onBack}
       onPressNotifications={onPressNotifications}
       onPressProfile={onPressProfile}

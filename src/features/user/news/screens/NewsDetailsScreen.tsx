@@ -126,7 +126,17 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <HomeHeader onBack={handleBack} />
+      <HomeHeader
+        onBack={handleBack}
+        activeNav="news"
+        onNavigateNav={(id: string) => {
+          if (id === 'home') onOpenHome?.();
+          else if (id === 'about') onOpenAbout?.();
+          else if (id === 'rights') onOpenRights?.();
+          else if (id === 'events') onOpenEvents?.();
+          else if (id === 'contact') onOpenContact?.();
+        }}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}

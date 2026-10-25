@@ -12,6 +12,7 @@ import {
   AdminColors,
   BorderRadius,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon, ImageSlot } from '../../components';
 import type { HomeEvent } from '../types/home.types';
@@ -127,27 +128,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dateDay: {
+    fontFamily: UserFontFamilies.sans,
     fontSize: 10,
     lineHeight: 12,
     fontWeight: '700',
-    color: AdminColors.primaryDark,
+    color: '#06294D',
   },
   dateMonth: {
+    fontFamily: UserFontFamilies.sans,
     fontSize: 7,
     lineHeight: 8,
-    fontWeight: '600',
+    fontWeight: '700',
     letterSpacing: 0.6,
-    color: AdminColors.textSecondary,
+    color: '#475569',
   },
   body: {
     padding: 5,
   },
   title: {
-    fontSize: 10,
-    lineHeight: 12,
-    fontWeight: '600',
-    color: AdminColors.primaryDark,
-    minHeight: 25,
+    fontFamily: UserFontFamilies.sans,
+    fontSize: 10.5,
+    lineHeight: 13,
+    fontWeight: '700',
+    color: '#06294D',
+    minHeight: 26,
   },
   footer: {
     flexDirection: 'row',
@@ -162,9 +166,11 @@ const styles = StyleSheet.create({
   },
   locationText: {
     flex: 1,
-    fontSize: 7,
-    lineHeight: 9,
-    color: AdminColors.textSecondary,
+    fontFamily: UserFontFamilies.sans,
+    fontSize: 7.5,
+    lineHeight: 9.5,
+    fontWeight: '500',
+    color: '#64748B',
     marginLeft: 4,
   },
   arrow: {

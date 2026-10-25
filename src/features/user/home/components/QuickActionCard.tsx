@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AdminColors, BorderRadius, Spacing } from '../../../../core/theme';
+import { AdminColors, BorderRadius, Spacing, UserFontFamilies } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import type { HomeQuickAction } from '../types/home.types';
 
@@ -125,10 +125,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
+    fontFamily: UserFontFamilies.sans,
     fontSize: 11,
     lineHeight: 14,
     fontWeight: '600',
-    color: AdminColors.textPrimary,
+    color: '#06294D',
     textAlign: 'center',
     marginTop: 6,
   },

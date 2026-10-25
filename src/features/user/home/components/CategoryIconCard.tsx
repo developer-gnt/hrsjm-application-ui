@@ -5,6 +5,7 @@ import {
   BorderRadius,
   Shadows,
   Spacing,
+  UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import type { RightsCategory } from '../types/home.types';
@@ -45,9 +46,12 @@ const REFERENCE_LABELS: Record<string, string> = {
   'Right to Education': 'Right to\nEducation',
   "Children's Rights": "Children's\nRights",
   'Awareness Campaigns': 'Awareness\nCampaigns',
-  'Workshops & Training': 'Workshops\n& Training',
-  'Research & Education': 'Research &\nEducation',
-  'Research & Rights Education': 'Research &\nEducation',
+  'Workshops & Training': 'Workshops\nand Training',
+  'Workshops and Training': 'Workshops\nand Training',
+  'Research & Education': 'Research and\nEducation',
+  'Research and Education': 'Research and\nEducation',
+  'Research & Rights Education': 'Research and\nEducation',
+  'Research and Rights Education': 'Research and\nEducation',
   'Community Activities': 'Community\nActivities',
 };
 
@@ -104,10 +108,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
+    fontFamily: UserFontFamilies.sans,
     fontSize: 10.5,
     lineHeight: 13.5,
     fontWeight: '600',
-    color: AdminColors.textPrimary,
+    color: '#06294D',
     textAlign: 'center',
     marginTop: 6,
   },
