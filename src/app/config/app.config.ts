@@ -5,7 +5,7 @@
 export type AppEnvironment = 'local' | 'production';
 
 // Switch between 'local' and 'production' here:
-export const CURRENT_ENV: AppEnvironment = 'local';
+export const CURRENT_ENV: AppEnvironment = 'production';
 
 const API_BASE_URLS: Record<AppEnvironment, string> = {
   // Local development backend
