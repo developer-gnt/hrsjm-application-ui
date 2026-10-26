@@ -53,3 +53,77 @@ export function matchesSearch(
     (ticket.user?.full_name ?? '').toLowerCase().includes(trimmed)
   );
 }
+
+export type TicketSourceType = 'website' | 'web' | 'app';
+
+export interface SourceMeta {
+  label: string;
+  shortLabel: string;
+  icon: string;
+  bg: string;
+  text: string;
+  border: string;
+}
+
+export const SOURCE_CONFIG: Record<TicketSourceType, SourceMeta> = {
+  website: {
+    label: 'Website',
+    shortLabel: 'Website',
+    icon: 'globe',
+    bg: '#EFF6FF',
+    text: '#1D4ED8',
+    border: '#BFDBFE',
+  },
+  app: {
+    label: 'Application',
+    shortLabel: 'App',
+    icon: 'smartphone',
+    bg: '#F0FDF4',
+    text: '#15803D',
+    border: '#BBF7D0',
+  },
+  web: {
+    label: 'Web App',
+    shortLabel: 'Web',
+    icon: 'laptop',
+    bg: '#FAF5FF',
+    text: '#7E22CE',
+    border: '#E9D5FF',
+  },
+};
+
+export function resolveTicketSource(ticket: {
+  source?: string;
+  description?: string;
+  subject?: string;
+}): TicketSourceType {
+  if (ticket.source) {
+    const s = ticket.source.toLowerCase().trim();
+    if (s.includes('site') || s === 'website') return 'website';
+    if (s === 'web' || s.includes('web app')) return 'web';
+    if (s === 'app' || s.includes('mobile')) return 'app';
+  }
+  const desc = ticket.description || '';
+  if (
+    desc.includes('Source: Website') ||
+    desc.includes('[Source: Website]') ||
+    desc.includes('Complainant Information:\n- Full Name:')
+  ) {
+    return 'website';
+  }
+  if (
+    desc.includes('Source: Web App') ||
+    desc.includes('Source: Web') ||
+    desc.includes('[Source: Web]')
+  ) {
+    return 'web';
+  }
+  if (
+    desc.includes('Source: App') ||
+    desc.includes('Source: Mobile App') ||
+    desc.includes('[Source: App]')
+  ) {
+    return 'app';
+  }
+  return 'app';
+}

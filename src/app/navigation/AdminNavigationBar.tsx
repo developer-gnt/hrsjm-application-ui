@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { CommonActions } from '@react-navigation/native';
 import type {
   BottomTabBarProps,
   BottomTabNavigationProp,
@@ -145,9 +146,22 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
 
           if (tabDef.name === AppRoutes.ADMIN_MORE_TAB) {
             // Tapping More always displays the Settings / More Menu options screen
-            navigation.navigate(AppRoutes.ADMIN_MORE_TAB, {
-              screen: 'MoreMenu',
-            } as any);
+            (navigation as any).dispatch(
+              CommonActions.reset({
+                index: state.routes.findIndex(r => r.name === AppRoutes.ADMIN_MORE_TAB),
+                routes: state.routes.map(r =>
+                  r.name === AppRoutes.ADMIN_MORE_TAB
+                    ? {
+                        name: AppRoutes.ADMIN_MORE_TAB,
+                        state: {
+                          routes: [{ name: 'MoreMenu' }],
+                          index: 0,
+                        },
+                      }
+                    : r,
+                ),
+              } as any),
+            );
             return;
           }
 
@@ -213,12 +227,25 @@ export const AdminNavigationBar: React.FC = () => {
           name={tab.name}
           component={tab.component}
           listeners={({ navigation }) => ({
-            tabPress: () => {
+            tabPress: (e) => {
               if (tab.name === AppRoutes.ADMIN_MORE_TAB) {
-                // When More tab is pressed, ensure it resets and navigates to MoreMenu/Settings
-                (navigation as any).navigate(AppRoutes.ADMIN_MORE_TAB, {
-                  screen: 'MoreMenu',
-                });
+                e.preventDefault();
+                (navigation as any).dispatch(
+                  CommonActions.reset({
+                    index: TAB_DEFINITIONS.findIndex(t => t.name === AppRoutes.ADMIN_MORE_TAB),
+                    routes: TAB_DEFINITIONS.map(t =>
+                      t.name === AppRoutes.ADMIN_MORE_TAB
+                        ? {
+                            name: AppRoutes.ADMIN_MORE_TAB,
+                            state: {
+                              routes: [{ name: 'MoreMenu' }],
+                              index: 0,
+                            },
+                          }
+                        : { name: t.name },
+                    ),
+                  } as any),
+                );
               }
             },
           })}

@@ -122,8 +122,8 @@ export const SETTING_SECTIONS: SettingSection[] = [
       },
       {
         icon: '📥',
-        title: 'Income Receipts',
-        description: 'Manual receipt entries against income accounts.',
+        title: 'Income',
+        description: 'Review and manage all incoming revenue transactions.',
         route: AppRoutes.RECEIPT_VOUCHERS,
       },
       {

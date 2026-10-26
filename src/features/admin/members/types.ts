@@ -1,7 +1,7 @@
 import type { ImageSourcePropType } from 'react-native';
 
 /** Member lifecycle status shown as the row pill. */
-export type MemberStatus = 'ACTIVE' | 'EXPIRING_SOON' | 'INACTIVE';
+export type MemberStatus = 'ACTIVE' | 'EXPIRING_SOON' | 'INACTIVE' | 'PENDING';
 
 export type MemberFilterTab = 'ALL' | MemberStatus;
 
@@ -35,4 +35,5 @@ export interface MemberStats {
   active: number;
   expiringSoon: number;
   inactive: number;
+  pending?: number;
 }

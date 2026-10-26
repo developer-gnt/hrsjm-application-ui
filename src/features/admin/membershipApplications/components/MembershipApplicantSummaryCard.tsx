@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { BorderRadius, Spacing } from '../../../../core';
 import { MembershipApplicationItem } from '../types/membershipApplications.types';
+import { resolveUploadedFileUri } from '../services/uploadedDocumentsCache';
 
 interface MembershipApplicantSummaryCardProps {
   application: MembershipApplicationItem;
@@ -22,6 +23,16 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
     }
     return (name.slice(0, 2) || 'NA').toUpperCase();
   };
+
+  const photoDoc = application.documents?.find(
+    doc => (doc.title || doc.fileName || doc.id || '').toLowerCase().includes('photo')
+  );
+  const resolvedAvatar =
+    (application.avatarUrl ? resolveUploadedFileUri(undefined, application.avatarUrl) : undefined) ||
+    (photoDoc?.uri ? resolveUploadedFileUri(photoDoc.fileName, photoDoc.uri) : undefined) ||
+    resolveUploadedFileUri(photoDoc?.fileName) ||
+    resolveUploadedFileUri(application.applicantName) ||
+    undefined;
 
   const renderStatusBadge = () => {
     switch (application.status) {
@@ -58,9 +69,9 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
       <View style={styles.cardRow}>
         {/* Left: Avatar */}
         <View style={styles.avatarContainer}>
-          {application.avatarUrl ? (
+          {resolvedAvatar ? (
             <Image
-              source={{ uri: application.avatarUrl }}
+              source={{ uri: resolvedAvatar }}
               style={styles.avatarImage}
             />
           ) : (

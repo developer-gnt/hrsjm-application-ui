@@ -71,7 +71,7 @@ describe('Membership Documents Tab & Store Integration', () => {
     expect(allText).toContain('passport_photo_mubasshir.jpg');
   });
 
-  it('provides fallback KYC documents when application documents array was empty', () => {
+  it('renders clean empty state when application documents array is empty (no fake mock docs)', () => {
     const emptyDocsApp: MembershipApplicationItem = {
       ...sampleApp,
       documents: [],
@@ -91,9 +91,8 @@ describe('Membership Documents Tab & Store Integration', () => {
       .join(' ');
 
     expect(allText).toContain('Submitted Documents');
-    expect(allText).toContain('Aadhaar Card (Identity Proof)');
-    expect(allText).toContain('Address Proof (Residence Verification)');
-    expect(allText).toContain('Passport Size Photograph');
+    expect(allText).toContain('No documents attached to this application');
+    expect(allText).not.toContain('Aadhaar Card (Identity Proof)');
   });
 
   it('triggers document viewer modal when View button is clicked', () => {

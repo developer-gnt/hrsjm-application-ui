@@ -76,8 +76,10 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Phase 4: Terms & Conditions state
-  const [termsAccepted, setTermsAccepted] = useState(true);
+  // Phase 4: Consents state (Terms, Privacy, Pledge)
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [pledgeAccepted, setPledgeAccepted] = useState(false);
 
   // Password requirement validations
   const hasMinLength = password.length >= 8;
@@ -112,6 +114,13 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
     }
   };
 
+  const handlePledgePress = () => {
+    Alert.alert(
+      'HRSJM Member Pledge',
+      'I solemnly pledge to uphold fundamental human rights, promote social justice, observe the Constitution and Code of Conduct of HRSJM, maintain ethical integrity, and certify that all details submitted are accurate.'
+    );
+  };
+
   const handleContinue = () => {
     if (!isPasswordValid) {
       Alert.alert(
@@ -134,7 +143,23 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
     if (!termsAccepted) {
       Alert.alert(
         'Terms Required',
-        'Please agree to the Terms & Conditions and Privacy Policy of HRSJM.'
+        'Please agree to the Terms & Conditions of HRSJM.'
+      );
+      return;
+    }
+
+    if (!privacyAccepted) {
+      Alert.alert(
+        'Privacy Policy Required',
+        'Please agree to the Privacy Policy of HRSJM.'
+      );
+      return;
+    }
+
+    if (!pledgeAccepted) {
+      Alert.alert(
+        'Pledge Required',
+        'Please solemnly agree to the HRSJM Member Pledge.'
       );
       return;
     }
@@ -488,37 +513,94 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
               <Text style={styles.errorFeedbackText}>Passwords do not match.</Text>
             )}
 
-            {/* 5. Terms & Conditions Agreement Row */}
-            <View style={styles.termsRow}>
-              <TouchableOpacity
-                style={[
-                  styles.checkbox,
-                  termsAccepted && styles.checkboxActive,
-                ]}
-                onPress={() => setTermsAccepted(!termsAccepted)}
-                activeOpacity={0.8}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: termsAccepted }}
-                accessibilityLabel="I agree to Terms & Conditions and Privacy Policy of HRSJM"
-              >
-                {termsAccepted && (
-                  <View style={styles.checkboxCheckmark}>
-                    <View style={styles.checkboxCheckmarkShort} />
-                    <View style={styles.checkboxCheckmarkLong} />
-                  </View>
-                )}
-              </TouchableOpacity>
-              <Text style={styles.termsText}>
-                I agree to the{' '}
-                <Text style={styles.termsLink} onPress={handleTermsPress}>
-                  Terms &amp; Conditions
-                </Text>{' '}
-                and{' '}
-                <Text style={styles.termsLink} onPress={handlePrivacyPress}>
-                  Privacy Policy
-                </Text>{' '}
-                of HRSJM.
-              </Text>
+            {/* 5. Terms, Privacy & Pledge Consents */}
+            <View style={{ gap: 12, marginTop: 16 }}>
+              {/* Terms & Conditions */}
+              <View style={styles.termsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.checkbox,
+                    termsAccepted && styles.checkboxActive,
+                  ]}
+                  onPress={() => setTermsAccepted(!termsAccepted)}
+                  activeOpacity={0.8}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: termsAccepted }}
+                  accessibilityLabel="I agree to Terms & Conditions of HRSJM"
+                >
+                  {termsAccepted && (
+                    <View style={styles.checkboxCheckmark}>
+                      <View style={styles.checkboxCheckmarkShort} />
+                      <View style={styles.checkboxCheckmarkLong} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <Text style={styles.termsText}>
+                  I agree to the{' '}
+                  <Text style={styles.termsLink} onPress={handleTermsPress}>
+                    Terms &amp; Conditions
+                  </Text>{' '}
+                  of HRSJM. *
+                </Text>
+              </View>
+
+              {/* Privacy Policy */}
+              <View style={styles.termsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.checkbox,
+                    privacyAccepted && styles.checkboxActive,
+                  ]}
+                  onPress={() => setPrivacyAccepted(!privacyAccepted)}
+                  activeOpacity={0.8}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: privacyAccepted }}
+                  accessibilityLabel="I accept the Privacy Policy of HRSJM"
+                >
+                  {privacyAccepted && (
+                    <View style={styles.checkboxCheckmark}>
+                      <View style={styles.checkboxCheckmarkShort} />
+                      <View style={styles.checkboxCheckmarkLong} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <Text style={styles.termsText}>
+                  I accept the{' '}
+                  <Text style={styles.termsLink} onPress={handlePrivacyPress}>
+                    Privacy Policy
+                  </Text>{' '}
+                  and consent to data processing for membership. *
+                </Text>
+              </View>
+
+              {/* Member Pledge */}
+              <View style={styles.termsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.checkbox,
+                    pledgeAccepted && styles.checkboxActive,
+                  ]}
+                  onPress={() => setPledgeAccepted(!pledgeAccepted)}
+                  activeOpacity={0.8}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: pledgeAccepted }}
+                  accessibilityLabel="I take the HRSJM Member Pledge"
+                >
+                  {pledgeAccepted && (
+                    <View style={styles.checkboxCheckmark}>
+                      <View style={styles.checkboxCheckmarkShort} />
+                      <View style={styles.checkboxCheckmarkLong} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <Text style={styles.termsText}>
+                  I solemnly take the{' '}
+                  <Text style={styles.termsLink} onPress={handlePledgePress}>
+                    HRSJM Member Pledge
+                  </Text>{' '}
+                  to defend human rights and uphold the NGO&apos;s Code of Conduct. *
+                </Text>
+              </View>
             </View>
 
             {/* 6. Continue Button */}

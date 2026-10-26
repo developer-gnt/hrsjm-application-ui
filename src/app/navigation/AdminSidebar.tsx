@@ -75,7 +75,7 @@ export const ADMIN_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[
     items: [
       // { id: 'payments', icon: '💰', title: 'Payment Verification', target: AppRoutes.PAYMENT_VERIFICATION },
       { id: 'expenses', icon: '🧾', title: 'Expenses', target: AppRoutes.EXPENSE_VOUCHERS },
-      { id: 'receipts', icon: '📥', title: 'Income Receipts', target: AppRoutes.RECEIPT_VOUCHERS },
+      { id: 'receipts', icon: '📥', title: 'Income', target: AppRoutes.RECEIPT_VOUCHERS },
       { id: 'accounting', icon: '📚', title: 'Accounting & Ledger', target: AppRoutes.ACCOUNTING },
       { id: 'reports', icon: '📈', title: 'Financial Reports', target: AppRoutes.REPORTS },
       { id: 'donations', icon: '🎁', title: 'Donations Management', target: AppRoutes.DONATIONS },

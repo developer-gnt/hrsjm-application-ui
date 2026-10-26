@@ -8,6 +8,7 @@ import { formatDate } from '../../../../core/utils/format';
 import { shortTicketId } from '../types/support.types';
 import type { SupportTicket } from '../types/support.types';
 import { TicketStatusBadge } from './TicketStatusBadge';
+import { resolveTicketSource, SOURCE_CONFIG } from '../support.utils';
 
 interface TicketCardProps {
   ticket: SupportTicket;
@@ -23,16 +24,22 @@ function TicketCardBase({ ticket, onPress }: TicketCardProps) {
     ticket.updated_at &&
     new Date(ticket.updated_at).getTime() - new Date(ticket.created_at).getTime() > 60000;
 
+  const source = resolveTicketSource(ticket);
+  const sourceMeta = SOURCE_CONFIG[source];
+
   return (
     <AppCard style={styles.card}>
       <TouchableOpacity onPress={onPress} activeOpacity={0.88}>
-        {/* Top Header: Avatar, Reporter & Status */}
+        {/* Top Header: Avatar, Reporter, Status & Metadata */}
         <View style={styles.topRow}>
           <AppAvatar name={ticket.user?.full_name ?? '—'} size={42} />
           <View style={styles.nameColumn}>
-            <Text style={styles.reporter} numberOfLines={1}>
-              {ticket.user?.full_name ?? 'Unknown user'}
-            </Text>
+            <View style={styles.nameStatusRow}>
+              <Text style={styles.reporter} numberOfLines={1}>
+                {ticket.user?.full_name ?? 'Unknown user'}
+              </Text>
+              <TicketStatusBadge status={ticket.status} />
+            </View>
             <View style={styles.subInfoRow}>
               <View style={styles.idBadge}>
                 <Text style={styles.idBadgeText}>
@@ -40,13 +47,31 @@ function TicketCardBase({ ticket, onPress }: TicketCardProps) {
                 </Text>
               </View>
               <View style={styles.categoryBadge}>
-                <Text style={styles.categoryBadgeText} numberOfLines={1}>
+                <Text style={styles.categoryBadgeText} numberOfLines={1} ellipsizeMode="tail">
                   {category}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.sourceBadge,
+                  {
+                    backgroundColor: sourceMeta.bg,
+                    borderColor: sourceMeta.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sourceBadgeText,
+                    { color: sourceMeta.text },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {sourceMeta.shortLabel}
                 </Text>
               </View>
             </View>
           </View>
-          <TicketStatusBadge status={ticket.status} />
         </View>
 
         {/* Subject & Description Snippet */}
@@ -94,28 +119,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
     ...Shadows.card,
   },
   topRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: Spacing.sm,
   },
   nameColumn: {
     flex: 1,
-    marginHorizontal: Spacing.sm,
+    marginLeft: Spacing.sm,
+    minWidth: 0,
+  },
+  nameStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   reporter: {
     ...Typography.sectionHeader,
     fontSize: 15.5,
     fontWeight: '700',
     color: '#0F2C59',
+    flex: 1,
   },
   subInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 6,
-    marginTop: 3,
+    marginTop: 4,
   },
   idBadge: {
     backgroundColor: '#F1F5F9',
@@ -145,11 +180,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 1.5,
     borderRadius: 6,
+    maxWidth: 135,
   },
   categoryBadgeText: {
     fontSize: 10,
     fontWeight: '700',
     color: '#4338CA',
+  },
+  sourceBadge: {
+    borderWidth: 1,
+    paddingHorizontal: 7,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+  },
+  sourceBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   subjectContainer: {
     backgroundColor: '#F8FAFC',

@@ -18,6 +18,7 @@ export interface SupportTicket {
   resolved_at: string | null;
   created_at: string;
   updated_at: string;
+  source?: 'website' | 'web' | 'app';
 }
 
 export interface SupportTicketListData {
@@ -30,12 +31,14 @@ export interface CreateTicketBody {
   description: string;
   category?: string;
   priority?: 'NORMAL' | 'HIGH' | 'URGENT';
+  source?: string;
 }
 
 export interface SupportFilterState {
   status: string; // 'ALL' | TicketStatus
   category: string; // 'ALL' | specific category
   dateRange: string; // 'ALL' | 'TODAY' | '7_DAYS' | 'THIS_MONTH' | '90_DAYS'
+  source?: string; // 'ALL' | 'website' | 'web' | 'app'
   fromDate?: string;
   toDate?: string;
 }
@@ -43,6 +46,7 @@ export interface SupportFilterState {
 export interface SupportTicketQuery {
   status?: TicketStatus;
   category?: string;
+  source?: string;
   from_date?: string;
   to_date?: string;
   page?: number;

@@ -169,7 +169,7 @@ describe('Complaints & Support Page (Master Prompt Implementation)', () => {
     const root = renderer!.root;
     expect(root.findByProps({ children: 'Donation' })).toBeDefined();
     expect(root.findByProps({ children: 'Receipt issue' })).toBeDefined();
-    expect(root.findByProps({ children: '#ABC1234D' })).toBeDefined();
+    expect(root.findByProps({ children: 'HRSJM-CMP-ABC1234D' })).toBeDefined();
     expect(root.findByProps({ children: 'Amit Kumar' })).toBeDefined();
     expect(root.findByProps({ children: 'View Details →' })).toBeDefined();
 

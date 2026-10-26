@@ -531,9 +531,6 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
 
     const sanitizeUri = (uri?: string) => {
       if (!uri) return undefined;
-      if (uri.startsWith('data:') && uri.length > 300) {
-        return undefined;
-      }
       return uri;
     };
 
@@ -664,7 +661,6 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
 
     const sanitizeUri = (uri?: string) => {
       if (!uri) return undefined;
-      if (uri.startsWith('data:') && uri.length > 300) return undefined;
       return uri;
     };
 

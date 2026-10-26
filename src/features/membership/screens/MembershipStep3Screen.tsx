@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -89,6 +90,11 @@ export function MembershipStep3Screen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [paymentPayload, setPaymentPayload] = useState<PaymentPayload | null>(null);
+
+  // Declarations & Consents state
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [agreePledge, setAgreePledge] = useState(false);
 
   const postFeeAmount = selectedPost?.feeAmount || 800;
   const postTitle = selectedPost?.postName || selectedMembershipType || 'District Active Member';
@@ -247,8 +253,24 @@ export function MembershipStep3Screen() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateConsents = () => {
+    if (!agreeTerms) {
+      Alert.alert('Terms & Conditions Required', 'Please accept the Terms & Conditions of HRSJM.');
+      return false;
+    }
+    if (!agreePrivacy) {
+      Alert.alert('Privacy Policy Required', 'Please accept the Privacy Policy of HRSJM.');
+      return false;
+    }
+    if (!agreePledge) {
+      Alert.alert('Member Pledge Required', 'Please solemnly agree to the HRSJM Member Pledge to complete your application.');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async () => {
-    if (!validateUploads()) return;
+    if (!validateUploads() || !validateConsents()) return;
 
     setSubmitting(true);
     try {
@@ -272,7 +294,7 @@ export function MembershipStep3Screen() {
   };
 
   const handleProceedToPayment = () => {
-    if (!validateUploads()) return;
+    if (!validateUploads() || !validateConsents()) return;
 
     setPaymentPayload({
       purpose: 'membership',
@@ -409,6 +431,78 @@ export function MembershipStep3Screen() {
             onRemove={() => handleRemove('photo')}
             onPreview={() => setPreviewDoc(documents.photograph || null)}
           />
+        </View>
+
+        {/* Declarations & Consents Card */}
+        <View style={styles.consentCard}>
+          <View style={styles.consentHeader}>
+            <View style={styles.feeIconCircle}>
+              <Icon name="shield-check" size={20} color={colors.primary} strokeWidth={2.2} />
+            </View>
+            <View style={styles.feeHeaderText}>
+              <Text style={styles.feeTitle}>Applicant Declarations &amp; Consents</Text>
+              <Text style={styles.feeCategory}>Mandatory legal requirements for membership</Text>
+            </View>
+          </View>
+
+          <View style={styles.feeDivider} />
+
+          {/* 1. Terms & Conditions */}
+          <TouchableOpacity
+            style={styles.consentRow}
+            onPress={() => setAgreeTerms(!agreeTerms)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.consentBox, agreeTerms && styles.consentBoxChecked]}>
+              {agreeTerms && <Icon name="check" size={13} color={colors.white} strokeWidth={3} />}
+            </View>
+            <View style={styles.consentTextWrap}>
+              <Text style={styles.consentTitle}>
+                I accept the <Text style={styles.consentLinkText}>Terms &amp; Conditions</Text> *
+              </Text>
+              <Text style={styles.consentSubtitle}>
+                I agree to abide by the constitution, bylaws, and aims of HRSJM.
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* 2. Privacy Policy */}
+          <TouchableOpacity
+            style={styles.consentRow}
+            onPress={() => setAgreePrivacy(!agreePrivacy)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.consentBox, agreePrivacy && styles.consentBoxChecked]}>
+              {agreePrivacy && <Icon name="check" size={13} color={colors.white} strokeWidth={3} />}
+            </View>
+            <View style={styles.consentTextWrap}>
+              <Text style={styles.consentTitle}>
+                I accept the <Text style={styles.consentLinkText}>Privacy Policy</Text> *
+              </Text>
+              <Text style={styles.consentSubtitle}>
+                I consent to the collection, verification, and processing of my uploaded documents.
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* 3. Member Pledge */}
+          <TouchableOpacity
+            style={styles.consentRow}
+            onPress={() => setAgreePledge(!agreePledge)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.consentBox, agreePledge && styles.consentBoxChecked]}>
+              {agreePledge && <Icon name="check" size={13} color={colors.white} strokeWidth={3} />}
+            </View>
+            <View style={styles.consentTextWrap}>
+              <Text style={styles.consentTitle}>
+                I take the <Text style={styles.consentLinkText}>HRSJM Member Pledge</Text> *
+              </Text>
+              <Text style={styles.consentSubtitle}>
+                I solemnly swear to champion human rights, uphold ethics, and affirm my details are genuine.
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Membership Registration Fee & Benefits Summary */}
@@ -719,6 +813,63 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#64748B',
     marginTop: 2,
+  },
+  consentCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: spacing.lg,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  consentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 14,
+  },
+  consentBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: '#94A3B8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+    backgroundColor: '#FFFFFF',
+  },
+  consentBoxChecked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  consentTextWrap: {
+    flex: 1,
+  },
+  consentTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  consentLinkText: {
+    textDecorationLine: 'underline',
+    color: '#D97706',
+  },
+  consentSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+    lineHeight: 16,
   },
   uploadCardsList: {
     gap: spacing.md,
