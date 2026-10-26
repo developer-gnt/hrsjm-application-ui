@@ -32,6 +32,24 @@ export function MembershipSubmittedScreen() {
     applications[0]?.applicationId ||
     'APP20260914023';
 
+  // Strict payment validation check:
+  // Application successful is only visible when payment has been completed.
+  const targetApp =
+    applications.find(a => a.applicationId === applicationId || a.id === applicationId) ||
+    activeApplication;
+
+  const isStoredPaymentDone =
+    typeof window !== 'undefined' && window.sessionStorage
+      ? window.sessionStorage.getItem(`hrsjm_payment_done_${applicationId}`) === 'true'
+      : false;
+
+  const isPaymentDone =
+    route.params?.paymentCompleted === true ||
+    Boolean(route.params?.paymentId) ||
+    Boolean(route.params?.receipt) ||
+    targetApp?.paymentStatus === 'Completed' ||
+    isStoredPaymentDone;
+
   const handleCopyId = () => {
     setCopied(true);
     setTimeout(() => {
@@ -41,6 +59,10 @@ export function MembershipSubmittedScreen() {
 
   const handleGoToMyApplication = () => {
     navigation.navigate('MyApplication' as any);
+  };
+
+  const handleCompletePayment = () => {
+    navigation.navigate('MembershipStep3Documents' as any);
   };
 
   const handleBackToHome = () => {
@@ -69,79 +91,138 @@ export function MembershipSubmittedScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        {/* Success Illustration Badge */}
-        <View style={styles.illustrationContainer}>
-          <View style={styles.docGraphicBox}>
-            <Icon name="file-text" size={48} color={colors.primary} strokeWidth={1.8} />
-            <View style={styles.checkBadge}>
-              <Icon name="check" size={14} color={colors.white} strokeWidth={3} />
+        {!isPaymentDone ? (
+          /* Payment Required State - Shown when payment has NOT been done */
+          <>
+            <View style={styles.illustrationContainer}>
+              <View style={[styles.docGraphicBox, styles.paymentRequiredGraphicBox]}>
+                <Icon name="lock" size={44} color="#D97706" strokeWidth={1.9} />
+                <View style={[styles.checkBadge, styles.warningBadge]}>
+                  <Icon name="clock" size={14} color={colors.white} strokeWidth={2.8} />
+                </View>
+              </View>
             </View>
-          </View>
 
-          {/* Confetti dot accents */}
-          <View style={[styles.sparkle, styles.sparkle1]} />
-          <View style={[styles.sparkle, styles.sparkle2]} />
-          <View style={[styles.sparkle, styles.sparkle3]} />
-        </View>
-
-        {/* Headline & Confirmation Message */}
-        <View style={styles.messageSection}>
-          <Text style={styles.title}>Application Submitted!</Text>
-          <Text style={styles.subtitle}>
-            Thank you for applying for membership.{'\n'}Your application has been submitted successfully.
-          </Text>
-        </View>
-
-        {/* Application ID Card */}
-        <View style={styles.idCard}>
-          <Text style={styles.idCardLabel}>Application ID</Text>
-
-          <TouchableOpacity
-            style={styles.idRow}
-            activeOpacity={0.7}
-            onPress={handleCopyId}
-            accessibilityRole="button"
-            accessibilityLabel={`Application ID ${applicationId}, tap to copy`}>
-            <Text style={styles.idNumber}>{applicationId}</Text>
-            <View style={styles.copyBtn}>
-              <Icon
-                name={copied ? 'check' : 'copy'}
-                size={18}
-                color={copied ? colors.active : colors.primary}
-                strokeWidth={2.2}
-              />
+            <View style={styles.messageSection}>
+              <Text style={[styles.title, styles.paymentRequiredTitle]}>Payment Required</Text>
+              <Text style={styles.subtitle}>
+                Your membership registration is incomplete.{'\n'}Payment of the registration fee is required to submit your application.
+              </Text>
             </View>
-          </TouchableOpacity>
 
-          {copied ? (
-            <Text style={styles.copiedHint}>✓ Copied to clipboard</Text>
-          ) : (
-            <Text style={styles.idHint}>
-              You can check the status of your application in the 'My Application' section.
-            </Text>
-          )}
-        </View>
+            <View style={[styles.idCard, styles.paymentRequiredCard]}>
+              <Text style={styles.idCardLabel}>Application Status</Text>
+              <View style={styles.statusPillPending}>
+                <Icon name="clock" size={14} color="#B45309" strokeWidth={2.2} />
+                <Text style={styles.statusPillPendingText}>Payment Pending</Text>
+              </View>
+              <Text style={styles.idHint}>
+                Please complete your payment to finalize your registration and receive your official member ID.
+              </Text>
+            </View>
 
-        {/* Bottom Action Buttons */}
-        <View style={styles.actionsWrap}>
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            activeOpacity={0.85}
-            onPress={handleGoToMyApplication}
-            accessibilityRole="button"
-            accessibilityLabel="Go to My Application">
-            <Text style={styles.primaryBtnText}>Go to My Application</Text>
-          </TouchableOpacity>
+            <View style={styles.actionsWrap}>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                activeOpacity={0.85}
+                onPress={handleCompletePayment}
+                accessibilityRole="button"
+                accessibilityLabel="Complete Payment Now">
+                <Text style={styles.primaryBtnText}>Complete Payment Now</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            activeOpacity={0.7}
-            onPress={handleBackToHome}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Home">
-            <Text style={styles.secondaryBtnText}>Back to Home</Text>
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity
+                style={styles.secondaryBtn}
+                activeOpacity={0.7}
+                onPress={handleBackToHome}
+                accessibilityRole="button"
+                accessibilityLabel="Back to Home">
+                <Text style={styles.secondaryBtnText}>Back to Home</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          /* Success State - ONLY visible when payment was completed */
+          <>
+            <View style={styles.illustrationContainer}>
+              <View style={styles.docGraphicBox}>
+                <Icon name="file-text" size={48} color={colors.primary} strokeWidth={1.8} />
+                <View style={styles.checkBadge}>
+                  <Icon name="check" size={14} color={colors.white} strokeWidth={3} />
+                </View>
+              </View>
+
+              {/* Confetti dot accents */}
+              <View style={[styles.sparkle, styles.sparkle1]} />
+              <View style={[styles.sparkle, styles.sparkle2]} />
+              <View style={[styles.sparkle, styles.sparkle3]} />
+            </View>
+
+            <View style={styles.messageSection}>
+              <Text style={styles.title}>Application Submitted!</Text>
+              <Text style={styles.subtitle}>
+                Thank you for applying for membership.{'\n'}Your application has been submitted successfully.
+              </Text>
+            </View>
+
+            {/* Verified Payment Status Pill */}
+            <View style={styles.verifiedPaymentPill}>
+              <Icon name="shield-check" size={15} color="#15803D" strokeWidth={2.4} />
+              <Text style={styles.verifiedPaymentText}>Registration Payment Verified</Text>
+            </View>
+
+            {/* Application ID Card */}
+            <View style={styles.idCard}>
+              <Text style={styles.idCardLabel}>Application ID</Text>
+
+              <TouchableOpacity
+                style={styles.idRow}
+                activeOpacity={0.7}
+                onPress={handleCopyId}
+                accessibilityRole="button"
+                accessibilityLabel={`Application ID ${applicationId}, tap to copy`}>
+                <Text style={styles.idNumber}>{applicationId}</Text>
+                <View style={styles.copyBtn}>
+                  <Icon
+                    name={copied ? 'check' : 'copy'}
+                    size={18}
+                    color={copied ? colors.active : colors.primary}
+                    strokeWidth={2.2}
+                  />
+                </View>
+              </TouchableOpacity>
+
+              {copied ? (
+                <Text style={styles.copiedHint}>✓ Copied to clipboard</Text>
+              ) : (
+                <Text style={styles.idHint}>
+                  You can check the status of your application in the 'My Application' section.
+                </Text>
+              )}
+            </View>
+
+            {/* Bottom Action Buttons */}
+            <View style={styles.actionsWrap}>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                activeOpacity={0.85}
+                onPress={handleGoToMyApplication}
+                accessibilityRole="button"
+                accessibilityLabel="Go to My Application">
+                <Text style={styles.primaryBtnText}>Go to My Application</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.secondaryBtn}
+                activeOpacity={0.7}
+                onPress={handleBackToHome}
+                accessibilityRole="button"
+                accessibilityLabel="Back to Home">
+                <Text style={styles.secondaryBtnText}>Back to Home</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -328,6 +409,55 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     fontWeight: '700',
     color: colors.primary,
+  },
+  paymentRequiredGraphicBox: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+  },
+  warningBadge: {
+    backgroundColor: '#D97706',
+  },
+  paymentRequiredTitle: {
+    color: '#92400E',
+  },
+  paymentRequiredCard: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+  },
+  statusPillPending: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 8,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  statusPillPendingText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#B45309',
+  },
+  verifiedPaymentPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  verifiedPaymentText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#15803D',
   },
 });
 

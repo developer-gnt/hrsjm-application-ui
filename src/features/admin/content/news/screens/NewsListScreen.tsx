@@ -428,7 +428,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.base,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.xs,
     gap: Spacing.sm,
@@ -479,14 +478,12 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     marginTop: Spacing.md,
-    paddingHorizontal: Spacing.base,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     marginTop: Spacing.md,
-    paddingHorizontal: Spacing.base,
   },
   searchBar: {
     flex: 1,
@@ -517,16 +514,15 @@ const styles = StyleSheet.create({
   },
   tabsSection: {
     marginTop: Spacing.sm,
+    marginHorizontal: -16,
   },
   skeletonList: {
-    paddingHorizontal: Spacing.base,
     paddingTop: Spacing.base,
     gap: Spacing.md,
   },
   skeletonRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    paddingHorizontal: Spacing.base + Spacing.sm,
   },
   skeletonThumb: {
     width: 48,
@@ -540,7 +536,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   listContent: {
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: 16,
     paddingBottom: Spacing.xl,
     flexGrow: 1,
   },

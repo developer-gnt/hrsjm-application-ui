@@ -193,6 +193,7 @@ const UserNewsScreenComponent: React.FC<any> = ({ navigation }) => {
 const UserProfileScreenComponent: React.FC<any> = ({ navigation }) => {
   return (
     <ProfileScreen
+      isMemberProfile={false}
       showIdCard={false}
       headerComponent={<HomeHeader />}
       onNavigate={(target) => {

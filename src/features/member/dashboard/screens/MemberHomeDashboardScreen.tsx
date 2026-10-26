@@ -320,8 +320,11 @@ export const MemberHomeDashboardScreen: React.FC<
     <View style={styles.safeArea}>
       {useAdminHeader ? (
         <AdminHeader
+          isMemberHeader={true}
           unreadCount={unreadCount}
           onPressNotifications={onOpenNotifications}
+          showDonate={true}
+          onPressDonate={onOpenDonation}
         />
       ) : (
         <HomeHeader

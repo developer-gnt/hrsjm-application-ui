@@ -73,6 +73,8 @@ export interface ProfileScreenProps {
   onJoinMembership?: () => void;
   showIdCard?: boolean;
   headerComponent?: React.ReactNode;
+  /** When true, forces member profile mode (never shows Join Membership button, shows My Status instead). */
+  isMemberProfile?: boolean;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
@@ -86,6 +88,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onJoinMembership,
   showIdCard,
   headerComponent,
+  isMemberProfile,
 }) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -176,14 +179,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const isMember =
     (authRoleNames.includes('MEMBER') || roleLower === 'member') && isApproved;
 
-  const isPlainUser =
-    authRoleNames.includes('USER') ||
-    roleLower === 'user' ||
-    (!isAdmin && !isSeeker && !isApproved);
+  const isMemberContext = Boolean(
+    isMemberProfile !== undefined
+      ? isMemberProfile
+      : (roleLower === 'member' || authRoleNames.includes('MEMBER'))
+  );
 
-  // ID Card is available ONLY for Approved Members, Admins, and Donation Seekers.
+  const isPlainUser =
+    !isMemberContext &&
+    (authRoleNames.includes('USER') ||
+      roleLower === 'user' ||
+      (!isAdmin && !isSeeker && !isApproved));
+
+  // ID Card is available for Approved Members, Admins, Donation Seekers, or Member Profile context.
   // Standard/general users and applicants whose membership is not approved NEVER have an ID card.
-  const isAllowedRoleForIdCard = (isMember || isAdmin || isSeeker) && !isPlainUser;
+  const isAllowedRoleForIdCard = (isMember || isAdmin || isSeeker || isMemberContext) && !isPlainUser;
   const canShowIdCard = showIdCard !== undefined ? (showIdCard && !isPlainUser) : isAllowedRoleForIdCard;
 
   const handleMemberDetailsAction = () => {
@@ -243,6 +253,28 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     (membershipCtx.applications[0]?.status) ||
     'Applied';
 
+  const effectiveMemberId =
+    profile.memberId ||
+    membershipCtx.activeApplication?.applicationId ||
+    (membershipCtx.applications && membershipCtx.applications[0]?.applicationId) ||
+    'HRSJM-47611';
+
+  const effectiveMembershipType =
+    profile.membershipType ||
+    membershipCtx.activeApplication?.membershipType ||
+    'Individual Member';
+
+  const cardProfile: AdminProfile = {
+    ...profile,
+    fullName: profile.fullName || profile.accountName || 'Member',
+    memberId: effectiveMemberId,
+    adminId: profile.adminId || effectiveMemberId,
+    membershipType: effectiveMembershipType,
+    accountStatus: profile.accountStatus || 'Active',
+    validTill: profile.validTill || '31 Dec 2027',
+    memberSince: profile.memberSince || '12 Oct 2024',
+  };
+
   const rejectionReason =
     profile.rejectionReason ||
     membershipCtx.activeApplication?.rejectionReason ||
@@ -264,7 +296,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   };
 
   // Inline ID card keeps the reference proportions on narrow screens.
-  const cardWidth = Math.min(windowWidth - 2 * Spacing.lg - 2 * Spacing.md, 340);
+  const cardWidth = Math.min(windowWidth - 2 * Spacing.lg - 2 * Spacing.base, 336);
 
   return (
     <View style={styles.screen}>
@@ -282,7 +314,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
-          !canShowIdCard && {
+          (!canShowIdCard || isMemberContext) && {
             paddingBottom: Math.max(insets.bottom + Spacing.lg, Spacing.xl),
           },
         ]}
@@ -326,7 +358,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </View>
             ) : null}
           </View>
-          {canShowIdCard ? (
+          {isMemberContext ? null : canShowIdCard ? (
             <TouchableOpacity
               style={styles.myIdButton}
               onPress={handleViewIdCard}
@@ -520,8 +552,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </ProfileSectionCard>
         )}
 
-        {/* Application Status Card for User who has applied */}
-        {hasApplied && (!canShowIdCard || currentAppStatus !== 'Approved') ? (
+        {/* Application Status Card for User who has applied or in member profile */}
+        {(hasApplied || isMemberContext) ? (
           <ProfileSectionCard
             icon={<BadgeCheckIcon size={18} color="#0F2860" />}
             title="Application Status"
@@ -539,18 +571,18 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <ProfileInfoRow
                 icon={<BuildingIcon size={16} color={AdminColors.textSecondary} />}
                 label="Application Type"
-                value={membershipCtx.activeApplication?.membershipType || profile.membershipType || 'Membership Application'}
+                value={effectiveMembershipType}
               />
               <ProfileInfoRow
                 icon={<IdCardIcon size={16} color={AdminColors.textSecondary} />}
                 label="Application ID"
-                value={membershipCtx.activeApplication?.applicationId || profile.memberId || 'APP-20261012-001'}
+                value={effectiveMemberId}
               />
               <ProfileInfoRow
                 icon={<Calendar size={16} color={AdminColors.textSecondary} />}
                 label="Status"
                 value={currentAppStatus}
-                divider={Boolean(currentAppStatus === 'Rejected')}
+                divider={isMemberContext || Boolean(currentAppStatus === 'Rejected')}
                 trailing={
                   <View
                     style={[
@@ -606,11 +638,58 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 </View>
               ) : null}
             </TouchableOpacity>
+
+            {/* Inline ID card of the member in this section */}
+            {isMemberContext ? (
+              <View style={styles.inlineIdCardSection}>
+                <View style={styles.inlineIdCardHeader}>
+                  <View style={styles.inlineIdCardHeaderLeft}>
+                    <IdCardIcon size={16} color="#0F2860" />
+                    <Text style={styles.inlineIdCardTitle}>Member ID Card</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={handleViewIdCard}
+                    style={styles.inlineIdCardViewLink}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="View full ID Card"
+                  >
+                    <Text style={styles.inlineIdCardViewText}>Full View</Text>
+                    <ChevronRight size={13} color="#0F2860" />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.92}
+                  onPress={handleViewIdCard}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open the full My ID Card page"
+                  style={styles.inlineIdCardWrapper}
+                >
+                  <MyIdCard profile={cardProfile} width={cardWidth} />
+                </TouchableOpacity>
+
+                <View style={styles.inlineDownloadWrap}>
+                  <AppButton
+                    title={
+                      busyAction === 'download' ? 'Generating PDF...' : 'Download ID Card'
+                    }
+                    variant="primary"
+                    size="sm"
+                    loading={busyAction === 'download'}
+                    disabled={busyAction !== null}
+                    icon={<DownloadIcon color={AdminColors.textOnDark} />}
+                    onPress={() => download(cardProfile)}
+                    style={styles.inlineDownloadButton}
+                  />
+                </View>
+              </View>
+            ) : null}
           </ProfileSectionCard>
         ) : null}
 
         {/* Join Membership Banner Card for User who has NOT applied */}
-        {!canShowIdCard && !hasApplied ? (
+        {!canShowIdCard && !hasApplied && !isMemberContext ? (
           <View style={[styles.sectionGap, styles.joinMembershipCard]}>
             <View style={styles.joinMembershipCardHeader}>
               <View style={styles.joinMembershipIconCircle}>
@@ -636,8 +715,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
         ) : null}
 
-        {/* My ID Card section — inline preview of the actual card (Member, Admin, Donation Seeker only) */}
-        {canShowIdCard ? (
+        {/* My ID Card section — inline preview of the actual card (Admin, Donation Seeker only when NOT in member profile) */}
+        {canShowIdCard && !isMemberContext ? (
           <View style={[styles.sectionGap, styles.idCardSection]}>
             <View style={styles.idCardSectionHeader}>
               <IdCardIcon size={18} />
@@ -657,8 +736,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         ) : null}
       </ScrollView>
 
-      {/* Download action — pinned directly above bottom (Member, Admin, Donation Seeker only) */}
-      {canShowIdCard ? (
+      {/* Download action — pinned directly above bottom (Admin, Donation Seeker only when NOT in member profile) */}
+      {canShowIdCard && !isMemberContext ? (
         <View style={[styles.downloadPanel, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           <AppButton
             title={
@@ -1037,6 +1116,56 @@ const styles = StyleSheet.create({
     ...Typography.bodyBold,
     fontSize: 12,
     color: AdminColors.primary,
+  },
+  inlineIdCardSection: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: AdminColors.border,
+  },
+  inlineIdCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  inlineIdCardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  inlineIdCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F2860',
+  },
+  inlineIdCardViewLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+  },
+  inlineIdCardViewText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0F2860',
+  },
+  inlineIdCardWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    ...Shadows.card,
+  },
+  inlineDownloadWrap: {
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  inlineDownloadButton: {
+    minHeight: 40,
+    borderRadius: BorderRadius.button,
   },
 });
 

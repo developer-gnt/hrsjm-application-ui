@@ -57,7 +57,7 @@ const STATUS_CONFIG: Record<
 
 export function MyApplicationScreen() {
   const navigation = useNavigation<NavProp>();
-  const { applications, setActiveApplication, reapply } = useMembership();
+  const { applications, setActiveApplication, reapply, removeApplication } = useMembership();
 
   const handleOpenStatus = (
     statusKey: 'applied' | 'under_review' | 'approved' | 'rejected',
@@ -123,22 +123,14 @@ export function MyApplicationScreen() {
           </Text>
         </View>
 
-
-
         {/* Applications List */}
         {applications.length > 0 ? (
           <View style={styles.listContainer}>
             {applications.map(item => {
-              const statusMeta = STATUS_CONFIG[item.status] || STATUS_CONFIG['Under Review'];
+              const statusMeta = STATUS_CONFIG[item.status] || STATUS_CONFIG.Rejected;
 
               return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.appCard}
-                  activeOpacity={0.7}
-                  onPress={() => handleOpenDetails(item)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Application ${item.applicationId}, ${item.membershipType}, status ${item.status}`}>
+                <View key={item.id} style={styles.appCard}>
                   {/* Status Banner Row */}
                   <View style={styles.statusRow}>
                     <View style={[styles.statusPill, { backgroundColor: statusMeta.bg }]}>
@@ -162,7 +154,13 @@ export function MyApplicationScreen() {
                   <View style={styles.divider} />
 
                   {/* Application Info Row */}
-                  <View style={styles.infoRow}>
+                  <TouchableOpacity
+                    style={styles.infoRow}
+                    activeOpacity={0.7}
+                    onPress={() => handleOpenDetails(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View details for application ${item.applicationId}`}
+                  >
                     <View style={styles.infoCol}>
                       <View style={styles.fieldItem}>
                         <Text style={styles.fieldLabel}>Application ID</Text>
@@ -182,27 +180,49 @@ export function MyApplicationScreen() {
                     <View style={styles.chevronWrap}>
                       <Icon name="chevron-right" size={20} color="#94A3B8" strokeWidth={2.4} />
                     </View>
-                  </View>
+                  </TouchableOpacity>
 
+                  {/* Rejection notice box if Rejected */}
                   {item.status === 'Rejected' && (
-                    <View style={styles.cardReapplyWrap}>
-                      <TouchableOpacity
-                        style={styles.cardReapplyButton}
-                        onPress={(e) => {
-                          e?.stopPropagation?.();
-                          reapply();
-                          (navigation as any).navigate('MembershipCategories');
-                        }}
-                        activeOpacity={0.8}
-                        accessibilityRole="button"
-                        accessibilityLabel="Re-apply for Membership"
-                      >
-                        <Icon name="refresh-cw" size={14} color="#FFFFFF" strokeWidth={2.2} />
-                        <Text style={styles.cardReapplyButtonText}>Re-apply for Membership</Text>
-                      </TouchableOpacity>
+                    <View style={styles.rejectionNoticeBox}>
+                      <Icon name="alert-circle" size={16} color="#DC2626" strokeWidth={2.2} />
+                      <View style={styles.rejectionNoticeContent}>
+                        <Text style={styles.rejectionNoticeTitle}>Application Rejected</Text>
+                        <Text style={styles.rejectionNoticeDesc}>
+                          {item.rejectionReason || 'Application returned for re-submission. Please re-apply to complete payment verification.'}
+                        </Text>
+                      </View>
                     </View>
                   )}
-                </TouchableOpacity>
+
+                  {/* Action buttons row: Re-apply button + Remove Card button */}
+                  <View style={styles.actionButtonsRow}>
+                    <TouchableOpacity
+                      style={styles.reapplyPrimaryBtn}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        reapply();
+                        navigation.navigate('MembershipCategories' as any);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Re-apply for Membership"
+                    >
+                      <Icon name="refresh-cw" size={14} color="#011F39" strokeWidth={2.4} />
+                      <Text style={styles.reapplyPrimaryBtnText}>Re-apply for Membership</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.removeCardBtn}
+                      activeOpacity={0.7}
+                      onPress={() => removeApplication(item.id || item.applicationId)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove this application card"
+                    >
+                      <Icon name="trash-2" size={14} color="#EF4444" strokeWidth={2.2} />
+                      <Text style={styles.removeCardBtnText}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               );
             })}
           </View>
@@ -212,7 +232,10 @@ export function MyApplicationScreen() {
               title="No Applications Found"
               message="You haven't submitted any membership applications yet."
               actionLabel="Apply for Membership"
-              onAction={() => navigation.navigate('MembershipStep1Personal')}
+              onAction={() => {
+                reapply();
+                navigation.navigate('MembershipCategories' as any);
+              }}
             />
           </View>
         )}
@@ -355,6 +378,74 @@ const styles = StyleSheet.create({
   emptyContainer: {
     paddingVertical: spacing.xxl,
     alignItems: 'center',
+  },
+  rejectionNoticeBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 12,
+  },
+  rejectionNoticeContent: {
+    flex: 1,
+  },
+  rejectionNoticeTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#991B1B',
+    marginBottom: 2,
+  },
+  rejectionNoticeDesc: {
+    fontSize: 11.5,
+    color: '#B91C1C',
+    lineHeight: 16,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 14,
+  },
+  reapplyPrimaryBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FAD465',
+    paddingVertical: 10,
+    borderRadius: 8,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  reapplyPrimaryBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#011F39',
+  },
+  removeCardBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  removeCardBtnText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#E11D48',
   },
 });
 

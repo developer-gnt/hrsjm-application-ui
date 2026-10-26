@@ -46,6 +46,8 @@ export const ApiRoutes = {
   // Renewals
   RENEWALS: {
     ADMIN_LIST: '/admin/renewals',
+    QUOTE: '/renewals/quote',
+    MEMBERSHIP_QUOTE: (id: string | number) => `/renewals/quote/${id}`,
   },
 
   // Admin

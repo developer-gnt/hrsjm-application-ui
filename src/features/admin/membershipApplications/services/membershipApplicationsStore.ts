@@ -543,6 +543,15 @@ class MembershipApplicationsStore {
     return [...this.applications];
   }
 
+  public removeApplication(idOrAppId: string): void {
+    this.applications = this.applications.filter(
+      a => a.id !== idOrAppId && a.applicationId !== idOrAppId
+    );
+    this.savePersistedApplications();
+    this.recalculateStatsFromItems();
+    this.notify();
+  }
+
   public resetForTest(): void {
     this.applications =
       process.env.NODE_ENV === 'test'

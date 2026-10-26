@@ -26,6 +26,13 @@ export interface CreateMembershipOrderParams {
   idempotencyKey?: string;
 }
 
+const getReturnUrl = (): string => {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}/index.html?cashfree_callback=true&order_id={order_id}`;
+  }
+  return 'http://localhost:8089/index.html?cashfree_callback=true&order_id={order_id}';
+};
+
 /**
  * Cashfree API Service for React Native Application
  */
@@ -75,6 +82,7 @@ export const cashfreeApi = {
       {
         purpose: 'donation',
         reference_id: paymentId,
+        return_url: getReturnUrl(),
       },
       { headers },
     );
@@ -94,17 +102,33 @@ export const cashfreeApi = {
       headers['x-idempotency-key'] = params.idempotencyKey;
     }
 
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const validReferenceId =
+      params.membershipPaymentId && UUID_REGEX.test(params.membershipPaymentId)
+        ? params.membershipPaymentId
+        : undefined;
+
+    const rawPhone = params.customerMobile || '';
+    const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
+    const customerPhone = cleanPhone.length === 10 ? cleanPhone : '9876543210';
+
+    const payload: Record<string, any> = {
+      purpose: 'membership',
+      amount: params.amount,
+      customer_name: params.customerName || 'HRSJM Member',
+      customer_phone: customerPhone,
+      customer_email: params.customerEmail || 'member@hrsjm.org',
+      order_note: params.membershipType || 'Membership Registration Fee',
+      return_url: getReturnUrl(),
+    };
+
+    if (validReferenceId) {
+      payload.reference_id = validReferenceId;
+    }
+
     const orderRes = await apiClient.post<CashfreeOrderSession>(
       API_ENDPOINTS.PAYMENTS.CASHFREE_ORDERS,
-      {
-        purpose: 'membership',
-        reference_id: params.membershipPaymentId,
-        amount: params.amount,
-        customer_name: params.customerName,
-        customer_phone: params.customerMobile,
-        customer_email: params.customerEmail,
-        order_note: params.membershipType,
-      },
+      payload,
       { headers },
     );
 
@@ -130,6 +154,7 @@ export const cashfreeApi = {
       {
         purpose,
         reference_id: referenceId,
+        return_url: getReturnUrl(),
       },
       { headers },
     );
