@@ -1,5 +1,5 @@
 import React from 'react';
-import { G, Svg } from 'react-native-svg';
+import Svg, { G } from 'react-native-svg';
 import { AdminColors } from '../../../../core/theme';
 import { GLYPHS } from './glyphs';
 import type { IconName } from './glyphs';
@@ -29,7 +29,11 @@ export const AppIcon: React.FC<AppIconProps> = ({
   strokeWidth = 1.8,
   filled = false,
 }) => {
-  const Glyph = GLYPHS[name];
+  const Glyph = GLYPHS[name] || GLYPHS['close'] || GLYPHS['heart'];
+
+  if (!Glyph) {
+    return null;
+  }
 
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">

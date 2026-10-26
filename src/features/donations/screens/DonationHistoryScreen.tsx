@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Platform,
@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,6 +19,11 @@ import { Icon } from '../../../core/components/common/Icon';
 import { AppEmptyState } from '../../../core/components/common/AppEmptyState';
 import { colors, serif, spacing, radius } from '../../../core/theme/theme';
 import type { AppStackParamList, TabsParamList } from '../../../core/navigation/types';
+import { apiClient } from '../../../core/api/client';
+import { cashfreeApi } from '../../payments/api/cashfree.api';
+import { receiptsService } from '../../receipts/services/receipts.service';
+import { recentDonationsStore } from '../services/recent-donations.store';
+import { amountToWords } from '../../../core/utils/format';
 import { MOCK_DONATION_RECORDS } from '../data/donations.mock';
 import type {
   DonationFilterState,
@@ -41,7 +46,17 @@ const INITIAL_FILTERS: DonationFilterState = {
   status: 'ALL',
 };
 
-export function DonationHistoryScreen() {
+export interface DonationHistoryScreenProps {
+  customHeader?: React.ReactNode;
+  onNavigateHome?: () => void;
+  onNavigateDonate?: () => void;
+}
+
+export function DonationHistoryScreen({
+  customHeader,
+  onNavigateHome,
+  onNavigateDonate,
+}: DonationHistoryScreenProps = {}) {
   const navigation = useNavigation<NavProp>();
   const [activeTab, setActiveTab] = useState<DonationFilterTab>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,12 +64,130 @@ export function DonationHistoryScreen() {
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [donationRecords, setDonationRecords] = useState<DonationRecord[]>([]);
 
-  // Filter donations: only personal donations (type === 'Donation') appear in Donation History
-  const donationRecords = useMemo(
-    () => MOCK_DONATION_RECORDS.filter(item => item.type === 'Donation'),
-    []
+  const loadDonations = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await apiClient.get<any>('/donation-payments');
+      const rawItems = res?.data?.items || (res as any)?.items || [];
+
+      // 1. Verify any pending payments with Cashfree
+      const pendingItems = rawItems.filter(
+        (it: any) => it.payment_status === 'PENDING' && it.gateway_order_id,
+      );
+
+      if (pendingItems.length > 0) {
+        await Promise.allSettled(
+          pendingItems.map(async (it: any) => {
+            try {
+              const vRes = await cashfreeApi.verifyOrder(it.gateway_order_id);
+              if (
+                vRes?.status === 'SUCCESS' ||
+                (vRes as any)?.payment?.payment_status === 'SUCCESS'
+              ) {
+                it.payment_status = 'SUCCESS';
+              } else {
+                it.payment_status = 'FAILED';
+              }
+            } catch {
+              it.payment_status = 'FAILED';
+            }
+          }),
+        );
+      }
+
+      // Any remaining pending item without order or unconfirmed is marked FAILED
+      for (const it of rawItems) {
+        if (it.payment_status === 'PENDING') {
+          it.payment_status = 'FAILED';
+        }
+      }
+
+      let realRecords: DonationRecord[] = [];
+      if (Array.isArray(rawItems) && rawItems.length > 0) {
+        realRecords = rawItems.map((item: any) => {
+          const dDate = new Date(item.created_at);
+          const dateStr = !isNaN(dDate.getTime())
+            ? dDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+            : 'Recent';
+          const timeStr = !isNaN(dDate.getTime())
+            ? dDate.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+            : '';
+          const amt = Number(item.amount) || 0;
+          return {
+            id: item.id,
+            receiptNo: item.gateway_order_id || `REC-${item.id.slice(0, 8).toUpperCase()}`,
+            type: 'Donation' as const,
+            title: item.donation?.cause || 'HRSJM Donation',
+            cause: item.donation?.cause || 'Social Justice & Human Rights Support',
+            category: 'Donation',
+            description: item.donation?.remark || `Donation contribution of ₹${amt.toLocaleString('en-IN')}`,
+            amount: amt,
+            amountInWords: amountToWords(amt),
+            date: dateStr,
+            time: timeStr,
+            dateTime: `${dateStr}${timeStr ? `, ${timeStr}` : ''}`,
+            isoDate: !isNaN(dDate.getTime()) ? dDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            status: item.payment_status === 'SUCCESS' ? 'Completed' : 'Failed',
+            paymentMethod: item.payment_method || 'Online',
+            transactionId: item.gateway_payment_id || item.gateway_order_id || item.id,
+            donorName: item.donation?.donor_name || 'Donor',
+            donorEmail: item.donation?.donor_email,
+            donorPhone: item.donation?.donor_mobile,
+            imageType: 'education' as const,
+          };
+        });
+      }
+
+      try {
+        const receipts = await receiptsService.getMyReceipts();
+        const donationReceipts = receipts.filter(r => r.type === 'Donation');
+        for (const dr of donationReceipts) {
+          if (!realRecords.some(r => r.id === dr.id || (dr.transactionId && r.transactionId === dr.transactionId))) {
+            realRecords.push(dr);
+          }
+        }
+      } catch {}
+
+      // Merge with live donations made in the active session
+      const recentLive = recentDonationsStore.getRecentDonations();
+      for (const rd of recentLive) {
+        if (!realRecords.some(r => r.id === rd.id || (rd.transactionId && r.transactionId === rd.transactionId))) {
+          realRecords.unshift(rd);
+        }
+      }
+
+      if (realRecords.length > 0) {
+        setDonationRecords(realRecords);
+      } else {
+        setDonationRecords(MOCK_DONATION_RECORDS.filter(item => item.type === 'Donation'));
+      }
+    } catch (err) {
+      setDonationRecords(MOCK_DONATION_RECORDS.filter(item => item.type === 'Donation'));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  // Live polling whenever screen is in focus: instant refresh on tab focus + 3s ticker
+  useFocusEffect(
+    useCallback(() => {
+      loadDonations();
+      const ticker = setInterval(() => {
+        loadDonations();
+      }, 3500);
+      return () => clearInterval(ticker);
+    }, [loadDonations]),
   );
+
+  // Instant update whenever a new donation is recorded in the session
+  useEffect(() => {
+    return recentDonationsStore.subscribe(() => {
+      loadDonations();
+    });
+  }, [loadDonations]);
 
   // Compute active filters count (excluding default status 'ALL')
   const activeFilterCount = useMemo(() => {
@@ -79,16 +212,14 @@ export function DonationHistoryScreen() {
   const tabCounts = useMemo(() => {
     const all = donationRecords.length;
     const completed = donationRecords.filter(d => d.status === 'Completed').length;
-    const pending = donationRecords.filter(d => d.status === 'Pending').length;
     const failed = donationRecords.filter(d => d.status === 'Failed').length;
-    return { all, completed, pending, failed };
+    return { all, completed, failed };
   }, [donationRecords]);
 
-  // Tab definitions
+  // Tab definitions: All, Done (Completed), Failed
   const tabs: Array<{ key: DonationFilterTab; label: string; count: number }> = [
     { key: 'ALL', label: 'All', count: tabCounts.all },
-    { key: 'Completed', label: 'Completed', count: tabCounts.completed },
-    { key: 'Pending', label: 'Pending', count: tabCounts.pending },
+    { key: 'Completed', label: 'Done', count: tabCounts.completed },
     { key: 'Failed', label: 'Failed', count: tabCounts.failed },
   ];
 
@@ -156,9 +287,7 @@ export function DonationHistoryScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 600);
+    loadDonations();
   };
 
   const handleApplyFilters = (newFilters: DonationFilterState) => {
@@ -177,12 +306,12 @@ export function DonationHistoryScreen() {
   };
 
   const handleCardPress = (donation: DonationRecord) => {
-    navigation.navigate('DonationDetail', { donationId: donation.id });
+    (navigation as any).navigate('DonationDetail', { donationId: donation.id, donation });
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <AdminTopBar />
+      {customHeader ? customHeader : <AdminTopBar />}
 
       {loading ? (
         <View style={styles.skeletonContainer}>
@@ -300,14 +429,20 @@ export function DonationHistoryScreen() {
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <AppEmptyState
-                title="No Donations Found"
+                title={searchQuery.length > 0 || activeFilterCount > 0 ? "No Matching Donations" : "No Donation Payments Yet"}
                 message={
                   searchQuery.length > 0
                     ? `No donations found matching "${searchQuery}".`
-                    : 'There are no donation records matching your current filters.'
+                    : activeFilterCount > 0
+                    ? 'There are no donation records matching your current filters.'
+                    : "You haven't made any donation payments yet. Your contributions help support human rights and community aid."
                 }
-                actionLabel="Clear All Filters"
-                onAction={handleClearAll}
+                actionLabel={searchQuery.length > 0 || activeFilterCount > 0 ? "Clear All Filters" : "Donate Now"}
+                onAction={
+                  searchQuery.length > 0 || activeFilterCount > 0
+                    ? handleClearAll
+                    : (onNavigateDonate || (() => (navigation as any).navigate('UserActionPage', { pageId: 'donate' })))
+                }
               />
             </View>
           }

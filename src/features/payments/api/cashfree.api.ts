@@ -75,6 +75,9 @@ export const cashfreeApi = {
       {
         purpose: 'donation',
         reference_id: paymentId,
+        customer_phone: params.donorMobile,
+        customer_name: params.donorName,
+        customer_email: params.donorEmail,
       },
       { headers },
     );

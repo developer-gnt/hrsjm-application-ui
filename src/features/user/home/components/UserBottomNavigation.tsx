@@ -5,7 +5,7 @@ import { USER_TABS } from '../data/home-preview-data';
 import type { HomeTab, HomeTabId } from '../types/home.types';
 
 /** Tabs whose User screens are wired into the host navigation. */
-const LIVE_TABS: HomeTabId[] = ['home', 'about', 'contact', 'rights', 'events', 'news'];
+const LIVE_TABS: HomeTabId[] = ['home', 'about', 'contact', 'rights', 'events', 'news', 'history'];
 
 interface UserBottomNavigationProps {
   /** Currently selected tab id for the hosting screen. */

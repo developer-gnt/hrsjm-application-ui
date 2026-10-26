@@ -44,6 +44,9 @@ import { ApplicationApprovedScreen } from '../../membership/screens/ApplicationA
 import { ApplicationRejectedScreen } from '../../membership/screens/ApplicationRejectedScreen';
 import { ApplicationAppliedScreen } from '../../membership/screens/ApplicationAppliedScreen';
 import { useMembership } from '../../membership/context/MembershipContext';
+import { DonationHistoryScreen } from '../../donations/screens/DonationHistoryScreen';
+import { DonationDetailScreen } from '../../donations/screens/DonationDetailScreen';
+import { ReceiptDetailScreen } from '../../receipts/screens/ReceiptDetailScreen';
 
 import {
   House,
@@ -51,6 +54,7 @@ import {
   Scale,
   Calendar,
   MessageSquare,
+  Clock,
   User,
   AppIconComponent,
 } from '../../../core/components/icons';
@@ -217,6 +221,21 @@ const UserProfileScreenComponent: React.FC<any> = ({ navigation }) => {
   );
 };
 
+const UserHistoryScreenComponent: React.FC<any> = ({ navigation }) => {
+  return (
+    <DonationHistoryScreen
+      customHeader={
+        <HomeHeader
+          onPressSearch={() => navigation.navigate('Search')}
+          onPressNotifications={() => navigation.navigate('Notifications')}
+        />
+      }
+      onNavigateHome={() => navigation.navigate('UserHome')}
+      onNavigateDonate={() => navigation.navigate('UserActionPage', { pageId: 'donate' })}
+    />
+  );
+};
+
 const USER_TABS: UserTabItem[] = [
   {
     name: 'UserHome',
@@ -249,15 +268,25 @@ const USER_TABS: UserTabItem[] = [
     component: UserNewsScreenComponent,
   },
   {
-    name: 'UserProfile',
-    label: 'Profile',
-    Icon: User,
-    component: UserProfileScreenComponent,
+    name: 'UserHistory',
+    label: 'History',
+    Icon: Clock,
+    component: UserHistoryScreenComponent,
   },
 ];
 
-const UserCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
+const UserCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation, descriptors }) => {
   const insets = useSafeAreaInsets();
+  const currentRoute = state.routes[state.index];
+  const currentRouteName = currentRoute?.name;
+
+  // Only render bottom tab navigation on the 6 primary tabs
+  const isMainTab = USER_TABS.some(t => t.name === currentRouteName);
+  const options = descriptors?.[currentRoute.key]?.options;
+
+  if (!isMainTab || (options?.tabBarStyle as any)?.display === 'none') {
+    return null;
+  }
 
   return (
     <View
@@ -488,7 +517,10 @@ export const UserTabNavigator: React.FC = () => {
 
       <Tab.Screen
         name="UserActionPage"
-        options={{ tabBarButton: () => null }}
+        options={{
+          tabBarButton: () => null,
+          tabBarStyle: { display: 'none' },
+        }}
       >
         {({ navigation, route }: any) => {
           let hasApplied = false;
@@ -649,6 +681,24 @@ export const UserTabNavigator: React.FC = () => {
           />
         )}
       </Tab.Screen>
+
+      <Tab.Screen
+        name="UserProfile"
+        options={{ tabBarButton: () => null }}
+        component={UserProfileScreenComponent}
+      />
+
+      <Tab.Screen
+        name="DonationDetail"
+        options={{ tabBarButton: () => null }}
+        component={DonationDetailScreen}
+      />
+
+      <Tab.Screen
+        name="ReceiptDetail"
+        options={{ tabBarButton: () => null }}
+        component={ReceiptDetailScreen}
+      />
     </Tab.Navigator>
   );
 };

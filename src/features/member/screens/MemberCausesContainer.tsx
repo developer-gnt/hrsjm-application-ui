@@ -4,7 +4,17 @@ import { MemberCauseListScreen } from './MemberCauseListScreen';
 import { MemberCauseDetailsScreen } from './MemberCauseDetailsScreen';
 import { MemberCause } from '../types/causes.types';
 
-export const MemberCausesContainer: React.FC = () => {
+export interface MemberCausesContainerProps {
+  onSelectCause?: (cause: MemberCause) => void;
+  onClose?: () => void;
+  hideHeader?: boolean;
+}
+
+export const MemberCausesContainer: React.FC<MemberCausesContainerProps> = ({
+  onSelectCause,
+  onClose,
+  hideHeader = false,
+}) => {
   const [selectedCause, setSelectedCause] = useState<MemberCause | null>(null);
 
   if (selectedCause) {
@@ -30,7 +40,21 @@ export const MemberCausesContainer: React.FC = () => {
 
   return (
     <MemberCauseListScreen
-      onViewCauseDetails={cause => setSelectedCause(cause)}
+      hideHeader={hideHeader}
+      onViewCauseDetails={cause => {
+        if (onSelectCause) {
+          onSelectCause(cause);
+        } else {
+          setSelectedCause(cause);
+        }
+      }}
+      onDonateCause={cause => {
+        if (onSelectCause) {
+          onSelectCause(cause);
+        } else {
+          setSelectedCause(cause);
+        }
+      }}
     />
   );
 };

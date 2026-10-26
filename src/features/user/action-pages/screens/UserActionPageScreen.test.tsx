@@ -5,6 +5,13 @@ import { UserActionPageScreen } from './UserActionPageScreen';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import { GlobalPaymentModal } from '../../../payments';
 
+jest.mock('../../../member/services/causes.service', () => ({
+  causesService: {
+    getCauses: jest.fn().mockResolvedValue([]),
+    recordDonation: jest.fn(),
+  },
+}));
+
 describe('UserActionPageScreen', () => {
   const initialMetrics = {
     frame: { x: 0, y: 0, width: 390, height: 844 },

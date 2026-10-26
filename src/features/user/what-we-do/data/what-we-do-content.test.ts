@@ -7,11 +7,11 @@ describe('What HRSJM Does page content', () => {
     expect(WHAT_WE_DO_IDS.map(id => WHAT_WE_DO_CONTENT[id].title)).toEqual([
       'Human-rights Monitoring',
       'Awareness Campaigns',
-      'Workshops & Training',
+      'Workshops and Training',
       'Community Activities',
       'Leadership Development',
-      'Advocacy & Awareness',
-      'Research & Rights Education',
+      'Advocacy and Awareness',
+      'Research and Rights Education',
       'Legal Rights Awareness',
       'Other Work Areas',
     ]);

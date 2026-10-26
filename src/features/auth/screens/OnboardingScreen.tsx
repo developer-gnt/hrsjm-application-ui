@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   StatusBar,
@@ -79,155 +79,167 @@ const SLIDES: OnboardingSlide[] = [
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   navigation,
 }) => {
-  const insets = useSafeAreaInsets();
-  const [index, setIndex] = useState(0);
-  const isLast = index === SLIDES.length - 1;
-
-  const complete = () => {
+  // Onboarding screens (all 3 pages) commented out / bypassed:
+  useEffect(() => {
     appPreferences.setOnboardingCompleted(true);
     navigation.replace('Login');
-  };
+  }, [navigation]);
 
-  const next = () => (isLast ? complete() : setIndex(curr => curr + 1));
-  const prev = () => setIndex(curr => Math.max(0, curr - 1));
-  const skip = () => complete();
+  return null;
 
-  const slide = SLIDES[index];
+  // Original onboarding code preserved below (disabled):
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (false as boolean) {
+    const insets = useSafeAreaInsets();
+    const [index, setIndex] = useState(0);
+    const isLast = index === SLIDES.length - 1;
 
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    const complete = () => {
+      appPreferences.setOnboardingCompleted(true);
+      navigation.replace('Login');
+    };
 
-      {/* Decorative ambient background rings for subtle depth */}
-      <View style={styles.ambientGlowTop} pointerEvents="none" />
-      <View style={styles.ambientGlowBottom} pointerEvents="none" />
+    const next = () => (isLast ? complete() : setIndex(curr => curr + 1));
+    const prev = () => setIndex(curr => Math.max(0, curr - 1));
+    const skip = () => complete();
 
-      {/* Top Navigation Bar with safe top padding */}
-      <View
-        style={[
-          styles.headerRow,
-          { paddingTop: Math.max(insets.top, 14) + 10 },
-        ]}
-      >
-        <View style={styles.brandRow}>
-          <AuthLogo size="xs" variant="light" showWordmark={false} showSubtitle={false} />
-          <View style={styles.stepBadge}>
-            <Text style={styles.stepBadgeText}>
-              STEP {index + 1} OF {SLIDES.length}
-            </Text>
-          </View>
-        </View>
+    const slide = SLIDES[index];
 
-        <TouchableOpacity
-          onPress={skip}
-          style={styles.skipButton}
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" />
+
+        {/* Decorative ambient background rings for subtle depth */}
+        <View style={styles.ambientGlowTop} pointerEvents="none" />
+        <View style={styles.ambientGlowBottom} pointerEvents="none" />
+
+        {/* Top Navigation Bar with safe top padding */}
+        <View
+          style={[
+            styles.headerRow,
+            { paddingTop: Math.max(insets.top, 14) + 10 },
+          ]}
         >
-          <Text style={styles.skipText}>Skip Intro</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Center Carousel Area */}
-      <View style={styles.mainContent}>
-        {/* Emblem Vector Icon with Dual-Tone Glow */}
-        <View style={styles.emblemContainer}>
-          <View style={styles.emblemHalo}>
-            <View style={styles.emblemCore}>
-              <Icon name={slide.iconName} size={36} color="#FAD465" />
+          <View style={styles.brandRow}>
+            <AuthLogo size="xs" variant="light" showWordmark={false} showSubtitle={false} />
+            <View style={styles.stepBadge}>
+              <Text style={styles.stepBadgeText}>
+                STEP {index + 1} OF {SLIDES.length}
+              </Text>
             </View>
           </View>
-        </View>
-
-        {/* Floating Editorial Card */}
-        <View style={styles.card}>
-          <View style={styles.badgePill}>
-            <Text style={styles.badgeText}>{slide.badge}</Text>
-          </View>
-
-          <Text style={styles.headline}>
-            {slide.titleLead}
-            <Text style={styles.headlineAccent}>{slide.titleAccent}</Text>
-            {slide.titleTail || ''}
-          </Text>
-
-          <Text style={styles.description}>{slide.description}</Text>
-
-          {/* Feature Highlights Pills */}
-          <View style={styles.chipsContainer}>
-            {slide.chips.map((chip, chipIndex) => (
-              <View key={chipIndex} style={styles.chip}>
-                <View style={styles.chipDot} />
-                <Text style={styles.chipText}>{chip}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Sleek Pagination Dots */}
-        <View style={styles.dotsRow}>
-          {SLIDES.map((_, dotIndex) => {
-            const isActive = dotIndex === index;
-            return (
-              <TouchableOpacity
-                key={dotIndex}
-                onPress={() => setIndex(dotIndex)}
-                activeOpacity={0.8}
-                style={[styles.dot, isActive ? styles.dotActive : styles.dotInactive]}
-                accessibilityLabel={`Go to slide ${dotIndex + 1}`}
-              />
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Bottom Actions Row */}
-      <View
-        style={[
-          styles.actionArea,
-          { paddingBottom: Math.max(insets.bottom, 12) + 10 },
-        ]}
-      >
-        <View style={styles.actionButtonsRow}>
-          {index > 0 && (
-            <TouchableOpacity
-              onPress={prev}
-              style={styles.backButton}
-              activeOpacity={0.75}
-              accessibilityLabel="Previous slide"
-            >
-              <Icon name="chevron-left" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          )}
 
           <TouchableOpacity
-            onPress={next}
-            style={styles.primaryButton}
-            activeOpacity={0.88}
-            accessibilityRole="button"
-            accessibilityLabel={isLast ? 'Get Started' : 'Continue'}
+            onPress={skip}
+            style={styles.skipButton}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.primaryButtonText}>
-              {isLast ? 'Get Started' : 'Continue'}
-            </Text>
-            <View style={styles.buttonIconWrap}>
-              <Icon name="arrow-right" size={16} color="#0B2F52" />
-            </View>
+            <Text style={styles.skipText}>Skip Intro</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Dignified Organization Trustmark */}
-        <View style={styles.trustFooter}>
-          <Text style={styles.trustTitle}>
-            मानव अधिकार एवं सामाजिक न्याय मिशन
-          </Text>
-          <Text style={styles.trustSub}>
-            Human Rights & Social Justice Mission • National Portal
-          </Text>
+        {/* Center Carousel Area */}
+        <View style={styles.mainContent}>
+          {/* Emblem Vector Icon with Dual-Tone Glow */}
+          <View style={styles.emblemContainer}>
+            <View style={styles.emblemHalo}>
+              <View style={styles.emblemCore}>
+                <Icon name={slide.iconName} size={36} color="#FAD465" />
+              </View>
+            </View>
+          </View>
+
+          {/* Floating Editorial Card */}
+          <View style={styles.card}>
+            <View style={styles.badgePill}>
+              <Text style={styles.badgeText}>{slide.badge}</Text>
+            </View>
+
+            <Text style={styles.headline}>
+              {slide.titleLead}
+              <Text style={styles.headlineAccent}>{slide.titleAccent}</Text>
+              {slide.titleTail || ''}
+            </Text>
+
+            <Text style={styles.description}>{slide.description}</Text>
+
+            {/* Feature Highlights Pills */}
+            <View style={styles.chipsContainer}>
+              {slide.chips.map((chip, chipIndex) => (
+                <View key={chipIndex} style={styles.chip}>
+                  <View style={styles.chipDot} />
+                  <Text style={styles.chipText}>{chip}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Sleek Pagination Dots */}
+          <View style={styles.dotsRow}>
+            {SLIDES.map((_, dotIndex) => {
+              const isActive = dotIndex === index;
+              return (
+                <TouchableOpacity
+                  key={dotIndex}
+                  onPress={() => setIndex(dotIndex)}
+                  activeOpacity={0.8}
+                  style={[styles.dot, isActive ? styles.dotActive : styles.dotInactive]}
+                  accessibilityLabel={`Go to slide ${dotIndex + 1}`}
+                />
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Bottom Actions Row */}
+        <View
+          style={[
+            styles.actionArea,
+            { paddingBottom: Math.max(insets.bottom, 12) + 10 },
+          ]}
+        >
+          <View style={styles.actionButtonsRow}>
+            {index > 0 && (
+              <TouchableOpacity
+                onPress={prev}
+                style={styles.backButton}
+                activeOpacity={0.75}
+                accessibilityLabel="Previous slide"
+              >
+                <Icon name="chevron-left" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              onPress={next}
+              style={styles.primaryButton}
+              activeOpacity={0.88}
+              accessibilityRole="button"
+              accessibilityLabel={isLast ? 'Get Started' : 'Continue'}
+            >
+              <Text style={styles.primaryButtonText}>
+                {isLast ? 'Get Started' : 'Continue'}
+              </Text>
+              <View style={styles.buttonIconWrap}>
+                <Icon name="arrow-right" size={16} color="#0B2F52" />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Dignified Organization Trustmark */}
+          <View style={styles.trustFooter}>
+            <Text style={styles.trustTitle}>
+              मानव अधिकार एवं सामाजिक न्याय मिशन
+            </Text>
+            <Text style={styles.trustSub}>
+              Human Rights & Social Justice Mission • National Portal
+            </Text>
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  }
 };
 
 const styles = StyleSheet.create({

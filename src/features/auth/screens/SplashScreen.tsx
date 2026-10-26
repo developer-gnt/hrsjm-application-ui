@@ -28,10 +28,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
     didRun.current = true;
 
     const decide = async () => {
-      if (!appPreferences.isOnboardingCompleted()) {
-        navigation.replace('Onboarding');
-        return;
-      }
+      // Onboarding screens commented out / bypassed:
+      // if (!appPreferences.isOnboardingCompleted()) {
+      //   navigation.replace('Onboarding');
+      //   return;
+      // }
 
       const restored = await useAuthStore.getState().restoreSession();
       if (!restored) {

@@ -14,7 +14,7 @@ import { Icon } from '../../../core/components/common/Icon';
 import { formatCurrency } from '../../../core/utils/format';
 import type { AppStackParamList } from '../../../core/navigation/types';
 import { MOCK_DONATION_RECORDS } from '../data/donations.mock';
-import type { DonationStatus } from '../types/donation.types';
+import type { DonationRecord, DonationStatus } from '../types/donation.types';
 import { CauseHeroBanner } from '../components/CauseHeroBanner';
 
 type RouteProps = NativeStackScreenProps<AppStackParamList, 'DonationDetail'>['route'];
@@ -25,7 +25,7 @@ const STATUS_META: Record<
   { label: string; bg: string; fg: string; icon: 'check-circle' | 'clock' | 'x-circle' }
 > = {
   Completed: {
-    label: 'Completed',
+    label: 'Done',
     bg: colors.greenSoft,
     fg: colors.active,
     icon: 'check-circle',
@@ -49,12 +49,17 @@ export function DonationDetailScreen() {
   const route = useRoute<RouteProps>();
   const donationId = route.params?.donationId;
 
-  const donation = MOCK_DONATION_RECORDS.find(item => item.id === donationId) || MOCK_DONATION_RECORDS[0];
-  const statusMeta = STATUS_META[donation.status] || STATUS_META.Completed;
+  const donation: DonationRecord =
+    (route.params as any)?.donation ||
+    MOCK_DONATION_RECORDS.find(item => item.id === donationId) ||
+    MOCK_DONATION_RECORDS[0];
+  const statusMeta =
+    STATUS_META[donation.status as DonationStatus] || STATUS_META.Completed;
 
   const handleViewReceipt = () => {
     navigation.navigate('ReceiptDetail', {
       receiptNo: donation.receiptNo,
+      record: donation,
       fromScreen: 'DonationDetail',
     });
   };
@@ -63,6 +68,7 @@ export function DonationDetailScreen() {
     // Navigates to receipt detail with print intent or opens print sheet
     navigation.navigate('ReceiptDetail', {
       receiptNo: donation.receiptNo,
+      record: donation,
       fromScreen: 'DonationDetail',
     });
   };
