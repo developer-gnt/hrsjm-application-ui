@@ -1,4 +1,4 @@
-export type UserType = 'member' | 'seeker' | 'donor' | 'general';
+export type UserType = 'member' | 'admin' | 'seeker' | 'donor' | 'general';
 
 export type UserStatus = 'active' | 'pending' | 'blocked';
 
@@ -43,6 +43,7 @@ export interface UserStats {
   pending: number;
   blocked: number;
   membersCount: number;
+  adminsCount: number;
   seekersCount: number;
   donorsCount: number;
   generalCount: number;

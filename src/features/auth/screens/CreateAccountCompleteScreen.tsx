@@ -283,7 +283,7 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
               {isGeneralUser
                 ? `Welcome to HRSJM! Your account has been\ncreated successfully. You can now explore\nthe app and its features.`
                 : regData.accountType === 'seeker'
-                ? `Welcome to HRSJM! Your Donation Seeker\napplication was submitted to Admin for review.\nYou can explore as a General User until approved.`
+                ? `Welcome to HRSJM! Your Donation Seeker\napplication was submitted to Admin for review.\nYou can explore as a User until approved.`
                 : `Welcome to HRSJM! Your account has been\ncreated and your document has been submitted\nfor verification.`}
             </Text>
           </View>
@@ -419,7 +419,7 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
                     <Text style={styles.fieldLabel}>Account Type</Text>
                   </View>
                   <Text style={styles.fieldValue} numberOfLines={1}>
-                    {regData.accountTypeLabel || 'General User'}
+                    {regData.accountTypeLabel || 'User'}
                   </Text>
                 </View>
 
@@ -506,7 +506,7 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
               </View>
               <Text style={styles.infoMessageText}>
                 {regData.accountType === 'seeker'
-                  ? 'Your Donation Seeker application (${applicationNumber}) has been submitted to Admin for verification. You can explore as a General User until approved. Once approved, your role will update to Donation Seeker and your seeker dashboard will unlock automatically.'
+                  ? 'Your Donation Seeker application (${applicationNumber}) has been submitted to Admin for verification. You can explore as a User until approved. Once approved, your role will update to Donation Seeker and your seeker dashboard will unlock automatically.'
                   : 'We will review your details and document. You will be notified once your account is verified. You can still explore the app in the meantime.'}
               </Text>
             </View>
@@ -523,7 +523,7 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
               accessibilityLabel="Go to Dashboard"
             >
               <Text style={styles.dashboardButtonText}>
-                {regData.accountType === 'seeker' ? 'Go to Dashboard (General User)' : 'Go to Dashboard'}
+                {regData.accountType === 'seeker' ? 'Go to Dashboard (User)' : 'Go to Dashboard'}
               </Text>
               <View style={styles.arrowIconWrapper}>
                 <ArrowRightIcon size={18} color="#0F2860" />

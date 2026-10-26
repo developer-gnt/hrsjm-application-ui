@@ -339,22 +339,22 @@ class MembershipApplicationsStore {
           }
         }
 
-        // Also load any registered Donation Seeker applicants from usersStore
+        // Also load any registered pending member applicants from usersStore
         try {
           const allRegisteredUsers = usersStore.getAllUsers();
           for (const u of allRegisteredUsers) {
-            if (u.userType === 'seeker' || (u.userType === 'member' && u.status === 'pending')) {
-              const seekerAppId = u.applicationNumber || (u.userType === 'seeker' ? 'HRSJM-SEK-0001' : (u.memberId || `APP-${u.id}`));
+            if (u.userType === 'member' && u.status === 'pending') {
+              const memberAppId = u.applicationNumber || u.memberId || `APP-${u.id}`;
               const exists = this.applications.some(
-                a => a.id === u.id || a.applicationId === seekerAppId || (u.email && a.email?.toLowerCase() === u.email.toLowerCase())
+                a => a.id === u.id || a.applicationId === memberAppId || (u.email && a.email?.toLowerCase() === u.email.toLowerCase())
               );
               if (!exists) {
-                const sStatus: ApplicationStatus = u.status === 'active' ? 'approved' : u.status === 'blocked' ? 'rejected' : 'under_review';
+                const sStatus: ApplicationStatus = 'under_review';
                 this.applications.unshift({
                   id: u.id,
-                  applicationId: seekerAppId,
+                  applicationId: memberAppId,
                   applicantName: u.name,
-                  membershipType: u.userType === 'seeker' ? 'Donation Seeker' : 'Individual Membership',
+                  membershipType: 'Individual Membership',
                   status: sStatus,
                   submittedAt: u.joinedDate || new Date().toLocaleString(),
                   submittedDate: u.joinedDate || new Date().toISOString(),
@@ -373,7 +373,7 @@ class MembershipApplicationsStore {
                     {
                       id: `log-reg-${u.id}`,
                       title: 'Application Submitted',
-                      description: `${u.userType === 'seeker' ? 'Donation Seeker' : 'Member'} application submitted for verification.`,
+                      description: 'Member application submitted for verification.',
                       timestamp: u.joinedDate || new Date().toLocaleString(),
                       status: sStatus,
                     },
@@ -511,6 +511,12 @@ class MembershipApplicationsStore {
           }
         }
 
+        this.applications.sort((a, b) => {
+          const timeA = new Date(a.submittedDate || 0).getTime() || 0;
+          const timeB = new Date(b.submittedDate || 0).getTime() || 0;
+          return timeB - timeA;
+        });
+
         this.recalculateStatsFromItems();
       } catch {
         // ignore storage errors
@@ -559,7 +565,11 @@ class MembershipApplicationsStore {
   }
 
   public getApplications(): MembershipApplicationItem[] {
-    return [...this.applications];
+    return this.applications.filter(
+      a =>
+        a.membershipType !== 'Donation Seeker' &&
+        !(a.applicationId && a.applicationId.startsWith('HRSJM-SEK'))
+    );
   }
 
   public resetForTest(): void {
@@ -937,6 +947,23 @@ class MembershipApplicationsStore {
     this.recalculateStatsFromItems();
     this.savePersistedApplications();
     this.notify();
+
+    // Sync directly to usersStore
+    try {
+      usersStore.registerUserFromRegistration({
+        fullName: application.applicantName,
+        email: application.email && application.email !== '—' ? application.email : undefined,
+        phone: application.phone && application.phone !== '—' ? application.phone : undefined,
+        accountType: 'member',
+        accountTypeLabel: 'Member',
+        applicationNumber: application.applicationId,
+        dob: application.dob,
+        selectedDocTitle: application.documents?.[0]?.title,
+        uploadedFileName: application.documents?.[0]?.fileName,
+      });
+    } catch {
+      // Continue gracefully
+    }
   }
 
   public subscribe(listener: () => void): () => void {

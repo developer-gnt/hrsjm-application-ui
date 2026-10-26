@@ -55,10 +55,19 @@ export const ADMIN_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[
     groupTitle: 'MAIN NAVIGATION',
     items: [
       { id: 'dashboard', icon: '🏠', title: 'Dashboard', target: AppRoutes.ADMIN_DASHBOARD_TAB },
+      { id: 'users', icon: '👥', title: 'User Management', target: AppRoutes.USERS },
       { id: 'membership_applications', icon: '📝', title: 'Membership Applications', target: AppRoutes.MEMBERSHIP_APPLICATIONS },
-      { id: 'members', icon: '👥', title: 'Members Directory', target: AppRoutes.ADMIN_MEMBERS_TAB },
+      { id: 'members', icon: '👤', title: 'Members Directory', target: AppRoutes.ADMIN_MEMBERS_TAB },
       { id: 'assistance', icon: '🤝', title: 'Donation Seekers & Aid', target: AppRoutes.ADMIN_APPLICATIONS_TAB },
       { id: 'complaints', icon: '💬', title: 'Support & Complaints', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
+    ],
+  },
+  {
+    groupTitle: 'USER MODULE',
+    items: [
+      { id: 'all_users', icon: '👥', title: 'All Users Directory', target: AppRoutes.USERS },
+      { id: 'add_user', icon: '➕', title: 'Add New User', target: AppRoutes.ADD_USER },
+      { id: 'roles', icon: '🛡️', title: 'Roles & Permissions', target: AppRoutes.ROLES_PERMISSIONS },
     ],
   },
   {
@@ -86,7 +95,6 @@ export const ADMIN_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[
     items: [
       { id: 'profile', icon: '👤', title: 'My Profile & ID Card', target: AppRoutes.MY_PROFILE },
       { id: 'notifications', icon: '🔔', title: 'Notifications', target: AppRoutes.NOTIFICATIONS },
-      { id: 'roles', icon: '🛡️', title: 'Roles & Permissions', target: AppRoutes.ROLES_PERMISSIONS },
       { id: 'settings', icon: '⚙️', title: 'Settings & Preferences', target: AppRoutes.SETTINGS },
     ],
   },
@@ -206,7 +214,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   if (!visible) return null;
 
   const userRole = user?.roles?.[0]?.name?.toUpperCase() || 'MEMBER';
-  const isAdmin = user?.roles?.some(r => r.name === 'ADMIN') ?? false;
+  const roleNames = (user?.roles ?? []).map(r => (r.name || '').toUpperCase());
+  const isAdmin =
+    roleNames.includes('ADMIN') ||
+    roleNames.includes('SUPER_ADMIN') ||
+    user?.email?.toLowerCase().includes('admin') ||
+    (!roleNames.includes('MEMBER') && !roleNames.includes('SEEKER') && !roleNames.includes('DONATION_SEEKER'));
 
   const activeMenuGroups = isAdmin
     ? ADMIN_MENU_GROUPS
@@ -306,7 +319,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       <Text style={styles.itemIcon}>{item.icon}</Text>
                       <Text style={styles.itemTitle}>{item.title}</Text>
                     </View>
-                    <Text style={styles.itemChevron}>›</Text>
+                    <View style={styles.itemRight}>
+                      {item.badge ? (
+                        <View style={styles.menuBadge}>
+                          <Text style={styles.menuBadgeText}>{item.badge}</Text>
+                        </View>
+                      ) : null}
+                      <Text style={styles.itemChevron}>›</Text>
+                    </View>
                   </TouchableOpacity>
                 ))}
 
@@ -457,6 +477,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#0B2F52',
     fontWeight: '500',
+  },
+  itemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  menuBadge: {
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  menuBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#0284C7',
+    textTransform: 'uppercase',
   },
   itemChevron: {
     fontSize: 18,

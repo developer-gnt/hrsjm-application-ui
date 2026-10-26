@@ -136,6 +136,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   }, [trackOffset, width]);
 
   useEffect(() => {
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
     const timer = setTimeout(
       () => moveSlideRef.current(1),
       AUTOPLAY_INTERVAL_MS,
