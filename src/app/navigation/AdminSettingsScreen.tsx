@@ -191,6 +191,12 @@ export const SETTING_SECTIONS: SettingSection[] = [
     iconColor: '#16A34A',
     items: [
       {
+        icon: '👥',
+        title: 'All Users',
+        description: 'View, filter, manage, verify, and edit all registered users across roles.',
+        route: AppRoutes.USERS,
+      },
+      {
         icon: '🛡️',
         title: 'User Roles & Permissions',
         description: 'Manage admin roles and set access permissions.',
@@ -200,6 +206,7 @@ export const SETTING_SECTIONS: SettingSection[] = [
         icon: '👤',
         title: 'Manage Admins',
         description: 'Add, edit or remove admin users.',
+        route: AppRoutes.USERS,
       },
       {
         icon: '📋',

@@ -108,10 +108,11 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
   const isFullyVerified = documents.length > 0 && verifiedCount === documents.length;
 
   const userTypeLabels: Record<UserType, string> = {
+    admin: 'Admin',
     member: 'Member',
     seeker: 'Donation Seeker',
     donor: 'Donor',
-    general: 'General User',
+    general: 'User',
   };
 
   const statusStyles: Record<

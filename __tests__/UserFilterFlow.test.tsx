@@ -67,7 +67,7 @@ describe('UserFilterFlow (Screen 6) User Filtering & Search Tests', () => {
     expect(root.findByProps({ children: 'Members' })).toBeDefined();
     expect(root.findByProps({ children: 'Donation Seekers' })).toBeDefined();
     expect(root.findByProps({ children: 'Donors' })).toBeDefined();
-    expect(root.findByProps({ children: 'General Users' })).toBeDefined();
+    expect(root.findByProps({ children: 'Users' })).toBeDefined();
 
     // Section 2: Account Status
     expect(root.findByProps({ children: 'Account Status' })).toBeDefined();

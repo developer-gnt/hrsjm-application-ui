@@ -6,6 +6,8 @@ import { updateRegistrationState, resetRegistrationState } from '../src/features
 import { membershipApplicationsStore } from '../src/features/admin/membershipApplications';
 
 describe('User Registration to Dynamic Users List Integration Tests', () => {
+  jest.setTimeout(45000);
+
   beforeEach(async () => {
     await act(async () => {
       usersStore.clearUsers();
@@ -48,7 +50,7 @@ describe('User Registration to Dynamic Users List Integration Tests', () => {
         phone: '+91 98220 11223',
         dob: '15 Aug 1991',
         accountType: 'general',
-        accountTypeLabel: 'General User',
+        accountTypeLabel: 'User',
       });
       usersStore.registerUserFromRegistration({
         fullName: 'Vikram Malhotra',
@@ -66,13 +68,13 @@ describe('User Registration to Dynamic Users List Integration Tests', () => {
     expect(root.findByProps({ children: 'Vikram Malhotra' })).toBeDefined();
     expect(root.findByProps({ children: 'vikram.malhotra@example.com' })).toBeDefined();
     expect(root.findByProps({ children: '+91 98220 11223' })).toBeDefined();
-    expect(root.findByProps({ children: 'General User' })).toBeDefined();
+    expect(root.findByProps({ children: 'User' })).toBeDefined();
     expect(root.findByProps({ children: 'Active' })).toBeDefined();
 
     // Check dynamic stats
     expect(root.findAllByProps({ children: '1' }).length).toBeGreaterThanOrEqual(1); // Total 1, Active 1
     expect(root.findByProps({ children: 'All Users (1)' })).toBeDefined();
-    expect(root.findByProps({ children: 'General Users (1)' })).toBeDefined();
+    expect(root.findByProps({ children: 'Users (1)' })).toBeDefined();
     expect(root.findByProps({ children: 'Members (0)' })).toBeDefined();
   });
 

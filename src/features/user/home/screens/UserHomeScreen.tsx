@@ -4,6 +4,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
   type ScrollViewInstance,
   Platform,
@@ -139,11 +140,20 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   const [hasPendingSeekerApp, setHasPendingSeekerApp] = useState(false);
   const [pendingSeekerAppNumber, setPendingSeekerAppNumber] = useState<string | null>(null);
 
+  const authUser = useAuthStore(state => state.user);
+  const isMemberRole = (authUser?.roles ?? []).some(r => r.name.toUpperCase() === 'MEMBER');
+  const hasPendingMemberApp =
+    (hasApplied && !isReapplying) ||
+    (isMemberRole && (authUser?.membership_status === 'PENDING' || authUser?.membership_status === 'UNDER_REVIEW'));
+
   useEffect(() => {
     try {
-      const authUser = useAuthStore.getState().user;
-      const phone = authUser?.mobile_number?.replace(/\D/g, '');
-      const email = authUser?.email?.toLowerCase();
+      const user = useAuthStore.getState().user;
+      const phone = user?.mobile_number?.replace(/\D/g, '');
+      const email = user?.email?.toLowerCase();
+      const isSeekerRole = (user?.roles ?? []).some(r => ['SEEKER', 'DONATION_SEEKER'].includes(r.name.toUpperCase()));
+      const isBackendPending = user?.assistance_status === 'PENDING' || user?.assistance_status === 'UNDER_REVIEW';
+
       const allUsers = usersStore.getAllUsers();
       const matched = allUsers.find(
         u =>
@@ -152,7 +162,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
           ((phone && u.phone && u.phone.replace(/\D/g, '').includes(phone)) ||
             (email && u.email && u.email.toLowerCase() === email))
       );
-      if (matched) {
+      if (matched || (isSeekerRole && isBackendPending) || user?.assistance_status === 'PENDING') {
         setHasPendingSeekerApp(true);
       }
     } catch {
@@ -184,11 +194,27 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   }, []);
 
   useEffect(() => {
-    loadDynamicData();
+    let isMounted = true;
+    const safeLoad = async () => {
+      if (isMounted) {
+        await loadDynamicData();
+      }
+    };
+    safeLoad();
+
+    if (process.env.NODE_ENV === 'test') {
+      return () => {
+        isMounted = false;
+      };
+    }
 
     // Auto-refresh periodically so newly published news and blogs appear automatically in 1st position
-    const intervalId = setInterval(loadDynamicData, 5000);
+    const intervalId = setInterval(safeLoad, 5000);
+    if ((intervalId as any)?.unref) {
+      (intervalId as any).unref();
+    }
     return () => {
+      isMounted = false;
       clearInterval(intervalId);
     };
   }, [loadDynamicData]);
@@ -268,6 +294,33 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
         }}
         ref={scrollRef}
       >
+        {hasPendingMemberApp && (
+          <TouchableOpacity
+            style={styles.seekerPendingBanner}
+            activeOpacity={0.85}
+            onPress={() => onOpenStatus?.()}
+            accessibilityRole="button"
+            accessibilityLabel="View Membership Application Status"
+          >
+            <View style={styles.seekerPendingIconBox}>
+              <Text style={styles.seekerPendingEmoji}>📋</Text>
+            </View>
+            <View style={styles.seekerPendingTextBox}>
+              <View style={styles.seekerPendingTitleRow}>
+                <Text style={styles.seekerPendingTitle}>
+                  Membership Application Under Review
+                </Text>
+                <View style={styles.seekerAppBadge}>
+                  <Text style={styles.seekerAppBadgeText}>Pending</Text>
+                </View>
+              </View>
+              <Text style={styles.seekerPendingDesc}>
+                Your membership application is currently being verified by the administration. You can view your live application status anytime. Official ID card and member voting privileges will activate upon approval.
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
         {hasPendingSeekerApp && (
           <View style={styles.seekerPendingBanner}>
             <View style={styles.seekerPendingIconBox}>
@@ -278,7 +331,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
                 Donation Seeker Application Under Review
               </Text>
               <Text style={styles.seekerPendingDesc}>
-                Your application and verification documents are being reviewed by the admin. You are currently browsing as a General User. Once approved, your role will update to Donation Seeker and your seeker dashboard will unlock automatically.
+                Your application and verification documents are being reviewed by the admin. You are currently browsing as a User. Once approved, your role will update to Donation Seeker and your seeker dashboard will unlock automatically.
               </Text>
             </View>
           </View>

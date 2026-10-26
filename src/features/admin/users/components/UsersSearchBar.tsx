@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BorderRadius, Spacing } from '../../../../core';
+import { BorderRadius, FontFamilies, Spacing } from '../../../../core';
 
 interface UsersSearchBarProps {
   value: string;
@@ -31,7 +31,7 @@ export const UsersSearchBar: React.FC<UsersSearchBarProps> = ({
         <TextInput
           style={styles.input}
           placeholder="Search by name, email, phone or user ID..."
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor="#718096"
           value={value}
           onChangeText={onChangeText}
           autoCapitalize="none"
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginVertical: Spacing.xs,
+    marginVertical: 8,
   },
   searchBox: {
     flex: 1,
@@ -94,28 +94,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: BorderRadius.lg,
+    borderColor: '#DCE4EC',
+    borderRadius: BorderRadius.button,
     paddingHorizontal: 12,
+    minHeight: 44,
     height: 44,
   },
   searchIcon: {
     fontSize: 14,
     marginRight: 8,
-    color: '#64748B',
+    color: '#718096',
   },
   input: {
     flex: 1,
+    fontFamily: FontFamilies.sans,
     fontSize: 13,
-    color: '#0F172A',
+    color: '#0B2F52',
     paddingVertical: 0,
   },
   clearButton: {
-    padding: 4,
+    minWidth: 32,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   clearText: {
+    fontFamily: FontFamilies.sans,
     fontSize: 12,
-    color: '#94A3B8',
+    color: '#718096',
     fontWeight: '700',
   },
   filtersButton: {
@@ -123,30 +129,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: 12,
+    borderColor: '#DCE4EC',
+    borderRadius: BorderRadius.button,
+    paddingHorizontal: 14,
+    minHeight: 44,
     height: 44,
     gap: 6,
   },
   filtersButtonActive: {
-    borderColor: '#0F2860',
-    backgroundColor: '#EFF6FF',
+    borderColor: '#06294D',
+    backgroundColor: '#EDF2F7',
   },
   filterIcon: {
     fontSize: 14,
-    color: '#1E3A8A',
+    color: '#06294D',
   },
   filterText: {
+    fontFamily: FontFamilies.sans,
     fontSize: 13,
-    fontWeight: '700',
-    color: '#1E3A8A',
+    fontWeight: '600',
+    color: '#06294D',
   },
   filterTextActive: {
-    color: '#0F2860',
+    color: '#06294D',
   },
   badge: {
-    backgroundColor: '#0F2860',
+    backgroundColor: '#06294D',
     borderRadius: BorderRadius.full,
     minWidth: 18,
     height: 18,
@@ -155,6 +163,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   badgeText: {
+    fontFamily: FontFamilies.sans,
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '800',

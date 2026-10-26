@@ -12,6 +12,11 @@ export type AuthStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   ResetPassword: { token?: string };
+  MembershipCategories: undefined;
+  MembershipStep1Personal: { post?: any } | undefined;
+  MembershipStep2Address: undefined;
+  MembershipStep3Documents: undefined;
+  MembershipSubmitted: { applicationId?: string } | undefined;
 };
 
 /** Bottom tabs of the authenticated admin area (spec: 5 tabs). */
@@ -95,6 +100,11 @@ export type MoreStackParamList = {
   [AppRoutes.EDIT_RIGHT]: { article: any };
   [AppRoutes.MEMBERSHIP_DETAILS]: undefined;
   [AppRoutes.RENEW_MEMBERSHIP]: undefined;
+  [AppRoutes.USERS]: undefined;
+  [AppRoutes.USER_DETAILS]: { userId: string };
+  [AppRoutes.ADD_USER]: undefined;
+  [AppRoutes.EDIT_USER]: { userId: string };
+  [AppRoutes.USER_VERIFICATION]: { userId: string };
 };
 
 /** Placeholder stack for non-admin authenticated users until their role

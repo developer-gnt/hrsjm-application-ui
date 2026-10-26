@@ -20,6 +20,9 @@ export interface UserProfile {
   roles: UserRoleInfo[];
   created_at: string;
   updated_at: string;
+  membership_status?: string | null;
+  assistance_status?: string | null;
+  account_type?: 'general' | 'member' | 'seeker' | 'admin';
 }
 
 /** Token pair issued by login/refresh (snake_case per backend contract). */

@@ -69,6 +69,13 @@ import {
   MembershipDetailsScreen,
   RenewMembershipScreen,
 } from '../../features/membership';
+import {
+  UsersListScreen,
+  UserDetailsScreen,
+  AddUserScreen,
+  EditUserScreen,
+  UserVerificationScreen,
+} from '../../features/admin/users';
 import { MoreStackParamList } from './NavigationTypes';
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();
@@ -653,6 +660,99 @@ export const MoreNavigator: React.FC = () => (
       {({ navigation }) => (
         <RenewMembershipScreen
           onBack={navigation.goBack}
+          onProfilePress={() =>
+            navigation.navigate(AppRoutes.MY_PROFILE as any)
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    {/* Admin User Management */}
+    <Stack.Screen name={AppRoutes.USERS}>
+      {({ navigation }) => (
+        <UsersListScreen
+          onAddUserPress={() => navigation.navigate(AppRoutes.ADD_USER as any)}
+          onSignUpPress={() => navigation.navigate(AppRoutes.ADD_USER as any)}
+          onUserPress={user =>
+            navigation.navigate(AppRoutes.USER_DETAILS as any, { userId: user.id })
+          }
+          onEditUserPress={user =>
+            navigation.navigate(AppRoutes.EDIT_USER as any, { userId: user.id })
+          }
+          onVerifyUserPress={user =>
+            navigation.navigate(AppRoutes.USER_VERIFICATION as any, { userId: user.id })
+          }
+          onNotificationsPress={() =>
+            navigation.navigate(AppRoutes.NOTIFICATIONS as any)
+          }
+          onProfilePress={() =>
+            navigation.navigate(AppRoutes.MY_PROFILE as any)
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.USER_DETAILS}>
+      {({ route, navigation }) => (
+        <UserDetailsScreen
+          userId={(route.params as any)?.userId}
+          onBack={navigation.goBack}
+          onEditPress={user =>
+            navigation.navigate(AppRoutes.EDIT_USER as any, { userId: user.id })
+          }
+          onVerifyPress={user =>
+            navigation.navigate(AppRoutes.USER_VERIFICATION as any, { userId: user.id })
+          }
+          onNotificationsPress={() =>
+            navigation.navigate(AppRoutes.NOTIFICATIONS as any)
+          }
+          onProfilePress={() =>
+            navigation.navigate(AppRoutes.MY_PROFILE as any)
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.ADD_USER}>
+      {({ navigation }) => (
+        <AddUserScreen
+          onBack={navigation.goBack}
+          onSuccess={navigation.goBack}
+          onNotificationsPress={() =>
+            navigation.navigate(AppRoutes.NOTIFICATIONS as any)
+          }
+          onProfilePress={() =>
+            navigation.navigate(AppRoutes.MY_PROFILE as any)
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.EDIT_USER}>
+      {({ route, navigation }) => (
+        <EditUserScreen
+          userId={(route.params as any)?.userId}
+          onBack={navigation.goBack}
+          onSuccess={navigation.goBack}
+          onNotificationsPress={() =>
+            navigation.navigate(AppRoutes.NOTIFICATIONS as any)
+          }
+          onProfilePress={() =>
+            navigation.navigate(AppRoutes.MY_PROFILE as any)
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.USER_VERIFICATION}>
+      {({ route, navigation }) => (
+        <UserVerificationScreen
+          userId={(route.params as any)?.userId}
+          onBack={navigation.goBack}
+          onSuccess={navigation.goBack}
+          onNotificationsPress={() =>
+            navigation.navigate(AppRoutes.NOTIFICATIONS as any)
+          }
           onProfilePress={() =>
             navigation.navigate(AppRoutes.MY_PROFILE as any)
           }

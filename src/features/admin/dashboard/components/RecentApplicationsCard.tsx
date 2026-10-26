@@ -11,6 +11,7 @@ interface RecentApplicationsCardProps {
     }
   >;
   onViewAll?: () => void;
+  onPressRow?: (rowId: string) => void;
 }
 
 const DEFAULT_ROWS: Array<
@@ -29,16 +30,19 @@ const STATUS_CONFIG: Record<
   { label: string; bg: string; text: string; border: string }
 > = {
   APPROVED: { label: 'Approved', bg: '#ECFDF5', text: '#059669', border: '#A7F3D0' },
+  ACTIVE: { label: 'Approved', bg: '#ECFDF5', text: '#059669', border: '#A7F3D0' },
   UNDER_REVIEW: { label: 'Review', bg: '#FFFBEB', text: '#D97706', border: '#FDE68A' },
   PENDING: { label: 'Pending', bg: '#EFF6FF', text: '#2563EB', border: '#BFDBFE' },
+  SUBMITTED: { label: 'Pending', bg: '#EFF6FF', text: '#2563EB', border: '#BFDBFE' },
   REJECTED: { label: 'Rejected', bg: '#FEF2F2', text: '#DC2626', border: '#FECACA' },
   CLOSED: { label: 'Closed', bg: '#F8FAFC', text: '#64748B', border: '#E2E8F0' },
 };
 
 const formatAppCode = (id?: string): string => {
   if (!id) return '#APP-001';
+  if (id.startsWith('#')) return id;
   if (id.startsWith('APP-')) return `#${id}`;
-  if (id.startsWith('APP')) return `#APP-${id.slice(3, 8)}`;
+  if (id.startsWith('HRSJM-')) return `#${id}`;
   const clean = id.replace(/-/g, '').slice(-5).toUpperCase();
   return `#APP-${clean}`;
 };
@@ -46,8 +50,17 @@ const formatAppCode = (id?: string): string => {
 export const RecentApplicationsCard: React.FC<RecentApplicationsCardProps> = ({
   rows,
   onViewAll,
+  onPressRow,
 }) => {
-  const displayList = rows && rows.length > 0 ? rows.slice(0, 4) : DEFAULT_ROWS;
+  // Show submitted applications awaiting review
+  const pendingRows = Array.isArray(rows)
+    ? rows.filter(row => {
+        const up = (row.status || '').toUpperCase();
+        return up === 'PENDING' || up === 'UNDER_REVIEW' || up === 'SUBMITTED';
+      })
+    : [];
+
+  const displayList = pendingRows.slice(0, 4);
 
   return (
     <View style={styles.card}>
@@ -60,87 +73,112 @@ export const RecentApplicationsCard: React.FC<RecentApplicationsCardProps> = ({
             onPress={onViewAll}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="View all applications"
           >
             <Text style={styles.viewAll}>View All</Text>
           </TouchableOpacity>
         ) : null}
       </View>
 
-      <View style={styles.rows}>
-        {displayList.map(row => {
-          const statusConfig = STATUS_CONFIG[row.status] || {
-            label: row.status.replace(/_/g, ' '),
-            bg: '#F8FAFC',
-            text: '#64748B',
-            border: '#E2E8F0',
-          };
+      {displayList.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyTitle}>No pending applications</Text>
+          <Text style={styles.emptySubtitle}>
+            Submitted applications awaiting review will appear here.
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.rows}>
+          {displayList.map(row => {
+            const normalizedKey = (row.status || '').toUpperCase();
+            const statusConfig = STATUS_CONFIG[normalizedKey] || STATUS_CONFIG[row.status] || {
+              label: (row.status || 'Pending').replace(/_/g, ' '),
+              bg: '#F8FAFC',
+              text: '#64748B',
+              border: '#E2E8F0',
+            };
 
-          const appCode = formatAppCode(row.id);
-          const hasName = Boolean(row.full_name && row.full_name.trim());
-          const primaryText = hasName ? row.full_name!.trim() : `Application ${appCode}`;
-          const secondaryText = hasName
-            ? `${appCode} · ${formatDate(row.created_at)}`
-            : formatDate(row.created_at);
+            const appCode = formatAppCode(row.id);
+            const hasName = Boolean(row.full_name && row.full_name.trim());
+            const primaryText = hasName ? row.full_name!.trim() : `Application ${appCode}`;
+            const secondaryText = hasName
+              ? `${appCode} · ${formatDate(row.created_at)}`
+              : formatDate(row.created_at);
 
-          return (
-            <View key={row.id} style={styles.row}>
-              <View style={styles.iconBox}>
-                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z"
-                    stroke="#2563EB"
-                    strokeWidth={1.8}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <Path
-                    d="M14 2V8H20"
-                    stroke="#2563EB"
-                    strokeWidth={1.8}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <Path
-                    d="M16 13H8"
-                    stroke="#2563EB"
-                    strokeWidth={1.8}
-                    strokeLinecap="round"
-                  />
-                  <Path
-                    d="M16 17H8"
-                    stroke="#2563EB"
-                    strokeWidth={1.8}
-                    strokeLinecap="round"
-                  />
-                </Svg>
-              </View>
-
-              <View style={styles.appInfo}>
-                <Text style={styles.primaryText} numberOfLines={1}>
-                  {primaryText}
-                </Text>
-                <Text style={styles.secondaryText} numberOfLines={1}>
-                  {secondaryText}
-                </Text>
-              </View>
-
-              <View
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: statusConfig.bg, borderColor: statusConfig.border },
-                ]}
+            return (
+              <TouchableOpacity
+                key={row.id}
+                style={styles.row}
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (onPressRow) {
+                    onPressRow(row.id);
+                  } else if (onViewAll) {
+                    onViewAll();
+                  }
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`${primaryText}, status ${statusConfig.label}`}
               >
-                <Text
-                  style={[styles.statusBadgeText, { color: statusConfig.text }]}
-                  numberOfLines={1}
+                <View style={styles.iconBox}>
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z"
+                      stroke="#2563EB"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <Path
+                      d="M14 2V8H20"
+                      stroke="#2563EB"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <Path
+                      d="M16 13H8"
+                      stroke="#2563EB"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                    />
+                    <Path
+                      d="M16 17H8"
+                      stroke="#2563EB"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                    />
+                  </Svg>
+                </View>
+
+                <View style={styles.appInfo}>
+                  <Text style={styles.primaryText} numberOfLines={1}>
+                    {primaryText}
+                  </Text>
+                  <Text style={styles.secondaryText} numberOfLines={1}>
+                    {secondaryText}
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: statusConfig.bg, borderColor: statusConfig.border },
+                  ]}
                 >
-                  {statusConfig.label}
-                </Text>
-              </View>
-            </View>
-          );
-        })}
-      </View>
+                  <Text
+                    style={[styles.statusBadgeText, { color: statusConfig.text }]}
+                    numberOfLines={1}
+                  >
+                    {statusConfig.label}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 };
@@ -216,6 +254,25 @@ const styles = StyleSheet.create({
   statusBadgeText: {
     fontSize: 10.5,
     fontWeight: '700',
+  },
+  emptyContainer: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#06294D',
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: 11.5,
+    fontWeight: '500',
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });
 

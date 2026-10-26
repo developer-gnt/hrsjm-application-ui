@@ -86,7 +86,7 @@ const getInitialProfile = (): AdminProfile => {
       avatar: user.avatar || null,
       role: mapBackendRole(user.roles),
       accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
-      membershipType: isUserAdmin ? 'Executive Member' : isMember ? 'Individual Member' : 'General User',
+      membershipType: isUserAdmin ? 'Executive Member' : isMember ? 'Individual Member' : 'User',
       memberId: adminId,
       adminId,
       dateOfBirth: '',
@@ -246,7 +246,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         membershipType:
           membershipData?.category?.name ||
           (membershipData?.application_data as any)?.membership_type ||
-          (isUserAdmin ? 'Executive Member' : isApprovedMember ? 'Individual Member' : 'General User'),
+          (isUserAdmin ? 'Executive Member' : isApprovedMember ? 'Individual Member' : 'User'),
         memberId,
         adminId,
         dateOfBirth: (user as any)?.dob || (membershipData?.application_data as any)?.personal_details?.dob || '',

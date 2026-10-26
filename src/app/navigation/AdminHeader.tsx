@@ -184,6 +184,9 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     AdminComplaintsTab: AppRoutes.ADMIN_COMPLAINTS_TAB,
     AdminMoreTab: AppRoutes.ADMIN_MORE_TAB,
     ProfileSettings: AppRoutes.SETTINGS,
+    Users: AppRoutes.USERS,
+    users: AppRoutes.USERS,
+    UserManagement: AppRoutes.USERS,
   };
 
   const TAB_ROUTE_SET = new Set([

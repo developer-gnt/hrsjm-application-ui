@@ -47,7 +47,7 @@ const DEFAULT_REGISTRATION_STATE: RegistrationState = {
   countryCode: '+91',
   dob: '',
   accountType: 'general',
-  accountTypeLabel: 'General User',
+  accountTypeLabel: 'User',
   password: '',
   confirmPassword: '',
   selectedDocId: 'aadhaar',

@@ -7,7 +7,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { BorderRadius, Spacing } from '../../../../core';
+import { BorderRadius, FontFamilies, Spacing } from '../../../../core';
 import { UserItem } from '../types/user.types';
 
 interface UserConfirmationModalProps {
@@ -113,7 +113,7 @@ export const UserConfirmationModal: React.FC<UserConfirmationModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    backgroundColor: 'rgba(1, 31, 57, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.base,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
@@ -140,24 +140,26 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   iconCircleRed: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#FDEEEF',
   },
   iconCircleGreen: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#EAF7EE',
   },
   icon: {
     fontSize: 26,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontFamily: FontFamilies.display,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#06294D',
     textAlign: 'center',
     marginBottom: 6,
   },
   message: {
+    fontFamily: FontFamilies.sans,
     fontSize: 13,
-    color: '#64748B',
+    color: '#718096',
     textAlign: 'center',
     lineHeight: 19,
     marginBottom: Spacing.base,
@@ -169,23 +171,26 @@ const styles = StyleSheet.create({
   },
   cancelBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: BorderRadius.md,
+    minHeight: 44,
+    paddingVertical: 12,
+    borderRadius: BorderRadius.button,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#DBE5EE',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#EDF2F7',
   },
   cancelBtnText: {
+    fontFamily: FontFamilies.sans,
     fontSize: 13,
     fontWeight: '700',
-    color: '#475569',
+    color: '#06294D',
   },
   confirmBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: BorderRadius.md,
+    minHeight: 44,
+    paddingVertical: 12,
+    borderRadius: BorderRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -196,6 +201,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#16A34A',
   },
   confirmBtnText: {
+    fontFamily: FontFamilies.sans,
     fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
