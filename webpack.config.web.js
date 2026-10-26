@@ -4,8 +4,30 @@
  * proxies /api to the local HRSJM backend so no CORS changes are
  * needed on the backend.
  */
+const fs = require('fs');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+// Load .env file if present
+const envPath = path.resolve(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  if (typeof process.loadEnvFile === 'function') {
+    process.loadEnvFile(envPath);
+  } else {
+    fs.readFileSync(envPath, 'utf8')
+      .split('\n')
+      .forEach(line => {
+        const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+        if (match) {
+          const key = match[1];
+          let value = (match[2] || '').trim().replace(/^['"](.*)['"]$/, '$1');
+          if (!process.env[key]) {
+            process.env[key] = value;
+          }
+        }
+      });
+  }
+}
 
 // Environment mode: 'local' (default 127.0.0.1:3000) or 'production' (194.164.151.17:3000)
 const APP_ENV = process.env.APP_ENV || 'local';
@@ -36,6 +58,14 @@ module.exports = {
         context: '/api',
         target: BACKEND_TARGET,
         changeOrigin: true,
+        on: {
+          proxyReq: (proxyReq) => {
+            proxyReq.removeHeader('origin');
+          },
+        },
+        onProxyReq: (proxyReq) => {
+          proxyReq.removeHeader('origin');
+        },
       },
     ],
   },
