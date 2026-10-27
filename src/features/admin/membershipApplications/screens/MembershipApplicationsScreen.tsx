@@ -76,6 +76,7 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   const [pageSize, setPageSize] = useState(25);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     status: 'all',
+    type: 'all',
     accountType: 'all',
     memberType: 'All Types',
     membershipType: 'All Types',
@@ -145,6 +146,7 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     setActiveTab('all');
     setFilterOptions({
       status: 'all',
+      type: 'all',
       accountType: 'all',
       memberType: 'All Types',
       membershipType: 'All Types',
@@ -169,13 +171,8 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   };
 
   const hasActiveFilters =
+    (filterOptions.type && filterOptions.type !== 'all') ||
     (filterOptions.accountType && filterOptions.accountType !== 'all') ||
-    (filterOptions.memberType &&
-      filterOptions.memberType !== 'All Types' &&
-      filterOptions.memberType !== 'All Member Types') ||
-    (filterOptions.membershipType &&
-      filterOptions.membershipType !== 'All Types' &&
-      !filterOptions.accountType) ||
     filterOptions.sortBy !== 'newest';
 
   // Filter and sort applications list
@@ -192,25 +189,11 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
 
       const appAccountType = getApplicationAccountType(app); // 'membership' | 'seeker'
 
-      // Account Type filter
-      if (filterOptions.accountType && filterOptions.accountType !== 'all') {
-        if (appAccountType !== filterOptions.accountType) {
+      // Type filter: All, Membership, Donor Seeker
+      const selectedType = filterOptions.type || filterOptions.accountType;
+      if (selectedType && selectedType !== 'all') {
+        if (appAccountType !== selectedType) {
           return false;
-        }
-      }
-
-      // Member Type filter (applies when filtering membership applications)
-      const activeMemberType = filterOptions.memberType || filterOptions.membershipType;
-      if (
-        activeMemberType &&
-        activeMemberType !== 'All Types' &&
-        activeMemberType !== 'All Member Types'
-      ) {
-        if (activeMemberType === 'Donation Seeker') {
-          if (appAccountType !== 'seeker') return false;
-        } else {
-          if (appAccountType === 'seeker') return false;
-          if (app.membershipType !== activeMemberType) return false;
         }
       }
 

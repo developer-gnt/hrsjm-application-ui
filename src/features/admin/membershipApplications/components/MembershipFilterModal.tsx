@@ -14,14 +14,16 @@ import {
 } from '../../../../core';
 import { StatusTabKey } from './MembershipStatusTabs';
 
-export type AccountTypeFilter = 'all' | 'membership' | 'seeker';
+export type ApplicationTypeFilter = 'all' | 'membership' | 'seeker';
+export type AccountTypeFilter = ApplicationTypeFilter;
 
 export interface FilterOptions {
   status: StatusTabKey;
-  accountType: AccountTypeFilter;
-  memberType: string;
+  type: ApplicationTypeFilter;
   sortBy: 'newest' | 'oldest' | 'name_asc';
-  membershipType?: string; // backwards compatibility
+  accountType?: ApplicationTypeFilter;
+  memberType?: string;
+  membershipType?: string;
 }
 
 interface MembershipFilterModalProps {
@@ -32,21 +34,13 @@ interface MembershipFilterModalProps {
   onReset: () => void;
 }
 
-export const ACCOUNT_TYPE_OPTIONS: { key: AccountTypeFilter; label: string }[] = [
-  { key: 'all', label: 'All Types' },
+export const TYPE_OPTIONS: { key: ApplicationTypeFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
   { key: 'membership', label: 'Membership' },
   { key: 'seeker', label: 'Donor Seeker' },
 ];
 
-export const MEMBER_TYPES = [
-  'All Types',
-  'District Unit',
-  'State Unit',
-  'Individual Membership',
-  'Family Membership',
-  'Life Membership',
-  'Corporate Membership',
-];
+export const ACCOUNT_TYPE_OPTIONS = TYPE_OPTIONS;
 
 const SORT_OPTIONS: { key: FilterOptions['sortBy']; label: string }[] = [
   { key: 'newest', label: 'Newest First' },
@@ -69,13 +63,10 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
   onReset,
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<StatusTabKey>(currentFilters.status);
-  const [selectedAccountType, setSelectedAccountType] = useState<AccountTypeFilter>(
-    currentFilters.accountType ||
+  const [selectedType, setSelectedType] = useState<ApplicationTypeFilter>(
+    currentFilters.type ||
+      currentFilters.accountType ||
       (currentFilters.membershipType === 'Donation Seeker' ? 'seeker' : 'all')
-  );
-  const [selectedMemberType, setSelectedMemberType] = useState<string>(
-    currentFilters.memberType ||
-      (currentFilters.membershipType !== 'Donation Seeker' ? currentFilters.membershipType || 'All Types' : 'All Types')
   );
   const [selectedSort, setSelectedSort] = useState<FilterOptions['sortBy']>(currentFilters.sortBy);
 
@@ -83,13 +74,10 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
   React.useEffect(() => {
     if (visible) {
       setSelectedStatus(currentFilters.status);
-      setSelectedAccountType(
-        currentFilters.accountType ||
+      setSelectedType(
+        currentFilters.type ||
+          currentFilters.accountType ||
           (currentFilters.membershipType === 'Donation Seeker' ? 'seeker' : 'all')
-      );
-      setSelectedMemberType(
-        currentFilters.memberType ||
-          (currentFilters.membershipType !== 'Donation Seeker' ? currentFilters.membershipType || 'All Types' : 'All Types')
       );
       setSelectedSort(currentFilters.sortBy);
     }
@@ -98,12 +86,15 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
   const handleApply = () => {
     onApply({
       status: selectedStatus,
-      accountType: selectedAccountType,
-      memberType: selectedMemberType,
+      type: selectedType,
+      accountType: selectedType,
+      memberType: 'All Types',
       membershipType:
-        selectedAccountType === 'seeker'
+        selectedType === 'seeker'
           ? 'Donation Seeker'
-          : selectedMemberType,
+          : selectedType === 'membership'
+          ? 'Membership'
+          : 'All Types',
       sortBy: selectedSort,
     });
     onClose();
@@ -111,8 +102,7 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
 
   const handleReset = () => {
     setSelectedStatus('all');
-    setSelectedAccountType('all');
-    setSelectedMemberType('All Types');
+    setSelectedType('all');
     setSelectedSort('newest');
     onReset();
     onClose();
@@ -168,22 +158,17 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
                   </View>
                 </View>
 
-                {/* 2. Account Type Section */}
+                {/* 2. Type Section (All, Membership, Donor Seeker) */}
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Account Type</Text>
+                  <Text style={styles.sectionTitle}>Type</Text>
                   <View style={styles.chipsRow}>
-                    {ACCOUNT_TYPE_OPTIONS.map(opt => {
-                      const isSelected = selectedAccountType === opt.key;
+                    {TYPE_OPTIONS.map(opt => {
+                      const isSelected = selectedType === opt.key;
                       return (
                         <TouchableOpacity
                           key={opt.key}
                           style={[styles.chip, isSelected && styles.chipSelected]}
-                          onPress={() => {
-                            setSelectedAccountType(opt.key);
-                            if (opt.key === 'seeker') {
-                              setSelectedMemberType('All Types');
-                            }
-                          }}
+                          onPress={() => setSelectedType(opt.key)}
                           activeOpacity={0.7}
                         >
                           <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
@@ -195,46 +180,7 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
                   </View>
                 </View>
 
-                {/* 3. Member Type Section */}
-                <View style={styles.section}>
-                  <View style={styles.sectionTitleRow}>
-                    <Text style={styles.sectionTitle}>Member Type</Text>
-                    {selectedAccountType === 'seeker' ? (
-                      <Text style={styles.sectionSubtitle}>Not applicable for Donor Seeker</Text>
-                    ) : null}
-                  </View>
-                  <View style={[styles.chipsRow, selectedAccountType === 'seeker' && styles.chipsRowDisabled]}>
-                    {MEMBER_TYPES.map(type => {
-                      const isSelected = selectedMemberType === type;
-                      const disabled = selectedAccountType === 'seeker';
-                      return (
-                        <TouchableOpacity
-                          key={type}
-                          disabled={disabled}
-                          style={[
-                            styles.chip,
-                            isSelected && !disabled && styles.chipSelected,
-                            disabled && styles.chipDisabled,
-                          ]}
-                          onPress={() => setSelectedMemberType(type)}
-                          activeOpacity={0.7}
-                        >
-                          <Text
-                            style={[
-                              styles.chipText,
-                              isSelected && !disabled && styles.chipTextSelected,
-                              disabled && styles.chipTextDisabled,
-                            ]}
-                          >
-                            {type}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* 4. Sort Order Section */}
+                {/* 3. Sort Order Section */}
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Sort By</Text>
                   <View style={styles.chipsRow}>
@@ -329,31 +275,16 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: Spacing.lg,
   },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
-  },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: '#0F2860',
     marginBottom: Spacing.sm,
   },
-  sectionSubtitle: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#94A3B8',
-    fontStyle: 'italic',
-  },
   chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  chipsRowDisabled: {
-    opacity: 0.5,
   },
   chip: {
     paddingVertical: 8,
@@ -361,10 +292,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     backgroundColor: '#F1F5F9',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  chipDisabled: {
-    backgroundColor: '#F8FAFC',
     borderColor: '#E2E8F0',
   },
   chipSelected: {
@@ -375,9 +302,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#475569',
-  },
-  chipTextDisabled: {
-    color: '#94A3B8',
   },
   chipTextSelected: {
     color: '#FFFFFF',
