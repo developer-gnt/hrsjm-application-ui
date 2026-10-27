@@ -131,6 +131,8 @@ function App() {
                   accountTypeLabel: 'General User',
                 });
                 navigateToCreateAccountComplete();
+              } else if (accountType === 'member') {
+                navigateToMembershipCategories();
               } else {
                 navigateToCreateAccountVerification();
               }

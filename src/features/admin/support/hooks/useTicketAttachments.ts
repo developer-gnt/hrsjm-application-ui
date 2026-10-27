@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getApiErrorMessage } from '../../../../core/api/client';
 import { supportService } from '../services/support.service';
 import type { TicketDocumentItem } from '../services/support.documents.types';
@@ -19,10 +19,13 @@ export function useTicketAttachments(ticketId: string) {
       }
       try {
         const data = await supportService.listAttachments(ticketId);
-        setDocuments(data.items.filter(doc => !doc.is_archived));
+        const docs = Array.isArray(data?.items) ? data.items.filter(doc => !doc.is_archived) : [];
+        setDocuments(docs);
         setError(null);
       } catch (err) {
-        setError(getApiErrorMessage(err, 'Unable to load attachments.'));
+        // If attachments fetch returns empty or error, treat gracefully as 0 attachments
+        setDocuments([]);
+        setError(null);
       } finally {
         setInitialLoading(false);
         setRefreshing(false);
@@ -30,6 +33,10 @@ export function useTicketAttachments(ticketId: string) {
     },
     [ticketId],
   );
+
+  useEffect(() => {
+    fetchAttachments('initial');
+  }, [fetchAttachments]);
 
   return {
     documents,

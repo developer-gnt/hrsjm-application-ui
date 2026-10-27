@@ -9,7 +9,7 @@ import {
   View,
   Platform,
 } from 'react-native';
-import { BorderRadius, Spacing } from '../../../../core';
+import { BorderRadius, FontFamilies, Spacing } from '../../../../core';
 import { UserItem, UserType, UserStatus } from '../types/user.types';
 import {
   MailOutlineIcon,
@@ -71,47 +71,56 @@ export const UserCard: React.FC<UserCardProps> = ({
 
   const getAvatarTheme = (type: UserType) => {
     switch (type) {
+      case 'admin':
+        return { bg: '#EDF2F7', text: '#06294D' };
       case 'member':
-        return { bg: '#DBEAFE', text: '#1D4ED8' };
+        return { bg: '#EDF2F7', text: '#06294D' };
       case 'seeker':
-        return { bg: '#FFEDD5', text: '#C2410C' };
+        return { bg: '#FFF9E6', text: '#C9971A' };
       case 'donor':
-        return { bg: '#FEE2E2', text: '#B91C1C' };
+        return { bg: '#EDF2F7', text: '#174A78' };
       case 'general':
       default:
-        return { bg: '#EDE9FE', text: '#6D28D9' };
+        return { bg: '#EDF2F7', text: '#34516D' };
     }
   };
 
   const getTypeBadge = (type: UserType) => {
     switch (type) {
+      case 'admin':
+        return {
+          label: 'Admin',
+          bg: '#EDF2F7',
+          text: '#06294D',
+          isGroup: false,
+        };
       case 'member':
         return {
           label: 'Member',
-          bg: '#EFF6FF',
-          text: '#2563EB',
+          bg: '#EDF2F7',
+          text: '#06294D',
           isGroup: true,
         };
       case 'seeker':
         return {
           label: 'Donation Seeker',
-          bg: '#FFEDD5',
-          text: '#EA580C',
+          bg: '#FFF9E6',
+          text: '#C9971A',
           isGroup: true,
         };
       case 'donor':
         return {
           label: 'Donor',
-          bg: '#FEE2E2',
-          text: '#DC2626',
+          bg: '#EDF2F7',
+          text: '#174A78',
           isGroup: false,
         };
       case 'general':
       default:
         return {
-          label: 'General User',
-          bg: '#F1F5F9',
-          text: '#475569',
+          label: 'User',
+          bg: '#EDF2F7',
+          text: '#34516D',
           isGroup: false,
         };
     }
@@ -122,22 +131,22 @@ export const UserCard: React.FC<UserCardProps> = ({
       case 'active':
         return {
           label: 'Active',
-          bg: '#DCFCE7',
+          bg: '#EAF7EE',
           text: '#15803D',
           dot: '#16A34A',
         };
       case 'pending':
         return {
           label: 'Pending',
-          bg: '#FEF3C7',
-          text: '#B45309',
+          bg: '#FFF9E6',
+          text: '#8F6600',
           dot: '#D97706',
         };
       case 'blocked':
         return {
           label: 'Blocked',
-          bg: '#FEE2E2',
-          text: '#B91C1C',
+          bg: '#FDEEEF',
+          text: '#DC2626',
           dot: '#DC2626',
         };
     }
@@ -459,7 +468,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   userName: {
-    fontFamily: 'serif',
+    fontFamily: FontFamilies.display,
     fontSize: 16,
     fontWeight: '700',
     color: '#0B2F52',
@@ -471,8 +480,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   metaText: {
+    fontFamily: FontFamilies.sans,
     fontSize: 12,
-    color: '#64748B',
+    color: '#718096',
     marginLeft: 5,
     fontWeight: '400',
     flexShrink: 1,
@@ -490,6 +500,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   roleBadgeText: {
+    fontFamily: FontFamilies.sans,
     fontSize: 11.5,
     fontWeight: '600',
   },
@@ -507,9 +518,10 @@ const styles = StyleSheet.create({
   statusDropdownBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 3.5,
+    paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 12,
+    minHeight: 32,
   },
   statusDot: {
     width: 6.5,
@@ -518,6 +530,7 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   statusText: {
+    fontFamily: FontFamilies.sans,
     fontSize: 11.5,
     fontWeight: '700',
   },
@@ -527,13 +540,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   overflowBtn: {
-    paddingLeft: 6,
-    paddingVertical: 2,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   overflowDots: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0F2860',
+    color: '#06294D',
     lineHeight: 18,
   },
   joinedDateRow: {
@@ -545,21 +560,23 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   joinedLabel: {
+    fontFamily: FontFamilies.sans,
     fontSize: 10,
-    color: '#64748B',
+    color: '#718096',
     fontWeight: '500',
     lineHeight: 12,
   },
   joinedDateValue: {
+    fontFamily: FontFamilies.sans,
     fontSize: 11,
-    color: '#1E293B',
+    color: '#0B2F52',
     fontWeight: '600',
     lineHeight: 14,
   },
   // Modals
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: 'rgba(1, 31, 57, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.base,
@@ -570,16 +587,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     padding: 14,
-    shadowColor: '#000',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 8,
   },
   statusSheetTitle: {
-    fontSize: 14,
+    fontFamily: FontFamilies.display,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#0F2860',
+    color: '#06294D',
     marginBottom: 10,
     paddingHorizontal: 4,
   },
@@ -591,12 +609,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   statusSheetItemActive: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#EDF2F7',
   },
   statusSheetItemText: {
     flex: 1,
+    fontFamily: FontFamilies.sans,
     fontSize: 13,
-    color: '#1E293B',
+    color: '#0B2F52',
     marginLeft: 8,
   },
   menuSheet: {
@@ -605,7 +624,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.xl,
     padding: Spacing.base,
-    shadowColor: '#000',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
@@ -613,18 +632,20 @@ const styles = StyleSheet.create({
   },
   menuHeader: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: '#DBE5EE',
     paddingBottom: 10,
     marginBottom: 8,
   },
   menuTitle: {
+    fontFamily: FontFamilies.display,
     fontSize: 16,
-    fontWeight: '800',
-    color: '#0F2860',
+    fontWeight: '700',
+    color: '#06294D',
   },
   menuSubtitle: {
+    fontFamily: FontFamilies.sans,
     fontSize: 12,
-    color: '#64748B',
+    color: '#718096',
     marginTop: 2,
   },
   menuItem: {
@@ -638,30 +659,32 @@ const styles = StyleSheet.create({
   destructiveMenuItem: {
     marginTop: 4,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: '#DBE5EE',
     paddingTop: 12,
   },
   menuItemIcon: {
     fontSize: 16,
   },
   menuItemText: {
+    fontFamily: FontFamilies.sans,
     fontSize: 13.5,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#0B2F52',
   },
   menuCancelBtn: {
     marginTop: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderRadius: BorderRadius.md,
+    backgroundColor: '#EDF2F7',
+    borderRadius: BorderRadius.button,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DBE5EE',
   },
   menuCancelText: {
+    fontFamily: FontFamilies.sans,
     fontSize: 13,
     fontWeight: '700',
-    color: '#64748B',
+    color: '#06294D',
   },
   badgeAndRefRow: {
     flexDirection: 'row',
@@ -671,9 +694,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   appNumberPill: {
-    backgroundColor: '#F0F5FA',
+    backgroundColor: '#EDF2F7',
     borderWidth: 1,
-    borderColor: '#D4E4F7',
+    borderColor: '#DBE5EE',
     borderRadius: 10,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -681,7 +704,7 @@ const styles = StyleSheet.create({
   appNumberPillText: {
     fontSize: 10.5,
     fontWeight: '700',
-    color: '#0F2860',
+    color: '#06294D',
     fontFamily: Platform.select({ ios: 'Courier', android: 'monospace', default: 'monospace' }),
   },
 });

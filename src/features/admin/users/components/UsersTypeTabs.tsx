@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { BorderRadius, FontFamilies } from '../../../../core';
 import { UserStats, UserTypeTabKey } from '../types/user.types';
 
 interface UsersTypeTabsProps {
@@ -14,15 +15,13 @@ interface TabDef {
   getCount: (stats: UserStats) => number;
 }
 
-const ROW_1_TABS: TabDef[] = [
+const TABS: TabDef[] = [
   { key: 'all', label: 'All Users', getCount: s => s.total },
   { key: 'member', label: 'Members', getCount: s => s.membersCount },
+  { key: 'admin', label: 'Admins', getCount: s => s.adminsCount || 0 },
   { key: 'seeker', label: 'Donation Seekers', getCount: s => s.seekersCount },
-];
-
-const ROW_2_TABS: TabDef[] = [
   { key: 'donor', label: 'Donors', getCount: s => s.donorsCount },
-  { key: 'general', label: 'General Users', getCount: s => s.generalCount },
+  { key: 'general', label: 'Users', getCount: s => s.generalCount },
 ];
 
 export const UsersTypeTabs: React.FC<UsersTypeTabsProps> = ({
@@ -63,15 +62,15 @@ export const UsersTypeTabs: React.FC<UsersTypeTabsProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Row 1 matching Reference Image: All Users, Members, Donation Seekers */}
-      <View style={styles.row}>
-        {ROW_1_TABS.map(renderTab)}
-      </View>
-
-      {/* Row 2 matching Reference Image: Donors, General Users */}
-      <View style={styles.row}>
-        {ROW_2_TABS.map(renderTab)}
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        accessibilityRole="tablist"
+      >
+        {TABS.map(renderTab)}
+      </ScrollView>
     </View>
   );
 };
@@ -79,34 +78,38 @@ export const UsersTypeTabs: React.FC<UsersTypeTabsProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginVertical: 8,
-    gap: 6,
   },
-  row: {
+  scrollContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    paddingRight: 8,
   },
   chip: {
-    paddingVertical: 6,
-    paddingHorizontal: 9,
-    borderRadius: 4,
+    minHeight: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: BorderRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
   chipActive: {
-    backgroundColor: '#0F2860',
+    backgroundColor: '#06294D',
   },
   chipInactive: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#EDF2F7',
+    borderWidth: 1,
+    borderColor: '#DBE5EE',
   },
   chipText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontFamily: FontFamilies.sans,
+    fontSize: 12,
+    fontWeight: '600',
   },
   chipTextActive: {
     color: '#FFFFFF',
   },
   chipTextInactive: {
-    color: '#1E40AF',
+    color: '#06294D',
   },
 });

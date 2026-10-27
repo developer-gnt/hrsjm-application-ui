@@ -139,6 +139,9 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
   const [submittedTicketId, setSubmittedTicketId] = useState<string>('');
   const [isHelpTopicSelectorVisible, setIsHelpTopicSelectorVisible] =
     useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [agreeDeclaration, setAgreeDeclaration] = useState(false);
 
   const stepLabels = ['Complaint Details', 'Your Details', 'Review & Submit'];
 
@@ -879,6 +882,68 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         </View>
       </View>
 
+      {/* Consents & Declarations */}
+      <View style={styles.complaintConsentsCard}>
+        <Text style={styles.complaintConsentsHeading}>Applicant Declarations &amp; Consents</Text>
+
+        {/* 1. Terms & Conditions */}
+        <TouchableOpacity
+          style={styles.complaintConsentRow}
+          onPress={() => setAgreeTerms(!agreeTerms)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.complaintCheckboxBox, agreeTerms && styles.complaintCheckboxBoxChecked]}>
+            {agreeTerms && <AppIcon name="check" size={13} color="#FFFFFF" />}
+          </View>
+          <View style={styles.complaintConsentTextWrap}>
+            <Text style={styles.complaintConsentTitle}>
+              I agree to the Terms &amp; Conditions *
+            </Text>
+            <Text style={styles.complaintConsentSub}>
+              I accept the official Terms of Service governing HRSJM grievance assistance.
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* 2. Privacy Policy */}
+        <TouchableOpacity
+          style={styles.complaintConsentRow}
+          onPress={() => setAgreePrivacy(!agreePrivacy)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.complaintCheckboxBox, agreePrivacy && styles.complaintCheckboxBoxChecked]}>
+            {agreePrivacy && <AppIcon name="check" size={13} color="#FFFFFF" />}
+          </View>
+          <View style={styles.complaintConsentTextWrap}>
+            <Text style={styles.complaintConsentTitle}>
+              I accept the Privacy Policy *
+            </Text>
+            <Text style={styles.complaintConsentSub}>
+              I consent to HRSJM verifying my details and contacting me regarding this case.
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* 3. Solemn Declaration */}
+        <TouchableOpacity
+          style={styles.complaintConsentRow}
+          onPress={() => setAgreeDeclaration(!agreeDeclaration)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.complaintCheckboxBox, agreeDeclaration && styles.complaintCheckboxBoxChecked]}>
+            {agreeDeclaration && <AppIcon name="check" size={13} color="#FFFFFF" />}
+          </View>
+          <View style={styles.complaintConsentTextWrap}>
+            <Text style={styles.complaintConsentTitle}>
+              Solemn Declaration of Truthfulness *
+            </Text>
+            <Text style={styles.complaintConsentSub}>
+              I declare that all facts and statements provided in this complaint are true and accurate.
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.doubleButtonRow}>
         <AppButton
           title="Back"
@@ -890,15 +955,22 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         <AppButton
           title="Submit Complaint"
           loading={isSubmitting}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !agreeTerms || !agreePrivacy || !agreeDeclaration}
           onPress={async () => {
             if (isSubmitting) return;
+            if (!agreeTerms || !agreePrivacy || !agreeDeclaration) {
+              Alert.alert(
+                'Declarations Required',
+                'Please accept the Terms & Conditions, Privacy Policy, and Solemn Declaration before submitting your complaint.'
+              );
+              return;
+            }
             setIsSubmitting(true);
             try {
               const ticket = await supportTicketsStore.createTicket({
                 category: form.helpType || selectedHelpTopic?.title || 'Human Rights Grievance',
                 subject: form.subject || 'Complaint / Grievance',
-                description: `${form.description}\n\nComplainant: ${form.fullName}\nPhone: +91${form.mobile}\nEmail: ${form.email || 'N/A'}\nAddress: ${form.address || 'N/A'}\nNearby Police Station: ${form.policeStation || 'N/A'}\nLocation: ${form.city || ''}, ${form.state || ''}`,
+                description: `[Source: ${Platform.OS === 'web' ? 'Web' : 'App'}]\n${form.description}\n\nComplainant: ${form.fullName}\nPhone: +91${form.mobile}\nEmail: ${form.email || 'N/A'}\nAddress: ${form.address || 'N/A'}\nNearby Police Station: ${form.policeStation || 'N/A'}\nLocation: ${form.city || ''}, ${form.state || ''}`,
                 attachments: attachments.map((a, idx) => ({
                   id: `att-${Date.now()}-${idx}`,
                   name: a.name || 'document',
@@ -1540,5 +1612,55 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: AdminColors.primaryDark,
+  },
+  complaintConsentsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.base,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: Spacing.md,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  complaintConsentsHeading: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+    marginBottom: Spacing.sm,
+  },
+  complaintConsentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 12,
+  },
+  complaintCheckboxBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#94A3B8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+    backgroundColor: '#FFFFFF',
+  },
+  complaintCheckboxBoxChecked: {
+    backgroundColor: AdminColors.primaryDark,
+    borderColor: AdminColors.primaryDark,
+  },
+  complaintConsentTextWrap: {
+    flex: 1,
+  },
+  complaintConsentTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+  },
+  complaintConsentSub: {
+    fontSize: 11.5,
+    color: AdminColors.textSecondary,
+    marginTop: 2,
+    lineHeight: 15,
   },
 });

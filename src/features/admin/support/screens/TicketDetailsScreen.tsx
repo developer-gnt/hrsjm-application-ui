@@ -23,7 +23,7 @@ import type { AppStackParamList } from '../../../../core/navigation/types';
 import { TicketStatusBadge } from '../components/TicketStatusBadge';
 import TicketStatusModal from '../components/TicketStatusModal';
 import TicketAttachments from '../components/TicketAttachments';
-import { ticketStatusMeta } from '../support.utils';
+import { resolveTicketSource, SOURCE_CONFIG, ticketStatusMeta } from '../support.utils';
 import { canTransition, shortTicketId } from '../types/support.types';
 import { useTicketActions } from '../hooks/useTicketActions';
 import { useTicketDetails } from '../hooks/useTicketDetails';
@@ -44,7 +44,11 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+      {typeof value === 'string' || typeof value === 'number' ? (
+        <Text style={styles.infoValue}>{value}</Text>
+      ) : (
+        value
+      )}
     </View>
   );
 }
@@ -108,6 +112,8 @@ export function TicketDetailsScreen({ route, navigation }: ScreenProps) {
     const canResolve = canManage && canTransition(ticket.status, 'RESOLVED');
     const canClose = canManage && canTransition(ticket.status, 'CLOSED');
     const hasActions = canStartReview || canResolve || canClose;
+    const sourceKey = resolveTicketSource(ticket);
+    const sourceMeta = SOURCE_CONFIG[sourceKey];
 
     return (
       <View>
@@ -132,6 +138,21 @@ export function TicketDetailsScreen({ route, navigation }: ScreenProps) {
         </Section>
 
         <Section title="Ticket Information">
+          <InfoRow
+            label="Source"
+            value={
+              <View
+                style={[
+                  styles.sourceBadge,
+                  { backgroundColor: sourceMeta.bg, borderColor: sourceMeta.border },
+                ]}
+              >
+                <Text style={[styles.sourceBadgeText, { color: sourceMeta.text }]}>
+                  {sourceMeta.label}
+                </Text>
+              </View>
+            }
+          />
           <InfoRow label="Submitted" value={formatDateTime(ticket.created_at)} />
           <InfoRow label="Last Updated" value={formatDateTime(ticket.updated_at)} />
           {ticket.resolved_at ? (
@@ -152,23 +173,6 @@ export function TicketDetailsScreen({ route, navigation }: ScreenProps) {
 
         <Section title="Attachments">
           <TicketAttachments ticketId={ticket.id} />
-        </Section>
-
-        <Section title="Conversation">
-          <Text style={styles.conversationNote}>
-            Reply to the reporter in the ticket chat.
-          </Text>
-          <AppButton
-            title="Open Chat"
-            variant="secondary"
-            fullWidth
-            onPress={() =>
-              navigation.navigate('TicketChat', {
-                ticketId: ticket.id,
-                subject: ticket.subject,
-              })
-            }
-          />
         </Section>
 
         <Section title="Actions">
@@ -328,10 +332,16 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textPrimary,
   },
-  conversationNote: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
+  sourceBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignSelf: 'flex-end',
+  },
+  sourceBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   actionsWrap: {
     gap: spacing.md,

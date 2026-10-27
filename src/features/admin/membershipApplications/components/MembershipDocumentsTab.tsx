@@ -11,6 +11,7 @@ import {
   DocumentItemData,
   MembershipDocumentViewerModal,
 } from './MembershipDocumentViewerModal';
+import { resolveUploadedFileUri } from '../services/uploadedDocumentsCache';
 
 interface MembershipDocumentsTabProps {
   application: MembershipApplicationItem;
@@ -27,44 +28,33 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
   const applicantSlug = (application.applicantName || 'applicant').toLowerCase().replace(/\s+/g, '_');
   const docDate = application.submittedAt ? application.submittedAt.split(',')[0] : 'Recently';
 
-  const documents: DocumentItemData[] = (application.documents && application.documents.length > 0)
+  const photoDoc = application.documents?.find(
+    doc => (doc.title || doc.fileName || doc.id || '').toLowerCase().includes('photo')
+  );
+  const resolvedAvatar =
+    (application.avatarUrl ? resolveUploadedFileUri(undefined, application.avatarUrl) : undefined) ||
+    (photoDoc?.uri ? resolveUploadedFileUri(photoDoc.fileName, photoDoc.uri) : undefined) ||
+    resolveUploadedFileUri(photoDoc?.fileName) ||
+    resolveUploadedFileUri(application.applicantName) ||
+    undefined;
+
+  const rawDocs = application.documents && application.documents.length > 0
     ? application.documents
-    : [
-        {
-          id: `doc-${application.id}-aadhaar`,
-          title: 'Aadhaar Card (Identity Proof)',
-          fileName: `aadhaar_card_${applicantSlug}.pdf`,
-          fileSize: '1.8 MB',
-          uploadDate: docDate,
-        },
-        {
-          id: `doc-${application.id}-address`,
-          title: 'Address Proof (Residence Verification)',
-          fileName: `address_proof_${applicantSlug}.pdf`,
-          fileSize: '1.5 MB',
-          uploadDate: docDate,
-        },
-        {
-          id: `doc-${application.id}-qualification`,
-          title: 'Educational Qualification Proof (Degree / Certificate)',
-          fileName: `qualification_${applicantSlug}.pdf`,
-          fileSize: '2.0 MB',
-          uploadDate: docDate,
-        },
-        {
-          id: `doc-${application.id}-photo`,
-          title: 'Passport Size Photograph',
-          fileName: `photograph_${applicantSlug}.jpg`,
-          fileSize: '850 KB',
-          uploadDate: docDate,
-          uri: application.avatarUrl,
-        },
-      ];
+    : [];
+
+  const documents: DocumentItemData[] = rawDocs.map(d => ({
+    ...d,
+    uri: resolveUploadedFileUri(d.fileName, d.uri),
+  }));
 
   const handleOpenDoc = (doc: DocumentItemData) => {
-    setSelectedDoc(doc);
+    const resolvedDoc = {
+      ...doc,
+      uri: resolveUploadedFileUri(doc.fileName, doc.uri),
+    };
+    setSelectedDoc(resolvedDoc);
     setViewerVisible(true);
-    onViewDocument?.(doc);
+    onViewDocument?.(resolvedDoc);
   };
 
   const renderFileIcon = (doc: DocumentItemData) => {
@@ -157,7 +147,7 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
           address: application.address,
           fatherName: application.fatherName,
           occupation: application.occupation,
-          avatarUrl: application.avatarUrl,
+          avatarUrl: resolvedAvatar || application.avatarUrl,
         }}
         onClose={() => setViewerVisible(false)}
       />

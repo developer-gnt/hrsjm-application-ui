@@ -92,24 +92,17 @@ export function TicketAttachments({ ticketId }: { ticketId: string }) {
 
   if (initialLoading) {
     return (
-      <View>
-        {[0, 1].map(index => (
-          <SkeletonCard key={index} />
-        ))}
+      <View style={styles.noAttachmentsBox}>
+        <Text style={styles.noAttachmentsText}>Checking attachments...</Text>
       </View>
     );
   }
 
-  if (error) {
-    return <AppErrorState title="Unable to load attachments" message={error} onRetry={retry} />;
-  }
-
-  if (documents.length === 0) {
+  if (error || documents.length === 0) {
     return (
-      <AppEmptyState
-        title="No Attachments"
-        message="No attachments have been uploaded to this ticket yet."
-      />
+      <View style={styles.noAttachmentsBox}>
+        <Text style={styles.noAttachmentsText}>No attachments uploaded</Text>
+      </View>
     );
   }
 
@@ -146,6 +139,19 @@ export function TicketAttachments({ ticketId }: { ticketId: string }) {
 }
 
 const styles = StyleSheet.create({
+  noAttachmentsBox: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  noAttachmentsText: {
+    ...typography.secondary,
+    color: '#64748B',
+    fontStyle: 'italic',
+  },
   docCard: {
     marginBottom: spacing.md,
   },

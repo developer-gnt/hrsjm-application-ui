@@ -24,8 +24,10 @@ import {
   ArrowRightIcon,
   GoogleGIcon,
   ChevronDownIcon,
+  GenderIcon,
 } from '../components/AuthIcons';
 import { DobDatePickerModal } from '../components/DobDatePickerModal';
+import { GenderPickerModal } from '../components/GenderPickerModal';
 import { getRegistrationState, updateRegistrationState } from '../state/registrationState';
 import { navigateToCreateAccountAdditional } from '../../../core/navigation/appRouter';
 import { authService } from '../services/auth.service';
@@ -46,6 +48,7 @@ export interface CreateAccountFormData {
   phone: string;
   countryCode: string;
   dob: string;
+  gender?: string;
 }
 
 export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
@@ -66,7 +69,9 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   });
   const [countryCode, setCountryCode] = useState(() => regState.countryCode || '+91');
   const [dob, setDob] = useState(() => regState.dob || '');
+  const [gender, setGender] = useState(() => regState.gender || '');
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+  const [isGenderPickerVisible, setIsGenderPickerVisible] = useState(false);
 
   // Field validation and database check states
   const [errors, setErrors] = useState<{
@@ -263,6 +268,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
         phone: formattedPhone,
         countryCode,
         dob: dob.trim(),
+        gender: gender.trim(),
       });
       if (onContinue) {
         onContinue({
@@ -271,6 +277,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
           phone: cleanMobile,
           countryCode,
           dob: dob.trim(),
+          gender: gender.trim(),
         });
       } else {
         navigateToCreateAccountAdditional();
@@ -285,6 +292,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
         phone: `${countryCode} ${cleanMobile}`,
         countryCode,
         dob: dob.trim(),
+        gender: gender.trim(),
       });
       if (onContinue) {
         onContinue({
@@ -293,6 +301,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
           phone: cleanMobile,
           countryCode,
           dob: dob.trim(),
+          gender: gender.trim(),
         });
       } else {
         navigateToCreateAccountAdditional();
@@ -538,6 +547,44 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   updateRegistrationState({ dob: date });
                 }}
                 onClose={() => setIsDatePickerVisible(false)}
+              />
+
+              {/* Field 5: Gender with Picker */}
+              <View style={styles.fieldWrapper}>
+                <TouchableOpacity
+                  style={styles.inputField}
+                  onPress={() => setIsGenderPickerVisible(true)}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select Gender"
+                >
+                  <View style={styles.inputLeftIcon}>
+                    <GenderIcon size={18} color="#475569" />
+                  </View>
+                  <Text
+                    style={[
+                      styles.textInput,
+                      styles.dobText,
+                      !gender && styles.placeholderText,
+                    ]}
+                  >
+                    {gender || 'Select Gender (Optional)'}
+                  </Text>
+                  <View style={styles.inputRightIcon}>
+                    <ChevronDownIcon size={12} color="#94A3B8" />
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              {/* Gender Picker Modal */}
+              <GenderPickerModal
+                visible={isGenderPickerVisible}
+                selectedGender={gender}
+                onSelectGender={(selected) => {
+                  setGender(selected);
+                  updateRegistrationState({ gender: selected });
+                }}
+                onClose={() => setIsGenderPickerVisible(false)}
               />
 
               {/* Continue Button */}

@@ -53,7 +53,7 @@ export const ApiRoutes = {
   // Admin
   ADMIN: {
     DASHBOARD: '/admin/dashboard',
-    MEMBERS: '/memberships',
+    MEMBERS: '/admin/members',
   },
 
   // Assistance Requests

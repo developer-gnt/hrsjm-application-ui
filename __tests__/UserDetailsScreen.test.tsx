@@ -100,7 +100,7 @@ describe('UserDetailsScreen (Screen 3) User Profile View Tests', () => {
     const root = renderer.root;
 
     expect(root.findAllByProps({ children: 'Fatima Khan' }).length).toBeGreaterThanOrEqual(1);
-    expect(root.findAllByProps({ children: 'General User' }).length).toBeGreaterThanOrEqual(1);
+    expect(root.findAllByProps({ children: 'User' }).length).toBeGreaterThanOrEqual(1);
   });
 
   it('triggers onEditPress callback when tapping Top Edit button or Bottom Edit User button', async () => {

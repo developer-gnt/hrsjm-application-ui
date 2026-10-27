@@ -82,4 +82,12 @@ export const AppRoutes = {
   // Membership & Renewal
   MEMBERSHIP_DETAILS: 'MembershipDetails',
   RENEW_MEMBERSHIP: 'RenewMembership',
+
+  // Admin User Management Sub-routes
+  USERS: 'UsersList',
+  USER_DETAILS: 'UserDetails',
+  ADD_USER: 'AddUser',
+  EDIT_USER: 'EditUser',
+  USER_VERIFICATION: 'UserVerification',
 } as const;
+

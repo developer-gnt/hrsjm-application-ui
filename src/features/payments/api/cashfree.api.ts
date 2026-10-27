@@ -47,8 +47,8 @@ export const cashfreeApi = {
     params: CreateDonationOrderParams,
   ): Promise<CashfreeOrderSession> {
     const remark = params.panNumber
-      ? `80G PAN: ${params.panNumber}`
-      : `Donation for ${params.cause}`;
+      ? `Donation from Application (80G PAN: ${params.panNumber})`
+      : `Donation from Application - ${params.cause}`;
 
     // 1. Create authoritative donation record
     const donationRes = await apiClient.post<{ id: string }>(API_ENDPOINTS.DONATIONS.CREATE, {

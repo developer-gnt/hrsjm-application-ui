@@ -41,6 +41,7 @@ import type { MoreStackParamList } from '../../../../app/navigation/NavigationTy
 import {
   classifyReceipt,
   formatPaymentMethodBadge,
+  formatVoucherStatusBadge,
 } from '../utils/receiptClassification';
 
 type ReceiptVoucherDetailsScreenProps = NativeStackScreenProps<
@@ -267,7 +268,7 @@ export const ReceiptVoucherDetailsScreen: React.FC<
             </View>
 
             <AdminStatusBadge
-              label={voucher.status}
+              label={formatVoucherStatusBadge(voucher.status).label}
               tone={adminStatusTone(voucher.status)}
             />
           </View>
@@ -363,11 +364,11 @@ export const ReceiptVoucherDetailsScreen: React.FC<
               <Text style={styles.sectionTitle}>
                 {classified.category === 'CAUSE_DONATION'
                   ? 'Donation for Cause'
-                  : classified.category === 'GENERAL_DONATION'
-                    ? 'General Donation'
-                    : classified.category === 'RENEW_MEMBERSHIP'
+                  : classified.category === 'NGO_DONATION' || classified.category === 'GENERAL_DONATION'
+                    ? 'NGO Donation'
+                    : classified.category === 'RENEWAL_PAYMENT' || classified.category === 'RENEW_MEMBERSHIP'
                       ? 'Membership Renewal'
-                      : classified.category === 'NEW_MEMBERSHIP'
+                      : classified.category === 'MEMBERSHIP_PAYMENT' || classified.category === 'NEW_MEMBERSHIP'
                         ? 'Membership Registration'
                         : 'Income Classification'}
               </Text>
@@ -396,39 +397,55 @@ export const ReceiptVoucherDetailsScreen: React.FC<
           {/* Context content based on category */}
           {classified.category === 'CAUSE_DONATION' ? (
             <>
-              <DataRow label="Supported Cause" value={classified.sourceTitle} highlight />
-              <DataRow label="Fund Purpose" value={classified.sourceDescription} />
+              {classified.sourceTitle ? (
+                <DataRow label="Supported Cause" value={classified.sourceTitle} highlight />
+              ) : null}
+              {classified.sourceDescription ? (
+                <DataRow label="Fund Purpose" value={classified.sourceDescription} />
+              ) : null}
+              <DataRow label="Source Channel" value={classified.sourceBadgeText} />
             </>
-          ) : classified.category === 'RENEW_MEMBERSHIP' ? (
+          ) : classified.category === 'RENEWAL_PAYMENT' || classified.category === 'RENEW_MEMBERSHIP' ? (
             <>
-              <DataRow label="Renewal Member" value={classified.payerName} highlight />
+              {classified.payerName ? (
+                <DataRow label="Renewal Member" value={classified.payerName} highlight />
+              ) : null}
               {classified.membershipNumber ? (
                 <DataRow label="Membership ID" value={classified.membershipNumber} />
               ) : null}
-              <DataRow
-                label="Extension Period"
-                value={classified.renewalExtension || '1 Year Extension'}
-              />
-              <DataRow label="Status" value="Renewal Active & Verified" />
+              {classified.renewalExtension ? (
+                <DataRow label="Extension Period" value={classified.renewalExtension} />
+              ) : null}
+              <DataRow label="Source Channel" value={classified.sourceBadgeText} />
             </>
-          ) : classified.category === 'NEW_MEMBERSHIP' ? (
+          ) : classified.category === 'MEMBERSHIP_PAYMENT' || classified.category === 'NEW_MEMBERSHIP' ? (
             <>
-              <DataRow label="New Member" value={classified.payerName} highlight />
+              {classified.payerName ? (
+                <DataRow label="New Member" value={classified.payerName} highlight />
+              ) : null}
               {classified.membershipNumber ? (
                 <DataRow label="Assigned Member ID" value={classified.membershipNumber} />
               ) : null}
-              <DataRow label="Plan / Category" value={classified.planName || 'Annual Membership'} />
-              <DataRow label="Registration Type" value="New Member Registration" />
+              {classified.planName ? (
+                <DataRow label="Plan / Category" value={classified.planName} />
+              ) : null}
+              <DataRow label="Source Channel" value={classified.sourceBadgeText} />
             </>
-          ) : classified.category === 'GENERAL_DONATION' ? (
+          ) : classified.category === 'NGO_DONATION' || classified.category === 'GENERAL_DONATION' ? (
             <>
-              <DataRow label="Contribution" value="General Public Donation" highlight />
+              <DataRow label="Contribution" value="General NGO Donation" highlight />
               <DataRow label="Purpose" value="HRSJM Social Welfare & Educational Programs" />
+              <DataRow label="Source Channel" value={classified.sourceBadgeText} />
             </>
           ) : (
             <>
-              <DataRow label="Income Account" value={voucher.income_account?.account_name} highlight />
-              <DataRow label="Classification" value={classified.sourceDescription} />
+              {voucher.income_account?.account_name ? (
+                <DataRow label="Income Account" value={voucher.income_account.account_name} highlight />
+              ) : null}
+              {classified.sourceDescription ? (
+                <DataRow label="Classification" value={classified.sourceDescription} />
+              ) : null}
+              <DataRow label="Source Channel" value={classified.sourceBadgeText} />
             </>
           )}
         </AppCard>
@@ -444,17 +461,21 @@ export const ReceiptVoucherDetailsScreen: React.FC<
             </View>
           </View>
 
-          <DataRow
-            label="Donor / Contributor"
-            value={classified.payerName}
-          />
+          {classified.payerName ? (
+            <DataRow
+              label="Donor / Contributor"
+              value={classified.payerName}
+            />
+          ) : null}
           {classified.payerContact ? (
             <DataRow label="Contact Info" value={classified.payerContact} />
           ) : null}
-          <DataRow
-            label="Contributor Type"
-            value={classified.contributorType || 'Registered Member / Contributor'}
-          />
+          {classified.contributorType ? (
+            <DataRow
+              label="Contributor Type"
+              value={classified.contributorType}
+            />
+          ) : null}
         </AppCard>
 
         {/* Payment Details Card */}
@@ -485,10 +506,24 @@ export const ReceiptVoucherDetailsScreen: React.FC<
             value={voucher.reference_number}
           />
           <View style={styles.dataRow}>
-            <Text style={styles.dataLabel}>Payment Status</Text>
-            <View style={styles.successBadge}>
-              <Text style={styles.successBadgeText}>
-                {voucher.status === 'POSTED' ? 'Success' : voucher.status}
+            <Text style={styles.dataLabel}>Receipt Status</Text>
+            <View
+              style={[
+                styles.successBadge,
+                {
+                  backgroundColor: formatVoucherStatusBadge(voucher.status).bg,
+                  borderColor: formatVoucherStatusBadge(voucher.status).border,
+                  borderWidth: 1,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.successBadgeText,
+                  { color: formatVoucherStatusBadge(voucher.status).color },
+                ]}
+              >
+                {formatVoucherStatusBadge(voucher.status).label}
               </Text>
             </View>
           </View>

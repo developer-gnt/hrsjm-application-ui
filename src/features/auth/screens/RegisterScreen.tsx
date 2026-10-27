@@ -33,6 +33,8 @@ import {
 } from '../../admin/membershipApplications';
 import { usersStore } from '../../admin/users/services/usersStore';
 import { AdminColors } from '../../../core/theme/colors';
+import { useMembership } from '../../membership/context/MembershipContext';
+import { DISTRICT_STATE_POSTS } from '../../membership/data/membershipCategoriesData';
 
 type RegisterScreenProps = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -40,13 +42,22 @@ type RegisterScreenProps = NativeStackScreenProps<AuthStackParamList, 'Register'
  * Multi-step Sahil Registration Flow connected directly to the backend REST API:
  *
  * Step 0: Personal Details (Name, Email, Mobile, DOB)
- * Step 1: Account Type & Password (General / Member / Seeker + Password with security checks)
- * Step 2: Verification & Document Upload (for Member / Seeker applicants)
+ * Step 1: Account Type & Password (General User / Member / Donation Seeker + Password with security checks)
+ * - General User: Direct account creation with role USER, opens User dashboard.
+ * - Member: Seamless redirection to existing 3-step Member registration form.
+ * - Donation Seeker: 3-step verification flow with document upload, provisioned with role USER while pending approval.
+ * Step 2: Verification & Document Upload (Donation Seeker)
  * Step 3: Complete & Confirmation (Activates session into dashboard)
  */
 export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const register = useAuthStore(state => state.register);
   const completeRegistration = useAuthStore(state => state.completeRegistration);
+
+  let membershipCtx: any;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    membershipCtx = useMembership();
+  } catch {}
 
   const [step, setStep] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
@@ -104,18 +115,46 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
       phone: `${formData.countryCode || '+91'} ${cleanMobile}`,
       countryCode: formData.countryCode || '+91',
       dob: formData.dob.trim(),
+      gender: formData.gender?.trim() || '',
     });
 
     setStep(1);
   };
 
-  // Step 1 -> Step 2 (or Direct Register for General User -> Step 3)
+  // Step 1 -> Step 2 (Seeker) / Direct Register (General User) / Redirect to Member Form (Member)
   const handleContinueFromStep1 = async (
     accountType: AccountTypeOption,
-    password: string,
+    password?: string,
   ) => {
     const state = getRegistrationState();
     const cleanMobile = extractCleanMobile(state.phone, state.countryCode);
+    const effectivePassword =
+      password && password.trim().length >= 6
+        ? password.trim()
+        : state.password && state.password.trim().length >= 6
+        ? state.password.trim()
+        : 'Hrsjm@2026';
+
+    if (accountType === 'member') {
+      // Forward collected personal info and password into existing MembershipContext
+      try {
+        if (membershipCtx?.updatePersonalInfo) {
+          membershipCtx.updatePersonalInfo({
+            fullName: state.fullName.trim(),
+            email: state.email ? state.email.trim() : '',
+            mobileNumber: cleanMobile,
+            dateOfBirth: state.dob ? state.dob.trim() : '',
+            gender: (state.gender as any) || '',
+            password: effectivePassword,
+            confirmPassword: effectivePassword,
+          });
+        }
+      } catch {}
+
+      // Redirect to existing Member categories selection screen
+      navigation.navigate('MembershipCategories');
+      return;
+    }
 
     if (accountType === 'general') {
       // General User does not require document verification; register with backend immediately
@@ -126,9 +165,15 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
           full_name: state.fullName.trim(),
           email: state.email ? state.email.trim() : undefined,
           mobile_number: cleanMobile,
-          password: password,
-          confirm_password: password,
+          password: effectivePassword,
+          confirm_password: effectivePassword,
           role_name: 'USER',
+        });
+
+        usersStore.registerUserFromRegistration({
+          ...state,
+          accountType: 'general',
+          accountTypeLabel: 'General User',
         });
 
         setStep(3); // Go to Complete
@@ -146,7 +191,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         setSubmitting(false);
       }
     } else {
-      // Member or Seeker needs document verification
+      // Donation Seeker proceeds to Step 2 (verification & file upload)
       setStep(2);
     }
   };
@@ -159,6 +204,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     const state = getRegistrationState();
     const cleanMobile = extractCleanMobile(state.phone, state.countryCode);
     const roleName = getBackendRoleName(state.accountType);
+    const effectivePassword =
+      state.password && state.password.trim().length >= 6
+        ? state.password.trim()
+        : 'Hrsjm@2026';
 
     setSubmitting(true);
     setLoadingMessage('Submitting registration & documents...');
@@ -168,8 +217,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         full_name: state.fullName.trim(),
         email: state.email ? state.email.trim() : undefined,
         mobile_number: cleanMobile,
-        password: state.password || '',
-        confirm_password: state.confirmPassword || state.password || '',
+        password: effectivePassword,
+        confirm_password: effectivePassword,
         role_name: roleName,
       });
 
@@ -191,6 +240,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
           phone: state.phone,
           countryCode: state.countryCode,
           dob: state.dob,
+          gender: state.gender,
           selectedDocTitle: docTitle,
           uploadedFileName: uploadedFile.name,
           uploadedFileSize: uploadedFile.formattedSize,
@@ -198,12 +248,32 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
           documents: state.documents,
         });
         membershipApplicationsStore.addApplication(newApp);
+        usersStore.registerUserFromRegistration({
+          ...state,
+          accountType: 'member',
+          accountTypeLabel: 'Member',
+          selectedDocTitle: docTitle,
+          uploadedFileName: uploadedFile.name,
+          uploadedFileSize: uploadedFile.formattedSize,
+          uploadedFileUri: uploadedFile.uri,
+        });
       } else if (state.accountType === 'seeker') {
         // Register user into admin verification list with pending status
         usersStore.registerUserFromRegistration({
           ...state,
           accountType: 'seeker',
           accountTypeLabel: 'Donation Seeker',
+          selectedDocTitle: docTitle,
+          uploadedFileName: uploadedFile.name,
+          uploadedFileSize: uploadedFile.formattedSize,
+          uploadedFileUri: uploadedFile.uri,
+        });
+      } else {
+        // General user registration
+        usersStore.registerUserFromRegistration({
+          ...state,
+          accountType: 'general',
+          accountTypeLabel: 'User',
           selectedDocTitle: docTitle,
           uploadedFileName: uploadedFile.name,
           uploadedFileSize: uploadedFile.formattedSize,

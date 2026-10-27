@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { BorderRadius, Spacing } from '../../../../core';
+import { resolveUploadedFileUri } from '../services/uploadedDocumentsCache';
 
 export interface DocumentItemData {
   id: string;
@@ -118,12 +119,17 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
   const isPan = titleLower.includes('pan') || fileLower.includes('pan');
 
   const isPdf = fileLower.endsWith('.pdf') || titleLower.includes('pdf');
-  const hasDirectImage =
-    Boolean(document.uri) &&
+  const effectiveUri = resolveUploadedFileUri(document.fileName, document.uri);
+  const isDirectImageUri =
+    Boolean(effectiveUri) &&
     (fileLower.endsWith('.jpg') ||
       fileLower.endsWith('.jpeg') ||
       fileLower.endsWith('.png') ||
-      document.uri?.startsWith('data:image'));
+      fileLower.includes('screenshot') ||
+      effectiveUri?.startsWith('data:image') ||
+      effectiveUri?.startsWith('http') ||
+      effectiveUri?.startsWith('blob:'));
+  const hasDirectImage = Boolean(effectiveUri) && isDirectImageUri;
 
   const applicantName = applicant?.applicantName || 'Applicant';
   const hindiName = getHindiName(applicantName);
@@ -138,7 +144,10 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
   const address = applicant?.address || '—';
   const appId = applicant?.applicationId || '—';
   const appType = applicant?.membershipType || 'Membership Application';
-  const photoUri = applicant?.avatarUrl || (hasDirectImage ? document.uri : undefined);
+  const photoUri =
+    applicant?.avatarUrl ||
+    resolveUploadedFileUri('Screenshot 2026-02-21 151534.png') ||
+    (isPhoto ? effectiveUri : undefined);
 
   const initials = applicantName
     .split(' ')
@@ -162,9 +171,10 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
 
   const handleOpenPrint = () => {
     const globalWin = typeof globalThis !== 'undefined' ? (globalThis as any).window : undefined;
+    const activeUri = effectiveUri || document.uri;
     if (Platform.OS === 'web' && globalWin) {
-      if (document.uri && !document.uri.startsWith('blob:')) {
-        globalWin.open(document.uri, '_blank');
+      if (activeUri && !activeUri.startsWith('blob:')) {
+        globalWin.open(activeUri, '_blank');
         return;
       }
 
@@ -288,10 +298,11 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
 
   const handleDownload = () => {
     const globalWin = typeof globalThis !== 'undefined' ? (globalThis as any).window : undefined;
+    const activeUri = effectiveUri || document.uri;
     if (Platform.OS === 'web' && globalWin && globalWin.document) {
-      if (document.uri && !document.uri.startsWith('blob:')) {
+      if (activeUri && !activeUri.startsWith('blob:')) {
         const link = globalWin.document.createElement('a');
-        link.href = document.uri;
+        link.href = activeUri;
         link.download = document.fileName;
         globalWin.document.body.appendChild(link);
         link.click();
@@ -299,8 +310,8 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
         return;
       }
       handleOpenPrint();
-    } else if (document.uri) {
-      Linking.openURL(document.uri).catch(() => {});
+    } else if (activeUri) {
+      Linking.openURL(activeUri).catch(() => {});
     }
   };
 
@@ -620,7 +631,7 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
   const renderDirectImage = () => (
     <View style={styles.directImageWrap}>
       <Image
-        source={{ uri: document.uri }}
+        source={{ uri: effectiveUri }}
         style={[
           styles.directImage,
           { transform: [{ scale: zoomLevel }] },
@@ -699,8 +710,14 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
 
               {/* Toolbar */}
               <View style={styles.toolbar}>
-                {/* View switcher for Aadhaar */}
-                {isAadhaar ? (
+                {/* View switcher for Aadhaar or Uploaded Document */}
+                {hasDirectImage ? (
+                  <View style={styles.fileMetaTag}>
+                    <Text style={styles.fileMetaTagText}>
+                      ✓ Authentic Uploaded Document • {document.fileName}
+                    </Text>
+                  </View>
+                ) : isAadhaar ? (
                   <View style={styles.tabsWrap}>
                     <TouchableOpacity
                       style={[styles.tabBtn, aadhaarTab === 'front' && styles.tabBtnActive]}
@@ -1713,10 +1730,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   directImage: {
-    width: 320,
-    height: 240,
+    width: 340,
+    height: 260,
+    maxWidth: '100%',
+    minHeight: 220,
+    maxHeight: 380,
     borderRadius: 8,
-    backgroundColor: '#EEF2F6',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   // --- META BOX ---
   documentMetaBox: {

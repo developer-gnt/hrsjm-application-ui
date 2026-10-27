@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import {
   SupportTicket,
   TicketStatsData,
@@ -236,6 +237,7 @@ class SupportTicketsStore {
         subject: finalSubject,
         description: data.description || '',
         priority: 'NORMAL',
+        source: Platform.OS === 'web' ? 'web' : 'app',
       });
 
       const mapped = mapBackendTicketToSupportTicket(created);

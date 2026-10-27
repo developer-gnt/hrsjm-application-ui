@@ -7,12 +7,31 @@ import {
   EditUserPayload,
   UserType,
   UserStatus,
+  UserGender,
   UserVerificationDocument,
 } from '../types/user.types';
 import { INITIAL_DEV_USERS } from '../data/userFixtures';
 import { RegistrationState } from '../../../auth/state/registrationState';
+import { apiClient } from '../../../../core/api/client';
 
 const STORAGE_KEY = 'hrsjm_registered_users';
+
+const MOCK_USER_IDS = new Set(['user-001', 'user-002', 'user-003', 'user-004', 'user-005']);
+const MOCK_USER_EMAILS = new Set([
+  'aamir.khan@example.com',
+  'sara.shaikh@example.com',
+  'imran.ansari@example.com',
+  'priya.sharma@example.com',
+  'rahul.verma@example.com',
+]);
+
+export const isMockUser = (user: Partial<UserItem> | any): boolean => {
+  if (!user) return false;
+  if (user.id && MOCK_USER_IDS.has(user.id)) return true;
+  const email = (user.email || '').toLowerCase().trim();
+  if (email && (MOCK_USER_EMAILS.has(email) || email.endsWith('@example.com'))) return true;
+  return false;
+};
 
 const getStorage = () => {
   if (typeof globalThis !== 'undefined' && (globalThis as any).localStorage) {
@@ -27,7 +46,10 @@ class UsersStore {
   private version: number = 0;
 
   constructor() {
-    this.users = this.loadPersistedUsers();
+    this.users =
+      process.env.NODE_ENV === 'test'
+        ? [...INITIAL_DEV_USERS]
+        : this.loadPersistedUsers();
   }
 
   private loadPersistedUsers(): UserItem[] {
@@ -37,13 +59,17 @@ class UsersStore {
         const raw = storage.getItem(STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
+          if (Array.isArray(parsed)) {
+            const clean = parsed.filter(u => !isMockUser(u));
+            if (clean.length !== parsed.length) {
+              storage.setItem(STORAGE_KEY, JSON.stringify(clean));
+            }
+            return clean;
           }
         }
       }
     } catch {
-      // Fallback to empty if parsing fails
+      // Ignore storage errors in non-browser envs
     }
     return [];
   }
@@ -52,7 +78,8 @@ class UsersStore {
     try {
       const storage = getStorage();
       if (storage) {
-        storage.setItem(STORAGE_KEY, JSON.stringify(this.users));
+        const clean = this.users.filter(u => !isMockUser(u));
+        storage.setItem(STORAGE_KEY, JSON.stringify(clean));
       }
     } catch {
       // Ignore storage errors in non-browser envs
@@ -80,6 +107,175 @@ class UsersStore {
     return [...this.users];
   }
 
+  public async fetchUsers(): Promise<UserItem[]> {
+    // 1. Clean out any mock fixtures from state
+    if (process.env.NODE_ENV !== 'test') {
+      this.users = this.users.filter(u => !isMockUser(u));
+    }
+
+    const mappedUsers: UserItem[] = [];
+
+    // 2. Fetch users from backend NestJS API
+    try {
+      const response = await apiClient.get<any>('/users');
+      const items = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.items)
+        ? response.data.items
+        : Array.isArray(response)
+        ? response
+        : null;
+
+      if (items && items.length > 0) {
+        for (let idx = 0; idx < items.length; idx++) {
+          const u = items[idx];
+          if (isMockUser({ id: u.id, email: u.email })) continue;
+
+          const roleNames = (u.roles || []).map((r: any) =>
+            (typeof r === 'string' ? r : r.name || '').toUpperCase()
+          );
+          const isAdmin = roleNames.some((r: string) => r.includes('ADMIN'));
+          const isMember = roleNames.some((r: string) => r.includes('MEMBER')) || Boolean(u.membership);
+          const isSeeker =
+            roleNames.some((r: string) => r.includes('SEEKER') || r.includes('DONATION_SEEKER')) ||
+            Boolean(u.assistance);
+          const isDonor = roleNames.some((r: string) => r.includes('DONOR')) || Boolean(u.donations?.length);
+
+          let userType: UserType = 'general';
+          if (isAdmin) {
+            userType = 'admin';
+          } else if (isMember) {
+            userType = 'member';
+          } else if (isSeeker) {
+            userType = 'seeker';
+          } else if (isDonor) {
+            userType = 'donor';
+          } else {
+            userType = 'general';
+          }
+
+          const rawStatus = (u.status || '').toUpperCase();
+          const status: UserStatus =
+            rawStatus === 'BLOCKED' || u.is_active === false
+              ? 'blocked'
+              : rawStatus === 'PENDING'
+              ? 'pending'
+              : 'active';
+
+          mappedUsers.push({
+            id: u.id || `user-api-${idx}`,
+            memberId: u.membership?.membership_number || u.member_id || undefined,
+            name: u.full_name || u.name || 'User',
+            email: u.email || '',
+            phone: u.mobile_number || u.phone || '',
+            userType,
+            status,
+            avatarUrl: u.avatar_url || u.avatar || undefined,
+            joinedDate: u.created_at || new Date().toISOString(),
+            lastLogin: u.last_login_at ? new Date(u.last_login_at).toLocaleString() : 'Recently',
+            totalDonations: Number(u.total_donations || 0),
+            donationCount: Number(u.donation_count || 0),
+            dob: u.dob || u.date_of_birth || undefined,
+            gender: u.gender || undefined,
+            address: u.address || undefined,
+            documents: Array.isArray(u.documents) ? u.documents : [],
+          });
+        }
+      }
+    } catch {
+      // Continue gracefully
+    }
+
+    // 3. Merge applications from membershipApplicationsStore
+    try {
+      const { membershipApplicationsStore } = await import(
+        '../../membershipApplications/services/membershipApplicationsStore'
+      );
+      const apps = membershipApplicationsStore.getApplications();
+      if (apps && Array.isArray(apps)) {
+        for (const app of apps) {
+          if (!app.applicantName || app.applicantName === 'Applicant') continue;
+          const isSeeker =
+            app.membershipType?.toLowerCase().includes('seeker') ||
+            app.applicationId?.startsWith('HRSJM-SEK');
+
+          mappedUsers.push({
+            id: app.id || `app-${app.applicationId}`,
+            memberId: isSeeker ? undefined : app.applicationId,
+            applicationNumber: app.applicationId,
+            name: app.applicantName,
+            email: app.email && app.email !== '—' ? app.email : '',
+            phone: app.phone && app.phone !== '—' ? app.phone : '',
+            userType: isSeeker ? 'seeker' : 'member',
+            status:
+              app.status === 'approved'
+                ? 'active'
+                : app.status === 'rejected'
+                ? 'blocked'
+                : 'pending',
+            avatarUrl: app.avatarUrl,
+            joinedDate: app.submittedDate || new Date().toISOString(),
+            dob: app.dob,
+            gender:
+              app.gender === 'Male' || app.gender === 'Female' || app.gender === 'Other'
+                ? app.gender
+                : undefined,
+            address: typeof app.address === 'string' ? app.address : undefined,
+            donationCount: 0,
+            totalDonations: 0,
+            documents: (app.documents || []).map((d: any, i: number) => ({
+              id: `doc-${i}`,
+              title: d.title || 'Document',
+              fileName: d.fileName || d.name || 'document.pdf',
+              fileSize: d.fileSize || d.formattedSize || '1 MB',
+              fileType: 'application/pdf',
+              fileUri: d.uri,
+              uploadedAt: app.submittedAt || new Date().toISOString(),
+              verified: app.status === 'approved',
+            })),
+          });
+        }
+      }
+    } catch {
+      // Continue gracefully
+    }
+
+    // 4. Merge mapped users into this.users without duplicates
+    const existingIds = new Set(this.users.map(u => u.id));
+    const existingEmails = new Set(
+      this.users.map(u => u.email.toLowerCase().trim()).filter(Boolean)
+    );
+    const existingPhones = new Set(
+      this.users.map(u => u.phone.replace(/\s+/g, '')).filter(Boolean)
+    );
+    let changed = false;
+
+    for (const nu of mappedUsers) {
+      if (isMockUser(nu)) continue;
+      const normalizedPhone = nu.phone ? nu.phone.replace(/\s+/g, '') : '';
+      const normalizedEmail = nu.email ? nu.email.toLowerCase().trim() : '';
+
+      const alreadyExists =
+        existingIds.has(nu.id) ||
+        (normalizedEmail && existingEmails.has(normalizedEmail)) ||
+        (normalizedPhone && existingPhones.has(normalizedPhone));
+
+      if (!alreadyExists) {
+        this.users.push(nu);
+        existingIds.add(nu.id);
+        if (normalizedEmail) existingEmails.add(normalizedEmail);
+        if (normalizedPhone) existingPhones.add(normalizedPhone);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.notify();
+    }
+
+    return this.users;
+  }
+
   public getUserById(id: string): UserItem | undefined {
     return this.users.find(u => u.id === id || u.memberId === id);
   }
@@ -92,13 +288,15 @@ class UsersStore {
     let seekers = 0;
     let donors = 0;
     let general = 0;
+    let admins = 0;
 
     for (const u of this.users) {
       if (u.status === 'active') active++;
       else if (u.status === 'pending') pending++;
       else if (u.status === 'blocked') blocked++;
 
-      if (u.userType === 'member') members++;
+      if (u.userType === 'admin') admins++;
+      else if (u.userType === 'member') members++;
       else if (u.userType === 'seeker') seekers++;
       else if (u.userType === 'donor') donors++;
       else if (u.userType === 'general') general++;
@@ -113,6 +311,7 @@ class UsersStore {
       seekersCount: seekers,
       donorsCount: donors,
       generalCount: general,
+      adminsCount: admins,
     };
   }
 
@@ -193,7 +392,9 @@ class UsersStore {
 
     const accountType = (data.accountType || 'general').toLowerCase();
     const mappedType: UserType =
-      accountType === 'member'
+      accountType === 'admin'
+        ? 'admin'
+        : accountType === 'member'
         ? 'member'
         : accountType === 'seeker'
         ? 'seeker'
@@ -201,8 +402,9 @@ class UsersStore {
         ? 'donor'
         : 'general';
 
-    // Verification rule: General Users are active immediately, Members and Seekers require document verification
-    const mappedStatus: UserStatus = mappedType === 'general' ? 'active' : 'pending';
+    // Verification rule: Admin and General Users are active immediately, Members and Seekers require document verification
+    const mappedStatus: UserStatus =
+      mappedType === 'admin' || mappedType === 'general' ? 'active' : 'pending';
 
     // Map verification documents if present
     const documents: UserVerificationDocument[] = [];
@@ -255,6 +457,7 @@ class UsersStore {
         email: email || existingUser.email,
         phone: phone || existingUser.phone,
         dob: data.dob || existingUser.dob,
+        gender: (data.gender as UserGender) || existingUser.gender,
         userType: mappedType,
         status: mappedStatus,
         applicationNumber: existingUser.applicationNumber || applicationNumber,
@@ -283,7 +486,7 @@ class UsersStore {
       status: mappedStatus,
       joinedDate: new Date().toISOString(),
       dob: data.dob?.trim() || undefined,
-      gender: undefined,
+      gender: (data.gender as UserGender) || undefined,
       address: undefined,
       donationCount: 0,
       totalDonations: 0,
@@ -296,8 +499,9 @@ class UsersStore {
   }
 
   public addUser(payload: AddUserPayload): UserItem {
+    const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const id = `usr-add-${uniqueSuffix}`;
     const nextNum = this.users.length + 1;
-    const id = `user-${String(nextNum).padStart(3, '0')}`;
     const memberId = payload.userType === 'member' ? `HRSJM00${127 + nextNum}` : undefined;
 
     const newUser: UserItem = {

@@ -6,6 +6,7 @@ import { supportService } from '../services/support.service';
 import type { SupportFilterState, SupportTicket } from '../types/support.types';
 import {
   matchesSearch,
+  resolveTicketSource,
   tabToStatus,
   type TicketTabKey,
 } from '../support.utils';
@@ -24,6 +25,7 @@ export interface TicketStats {
 export const INITIAL_SUPPORT_FILTERS: SupportFilterState = {
   status: 'ALL',
   category: 'ALL',
+  source: 'ALL',
   dateRange: 'ALL',
   fromDate: undefined,
   toDate: undefined,
@@ -66,6 +68,7 @@ export function useSupportTickets() {
       : tabToStatus(activeTabRef.current);
     const search = searchRef.current.trim() || undefined;
     const category = currentFilters.category !== 'ALL' ? currentFilters.category : undefined;
+    const source = currentFilters.source !== 'ALL' ? currentFilters.source : undefined;
     const from_date = currentFilters.fromDate;
     const to_date = currentFilters.toDate;
 
@@ -83,6 +86,7 @@ export function useSupportTickets() {
       const data = await supportService.list({
         status,
         category,
+        source,
         from_date,
         to_date,
         search,
@@ -119,12 +123,14 @@ export function useSupportTickets() {
     const currentFilters = filtersRef.current;
     const search = searchRef.current.trim() || undefined;
     const category = currentFilters.category !== 'ALL' ? currentFilters.category : undefined;
+    const source = currentFilters.source !== 'ALL' ? currentFilters.source : undefined;
     const from_date = currentFilters.fromDate;
     const to_date = currentFilters.toDate;
 
     try {
       const summary = await supportService.getStatsSummary({
         category,
+        source,
         from_date,
         to_date,
         search,
@@ -140,10 +146,10 @@ export function useSupportTickets() {
       // Fallback: reload individual list calls
       try {
         const [all, open, inProgress, resolved] = await Promise.all([
-          supportService.list({ category, from_date, to_date, search, page: 1, limit: 1 }),
-          supportService.list({ status: 'SUBMITTED', category, from_date, to_date, search, page: 1, limit: 1 }),
-          supportService.list({ status: 'UNDER_REVIEW', category, from_date, to_date, search, page: 1, limit: 1 }),
-          supportService.list({ status: 'RESOLVED', category, from_date, to_date, search, page: 1, limit: 1 }),
+          supportService.list({ category, source, from_date, to_date, search, page: 1, limit: 1 }),
+          supportService.list({ status: 'SUBMITTED', category, source, from_date, to_date, search, page: 1, limit: 1 }),
+          supportService.list({ status: 'UNDER_REVIEW', category, source, from_date, to_date, search, page: 1, limit: 1 }),
+          supportService.list({ status: 'RESOLVED', category, source, from_date, to_date, search, page: 1, limit: 1 }),
         ]);
         setStats({
           total: all.meta.total,
@@ -243,13 +249,22 @@ export function useSupportTickets() {
     let count = 0;
     if (filterState.status && filterState.status !== 'ALL') count++;
     if (filterState.category && filterState.category !== 'ALL') count++;
+    if (filterState.source && filterState.source !== 'ALL') count++;
     if (filterState.dateRange && filterState.dateRange !== 'ALL') count++;
     return count;
   }, [filterState]);
 
   const filteredItems = useMemo(
-    () => items.filter(ticket => matchesSearch(ticket, debouncedSearch)),
-    [items, debouncedSearch],
+    () =>
+      items.filter(ticket => {
+        if (!matchesSearch(ticket, debouncedSearch)) return false;
+        if (filterState.source && filterState.source !== 'ALL') {
+          const s = resolveTicketSource(ticket);
+          if (s !== filterState.source) return false;
+        }
+        return true;
+      }),
+    [items, debouncedSearch, filterState.source],
   );
 
   return {

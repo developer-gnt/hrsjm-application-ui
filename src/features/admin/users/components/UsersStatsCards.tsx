@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { BorderRadius, Spacing } from '../../../../core';
+import { BorderRadius, FontFamilies, Spacing } from '../../../../core';
 import { UserStats } from '../types/user.types';
 
 interface UsersStatsCardsProps {
@@ -35,7 +35,7 @@ export const UsersStatsCards: React.FC<UsersStatsCardsProps> = ({
           accessibilityLabel={`Total Users: ${formatNumber(stats.total)}`}
         >
           <View style={styles.iconCircleBlue}>
-            <Text style={styles.iconTextBlue}>👥</Text>
+            <Text style={styles.iconText}>👥</Text>
           </View>
           <Text style={styles.numberBlue}>{formatNumber(stats.total)}</Text>
           <Text style={styles.labelBlue}>Total Users</Text>
@@ -54,7 +54,7 @@ export const UsersStatsCards: React.FC<UsersStatsCardsProps> = ({
           accessibilityLabel={`Active Users: ${formatNumber(stats.active)}`}
         >
           <View style={styles.iconCircleGreen}>
-            <Text style={styles.iconTextGreen}>👤</Text>
+            <Text style={styles.iconText}>👤</Text>
           </View>
           <Text style={styles.numberGreen}>{formatNumber(stats.active)}</Text>
           <Text style={styles.labelGreen}>Active Users</Text>
@@ -76,7 +76,7 @@ export const UsersStatsCards: React.FC<UsersStatsCardsProps> = ({
           accessibilityLabel={`Pending Verification: ${formatNumber(stats.pending)}`}
         >
           <View style={styles.iconCircleAmber}>
-            <Text style={styles.iconTextAmber}>⏱️</Text>
+            <Text style={styles.iconText}>⏱️</Text>
           </View>
           <Text style={styles.numberAmber}>{formatNumber(stats.pending)}</Text>
           <Text style={styles.labelAmber}>Pending Verification</Text>
@@ -95,7 +95,7 @@ export const UsersStatsCards: React.FC<UsersStatsCardsProps> = ({
           accessibilityLabel={`Blocked Users: ${formatNumber(stats.blocked)}`}
         >
           <View style={styles.iconCircleRed}>
-            <Text style={styles.iconTextRed}>🚫</Text>
+            <Text style={styles.iconText}>🚫</Text>
           </View>
           <Text style={styles.numberRed}>{formatNumber(stats.blocked)}</Text>
           <Text style={styles.labelRed}>Blocked Users</Text>
@@ -107,145 +107,144 @@ export const UsersStatsCards: React.FC<UsersStatsCardsProps> = ({
 
 const styles = StyleSheet.create({
   grid: {
-    gap: 12,
-    marginVertical: Spacing.sm,
+    gap: 8,
+    marginVertical: 8,
   },
   row: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   card: {
     flex: 1,
     borderRadius: BorderRadius.lg,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    minHeight: 104,
+    minHeight: 100,
   },
   cardActiveRing: {
     borderWidth: 2,
-    borderColor: '#0F2860',
+    borderColor: '#06294D',
+  },
+  iconText: {
+    fontSize: 16,
   },
 
-  // Total Card (Blue)
+  // Total Card (Pale Blue / Navy per design.md)
   totalCard: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#DBEAFE',
+    backgroundColor: '#EDF2F7',
+    borderColor: '#DBE5EE',
   },
   iconCircleBlue: {
     width: 32,
     height: 32,
     borderRadius: BorderRadius.full,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#DBE5EE',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  iconTextBlue: {
-    fontSize: 16,
-  },
   numberBlue: {
+    fontFamily: FontFamilies.display,
     fontSize: 22,
-    fontWeight: '800',
-    color: '#1E3A8A',
+    fontWeight: '700',
+    color: '#06294D',
     letterSpacing: 0.2,
   },
   labelBlue: {
+    fontFamily: FontFamilies.sans,
     fontSize: 12,
     fontWeight: '600',
-    color: '#3B82F6',
+    color: '#174A78',
     marginTop: 2,
   },
 
-  // Active Card (Green)
+  // Active Card (Dignified Green per design.md tokens)
   activeCard: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#A7F3D0',
+    backgroundColor: '#EAF7EE',
+    borderColor: '#D1EAD8',
   },
   iconCircleGreen: {
     width: 32,
     height: 32,
     borderRadius: BorderRadius.full,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#D1EAD8',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  iconTextGreen: {
-    fontSize: 16,
-  },
   numberGreen: {
+    fontFamily: FontFamilies.display,
     fontSize: 22,
-    fontWeight: '800',
-    color: '#065F46',
+    fontWeight: '700',
+    color: '#15803D',
     letterSpacing: 0.2,
   },
   labelGreen: {
+    fontFamily: FontFamilies.sans,
     fontSize: 12,
     fontWeight: '600',
-    color: '#10B981',
+    color: '#15803D',
     marginTop: 2,
   },
 
-  // Pending Card (Amber)
+  // Pending Card (Warm Gold per design.md tokens)
   pendingCard: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
+    backgroundColor: '#FFF9E6',
+    borderColor: '#FAD465',
   },
   iconCircleAmber: {
     width: 32,
     height: 32,
     borderRadius: BorderRadius.full,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FDE8A0',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  iconTextAmber: {
-    fontSize: 16,
-  },
   numberAmber: {
+    fontFamily: FontFamilies.display,
     fontSize: 22,
-    fontWeight: '800',
-    color: '#92400E',
+    fontWeight: '700',
+    color: '#8F6600',
     letterSpacing: 0.2,
   },
   labelAmber: {
+    fontFamily: FontFamilies.sans,
     fontSize: 12,
     fontWeight: '600',
-    color: '#F59E0B',
+    color: '#8F6600',
     marginTop: 2,
   },
 
-  // Blocked Card (Red)
+  // Blocked Card (Subtle Red / Danger per design.md tokens)
   blockedCard: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
+    backgroundColor: '#FDEEEF',
+    borderColor: '#FBD5D8',
   },
   iconCircleRed: {
     width: 32,
     height: 32,
     borderRadius: BorderRadius.full,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#FBD5D8',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  iconTextRed: {
-    fontSize: 16,
-  },
   numberRed: {
+    fontFamily: FontFamilies.display,
     fontSize: 22,
-    fontWeight: '800',
-    color: '#991B1B',
+    fontWeight: '700',
+    color: '#DC2626',
     letterSpacing: 0.2,
   },
   labelRed: {
+    fontFamily: FontFamilies.sans,
     fontSize: 12,
     fontWeight: '600',
-    color: '#EF4444',
+    color: '#991B1B',
     marginTop: 2,
   },
 });

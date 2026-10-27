@@ -25,6 +25,7 @@ export interface RegistrationState {
   phone: string;
   countryCode: string;
   dob: string;
+  gender?: string;
   accountType: string;
   accountTypeLabel: string;
   password?: string;
@@ -46,8 +47,9 @@ const DEFAULT_REGISTRATION_STATE: RegistrationState = {
   phone: '',
   countryCode: '+91',
   dob: '',
+  gender: '',
   accountType: 'general',
-  accountTypeLabel: 'General User',
+  accountTypeLabel: 'User',
   password: '',
   confirmPassword: '',
   selectedDocId: 'aadhaar',

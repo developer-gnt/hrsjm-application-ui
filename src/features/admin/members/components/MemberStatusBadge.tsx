@@ -15,6 +15,7 @@ const STATUS_META: Record<MemberStatus, { label: string; bg: string; text: strin
     text: StatusTones.warning.text,
   },
   INACTIVE: { label: 'Inactive', bg: StatusTones.danger.bg, text: StatusTones.danger.text },
+  PENDING: { label: 'Pending', bg: StatusTones.neutral.bg, text: StatusTones.neutral.text },
 };
 
 /** Compact semantic status pill — soft tinted background, dark readable text. */
