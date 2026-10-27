@@ -559,7 +559,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 10,
     gap: 12,
@@ -570,7 +569,7 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     fontSize: 23,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#0B2F52',
     lineHeight: 28,
   },
@@ -597,7 +596,7 @@ const styles = StyleSheet.create({
   },
   addBtnIcon: {
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#011F39',
   },
   addBtnText: {
@@ -606,7 +605,6 @@ const styles = StyleSheet.create({
     color: '#011F39',
   },
   statsSection: {
-    paddingHorizontal: 16,
     marginTop: 6,
     marginBottom: 16,
   },
@@ -614,9 +612,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 16,
     marginBottom: 12,
-    width: '100%',
   },
   searchBar: {
     flex: 1,
@@ -657,6 +653,7 @@ const styles = StyleSheet.create({
   },
   tabsSection: {
     marginBottom: 6,
+    marginHorizontal: -16,
   },
   tableHeaderSection: {
     paddingHorizontal: 2,
@@ -674,7 +671,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   skeletonList: {
-    paddingHorizontal: 16,
     gap: 10,
     marginTop: 8,
   },

@@ -26,6 +26,37 @@ export type PaymentStage =
   | 'user_dropped'
   | 'pending';
 
+export interface RenewalPeriodBreakdown {
+  sequence: number;
+  label: string;
+  period_start: string;
+  period_end: string;
+  fee: number;
+  status: 'UNPAID' | 'PAID' | 'WAIVED';
+}
+
+export interface RenewalQuotePayload {
+  membership_id: string;
+  membership_number?: string | null;
+  status?: string;
+  registration_date?: string | null;
+  current_expiry?: string | null;
+  projected_expiry?: string | null;
+  is_overdue: boolean;
+  days_overdue?: number;
+  days_remaining?: number;
+  unpaid_periods_count: number;
+  paid_periods_count: number;
+  periods: RenewalPeriodBreakdown[];
+  renewal_subtotal: number;
+  platform_fee: number;
+  taxes: number;
+  total_payable: number;
+  explanation: string;
+  requires_verification?: boolean;
+  verification_reason?: string;
+}
+
 export interface PaymentPayload {
   purpose: PaymentPurposeType;
   title: string;
@@ -43,6 +74,7 @@ export interface PaymentPayload {
   targetAmount?: number;
   raisedAmount?: number;
   maxAllowedAmount?: number;
+  renewalQuote?: RenewalQuotePayload;
 }
 
 export interface CashfreeOrderSession {

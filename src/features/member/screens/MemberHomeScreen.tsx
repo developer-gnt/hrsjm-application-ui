@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { AdminHeader } from '../../../app/navigation/AdminHeader';
+import { MemberHeader } from '../components/MemberHeader';
 import { useNotifications } from '../../admin/notifications';
 import { AppRoutes } from '../../../core/constants/routes';
 import { useAuthStore } from '../../auth/store/authStore';
@@ -33,9 +33,10 @@ export const MemberHomeScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <AdminHeader
+      <MemberHeader
         unreadCount={unreadCount}
         onPressNotifications={() => navigation.navigate(AppRoutes.NOTIFICATIONS)}
+        onPressDonate={() => navigation.navigate('UserActionPage', { pageId: 'donate' })}
       />
 
       <ScrollView

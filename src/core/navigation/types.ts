@@ -31,7 +31,12 @@ export type AppStackParamList = {
   MembershipStep1Personal: undefined;
   MembershipStep2Address: undefined;
   MembershipStep3Documents: undefined;
-  MembershipSubmitted: { applicationId: string };
+  MembershipSubmitted: {
+    applicationId: string;
+    paymentCompleted?: boolean;
+    paymentId?: string;
+    receipt?: any;
+  };
   MyApplication: undefined;
   ApplicationDetails: { applicationId?: string; status?: 'applied' | 'under_review' | 'approved' | 'rejected' };
   ApplicationApplied: { applicationId?: string };

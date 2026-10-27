@@ -115,6 +115,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
       phone: `${formData.countryCode || '+91'} ${cleanMobile}`,
       countryCode: formData.countryCode || '+91',
       dob: formData.dob.trim(),
+      gender: formData.gender?.trim() || '',
     });
 
     setStep(1);
@@ -143,6 +144,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
             email: state.email ? state.email.trim() : '',
             mobileNumber: cleanMobile,
             dateOfBirth: state.dob ? state.dob.trim() : '',
+            gender: (state.gender as any) || '',
             password: effectivePassword,
             confirmPassword: effectivePassword,
           });
@@ -238,6 +240,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
           phone: state.phone,
           countryCode: state.countryCode,
           dob: state.dob,
+          gender: state.gender,
           selectedDocTitle: docTitle,
           uploadedFileName: uploadedFile.name,
           uploadedFileSize: uploadedFile.formattedSize,

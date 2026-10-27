@@ -572,6 +572,15 @@ class MembershipApplicationsStore {
     );
   }
 
+  public removeApplication(idOrAppId: string): void {
+    this.applications = this.applications.filter(
+      a => a.id !== idOrAppId && a.applicationId !== idOrAppId
+    );
+    this.savePersistedApplications();
+    this.recalculateStatsFromItems();
+    this.notify();
+  }
+
   public resetForTest(): void {
     this.applications =
       process.env.NODE_ENV === 'test'
@@ -986,6 +995,7 @@ export interface RegistrationInputData {
   phone?: string;
   countryCode?: string;
   dob?: string;
+  gender?: string;
   selectedDocTitle?: string;
   uploadedFileName?: string;
   uploadedFileSize?: string;
@@ -1062,7 +1072,7 @@ export const createApplicationFromRegistration = (
     phone: data.phone,
     email: data.email,
     dob: data.dob,
-    gender: 'Not specified',
+    gender: data.gender || 'Not specified',
     fatherName: 'Not specified',
     address: 'Submitted online via Member Registration',
     occupation: 'Member',

@@ -6,11 +6,13 @@ import { WarningExclamationIcon } from './MembershipIcons';
 interface MembershipExpiryAlertProps {
   daysRemaining?: number;
   message?: string;
+  isOverdue?: boolean;
 }
 
 export const MembershipExpiryAlert: React.FC<MembershipExpiryAlertProps> = ({
   daysRemaining = 7,
   message = 'Your membership is expiring soon!',
+  isOverdue = false,
 }) => {
   return (
     <View
@@ -23,7 +25,9 @@ export const MembershipExpiryAlert: React.FC<MembershipExpiryAlertProps> = ({
       </View>
       <View style={styles.textWrapper}>
         <Text style={styles.titleText}>{message}</Text>
-        <Text style={styles.daysText}>{`Only ${daysRemaining} days remaining`}</Text>
+        <Text style={styles.daysText}>
+          {isOverdue ? `${daysRemaining} days overdue` : `Only ${daysRemaining} days remaining`}
+        </Text>
       </View>
     </View>
   );

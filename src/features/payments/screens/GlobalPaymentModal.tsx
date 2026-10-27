@@ -57,6 +57,10 @@ import { FontFamilies } from '../../../core/theme/typography';
 
 const HRSJM_EMBLEM = require('../../../assets/hrsjm_logo.png');
 
+const isDev =
+  (typeof __DEV__ !== 'undefined' && Boolean(__DEV__)) ||
+  process.env.NODE_ENV !== 'production';
+
 export interface GlobalPaymentModalProps {
   visible: boolean;
   payload: PaymentPayload | null;
@@ -974,23 +978,63 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
         {/* Payment Summary */}
         <View style={styles.summaryCard}>
           <Text style={styles.cardSectionHeading}>Payment Summary</Text>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>
-              {payload?.purpose === 'membership' ? 'Registration Fee' : 'Donation Amount'}
-            </Text>
-            <Text style={styles.summaryValue}>₹{activeAmount.toLocaleString('en-IN')}</Text>
-          </View>
+          {payload?.renewalQuote?.periods && payload.renewalQuote.periods.length > 0 ? (
+            <>
+              <View style={styles.arrearsNoticeBox}>
+                <Text style={styles.arrearsNoticeTitle}>Unpaid Renewal Arrears Breakdown</Text>
+                <Text style={styles.arrearsNoticeSub}>
+                  {payload.renewalQuote.explanation ||
+                    `Includes ${payload.renewalQuote.periods.length} unpaid renewal period(s)`}
+                </Text>
+              </View>
+
+              {payload.renewalQuote.periods.map(p => (
+                <View key={p.sequence} style={styles.arrearsItemRow}>
+                  <View style={styles.arrearsItemLeft}>
+                    <View style={styles.arrearsSeqBadge}>
+                      <Text style={styles.arrearsSeqBadgeText}>Yr {p.sequence}</Text>
+                    </View>
+                    <Text style={styles.arrearsItemLabel}>
+                      {p.label} ({p.period_start} – {p.period_end})
+                    </Text>
+                  </View>
+                  <Text style={styles.arrearsItemValue}>₹{p.fee.toLocaleString('en-IN')}</Text>
+                </View>
+              ))}
+
+              <View style={styles.summaryDivider} />
+
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Total Outstanding Renewal Fees</Text>
+                <Text style={styles.summaryValue}>
+                  ₹{(payload.renewalQuote.renewal_subtotal || activeAmount).toLocaleString('en-IN')}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>
+                {payload?.purpose === 'membership' ? 'Renewal Fee' : 'Donation Amount'}
+              </Text>
+              <Text style={styles.summaryValue}>₹{activeAmount.toLocaleString('en-IN')}</Text>
+            </View>
+          )}
+
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Platform Fee</Text>
-            <Text style={styles.summaryValue}>₹0</Text>
+            <Text style={styles.summaryValue}>
+              ₹{(payload?.renewalQuote?.platform_fee || 0).toLocaleString('en-IN')}
+            </Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tax / Charges</Text>
-            <Text style={styles.summaryValue}>₹0</Text>
+            <Text style={styles.summaryValue}>
+              ₹{(payload?.renewalQuote?.taxes || 0).toLocaleString('en-IN')}
+            </Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Payable</Text>
+            <Text style={styles.totalLabel}>Final Total Payable</Text>
             <Text style={styles.totalValue}>₹{activeAmount.toLocaleString('en-IN')}</Text>
           </View>
         </View>
@@ -1951,8 +1995,8 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
             </View>
           </View>
 
-          {/* Developer Technical Diagnostics (__DEV__ only) */}
-          {__DEV__ && failureError?.message && (
+          {/* Developer Technical Diagnostics (dev mode only) */}
+          {isDev && (failureError?.message || failureError?.reason) && (
             <View style={styles.devDiagCard}>
               <TouchableOpacity
                 onPress={() => setShowDevDebug(prev => !prev)}
@@ -1969,12 +2013,54 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
                 <View style={styles.devDiagContent}>
                   <Text style={styles.devDiagSub}>Raw Gateway Response:</Text>
                   <Text style={styles.devDiagErrorText} selectable>
-                    {failureError.message}
+                    {failureError?.message || failureError?.reason || 'No detailed error message provided.'}
                   </Text>
-                  {failureError.code && (
+                  {failureError?.code && (
                     <Text style={styles.devDiagCodeText}>
                       Code: {failureError.code}
                     </Text>
+                  )}
+                  {payload && (
+                    <TouchableOpacity
+                      style={styles.devSimulateSuccessBtn}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        const simulatedReceipt: PaymentReceiptDetails = {
+                          paymentId: `hrsjm_pay_sim_${Date.now()}`,
+                          orderId: failureError?.orderId || `order_sim_${Date.now()}`,
+                          amount: activeAmount,
+                          platformFee: 0,
+                          taxCharges: 0,
+                          totalPayable: activeAmount,
+                          date: new Date().toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          }),
+                          time: new Date().toLocaleTimeString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }),
+                          paymentMethod: paymentMethodDisplay,
+                          paymentMethodType: paymentMethod,
+                          status: 'Completed',
+                          purpose: payload.purpose,
+                          title: payload.title,
+                          donorName,
+                          donorEmail,
+                          donorMobile,
+                          is80GEligible: Boolean(panNumber && need80G),
+                          receiptNumber: `HRSJM-REC-${Date.now()}`,
+                        };
+                        setReceiptResult(simulatedReceipt);
+                        setStage('success');
+                        onSuccess?.(simulatedReceipt);
+                      }}
+                    >
+                      <Text style={styles.devSimulateSuccessBtnText}>
+                        ⚡ Simulate Payment Success (Dev Testing)
+                      </Text>
+                    </TouchableOpacity>
                   )}
                 </View>
               )}
@@ -2727,25 +2813,25 @@ const styles = StyleSheet.create({
   primaryProceedBtn: {
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#0F2860',
+    backgroundColor: '#FAD465',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0F2860',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   primaryProceedBtnDisabled: {
-    backgroundColor: '#94A3B8',
+    backgroundColor: '#E2E8F0',
     shadowOpacity: 0,
     elevation: 0,
   },
   primaryProceedBtnText: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: FontFamilies.sans,
     fontSize: 15,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontWeight: '700',
+    color: '#011F39',
     letterSpacing: 0.3,
   },
 
@@ -2762,6 +2848,62 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 3,
     elevation: 1,
+  },
+  arrearsNoticeBox: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  arrearsNoticeTitle: {
+    fontFamily: FontFamilies.sans,
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  arrearsNoticeSub: {
+    fontFamily: FontFamilies.sans,
+    fontSize: 11,
+    color: '#B45309',
+    marginTop: 2,
+  },
+  arrearsItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  arrearsItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  arrearsSeqBadge: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    marginRight: 6,
+  },
+  arrearsSeqBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#1E40AF',
+  },
+  arrearsItemLabel: {
+    fontFamily: FontFamilies.sans,
+    fontSize: 12,
+    color: '#334155',
+  },
+  arrearsItemValue: {
+    fontFamily: FontFamilies.sans,
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#0F2860',
   },
   cardSectionHeading: {
     fontFamily: FontFamilies.display,
@@ -3849,6 +3991,20 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     color: '#718096',
     marginTop: 6,
+  },
+  devSimulateSuccessBtn: {
+    marginTop: 10,
+    backgroundColor: '#06294D',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  devSimulateSuccessBtnText: {
+    fontFamily: FontFamilies.sans,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FAD465',
   },
   primaryRetryBtn: {
     height: 48,

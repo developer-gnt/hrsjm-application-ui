@@ -43,6 +43,7 @@ import {
   EditPersonalInfoScreen,
   AdminDetailsScreen,
 } from '../../admin/profile';
+import { UserActionPageScreen } from '../../user/action-pages';
 import {
   House,
   Heart,
@@ -75,7 +76,7 @@ const MemberHomeScreenComponent: React.FC<any> = ({ navigation }) => {
       onOpenTickets={() => navigation.navigate(AppRoutes.SUPPORT_TICKETS)}
       onOpenEvents={() => navigation.navigate('MemberEvents')}
       onOpenEvent={(event) => navigation.navigate('EventDetails', { event })}
-      onOpenDonation={() => navigation.navigate('MemberCauses')}
+      onOpenDonation={() => navigation.navigate('UserActionPage', { pageId: 'donate' })}
       onOpenHome={() => navigation.navigate('MemberHome')}
       onOpenAbout={() => navigation.navigate('About')}
       onOpenNews={() => navigation.navigate('News')}
@@ -87,6 +88,8 @@ const MemberHomeScreenComponent: React.FC<any> = ({ navigation }) => {
 const MemberProfileScreenComponent: React.FC<any> = ({ navigation }) => {
   return (
     <ProfileScreen
+      isMemberProfile={true}
+      showIdCard={true}
       onNavigate={(target) => {
         if (target === 'MyApplication' || target === 'status') {
           navigation.navigate('MyApplication');
@@ -264,7 +267,7 @@ export const MemberTabNavigator: React.FC = () => {
             onOpenTickets={() => navigation.navigate(AppRoutes.SUPPORT_TICKETS)}
             onOpenEvents={() => navigation.navigate('MemberEvents')}
             onOpenEvent={(event) => navigation.navigate('EventDetails', { event })}
-            onOpenDonation={() => navigation.navigate('MemberCauses')}
+            onOpenDonation={() => navigation.navigate('UserActionPage', { pageId: 'donate' })}
             onOpenHome={() => navigation.navigate('MemberHome')}
             onOpenAbout={() => navigation.navigate('About')}
             onOpenNews={() => navigation.navigate('News')}
@@ -283,7 +286,7 @@ export const MemberTabNavigator: React.FC = () => {
             onOpenMembershipInfo={() => navigation.navigate('MembershipDetails')}
             onOpenComplaint={() => navigation.navigate('MemberComplaint')}
             onOpenTickets={() => navigation.navigate(AppRoutes.SUPPORT_TICKETS)}
-            onOpenDonation={() => navigation.navigate('MemberCauses')}
+            onOpenDonation={() => navigation.navigate('UserActionPage', { pageId: 'donate' })}
             onOpenRight={(rightId) => navigation.navigate('MemberRights', { rightId })}
             onOpenRights={() => navigation.navigate('KnowYourRights')}
             onOpenEvents={() => navigation.navigate('MemberEvents')}
@@ -569,6 +572,65 @@ export const MemberTabNavigator: React.FC = () => {
         {({ navigation }) => (
           <MembershipCategoriesScreen
             onBack={navigation.goBack}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="UserActionPage"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => {
+          const pageId = route?.params?.pageId || 'donate';
+          return (
+            <UserActionPageScreen
+              pageId={pageId}
+              hideBottomNav={true}
+              showBottomNav={false}
+              onBack={() => {
+                if (navigation?.canGoBack && navigation.canGoBack()) {
+                  navigation.goBack();
+                } else {
+                  navigation.navigate('MemberHome');
+                }
+              }}
+              onOpenHome={() => navigation.navigate('MemberHome')}
+              onOpenAbout={() => navigation.navigate('About')}
+              onOpenRights={() => navigation.navigate('KnowYourRights')}
+              onOpenEvents={() => navigation.navigate('MemberEvents')}
+              onOpenNews={() => navigation.navigate('News')}
+              onOpenContact={() => navigation.navigate('MemberProfile')}
+              onOpenMembershipCategories={() => navigation.navigate('MembershipCategories')}
+              onOpenDonations={() => navigation.navigate('UserActionPage', { pageId: 'donate' })}
+            />
+          );
+        }}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="Donate"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }: any) => (
+          <UserActionPageScreen
+            pageId="donate"
+            hideBottomNav={true}
+            showBottomNav={false}
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MemberHome');
+              }
+            }}
+            onOpenHome={() => navigation.navigate('MemberHome')}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenRights={() => navigation.navigate('KnowYourRights')}
+            onOpenEvents={() => navigation.navigate('MemberEvents')}
+            onOpenNews={() => navigation.navigate('News')}
+            onOpenContact={() => navigation.navigate('MemberProfile')}
+            onOpenMembershipCategories={() => navigation.navigate('MembershipCategories')}
+            onOpenDonations={() => navigation.navigate('UserActionPage', { pageId: 'donate' })}
           />
         )}
       </Tab.Screen>

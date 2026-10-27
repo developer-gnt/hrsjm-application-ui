@@ -69,6 +69,14 @@ export interface AdminHeaderProps {
   hideNotifications?: boolean;
   /** Optional custom right action element (e.g. button or custom control). */
   rightAction?: React.ReactNode;
+  /** Whether to show the Donate / Donate Now button. Defaults to true for members / non-admins or when explicitly set. */
+  showDonate?: boolean;
+  /** Custom label for donate button. Defaults to 'Donate Now'. */
+  donateLabel?: string;
+  /** Callback when Donate button is pressed. */
+  onPressDonate?: () => void;
+  /** Whether this header is rendered as MemberHeader (resizes donate button to compact & provides clean gap from logo). */
+  isMemberHeader?: boolean;
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
@@ -84,6 +92,10 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   onPressProfile,
   hideNotifications = false,
   rightAction,
+  showDonate,
+  donateLabel = 'Donate Now',
+  onPressDonate,
+  isMemberHeader = false,
 }) => {
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
@@ -104,6 +116,28 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   };
 
   const isAdmin = user?.roles?.some(r => r.name === 'ADMIN' || r.name === 'SUPER_ADMIN') ?? false;
+  const isMember = Boolean(isMemberHeader || !isAdmin);
+  const shouldShowDonate = Boolean(
+    showDonate !== undefined ? showDonate : isMember
+  );
+
+  const handleDonatePress = () => {
+    if (onPressDonate) {
+      onPressDonate();
+      return;
+    }
+    if (navigation?.navigate) {
+      try {
+        navigation.navigate('UserActionPage', { pageId: 'donate' });
+        return;
+      } catch {}
+
+      try {
+        navigation.navigate('MemberCauses');
+        return;
+      } catch {}
+    }
+  };
 
   const handleOpenNotifications = () => {
     if (onPressNotifications) {
@@ -332,7 +366,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         <View
           style={[
             styles.centerWrap,
-            (alignLogo === 'left' || (!title && !showMenu && !isBackMode)) && styles.centerWrapLeft,
+            (alignLogo === 'left' || shouldShowDonate || (!title && !showMenu && !isBackMode)) &&
+              styles.centerWrapLeft,
           ]}
         >
           {title ? (
@@ -349,10 +384,32 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           )}
         </View>
 
-        {/* Right Controls: Custom Right Action + Notifications & Profile */}
+        {/* Right Controls: Custom Right Action + Donate CTA + Notifications & Profile */}
         <View style={styles.rightRow}>
           {rightAction ? (
             <View style={styles.customRightAction}>{rightAction}</View>
+          ) : null}
+
+          {shouldShowDonate ? (
+            <TouchableOpacity
+              style={[
+                styles.donateButton,
+                isMember && styles.donateButtonMember,
+              ]}
+              onPress={handleDonatePress}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel="Donate to HRSJM"
+            >
+              <Text
+                style={[
+                  styles.donateButtonText,
+                  isMember && styles.donateButtonTextMember,
+                ]}
+              >
+                {donateLabel}
+              </Text>
+            </TouchableOpacity>
           ) : null}
 
           {/* Notification Bell */}
@@ -533,6 +590,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'center',
     paddingHorizontal: 0,
+    paddingLeft: 6,
   },
   centerTitle: {
     ...Typography.screenTitle,
@@ -543,10 +601,39 @@ const styles = StyleSheet.create({
   rightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   customRightAction: {
     marginRight: 2,
+  },
+  donateButton: {
+    backgroundColor: '#FAD465',
+    paddingHorizontal: 11,
+    paddingVertical: 5.5,
+    borderRadius: 8,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  donateButtonMember: {
+    paddingHorizontal: 8.5,
+    paddingVertical: 3.5,
+    borderRadius: 6,
+    marginLeft: 10,
+  },
+  donateButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#011F39',
+    fontFamily: 'Inter',
+  },
+  donateButtonTextMember: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#011F39',
+    lineHeight: 14,
   },
   bellWrap: {
     position: 'relative',

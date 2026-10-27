@@ -7,6 +7,7 @@ import {
   EditUserPayload,
   UserType,
   UserStatus,
+  UserGender,
   UserVerificationDocument,
 } from '../types/user.types';
 import { INITIAL_DEV_USERS } from '../data/userFixtures';
@@ -469,6 +470,7 @@ class UsersStore {
         email: email || existingUser.email,
         phone: phone || existingUser.phone,
         dob: data.dob || existingUser.dob,
+        gender: (data.gender as UserGender) || existingUser.gender,
         userType: mappedType,
         status: mappedStatus,
         applicationNumber: existingUser.applicationNumber || applicationNumber,
@@ -497,7 +499,7 @@ class UsersStore {
       status: mappedStatus,
       joinedDate: new Date().toISOString(),
       dob: data.dob?.trim() || undefined,
-      gender: undefined,
+      gender: (data.gender as UserGender) || undefined,
       address: undefined,
       donationCount: 0,
       totalDonations: 0,
