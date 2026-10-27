@@ -46,6 +46,16 @@ export interface BackendMembership {
     fee: string | number;
     validity_days?: number;
   };
+  payment?: {
+    id?: string;
+    amount?: number | string;
+    payment_status?: string;
+    payment_method?: string;
+    transaction_id?: string | null;
+  } | null;
+  payment_amount?: number;
+  amount?: number;
+  payment_status?: string;
   created_at: string;
   updated_at: string;
 }
@@ -259,7 +269,7 @@ export const membersService = {
           id: '1',
           name: 'District Unit',
           code: 'DISTRICT_UNIT',
-          fee: 3000,
+          fee: 1300,
           description: 'Qualification: 10th Pass (10 TH) · 1 Yr Free Renewal',
           status: 'ACTIVE',
         },
@@ -267,7 +277,7 @@ export const membersService = {
           id: '2',
           name: 'State Unit',
           code: 'STATE_UNIT',
-          fee: 3000,
+          fee: 2300,
           description: 'Qualification: 10th Pass (10 TH) · 2 Yrs Free Renewal',
           status: 'ACTIVE',
         },
@@ -275,7 +285,7 @@ export const membersService = {
           id: '3',
           name: 'Lion, Counselor or Ambassador of State',
           code: 'LION_COUNSELOR_AMBASSADOR',
-          fee: 3000,
+          fee: 5000,
           description: 'Qualification: 12th Pass (12 TH) · 3 Yrs Free Renewal',
           status: 'ACTIVE',
         },
@@ -283,7 +293,7 @@ export const membersService = {
           id: '4',
           name: "Hon'ble State Director",
           code: 'STATE_DIRECTOR',
-          fee: 3000,
+          fee: 10000,
           description: 'Qualification: Graduate (GRADUATES) · 4 Yrs Free Renewal',
           status: 'ACTIVE',
         },
@@ -291,8 +301,24 @@ export const membersService = {
           id: '5',
           name: 'National Council Cell',
           code: 'NATIONAL_COUNCIL_CELL',
-          fee: 3000,
+          fee: 10000,
           description: 'Lawyers, Women or Minority · Qualification: Graduate · 5 Yrs Free Renewal',
+          status: 'ACTIVE',
+        },
+        {
+          id: '6',
+          name: 'District Active Member',
+          code: 'DISTRICT_ACTIVE_MEMBER',
+          fee: 800,
+          description: 'Qualification: Minimum 8th Class · 1 Year Validity',
+          status: 'ACTIVE',
+        },
+        {
+          id: '7',
+          name: 'State Active Member',
+          code: 'STATE_ACTIVE_MEMBER',
+          fee: 900,
+          description: 'Qualification: Minimum 8th Class · 1 Year Validity',
           status: 'ACTIVE',
         },
       ];
