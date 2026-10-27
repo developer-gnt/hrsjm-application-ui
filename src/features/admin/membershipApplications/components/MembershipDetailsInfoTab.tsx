@@ -1,7 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { BorderRadius, Spacing } from '../../../../core';
-import { MembershipApplicationItem } from '../types/membershipApplications.types';
+import {
+  MembershipApplicationItem,
+  getApplicationAccountType,
+} from '../types/membershipApplications.types';
 
 interface MembershipDetailsInfoTabProps {
   application: MembershipApplicationItem;
@@ -15,8 +18,22 @@ interface InfoField {
 export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> = ({
   application,
 }) => {
+  const accountType = getApplicationAccountType(application);
+  const isSeeker = accountType === 'seeker';
+
   const fields: InfoField[] = [
     { label: 'Full Name', value: application.applicantName || 'Applicant' },
+    { label: 'Account Type', value: isSeeker ? 'Donor Seeker' : 'Membership' },
+    {
+      label: isSeeker ? 'Assistance Type' : 'Member Type',
+      value: isSeeker
+        ? application.membershipType &&
+          application.membershipType !== 'Donation Seeker' &&
+          application.membershipType !== 'Donor Seeker'
+          ? application.membershipType
+          : 'Aid Request'
+        : application.membershipType || 'Standard Member',
+    },
     {
       label: 'Date of Birth',
       value: application.dob && application.dob !== '—' ? application.dob : 'Not specified',
@@ -49,7 +66,6 @@ export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> =
       label: 'Occupation',
       value: application.occupation && application.occupation !== '—' ? application.occupation : 'Not specified',
     },
-    { label: 'Membership Type', value: application.membershipType || 'Not specified' },
   ];
 
   return (

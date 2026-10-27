@@ -8,7 +8,10 @@ import {
 } from 'react-native';
 import { BorderRadius, Spacing } from '../../../../core';
 import { FileText, ChevronRight } from '../../../../core/components/icons';
-import { MembershipApplicationItem } from '../types/membershipApplications.types';
+import {
+  MembershipApplicationItem,
+  getApplicationAccountType,
+} from '../types/membershipApplications.types';
 
 interface MembershipApplicationCardProps {
   application: MembershipApplicationItem;
@@ -59,6 +62,9 @@ export const MembershipApplicationCard: React.FC<MembershipApplicationCardProps>
     }
   };
 
+  const accountType = getApplicationAccountType(application);
+  const isSeeker = accountType === 'seeker';
+
   return (
     <TouchableOpacity
       style={styles.card}
@@ -89,9 +95,34 @@ export const MembershipApplicationCard: React.FC<MembershipApplicationCardProps>
           <Text style={styles.applicantName} numberOfLines={1}>
             {application.applicantName}
           </Text>
-          <Text style={styles.membershipType} numberOfLines={1}>
-            {application.membershipType}
-          </Text>
+
+          <View style={styles.accountTypeRow}>
+            <View
+              style={[
+                styles.accountTypeBadge,
+                isSeeker ? styles.badgeSeeker : styles.badgeMember,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.accountTypeText,
+                  isSeeker ? styles.textSeeker : styles.textMember,
+                ]}
+              >
+                {isSeeker ? 'Donor Seeker' : 'Membership'}
+              </Text>
+            </View>
+            <Text style={styles.memberTypeLabel} numberOfLines={1}>
+              {isSeeker
+                ? application.membershipType &&
+                  application.membershipType !== 'Donation Seeker' &&
+                  application.membershipType !== 'Donor Seeker'
+                  ? application.membershipType
+                  : 'Aid Request'
+                : application.membershipType || 'General Member'}
+            </Text>
+          </View>
+
           <View style={styles.appIdRow}>
             <FileText size={12} color="#2563EB" strokeWidth={2} />
             <Text style={styles.applicationId} numberOfLines={1}>
@@ -174,6 +205,45 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#0F2860',
     lineHeight: 18,
+  },
+  accountTypeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 3,
+    marginBottom: 2,
+    flexWrap: 'nowrap',
+  },
+  accountTypeBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  badgeSeeker: {
+    backgroundColor: '#FFF1F2',
+    borderColor: '#FECDD3',
+  },
+  textSeeker: {
+    color: '#E11D48',
+  },
+  badgeMember: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+  },
+  textMember: {
+    color: '#1D4ED8',
+  },
+  accountTypeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  memberTypeLabel: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '500',
+    flexShrink: 1,
   },
   membershipType: {
     fontSize: 11,

@@ -6,7 +6,10 @@ import {
   View,
 } from 'react-native';
 import { BorderRadius, Spacing } from '../../../../core';
-import { MembershipApplicationItem } from '../types/membershipApplications.types';
+import {
+  MembershipApplicationItem,
+  getApplicationAccountType,
+} from '../types/membershipApplications.types';
 import { resolveUploadedFileUri } from '../services/uploadedDocumentsCache';
 
 interface MembershipApplicantSummaryCardProps {
@@ -64,6 +67,9 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
     }
   };
 
+  const accountType = getApplicationAccountType(application);
+  const isSeeker = accountType === 'seeker';
+
   return (
     <View style={styles.card}>
       <View style={styles.cardRow}>
@@ -88,9 +94,33 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
           <Text style={styles.applicantName} numberOfLines={1}>
             {application.applicantName}
           </Text>
-          <Text style={styles.membershipType} numberOfLines={1}>
-            {application.membershipType}
-          </Text>
+
+          <View style={styles.typeRow}>
+            <View
+              style={[
+                styles.accountBadge,
+                isSeeker ? styles.accountBadgeSeeker : styles.accountBadgeMember,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.accountBadgeText,
+                  isSeeker ? styles.accountTextSeeker : styles.accountTextMember,
+                ]}
+              >
+                {isSeeker ? 'Donor Seeker' : 'Membership'}
+              </Text>
+            </View>
+            <Text style={styles.membershipType} numberOfLines={1}>
+              {isSeeker
+                ? application.membershipType &&
+                  application.membershipType !== 'Donation Seeker' &&
+                  application.membershipType !== 'Donor Seeker'
+                  ? application.membershipType
+                  : 'Aid Request'
+                : application.membershipType || 'General Member'}
+            </Text>
+          </View>
 
           <View style={styles.metaList}>
             <View style={styles.metaRow}>
@@ -193,11 +223,43 @@ const styles = StyleSheet.create({
     color: '#0F2860',
     lineHeight: 20,
   },
+  typeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  accountBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  accountBadgeSeeker: {
+    backgroundColor: '#FFF1F2',
+    borderColor: '#FECDD3',
+  },
+  accountBadgeMember: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+  },
+  accountBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  accountTextSeeker: {
+    color: '#E11D48',
+  },
+  accountTextMember: {
+    color: '#1D4ED8',
+  },
   membershipType: {
     fontSize: 11,
     color: '#64748B',
-    marginTop: 1,
-    marginBottom: 4,
+    fontWeight: '500',
+    flexShrink: 1,
   },
   metaList: {
     gap: 2,

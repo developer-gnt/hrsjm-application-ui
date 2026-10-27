@@ -1,9 +1,27 @@
 export type ApplicationStatus = 'submitted' | 'under_review' | 'approved' | 'rejected';
+export type ApplicationAccountType = 'membership' | 'seeker';
+
+export function getApplicationAccountType(app?: {
+  accountType?: string;
+  membershipType?: string;
+  applicationId?: string;
+}): ApplicationAccountType {
+  if (!app) return 'membership';
+  if (app.accountType === 'seeker') return 'seeker';
+  if (app.accountType === 'membership') return 'membership';
+  const type = (app.membershipType || '').toLowerCase();
+  const id = (app.applicationId || '').toUpperCase();
+  if (type.includes('seeker') || id.startsWith('HRSJM-SEK')) {
+    return 'seeker';
+  }
+  return 'membership';
+}
 
 export interface MembershipApplicationItem {
   id: string;
   applicationId: string;
   applicantName: string;
+  accountType?: ApplicationAccountType;
   membershipType: string;
   avatarUrl?: string;
   status: ApplicationStatus;

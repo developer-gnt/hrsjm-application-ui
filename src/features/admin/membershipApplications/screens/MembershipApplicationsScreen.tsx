@@ -19,7 +19,10 @@ import { MembershipApplicationCard } from '../components/MembershipApplicationCa
 import { MembershipApplicationsBottomNav } from '../components/MembershipApplicationsBottomNav';
 import { MembershipFilterModal, FilterOptions } from '../components/MembershipFilterModal';
 import { membershipApplicationsStore } from '../services/membershipApplicationsStore';
-import { MembershipApplicationItem } from '../types/membershipApplications.types';
+import {
+  MembershipApplicationItem,
+  getApplicationAccountType,
+} from '../types/membershipApplications.types';
 
 interface MembershipApplicationsScreenProps {
   onViewApplication?: (application: MembershipApplicationItem) => void;
@@ -73,6 +76,8 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   const [pageSize, setPageSize] = useState(25);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     status: 'all',
+    accountType: 'all',
+    memberType: 'All Types',
     membershipType: 'All Types',
     sortBy: 'newest',
   });
@@ -140,6 +145,8 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     setActiveTab('all');
     setFilterOptions({
       status: 'all',
+      accountType: 'all',
+      memberType: 'All Types',
       membershipType: 'All Types',
       sortBy: 'newest',
     });
@@ -162,7 +169,13 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   };
 
   const hasActiveFilters =
-    filterOptions.membershipType !== 'All Types' ||
+    (filterOptions.accountType && filterOptions.accountType !== 'all') ||
+    (filterOptions.memberType &&
+      filterOptions.memberType !== 'All Types' &&
+      filterOptions.memberType !== 'All Member Types') ||
+    (filterOptions.membershipType &&
+      filterOptions.membershipType !== 'All Types' &&
+      !filterOptions.accountType) ||
     filterOptions.sortBy !== 'newest';
 
   // Filter and sort applications list
@@ -176,13 +189,31 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
       } else if (activeTab !== 'all' && app.status !== activeTab) {
         return false;
       }
-      // Membership type filter
-      if (
-        filterOptions.membershipType !== 'All Types' &&
-        app.membershipType !== filterOptions.membershipType
-      ) {
-        return false;
+
+      const appAccountType = getApplicationAccountType(app); // 'membership' | 'seeker'
+
+      // Account Type filter
+      if (filterOptions.accountType && filterOptions.accountType !== 'all') {
+        if (appAccountType !== filterOptions.accountType) {
+          return false;
+        }
       }
+
+      // Member Type filter (applies when filtering membership applications)
+      const activeMemberType = filterOptions.memberType || filterOptions.membershipType;
+      if (
+        activeMemberType &&
+        activeMemberType !== 'All Types' &&
+        activeMemberType !== 'All Member Types'
+      ) {
+        if (activeMemberType === 'Donation Seeker') {
+          if (appAccountType !== 'seeker') return false;
+        } else {
+          if (appAccountType === 'seeker') return false;
+          if (app.membershipType !== activeMemberType) return false;
+        }
+      }
+
       // Search query filter (matches name, application ID, phone, or email)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
