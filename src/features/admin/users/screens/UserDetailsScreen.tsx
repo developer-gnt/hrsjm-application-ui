@@ -91,19 +91,20 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
   }
 
   // Handle status toggle (Block / Unblock / Delete)
-  const handleConfirmAction = () => {
-    if (!confirmAction) return;
+  const handleConfirmAction = async () => {
+    if (!confirmAction || !user) return;
 
-    if (confirmAction === 'delete') {
-      usersStore.deleteUser(user.id);
-      setConfirmAction(null);
+    const action = confirmAction;
+    const targetUserId = user.id;
+    setConfirmAction(null);
+
+    if (action === 'delete') {
+      usersStore.deleteUser(targetUserId);
       if (onBack) onBack();
-    } else if (confirmAction === 'block') {
-      usersStore.updateStatus(user.id, 'blocked');
-      setConfirmAction(null);
-    } else if (confirmAction === 'unblock') {
-      usersStore.updateStatus(user.id, 'active');
-      setConfirmAction(null);
+    } else if (action === 'block') {
+      await usersStore.updateStatus(targetUserId, 'blocked');
+    } else if (action === 'unblock') {
+      await usersStore.updateStatus(targetUserId, 'active');
     }
   };
 

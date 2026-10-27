@@ -187,7 +187,7 @@ class UsersStore {
 
           const rawStatus = (u.status || '').toUpperCase();
           let status: UserStatus =
-            rawStatus === 'BLOCKED' || u.is_active === false
+            rawStatus === 'BLOCKED' || rawStatus === 'INACTIVE' || rawStatus === 'SUSPENDED' || u.is_active === false
               ? 'blocked'
               : rawStatus === 'PENDING'
               ? 'pending'
@@ -696,7 +696,11 @@ class UsersStore {
     return updated;
   }
 
-  public updateStatus(id: string, status: UserItem['status'], remarks?: string): boolean {
+  public async updateStatus(
+    id: string,
+    status: UserItem['status'],
+    remarks?: string
+  ): Promise<boolean> {
     const index = this.users.findIndex(u => u.id === id || u.memberId === id);
     if (index === -1) return false;
 
@@ -709,12 +713,105 @@ class UsersStore {
 
     const target = this.users[index];
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(target.id);
-    if (isUuid) {
-      const apiStatus = status === 'blocked' ? 'INACTIVE' : 'ACTIVE';
-      apiClient.patch(`/users/${target.id}/status`, { status: apiStatus }).catch(() => {});
+    let targetId = isUuid ? target.id : null;
+
+    if (!targetId) {
+      try {
+        const cleanMobile = target.phone ? target.phone.replace(/\D/g, '').slice(-10) : '';
+        const res: any = await apiClient.get<any>('/users', {
+          params: { search: cleanMobile || target.email || undefined },
+        });
+        const items = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.items)
+          ? res.data.items
+          : Array.isArray(res)
+          ? res
+          : null;
+        if (items && items.length > 0) {
+          const found = items.find((u: any) =>
+            (cleanMobile && u.mobile_number && u.mobile_number.includes(cleanMobile)) ||
+            (target.email && u.email && u.email.toLowerCase() === target.email.toLowerCase())
+          );
+          if (found && found.id) {
+            targetId = found.id;
+          }
+        }
+      } catch (err) {
+        console.warn('updateStatus lookup targetId error:', err);
+      }
+    }
+
+    if (targetId) {
+      try {
+        const apiStatus = status === 'blocked' ? 'INACTIVE' : 'ACTIVE';
+        await apiClient.patch(`/users/${targetId}/status`, { status: apiStatus });
+      } catch (err) {
+        console.warn('updateStatus backend patch error:', err);
+      }
     }
 
     return true;
+  }
+
+  public async resetPassword(
+    id: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> {
+    const target = this.users.find(u => u.id === id || u.memberId === id);
+    if (!target) {
+      return { success: false, message: 'User not found in store' };
+    }
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(target.id);
+    let targetId = isUuid ? target.id : null;
+
+    if (!targetId) {
+      try {
+        const cleanMobile = target.phone ? target.phone.replace(/\D/g, '').slice(-10) : '';
+        const res: any = await apiClient.get<any>('/users', {
+          params: { search: cleanMobile || target.email || undefined },
+        });
+        const items = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.items)
+          ? res.data.items
+          : Array.isArray(res)
+          ? res
+          : null;
+        if (items && items.length > 0) {
+          const found = items.find((u: any) =>
+            (cleanMobile && u.mobile_number && u.mobile_number.includes(cleanMobile)) ||
+            (target.email && u.email && u.email.toLowerCase() === target.email.toLowerCase())
+          );
+          if (found && found.id) {
+            targetId = found.id;
+          }
+        }
+      } catch (err) {
+        console.warn('resetPassword lookup targetId error:', err);
+      }
+    }
+
+    if (!targetId) {
+      return { success: false, message: 'User database record could not be located' };
+    }
+
+    try {
+      const res: any = await apiClient.post(`/users/${targetId}/reset-password`, {
+        new_password: newPassword,
+      });
+      return {
+        success: true,
+        message: res?.data?.message || res?.message || 'Password reset successfully',
+      };
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to reset password. Please try again.';
+      return { success: false, message: Array.isArray(msg) ? msg.join(', ') : msg };
+    }
   }
 
   public deleteUser(id: string): boolean {

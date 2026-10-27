@@ -142,13 +142,17 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
     setConfirmAction(user.status === 'blocked' ? 'unblock' : 'block');
   };
 
-  const handleConfirmToggleBlock = () => {
+  const handleConfirmToggleBlock = async () => {
     if (confirmModalUser && confirmAction) {
       const nextStatus: UserStatus = confirmAction === 'block' ? 'blocked' : 'active';
-      usersStore.updateStatus(confirmModalUser.id, nextStatus);
+      const targetId = confirmModalUser.id;
+      setConfirmModalUser(null);
+      setConfirmAction(null);
+      await usersStore.updateStatus(targetId, nextStatus);
+    } else {
+      setConfirmModalUser(null);
+      setConfirmAction(null);
     }
-    setConfirmModalUser(null);
-    setConfirmAction(null);
   };
 
   const handleResetFilters = () => {
