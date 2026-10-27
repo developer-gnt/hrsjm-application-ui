@@ -471,7 +471,8 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
   return (
     <View style={styles.screen}>
       <AdminHeader
-        showBack={Boolean(onBack || showBack)}
+        showBack={Boolean(showBack)}
+        showMenu
         onBack={onBack}
         onNavigate={onNavigate}
         unreadCount={3}
