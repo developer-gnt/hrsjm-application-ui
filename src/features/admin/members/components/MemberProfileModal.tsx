@@ -620,12 +620,12 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
               {member.status === 'ACTIVE' ? (
                 <>
                   <UserX size={16} color={BrandColors.danger} />
-                  <Text style={styles.footerStatusTextDeactivate}>Suspend</Text>
+                  <Text style={styles.footerStatusTextDeactivate}>Block User</Text>
                 </>
               ) : (
                 <>
                   <UserCheck size={16} color={BrandColors.success} />
-                  <Text style={styles.footerStatusTextActivate}>Activate</Text>
+                  <Text style={styles.footerStatusTextActivate}>Unblock User</Text>
                 </>
               )}
             </TouchableOpacity>

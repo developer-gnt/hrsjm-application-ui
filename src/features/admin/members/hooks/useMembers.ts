@@ -232,7 +232,7 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
       { tab: 'ALL', label: 'All', count: stats.total },
       { tab: 'ACTIVE', label: 'Active', count: stats.active },
       { tab: 'EXPIRING_SOON', label: 'Expiring Soon', count: stats.expiringSoon },
-      { tab: 'INACTIVE', label: 'Inactive', count: stats.inactive },
+      { tab: 'INACTIVE', label: 'Blocked', count: stats.inactive },
     ],
     [stats]
   );

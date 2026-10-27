@@ -119,14 +119,14 @@ export const MemberActionsSheet: React.FC<MemberActionsSheetProps> = ({
     },
     isActive
       ? {
-          key: 'deactivate',
-          label: 'Deactivate',
+          key: 'block',
+          label: 'Block User',
           Icon: UserX,
           destructive: true,
         }
       : {
-          key: 'activate',
-          label: 'Activate',
+          key: 'unblock',
+          label: 'Unblock User',
           Icon: UserCheck,
         },
   ];

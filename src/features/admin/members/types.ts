@@ -13,6 +13,7 @@ export type MemberSortOption =
 
 export interface Member {
   id: string;
+  userId?: string;
   name: string;
   phone: string;
   email: string;
