@@ -86,6 +86,9 @@ export const dashboardErrorMessage = (error: unknown): string => {
     if (error.statusCode === 403) {
       return 'Your role does not have access to the admin dashboard.';
     }
+    if (error.statusCode === 429) {
+      return 'Too many requests received. Please wait a moment and try again.';
+    }
     return error.message;
   }
   return 'Something went wrong while loading the dashboard. Please try again.';

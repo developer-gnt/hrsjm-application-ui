@@ -1,8 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AdminColors, Spacing, UserFontFamilies } from '../../../../core/theme';
 import { AppIcon } from '../../components';
-import { SectionHeader } from './SectionHeader';
 import type { ImpactStats } from '../types/home.types';
 import { formatImpactNumber } from '../utils/format-impact-number';
 
@@ -12,42 +11,69 @@ interface ImpactSectionProps {
 }
 
 const IMPACT_METRICS = [
-  { key: 'members', label: 'Members', icon: 'users' },
+  { key: 'members', label: 'Active Members', icon: 'users' },
   { key: 'complaintsHandled', label: 'Complaints Handled', icon: 'file-text' },
   { key: 'casesResolved', label: 'Cases Resolved', icon: 'handshake' },
 ] as const;
 
 /**
- * Reference-locked "Our Impact": full-bleed navy band, serif white heading,
- * three gold-icon statistics separated by thin dividers.
+ * Premium Executive "Our Impact" Card:
+ * Deep royal navy container, golden verification indicator,
+ * three distinct frosted metric tiles with high-legibility tabular typography
+ * that will never squish, collide, or wrap awkwardly on mobile devices.
  */
 export const ImpactSection: React.FC<ImpactSectionProps> = ({
   stats,
   onDetailsPress,
 }) => (
-  <View style={styles.section}>
-    <SectionHeader
-      title="Our Impact"
-      linkLabel="View Details"
-      onLinkPress={onDetailsPress}
-      light
-    />
+  <View style={styles.cardContainer}>
+    {/* Header with Title and View Details Action */}
+    <View style={styles.headerRow}>
+      <View style={styles.titleCol}>
+        <View style={styles.eyebrowRow}>
+          <View style={styles.verifiedDot} />
+          <Text style={styles.eyebrowText}>Verified National Mission</Text>
+        </View>
+        <Text style={styles.titleText}>Our Impact</Text>
+      </View>
 
-    <View style={styles.statsRow}>
-      {IMPACT_METRICS.map(metric => (
-        <View key={metric.key} style={styles.stat}>
+      {onDetailsPress && (
+        <TouchableOpacity
+          style={styles.detailsButton}
+          onPress={onDetailsPress}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel="View Details on Our Impact"
+        >
+          <Text style={styles.detailsButtonText}>View Details</Text>
+          <AppIcon name="arrow-right" size={13} color="#FAD465" />
+        </TouchableOpacity>
+      )}
+    </View>
+
+    {/* 3 Metric Tiles with generous breathing room and zero collision */}
+    <View style={styles.tilesGrid}>
+      {IMPACT_METRICS.map((metric) => (
+        <View key={metric.key} style={styles.metricTile}>
           <View style={styles.iconCircle}>
             <AppIcon
               name={metric.icon}
-              size={22}
+              size={18}
               color="#FAD465"
               strokeWidth={1.8}
             />
           </View>
-          <Text style={styles.value}>
+          <Text
+            style={styles.metricValue}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             {formatImpactNumber(stats[metric.key])}
           </Text>
-          <Text style={styles.label}>{metric.label}</Text>
+          <Text style={styles.metricLabel} numberOfLines={2}>
+            {metric.label}
+          </Text>
         </View>
       ))}
     </View>
@@ -55,51 +81,123 @@ export const ImpactSection: React.FC<ImpactSectionProps> = ({
 );
 
 const styles = StyleSheet.create({
-  section: {
-    backgroundColor: '#06294D', // color-navy-900
-    borderRadius: 14,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.xl,
-    paddingHorizontal: Spacing.base,
-    marginHorizontal: Spacing.base,
+  cardContainer: {
+    backgroundColor: '#072444',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(219, 229, 238, 0.15)',
+    borderColor: 'rgba(250, 212, 101, 0.25)',
+    borderTopWidth: 2.5,
+    borderTopColor: '#F59E0B',
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    marginHorizontal: Spacing.base,
+    shadowColor: '#072444',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 4,
   },
-  statsRow: {
+  headerRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginTop: Spacing.md,
-  },
-  stat: {
-    flex: 1,
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
+    paddingHorizontal: 2,
+  },
+  titleCol: {
+    flex: 1,
+  },
+  eyebrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 6,
+  },
+  verifiedDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  eyebrowText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FAD465',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    fontFamily: 'Inter',
+  },
+  titleText: {
+    fontFamily: UserFontFamilies.heading,
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
+  },
+  detailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(250, 212, 101, 0.12)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(250, 212, 101, 0.25)',
+  },
+  detailsButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FAD465',
+    fontFamily: 'Inter',
+  },
+  tilesGrid: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  metricTile: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.09)',
+    alignItems: 'center',
+    paddingVertical: 12,
     paddingHorizontal: 4,
   },
   iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: '#C9971A', // color-gold-700
-    backgroundColor: 'rgba(250, 212, 101, 0.1)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(250, 212, 101, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(250, 212, 101, 0.35)',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 6,
   },
-  value: {
-    fontFamily: UserFontFamilies.heading,
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: '700',
+  metricValue: {
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'sans-serif-medium',
+      default: 'Inter, -apple-system, sans-serif',
+    }),
+    fontSize: 15.5,
+    lineHeight: 20,
+    fontWeight: '800',
     color: '#FFFFFF',
-    marginTop: 8,
     textAlign: 'center',
+    letterSpacing: -0.2,
+    width: '100%',
   },
-  label: {
-    fontSize: 11.5,
-    lineHeight: 15,
+  metricLabel: {
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: '500',
-    color: '#EDF2F7', // color-blue-100
+    color: '#CBD5E1',
     marginTop: 4,
     textAlign: 'center',
     fontFamily: 'Inter',

@@ -669,6 +669,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     effectiveAddressInfo: AddressInfo,
     uploadedDocs: any[],
     fullAddress: string,
+    effectivePost?: MembershipPostData | null,
   ): Promise<MembershipApplicationRecord> => {
     const CATEGORY_MAP: Record<string, string> = {
       'district': 'd8907f1c-7c4e-4ed4-bee9-c47d51e5b97a',
@@ -688,6 +689,16 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     const validEmail = rawEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail) ? rawEmail : (authUser?.email || undefined);
     const matchedKey = Object.keys(CATEGORY_MAP).find(k => categoryTitle.toLowerCase().includes(k.toLowerCase()));
     const catId = matchedKey ? CATEGORY_MAP[matchedKey] : 'd8907f1c-7c4e-4ed4-bee9-c47d51e5b97a';
+
+    let resolvedValidity = effectivePost?.validity || '1 Year';
+    let resolvedValidityDays = 365;
+    if (resolvedValidity.includes('10')) {
+      resolvedValidityDays = 3650;
+    } else if (resolvedValidity.includes('5')) {
+      resolvedValidityDays = 1825;
+    } else if (resolvedValidity.includes('2')) {
+      resolvedValidityDays = 730;
+    }
 
     const sanitizeUri = (uri?: string) => {
       if (!uri) return undefined;
@@ -725,6 +736,9 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       application_data: {
         application_id: adminAppItem.applicationId,
         membership_type: categoryTitle,
+        post_name: categoryTitle,
+        validity: resolvedValidity,
+        validity_days: resolvedValidityDays,
         documents: docsForBackend,
         police_station: effectivePersonalInfo.policeStation?.trim() || effectiveAddressInfo.policeStation?.trim() || undefined,
       },
@@ -915,6 +929,23 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       ],
     };
 
+    let validityYears = 1;
+    if (effectivePost?.validity) {
+      const match = effectivePost.validity.match(/(\d+)\s*year/i);
+      if (match) {
+        validityYears = parseInt(match[1], 10);
+      }
+    } else {
+      const lower = categoryTitle.toLowerCase();
+      if (lower.includes('director') || lower.includes('council')) {
+        validityYears = 10;
+      } else if (lower.includes('lion') || lower.includes('counselor') || lower.includes('ambassador')) {
+        validityYears = 5;
+      } else if (lower.includes('state unit')) {
+        validityYears = 2;
+      }
+    }
+
     const newRecord: MembershipApplicationRecord = {
       id: adminAppItem.id,
       applicationId: appIdNumber,
@@ -923,7 +954,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       status: 'Applied',
       submittedAt: `${formattedDate}, ${formattedTime}`,
       validFrom: formattedDate,
-      validTill: `${formattedDate.slice(0, -4)}${Number(timestamp.getFullYear()) + 1}`,
+      validTill: `${formattedDate.slice(0, -4)}${Number(timestamp.getFullYear()) + validityYears}`,
       rejectionReason: 'Documents are not clear. Please upload a valid address proof and clear photograph.',
       paymentStatus: overrides?.paymentCompleted ? 'Completed' : 'Pending',
       paymentId: overrides?.paymentId,
@@ -970,7 +1001,16 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
 
     if (process.env.NODE_ENV !== 'test') {
       try {
-        const saved = await executeBackendApply(newRecord, adminAppItem, categoryTitle, effectivePersonalInfo, effectiveAddressInfo, uploadedDocs, fullAddress);
+        const saved = await executeBackendApply(
+          newRecord,
+          adminAppItem,
+          categoryTitle,
+          effectivePersonalInfo,
+          effectiveAddressInfo,
+          uploadedDocs,
+          fullAddress,
+          effectivePost,
+        );
         return saved;
       } catch {
         return newRecord;

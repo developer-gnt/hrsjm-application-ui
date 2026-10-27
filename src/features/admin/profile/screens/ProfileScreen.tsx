@@ -46,7 +46,7 @@ import { AvatarPickerModal } from '../components/AvatarPickerModal';
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { EditPersonalInfoModal } from '../components/EditPersonalInfoModal';
 import { MyIdCard } from '../components/MyIdCard';
-import { Lock, KeyRound, Calendar } from '../../../../core/components/icons';
+import { Lock, KeyRound, Calendar, BadgeCheck } from '../../../../core/components/icons';
 import {
   PersonIcon,
   MailIcon,
@@ -694,7 +694,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <View style={[styles.sectionGap, styles.joinMembershipCard]}>
             <View style={styles.joinMembershipCardHeader}>
               <View style={styles.joinMembershipIconCircle}>
-                <Text style={styles.joinMembershipBigIcon}>✦</Text>
+                <BadgeCheck size={22} color="#D97706" strokeWidth={2.2} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.joinMembershipCardTitle}>Become an Official Member</Text>
@@ -964,13 +964,11 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFF9E6',
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  joinMembershipBigIcon: {
-    fontSize: 20,
-    color: '#C9971A',
   },
   joinMembershipCardTitle: {
     fontFamily: FontFamilies.serif,

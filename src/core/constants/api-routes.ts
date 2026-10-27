@@ -62,6 +62,9 @@ export const ApiRoutes = {
   // Notifications
   NOTIFICATIONS: {
     ME: '/notifications/me',
+    UNREAD_COUNT: '/notifications/me/unread-count',
+    READ_ALL: '/notifications/me/read-all',
+    MARK_READ: (recipientId: string) => `/notifications/recipients/${recipientId}/read`,
   },
 
   // Payments

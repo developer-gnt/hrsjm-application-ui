@@ -215,7 +215,7 @@ export const USER_TABS: HomeTab[] = [
   { id: 'rights', label: 'Rights', icon: 'scale' },
   { id: 'events', label: 'Events', icon: 'calendar' },
   { id: 'news', label: 'News', icon: 'news' },
-  { id: 'contact', label: 'Contact', icon: 'user' },
+  { id: 'history', label: 'History', icon: 'clock' },
 ];
 
 export const MEMBER_TABS: HomeTab[] = [

@@ -15,7 +15,25 @@ class CausesService {
         ? payload.items
         : [];
 
-      const mappedBackendCauses: MemberCause[] = rawList.map((item: any) => {
+      // Filter out internal registration/account verification tickets and 0-amount requests
+      const validCausesList = rawList.filter((item: any) => {
+        const reasonLower = (item.reason || '').toLowerCase().trim();
+        const descLower = (item.description || '').toLowerCase().trim();
+        const amount = Number(item.requested_amount || 0);
+
+        if (
+          amount <= 0 ||
+          reasonLower.includes('account verification') ||
+          reasonLower.includes('seeker verification') ||
+          descLower.includes('registration pending') ||
+          descLower.includes('account verification')
+        ) {
+          return false;
+        }
+        return true;
+      });
+
+      const mappedBackendCauses: MemberCause[] = validCausesList.map((item: any) => {
         const reasonLower = (item.reason || '').toLowerCase();
         const descLower = (item.description || '').toLowerCase();
         const text = `${reasonLower} ${descLower}`;

@@ -38,6 +38,7 @@ import {
 } from '../hooks/useCashfreePayment';
 import { useAuthStore } from '../../auth/store/authStore';
 import { causesService } from '../../member/services/causes.service';
+import { recentDonationsStore } from '../../donations/services/recent-donations.store';
 import {
   UpiBrandLogo,
   GPayAppLogo,
@@ -411,44 +412,46 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       return;
     }
 
-    // Validation per selected method
-    if (paymentMethod === 'upi') {
-      const trimmedUpi = upiId.trim();
-      if (trimmedUpi.length > 0) {
-        const formatResult = validateUpiFormat(trimmedUpi);
-        if (!formatResult.isValid) {
-          setUpiTouched(true);
-          setUpiError(formatResult.error || 'Please enter a valid UPI ID (e.g. 9888880002@upi)');
-          Alert.alert('Invalid UPI Format', formatResult.error || 'Please enter a valid UPI ID (e.g. 9888880002@upi).');
+    // Validation per selected method - bypassed as Cashfree Gateway collects and validates payment details directly
+    if (false as boolean) {
+      if (paymentMethod === 'upi') {
+        const trimmedUpi = upiId.trim();
+        if (trimmedUpi.length > 0) {
+          const formatResult = validateUpiFormat(trimmedUpi);
+          if (!formatResult.isValid) {
+            setUpiTouched(true);
+            setUpiError(formatResult.error || 'Please enter a valid UPI ID (e.g. 9888880002@upi)');
+            Alert.alert('Invalid UPI Format', formatResult.error || 'Please enter a valid UPI ID (e.g. 9888880002@upi).');
+            return;
+          }
+        }
+      } else if (paymentMethod === 'card') {
+        const newCardErrors: {
+          cardNumber?: string;
+          cardExpiry?: string;
+          cardCvv?: string;
+          cardHolder?: string;
+        } = {};
+
+        if (!validateLuhnCardNumber(cardNumber)) {
+          newCardErrors.cardNumber = 'Please enter a valid 13-19 digit card number.';
+        }
+        const expValidation = validateCardExpiry(cardExpiry);
+        if (!expValidation.isValid) {
+          newCardErrors.cardExpiry = expValidation.error || 'Invalid expiry date.';
+        }
+        if (!validateCardCvv(cardCvv)) {
+          newCardErrors.cardCvv = 'CVV must be 3 or 4 digits.';
+        }
+        if (!validateCardHolderName(cardHolder)) {
+          newCardErrors.cardHolder = 'Please enter cardholder name.';
+        }
+
+        if (Object.keys(newCardErrors).length > 0) {
+          setCardErrors(newCardErrors);
+          Alert.alert('Incomplete Card Details', 'Please correct the highlighted card details to proceed.');
           return;
         }
-      }
-    } else if (paymentMethod === 'card') {
-      const newCardErrors: {
-        cardNumber?: string;
-        cardExpiry?: string;
-        cardCvv?: string;
-        cardHolder?: string;
-      } = {};
-
-      if (!validateLuhnCardNumber(cardNumber)) {
-        newCardErrors.cardNumber = 'Please enter a valid 13-19 digit card number.';
-      }
-      const expValidation = validateCardExpiry(cardExpiry);
-      if (!expValidation.isValid) {
-        newCardErrors.cardExpiry = expValidation.error || 'Invalid expiry date.';
-      }
-      if (!validateCardCvv(cardCvv)) {
-        newCardErrors.cardCvv = 'CVV must be 3 or 4 digits.';
-      }
-      if (!validateCardHolderName(cardHolder)) {
-        newCardErrors.cardHolder = 'Please enter cardholder name.';
-      }
-
-      if (Object.keys(newCardErrors).length > 0) {
-        setCardErrors(newCardErrors);
-        Alert.alert('Incomplete Card Details', 'Please correct the highlighted card details to proceed.');
-        return;
       }
     }
 
@@ -493,6 +496,30 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       // Record donation in causesService so all cause statistics reflect immediately
       if (payload.purpose === 'donation') {
         causesService.recordDonation(payload.entityId || payload.title, activeAmount, result.paymentId);
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+        recentDonationsStore.addDonation({
+          id: result.paymentId || result.orderId || `rec-don-${Date.now()}`,
+          receiptNo: result.receiptNumber || result.orderId || `REC-${Date.now().toString().slice(-6)}`,
+          type: 'Donation',
+          title: payload.title || 'HRSJM Donation',
+          cause: payload.category || payload.title || 'Social Justice & Human Rights Support',
+          category: 'Donation',
+          description: `Donation contribution of ₹${activeAmount.toLocaleString('en-IN')}`,
+          amount: activeAmount,
+          date: dateStr,
+          time: timeStr,
+          dateTime: `${dateStr}, ${timeStr}`,
+          isoDate: now.toISOString().split('T')[0],
+          status: 'Completed',
+          paymentMethod: result.paymentMethod || 'Cashfree Online',
+          transactionId: result.paymentId || result.orderId || `TRX-${Date.now()}`,
+          donorName: donorName || 'Donor',
+          donorEmail: donorEmail || undefined,
+          donorPhone: donorMobile || undefined,
+          imageType: 'education',
+        });
       }
 
       setProcessingStep(5);
@@ -1039,7 +1066,19 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           </View>
         </View>
 
-        {/* Select Payment Method */}
+        {/* Secure Cashfree Checkout Banner */}
+        <View style={styles.secureCalloutBox}>
+          <SecureShieldVectorIcon size={26} color="#1E40AF" />
+          <View style={styles.secureCalloutTextCol}>
+            <Text style={styles.secureCalloutTitle}>Secure Cashfree Checkout</Text>
+            <Text style={styles.secureCalloutDesc}>
+              Tap the button below to proceed. You can choose from UPI (GPay, PhonePe, Paytm, BHIM), Credit/Debit Cards, Net Banking, or Wallets directly on Cashfree.
+            </Text>
+          </View>
+        </View>
+
+        {/* Commented out: internal payment method selector (Cashfree PG handles all payment methods directly) */}
+        {false && (
         <View style={styles.methodsSection}>
           <Text style={styles.chooseMethodHeading}>Select Payment Method</Text>
 
@@ -1543,19 +1582,8 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
             </View>
           )}
 
-          {/* ================================================================== */}
-          {/* SECURE PAYMENT CALLOUT BANNER (Screenshot 2) */}
-          {/* ================================================================== */}
-          <View style={styles.secureCalloutBox}>
-            <SecureShieldVectorIcon size={26} color="#1E40AF" />
-            <View style={styles.secureCalloutTextCol}>
-              <Text style={styles.secureCalloutTitle}>Secure Payment</Text>
-              <Text style={styles.secureCalloutDesc}>
-                Your payment information is encrypted and secured with industry-standard security measures.
-              </Text>
-            </View>
-          </View>
         </View>
+        )}
       </ScrollView>
 
       {/* Sticky Bottom Checkout Action */}
@@ -1572,7 +1600,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           activeOpacity={0.85}
         >
           <Text style={styles.payButtonText}>
-            🔒 Pay ₹{activeAmount.toLocaleString('en-IN')}
+            🔒 Pay ₹{activeAmount.toLocaleString('en-IN')} with Cashfree
           </Text>
         </TouchableOpacity>
       </View>

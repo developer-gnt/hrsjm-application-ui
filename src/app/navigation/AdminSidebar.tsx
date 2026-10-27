@@ -19,6 +19,34 @@ import { AppRoutes } from '../../core/constants/routes';
 import { useAuthStore } from '../../features/auth/store/authStore';
 import { DEFAULT_ADMIN_AVATAR } from '../../features/auth/components/UserProfileModal';
 import { AuthLogo } from '../../features/auth/components/AuthLogo';
+import {
+  ArrowDownToLine,
+  BarChart3,
+  Bell,
+  BookOpen,
+  Briefcase,
+  Calendar,
+  ChevronRight,
+  FileText,
+  Gift,
+  Heart,
+  HeartHandshake,
+  House,
+  IdCard,
+  LogOut,
+  MessageSquare,
+  Newspaper,
+  Plus,
+  Receipt,
+  Scale,
+  Search,
+  Settings,
+  ShieldCheck,
+  User,
+  Users,
+  X,
+  AppIconComponent,
+} from '../../core/components/icons';
 
 /**
  * ============================================================================
@@ -44,7 +72,7 @@ export interface AdminSidebarProps {
 
 export interface DrawerMenuItem {
   id: string;
-  icon: string;
+  icon: AppIconComponent;
   title: string;
   target: string;
   badge?: string;
@@ -54,48 +82,47 @@ export const ADMIN_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[
   {
     groupTitle: 'MAIN NAVIGATION',
     items: [
-      { id: 'dashboard', icon: '🏠', title: 'Dashboard', target: AppRoutes.ADMIN_DASHBOARD_TAB },
-      { id: 'users', icon: '👥', title: 'User Management', target: AppRoutes.USERS },
-      { id: 'membership_applications', icon: '📝', title: 'Membership Applications', target: AppRoutes.MEMBERSHIP_APPLICATIONS },
-      { id: 'members', icon: '👤', title: 'Members Directory', target: AppRoutes.ADMIN_MEMBERS_TAB },
-      { id: 'assistance', icon: '🤝', title: 'Donation Seekers & Aid', target: AppRoutes.ADMIN_APPLICATIONS_TAB },
-      { id: 'complaints', icon: '💬', title: 'Support & Complaints', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
+      { id: 'dashboard', icon: House, title: 'Dashboard', target: AppRoutes.ADMIN_DASHBOARD_TAB },
+      { id: 'users', icon: Users, title: 'User Management', target: AppRoutes.USERS },
+      { id: 'membership_applications', icon: FileText, title: 'All Applications', target: AppRoutes.MEMBERSHIP_APPLICATIONS },
+      { id: 'members', icon: User, title: 'Members Directory', target: AppRoutes.ADMIN_MEMBERS_TAB },
+      { id: 'assistance', icon: HeartHandshake, title: 'Donation Seekers & Aid', target: AppRoutes.ASSISTANCE_REQUESTS },
+      { id: 'complaints', icon: MessageSquare, title: 'Support & Complaints', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
     ],
   },
   {
     groupTitle: 'USER MODULE',
     items: [
-      { id: 'all_users', icon: '👥', title: 'All Users Directory', target: AppRoutes.USERS },
-      { id: 'add_user', icon: '➕', title: 'Add New User', target: AppRoutes.ADD_USER },
-      { id: 'roles', icon: '🛡️', title: 'Roles & Permissions', target: AppRoutes.ROLES_PERMISSIONS },
+      { id: 'all_users', icon: Users, title: 'All Users Directory', target: AppRoutes.USERS },
+      { id: 'add_user', icon: Plus, title: 'Add New User', target: AppRoutes.ADD_USER },
+      { id: 'roles', icon: ShieldCheck, title: 'Roles & Permissions', target: AppRoutes.ROLES_PERMISSIONS },
     ],
   },
   {
     groupTitle: 'CONTENT & MEDIA',
     items: [
-      { id: 'events', icon: '📅', title: 'Events Management', target: AppRoutes.EVENTS },
-      { id: 'news', icon: '📰', title: 'News & Press', target: AppRoutes.NEWS },
-      { id: 'blogs', icon: '✍️', title: 'Articles & Blogs', target: AppRoutes.BLOGS },
-      { id: 'rights', icon: '⚖️', title: 'Know Your Rights', target: AppRoutes.KNOW_YOUR_RIGHTS },
+      { id: 'events', icon: Calendar, title: 'Events Management', target: AppRoutes.EVENTS },
+      { id: 'news', icon: Newspaper, title: 'News & Press', target: AppRoutes.NEWS },
+      { id: 'blogs', icon: BookOpen, title: 'Articles & Blogs', target: AppRoutes.BLOGS },
+      { id: 'rights', icon: Scale, title: 'Know Your Rights', target: AppRoutes.KNOW_YOUR_RIGHTS },
     ],
   },
   {
     groupTitle: 'FINANCE & ACCOUNTS',
     items: [
-      // { id: 'payments', icon: '💰', title: 'Payment Verification', target: AppRoutes.PAYMENT_VERIFICATION },
-      { id: 'expenses', icon: '🧾', title: 'Expenses', target: AppRoutes.EXPENSE_VOUCHERS },
-      { id: 'receipts', icon: '📥', title: 'Income', target: AppRoutes.RECEIPT_VOUCHERS },
-      { id: 'accounting', icon: '📚', title: 'Accounting & Ledger', target: AppRoutes.ACCOUNTING },
-      { id: 'reports', icon: '📈', title: 'Financial Reports', target: AppRoutes.REPORTS },
-      { id: 'donations', icon: '🎁', title: 'Donations Management', target: AppRoutes.DONATIONS },
+      { id: 'expenses', icon: Receipt, title: 'Expenses', target: AppRoutes.EXPENSE_VOUCHERS },
+      { id: 'receipts', icon: ArrowDownToLine, title: 'Income', target: AppRoutes.RECEIPT_VOUCHERS },
+      { id: 'accounting', icon: Briefcase, title: 'Accounting & Ledger', target: AppRoutes.ACCOUNTING },
+      { id: 'reports', icon: BarChart3, title: 'Financial Reports', target: AppRoutes.REPORTS },
+      { id: 'donations', icon: Gift, title: 'Donations Management', target: AppRoutes.DONATIONS },
     ],
   },
   {
     groupTitle: 'PLATFORM & SYSTEM',
     items: [
-      { id: 'profile', icon: '👤', title: 'My Profile & ID Card', target: AppRoutes.MY_PROFILE },
-      { id: 'notifications', icon: '🔔', title: 'Notifications', target: AppRoutes.NOTIFICATIONS },
-      { id: 'settings', icon: '⚙️', title: 'Settings & Preferences', target: AppRoutes.SETTINGS },
+      { id: 'profile', icon: IdCard, title: 'My Profile & ID Card', target: AppRoutes.MY_PROFILE },
+      { id: 'notifications', icon: Bell, title: 'Notifications', target: AppRoutes.NOTIFICATIONS },
+      { id: 'settings', icon: Settings, title: 'Settings & Preferences', target: AppRoutes.SETTINGS },
     ],
   },
 ];
@@ -104,48 +131,47 @@ export const MEMBER_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }
   {
     groupTitle: 'MEMBER SERVICES',
     items: [
-      { id: 'member_home', icon: '🏠', title: 'Member Dashboard', target: 'MemberHome' },
-      { id: 'member_causes', icon: '💛', title: 'Social Causes & Aid', target: 'MemberCauses' },
-      { id: 'member_events', icon: '📅', title: 'Upcoming Events & Drives', target: 'MemberEvents' },
-      { id: 'member_receipts', icon: '📥', title: 'My Donations & 80G Receipts', target: 'MemberReceipts' },
-      { id: 'complaints', icon: '💬', title: 'Help & Support Desk', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
+      { id: 'member_home', icon: House, title: 'Member Dashboard', target: 'MemberHome' },
+      { id: 'member_causes', icon: Heart, title: 'Social Causes & Aid', target: 'MemberCauses' },
+      { id: 'member_events', icon: Calendar, title: 'Upcoming Events & Drives', target: 'MemberEvents' },
+      { id: 'member_receipts', icon: ArrowDownToLine, title: 'My Donations & 80G Receipts', target: 'MemberReceipts' },
+      { id: 'complaints', icon: MessageSquare, title: 'Help & Support Desk', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
     ],
   },
   {
     groupTitle: 'COMMUNITY & IMPACT',
     items: [
-      { id: 'about', icon: '📖', title: 'About HRSJM Mission', target: AppRoutes.ABOUT },
-      { id: 'rights', icon: '⚖️', title: 'Know Your Rights', target: AppRoutes.KNOW_YOUR_RIGHTS },
-      { id: 'news', icon: '📰', title: 'News & Press Releases', target: AppRoutes.NEWS },
-      { id: 'blogs', icon: '✍️', title: 'Articles & Blogs', target: AppRoutes.BLOGS },
+      { id: 'about', icon: BookOpen, title: 'About HRSJM Mission', target: AppRoutes.ABOUT },
+      { id: 'rights', icon: Scale, title: 'Know Your Rights', target: AppRoutes.KNOW_YOUR_RIGHTS },
+      { id: 'news', icon: Newspaper, title: 'News & Press Releases', target: AppRoutes.NEWS },
+      { id: 'blogs', icon: BookOpen, title: 'Articles & Blogs', target: AppRoutes.BLOGS },
     ],
   },
   {
     groupTitle: 'MEMBERSHIP & ACCOUNT',
     items: [
-      { id: 'profile', icon: '🪪', title: 'Digital ID Card & Profile', target: AppRoutes.MY_PROFILE },
-      { id: 'notifications', icon: '🔔', title: 'Notifications', target: AppRoutes.NOTIFICATIONS },
-      { id: 'settings', icon: '⚙️', title: 'Settings & Security', target: AppRoutes.SETTINGS },
+      { id: 'profile', icon: IdCard, title: 'Digital ID Card & Profile', target: AppRoutes.MY_PROFILE },
+      { id: 'notifications', icon: Bell, title: 'Notifications', target: AppRoutes.NOTIFICATIONS },
+      { id: 'settings', icon: Settings, title: 'Settings & Security', target: AppRoutes.SETTINGS },
     ],
   },
 ];
-
 
 export const SEEKER_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[] = [
   {
     groupTitle: 'AID & ASSISTANCE',
     items: [
-      { id: 'seeker_home', icon: '🏠', title: 'Seeker Dashboard', target: 'SeekerHome' },
-      { id: 'seeker_apply', icon: '📝', title: 'Apply for Assistance', target: 'SeekerApply' },
-      { id: 'seeker_status', icon: '🔍', title: 'My Aid Requests Status', target: 'SeekerStatus' },
-      { id: 'complaints', icon: '💬', title: 'Support & Grievances', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
+      { id: 'seeker_home', icon: House, title: 'Seeker Dashboard', target: 'SeekerHome' },
+      { id: 'seeker_apply', icon: FileText, title: 'Apply for Assistance', target: 'SeekerApply' },
+      { id: 'seeker_status', icon: Search, title: 'My Aid Requests Status', target: 'SeekerStatus' },
+      { id: 'complaints', icon: MessageSquare, title: 'Support & Grievances', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
     ],
   },
   {
     groupTitle: 'RESOURCES',
     items: [
-      { id: 'rights', icon: '⚖️', title: 'Know Your Legal Rights', target: AppRoutes.KNOW_YOUR_RIGHTS },
-      { id: 'profile', icon: '👤', title: 'My Profile', target: AppRoutes.MY_PROFILE },
+      { id: 'rights', icon: Scale, title: 'Know Your Legal Rights', target: AppRoutes.KNOW_YOUR_RIGHTS },
+      { id: 'profile', icon: IdCard, title: 'My Profile', target: AppRoutes.MY_PROFILE },
     ],
   },
 ];
@@ -276,7 +302,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 style={styles.closeBtn}
               >
-                <Text style={styles.closeBtnText}>✕</Text>
+                <X size={18} color="#64748B" strokeWidth={2.4} />
               </TouchableOpacity>
             </View>
 
@@ -308,27 +334,32 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <View key={group.groupTitle} style={styles.menuGroup}>
                 <Text style={styles.groupHeaderTitle}>{group.groupTitle}</Text>
 
-                {group.items.map(item => (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={styles.menuItem}
-                    activeOpacity={0.7}
-                    onPress={() => handleSelect(item.target)}
-                  >
-                    <View style={styles.itemLeft}>
-                      <Text style={styles.itemIcon}>{item.icon}</Text>
-                      <Text style={styles.itemTitle}>{item.title}</Text>
-                    </View>
-                    <View style={styles.itemRight}>
-                      {item.badge ? (
-                        <View style={styles.menuBadge}>
-                          <Text style={styles.menuBadgeText}>{item.badge}</Text>
+                {group.items.map(item => {
+                  const ItemIcon = item.icon;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={styles.menuItem}
+                      activeOpacity={0.7}
+                      onPress={() => handleSelect(item.target)}
+                    >
+                      <View style={styles.itemLeft}>
+                        <View style={styles.itemIconBadge}>
+                          <ItemIcon size={16} color="#0F2860" strokeWidth={2} />
                         </View>
-                      ) : null}
-                      <Text style={styles.itemChevron}>›</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                        <Text style={styles.itemTitle}>{item.title}</Text>
+                      </View>
+                      <View style={styles.itemRight}>
+                        {item.badge ? (
+                          <View style={styles.menuBadge}>
+                            <Text style={styles.menuBadgeText}>{item.badge}</Text>
+                          </View>
+                        ) : null}
+                        <ChevronRight size={14} color="#94A3B8" strokeWidth={2.2} />
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
 
                 {groupIdx < activeMenuGroups.length - 1 && (
                   <View style={styles.groupDivider} />
@@ -344,7 +375,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               activeOpacity={0.75}
               onPress={handleSignOut}
             >
-              <Text style={styles.signOutIcon}>🚪</Text>
+              <LogOut size={16} color="#DC2626" strokeWidth={2.2} />
               <Text style={styles.signOutText}>Sign Out</Text>
             </TouchableOpacity>
             <Text style={styles.versionText}>HRSJM {appRoleLabel} Mobile v1.0.0</Text>
@@ -466,11 +497,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  itemIcon: {
-    fontSize: 16,
-    marginRight: Spacing.md,
-    width: 22,
-    textAlign: 'center',
+  itemIconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    backgroundColor: '#EEF2F6',
+    borderWidth: 1,
+    borderColor: '#D2DEEB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
   itemTitle: {
     ...Typography.body,
@@ -522,10 +558,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FEE2E2',
     justifyContent: 'center',
-  },
-  signOutIcon: {
-    fontSize: 15,
-    marginRight: Spacing.xs,
+    gap: 6,
   },
   signOutText: {
     fontSize: 14,

@@ -21,6 +21,14 @@ export interface AdminDashboardResponse {
     thisMonth: number;
     prevMonth: number;
   };
+  applications?: {
+    total: number;
+    memberships: number;
+    assistance: number;
+    signups: number;
+    thisMonth: number;
+    prevMonth: number;
+  };
   tickets: {
     total: number;
     open: number;

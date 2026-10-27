@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Alert,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -33,11 +35,15 @@ import {
   parseCustomDonationAmount,
   SUGGESTED_DONATION_AMOUNTS,
 } from '../utils/donation-amount';
+import { amountToWords } from '../../../../core/utils/format';
 import { navigateToMembershipCategories } from '../../../../core/navigation/appRouter';
 import { GlobalPaymentModal, PaymentPayload } from '../../../payments';
 import { useAuthStore } from '../../../auth/store/authStore';
 import { useMembership } from '../../../membership/context/MembershipContext';
 import { causesService } from '../../../member/services/causes.service';
+import { MemberCausesContainer } from '../../../member/screens/MemberCausesContainer';
+import type { MemberCause } from '../../../member/types/causes.types';
+import { recentDonationsStore } from '../../../donations/services/recent-donations.store';
 
 export interface UserActionPageScreenProps {
   pageId: ActionPageId;
@@ -148,6 +154,75 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
   const [selectedCause, setSelectedCause] = useState<string>(
     content.cards?.[0]?.title || 'Awareness and Education',
   );
+  const [dynamicCauses, setDynamicCauses] = useState<MemberCause[]>([]);
+  const [showCauseDirectory, setShowCauseDirectory] = useState<boolean>(false);
+
+  useEffect(() => {
+    let mounted = true;
+    if (pageId === 'donate') {
+      causesService
+        .getCauses()
+        .then(res => {
+          if (mounted && Array.isArray(res) && res.length > 0) {
+            setDynamicCauses(res);
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [pageId]);
+
+  const availableCauses = useMemo(() => {
+    if (pageId !== 'donate') return content.cards;
+    const dynamicList = dynamicCauses
+      .filter(dc => {
+        const titleLower = (dc.title || '').toLowerCase();
+        const descLower = (dc.description || '').toLowerCase();
+        return (
+          !titleLower.includes('account verification') &&
+          !titleLower.includes('seeker verification') &&
+          !descLower.includes('account verification') &&
+          !descLower.includes('registration pending') &&
+          !titleLower.includes('mock') &&
+          !titleLower.includes('test')
+        );
+      })
+      .map(dc => {
+        let iconName: any = 'heart';
+        if (dc.categoryKey === 'healthcare') iconName = 'heart-pulse';
+        else if (dc.categoryKey === 'education') iconName = 'book-open';
+        else if (dc.categoryKey === 'relief') iconName = 'heart-hands';
+        else if (dc.categoryKey === 'women') iconName = 'users';
+        else if (dc.categoryKey === 'environment') iconName = 'globe';
+        return {
+          title: dc.title,
+          description: dc.description || `Support ${dc.category} cause`,
+          icon: iconName,
+        };
+      });
+
+    const base = content.cards.map(c => ({
+      title: c.title,
+      description: c.description,
+      icon: c.icon,
+    }));
+
+    // Dynamic latest causes first, followed by base causes that are not duplicates
+    const combined = [
+      ...dynamicList,
+      ...base.filter(b => !dynamicList.some(d => d.title.toLowerCase() === b.title.toLowerCase())),
+    ];
+    return combined;
+  }, [pageId, content.cards, dynamicCauses]);
+
+  // Show only 4 latest causes on the donate page, with full access via "View All Causes"
+  const displayedCauses = useMemo(() => {
+    if (pageId !== 'donate') return availableCauses;
+    return availableCauses.slice(0, 4);
+  }, [pageId, availableCauses]);
+
   const [selectedAmount, setSelectedAmount] = useState<number | 'custom'>(500);
   const [customAmountInput, setCustomAmountInput] = useState('');
   const customAmount =
@@ -183,7 +258,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
     subtitle: 'Human Rights and Social Justice Mission',
     amount: resolvedDonationAmount,
     donorName: authUser?.full_name || 'Donor',
-    donorMobile: authUser?.mobile_number || '',
+    donorMobile: authUser?.mobile_number || (authUser as any)?.phone || '',
     donorEmail: authUser?.email || '',
     category:
       pageId === 'donate' && selectedCause ? selectedCause : 'General Public Aid',
@@ -287,6 +362,147 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
           </Text>
         </View>
 
+        {/* Donation Amount section (UP for donate page) */}
+        {pageId === 'donate' ? (
+          <View style={styles.section}>
+            <SectionTitle title="Choose Donation Amount" />
+            <View style={styles.amountGrid}>
+              {SUGGESTED_DONATION_AMOUNTS.map(amount => {
+                const selected = selectedAmount === amount;
+                return (
+                  <Pressable
+                    key={amount}
+                    style={[
+                      styles.amountButton,
+                      selected && styles.amountButtonSelected,
+                    ]}
+                    onPress={() => setSelectedAmount(amount)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                  >
+                    <Text
+                      style={[
+                        styles.amountText,
+                        selected && styles.amountTextSelected,
+                      ]}
+                    >
+                      {formatRupees(amount)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+              <Pressable
+                style={[
+                  styles.amountButton,
+                  selectedAmount === 'custom' && styles.amountButtonSelected,
+                ]}
+                onPress={() => setSelectedAmount('custom')}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedAmount === 'custom' }}
+              >
+                <Text
+                  style={[
+                    styles.amountText,
+                    selectedAmount === 'custom' && styles.amountTextSelected,
+                  ]}
+                >
+                  Custom
+                </Text>
+              </Pressable>
+            </View>
+            {selectedAmount === 'custom' ? (
+              <View style={styles.customAmountContainer}>
+                <Text style={styles.customAmountTitle}>Enter Custom Donation Amount</Text>
+                <View style={styles.customInputRow}>
+                  <Text style={styles.customRupeeSign}>₹</Text>
+                  <TextInput
+                    style={styles.customNumberInput}
+                    value={customAmountInput}
+                    onChangeText={val => {
+                      const clean = val.replace(/[^0-9]/g, '');
+                      setCustomAmountInput(clean);
+                    }}
+                    keyboardType="number-pad"
+                    placeholder="Enter amount (e.g. 1000)"
+                    placeholderTextColor={AdminColors.textMuted}
+                    accessibilityLabel="Custom donation amount in rupees"
+                  />
+                  {customAmountInput.length > 0 ? (
+                    <TouchableOpacity
+                      onPress={() => setCustomAmountInput('')}
+                      style={styles.clearAmountBtn}
+                      accessibilityLabel="Clear amount"
+                    >
+                      <AppIcon name="close" size={14} color="#64748B" />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+
+                {/* Quick Add Increment Chips */}
+                <View style={styles.quickAddRow}>
+                  {[500, 1000, 2000, 5000].map(addAmt => (
+                    <TouchableOpacity
+                      key={addAmt}
+                      style={styles.quickAddChip}
+                      onPress={() => {
+                        const cur = customAmount || 0;
+                        setCustomAmountInput(String(cur + addAmt));
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.quickAddChipText}>+ ₹{addAmt.toLocaleString('en-IN')}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* In words & validation */}
+                {customAmount && customAmount > 0 ? (
+                  <View style={styles.wordsPreviewBox}>
+                    <Text style={styles.wordsPreviewLabel}>Amount in Words:</Text>
+                    <Text style={styles.wordsPreviewValue}>{amountToWords(customAmount)}</Text>
+                  </View>
+                ) : customAmountInput.length > 0 ? (
+                  <Text style={styles.validationText}>
+                    Please enter a valid donation amount (at least ₹1).
+                  </Text>
+                ) : (
+                  <Text style={styles.customHintText}>
+                    Enter any custom amount you would like to contribute.
+                  </Text>
+                )}
+              </View>
+            ) : null}
+            <Pressable
+              style={[
+                styles.donateButton,
+                selectedAmount === 'custom' && (!customAmount || customAmount <= 0)
+                  ? styles.donateButtonDisabled
+                  : null,
+              ]}
+              disabled={selectedAmount === 'custom' && (!customAmount || customAmount <= 0)}
+              onPress={handleDonatePress}
+              accessibilityRole="button"
+              accessibilityLabel={`Donate Now${donationAmount ? ` ${formatRupees(donationAmount)}` : ''}`}
+            >
+              <Text style={styles.donateButtonText}>
+                Donate Now{donationAmount && donationAmount > 0 ? ` · ${formatRupees(donationAmount)}` : ''}
+              </Text>
+              <AppIcon
+                name="arrow-right"
+                size={17}
+                color={AdminColors.primaryDark}
+              />
+            </Pressable>
+            <View style={styles.secureNote}>
+              <AppIcon name="lock" size={13} color={AdminColors.textSecondary} />
+              <Text style={styles.secureNoteText}>
+                Secure 256-bit encrypted donation. Eligible for 80G tax benefit.
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* Cause / Cards section (BELOW donation section for donate page) */}
         {pageId === 'membership' ? (
           <View style={styles.palePanel}>
             <SectionTitle title="Member Categories" />
@@ -329,9 +545,23 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
           </View>
         ) : (
           <View style={styles.palePanel}>
-            <SectionTitle title={content.cardsTitle} />
+            <View style={styles.causesHeaderRow}>
+              <SectionTitle title={pageId === 'donate' ? 'Select a Cause to Support' : content.cardsTitle} />
+              {pageId === 'donate' ? (
+                <TouchableOpacity
+                  style={styles.viewAllCausesBtn}
+                  onPress={() => setShowCauseDirectory(true)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="View all causes directory"
+                >
+                  <Text style={styles.viewAllCausesText}>View All Causes</Text>
+                  <AppIcon name="arrow-right" size={13} color={AdminColors.primaryDark} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
             <View style={styles.featureGrid}>
-              {content.cards.map(card => {
+              {displayedCauses.map(card => {
                 const isCauseSelected =
                   pageId === 'donate' && selectedCause === card.title;
                 return (
@@ -400,101 +630,6 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
           </View>
         ) : null}
 
-        {pageId === 'donate' ? (
-          <View style={styles.section}>
-            <SectionTitle title="Choose Donation Amount" />
-            <View style={styles.amountGrid}>
-              {SUGGESTED_DONATION_AMOUNTS.map(amount => {
-                const selected = selectedAmount === amount;
-                return (
-                  <Pressable
-                    key={amount}
-                    style={[
-                      styles.amountButton,
-                      selected && styles.amountButtonSelected,
-                    ]}
-                    onPress={() => setSelectedAmount(amount)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected }}
-                  >
-                    <Text
-                      style={[
-                        styles.amountText,
-                        selected && styles.amountTextSelected,
-                      ]}
-                    >
-                      {formatRupees(amount)}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-              <Pressable
-                style={[
-                  styles.amountButton,
-                  selectedAmount === 'custom' && styles.amountButtonSelected,
-                ]}
-                onPress={() => setSelectedAmount('custom')}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: selectedAmount === 'custom' }}
-              >
-                <Text
-                  style={[
-                    styles.amountText,
-                    selectedAmount === 'custom' && styles.amountTextSelected,
-                  ]}
-                >
-                  Custom
-                </Text>
-              </Pressable>
-            </View>
-            {selectedAmount === 'custom' ? (
-              <View>
-                <TextInput
-                  style={styles.customInput}
-                  value={customAmountInput}
-                  onChangeText={setCustomAmountInput}
-                  keyboardType="decimal-pad"
-                  placeholder="Enter amount in ₹"
-                  placeholderTextColor={AdminColors.textMuted}
-                  accessibilityLabel="Custom donation amount in rupees"
-                />
-                {customAmountInput.length > 0 && !customAmount ? (
-                  <Text style={styles.validationText}>
-                    Enter a positive amount with up to two decimal places.
-                  </Text>
-                ) : null}
-              </View>
-            ) : null}
-            <Pressable
-              style={[
-                styles.donateButton,
-                selectedAmount === 'custom' && !customAmount
-                  ? styles.donateButtonDisabled
-                  : null,
-              ]}
-              disabled={selectedAmount === 'custom' && !customAmount}
-              onPress={handleDonatePress}
-              accessibilityRole="button"
-              accessibilityLabel={`Donate Now${donationAmount ? ` ${formatRupees(donationAmount)}` : ''}`}
-            >
-              <Text style={styles.donateButtonText}>
-                Donate Now{donationAmount ? ` · ${formatRupees(donationAmount)}` : ''}
-              </Text>
-              <AppIcon
-                name="arrow-right"
-                size={17}
-                color={AdminColors.primaryDark}
-              />
-            </Pressable>
-            <View style={styles.secureNote}>
-              <AppIcon name="lock" size={13} color={AdminColors.textSecondary} />
-              <Text style={styles.secureNoteText}>
-                Secure 256-bit encrypted donation. Eligible for 80G tax benefit.
-              </Text>
-            </View>
-          </View>
-        ) : null}
-
         <View style={styles.ctaBanner}>
           <Image
             source={content.ctaImage}
@@ -532,6 +667,34 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
         onClose={() => setPaymentModalVisible(false)}
         onSuccess={(receipt) => {
           const donatedAmount = receipt?.amount || resolvedDonationAmount;
+          const causeTitle = selectedCause || 'Awareness and Education';
+          const now = new Date();
+          const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+          const timeStr = now.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+          recentDonationsStore.addDonation({
+            id: receipt?.paymentId || `rec-don-${Date.now()}`,
+            receiptNo: receipt?.receiptNumber || receipt?.orderId || `REC-${Date.now().toString().slice(-6)}`,
+            type: 'Donation',
+            title: `HRSJM Donation - ${causeTitle}`,
+            cause: causeTitle,
+            category: 'Donation',
+            description: `Donation contribution of ₹${donatedAmount.toLocaleString('en-IN')}`,
+            amount: donatedAmount,
+            amountInWords: formatRupees(donatedAmount),
+            date: dateStr,
+            time: timeStr,
+            dateTime: `${dateStr}, ${timeStr}`,
+            isoDate: now.toISOString().split('T')[0],
+            status: 'Completed',
+            paymentMethod: receipt?.paymentMethod || 'Cashfree Online',
+            transactionId: receipt?.paymentId || receipt?.orderId || `TRX-${Date.now()}`,
+            donorName: authUser?.full_name || 'Donor',
+            donorEmail: authUser?.email || undefined,
+            donorPhone: authUser?.mobile_number || undefined,
+            imageType: 'education',
+          });
+
           causesService.recordDonation(
             selectedCause || 'General Public Aid',
             donatedAmount,
@@ -540,6 +703,46 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
         }}
         onNavigateHome={onBack}
       />
+
+      {/* Full Cause Directory Modal */}
+      <Modal
+        visible={showCauseDirectory}
+        animationType="slide"
+        onRequestClose={() => setShowCauseDirectory(false)}
+      >
+        <SafeAreaView style={styles.directoryModalContainer} edges={['top', 'left', 'right', 'bottom']}>
+          <View style={styles.directoryModalHeader}>
+            <TouchableOpacity
+              style={styles.directoryBackBtn}
+              onPress={() => setShowCauseDirectory(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Back to donation page"
+            >
+              <AppIcon name="chevron-left" size={20} color={AdminColors.primaryDark} />
+            </TouchableOpacity>
+            <View style={styles.directoryTitleBox}>
+              <Text style={styles.directoryHeaderTitle}>All Approved Causes & Programs</Text>
+              <Text style={styles.directoryHeaderSubtitle}>Tap any cause to support or donate</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.directoryCloseBtn}
+              onPress={() => setShowCauseDirectory(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Close directory"
+            >
+              <AppIcon name="close" size={18} color={AdminColors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          <MemberCausesContainer
+            hideHeader={true}
+            onSelectCause={(cause) => {
+              setSelectedCause(cause.title);
+              setShowCauseDirectory(false);
+            }}
+            onClose={() => setShowCauseDirectory(false)}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -862,5 +1065,145 @@ const styles = StyleSheet.create({
     color: AdminColors.primaryDark,
     fontWeight: '700',
     fontSize: 12,
+  },
+  causesHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
+  },
+  viewAllCausesBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: BorderRadius.full,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: AdminColors.accentGold,
+  },
+  viewAllCausesText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+  },
+  customAmountContainer: {
+    marginTop: Spacing.sm,
+    padding: Spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.card,
+  },
+  customAmountTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: AdminColors.textPrimary,
+    marginBottom: 8,
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: AdminColors.accentGold,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: 12,
+    height: 48,
+  },
+  customRupeeSign: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+    marginRight: 6,
+  },
+  customNumberInput: {
+    flex: 1,
+    height: 44,
+    fontSize: 18,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+  },
+  clearAmountBtn: {
+    padding: 6,
+  },
+  quickAddRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 10,
+  },
+  quickAddChip: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    backgroundColor: '#F1F5F9',
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  quickAddChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: AdminColors.primaryDark,
+  },
+  wordsPreviewBox: {
+    marginTop: 10,
+    padding: 8,
+    backgroundColor: '#F8FAFC',
+    borderRadius: BorderRadius.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: AdminColors.accentGold,
+  },
+  wordsPreviewLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: AdminColors.textMuted,
+    textTransform: 'uppercase',
+  },
+  wordsPreviewValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: AdminColors.primaryDark,
+    marginTop: 2,
+  },
+  customHintText: {
+    fontSize: 11,
+    color: AdminColors.textSecondary,
+    marginTop: 6,
+  },
+  directoryModalContainer: {
+    flex: 1,
+    backgroundColor: '#FAF8F5',
+  },
+  directoryModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  directoryBackBtn: {
+    padding: 6,
+    marginRight: 8,
+  },
+  directoryTitleBox: {
+    flex: 1,
+  },
+  directoryHeaderTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+    fontFamily: UserFontFamilies.heading,
+  },
+  directoryHeaderSubtitle: {
+    fontSize: 11,
+    color: AdminColors.textSecondary,
+  },
+  directoryCloseBtn: {
+    padding: 6,
   },
 });

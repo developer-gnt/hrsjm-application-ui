@@ -180,21 +180,56 @@ export async function launchCashfreeWebCheckout(
   const sessionId = paymentSessionId.trim();
   if (!sessionId) return;
 
+  const getCashfree = (): any => {
+    return win?.Cashfree || globalObj?.Cashfree || null;
+  };
+
   const loadSdk = (): Promise<any> => {
-    return new Promise((resolve, reject) => {
-      if (win.Cashfree) return resolve(win.Cashfree);
-      const existing = doc.getElementById('cashfree-js-sdk');
+    return new Promise(resolve => {
+      const existingCashfree = getCashfree();
+      if (existingCashfree) return resolve(existingCashfree);
+
+      const existing: any = doc.getElementById('cashfree-js-sdk');
       if (existing) {
-        existing.addEventListener('load', () => resolve(win.Cashfree));
+        // Poll briefly in case the script is already executing or loaded
+        let pollAttempts = 0;
+        const interval = setInterval(() => {
+          pollAttempts++;
+          const inst = getCashfree();
+          if (inst) {
+            clearInterval(interval);
+            return resolve(inst);
+          }
+          if (pollAttempts >= 30) {
+            clearInterval(interval);
+            return resolve(null);
+          }
+        }, 50);
+
+        if (typeof existing.addEventListener === 'function') {
+          existing.addEventListener('load', () => {
+            clearInterval(interval);
+            resolve(getCashfree() || null);
+          });
+          existing.addEventListener('error', () => {
+            clearInterval(interval);
+            resolve(null);
+          });
+        }
         return;
       }
+
       try {
-        const script = doc.createElement('script');
+        const script: any = doc.createElement('script');
         script.id = 'cashfree-js-sdk';
+        script.crossOrigin = 'anonymous';
         script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
-        script.onload = () => resolve(win.Cashfree);
-        script.onerror = () => reject(new Error('Failed to load Cashfree Web SDK'));
+        script.onload = () => resolve(getCashfree() || null);
+        script.onerror = () => resolve(null);
         doc.head.appendChild(script);
+
+        // Failsafe timeout so it never hangs indefinitely
+        setTimeout(() => resolve(getCashfree() || null), 3500);
       } catch {
         resolve(null);
       }
@@ -209,6 +244,8 @@ export async function launchCashfreeWebCheckout(
         paymentSessionId: sessionId,
         redirectTarget: '_modal',
       });
+    } else {
+      console.warn('Cashfree SDK is unavailable or blocked by browser extensions');
     }
   } catch (err) {
     console.warn('Cashfree web checkout launch error:', err);

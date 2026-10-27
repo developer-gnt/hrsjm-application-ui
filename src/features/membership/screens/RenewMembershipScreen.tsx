@@ -40,6 +40,9 @@ interface RenewMembershipScreenProps {
   onRenewPress?: (selectedPlanId: string) => void;
   onWebsitePress?: () => void;
   onWhatsAppPress?: () => void;
+  postName?: string;
+  validTill?: string;
+  daysRemaining?: string;
 }
 
 export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
@@ -51,6 +54,9 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
   onRenewPress,
   onWebsitePress,
   onWhatsAppPress,
+  postName: propPostName,
+  validTill: propValidTill,
+  daysRemaining: propDaysRemaining,
 }) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -165,17 +171,27 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
   const bottomPadding = Math.max(insets.bottom, 20) + Spacing.lg;
   const hasArrears = !!quote?.is_overdue && !!quote?.periods && quote.periods.length > 0;
 
-  const formattedExpiry = quote?.current_expiry
+  const formattedExpiry = propValidTill || (quote?.current_expiry
     ? new Date(quote.current_expiry).toLocaleDateString('en-GB', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
       })
-    : '15 Oct 2026';
+    : (memberData.hasData && memberData.validTill ? memberData.validTill : '15 Oct 2026'));
 
-  const expiryDaysLabel = quote?.is_overdue
+  const expiryDaysLabel = propDaysRemaining || (quote?.is_overdue
     ? `${quote.days_overdue} days overdue`
-    : `${quote?.days_remaining ?? 7} days`;
+    : `${quote?.days_remaining ?? (memberData.hasData && memberData.daysRemaining ? memberData.daysRemaining : 7)} days`);
+
+  const effectivePostName =
+    propPostName ||
+    (quote?.membership_number
+      ? `Member #${quote.membership_number}`
+      : memberData.hasData && memberData.membershipType && memberData.membershipType !== 'Individual Member'
+      ? memberData.membershipType
+      : memberData?.memberId
+      ? `Member #${memberData.memberId}`
+      : 'District Unit');
 
   const nextRenewalSequence = (quote?.paid_periods_count || 0) + 1;
   const applicablePlan = getDynamicRenewalPlan(nextRenewalSequence);
@@ -257,20 +273,14 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
 
           {/* Section 03: Membership Expiry Alert */}
           <MembershipExpiryAlert
-            daysRemaining={quote?.is_overdue ? quote.days_overdue : (quote?.days_remaining ?? 7)}
+            daysRemaining={quote?.is_overdue ? quote.days_overdue : (quote?.days_remaining ?? (parseInt(String(expiryDaysLabel), 10) || 7))}
             message={quote?.is_overdue ? 'Your membership has expired!' : 'Your membership is expiring soon!'}
             isOverdue={!!quote?.is_overdue}
           />
 
           {/* Section 04: Current Membership Card */}
           <CurrentMembershipCard
-            postName={
-              quote?.membership_number
-                ? `Member #${quote.membership_number}`
-                : memberData?.memberId
-                ? `Member #${memberData.memberId}`
-                : 'District Unit'
-            }
+            postName={effectivePostName}
             validTill={formattedExpiry}
             daysRemaining={expiryDaysLabel}
           />

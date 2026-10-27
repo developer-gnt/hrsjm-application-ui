@@ -23,6 +23,7 @@ import { AppBottomSheet } from '../../../core/components/common/AppBottomSheet';
 import { DatePickerSheet } from '../components/DatePickerSheet';
 import { ImagePickerSheet } from '../components/ImagePickerSheet';
 import { useAuthStore } from '../../auth/store/authStore';
+import { useProfileStore } from '../../admin/profile/profileStore';
 import type { MembershipPostData } from '../data/membershipCategoriesData';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
@@ -55,6 +56,9 @@ export function MembershipStep1Screen() {
   const routePost = route?.params?.post as MembershipPostData | undefined;
   const activePost = routePost || selectedPost;
   const authUser = useAuthStore(state => state.user);
+  const profileAvatar = useProfileStore(state => state.profile?.avatar);
+  const userAvatar = authUser?.avatar || profileAvatar;
+  const [userRemovedPhoto, setUserRemovedPhoto] = useState(false);
 
   React.useEffect(() => {
     if (routePost) {
@@ -73,6 +77,13 @@ export function MembershipStep1Screen() {
     }
   }, [authUser?.full_name]);
 
+  // Pre-fill profile photo from account avatar if available and no photo selected yet
+  React.useEffect(() => {
+    if (userAvatar && !personalInfo.profilePhotoUri && !userRemovedPhoto) {
+      updatePersonalInfo({ profilePhotoUri: userAvatar });
+    }
+  }, [userAvatar, personalInfo.profilePhotoUri, userRemovedPhoto]);
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -85,6 +96,7 @@ export function MembershipStep1Screen() {
   };
 
   const handleRemovePhoto = () => {
+    setUserRemovedPhoto(true);
     updatePersonalInfo({ profilePhotoUri: undefined });
   };
 
@@ -615,6 +627,7 @@ export function MembershipStep1Screen() {
         onClose={() => setImagePickerVisible(false)}
         currentImageUri={personalInfo.profilePhotoUri}
         onSelectImage={uri => {
+          setUserRemovedPhoto(false);
           updatePersonalInfo({ profilePhotoUri: uri });
           setImagePickerVisible(false);
         }}

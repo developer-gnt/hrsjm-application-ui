@@ -31,13 +31,9 @@ const Stack = createNativeStackNavigator<ApplicationsStackParamList>();
  */
 export const ApplicationsNavigator: React.FC = () => (
   <Stack.Navigator
-    initialRouteName={AppRoutes.ASSISTANCE_REQUESTS}
+    initialRouteName={AppRoutes.MEMBERSHIP_APPLICATIONS}
     screenOptions={{ headerShown: false }}
   >
-    <Stack.Screen
-      name={AppRoutes.ASSISTANCE_REQUESTS}
-      component={AssistanceRequestsScreen}
-    />
     <Stack.Screen
       name={AppRoutes.MEMBERSHIP_APPLICATIONS}
       component={MembershipApplicationsScreen}
@@ -45,6 +41,10 @@ export const ApplicationsNavigator: React.FC = () => (
     <Stack.Screen
       name={AppRoutes.MEMBERSHIP_APPLICATION_DETAILS}
       component={MembershipApplicationDetailsScreen as any}
+    />
+    <Stack.Screen
+      name={AppRoutes.ASSISTANCE_REQUESTS}
+      component={AssistanceRequestsScreen}
     />
     <Stack.Screen
       name={AppRoutes.CREATE_ASSISTANCE_REQUEST}

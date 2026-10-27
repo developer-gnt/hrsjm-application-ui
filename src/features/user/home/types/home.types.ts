@@ -89,7 +89,8 @@ export type HomeTabId =
   | 'contact'
   | 'complaints'
   | 'donate'
-  | 'profile';
+  | 'profile'
+  | 'history';
 
 export interface HomeTab {
   id: HomeTabId;

@@ -77,11 +77,18 @@ export const cashfreeApi = {
       headers['x-idempotency-key'] = params.idempotencyKey;
     }
 
+    const globalObj = typeof globalThis !== 'undefined' ? (globalThis as any) : null;
+    const origin = globalObj?.window?.location?.origin || 'http://localhost:8089';
+    const returnUrl = `${origin}/?order_id={order_id}`;
+
     const orderRes = await apiClient.post<CashfreeOrderSession>(
       API_ENDPOINTS.PAYMENTS.CASHFREE_ORDERS,
       {
         purpose: 'donation',
         reference_id: paymentId,
+        customer_phone: params.donorMobile,
+        customer_name: params.donorName,
+        customer_email: params.donorEmail,
         return_url: getReturnUrl(),
       },
       { headers },

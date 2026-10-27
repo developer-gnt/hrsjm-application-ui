@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   StyleSheet,
   Text,
@@ -29,6 +30,8 @@ import {
 import { DatePickerModal } from '../../../../core/components/common/DatePickerModal';
 import { useProfileStore } from '../profileStore';
 import type { PersonalInfoInput } from '../types/profile.types';
+import { authService } from '../../../auth/services/auth.service';
+import { useAuthStore } from '../../../auth/store/authStore';
 
 interface EditPersonalInfoModalProps {
   visible: boolean;
@@ -51,31 +54,107 @@ export const EditPersonalInfoModal: React.FC<EditPersonalInfoModalProps> = ({
 }) => {
   const profile = useProfileStore(state => state.profile);
   const updatePersonalInfo = useProfileStore(state => state.updatePersonalInfo);
+  const authUser = useAuthStore(state => state.user);
+  const currentUserId = authUser?.id || (profile as any)?.id || profile.adminId || profile.memberId;
+  const initialEmail = useMemo(() => (profile.email || authUser?.email || '').toLowerCase().trim(), [profile.email, authUser?.email]);
+  const initialPhone = useMemo(() => (profile.phone || authUser?.mobile_number || '').replace(/\D/g, '').slice(-10), [profile.phone, authUser?.mobile_number]);
 
   const [form, setForm] = useState<PersonalInfoInput>({
-    fullName: profile.fullName || '',
-    email: profile.email || '',
-    phone: profile.phone || '',
-    dob: (profile.dateOfBirth || (profile as any).dob || '').trim(),
+    fullName: profile.fullName || authUser?.full_name || '',
+    email: initialEmail,
+    phone: initialPhone,
+    dob: (profile.dateOfBirth || (profile as any).dob || (authUser as any)?.dob || '').trim(),
   });
   const [dobPickerVisible, setDobPickerVisible] = useState(false);
 
   const [errors, setErrors] = useState<Partial<Record<keyof PersonalInfoInput, string>>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [checkingPhone, setCheckingPhone] = useState(false);
 
   useEffect(() => {
     if (visible) {
       setForm({
-        fullName: profile.fullName || '',
-        email: profile.email || '',
-        phone: profile.phone || '',
-        dob: (profile.dateOfBirth || (profile as any).dob || '').trim(),
+        fullName: profile.fullName || authUser?.full_name || '',
+        email: initialEmail,
+        phone: initialPhone,
+        dob: (profile.dateOfBirth || (profile as any).dob || (authUser as any)?.dob || '').trim(),
       });
       setErrors({});
       setErrorMessage(null);
     }
-  }, [visible, profile]);
+  }, [visible, profile, authUser, initialEmail, initialPhone]);
+
+  const checkEmailDuplicate = useCallback(async (emailToCheck: string) => {
+    const cleanEmail = emailToCheck.trim().toLowerCase();
+    if (!cleanEmail || cleanEmail === initialEmail || !isEmailValid(cleanEmail)) {
+      return;
+    }
+    setCheckingEmail(true);
+    try {
+      const res = await authService.checkDuplicates(undefined, cleanEmail, currentUserId);
+      if (res?.email_taken) {
+        setErrors(prev => ({
+          ...prev,
+          email: res.email_message || 'This email is already in use by another account.',
+        }));
+      } else {
+        setErrors(prev => ({ ...prev, email: undefined }));
+      }
+    } catch {
+      // Ignore network errors in background check
+    } finally {
+      setCheckingEmail(false);
+    }
+  }, [initialEmail, currentUserId]);
+
+  const checkPhoneDuplicate = useCallback(async (phoneToCheck: string) => {
+    const cleanPhone = phoneToCheck.replace(/\D/g, '').slice(0, 10);
+    if (!cleanPhone || cleanPhone === initialPhone || cleanPhone.length !== 10) {
+      return;
+    }
+    setCheckingPhone(true);
+    try {
+      const res = await authService.checkDuplicates(cleanPhone, undefined, currentUserId);
+      if (res?.mobile_taken) {
+        setErrors(prev => ({
+          ...prev,
+          phone: res.mobile_message || 'This phone number is already in use by another account.',
+        }));
+      } else {
+        setErrors(prev => ({ ...prev, phone: undefined }));
+      }
+    } catch {
+      // Ignore network errors in background check
+    } finally {
+      setCheckingPhone(false);
+    }
+  }, [initialPhone, currentUserId]);
+
+  // Debounced check for email duplication while typing
+  useEffect(() => {
+    const cleanEmail = form.email.trim().toLowerCase();
+    if (!cleanEmail || cleanEmail === initialEmail || !isEmailValid(cleanEmail)) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      checkEmailDuplicate(cleanEmail);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [form.email, initialEmail, checkEmailDuplicate]);
+
+  // Debounced check for phone duplication while typing
+  useEffect(() => {
+    const cleanPhone = form.phone.replace(/\D/g, '').slice(0, 10);
+    if (!cleanPhone || cleanPhone === initialPhone || cleanPhone.length !== 10) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      checkPhoneDuplicate(cleanPhone);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [form.phone, initialPhone, checkPhoneDuplicate]);
 
   const setField = (field: keyof PersonalInfoInput, value: string) => {
     let cleanVal = value;
@@ -129,6 +208,31 @@ export const EditPersonalInfoModal: React.FC<EditPersonalInfoModalProps> = ({
     try {
       const cleanEmail = form.email.trim().toLowerCase();
       const cleanPhone = form.phone.replace(/\D/g, '').slice(0, 10);
+
+      // Validate duplication before submitting
+      const emailChanged = cleanEmail !== initialEmail;
+      const phoneChanged = cleanPhone !== initialPhone;
+      if (emailChanged || phoneChanged) {
+        const dupCheck = await authService.checkDuplicates(
+          phoneChanged ? cleanPhone : undefined,
+          emailChanged ? cleanEmail : undefined,
+          currentUserId,
+        );
+        const dupErrors: Partial<Record<keyof PersonalInfoInput, string>> = {};
+        if (emailChanged && dupCheck?.email_taken) {
+          dupErrors.email = dupCheck.email_message || 'This email is already in use by another account.';
+        }
+        if (phoneChanged && dupCheck?.mobile_taken) {
+          dupErrors.phone = dupCheck.mobile_message || 'This phone number is already in use by another account.';
+        }
+        if (Object.keys(dupErrors).length > 0) {
+          setErrors(prev => ({ ...prev, ...dupErrors }));
+          setErrorMessage('Please resolve duplicate email or phone number.');
+          setIsLoading(false);
+          return;
+        }
+      }
+
       await updatePersonalInfo({
         fullName: form.fullName.trim(),
         email: cleanEmail,
@@ -248,10 +352,12 @@ export const EditPersonalInfoModal: React.FC<EditPersonalInfoModalProps> = ({
                   placeholderTextColor={AdminColors.textMuted}
                   value={form.email}
                   onChangeText={v => setField('email', v)}
+                  onBlur={() => checkEmailDuplicate(form.email)}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   editable={!isLoading}
                 />
+                {checkingEmail && <ActivityIndicator size="small" color={AdminColors.primary} style={{ marginRight: 8 }} />}
               </View>
               {errors.email ? (
                 <Text style={styles.fieldError}>{errors.email}</Text>
@@ -269,10 +375,12 @@ export const EditPersonalInfoModal: React.FC<EditPersonalInfoModalProps> = ({
                   placeholderTextColor={AdminColors.textMuted}
                   value={form.phone}
                   onChangeText={v => setField('phone', v)}
+                  onBlur={() => checkPhoneDuplicate(form.phone)}
                   keyboardType="phone-pad"
                   maxLength={10}
                   editable={!isLoading}
                 />
+                {checkingPhone && <ActivityIndicator size="small" color={AdminColors.primary} style={{ marginRight: 8 }} />}
               </View>
               {errors.phone ? (
                 <Text style={styles.fieldError}>{errors.phone}</Text>
@@ -317,7 +425,7 @@ export const EditPersonalInfoModal: React.FC<EditPersonalInfoModalProps> = ({
                 title={isLoading ? 'Saving...' : 'Save Changes'}
                 onPress={handleSubmit}
                 loading={isLoading}
-                disabled={isLoading}
+                disabled={isLoading || checkingEmail || checkingPhone || Boolean(errors.email) || Boolean(errors.phone)}
                 style={styles.submitButton}
               />
             </View>

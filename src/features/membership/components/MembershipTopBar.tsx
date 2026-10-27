@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing } from '../../../core/theme/theme';
 import type { AppStackParamList, TabsParamList } from '../../../core/navigation/types';
 import { useAuth } from '../../../core/auth/AuthContext';
+import { useProfileStore } from '../../admin/profile/profileStore';
 import { AppLogo } from '../../../core/components/common/AppLogo';
 import { Icon } from '../../../core/components/common/Icon';
 import { AppBottomSheet } from '../../../core/components/common/AppBottomSheet';
@@ -77,6 +78,9 @@ export function MembershipTopBar({ showBack = false, onBackPress }: MembershipTo
     .map((part: string) => part[0]?.toUpperCase())
     .join('');
 
+  const profileAvatar = useProfileStore(state => state.profile?.avatar);
+  const avatarUri = user?.avatar || profileAvatar;
+
   return (
     <View style={styles.bar}>
       {showBack ? (
@@ -124,7 +128,11 @@ export function MembershipTopBar({ showBack = false, onBackPress }: MembershipTo
           accessibilityLabel="Open profile and settings"
           style={styles.profileButton}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials || '?'}</Text>
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>{initials || '?'}</Text>
+            )}
           </View>
         </TouchableOpacity>
       </View>
@@ -239,6 +247,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: '#FAD465',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
   },
   avatarText: {
     color: colors.white,

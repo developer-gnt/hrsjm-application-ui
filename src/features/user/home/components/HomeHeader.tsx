@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Image,
   Modal,
@@ -17,6 +17,7 @@ import { AdminColors, Spacing, UserFontFamilies } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { useHeaderActions } from '../../components/HeaderActionsContext';
 import { useAuthStore } from '../../../auth/store/authStore';
+import { useNotificationsStore } from '../../../notifications/store/useNotificationsStore';
 import {
   DEFAULT_ADMIN_AVATAR,
   UserProfileModal,

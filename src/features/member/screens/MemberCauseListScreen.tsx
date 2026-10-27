@@ -38,11 +38,13 @@ const CATEGORY_TABS: FilterTabItem[] = [
 interface MemberCauseListScreenProps {
   onViewCauseDetails?: (cause: MemberCause) => void;
   onDonateCause?: (cause: MemberCause) => void;
+  hideHeader?: boolean;
 }
 
 export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
   onViewCauseDetails,
   onDonateCause,
+  hideHeader = false,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -350,7 +352,7 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
       <StatusBar barStyle="dark-content" />
 
       {/* Authenticated Member Header */}
-      <MemberHeader />
+      {!hideHeader && <MemberHeader />}
 
       {hasError ? (
         renderErrorState()

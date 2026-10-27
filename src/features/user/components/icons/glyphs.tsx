@@ -419,6 +419,7 @@ const quote: React.FC<GlyphProps> = () => (
 
 export const GLYPHS = {
   'arrow-right': arrowRight,
+  'arrow-left': chevronLeft,
   bell,
   bookmark,
   'book-open': bookOpen,
@@ -432,6 +433,7 @@ export const GLYPHS = {
   'chevron-right': chevronRight,
   clock,
   close,
+  x: close,
   download,
   'doc-search': docSearch,
   ear,

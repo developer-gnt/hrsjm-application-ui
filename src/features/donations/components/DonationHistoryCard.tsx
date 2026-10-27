@@ -15,7 +15,7 @@ const STATUS_CONFIG: Record<
   { label: string; bg: string; fg: string; dot: string }
 > = {
   Completed: {
-    label: 'Completed',
+    label: 'Done',
     bg: colors.greenSoft,
     fg: colors.active,
     dot: colors.active,

@@ -172,7 +172,7 @@
 
 /**
  * @license React
- * react-dom-client.development.js
+ * react-dom-client.production.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -182,7 +182,7 @@
 
 /**
  * @license React
- * react-dom.development.js
+ * react-dom.production.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -192,7 +192,7 @@
 
 /**
  * @license React
- * react-jsx-runtime.development.js
+ * react-is.production.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -202,7 +202,7 @@
 
 /**
  * @license React
- * scheduler.development.js
+ * react-jsx-runtime.production.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -212,7 +212,27 @@
 
 /**
  * @license React
- * use-sync-external-store-with-selector.development.js
+ * react.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * scheduler.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * use-sync-external-store-with-selector.production.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

@@ -100,6 +100,7 @@ export const authService = {
   async checkDuplicates(
     mobileNumber?: string,
     email?: string,
+    excludeUserId?: string,
   ): Promise<{
     available: boolean;
     mobile_taken: boolean;
@@ -116,6 +117,7 @@ export const authService = {
     }>(ApiRoutes.AUTH.CHECK_DUPLICATES, {
       mobile_number: mobileNumber,
       email,
+      exclude_user_id: excludeUserId,
     });
     return (response as any)?.data || response;
   },
