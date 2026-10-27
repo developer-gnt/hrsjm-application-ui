@@ -199,7 +199,7 @@ export function ReceiptsListScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <AdminHeader unreadCount={1} />
+      <AdminHeader />
 
       {loading ? (
         <View style={styles.skeletonContainer}>

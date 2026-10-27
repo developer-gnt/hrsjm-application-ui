@@ -410,7 +410,6 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
         showBack={Boolean(onBack)}
         onBack={handleBack}
         onNavigate={onNavigate}
-        unreadCount={3}
       />
       <ScrollView
         style={styles.scroll}

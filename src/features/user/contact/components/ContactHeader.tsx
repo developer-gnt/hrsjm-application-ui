@@ -16,7 +16,7 @@ export const ContactHeader: React.FC<ContactHeaderProps> = ({
   onBack,
   onPressNotifications,
   onPressProfile,
-  unreadCount = 3,
+  unreadCount,
 }) => {
   return (
     <HomeHeader

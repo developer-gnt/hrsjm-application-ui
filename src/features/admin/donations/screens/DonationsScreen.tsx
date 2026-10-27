@@ -475,7 +475,6 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
         showMenu
         onBack={onBack}
         onNavigate={onNavigate}
-        unreadCount={3}
       />
 
       {toastMessage && (

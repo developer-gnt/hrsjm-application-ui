@@ -4,6 +4,7 @@ import { getApiErrorMessage } from '../../../../core/api/client';
 import type { PaginationMeta } from '../../../../core/api/types';
 import { notificationsService } from '../services/notifications.service';
 import type { NotificationItem } from '../types/notifications.types';
+import { useNotificationsStore } from '../store/notificationsStore';
 
 const PAGE_SIZE = 10;
 
@@ -51,6 +52,7 @@ export function useNotifications() {
       pageRef.current = page;
       setMeta(data.meta);
       setUnreadCount(data.unread_count);
+      useNotificationsStore.getState().setUnreadCount(data.unread_count);
       setItems(prev =>
         mode === 'more' && page > 1 ? [...prev, ...data.items] : data.items,
       );
@@ -129,6 +131,7 @@ export function useNotifications() {
           ),
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
+        useNotificationsStore.getState().decrementUnreadCount();
         return true;
       } catch (err) {
         setError(getApiErrorMessage(err, 'Could not mark the notification as read.'));
@@ -143,6 +146,7 @@ export function useNotifications() {
       await notificationsService.markAllRead();
       setItems(prev => prev.map(entry => ({ ...entry, is_read: true })));
       setUnreadCount(0);
+      useNotificationsStore.getState().resetUnreadCount();
       return true;
     } catch (err) {
       setError(getApiErrorMessage(err, 'Could not mark all notifications as read.'));

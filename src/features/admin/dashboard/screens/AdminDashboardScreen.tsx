@@ -259,7 +259,7 @@ export const AdminDashboardScreen: React.FC<{
       : 'Something went wrong while loading the dashboard. Please try again.';
     return (
       <View style={styles.container}>
-        <DashboardHeader unreadCount={unreadQuery.data ?? 0} onNavigate={handleDrawerNavigate} />
+        <DashboardHeader onNavigate={handleDrawerNavigate} />
         <AppErrorState message={message} onRetry={handleRefresh} />
       </View>
     );
@@ -268,7 +268,7 @@ export const AdminDashboardScreen: React.FC<{
   if (isLoading || !dashboard) {
     return (
       <View style={styles.container}>
-        <DashboardHeader unreadCount={unreadQuery.data ?? 0} onNavigate={handleDrawerNavigate} />
+        <DashboardHeader onNavigate={handleDrawerNavigate} />
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
@@ -347,7 +347,6 @@ export const AdminDashboardScreen: React.FC<{
   return (
     <View style={styles.container}>
       <DashboardHeader
-        unreadCount={unreadQuery.data ?? 0}
         onNavigate={handleDrawerNavigate}
       />
 

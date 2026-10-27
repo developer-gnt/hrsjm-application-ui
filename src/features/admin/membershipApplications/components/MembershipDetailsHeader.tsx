@@ -11,6 +11,7 @@ import {
   Spacing,
   BorderRadius,
 } from '../../../../core';
+import { useDynamicUnreadCount } from '../../notifications/store/notificationsStore';
 
 const HRSJM_LOGO = require('../../../../assets/hrsjm_logo.png');
 
@@ -27,6 +28,8 @@ export const MembershipDetailsHeader: React.FC<MembershipDetailsHeaderProps> = (
   onNotificationsPress,
   onProfilePress,
 }) => {
+  const unreadCount = useDynamicUnreadCount();
+
   return (
     <View style={[styles.wrapper, { paddingTop: paddingTop + Spacing.sm }]}>
       {/* Top Navigation Row */}
@@ -60,16 +63,20 @@ export const MembershipDetailsHeader: React.FC<MembershipDetailsHeaderProps> = (
             onPress={onNotificationsPress}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="Notifications"
+            accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
           >
             <View style={styles.bellIcon}>
               <View style={styles.bellDome} />
               <View style={styles.bellBase} />
               <View style={styles.bellClapper} />
             </View>
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>3</Text>
-            </View>
+            {unreadCount > 0 ? (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadBadgeText}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            ) : null}
           </TouchableOpacity>
 
           <TouchableOpacity

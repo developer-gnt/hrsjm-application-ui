@@ -132,7 +132,6 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       {useAdminHeader ? (
         <AdminHeader
-          unreadCount={1}
           showBack={Boolean(onBack)}
           onBack={onBack}
           title={onBack ? 'About HRSJM' : undefined}
@@ -141,7 +140,6 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
         <HomeHeader
           activeNav="about"
           onBack={onBack}
-          unreadCount={3}
           showNotificationDot
           notificationDotColor={AdminColors.accentGold}
           onOpenDonate={() => onNavigate?.('donations')}

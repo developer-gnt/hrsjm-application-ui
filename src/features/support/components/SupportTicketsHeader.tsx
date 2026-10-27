@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { AdminColors, Spacing, BorderRadius } from '../../../core';
+import { useDynamicUnreadCount } from '../../admin/notifications/store/notificationsStore';
 
 const HRSJM_LOGO = require('../../../assets/hrsjm_logo.png');
 
@@ -25,6 +26,8 @@ export const SupportTicketsHeader: React.FC<SupportTicketsHeaderProps> = ({
   onNotificationsPress,
   onProfilePress,
 }) => {
+  const unreadCount = useDynamicUnreadCount();
+
   return (
     <View style={[styles.wrapper, { paddingTop: paddingTop + Spacing.xs }]}>
       <View style={styles.topBar}>
@@ -81,16 +84,20 @@ export const SupportTicketsHeader: React.FC<SupportTicketsHeaderProps> = ({
             onPress={onNotificationsPress}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="Notifications"
+            accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
           >
             <View style={styles.bellIcon}>
               <View style={styles.bellDome} />
               <View style={styles.bellBase} />
               <View style={styles.bellClapper} />
             </View>
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>1</Text>
-            </View>
+            {unreadCount > 0 ? (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadBadgeText}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            ) : null}
           </TouchableOpacity>
 
           <TouchableOpacity

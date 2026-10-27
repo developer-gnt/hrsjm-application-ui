@@ -36,7 +36,7 @@ export const MemberHeader: React.FC<MemberHeaderProps> = props => {
       onPressDonate={handleDonate}
       {...props}
       onPressNotifications={props.onNotificationsPress || props.onPressNotifications}
-      unreadCount={props.unreadCount ?? 0}
+      unreadCount={props.unreadCount}
     />
   );
 };

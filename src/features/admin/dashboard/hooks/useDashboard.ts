@@ -8,6 +8,7 @@ import {
 import { apiClient } from '../../../../core/api/client';
 import { ApiRoutes } from '../../../../core/constants/api-routes';
 import { ApiError } from '../../../../core/api/api-error';
+import { useNotificationsStore } from '../../notifications/store/notificationsStore';
 
 export const DASHBOARD_QUERY_KEYS = {
   dashboard: (month?: string, growthMonths?: number) =>
@@ -52,7 +53,9 @@ export const useUnreadNotifications = () =>
         ApiRoutes.NOTIFICATIONS.ME,
         { params: { page: 1, limit: 1 } },
       );
-      return response.data.unread_count ?? 0;
+      const count = response.data.unread_count ?? 0;
+      useNotificationsStore.getState().setUnreadCount(count);
+      return count;
     },
     staleTime: 30_000,
   });

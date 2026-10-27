@@ -483,7 +483,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
 
   return (
     <View style={styles.screen}>
-      <AdminHeader unreadCount={3} onNavigate={onNavigate} />
+      <AdminHeader onNavigate={onNavigate} />
 
       <FlatList
         data={members.isLoading || members.hasError ? [] : paginatedMembers}

@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { Spacing, BorderRadius, FontFamilies } from '../../../../core';
+import { useDynamicUnreadCount } from '../../notifications/store/notificationsStore';
 
 const HRSJM_LOGO = require('../../../../assets/hrsjm_logo.png');
 
@@ -23,6 +24,8 @@ export const UsersHeader: React.FC<UsersHeaderProps> = ({
   onNotificationsPress,
   onProfilePress,
 }) => {
+  const unreadCount = useDynamicUnreadCount();
+
   return (
     <View style={[styles.wrapper, { paddingTop: paddingTop + Spacing.xs }]}>
       <View style={styles.topBar}>
@@ -60,23 +63,27 @@ export const UsersHeader: React.FC<UsersHeaderProps> = ({
           </View>
         </View>
 
-        {/* Right Action Icons: Bell with badge '1' + Profile Avatar */}
+        {/* Right Action Icons: Bell with dynamic badge + Profile Avatar */}
         <View style={styles.rightActions}>
           <TouchableOpacity
             style={styles.notificationButton}
             onPress={onNotificationsPress}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="Notifications"
+            accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
           >
             <View style={styles.bellIcon}>
               <View style={styles.bellDome} />
               <View style={styles.bellBase} />
               <View style={styles.bellClapper} />
             </View>
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>1</Text>
-            </View>
+            {unreadCount > 0 ? (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadBadgeText}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            ) : null}
           </TouchableOpacity>
 
           <TouchableOpacity

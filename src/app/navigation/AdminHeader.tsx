@@ -21,6 +21,7 @@ import {
   UserProfileModal,
 } from '../../features/auth/components/UserProfileModal';
 import { AdminSidebar } from './AdminSidebar';
+import { useDynamicUnreadCount } from '../../features/admin/notifications/store/notificationsStore';
 
 /**
  * ============================================================================
@@ -85,7 +86,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   showMenu = true,
   alignLogo,
   onBack,
-  unreadCount = 0,
+  unreadCount: propUnreadCount,
   onOpenMore,
   onNavigate,
   onPressNotifications,
@@ -101,6 +102,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   const user = useAuthStore(state => state.user);
   const signOut = useAuthStore(state => state.signOut);
   const navigation = useNavigation<any>();
+  const dynamicUnreadCount = useDynamicUnreadCount();
+  const unreadCount = propUnreadCount !== undefined ? propUnreadCount : dynamicUnreadCount;
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);

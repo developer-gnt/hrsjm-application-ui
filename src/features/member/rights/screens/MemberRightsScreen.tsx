@@ -274,7 +274,6 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
       <HomeHeader
         activeNav="rights"
         onBack={onBack}
-        unreadCount={3}
       />
 
       <ScrollView

@@ -451,7 +451,7 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
   return (
     <View style={styles.root}>
       {/* Official HRSJM Admin Header with unread notification badge */}
-      <AdminHeader unreadCount={3} />
+      <AdminHeader />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         {uiState === 'loading' && articles.length === 0 ? (

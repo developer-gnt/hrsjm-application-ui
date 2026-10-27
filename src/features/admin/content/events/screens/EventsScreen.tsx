@@ -404,7 +404,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
   return (
     <View style={styles.root}>
       {/* Unified official Admin Header - Fixed at Top */}
-      <AdminHeader onNavigate={handleDrawerNavigate} unreadCount={3} />
+      <AdminHeader onNavigate={handleDrawerNavigate} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <FlatList

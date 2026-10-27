@@ -21,6 +21,7 @@ import {
   DEFAULT_ADMIN_AVATAR,
   UserProfileModal,
 } from '../../../auth/components/UserProfileModal';
+import { useDynamicUnreadCount } from '../../../admin/notifications/store/notificationsStore';
 
 const LOGO_SOURCE = require('../../../../assets/logo/logo.png');
 
@@ -69,7 +70,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onPressSearch,
   onPressNotifications,
   onPressProfile,
-  unreadCount = 3,
+  unreadCount: propUnreadCount,
   rightAction,
   activeNav,
   hideSecondaryNav = false,
@@ -83,11 +84,12 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   const user = useAuthStore(state => state.user);
   const signOut = useAuthStore(state => state.signOut);
   const headerActions = useHeaderActions();
+  const dynamicUnreadCount = useDynamicUnreadCount();
 
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
 
-  const effectiveUnreadCount = unreadCount ?? 3;
+  const effectiveUnreadCount = propUnreadCount !== undefined ? propUnreadCount : dynamicUnreadCount;
 
   const roleNames = (user?.roles ?? []).map(r => (r.name || '').toUpperCase());
   const isSeekerRole =

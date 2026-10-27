@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdminColors, BorderRadius, Spacing, Typography } from '../../../../../core/theme';
+import { useDynamicUnreadCount } from '../../../notifications/store/notificationsStore';
 
 /**
  * TEMPORARY PREVIEW COMPONENT — NOT THE REAL GLOBAL HEADER.
@@ -28,6 +29,7 @@ export const AdminShellHeader: React.FC<{
   onBack?: () => void;
 }> = ({ leading = 'menu', onBack }) => {
   const insets = useSafeAreaInsets();
+  const unreadCount = useDynamicUnreadCount();
 
   return (
     <View style={[styles.header, { paddingTop: Math.max(insets.top, Spacing.sm) }]}>
@@ -61,12 +63,14 @@ export const AdminShellHeader: React.FC<{
           style={styles.bellButton}
           onPress={showPreviewNotice}
           accessibilityRole="button"
-          accessibilityLabel="Notifications, 3 unread"
+          accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
         >
           <Text style={styles.bellIcon}>🔔</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>3</Text>
-          </View>
+          {unreadCount > 0 ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+            </View>
+          ) : null}
         </TouchableOpacity>
 
         <TouchableOpacity
