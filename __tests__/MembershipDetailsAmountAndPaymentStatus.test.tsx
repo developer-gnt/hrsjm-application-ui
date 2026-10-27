@@ -11,6 +11,7 @@ import {
   getApplicationFeeAmount,
   getApplicationPaymentStatus,
 } from '../src/features/admin/membershipApplications/types/membershipApplications.types';
+import { mapBackendToApplicationItem } from '../src/features/admin/membershipApplications/services/membershipApplicationsStore';
 
 describe('Membership Details Amount and Payment Status Display', () => {
   it('resolves fee amount correctly for Hon\'ble State Director', () => {
@@ -156,5 +157,52 @@ describe('Membership Details Amount and Payment Status Display', () => {
 
     const root = renderer.root;
     expect(root.findByProps({ children: '₹10,000 • Paid' })).toBeDefined();
+  });
+
+  it('maps amount and paymentStatus from database payment record in mapBackendToApplicationItem', () => {
+    const backendData: any = {
+      id: 'uuid-1',
+      membership_number: 'HRSJM-00047',
+      status: 'UNDER_REVIEW',
+      created_at: '2026-10-27T13:00:00Z',
+      user: {
+        full_name: 'Sahil Shaikh',
+        mobile_number: '4444444444',
+      },
+      category: {
+        name: "Hon'ble State Director",
+        fee: 10000,
+      },
+      payment: {
+        amount: 10000,
+        payment_status: 'SUCCESS',
+      },
+    };
+
+    const mapped = mapBackendToApplicationItem(backendData);
+    expect(mapped.amount).toBe(10000);
+    expect(mapped.paymentStatus).toBe('PAID');
+  });
+
+  it('maps category fee from database when no payment record exists in mapBackendToApplicationItem', () => {
+    const backendData: any = {
+      id: 'uuid-2',
+      membership_number: 'HRSJM-00048',
+      status: 'PENDING',
+      created_at: '2026-10-27T13:00:00Z',
+      user: {
+        full_name: 'Test Applicant',
+        mobile_number: '9999999999',
+      },
+      category: {
+        name: 'District Unit',
+        fee: 1300,
+      },
+      payment: null,
+    };
+
+    const mapped = mapBackendToApplicationItem(backendData);
+    expect(mapped.amount).toBe(1300);
+    expect(mapped.paymentStatus).toBe('UNPAID');
   });
 });

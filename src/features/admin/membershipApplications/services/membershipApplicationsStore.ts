@@ -269,16 +269,28 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
       appData.occupation ||
       user.occupation ||
       undefined,
-    amount:
-      backend.amount ??
-      backend.fee ??
-      backend.category?.fee ??
-      appData.amount ??
-      appData.fee ??
-      appData.package_fee ??
-      appData.payment_amount ??
-      backend.payment?.amount ??
-      undefined,
+    amount: (() => {
+      const dbAmount =
+        backend.payment?.amount ??
+        backend.payment_amount ??
+        backend.amount ??
+        backend.fee ??
+        backend.category?.fee;
+      if (dbAmount !== undefined && dbAmount !== null && dbAmount !== '') {
+        const parsed = Number(typeof dbAmount === 'string' ? dbAmount.replace(/[^0-9.]/g, '') : dbAmount);
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
+      const rawApp =
+        appData.amount ??
+        appData.fee ??
+        appData.package_fee ??
+        appData.payment_amount;
+      if (rawApp !== undefined && rawApp !== null && rawApp !== '') {
+        const parsed = Number(typeof rawApp === 'string' ? rawApp.replace(/[^0-9.]/g, '') : rawApp);
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
+      return undefined;
+    })(),
     paymentStatus: (() => {
       const raw = String(
         backend.payment_status ||
