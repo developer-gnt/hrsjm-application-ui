@@ -45,15 +45,15 @@ interface FormErrors {
 }
 
 const USER_TYPE_OPTIONS: { label: string; value: UserType }[] = [
-  { label: 'Member', value: 'member' },
   { label: 'Admin', value: 'admin' },
-  { label: 'Donation Seeker', value: 'seeker' },
+  { label: 'Member', value: 'member' },
   { label: 'Donor', value: 'donor' },
+  { label: 'Donation Seeker', value: 'seeker' },
   { label: 'User', value: 'general' },
 ];
 
 const STATUS_OPTIONS: { label: string; value: UserStatus; color: string }[] = [
-  { label: 'Active', value: 'active', color: '#059669' },
+  { label: 'Approved', value: 'active', color: '#059669' },
   { label: 'Pending', value: 'pending', color: '#D97706' },
   { label: 'Blocked', value: 'blocked', color: '#DC2626' },
 ];
@@ -226,6 +226,9 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
   };
 
   const getStatusLabel = (val: UserStatus) => {
+    if (val === 'active') {
+      return userType === 'general' ? 'Active' : 'Approved';
+    }
     const found = STATUS_OPTIONS.find(o => o.value === val);
     return found ? found.label : 'Select status';
   };
@@ -674,7 +677,9 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
             <TouchableWithoutFeedback>
               <View style={styles.pickerSheet}>
                 <Text style={styles.pickerSheetTitle}>Select Account Status</Text>
-                {STATUS_OPTIONS.map(opt => (
+                {STATUS_OPTIONS.filter(
+                  opt => userType !== 'general' || opt.value !== 'pending'
+                ).map(opt => (
                   <TouchableOpacity
                     key={opt.value}
                     style={[
@@ -699,7 +704,7 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
                           status === opt.value && styles.pickerItemTextActive,
                         ]}
                       >
-                        {opt.label}
+                        {opt.value === 'active' && userType === 'general' ? 'Active' : opt.label}
                       </Text>
                     </View>
                     {status === opt.value && (

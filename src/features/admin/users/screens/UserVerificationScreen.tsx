@@ -123,7 +123,12 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
     UserStatus,
     { badgeBg: string; text: string; dot: string; label: string }
   > = {
-    active: { badgeBg: '#ECFDF5', text: '#059669', dot: '#10B981', label: 'Active / Verified' },
+    active: {
+      badgeBg: '#ECFDF5',
+      text: '#059669',
+      dot: '#10B981',
+      label: user.userType === 'general' ? 'Active' : 'Approved',
+    },
     pending: { badgeBg: '#FFFBEB', text: '#D97706', dot: '#F59E0B', label: 'Pending Review' },
     blocked: { badgeBg: '#FEF2F2', text: '#DC2626', dot: '#EF4444', label: 'Rejected / Blocked' },
   };

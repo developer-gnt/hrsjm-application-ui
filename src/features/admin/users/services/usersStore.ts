@@ -154,12 +154,23 @@ class UsersStore {
           }
 
           const rawStatus = (u.status || '').toUpperCase();
-          const status: UserStatus =
+          let status: UserStatus =
             rawStatus === 'BLOCKED' || u.is_active === false
               ? 'blocked'
               : rawStatus === 'PENDING'
               ? 'pending'
               : 'active';
+
+          // General users do not require admin approval ("for the user we dont need the approve")
+          if (userType === 'general' && status === 'pending') {
+            status = 'active';
+          }
+
+          // In User Management, roles requiring approval (Member, Seeker) only show approved users.
+          // Pending applicants remain in their respective review modules (Membership Applications / Aid).
+          if ((userType === 'member' || userType === 'seeker') && status === 'pending') {
+            continue;
+          }
 
           mappedUsers.push({
             id: u.id || `user-api-${idx}`,
@@ -198,6 +209,12 @@ class UsersStore {
             app.membershipType?.toLowerCase().includes('seeker') ||
             app.applicationId?.startsWith('HRSJM-SEK');
 
+          // In User Management, only APPROVED members & seekers appear.
+          // Pending applications remain in Membership Applications until approved.
+          if (app.status !== 'approved') {
+            continue;
+          }
+
           mappedUsers.push({
             id: app.id || `app-${app.applicationId}`,
             memberId: isSeeker ? undefined : app.applicationId,
@@ -206,12 +223,7 @@ class UsersStore {
             email: app.email && app.email !== '—' ? app.email : '',
             phone: app.phone && app.phone !== '—' ? app.phone : '',
             userType: isSeeker ? 'seeker' : 'member',
-            status:
-              app.status === 'approved'
-                ? 'active'
-                : app.status === 'rejected'
-                ? 'blocked'
-                : 'pending',
+            status: 'active',
             avatarUrl: app.avatarUrl,
             joinedDate: app.submittedDate || new Date().toISOString(),
             dob: app.dob,
@@ -304,6 +316,7 @@ class UsersStore {
     return {
       total: this.users.length,
       active,
+      approved: active,
       pending,
       blocked,
       membersCount: members,

@@ -40,6 +40,7 @@ export interface UserItem {
 export interface UserStats {
   total: number;
   active: number;
+  approved: number;
   pending: number;
   blocked: number;
   membersCount: number;

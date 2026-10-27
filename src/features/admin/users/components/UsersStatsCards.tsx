@@ -20,9 +20,9 @@ export const UsersStatsCards: React.FC<UsersStatsCardsProps> = ({
 
   return (
     <View style={styles.grid}>
-      {/* Row 1: Total Users | Active Users */}
+      {/* Row 1: Total Users (All) | Approved Users */}
       <View style={styles.row}>
-        {/* Total Users */}
+        {/* Total Users (All) */}
         <TouchableOpacity
           style={[
             styles.card,
@@ -41,7 +41,7 @@ export const UsersStatsCards: React.FC<UsersStatsCardsProps> = ({
           <Text style={styles.labelBlue}>Total Users</Text>
         </TouchableOpacity>
 
-        {/* Active Users */}
+        {/* Approved Users */}
         <TouchableOpacity
           style={[
             styles.card,
@@ -51,55 +51,35 @@ export const UsersStatsCards: React.FC<UsersStatsCardsProps> = ({
           activeOpacity={0.8}
           onPress={() => onSelectStatus?.('active')}
           accessibilityRole="button"
-          accessibilityLabel={`Active Users: ${formatNumber(stats.active)}`}
+          accessibilityLabel={`Approved Users: ${formatNumber(stats.approved ?? stats.active)}`}
         >
           <View style={styles.iconCircleGreen}>
-            <Text style={styles.iconText}>👤</Text>
+            <Text style={styles.iconText}>✓</Text>
           </View>
-          <Text style={styles.numberGreen}>{formatNumber(stats.active)}</Text>
-          <Text style={styles.labelGreen}>Active Users</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Row 2: Pending Verification | Blocked Users */}
-      <View style={styles.row}>
-        {/* Pending Verification */}
-        <TouchableOpacity
-          style={[
-            styles.card,
-            styles.pendingCard,
-            selectedStatus === 'pending' && styles.cardActiveRing,
-          ]}
-          activeOpacity={0.8}
-          onPress={() => onSelectStatus?.('pending')}
-          accessibilityRole="button"
-          accessibilityLabel={`Pending Verification: ${formatNumber(stats.pending)}`}
-        >
-          <View style={styles.iconCircleAmber}>
-            <Text style={styles.iconText}>⏱️</Text>
-          </View>
-          <Text style={styles.numberAmber}>{formatNumber(stats.pending)}</Text>
-          <Text style={styles.labelAmber}>Pending Verification</Text>
+          <Text style={styles.numberGreen}>{formatNumber(stats.approved ?? stats.active)}</Text>
+          <Text style={styles.labelGreen}>Approved Users</Text>
         </TouchableOpacity>
 
-        {/* Blocked Users */}
-        <TouchableOpacity
-          style={[
-            styles.card,
-            styles.blockedCard,
-            selectedStatus === 'blocked' && styles.cardActiveRing,
-          ]}
-          activeOpacity={0.8}
-          onPress={() => onSelectStatus?.('blocked')}
-          accessibilityRole="button"
-          accessibilityLabel={`Blocked Users: ${formatNumber(stats.blocked)}`}
-        >
-          <View style={styles.iconCircleRed}>
-            <Text style={styles.iconText}>🚫</Text>
-          </View>
-          <Text style={styles.numberRed}>{formatNumber(stats.blocked)}</Text>
-          <Text style={styles.labelRed}>Blocked Users</Text>
-        </TouchableOpacity>
+        {/* Blocked Users shown conditionally if any exist */}
+        {stats.blocked > 0 && (
+          <TouchableOpacity
+            style={[
+              styles.card,
+              styles.blockedCard,
+              selectedStatus === 'blocked' && styles.cardActiveRing,
+            ]}
+            activeOpacity={0.8}
+            onPress={() => onSelectStatus?.('blocked')}
+            accessibilityRole="button"
+            accessibilityLabel={`Blocked Users: ${formatNumber(stats.blocked)}`}
+          >
+            <View style={styles.iconCircleRed}>
+              <Text style={styles.iconText}>🚫</Text>
+            </View>
+            <Text style={styles.numberRed}>{formatNumber(stats.blocked)}</Text>
+            <Text style={styles.labelRed}>Blocked Users</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

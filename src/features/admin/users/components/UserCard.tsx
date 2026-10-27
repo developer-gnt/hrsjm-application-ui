@@ -126,11 +126,11 @@ export const UserCard: React.FC<UserCardProps> = ({
     }
   };
 
-  const getStatusBadge = (status: UserStatus) => {
+  const getStatusBadge = (status: UserStatus, uType?: UserType) => {
     switch (status) {
       case 'active':
         return {
-          label: 'Active',
+          label: uType === 'general' ? 'Active' : 'Approved',
           bg: '#EAF7EE',
           text: '#15803D',
           dot: '#16A34A',
@@ -153,7 +153,7 @@ export const UserCard: React.FC<UserCardProps> = ({
   };
 
   const typeConfig = getTypeBadge(user.userType);
-  const statusConfig = getStatusBadge(user.status);
+  const statusConfig = getStatusBadge(user.status, user.userType);
   const avatarTheme = getAvatarTheme(user.userType);
   const joinedInfo = formatJoinedDateParts(user.joinedDate);
 
@@ -278,8 +278,11 @@ export const UserCard: React.FC<UserCardProps> = ({
             <TouchableWithoutFeedback>
               <View style={styles.statusSheet}>
                 <Text style={styles.statusSheetTitle}>Update Status</Text>
-                {(['active', 'pending', 'blocked'] as UserStatus[]).map(st => {
-                  const cfg = getStatusBadge(st);
+                {(user.userType === 'general'
+                  ? (['active', 'blocked'] as UserStatus[])
+                  : (['active', 'pending', 'blocked'] as UserStatus[])
+                ).map(st => {
+                  const cfg = getStatusBadge(st, user.userType);
                   const isCur = user.status === st;
                   return (
                     <TouchableOpacity
@@ -351,8 +354,8 @@ export const UserCard: React.FC<UserCardProps> = ({
                   <Text style={styles.menuItemText}>Edit User</Text>
                 </TouchableOpacity>
 
-                {/* Verify User if pending */}
-                {user.status === 'pending' && (
+                {/* Verify User if pending (General users do not require approval) */}
+                {user.status === 'pending' && user.userType !== 'general' && (
                   <TouchableOpacity
                     style={styles.menuItem}
                     onPress={() => {

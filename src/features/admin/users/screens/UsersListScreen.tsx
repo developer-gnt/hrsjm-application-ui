@@ -258,7 +258,7 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
                     activeOpacity={0.7}
                   >
                     <Text style={styles.activeFilterPillText}>
-                      {`Status: ${selectedStatus.toUpperCase()} ✕`}
+                      {`Status: ${selectedStatus === 'active' ? 'Approved' : selectedStatus.toUpperCase()} ✕`}
                     </Text>
                   </TouchableOpacity>
                 )}

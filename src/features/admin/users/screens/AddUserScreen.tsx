@@ -49,10 +49,10 @@ interface FormErrors {
 }
 
 const USER_TYPE_OPTIONS: { label: string; value: UserType }[] = [
-  { label: 'Member', value: 'member' },
   { label: 'Admin', value: 'admin' },
-  { label: 'Donation Seeker', value: 'seeker' },
+  { label: 'Member', value: 'member' },
   { label: 'Donor', value: 'donor' },
+  { label: 'Donation Seeker', value: 'seeker' },
   { label: 'User', value: 'general' },
 ];
 
