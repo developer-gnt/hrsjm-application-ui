@@ -40,6 +40,16 @@ const getStorage = () => {
   return null;
 };
 
+export const parseUserDateToTimestamp = (dateStr?: string): number => {
+  if (!dateStr) return 0;
+  if (typeof dateStr === 'number') return dateStr;
+  const num = Number(dateStr);
+  if (!isNaN(num) && num > 100000000) return num;
+  const parsed = Date.parse(dateStr);
+  if (!isNaN(parsed)) return parsed;
+  return 0;
+};
+
 class UsersStore {
   private users: UserItem[] = [];
   private listeners: Set<() => void> = new Set();
@@ -50,6 +60,16 @@ class UsersStore {
       process.env.NODE_ENV === 'test'
         ? [...INITIAL_DEV_USERS]
         : this.loadPersistedUsers();
+    this.sortUsersInternal();
+  }
+
+  private sortUsersInternal(): void {
+    this.users.sort((a, b) => {
+      const timeA = parseUserDateToTimestamp(a.joinedDate);
+      const timeB = parseUserDateToTimestamp(b.joinedDate);
+      if (timeB !== timeA) return timeB - timeA;
+      return (b.id || '').localeCompare(a.id || '');
+    });
   }
 
   private loadPersistedUsers(): UserItem[] {
@@ -64,7 +84,12 @@ class UsersStore {
             if (clean.length !== parsed.length) {
               storage.setItem(STORAGE_KEY, JSON.stringify(clean));
             }
-            return clean;
+            return clean.sort((a, b) => {
+              const timeA = parseUserDateToTimestamp(a.joinedDate);
+              const timeB = parseUserDateToTimestamp(b.joinedDate);
+              if (timeB !== timeA) return timeB - timeA;
+              return (b.id || '').localeCompare(a.id || '');
+            });
           }
         }
       }
@@ -104,7 +129,12 @@ class UsersStore {
   }
 
   public getAllUsers(): UserItem[] {
-    return [...this.users];
+    return [...this.users].sort((a, b) => {
+      const timeA = parseUserDateToTimestamp(a.joinedDate);
+      const timeB = parseUserDateToTimestamp(b.joinedDate);
+      if (timeB !== timeA) return timeB - timeA;
+      return (b.id || '').localeCompare(a.id || '');
+    });
   }
 
   public async fetchUsers(): Promise<UserItem[]> {
@@ -253,13 +283,6 @@ class UsersStore {
     }
 
     // 4. Merge mapped users into this.users without duplicates
-    const existingIds = new Set(this.users.map(u => u.id));
-    const existingEmails = new Set(
-      this.users.map(u => u.email.toLowerCase().trim()).filter(Boolean)
-    );
-    const existingPhones = new Set(
-      this.users.map(u => u.phone.replace(/\s+/g, '')).filter(Boolean)
-    );
     let changed = false;
 
     for (const nu of mappedUsers) {
@@ -267,19 +290,27 @@ class UsersStore {
       const normalizedPhone = nu.phone ? nu.phone.replace(/\s+/g, '') : '';
       const normalizedEmail = nu.email ? nu.email.toLowerCase().trim() : '';
 
-      const alreadyExists =
-        existingIds.has(nu.id) ||
-        (normalizedEmail && existingEmails.has(normalizedEmail)) ||
-        (normalizedPhone && existingPhones.has(normalizedPhone));
+      const existingIndex = this.users.findIndex(
+        u =>
+          u.id === nu.id ||
+          (normalizedEmail && u.email && u.email.toLowerCase().trim() === normalizedEmail) ||
+          (normalizedPhone && u.phone && u.phone.replace(/\s+/g, '') === normalizedPhone)
+      );
 
-      if (!alreadyExists) {
-        this.users.push(nu);
-        existingIds.add(nu.id);
-        if (normalizedEmail) existingEmails.add(normalizedEmail);
-        if (normalizedPhone) existingPhones.add(normalizedPhone);
+      if (existingIndex >= 0) {
+        this.users[existingIndex] = {
+          ...this.users[existingIndex],
+          ...nu,
+          joinedDate: nu.joinedDate || this.users[existingIndex].joinedDate,
+        };
+        changed = true;
+      } else {
+        this.users.unshift(nu);
         changed = true;
       }
     }
+
+    this.sortUsersInternal();
 
     if (changed) {
       this.notify();
@@ -340,16 +371,18 @@ class UsersStore {
     }
 
     if (options?.joinedFrom) {
+      const fromTime = parseUserDateToTimestamp(options.joinedFrom);
       result = result.filter(u => {
-        const itemDate = u.joinedDate.slice(0, 10);
-        return itemDate >= options.joinedFrom!;
+        const itemTime = parseUserDateToTimestamp(u.joinedDate);
+        return itemTime >= fromTime;
       });
     }
 
     if (options?.joinedTo) {
+      const toTime = parseUserDateToTimestamp(options.joinedTo) + 86400000;
       result = result.filter(u => {
-        const itemDate = u.joinedDate.slice(0, 10);
-        return itemDate <= options.joinedTo!;
+        const itemTime = parseUserDateToTimestamp(u.joinedDate);
+        return itemTime <= toTime;
       });
     }
 
@@ -362,22 +395,33 @@ class UsersStore {
             u.email.toLowerCase().includes(q) ||
             u.phone.toLowerCase().includes(q) ||
             (u.memberId && u.memberId.toLowerCase().includes(q)) ||
+            (u.applicationNumber && u.applicationNumber.toLowerCase().includes(q)) ||
             u.id.toLowerCase().includes(q)
           );
         });
       }
     }
 
-    if (options?.sortBy) {
-      if (options.sortBy === 'newest') {
-        result.sort((a, b) => b.joinedDate.localeCompare(a.joinedDate));
-      } else if (options.sortBy === 'oldest') {
-        result.sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
-      } else if (options.sortBy === 'name_asc') {
-        result.sort((a, b) => a.name.localeCompare(b.name));
-      } else if (options.sortBy === 'name_desc') {
-        result.sort((a, b) => b.name.localeCompare(a.name));
-      }
+    // Default to 'newest' so the latest registration is always on top
+    const sortBy = options?.sortBy || 'newest';
+    if (sortBy === 'newest') {
+      result.sort((a, b) => {
+        const timeA = parseUserDateToTimestamp(a.joinedDate);
+        const timeB = parseUserDateToTimestamp(b.joinedDate);
+        if (timeB !== timeA) return timeB - timeA;
+        return (b.id || '').localeCompare(a.id || '');
+      });
+    } else if (sortBy === 'oldest') {
+      result.sort((a, b) => {
+        const timeA = parseUserDateToTimestamp(a.joinedDate);
+        const timeB = parseUserDateToTimestamp(b.joinedDate);
+        if (timeA !== timeB) return timeA - timeB;
+        return (a.id || '').localeCompare(b.id || '');
+      });
+    } else if (sortBy === 'name_asc') {
+      result.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === 'name_desc') {
+      result.sort((a, b) => b.name.localeCompare(a.name));
     }
 
     return result;
@@ -475,8 +519,10 @@ class UsersStore {
         status: mappedStatus,
         applicationNumber: existingUser.applicationNumber || applicationNumber,
         documents: documents.length > 0 ? documents : existingUser.documents,
+        joinedDate: existingUser.joinedDate || new Date().toISOString(),
       };
       this.users[existingIndex] = updatedUser;
+      this.sortUsersInternal();
       this.notify();
       return updatedUser;
     }
@@ -507,6 +553,7 @@ class UsersStore {
     };
 
     this.users.unshift(newUser);
+    this.sortUsersInternal();
     this.notify();
     return newUser;
   }
@@ -536,6 +583,7 @@ class UsersStore {
     };
 
     this.users.unshift(newUser);
+    this.sortUsersInternal();
     this.notify();
     return newUser;
   }

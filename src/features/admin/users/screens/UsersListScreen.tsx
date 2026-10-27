@@ -126,7 +126,7 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
     searchQuery,
     joinedFrom: extraFilters.joinedFrom,
     joinedTo: extraFilters.joinedTo,
-    sortBy: extraFilters.sortBy,
+    sortBy: extraFilters.sortBy || 'newest',
   });
 
   const handleSelectStatusFromCard = (status: 'all' | 'active' | 'pending' | 'blocked') => {
