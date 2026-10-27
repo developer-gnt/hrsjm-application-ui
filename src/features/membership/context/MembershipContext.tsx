@@ -577,6 +577,8 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       address: fullAddress || 'Not specified',
       policeStation: effectivePersonalInfo.policeStation || effectiveAddressInfo.policeStation || undefined,
       occupation: 'Member',
+      amount: overrides?.paymentAmount || effectivePost?.feeAmount || 800,
+      paymentStatus: overrides?.paymentCompleted ? 'PAID' : 'UNPAID',
       documents: uploadedDocs.map(d => ({ ...d, uri: sanitizeUri(d.uri) })),
       activityLog: [
         {
@@ -899,6 +901,8 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       address: fullAddress || 'Not specified',
       policeStation: effectivePersonalInfo.policeStation || effectiveAddressInfo.policeStation || undefined,
       occupation: 'Member',
+      amount: overrides?.paymentAmount || effectivePost?.feeAmount || 800,
+      paymentStatus: overrides?.paymentCompleted ? 'PAID' : 'UNPAID',
       documents: uploadedDocs,
       activityLog: [
         {

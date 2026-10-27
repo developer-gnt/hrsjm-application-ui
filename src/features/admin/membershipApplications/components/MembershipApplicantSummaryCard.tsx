@@ -9,6 +9,8 @@ import { BorderRadius, Spacing } from '../../../../core';
 import {
   MembershipApplicationItem,
   getApplicationAccountType,
+  getApplicationFeeAmount,
+  getApplicationPaymentStatus,
 } from '../types/membershipApplications.types';
 import { resolveUploadedFileUri } from '../services/uploadedDocumentsCache';
 
@@ -19,6 +21,11 @@ interface MembershipApplicantSummaryCardProps {
 export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummaryCardProps> = ({
   application,
 }) => {
+  const accountType = getApplicationAccountType(application);
+  const isSeeker = accountType === 'seeker';
+  const feeAmount = getApplicationFeeAmount(application);
+  const paymentStatus = getApplicationPaymentStatus(application);
+  const isPaid = paymentStatus === 'PAID';
   const getInitials = (name: string): string => {
     const parts = name.trim().split(/\s+/);
     if (parts.length >= 2) {
@@ -66,9 +73,6 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
         );
     }
   };
-
-  const accountType = getApplicationAccountType(application);
-  const isSeeker = accountType === 'seeker';
 
   return (
     <View style={styles.card}>
@@ -147,6 +151,13 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
                 </Text>
               </View>
             ) : null}
+
+            <View style={styles.metaRow}>
+              <Text style={styles.metaIcon}>💳</Text>
+              <Text style={styles.metaText} numberOfLines={1}>
+                {`${feeAmount} • ${isSeeker ? 'Free' : isPaid ? 'Paid' : 'Unpaid'}`}
+              </Text>
+            </View>
           </View>
         </View>
 

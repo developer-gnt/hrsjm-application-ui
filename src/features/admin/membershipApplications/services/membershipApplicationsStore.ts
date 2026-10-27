@@ -269,6 +269,33 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
       appData.occupation ||
       user.occupation ||
       undefined,
+    amount:
+      backend.amount ??
+      backend.fee ??
+      backend.category?.fee ??
+      appData.amount ??
+      appData.fee ??
+      appData.package_fee ??
+      appData.payment_amount ??
+      backend.payment?.amount ??
+      undefined,
+    paymentStatus: (() => {
+      const raw = String(
+        backend.payment_status ||
+        backend.paymentStatus ||
+        backend.payment?.payment_status ||
+        backend.payment?.status ||
+        appData.payment_status ||
+        appData.paymentStatus ||
+        (appData.paymentCompleted ? 'PAID' : undefined) ||
+        (backend.status === 'APPROVED' || backend.status === 'ACTIVE' || status === 'approved' ? 'PAID' : undefined) ||
+        (appData.payment_order_id || appData.gateway_payment_id || appData.transaction_id ? 'PAID' : undefined) ||
+        ''
+      ).toUpperCase();
+      return raw === 'PAID' || raw === 'SUCCESS' || raw === 'SUCCESSFUL' || raw === 'COMPLETED' || status === 'approved'
+        ? 'PAID'
+        : 'UNPAID';
+    })(),
     documents,
     activityLog,
   };
@@ -324,6 +351,8 @@ export function mapAssistanceRequestToApplicationItem(item: any): MembershipAppl
     phone: item.mobile?.trim() || user.mobile_number?.trim() || undefined,
     email: item.email?.trim() || user.email?.trim() || undefined,
     address: user.address_line1 || user.city || user.state || undefined,
+    amount: item.amount || item.requested_amount || undefined,
+    paymentStatus: 'EXEMPT',
     documents: [],
     activityLog: [
       {
@@ -429,6 +458,8 @@ class MembershipApplicationsStore {
                   phone: u.phone,
                   email: u.email,
                   dob: u.dob,
+                  amount: isSeeker ? undefined : 800,
+                  paymentStatus: 'UNPAID',
                   documents: u.documents?.map((d, idx) => ({
                     id: d.id || `doc-${idx + 1}`,
                     title: d.title || (isSeeker ? 'Income / Medical Proof' : 'Identification Document'),
@@ -542,6 +573,13 @@ class MembershipApplicationsStore {
               fatherName: userRec.personalInfo?.fatherOrHusbandName || undefined,
               address: addressParts.join(', ') || undefined,
               occupation: userRec.personalInfo?.occupation || undefined,
+              amount: userRec.paymentAmount || userRec.fee || userRec.amount,
+              paymentStatus:
+                userRec.paymentStatus === 'Completed' ||
+                userRec.paymentCompleted === true ||
+                statusKey === 'approved'
+                  ? 'PAID'
+                  : 'UNPAID',
               documents: userDocs,
               activityLog: [
                 {
@@ -572,6 +610,8 @@ class MembershipApplicationsStore {
                 submittedAt: userAppItem.submittedAt || this.applications[existingIdx].submittedAt,
                 submittedDate: userAppItem.submittedDate || this.applications[existingIdx].submittedDate,
                 membershipType: userAppItem.membershipType || this.applications[existingIdx].membershipType,
+                amount: userAppItem.amount || this.applications[existingIdx].amount,
+                paymentStatus: userAppItem.paymentStatus || this.applications[existingIdx].paymentStatus,
               };
             } else {
               this.applications = [userAppItem, ...this.applications];
@@ -919,6 +959,7 @@ class MembershipApplicationsStore {
       ...current,
       status: newStatus,
       rejectionReason: newStatus === 'rejected' ? (notes || 'Incomplete documents') : undefined,
+      paymentStatus: newStatus === 'approved' ? 'PAID' : current.paymentStatus,
       activityLog: [newLogItem, ...(current.activityLog || [])],
     };
 
@@ -1043,6 +1084,20 @@ class MembershipApplicationsStore {
     }
 
     return true;
+  }
+
+  public updatePaymentStatus(id: string, paymentStatus: 'PAID' | 'UNPAID'): void {
+    const index = this.applications.findIndex(
+      a => a.id === id || a.applicationId === id
+    );
+    if (index !== -1) {
+      this.applications[index] = {
+        ...this.applications[index],
+        paymentStatus,
+      };
+      this.savePersistedApplications();
+      this.notify();
+    }
   }
 
   public addApplication(application: MembershipApplicationItem): void {

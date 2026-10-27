@@ -4,6 +4,8 @@ import { BorderRadius, Spacing } from '../../../../core';
 import {
   MembershipApplicationItem,
   getApplicationAccountType,
+  getApplicationFeeAmount,
+  getApplicationPaymentStatus,
 } from '../types/membershipApplications.types';
 
 interface MembershipDetailsInfoTabProps {
@@ -13,6 +15,8 @@ interface MembershipDetailsInfoTabProps {
 interface InfoField {
   label: string;
   value?: string;
+  isAmount?: boolean;
+  isPaymentStatus?: boolean;
 }
 
 export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> = ({
@@ -20,6 +24,9 @@ export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> =
 }) => {
   const accountType = getApplicationAccountType(application);
   const isSeeker = accountType === 'seeker';
+  const feeAmount = getApplicationFeeAmount(application);
+  const paymentStatus = getApplicationPaymentStatus(application);
+  const isPaid = paymentStatus === 'PAID';
 
   const fields: InfoField[] = [
     { label: 'Full Name', value: application.applicantName || 'Applicant' },
@@ -33,6 +40,16 @@ export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> =
           ? application.membershipType
           : 'Aid Request'
         : application.membershipType || 'Standard Member',
+    },
+    {
+      label: 'Amount',
+      value: feeAmount,
+      isAmount: true,
+    },
+    {
+      label: 'Payment Status',
+      value: isSeeker ? 'Free / Exempt' : isPaid ? 'Paid' : 'Unpaid',
+      isPaymentStatus: true,
     },
     {
       label: 'Date of Birth',
@@ -82,7 +99,45 @@ export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> =
               </View>
               <Text style={styles.colon}>:</Text>
               <View style={styles.valueCol}>
-                <Text style={styles.valueText}>{field.value}</Text>
+                {field.isPaymentStatus ? (
+                  <View
+                    style={[
+                      styles.statusPill,
+                      isPaid
+                        ? styles.statusPillPaid
+                        : isSeeker
+                        ? styles.statusPillExempt
+                        : styles.statusPillUnpaid,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.statusDot,
+                        isPaid
+                          ? styles.statusDotPaid
+                          : isSeeker
+                          ? styles.statusDotExempt
+                          : styles.statusDotUnpaid,
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.statusPillText,
+                        isPaid
+                          ? styles.statusTextPaid
+                          : isSeeker
+                          ? styles.statusTextExempt
+                          : styles.statusTextUnpaid,
+                      ]}
+                    >
+                      {field.value}
+                    </Text>
+                  </View>
+                ) : field.isAmount ? (
+                  <Text style={styles.amountValueText}>{field.value}</Text>
+                ) : (
+                  <Text style={styles.valueText}>{field.value}</Text>
+                )}
               </View>
             </View>
           ))}
@@ -142,7 +197,7 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingVertical: 7,
   },
   labelCol: {
@@ -167,5 +222,61 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0F2860',
     lineHeight: 18,
+  },
+  amountValueText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F2860',
+    lineHeight: 18,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+    gap: 5,
+  },
+  statusPillPaid: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  statusPillUnpaid: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+  statusPillExempt: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#CBD5E1',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusDotPaid: {
+    backgroundColor: '#10B981',
+  },
+  statusDotUnpaid: {
+    backgroundColor: '#EF4444',
+  },
+  statusDotExempt: {
+    backgroundColor: '#64748B',
+  },
+  statusPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  statusTextPaid: {
+    color: '#047857',
+  },
+  statusTextUnpaid: {
+    color: '#B91C1C',
+  },
+  statusTextExempt: {
+    color: '#475569',
   },
 });
