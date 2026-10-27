@@ -67,7 +67,17 @@ export const DonationFilters: React.FC<DonationFiltersProps> = ({
     >
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.sheet}>
-          <Text style={styles.title}>Filters</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Filters</Text>
+            <TouchableOpacity
+              onPress={onClose}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Close filters"
+            >
+              <Text style={styles.closeIcon}>✕</Text>
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.sectionLabel}>Status</Text>
           <View style={styles.optionsGrid}>
@@ -149,10 +159,21 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.xl,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
+  },
   title: {
     ...Typography.sectionHeader,
     color: AdminColors.textPrimary,
-    marginBottom: Spacing.md,
+  },
+  closeIcon: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: AdminColors.textSecondary,
+    padding: Spacing.xs,
   },
   sectionLabel: {
     ...Typography.secondaryMedium,

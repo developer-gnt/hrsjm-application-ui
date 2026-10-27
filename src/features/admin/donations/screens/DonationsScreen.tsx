@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -236,6 +237,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
     setSearch(null);
     setStatus(null);
     setActiveTab('ALL');
+    setDateRange({ from: null, to: null });
   };
 
   const handleTabPress = (key: DonationCategory) => {
@@ -351,8 +353,15 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
       <DonationStats
         stats={stats}
         loading={isLoading && !previewMode}
-        cardWidth={statCardWidth}
-        layout={isWide ? 'scroll' : 'grid'}
+        onPressCard={statId => {
+          if (statId === 'one-time-donations') {
+            setActiveTab('ONE_TIME');
+          } else if (statId === 'recurring-donations') {
+            setActiveTab('RECURRING');
+          } else {
+            setActiveTab('ALL');
+          }
+        }}
       />
 
       <DonationSearch
@@ -361,8 +370,13 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
         onFiltersPress={() => setFiltersVisible(true)}
       />
 
-      <View style={styles.tabsRow}>
-        {tabs.map((tab, index) => {
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabsScrollContent}
+        style={styles.tabsScrollView}
+      >
+        {tabs.map(tab => {
           const active = tab.key === activeTab;
           return (
             <TouchableOpacity
@@ -370,7 +384,6 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
               style={[
                 styles.tab,
                 active && styles.tabActive,
-                index === tabs.length - 1 && styles.tabLast,
               ]}
               onPress={() => handleTabPress(tab.key)}
               accessibilityRole="button"
@@ -379,15 +392,13 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
               <Text
                 style={[styles.tabLabel, active && styles.tabLabelActive]}
                 numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
               >
                 {`${tab.label} (${tab.count})`}
               </Text>
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
 
       {!previewMode ? (
         <View style={styles.summaryRow}>
@@ -526,9 +537,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
         onClose={() => setFiltersVisible(false)}
         onApply={({ status: appliedStatus, category: appliedCategory }) => {
           setStatus(appliedStatus);
-          if (appliedCategory) {
-            setActiveTab(appliedCategory);
-          }
+          setActiveTab(appliedCategory || 'ALL');
           setFiltersVisible(false);
         }}
       />
@@ -647,28 +656,30 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#011F39',
   },
-  tabsRow: {
+  tabsScrollView: {
+    marginVertical: Spacing.sm,
+  },
+  tabsScrollContent: {
     flexDirection: 'row',
-    marginVertical: Spacing.base,
+    gap: 8,
+    paddingRight: Spacing.base,
+    alignItems: 'center',
   },
   tab: {
-    flex: 1,
-    backgroundColor: AdminColors.divider,
-    borderRadius: BorderRadius.lg,
-    minHeight: 44,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minHeight: 40,
+    borderRadius: BorderRadius.full,
+    backgroundColor: '#EDF2F7',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 4,
-    marginRight: 6,
-  },
-  tabLast: {
-    marginRight: 0,
+    flexShrink: 0,
   },
   tabActive: {
     backgroundColor: AdminColors.primary,
   },
   tabLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: AdminColors.primary,
   },

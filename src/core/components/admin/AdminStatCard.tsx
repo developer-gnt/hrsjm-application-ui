@@ -58,7 +58,7 @@ export const AdminStatCard: React.FC<AdminStatCardProps> = ({
   const cardSublabel =
     sublabel || note || (growthPercent !== undefined ? `↑ ${growthPercent}%` : undefined);
 
-  const displayValue = typeof value === 'number' ? value.toLocaleString() : value;
+  const displayValue = typeof value === 'number' ? value.toLocaleString('en-IN') : value;
 
   const CardWrapper = onPress ? TouchableOpacity : View;
 
@@ -82,7 +82,12 @@ export const AdminStatCard: React.FC<AdminStatCardProps> = ({
         {loading ? (
           <View style={[styles.valueSkeleton, { backgroundColor: colors.solid }]} />
         ) : (
-          <Text style={styles.value} numberOfLines={1}>
+          <Text
+            style={[styles.value, { color: colors.text }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.65}
+          >
             {displayValue}
           </Text>
         )}
@@ -91,7 +96,10 @@ export const AdminStatCard: React.FC<AdminStatCardProps> = ({
           {cardLabel}
         </Text>
         {cardSublabel ? (
-          <Text style={styles.sublabel} numberOfLines={1}>
+          <Text
+            style={[styles.sublabel, { color: colors.text, opacity: 0.75 }]}
+            numberOfLines={1}
+          >
             {cardSublabel}
           </Text>
         ) : null}
