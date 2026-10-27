@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Image, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
 import {
   AdminColors,
   Spacing,
@@ -14,6 +14,8 @@ interface DonationsTopBarProps {
   onBellPress?: () => void;
   onProfilePress?: () => void;
 }
+
+const LOGO_SOURCE = require('../../../../assets/logo/logo.png');
 
 /**
  * UI-phase HRSJM admin header (hamburger, logo, org identity,
@@ -43,10 +45,12 @@ export const DonationsTopBar: React.FC<DonationsTopBarProps> = ({
         <Text style={styles.menuIcon}>≡</Text>
       </TouchableOpacity>
 
-      <View style={styles.logoBadge}>
-        <Text style={styles.logoLetter}>H</Text>
-        <View style={styles.logoUnderline} />
-      </View>
+      <Image
+        source={LOGO_SOURCE}
+        style={styles.logoImage}
+        resizeMode="contain"
+        accessibilityLabel="HRSJM Logo"
+      />
 
       <View style={styles.identityColumn}>
         <Text style={styles.orgName}>HRSJM</Text>
@@ -111,28 +115,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: AdminColors.primaryDark,
   },
-  logoBadge: {
+  logoImage: {
     width: 44,
     height: 44,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: AdminColors.cardSurface,
-    borderWidth: 1.5,
-    borderColor: AdminColors.accentGold,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginLeft: Spacing.xs,
-  },
-  logoLetter: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: AdminColors.primary,
-  },
-  logoUnderline: {
-    width: 16,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: AdminColors.accentGold,
-    marginTop: 1,
   },
   identityColumn: {
     flex: 1,

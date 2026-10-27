@@ -31,6 +31,12 @@ const escapeHtml = (value: string | null | undefined): string =>
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
+const LOGO_SOURCE = require('../../../../assets/logo/logo.png');
+const LOGO_URI: string =
+  typeof LOGO_SOURCE === 'string'
+    ? LOGO_SOURCE
+    : (LOGO_SOURCE?.default || LOGO_SOURCE?.uri || '');
+
 /**
  * Receipt stylesheet. Scoped to `.receipt-doc` so it can be injected
  * both as a standalone document (print) and as an offscreen node for
@@ -48,6 +54,8 @@ export const receiptStyles = (): string => `
   .receipt { max-width: 720px; margin: 0 auto; border: 1px solid #E2E8F0;
     border-radius: 16px; padding: 24px; background: #ffffff; }
   .brand { text-align: center; margin-bottom: 16px; }
+  .brand-logo-img { display: inline-block; width: 48px; height: 48px;
+    object-fit: contain; vertical-align: middle; margin-bottom: 4px; }
   .brand-logo { display: inline-block; width: 44px; height: 44px;
     border: 2px solid #C9A227; border-radius: 10px; line-height: 44px;
     font-size: 20px; font-weight: 800; color: #1B3F8F; }
@@ -115,7 +123,7 @@ const buildReceiptBody = (receipt: DonationReceiptModel): string => {
 
   return `<div class="receipt">
     <div class="brand">
-      <div class="brand-logo">H</div>
+      ${LOGO_URI ? `<img class="brand-logo-img" src="${LOGO_URI}" alt="HRSJM Logo" />` : '<div class="brand-logo">H</div>'}
       <div class="brand-name">HRSJM</div>
       <div class="brand-full">HUMAN RIGHTS &amp; SOCIAL JUSTICE MISSION</div>
       <div class="brand-motto">मानव अधिकार • सामाजिक न्याय</div>
