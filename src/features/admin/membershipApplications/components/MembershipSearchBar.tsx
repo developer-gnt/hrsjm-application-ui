@@ -29,7 +29,7 @@ export const MembershipSearchBar: React.FC<MembershipSearchBarProps> = ({
         <Search size={18} color="#64748B" strokeWidth={2} style={styles.searchIcon} />
         <TextInput
           style={styles.input}
-          placeholder="Search by name, application ID, phone..."
+          placeholder="Search by name, ID, phone..."
           placeholderTextColor="#94A3B8"
           value={query}
           onChangeText={onChangeQuery}

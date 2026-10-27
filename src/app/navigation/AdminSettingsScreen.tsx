@@ -15,34 +15,51 @@ import { Typography } from '../../core/theme/typography';
 import { Spacing, BorderRadius, Shadows } from '../../core/theme/spacing';
 import { AppRoutes } from '../../core/constants/routes';
 import { MoreStackParamList } from './NavigationTypes';
-
-/**
- * ============================================================================
- * ADMIN SETTINGS SCREEN
- * ============================================================================
- *
- * This is the dedicated Admin Settings screen for the HRSJM Admin App.
- *
- * SECTIONS:
- * 1. General Settings          (Organization profile, contact, app preferences)
- * 2. User & Admin Management   (Roles & permissions, verification, admin users)
- * 3. Notifications & Alerts    (Email alerts, push notifications, SMS)
- * 4. Content & Platform        (Moderation, categories, banners, homepage content)
- * 5. Security & Privacy        (Passwords, session policy, logs, data privacy)
- * 6. System & Maintenance      (Backups, app version, maintenance mode)
- *
- * HOW TO ADD A NEW SETTING ITEM:
- * In SETTING_SECTIONS below, add your setting item under the desired section:
- *   {
- *     icon: '🔧',
- *     title: 'Setting Name',
- *     description: 'Helpful explanation for employees.',
- *     route: AppRoutes.YOUR_ROUTE, // Optional: if it links to a dedicated screen
- *   }
- */
+import {
+  Activity,
+  ArrowDownToLine,
+  BarChart3,
+  Bell,
+  BookOpen,
+  Briefcase,
+  Building2,
+  Calendar,
+  ChevronRight,
+  ClipboardList,
+  CreditCard,
+  Database,
+  FileCheck,
+  FileSpreadsheet,
+  FileText,
+  FolderTree,
+  Gift,
+  Globe,
+  IdCard,
+  ImageIcon,
+  Info,
+  Key,
+  Layers,
+  Lock,
+  Mail,
+  MessageSquare,
+  Newspaper,
+  Phone,
+  Receipt,
+  Scale,
+  Settings,
+  Shield,
+  ShieldCheck,
+  SlidersHorizontal,
+  Tag,
+  UserCheck,
+  Users,
+  Wallet,
+  Wrench,
+  AppIconComponent,
+} from '../../core/components/icons';
 
 export interface SettingItem {
-  icon: string;
+  icon: AppIconComponent;
   title: string;
   description: string;
   route?: keyof MoreStackParamList;
@@ -53,9 +70,7 @@ export interface SettingSection {
   id: string;
   title: string;
   description: string;
-  icon: string;
-  badgeBg: string;
-  iconColor: string;
+  icon: AppIconComponent;
   items: SettingItem[];
 }
 
@@ -64,76 +79,64 @@ export const SETTING_SECTIONS: SettingSection[] = [
     id: 'operations',
     title: 'Operations & Modules',
     description: 'Direct access to core admin modules and campaign trackers.',
-    icon: '🎁',
-    badgeBg: '#FEF3C7',
-    iconColor: '#D97706',
+    icon: Layers,
     items: [
       {
-        icon: '📝',
-        title: 'Membership Applications',
-        description:
-          'Review, verify, and approve new member registration applications.',
+        icon: FileText,
+        title: 'All Applications',
+        description: 'Review, verify, and approve applications across all streams.',
         route: AppRoutes.MEMBERSHIP_APPLICATIONS,
       },
       {
-        icon: '🎁',
+        icon: Gift,
         title: 'Donations Management',
-        description:
-          'Manage donation records, campaigns, donor details, and receipts.',
+        description: 'Manage donation records, campaigns, donor details, and receipts.',
         route: AppRoutes.DONATIONS,
       },
       {
-        icon: '📅',
+        icon: Calendar,
         title: 'Events Management',
-        description:
-          'Create and manage NGO events, workshops, and registrations.',
+        description: 'Create and manage NGO events, workshops, and registrations.',
         route: AppRoutes.EVENTS,
       },
       {
-        icon: '📰',
+        icon: Newspaper,
         title: 'News & Announcements',
         description: 'Publish and manage news releases, media updates and alerts.',
         route: AppRoutes.NEWS,
       },
       {
-        icon: '✍️',
+        icon: BookOpen,
         title: 'Blogs & Articles',
         description: 'Publish and manage educational articles and field stories.',
         route: AppRoutes.BLOGS,
       },
       {
-        icon: '⚖️',
+        icon: Scale,
         title: 'Know Your Rights',
         description: 'Publish and manage legal and human rights educational resources.',
         route: AppRoutes.KNOW_YOUR_RIGHTS,
       },
-      // {
-      //   icon: '💰',
-      //   title: 'Payment Verification',
-      //   description:
-      //     'Verify offline and online membership fee payments.',
-      //   route: AppRoutes.PAYMENT_VERIFICATION,
-      // },
       {
-        icon: '🧾',
+        icon: Receipt,
         title: 'Expenses',
         description: 'Record and track organizational expenditure entries.',
         route: AppRoutes.EXPENSE_VOUCHERS,
       },
       {
-        icon: '📥',
+        icon: ArrowDownToLine,
         title: 'Income',
         description: 'Review and manage all incoming revenue transactions.',
         route: AppRoutes.RECEIPT_VOUCHERS,
       },
       {
-        icon: '📚',
+        icon: Briefcase,
         title: 'Accounting & Ledger',
         description: 'Chart of accounts, general ledger, and journal entries.',
         route: AppRoutes.ACCOUNTING,
       },
       {
-        icon: '📈',
+        icon: BarChart3,
         title: 'Financial Reports',
         description: 'Trial balance, profit & loss, and balance sheet statements.',
         route: AppRoutes.REPORTS,
@@ -144,40 +147,34 @@ export const SETTING_SECTIONS: SettingSection[] = [
     id: 'general',
     title: 'General Settings',
     description: 'Manage basic platform information and preferences.',
-    icon: '⚙️',
-    badgeBg: '#E0F2FE',
-    iconColor: '#0284C7',
+    icon: Settings,
     items: [
       {
-        icon: '👤',
+        icon: IdCard,
         title: 'My Profile & ID Card',
-        description:
-          'View and manage your administrator profile, official ID card and QR code.',
+        description: 'View and manage your administrator profile, official ID card and QR code.',
         route: AppRoutes.MY_PROFILE,
       },
       {
-        icon: '🏢',
+        icon: Building2,
         title: 'Organization Profile (About HRSJM)',
-        description:
-          'Organization background, mission, vision, core values, and leadership.',
+        description: 'Organization background, mission, vision, core values, and leadership.',
         route: AppRoutes.ABOUT,
       },
       {
-        icon: '📞',
+        icon: Phone,
         title: 'Contact Information',
         description: 'Manage address, phone, email and social media links.',
       },
       {
-        icon: '📱',
+        icon: SlidersHorizontal,
         title: 'App Settings',
-        description:
-          'Configure app name, tagline, maintenance mode and other preferences.',
+        description: 'Configure app name, tagline, maintenance mode and other preferences.',
       },
       {
-        icon: 'ℹ️',
+        icon: Info,
         title: 'About HRSJM',
-        description:
-          'Learn about our mission, values, principles, and leadership team.',
+        description: 'Learn about our mission, values, principles, and leadership team.',
         route: AppRoutes.ABOUT,
       },
     ],
@@ -186,30 +183,28 @@ export const SETTING_SECTIONS: SettingSection[] = [
     id: 'users',
     title: 'User Management',
     description: 'Manage user roles, permissions and access control.',
-    icon: '👥',
-    badgeBg: '#DCFCE7',
-    iconColor: '#16A34A',
+    icon: Users,
     items: [
       {
-        icon: '👥',
+        icon: Users,
         title: 'All Users',
         description: 'View, filter, manage, verify, and edit all registered users across roles.',
         route: AppRoutes.USERS,
       },
       {
-        icon: '🛡️',
+        icon: ShieldCheck,
         title: 'User Roles & Permissions',
         description: 'Manage admin roles and set access permissions.',
         route: AppRoutes.ROLES_PERMISSIONS,
       },
       {
-        icon: '👤',
+        icon: UserCheck,
         title: 'Manage Admins',
         description: 'Add, edit or remove admin users.',
         route: AppRoutes.USERS,
       },
       {
-        icon: '📋',
+        icon: ClipboardList,
         title: 'Verification Settings',
         description: 'Configure member verification and approval process.',
       },
@@ -219,23 +214,20 @@ export const SETTING_SECTIONS: SettingSection[] = [
     id: 'notifications',
     title: 'Notifications',
     description: 'Manage notification settings and communication preferences.',
-    icon: '🔔',
-    badgeBg: '#FEF3C7',
-    iconColor: '#D97706',
+    icon: Bell,
     items: [
       {
-        icon: '✉️',
+        icon: Mail,
         title: 'Email Notifications',
         description: 'Configure email alerts and notification templates.',
       },
       {
-        icon: '🔔',
+        icon: Bell,
         title: 'Push Notifications',
-        description:
-          'Manage in-app push notifications for important updates.',
+        description: 'Manage in-app push notifications for important updates.',
       },
       {
-        icon: '💬',
+        icon: MessageSquare,
         title: 'SMS Notifications',
         description: 'Configure SMS alerts for critical communications.',
       },
@@ -245,23 +237,20 @@ export const SETTING_SECTIONS: SettingSection[] = [
     id: 'content',
     title: 'Content & Platform Settings',
     description: 'Manage content moderation and platform configuration.',
-    icon: '🌐',
-    badgeBg: '#F3E8FF',
-    iconColor: '#9333EA',
+    icon: Globe,
     items: [
       {
-        icon: '📝',
+        icon: FileCheck,
         title: 'Content Moderation',
-        description:
-          'Configure content approval settings for rights, news, blogs, events etc.',
+        description: 'Configure content approval settings for rights, news, blogs, events etc.',
       },
       {
-        icon: '🏷️',
+        icon: Tag,
         title: 'Categories & Tags',
         description: 'Manage categories for rights, work areas, news and blogs.',
       },
       {
-        icon: '🖼️',
+        icon: ImageIcon,
         title: 'App Content',
         description: 'Manage banners, homepage content, and static pages.',
       },
@@ -271,23 +260,20 @@ export const SETTING_SECTIONS: SettingSection[] = [
     id: 'security',
     title: 'Security & Privacy',
     description: 'Manage security settings and data privacy.',
-    icon: '🛡️',
-    badgeBg: '#FEE2E2',
-    iconColor: '#DC2626',
+    icon: Shield,
     items: [
       {
-        icon: '🔒',
+        icon: Lock,
         title: 'Password & Login Settings',
-        description:
-          'Configure login security, password policies and session settings.',
+        description: 'Configure login security, password policies and session settings.',
       },
       {
-        icon: '🗄️',
+        icon: Key,
         title: 'Data Privacy',
         description: 'Manage data retention, user data and privacy policies.',
       },
       {
-        icon: '🕒',
+        icon: Activity,
         title: 'Activity Logs',
         description: 'View admin activity and system logs.',
       },
@@ -297,22 +283,20 @@ export const SETTING_SECTIONS: SettingSection[] = [
     id: 'system',
     title: 'System Settings',
     description: 'Manage system configuration and maintenance.',
-    icon: '🔧',
-    badgeBg: '#F1F5F9',
-    iconColor: '#475569',
+    icon: Wrench,
     items: [
       {
-        icon: '🗃️',
+        icon: Database,
         title: 'Backup & Restore',
         description: 'Manage data backup and restore options.',
       },
       {
-        icon: 'ℹ️',
+        icon: Info,
         title: 'App Version',
         description: 'View current app version and check for updates.',
       },
       {
-        icon: '🛠️',
+        icon: Wrench,
         title: 'System Maintenance',
         description: 'Enable maintenance mode and manage system settings.',
       },
@@ -371,68 +355,64 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
           </Text>
         </View>
 
-        {/* 6 Setting Section Cards */}
-        {SETTING_SECTIONS.map(section => (
-          <View key={section.id} style={styles.card}>
-            {/* Section Header */}
-            <View style={styles.sectionHeader}>
-              <View
-                style={[
-                  styles.sectionIconBadge,
-                  { backgroundColor: section.badgeBg },
-                ]}
-              >
-                <Text style={styles.sectionIcon}>{section.icon}</Text>
+        {/* 7 Setting Section Cards with Outline Icons */}
+        {SETTING_SECTIONS.map(section => {
+          const SectionIcon = section.icon;
+          return (
+            <View key={section.id} style={styles.card}>
+              {/* Section Header */}
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionIconBadge}>
+                  <SectionIcon size={20} color="#0F2860" strokeWidth={2.2} />
+                </View>
+
+                <View style={styles.sectionTitleBlock}>
+                  <Text style={styles.sectionTitle}>{section.title}</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    {section.description}
+                  </Text>
+                </View>
               </View>
 
-              <View style={styles.sectionTitleBlock}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
-                <Text style={styles.sectionSubtitle}>
-                  {section.description}
-                </Text>
+              {/* Section Items */}
+              <View style={styles.itemsList}>
+                {section.items.map((item, idx) => {
+                  const ItemIcon = item.icon;
+                  const isLast = idx === section.items.length - 1;
+                  return (
+                    <View key={item.title}>
+                      <TouchableOpacity
+                        style={styles.itemRow}
+                        activeOpacity={0.7}
+                        onPress={() => handleItemPress(item)}
+                      >
+                        <View style={styles.itemIconBadge}>
+                          <ItemIcon size={16} color="#1E3A8A" strokeWidth={2} />
+                        </View>
+
+                        <View style={styles.itemTextBlock}>
+                          <Text style={styles.itemTitle}>{item.title}</Text>
+                          <Text style={styles.itemDescription}>
+                            {item.description}
+                          </Text>
+                        </View>
+
+                        <ChevronRight size={16} color="#94A3B8" strokeWidth={2.2} />
+                      </TouchableOpacity>
+                      {!isLast && <View style={styles.divider} />}
+                    </View>
+                  );
+                })}
               </View>
             </View>
-
-            {/* Section Items */}
-            <View style={styles.itemsList}>
-              {section.items.map((item, idx) => {
-                const isLast = idx === section.items.length - 1;
-                return (
-                  <View key={item.title}>
-                    <TouchableOpacity
-                      style={styles.itemRow}
-                      activeOpacity={0.7}
-                      onPress={() => handleItemPress(item)}
-                    >
-                      <Text style={styles.itemIcon}>{item.icon}</Text>
-
-                      <View style={styles.itemTextBlock}>
-                        <Text style={styles.itemTitle}>{item.title}</Text>
-                        <Text style={styles.itemDescription}>
-                          {item.description}
-                        </Text>
-                      </View>
-
-                      <Text style={styles.chevron}>›</Text>
-                    </TouchableOpacity>
-                    {!isLast && <View style={styles.divider} />}
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        ))}
+          );
+        })}
 
         {/* Financial & Accounting Module Shortcuts */}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
-            <View
-              style={[
-                styles.sectionIconBadge,
-                { backgroundColor: '#FEF3C7' },
-              ]}
-            >
-              <Text style={styles.sectionIcon}>💼</Text>
+            <View style={styles.sectionIconBadge}>
+              <Wallet size={20} color="#0F2860" strokeWidth={2.2} />
             </View>
             <View style={styles.sectionTitleBlock}>
               <Text style={styles.sectionTitle}>Financial Modules</Text>
@@ -448,14 +428,16 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
               activeOpacity={0.7}
               onPress={() => navigation.navigate(AppRoutes.PAYMENT_VERIFICATION)}
             >
-              <Text style={styles.itemIcon}>💰</Text>
+              <View style={styles.itemIconBadge}>
+                <CreditCard size={16} color="#1E3A8A" strokeWidth={2} />
+              </View>
               <View style={styles.itemTextBlock}>
                 <Text style={styles.itemTitle}>Payment Verification</Text>
                 <Text style={styles.itemDescription}>
                   Review & verify membership payments
                 </Text>
               </View>
-              <Text style={styles.chevron}>›</Text>
+              <ChevronRight size={16} color="#94A3B8" strokeWidth={2.2} />
             </TouchableOpacity>
 
             <View style={styles.divider} />
@@ -465,14 +447,16 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
               activeOpacity={0.7}
               onPress={() => navigation.navigate(AppRoutes.EXPENSE_VOUCHERS)}
             >
-              <Text style={styles.itemIcon}>🧾</Text>
+              <View style={styles.itemIconBadge}>
+                <Receipt size={16} color="#1E3A8A" strokeWidth={2} />
+              </View>
               <View style={styles.itemTextBlock}>
                 <Text style={styles.itemTitle}>Expenses</Text>
                 <Text style={styles.itemDescription}>
                   Manage outgoing expenses & expenditure records
                 </Text>
               </View>
-              <Text style={styles.chevron}>›</Text>
+              <ChevronRight size={16} color="#94A3B8" strokeWidth={2.2} />
             </TouchableOpacity>
 
             <View style={styles.divider} />
@@ -482,14 +466,16 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
               activeOpacity={0.7}
               onPress={() => navigation.navigate(AppRoutes.RECEIPT_VOUCHERS)}
             >
-              <Text style={styles.itemIcon}>📥</Text>
+              <View style={styles.itemIconBadge}>
+                <ArrowDownToLine size={16} color="#1E3A8A" strokeWidth={2} />
+              </View>
               <View style={styles.itemTextBlock}>
                 <Text style={styles.itemTitle}>Income Receipts</Text>
                 <Text style={styles.itemDescription}>
                   Manage incoming receipt entries
                 </Text>
               </View>
-              <Text style={styles.chevron}>›</Text>
+              <ChevronRight size={16} color="#94A3B8" strokeWidth={2.2} />
             </TouchableOpacity>
 
             <View style={styles.divider} />
@@ -499,14 +485,16 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
               activeOpacity={0.7}
               onPress={() => navigation.navigate(AppRoutes.CHART_OF_ACCOUNTS)}
             >
-              <Text style={styles.itemIcon}>📚</Text>
+              <View style={styles.itemIconBadge}>
+                <FolderTree size={16} color="#1E3A8A" strokeWidth={2} />
+              </View>
               <View style={styles.itemTextBlock}>
                 <Text style={styles.itemTitle}>Chart of Accounts</Text>
                 <Text style={styles.itemDescription}>
                   Hierarchical structure of organizational ledger accounts
                 </Text>
               </View>
-              <Text style={styles.chevron}>›</Text>
+              <ChevronRight size={16} color="#94A3B8" strokeWidth={2.2} />
             </TouchableOpacity>
 
             <View style={styles.divider} />
@@ -516,14 +504,16 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
               activeOpacity={0.7}
               onPress={() => navigation.navigate(AppRoutes.GENERAL_LEDGER as any)}
             >
-              <Text style={styles.itemIcon}>📖</Text>
+              <View style={styles.itemIconBadge}>
+                <BookOpen size={16} color="#1E3A8A" strokeWidth={2} />
+              </View>
               <View style={styles.itemTextBlock}>
                 <Text style={styles.itemTitle}>General Ledger</Text>
                 <Text style={styles.itemDescription}>
                   Transaction book with opening, debit, credit & running balance
                 </Text>
               </View>
-              <Text style={styles.chevron}>›</Text>
+              <ChevronRight size={16} color="#94A3B8" strokeWidth={2.2} />
             </TouchableOpacity>
 
             <View style={styles.divider} />
@@ -533,14 +523,16 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
               activeOpacity={0.7}
               onPress={() => navigation.navigate(AppRoutes.JOURNAL_ENTRIES)}
             >
-              <Text style={styles.itemIcon}>📝</Text>
+              <View style={styles.itemIconBadge}>
+                <FileSpreadsheet size={16} color="#1E3A8A" strokeWidth={2} />
+              </View>
               <View style={styles.itemTextBlock}>
                 <Text style={styles.itemTitle}>Journal Entries</Text>
                 <Text style={styles.itemDescription}>
                   Dual-sided double entry records and reversal audit history
                 </Text>
               </View>
-              <Text style={styles.chevron}>›</Text>
+              <ChevronRight size={16} color="#94A3B8" strokeWidth={2.2} />
             </TouchableOpacity>
           </View>
         </View>
@@ -561,7 +553,11 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <View style={styles.modalTitleRow}>
-                <Text style={styles.modalIcon}>{selectedSetting?.icon}</Text>
+                {selectedSetting ? (
+                  <View style={styles.modalIconBadge}>
+                    <selectedSetting.icon size={18} color="#0F2860" strokeWidth={2.2} />
+                  </View>
+                ) : null}
                 <Text style={styles.modalTitle}>{selectedSetting?.title}</Text>
               </View>
               <TouchableOpacity
@@ -651,30 +647,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: Spacing.sm,
-    gap: 10,
   },
   sectionIconBadge: {
     width: 38,
     height: 38,
-    borderRadius: BorderRadius.md,
+    borderRadius: 10,
+    backgroundColor: '#EEF2F6',
+    borderWidth: 1,
+    borderColor: '#D2DEEB',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sectionIcon: {
-    fontSize: 20,
+    marginRight: 10,
   },
   sectionTitleBlock: {
     flex: 1,
   },
   sectionTitle: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontWeight: '800',
+    color: '#0F2C59',
   },
   sectionSubtitle: {
     fontSize: 11,
     color: '#64748B',
     marginTop: 1,
+    lineHeight: 15,
   },
   itemsList: {
     borderTopWidth: 1,
@@ -685,45 +682,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    gap: 10,
   },
-  itemIcon: {
-    fontSize: 18,
-    width: 24,
-    textAlign: 'center',
+  itemIconBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 7,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
   itemTextBlock: {
     flex: 1,
+    marginRight: 8,
   },
   itemTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1E293B',
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#0F2860',
   },
   itemDescription: {
     fontSize: 11,
     color: '#64748B',
     marginTop: 1,
-  },
-  chevron: {
-    fontSize: 18,
-    color: '#94A3B8',
-    fontWeight: '400',
+    lineHeight: 14,
   },
   divider: {
     height: 1,
-    backgroundColor: '#F8FAFC',
-    marginVertical: 1,
+    backgroundColor: '#F1F5F9',
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Spacing.lg,
+    padding: Spacing.base,
   },
   modalCard: {
     width: '100%',
+    maxWidth: 360,
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
@@ -739,30 +738,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
   },
-  modalIcon: {
-    fontSize: 22,
+  modalIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#EEF2F6',
+    borderWidth: 1,
+    borderColor: '#D2DEEB',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontWeight: '800',
+    color: '#0F2C59',
   },
   closeIcon: {
-    fontSize: 18,
-    color: '#64748B',
+    fontSize: 14,
     fontWeight: '700',
+    color: '#64748B',
   },
   modalDescription: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748B',
-    lineHeight: 18,
+    lineHeight: 17,
     marginBottom: Spacing.md,
   },
   modalSection: {
     backgroundColor: '#F8FAFC',
     borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    padding: Spacing.sm,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     marginBottom: Spacing.md,
@@ -771,6 +778,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: 4,
   },
   switchLabel: {
     fontSize: 13,
@@ -780,12 +788,13 @@ const styles = StyleSheet.create({
   modalDivider: {
     height: 1,
     backgroundColor: '#E2E8F0',
-    marginVertical: Spacing.sm,
+    marginVertical: Spacing.xs,
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: 4,
   },
   statusLabel: {
     fontSize: 12,
@@ -794,25 +803,23 @@ const styles = StyleSheet.create({
   statusPill: {
     backgroundColor: '#DCFCE7',
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
   },
   statusText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#16A34A',
+    color: '#15803D',
   },
   saveButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#0F2860',
     paddingVertical: 12,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
   },
   saveButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
     color: '#FFFFFF',
+    fontSize: 13.5,
+    fontWeight: '700',
   },
 });
-
-export default AdminSettingsScreen;

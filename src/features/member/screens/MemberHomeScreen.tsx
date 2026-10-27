@@ -16,6 +16,7 @@ import { AppRoutes } from '../../../core/constants/routes';
 import { useAuthStore } from '../../auth/store/authStore';
 import { DEFAULT_ADMIN_AVATAR } from '../../auth/components/UserProfileModal';
 import { FontFamilies, BorderRadius } from '../../../core/theme';
+import { useMembershipDetailsData } from '../../membership/hooks/useMembershipDetailsData';
 
 const HRSJM_EMBLEM = require('../../../assets/hrsjm_logo.png');
 
@@ -24,11 +25,15 @@ export const MemberHomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const user = useAuthStore(state => state.user);
   const { unreadCount } = useNotifications();
+  const memberData = useMembershipDetailsData();
 
   const memberName = user?.full_name || 'HRSJM Member';
   const memberEmail = user?.email || 'member@hrsjm.org';
   const memberMobile = user?.mobile_number || '+91 98888 80002';
   const avatarUrl = user?.avatar || DEFAULT_ADMIN_AVATAR;
+  const designation = memberData.hasData && memberData.membershipType ? memberData.membershipType : 'Official Verified Member';
+  const memberId = memberData.memberId || 'HRSJM-MEM-2026-0842';
+  const validThru = memberData.hasData && memberData.validTill ? memberData.validTill.toUpperCase() : '31 DEC 2027';
 
   return (
     <View style={styles.container}>
@@ -66,15 +71,15 @@ export const MemberHomeScreen: React.FC = () => {
             <Image source={{ uri: avatarUrl }} style={styles.memberPhoto} />
             <View style={styles.memberInfoCol}>
               <Text style={styles.memberName} numberOfLines={1}>{memberName}</Text>
-              <Text style={styles.memberDesignation}>Official Verified Member</Text>
-              <Text style={styles.memberIdText}>ID: HRSJM-MEM-2026-0842</Text>
+              <Text style={styles.memberDesignation}>{designation}</Text>
+              <Text style={styles.memberIdText}>ID: {memberId}</Text>
             </View>
           </View>
 
           <View style={styles.cardFooterRow}>
             <View style={styles.cardFooterMeta}>
               <Text style={styles.cardMetaLabel}>VALID THRU</Text>
-              <Text style={styles.cardMetaValue}>31 DEC 2027</Text>
+              <Text style={styles.cardMetaValue}>{validThru}</Text>
             </View>
             <View style={styles.cardFooterDivider} />
             <View style={styles.cardFooterMeta}>

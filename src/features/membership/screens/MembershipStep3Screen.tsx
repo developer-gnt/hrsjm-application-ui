@@ -74,6 +74,7 @@ const PRESET_OPTIONS: Record<
 export function MembershipStep3Screen() {
   const navigation = useNavigation<NavProp>();
   const {
+    personalInfo,
     documents,
     updateDocuments,
     submitApplication,
@@ -99,6 +100,23 @@ export function MembershipStep3Screen() {
   const postFeeAmount = selectedPost?.feeAmount || 800;
   const postTitle = selectedPost?.postName || selectedMembershipType || 'District Active Member';
   const postValidity = selectedPost?.validity || '1 Year';
+
+  // Automatically sync profile photo from Step 1 to photograph document
+  React.useEffect(() => {
+    if (personalInfo?.profilePhotoUri && !documents.photograph?.isUploaded) {
+      updateDocuments({
+        photograph: {
+          type: 'photo',
+          name: 'Applicant Photograph (Profile Photo)',
+          fileName: 'applicant_photograph.jpg',
+          fileSize: '1.2 MB',
+          isUploaded: true,
+          fileUri: personalInfo.profilePhotoUri,
+        },
+      });
+      setErrors(prev => ({ ...prev, photo: undefined }));
+    }
+  }, [personalInfo?.profilePhotoUri, documents.photograph?.isUploaded]);
 
   // Custom upload state
   const [customFileName, setCustomFileName] = useState('');

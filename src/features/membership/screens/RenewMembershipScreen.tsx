@@ -23,6 +23,7 @@ import {
   navigateToProfile,
 } from '../../../core/navigation/appRouter';
 import { BorderRadius, Spacing, FontFamilies } from '../../../core';
+import { useMembershipDetailsData } from '../hooks/useMembershipDetailsData';
 
 interface RenewMembershipScreenProps {
   onBack?: () => void;
@@ -33,6 +34,9 @@ interface RenewMembershipScreenProps {
   onRenewPress?: (selectedPlanId: string) => void;
   onWebsitePress?: () => void;
   onWhatsAppPress?: () => void;
+  postName?: string;
+  validTill?: string;
+  daysRemaining?: string;
 }
 
 export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
@@ -44,12 +48,25 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
   onRenewPress,
   onWebsitePress,
   onWhatsAppPress,
+  postName: propPostName,
+  validTill: propValidTill,
+  daysRemaining: propDaysRemaining,
 }) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const memberData = useMembershipDetailsData();
   const [selectedPlanId, setSelectedPlanId] = useState<string>('1-year');
   const [paymentModalVisible, setPaymentModalVisible] = useState<boolean>(false);
   const [paymentPayload, setPaymentPayload] = useState<PaymentPayload | null>(null);
+
+  const effectivePostName =
+    propPostName ||
+    (memberData.hasData && memberData.membershipType && memberData.membershipType !== 'Individual Member'
+      ? memberData.membershipType
+      : 'District Unit');
+  const effectiveValidTill = propValidTill || (memberData.hasData && memberData.validTill ? memberData.validTill : '15 Oct 2026');
+  const effectiveDaysRemaining = propDaysRemaining || (memberData.hasData && memberData.daysRemaining ? memberData.daysRemaining : '7 days');
+  const alertDaysNumber = parseInt(String(effectiveDaysRemaining), 10) || 7;
 
   const isTabletOrDesktop = width > 520;
   const contentMaxWidth = isTabletOrDesktop ? 460 : width;
@@ -143,15 +160,15 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
 
           {/* Section 03: Membership Expiry Alert */}
           <MembershipExpiryAlert
-            daysRemaining={7}
+            daysRemaining={alertDaysNumber}
             message="Your membership is expiring soon!"
           />
 
           {/* Section 04: Current Membership Card */}
           <CurrentMembershipCard
-            postName="District Unit"
-            validTill="15 Oct 2026"
-            daysRemaining="7 days"
+            postName={effectivePostName}
+            validTill={effectiveValidTill}
+            daysRemaining={effectiveDaysRemaining}
           />
 
           {/* Section 05: Renewal Plan Section */}

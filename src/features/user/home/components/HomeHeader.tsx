@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Image,
   Modal,
@@ -17,6 +17,7 @@ import { AdminColors, Spacing, UserFontFamilies } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { useHeaderActions } from '../../components/HeaderActionsContext';
 import { useAuthStore } from '../../../auth/store/authStore';
+import { useNotificationsStore } from '../../../notifications/store/useNotificationsStore';
 import {
   DEFAULT_ADMIN_AVATAR,
   UserProfileModal,
@@ -87,7 +88,14 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
 
-  const effectiveUnreadCount = unreadCount ?? 3;
+  const liveUnreadCount = useNotificationsStore(state => state.unreadCount);
+  const fetchUnreadCount = useNotificationsStore(state => state.fetchUnreadCount);
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  const effectiveUnreadCount = unreadCount !== undefined ? unreadCount : liveUnreadCount;
 
   const roleNames = (user?.roles ?? []).map(r => (r.name || '').toUpperCase());
   const isSeekerRole =

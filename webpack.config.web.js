@@ -6,6 +6,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 // Load .env file if present
@@ -48,10 +49,7 @@ module.exports = {
     hot: true,
     compress: true,
     client: {
-      overlay: {
-        errors: true,
-        warnings: false,
-      },
+      overlay: false,
     },
     proxy: [
       {
@@ -123,6 +121,9 @@ module.exports = {
     ],
   },
   plugins: [
+    new webpack.DefinePlugin({
+      __DEV__: JSON.stringify(true),
+    }),
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, 'web/index.html'),
     }),

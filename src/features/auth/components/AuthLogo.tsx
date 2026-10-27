@@ -18,6 +18,7 @@ interface AuthLogoProps {
   /** 'light' renders wordmark for navy backgrounds; 'dark' for light ones. */
   variant?: 'light' | 'dark';
   showWordmark?: boolean;
+  showTitle?: boolean;
   /** Whether to show the bilingual subtitles (English mission + Hindi motto). Defaults to true. */
   showSubtitle?: boolean;
   layout?: 'vertical' | 'horizontal';
@@ -25,10 +26,10 @@ interface AuthLogoProps {
 }
 
 const SIZES = {
-  xs: { width: 38, height: 30 },
-  sm: { width: 50, height: 40 },
-  md: { width: 80, height: 64 },
-  lg: { width: 110, height: 88 },
+  xs: { width: 36, height: 36 },
+  sm: { width: 48, height: 48 },
+  md: { width: 72, height: 72 },
+  lg: { width: 104, height: 104 },
 } as const;
 
 /**
@@ -40,6 +41,7 @@ export const AuthLogo: React.FC<AuthLogoProps> = ({
   size = 'md',
   variant = 'dark',
   showWordmark = true,
+  showTitle = true,
   showSubtitle = true,
   layout = 'vertical',
   style,
@@ -73,19 +75,22 @@ export const AuthLogo: React.FC<AuthLogoProps> = ({
               : styles.verticalWordmarkWrap
           }
         >
-          <Text
-            style={[
-              isHorizontal ? styles.horizontalWordmark : styles.verticalWordmark,
-              { color: wordmarkColor },
-            ]}
-          >
-            HRSJM
-          </Text>
+          {showTitle && (
+            <Text
+              style={[
+                isHorizontal ? styles.horizontalWordmark : styles.verticalWordmark,
+                { color: wordmarkColor },
+              ]}
+            >
+              HRSJM
+            </Text>
+          )}
           {showSubtitle && (
             <>
               <Text
                 style={[
                   isHorizontal ? styles.horizontalMission : styles.verticalMission,
+                  !showTitle && { marginTop: 2 },
                   { color: missionColor },
                 ]}
                 numberOfLines={1}

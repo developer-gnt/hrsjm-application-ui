@@ -339,24 +339,32 @@ class MembershipApplicationsStore {
           }
         }
 
-        // Also load any registered pending member applicants from usersStore
+        // Also load any registered pending applicants (Member, Seeker, Signup Verification) from usersStore
         try {
           const allRegisteredUsers = usersStore.getAllUsers();
           for (const u of allRegisteredUsers) {
-            if (u.userType === 'member' && u.status === 'pending') {
-              const memberAppId = u.applicationNumber || u.memberId || `APP-${u.id}`;
+            if (u.status === 'pending' || u.userType === 'member' || u.userType === 'seeker') {
+              const appId = u.applicationNumber || u.memberId || `APP-${u.id}`;
               const exists = this.applications.some(
-                a => a.id === u.id || a.applicationId === memberAppId || (u.email && a.email?.toLowerCase() === u.email.toLowerCase())
+                a => a.id === u.id || a.applicationId === appId || (u.email && a.email?.toLowerCase() === u.email.toLowerCase())
               );
               if (!exists) {
-                const sStatus: ApplicationStatus = 'under_review';
+                const sStatus: ApplicationStatus =
+                  u.status === 'active' ? 'approved' : u.status === 'blocked' ? 'rejected' : 'under_review';
+                const mType =
+                  u.userType === 'seeker'
+                    ? 'Donation Seeker'
+                    : u.userType === 'member'
+                    ? 'Individual Membership'
+                    : 'Signup Verification';
+
                 this.applications.unshift({
                   id: u.id,
-                  applicationId: memberAppId,
+                  applicationId: appId,
                   applicantName: u.name,
-                  membershipType: 'Individual Membership',
+                  membershipType: mType,
                   status: sStatus,
-                  submittedAt: u.joinedDate || new Date().toLocaleString(),
+                  submittedAt: u.joinedDate ? new Date(u.joinedDate).toLocaleDateString('en-GB') : 'Recently',
                   submittedDate: u.joinedDate || new Date().toISOString(),
                   phone: u.phone,
                   email: u.email,
@@ -373,7 +381,7 @@ class MembershipApplicationsStore {
                     {
                       id: `log-reg-${u.id}`,
                       title: 'Application Submitted',
-                      description: 'Member application submitted for verification.',
+                      description: `${mType} submitted for verification.`,
                       timestamp: u.joinedDate || new Date().toLocaleString(),
                       status: sStatus,
                     },
@@ -570,6 +578,16 @@ class MembershipApplicationsStore {
         a.membershipType !== 'Donation Seeker' &&
         !(a.applicationId && a.applicationId.startsWith('HRSJM-SEK'))
     );
+  }
+
+  /**
+   * Returns all applications across all 3 streams:
+   * 1. Membership Applications
+   * 2. Donor Seeker Applications
+   * 3. Signup Verification Applications
+   */
+  public getAllApplications(): MembershipApplicationItem[] {
+    return [...this.applications];
   }
 
   public resetForTest(): void {

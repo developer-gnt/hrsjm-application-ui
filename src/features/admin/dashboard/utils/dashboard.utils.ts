@@ -51,14 +51,15 @@ export const toGrowthChartPoints = (
     total: point.total,
   }));
 
-/** Application-status donut segments from the dashboard payload. */
+/** Application-status donut segments from the dashboard payload + application stores. */
 export const toApplicationStatusSegments = (
   byStatus: AdminDashboardResponse['applicationsByStatus'],
+  extra?: { approved?: number; underReview?: number; pending?: number; rejected?: number },
 ): Array<{ label: string; count: number }> => [
-  { label: 'Approved', count: byStatus.APPROVED },
-  { label: 'Under Review', count: byStatus.UNDER_REVIEW },
-  { label: 'Pending', count: byStatus.PENDING },
-  { label: 'Rejected', count: byStatus.REJECTED },
+  { label: 'Approved', count: (byStatus?.APPROVED ?? 0) + (extra?.approved ?? 0) },
+  { label: 'Under Review', count: (byStatus?.UNDER_REVIEW ?? 0) + (extra?.underReview ?? 0) },
+  { label: 'Pending', count: (byStatus?.PENDING ?? 0) + (extra?.pending ?? 0) },
+  { label: 'Rejected', count: (byStatus?.REJECTED ?? 0) + (extra?.rejected ?? 0) },
 ];
 
 /** Complaints-overview donut segments from the dashboard payload. */

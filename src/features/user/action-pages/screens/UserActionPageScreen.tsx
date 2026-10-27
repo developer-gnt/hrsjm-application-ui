@@ -175,19 +175,32 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
 
   const availableCauses = useMemo(() => {
     if (pageId !== 'donate') return content.cards;
-    const dynamicList = dynamicCauses.map(dc => {
-      let iconName: any = 'heart';
-      if (dc.categoryKey === 'healthcare') iconName = 'heart-pulse';
-      else if (dc.categoryKey === 'education') iconName = 'book-open';
-      else if (dc.categoryKey === 'relief') iconName = 'heart-hands';
-      else if (dc.categoryKey === 'women') iconName = 'users';
-      else if (dc.categoryKey === 'environment') iconName = 'globe';
-      return {
-        title: dc.title,
-        description: dc.description || `Support ${dc.category} cause`,
-        icon: iconName,
-      };
-    });
+    const dynamicList = dynamicCauses
+      .filter(dc => {
+        const titleLower = (dc.title || '').toLowerCase();
+        const descLower = (dc.description || '').toLowerCase();
+        return (
+          !titleLower.includes('account verification') &&
+          !titleLower.includes('seeker verification') &&
+          !descLower.includes('account verification') &&
+          !descLower.includes('registration pending') &&
+          !titleLower.includes('mock') &&
+          !titleLower.includes('test')
+        );
+      })
+      .map(dc => {
+        let iconName: any = 'heart';
+        if (dc.categoryKey === 'healthcare') iconName = 'heart-pulse';
+        else if (dc.categoryKey === 'education') iconName = 'book-open';
+        else if (dc.categoryKey === 'relief') iconName = 'heart-hands';
+        else if (dc.categoryKey === 'women') iconName = 'users';
+        else if (dc.categoryKey === 'environment') iconName = 'globe';
+        return {
+          title: dc.title,
+          description: dc.description || `Support ${dc.category} cause`,
+          icon: iconName,
+        };
+      });
 
     const base = content.cards.map(c => ({
       title: c.title,

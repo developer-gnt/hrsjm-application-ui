@@ -65,8 +65,9 @@ export const setupRefreshInterceptor = (
             { timeout: 15000 },
           );
 
-          const { access_token: accessToken, refresh_token: newRefreshToken } =
-            response.data?.data || {};
+          const payload = response.data?.data || response.data || {};
+          const accessToken = payload.access_token;
+          const newRefreshToken = payload.refresh_token;
 
           if (!accessToken) {
             throw new Error('Token refresh did not return a valid access_token');

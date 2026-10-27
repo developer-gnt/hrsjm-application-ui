@@ -40,6 +40,7 @@ import { RecentMembersCard } from '../components/RecentMembersCard';
 import { RecentApplicationsCard } from '../components/RecentApplicationsCard';
 import { AdminCalendarModal } from '../components/AdminCalendarModal';
 import { membershipApplicationsStore } from '../../membershipApplications/services/membershipApplicationsStore';
+import { usersStore } from '../../users/services/usersStore';
 import type { AdminMemberItem } from '../types/dashboard.types';
 
 const MORE_TAB = 'AdminMoreTab' as const;
@@ -81,16 +82,19 @@ export const AdminDashboardScreen: React.FC<{
   useEffect(() => {
     membershipApplicationsStore.loadPersistedApplications();
     membershipApplicationsStore.fetchApplications().catch(() => {});
-    const unsubscribe = membershipApplicationsStore.subscribe(() => {
+    usersStore.fetchUsers().catch(() => {});
+
+    const unsubscribeApps = membershipApplicationsStore.subscribe(() => {
       setStoreTick((t) => t + 1);
-      // Immediately refresh recent members, recent applications, and dashboard counts on approval
-      recentMembersQuery.refetch().catch(() => {});
-      recentApplicationsQuery.refetch().catch(() => {});
-      dashboardQuery.refetch().catch(() => {});
+    });
+
+    const unsubscribeUsers = usersStore.subscribe(() => {
+      setStoreTick((t) => t + 1);
     });
 
     return () => {
-      unsubscribe();
+      unsubscribeApps();
+      unsubscribeUsers();
     };
   }, []);
 
@@ -333,8 +337,54 @@ export const AdminDashboardScreen: React.FC<{
   );
   const membersThisMonth = dashboard.memberships?.thisMonth ?? dashboard.users?.thisMonth ?? 0;
 
-  const totalApplications = dashboard.assistance?.total ?? 0;
-  const applicationsThisMonth = dashboard.assistance?.thisMonth ?? 0;
+  // 1. Membership applications (from backend memberships or applications store)
+  const storeMemberAppsCount = (membershipApplicationsStore.getApplications() || []).filter(
+    (a) =>
+      a.membershipType !== 'Donation Seeker' &&
+      !a.applicationId?.startsWith('HRSJM-SEK'),
+  ).length;
+  const membershipAppsTotal = Math.max(
+    dashboard.applications?.memberships ?? dashboard.memberships?.total ?? 0,
+    membershipApplicationsStore.getStats().total ?? 0,
+    storeMemberAppsCount,
+  );
+  const membershipAppsThisMonth = dashboard.memberships?.thisMonth ?? 0;
+
+  // 2. Donor Seeker applications (from backend assistance requests or applications store)
+  const storeSeekerAppsCount = (
+    membershipApplicationsStore.getAllApplications?.() ||
+    membershipApplicationsStore.getApplications() ||
+    []
+  ).filter(
+    (a) =>
+      a.membershipType === 'Donation Seeker' ||
+      a.applicationId?.startsWith('HRSJM-SEK'),
+  ).length;
+  const seekerAppsTotal = Math.max(
+    dashboard.applications?.assistance ?? dashboard.assistance?.total ?? 0,
+    storeSeekerAppsCount,
+  );
+  const seekerAppsThisMonth = dashboard.assistance?.thisMonth ?? 0;
+
+  // 3. User Signup applications (pending verification signups in usersStore)
+  const userStats = usersStore.getStats();
+  const signupAppsTotal = Math.max(
+    dashboard.applications?.signups ?? 0,
+    userStats.pending,
+  );
+  const signupAppsThisMonth = dashboard.users?.thisMonth ?? 0;
+
+  // Comprehensive Total Applications KPI:
+  // Combines (1) Membership applications + (2) Donor Seeker applications + (3) Signup applications
+  const totalApplications =
+    dashboard.applications?.total &&
+    dashboard.applications.total >= (membershipAppsTotal + seekerAppsTotal + signupAppsTotal)
+      ? dashboard.applications.total
+      : (membershipAppsTotal + seekerAppsTotal + signupAppsTotal);
+
+  const applicationsThisMonth =
+    (membershipAppsThisMonth + seekerAppsThisMonth + (signupAppsTotal > 0 ? signupAppsThisMonth : 0)) ||
+    (dashboard.applications?.thisMonth ?? dashboard.assistance?.thisMonth ?? 0);
 
   const totalComplaints = dashboard.tickets?.total ?? 0;
   const complaintsThisMonth = dashboard.tickets?.thisMonth ?? 0;
@@ -397,7 +447,11 @@ export const AdminDashboardScreen: React.FC<{
             value={totalApplications}
             note={`+${applicationsThisMonth} this month`}
             tone="warning"
-            onPress={() => jumpToTab('AdminApplicationsTab')}
+            onPress={() => {
+              (navigation as any).navigate(MORE_TAB, {
+                screen: AppRoutes.MEMBERSHIP_APPLICATIONS,
+              });
+            }}
           />
         </View>
 
@@ -432,7 +486,10 @@ export const AdminDashboardScreen: React.FC<{
         <View style={styles.twoColumnRow}>
           <StatusDonutCard
             title="Application Status"
-            segments={toApplicationStatusSegments(dashboard.applicationsByStatus)}
+            segments={toApplicationStatusSegments(dashboard.applicationsByStatus, {
+              approved: Math.max(dashboard.memberships?.active ?? 0, 0),
+              pending: Math.max(dashboard.memberships?.pending ?? 0, signupAppsTotal),
+            })}
           />
           <StatusDonutCard
             title="Complaints Overview"

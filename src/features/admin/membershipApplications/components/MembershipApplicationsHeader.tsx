@@ -19,6 +19,8 @@ const HRSJM_LOGO = require('../../../../assets/hrsjm_logo.png');
 
 interface MembershipApplicationsHeaderProps {
   paddingTop?: number;
+  title?: string;
+  subtitle?: string;
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   onProfilePress?: () => void;
@@ -27,6 +29,8 @@ interface MembershipApplicationsHeaderProps {
 
 export const MembershipApplicationsHeader: React.FC<MembershipApplicationsHeaderProps> = ({
   paddingTop = 0,
+  title = 'All Applications',
+  subtitle = 'Review, verify and manage all applications.',
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
@@ -92,10 +96,8 @@ export const MembershipApplicationsHeader: React.FC<MembershipApplicationsHeader
       {/* Page Title & Subtitle with Sign Up action button */}
       <View style={styles.titleRow}>
         <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>Membership Applications</Text>
-          <Text style={styles.pageSubtitle}>
-            Review, verify and manage membership applications.
-          </Text>
+          <Text style={styles.pageTitle}>{title}</Text>
+          <Text style={styles.pageSubtitle}>{subtitle}</Text>
         </View>
         {onSignupPress ? (
           <TouchableOpacity

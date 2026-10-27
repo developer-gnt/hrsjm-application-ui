@@ -1980,7 +1980,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           </View>
 
           {/* Developer Technical Diagnostics (__DEV__ only) */}
-          {__DEV__ && failureError?.message && (
+          {(typeof __DEV__ !== 'undefined' ? Boolean(__DEV__) : process.env.NODE_ENV !== 'production') && failureError?.message && (
             <View style={styles.devDiagCard}>
               <TouchableOpacity
                 onPress={() => setShowDevDebug(prev => !prev)}

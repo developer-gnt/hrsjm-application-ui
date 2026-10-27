@@ -2,13 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   RefreshControl,
+  ScrollView,
   StatusBar,
   StyleSheet,
+  Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { AppEmptyState, AppPagination } from '../../../../core';
+import { AppEmptyState, AppPagination, Spacing } from '../../../../core';
 import { AppRoutes } from '../../../../core/constants/routes';
 import { AdminSidebar } from '../../../../app/navigation/AdminSidebar';
 import { MembershipApplicationsHeader } from '../components/MembershipApplicationsHeader';
@@ -78,24 +81,16 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   });
 
   const [applications, setApplications] = useState<MembershipApplicationItem[]>(() =>
-    membershipApplicationsStore.getApplications()
+    membershipApplicationsStore.getAllApplications()
   );
   const [stats, setStats] = useState(() => membershipApplicationsStore.getStats());
 
   useEffect(() => {
     membershipApplicationsStore.fetchApplications();
     const unsubscribe = membershipApplicationsStore.subscribe(() => {
-      setApplications(membershipApplicationsStore.getApplications());
+      setApplications(membershipApplicationsStore.getAllApplications());
       setStats(membershipApplicationsStore.getStats());
     });
-
-    // Auto-refresh interval so new submissions and re-applications appear dynamically without hard reload
-    let intervalId: any = null;
-    if (process.env.NODE_ENV !== 'test') {
-      intervalId = setInterval(() => {
-        membershipApplicationsStore.fetchApplications().catch(() => {});
-      }, 4000);
-    }
 
     // Sync on window focus and storage changes
     const handleSync = () => {
@@ -110,7 +105,6 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
 
     return () => {
       unsubscribe();
-      if (intervalId) clearInterval(intervalId);
       if (win && typeof win.removeEventListener === 'function') {
         win.removeEventListener('focus', handleSync);
         win.removeEventListener('storage', handleSync);
@@ -165,6 +159,26 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     filterOptions.membershipType !== 'All Types' ||
     filterOptions.sortBy !== 'newest';
 
+  const memberAppsCount = useMemo(
+    () =>
+      applications.filter(
+        a =>
+          !a.membershipType?.toLowerCase().includes('seeker') &&
+          !a.applicationId?.startsWith('HRSJM-SEK'),
+      ).length,
+    [applications],
+  );
+
+  const seekerAppsCount = useMemo(
+    () =>
+      applications.filter(
+        a =>
+          a.membershipType?.toLowerCase().includes('seeker') ||
+          a.applicationId?.startsWith('HRSJM-SEK'),
+      ).length,
+    [applications],
+  );
+
   // Filter and sort applications list
   const filteredApplications = useMemo(() => {
     const list = applications.filter(app => {
@@ -177,11 +191,21 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
         return false;
       }
       // Membership type filter
-      if (
-        filterOptions.membershipType !== 'All Types' &&
-        app.membershipType !== filterOptions.membershipType
-      ) {
-        return false;
+      if (filterOptions.membershipType !== 'All Types') {
+        const isSeeker =
+          app.membershipType?.toLowerCase().includes('seeker') ||
+          app.applicationId?.startsWith('HRSJM-SEK');
+        if (filterOptions.membershipType === 'Donation Seeker' && !isSeeker) {
+          return false;
+        } else if (filterOptions.membershipType === 'Members' && isSeeker) {
+          return false;
+        } else if (
+          filterOptions.membershipType !== 'Donation Seeker' &&
+          filterOptions.membershipType !== 'Members' &&
+          app.membershipType !== filterOptions.membershipType
+        ) {
+          return false;
+        }
       }
       // Search query filter (matches name, application ID, phone, or email)
       if (searchQuery.trim()) {
@@ -224,6 +248,84 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
         onFilterPress={() => setFilterModalVisible(true)}
         hasActiveFilters={hasActiveFilters}
       />
+
+      {/* Category Type Color Filter Bar: Member (Dark White) vs Seeker (Light White) */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoryFilterScroll}
+      >
+        <TouchableOpacity
+          style={[
+            styles.categoryChip,
+            filterOptions.membershipType === 'All Types' && styles.categoryChipActiveAll,
+          ]}
+          onPress={() => setFilterOptions(prev => ({ ...prev, membershipType: 'All Types' }))}
+          activeOpacity={0.8}
+        >
+          <Text
+            style={[
+              styles.categoryChipText,
+              filterOptions.membershipType === 'All Types' && styles.categoryChipTextActive,
+            ]}
+          >
+            All Types ({applications.length})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.categoryChip,
+            styles.categoryChipMember,
+            filterOptions.membershipType === 'Members' && styles.categoryChipActiveMember,
+          ]}
+          onPress={() =>
+            setFilterOptions(prev => ({
+              ...prev,
+              membershipType: prev.membershipType === 'Members' ? 'All Types' : 'Members',
+            }))
+          }
+          activeOpacity={0.8}
+        >
+          <View style={styles.colorDotMember} />
+          <Text
+            style={[
+              styles.categoryChipText,
+              styles.categoryChipTextMember,
+              filterOptions.membershipType === 'Members' && styles.categoryChipTextActive,
+            ]}
+          >
+            Members ({memberAppsCount})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.categoryChip,
+            styles.categoryChipSeeker,
+            filterOptions.membershipType === 'Donation Seeker' && styles.categoryChipActiveSeeker,
+          ]}
+          onPress={() =>
+            setFilterOptions(prev => ({
+              ...prev,
+              membershipType: prev.membershipType === 'Donation Seeker' ? 'All Types' : 'Donation Seeker',
+            }))
+          }
+          activeOpacity={0.8}
+        >
+          <View style={styles.colorDotSeeker} />
+          <Text
+            style={[
+              styles.categoryChipText,
+              styles.categoryChipTextSeeker,
+              filterOptions.membershipType === 'Donation Seeker' && styles.categoryChipTextActive,
+            ]}
+          >
+            Donation Seekers ({seekerAppsCount})
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+
       <MembershipStatusTabs
         activeTab={activeTab}
         onSelectTab={handleSelectTab}
@@ -353,6 +455,71 @@ const styles = StyleSheet.create({
   },
   headerArea: {
     paddingBottom: 4,
+  },
+  categoryFilterScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.base,
+    gap: 8,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 11,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DDE5EE',
+    backgroundColor: '#FFFFFF',
+    gap: 6,
+  },
+  categoryChipActiveAll: {
+    backgroundColor: '#0F2860',
+    borderColor: '#0F2860',
+  },
+  categoryChipMember: {
+    backgroundColor: '#EEF2F6', // little dark white
+    borderColor: '#C8D5E5',
+  },
+  categoryChipActiveMember: {
+    backgroundColor: '#0F2860',
+    borderColor: '#0F2860',
+  },
+  categoryChipSeeker: {
+    backgroundColor: '#FFFFFF', // little light white
+    borderColor: '#EFE7DA',
+  },
+  categoryChipActiveSeeker: {
+    backgroundColor: '#D97706',
+    borderColor: '#D97706',
+  },
+  categoryChipText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  categoryChipTextActive: {
+    color: '#FFFFFF',
+  },
+  categoryChipTextMember: {
+    color: '#0F2860',
+  },
+  categoryChipTextSeeker: {
+    color: '#92400E',
+  },
+  colorDotMember: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#0F2860',
+  },
+  colorDotSeeker: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#D97706',
   },
   listSpacer: {
     height: 8,

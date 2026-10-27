@@ -146,7 +146,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             { paddingTop: Math.max(insets.top, 16) + 12 },
           ]}
         >
-          <AuthLogo size="lg" variant="light" />
+          <AuthLogo size="lg" variant="light" showTitle={false} />
 
           <Text style={styles.headline}>
             Together for a{' '}
