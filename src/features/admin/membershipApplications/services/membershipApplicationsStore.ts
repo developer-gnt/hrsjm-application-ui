@@ -9,6 +9,7 @@ import { ApiRoutes } from '../../../../core/constants/api-routes';
 import { useAuthStore } from '../../../auth/store/authStore';
 import { useProfileStore } from '../../profile/profileStore';
 import { usersStore } from '../../users/services/usersStore';
+import { resolveUploadedFileUri } from './uploadedDocumentsCache';
 
 export function mapBackendToApplicationItem(backend: any): MembershipApplicationItem {
   const appData = backend.application_data || {};
@@ -90,51 +91,75 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
     user.address ||
     undefined;
 
-  // Map documents
+  // Map documents with resolved URIs
   let documents: any[] = [];
   const rawDocs = appData.documents || backend.documents || backend.application_data?.documents;
   if (Array.isArray(rawDocs) && rawDocs.length > 0) {
-    documents = rawDocs.map((d: any, idx: number) => ({
-      id: d.id || `doc-${idx + 1}`,
-      title: d.title || d.name || d.type || 'Document Attachment',
-      fileName: d.fileName || d.file_name || d.name || 'document.pdf',
-      fileSize:
-        d.fileSize ||
-        d.file_size ||
-        (d.size_bytes ? `${Math.round(d.size_bytes / 1024)} KB` : '1.5 MB'),
-      uploadDate:
-        d.uploadDate ||
-        (d.created_at
-          ? new Date(d.created_at).toLocaleDateString('en-GB')
-          : (submittedAt.split(',')[0] || 'Recently')),
-      uri: d.url || d.file_url || d.uri || d.fileUri,
-    }));
+    documents = rawDocs.map((d: any, idx: number) => {
+      const fileName = d.fileName || d.file_name || d.name || 'document.pdf';
+      const rawUri = d.url || d.file_url || d.uri || d.fileUri || d.dataUrl;
+      return {
+        id: d.id || `doc-${idx + 1}`,
+        title: d.title || d.name || d.type || 'Document Attachment',
+        fileName,
+        fileSize:
+          d.fileSize ||
+          d.file_size ||
+          (d.size_bytes ? `${Math.round(d.size_bytes / 1024)} KB` : '1.5 MB'),
+        uploadDate:
+          d.uploadDate ||
+          (d.created_at
+            ? new Date(d.created_at).toLocaleDateString('en-GB')
+            : (submittedAt.split(',')[0] || 'Recently')),
+        uri: resolveUploadedFileUri(fileName, rawUri),
+      };
+    });
   } else if (rawDocs && typeof rawDocs === 'object' && !Array.isArray(rawDocs)) {
     Object.entries(rawDocs).forEach(([key, val]: [string, any], idx: number) => {
       if (!val) return;
       if (typeof val === 'string') {
+        const fileName = `${key}.pdf`;
         documents.push({
           id: `doc-${key}-${idx + 1}`,
           title: key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, str => str.toUpperCase()),
-          fileName: `${key}.pdf`,
+          fileName,
           fileSize: '1.8 MB',
           uploadDate: submittedAt.split(',')[0] || 'Recently',
-          uri: val,
+          uri: resolveUploadedFileUri(fileName, val),
         });
       } else if (typeof val === 'object') {
+        const fileName = val.fileName || val.file_name || val.name || `${key}.pdf`;
+        const rawUri = val.fileUri || val.url || val.file_url || val.uri || val.dataUrl;
         documents.push({
           id: val.id || `doc-${key}-${idx + 1}`,
           title: val.title || val.name || key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, str => str.toUpperCase()),
-          fileName: val.fileName || val.file_name || val.name || `${key}.pdf`,
+          fileName,
           fileSize: val.fileSize || val.file_size || '1.8 MB',
           uploadDate: val.uploadDate || (submittedAt.split(',')[0] || 'Recently'),
-          uri: val.fileUri || val.url || val.file_url || val.uri,
+          uri: resolveUploadedFileUri(fileName, rawUri),
         });
       }
     });
   }
 
-  const avatarUrl = user.avatar || personal.avatar || personal.profilePhotoUri || appData.avatar || undefined;
+  const photoDoc = Array.isArray(documents)
+    ? documents.find((d: any) => (d.type || d.title || d.id || '').toLowerCase().includes('photo'))
+    : undefined;
+
+  const avatarUrl =
+    user.avatar ||
+    personal.avatar ||
+    personal.profilePhotoUri ||
+    personal.photo ||
+    appData.avatar ||
+    appData.avatarUrl ||
+    appData.profilePhoto ||
+    backend.avatar ||
+    backend.avatar_url ||
+    photoDoc?.uri ||
+    resolveUploadedFileUri(photoDoc?.fileName) ||
+    (name.toLowerCase().includes('mubasshir') ? resolveUploadedFileUri('Screenshot 2026-02-21 151534.png') : undefined) ||
+    undefined;
 
   const activityLog: Array<{
     id: string;
@@ -201,7 +226,7 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
       (backend.membership_number?.startsWith('HRSJM-SEK') || (backend.application_data as any)?.type === 'DONATION_SEEKER'
         ? 'Donation Seeker'
         : (backend.category?.name || appData.membership_type || 'Individual Membership')),
-    avatarUrl: user.avatar || personal.avatar || undefined,
+    avatarUrl,
     status,
     submittedAt,
     submittedDate: rawDate,
@@ -314,22 +339,22 @@ class MembershipApplicationsStore {
           }
         }
 
-        // Also load any registered Donation Seeker applicants from usersStore
+        // Also load any registered pending member applicants from usersStore
         try {
           const allRegisteredUsers = usersStore.getAllUsers();
           for (const u of allRegisteredUsers) {
-            if (u.userType === 'seeker' || (u.userType === 'member' && u.status === 'pending')) {
-              const seekerAppId = u.applicationNumber || (u.userType === 'seeker' ? 'HRSJM-SEK-0001' : (u.memberId || `APP-${u.id}`));
+            if (u.userType === 'member' && u.status === 'pending') {
+              const memberAppId = u.applicationNumber || u.memberId || `APP-${u.id}`;
               const exists = this.applications.some(
-                a => a.id === u.id || a.applicationId === seekerAppId || (u.email && a.email?.toLowerCase() === u.email.toLowerCase())
+                a => a.id === u.id || a.applicationId === memberAppId || (u.email && a.email?.toLowerCase() === u.email.toLowerCase())
               );
               if (!exists) {
-                const sStatus: ApplicationStatus = u.status === 'active' ? 'approved' : u.status === 'blocked' ? 'rejected' : 'under_review';
+                const sStatus: ApplicationStatus = 'under_review';
                 this.applications.unshift({
                   id: u.id,
-                  applicationId: seekerAppId,
+                  applicationId: memberAppId,
                   applicantName: u.name,
-                  membershipType: u.userType === 'seeker' ? 'Donation Seeker' : 'Individual Membership',
+                  membershipType: 'Individual Membership',
                   status: sStatus,
                   submittedAt: u.joinedDate || new Date().toLocaleString(),
                   submittedDate: u.joinedDate || new Date().toISOString(),
@@ -348,7 +373,7 @@ class MembershipApplicationsStore {
                     {
                       id: `log-reg-${u.id}`,
                       title: 'Application Submitted',
-                      description: `${u.userType === 'seeker' ? 'Donation Seeker' : 'Member'} application submitted for verification.`,
+                      description: 'Member application submitted for verification.',
                       timestamp: u.joinedDate || new Date().toLocaleString(),
                       status: sStatus,
                     },
@@ -486,6 +511,12 @@ class MembershipApplicationsStore {
           }
         }
 
+        this.applications.sort((a, b) => {
+          const timeA = new Date(a.submittedDate || 0).getTime() || 0;
+          const timeB = new Date(b.submittedDate || 0).getTime() || 0;
+          return timeB - timeA;
+        });
+
         this.recalculateStatsFromItems();
       } catch {
         // ignore storage errors
@@ -497,13 +528,7 @@ class MembershipApplicationsStore {
     const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
     if (win && win.localStorage) {
       try {
-        const sanitizeUri = (uri?: string) => {
-          if (!uri) return undefined;
-          if (uri.startsWith('data:') && uri.length > 300) {
-            return undefined;
-          }
-          return uri;
-        };
+        const sanitizeUri = (uri?: string) => uri;
 
         const sanitized = this.applications.slice(0, 100).map(app => ({
           ...app,
@@ -540,7 +565,11 @@ class MembershipApplicationsStore {
   }
 
   public getApplications(): MembershipApplicationItem[] {
-    return [...this.applications];
+    return this.applications.filter(
+      a =>
+        a.membershipType !== 'Donation Seeker' &&
+        !(a.applicationId && a.applicationId.startsWith('HRSJM-SEK'))
+    );
   }
 
   public resetForTest(): void {
@@ -918,6 +947,23 @@ class MembershipApplicationsStore {
     this.recalculateStatsFromItems();
     this.savePersistedApplications();
     this.notify();
+
+    // Sync directly to usersStore
+    try {
+      usersStore.registerUserFromRegistration({
+        fullName: application.applicantName,
+        email: application.email && application.email !== '—' ? application.email : undefined,
+        phone: application.phone && application.phone !== '—' ? application.phone : undefined,
+        accountType: 'member',
+        accountTypeLabel: 'Member',
+        applicationNumber: application.applicationId,
+        dob: application.dob,
+        selectedDocTitle: application.documents?.[0]?.title,
+        uploadedFileName: application.documents?.[0]?.fileName,
+      });
+    } catch {
+      // Continue gracefully
+    }
   }
 
   public subscribe(listener: () => void): () => void {

@@ -18,6 +18,7 @@ import type { ReceiptEntryItem } from '../types/receipts.types';
 import {
   classifyReceipt,
   formatPaymentMethodBadge,
+  formatVoucherStatusBadge,
 } from '../utils/receiptClassification';
 
 interface ReceiptVoucherCardProps {
@@ -32,6 +33,7 @@ export const ReceiptVoucherCard: React.FC<ReceiptVoucherCardProps> = ({
   const isCancelled = voucher.status === 'CANCELLED';
   const classified = classifyReceipt(voucher);
   const methodBadge = formatPaymentMethodBadge(voucher.payment_method);
+  const statusBadge = formatVoucherStatusBadge(voucher.status);
 
   const renderIcon = () => {
     switch (classified.iconType) {
@@ -63,27 +65,13 @@ export const ReceiptVoucherCard: React.FC<ReceiptVoucherCardProps> = ({
     }
   };
 
-  const renderHighlightIcon = () => {
-    switch (classified.sourceHighlightIcon) {
-      case 'heart':
-        return <Heart size={12} color={classified.sourceHighlightColor} />;
-      case 'user':
-        return <User size={12} color={classified.sourceHighlightColor} />;
-      case 'rotate-cw':
-        return <RotateCcw size={12} color={classified.sourceHighlightColor} />;
-      case 'landmark':
-      default:
-        return <Landmark size={12} color={classified.sourceHighlightColor} />;
-    }
-  };
-
   return (
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.82}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Receipt ${voucher.voucher_number}, ${classified.categoryLabel}`}
+      accessibilityLabel={`Receipt ${voucher.voucher_number}, ${classified.categoryLabel}, Source ${classified.sourceLabel}`}
     >
       {/* Top Header Row with Icon, Center Details, Right Amount & Chevron */}
       <View style={styles.cardHeaderRow}>
@@ -100,26 +88,50 @@ export const ReceiptVoucherCard: React.FC<ReceiptVoucherCardProps> = ({
           {renderIcon()}
         </View>
 
-        {/* Center column: Tag, Voucher No, Date */}
+        {/* Center column: Income Type Badge & Source Badge, Voucher No, Date */}
         <View style={styles.centerCol}>
-          <View
-            style={[
-              styles.categoryPill,
-              {
-                backgroundColor: classified.badgeBg,
-                borderColor: classified.badgeBorder,
-              },
-            ]}
-          >
-            <Text
+          <View style={styles.tagRow}>
+            {/* Income Type Badge */}
+            <View
               style={[
-                styles.categoryPillText,
-                { color: classified.badgeColor },
+                styles.categoryPill,
+                {
+                  backgroundColor: classified.badgeBg,
+                  borderColor: classified.badgeBorder,
+                },
               ]}
-              numberOfLines={1}
             >
-              {classified.categoryLabel}
-            </Text>
+              <Text
+                style={[
+                  styles.categoryPillText,
+                  { color: classified.badgeColor },
+                ]}
+                numberOfLines={1}
+              >
+                {classified.categoryLabel}
+              </Text>
+            </View>
+
+            {/* Source Badge (Website / Web App / Application) */}
+            <View
+              style={[
+                styles.sourcePill,
+                {
+                  backgroundColor: classified.sourceBadgeBg,
+                  borderColor: classified.sourceBadgeBorder,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.sourcePillText,
+                  { color: classified.sourceBadgeColor },
+                ]}
+                numberOfLines={1}
+              >
+                {classified.sourceBadgeText}
+              </Text>
+            </View>
           </View>
 
           <Text style={styles.voucherNumber} numberOfLines={1}>
@@ -136,20 +148,19 @@ export const ReceiptVoucherCard: React.FC<ReceiptVoucherCardProps> = ({
           <View
             style={[
               styles.statusPill,
-              voucher.status === 'POSTED'
-                ? styles.statusPosted
-                : styles.statusCancelled,
+              {
+                backgroundColor: statusBadge.bg,
+                borderColor: statusBadge.border,
+              },
             ]}
           >
             <Text
               style={[
                 styles.statusPillText,
-                voucher.status === 'POSTED'
-                  ? styles.statusPostedText
-                  : styles.statusCancelledText,
+                { color: statusBadge.color },
               ]}
             >
-              {voucher.status}
+              {statusBadge.label}
             </Text>
           </View>
 
@@ -187,45 +198,22 @@ export const ReceiptVoucherCard: React.FC<ReceiptVoucherCardProps> = ({
         </View>
       </View>
 
-      {/* Source Highlight Pill (Cause / Member / Renewal / Account) */}
-      <View
-        style={[
-          styles.sourceHighlightWrap,
-          {
-            backgroundColor: classified.sourceHighlightBg,
-            borderColor: classified.sourceHighlightBorder,
-          },
-        ]}
-      >
-        <View style={styles.highlightIconWrap}>{renderHighlightIcon()}</View>
-        <Text
-          style={[
-            styles.sourceHighlightText,
-            { color: classified.sourceHighlightColor },
-          ]}
-          numberOfLines={1}
-        >
-          <Text style={styles.sourceHighlightLabel}>
-            {classified.sourceHighlightLabel}{' '}
-          </Text>
-          {classified.sourceHighlightValue}
-        </Text>
-      </View>
-
-      {/* Payer info: Clean multi-line layout with contact aligned directly under name */}
-      <View style={styles.payerRow}>
-        <Text style={styles.fromLabel}>From:</Text>
-        <View style={styles.payerDetailsCol}>
-          <Text style={styles.fromName} numberOfLines={1}>
-            {classified.payerName}
-          </Text>
-          {classified.payerContact ? (
-            <Text style={styles.contactText} numberOfLines={1}>
-              ({classified.payerContact})
+      {/* Payer info: Clean multi-line layout - ONLY shown if real payerName exists! */}
+      {classified.payerName ? (
+        <View style={styles.payerRow}>
+          <Text style={styles.fromLabel}>From:</Text>
+          <View style={styles.payerDetailsCol}>
+            <Text style={styles.fromName} numberOfLines={1}>
+              {classified.payerName}
             </Text>
-          ) : null}
+            {classified.payerContact ? (
+              <Text style={styles.contactText} numberOfLines={1}>
+                ({classified.payerContact})
+              </Text>
+            ) : null}
+          </View>
         </View>
-      </View>
+      ) : null}
     </TouchableOpacity>
   );
 };
@@ -261,9 +249,14 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 3,
   },
+  tagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flexWrap: 'wrap',
+  },
   categoryPill: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 7,
+    paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 5,
     borderWidth: 1,
@@ -271,13 +264,25 @@ const styles = StyleSheet.create({
   categoryPillText: {
     fontSize: 9.5,
     fontWeight: '800',
-    letterSpacing: 0.4,
+    letterSpacing: 0.3,
+  },
+  sourcePill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  sourcePillText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   voucherNumber: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '800',
     color: '#0B2F52',
     letterSpacing: -0.2,
+    marginTop: 1,
   },
   dateText: {
     fontSize: 11,
@@ -314,7 +319,7 @@ const styles = StyleSheet.create({
   },
   amountText: {
     fontFamily: FontFamilies.display,
-    fontSize: 16,
+    fontSize: 15.5,
     fontWeight: '700',
     color: '#16A34A',
     letterSpacing: -0.2,
@@ -340,26 +345,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingLeft: 2,
-  },
-  sourceHighlightWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  highlightIconWrap: {
-    marginRight: 1,
-  },
-  sourceHighlightText: {
-    fontSize: 12,
-    fontWeight: '600',
-    flex: 1,
-  },
-  sourceHighlightLabel: {
-    fontWeight: '800',
   },
   payerRow: {
     flexDirection: 'row',

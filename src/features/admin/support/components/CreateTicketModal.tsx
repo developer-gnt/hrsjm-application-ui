@@ -96,6 +96,7 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
         priority,
         subject: subject.trim(),
         description: description.trim(),
+        source: Platform.OS === 'web' ? 'web' : 'app',
       };
       const created = await supportService.create(payload);
       const ticketRef = created?.id

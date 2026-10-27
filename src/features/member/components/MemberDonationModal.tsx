@@ -52,6 +52,7 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
   const [phone, setPhone] = useState<string>(user?.mobile_number || '');
   const [email, setEmail] = useState<string>(user?.email || '');
   const [needReceipt, setNeedReceipt] = useState<boolean>(true);
+  const [agreeTerms, setAgreeTerms] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [receiptResult, setReceiptResult] = useState<DonationReceiptResult | null>(null);
   const [paymentModalVisible, setPaymentModalVisible] = useState<boolean>(false);
@@ -110,6 +111,14 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
     const minRequired = maxAllowedAmount !== undefined && maxAllowedAmount < 50 ? maxAllowedAmount : 50;
     if (currentAmount < minRequired) {
       Alert.alert('Invalid Amount', `Please enter a contribution amount of at least ₹${minRequired}.`);
+      return;
+    }
+
+    if (!agreeTerms) {
+      Alert.alert(
+        'Terms & Conditions Required',
+        'Please review and agree to the Terms & Conditions (including voluntary & non-refundable donation terms) to proceed.'
+      );
       return;
     }
 
@@ -391,14 +400,38 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
                 </View>
               </View>
 
+              {/* Terms & Conditions Checkbox */}
+              <TouchableOpacity
+                style={styles.checkboxRow}
+                onPress={() => setAgreeTerms(!agreeTerms)}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.checkboxBox,
+                    agreeTerms && styles.checkboxBoxChecked,
+                  ]}
+                >
+                  {agreeTerms && <Text style={styles.checkMark}>✓</Text>}
+                </View>
+                <View style={styles.checkboxTextCol}>
+                  <Text style={styles.checkboxTitle}>
+                    I agree to the Terms &amp; Conditions *
+                  </Text>
+                  <Text style={styles.checkboxSub}>
+                    Governed by HRSJM Terms, including voluntary and non-refundable contribution policy.
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
               {/* Submit CTA */}
               <TouchableOpacity
                 style={[
                   styles.submitBtn,
-                  currentAmount < 50 && styles.submitBtnDisabled,
+                  (currentAmount < 50 || !agreeTerms) && styles.submitBtnDisabled,
                 ]}
                 onPress={handleSubmitDonation}
-                disabled={isSubmitting || currentAmount < 50}
+                disabled={isSubmitting || currentAmount < 50 || !agreeTerms}
                 activeOpacity={0.85}
               >
                 <Text style={styles.submitBtnText}>

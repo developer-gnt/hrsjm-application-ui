@@ -42,6 +42,13 @@ const CATEGORY_OPTIONS = [
   { key: 'General', label: 'General / Other', icon: '💬' },
 ];
 
+const SOURCE_FILTER_OPTIONS: Array<{ key: 'ALL' | 'website' | 'app' | 'web'; label: string; icon: string }> = [
+  { key: 'ALL', label: 'All Sources', icon: '✨' },
+  { key: 'website', label: 'Website', icon: '🌐' },
+  { key: 'app', label: 'App', icon: '📱' },
+  { key: 'web', label: 'Web', icon: '💻' },
+];
+
 const DATE_RANGE_OPTIONS = [
   { key: 'ALL', label: 'All Time' },
   { key: 'TODAY', label: 'Today' },
@@ -69,6 +76,7 @@ export const TicketFilters: React.FC<TicketFiltersProps> = ({
     let count = 0;
     if (f.status && f.status !== 'ALL') count++;
     if (f.category && f.category !== 'ALL') count++;
+    if (f.source && f.source !== 'ALL') count++;
     if (f.dateRange && f.dateRange !== 'ALL') count++;
     return count;
   };
@@ -110,6 +118,7 @@ export const TicketFilters: React.FC<TicketFiltersProps> = ({
     const clean: SupportFilterState = {
       status: 'ALL',
       category: 'ALL',
+      source: 'ALL',
       dateRange: 'ALL',
       fromDate: undefined,
       toDate: undefined,
@@ -227,6 +236,45 @@ export const TicketFilters: React.FC<TicketFiltersProps> = ({
                           ]}
                         >
                           {cat.label}
+                        </Text>
+                        {isSelected ? (
+                          <Check size={12} color="#FFFFFF" strokeWidth={3} />
+                        ) : null}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Complaint Source Section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionHeading}>Complaint Source</Text>
+                <View style={styles.chipsRow}>
+                  {SOURCE_FILTER_OPTIONS.map((src) => {
+                    const isSelected = (draftFilters.source || 'ALL') === src.key;
+                    return (
+                      <TouchableOpacity
+                        key={src.key}
+                        style={[
+                          styles.chip,
+                          isSelected && styles.chipActive,
+                        ]}
+                        onPress={() =>
+                          setDraftFilters((prev) => ({
+                            ...prev,
+                            source: src.key,
+                          }))
+                        }
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.catIcon}>{src.icon}</Text>
+                        <Text
+                          style={[
+                            styles.chipText,
+                            isSelected && styles.chipTextActive,
+                          ]}
+                        >
+                          {src.label}
                         </Text>
                         {isSelected ? (
                           <Check size={12} color="#FFFFFF" strokeWidth={3} />

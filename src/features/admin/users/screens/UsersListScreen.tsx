@@ -1,4 +1,4 @@
-import React, { useState, useSyncExternalStore } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -7,7 +7,10 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core';
+import { AppRoutes } from '../../../../core/constants/routes';
+import { AdminSidebar } from '../../../../app/navigation/AdminSidebar';
 import { usersStore } from '../services/usersStore';
 import { UserItem, UserTypeTabKey, UserStatus, UserFilterOptions } from '../types/user.types';
 import { UsersHeader } from '../components/UsersHeader';
@@ -32,6 +35,7 @@ interface UsersListScreenProps {
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   onProfilePress?: () => void;
+  showBottomNav?: boolean;
 }
 
 export const UsersListScreen: React.FC<UsersListScreenProps> = ({
@@ -45,8 +49,51 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
+  showBottomNav,
 }) => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+
+  // In the admin tab hierarchy, AdminNavigationBar renders the bottom tab bar.
+  // Only render UsersBottomNav if explicitly requested or when onBottomTabPress handler is supplied.
+  const isBottomNavVisible = showBottomNav ?? !!onBottomTabPress;
+
+  useEffect(() => {
+    usersStore.fetchUsers().catch(() => {});
+  }, []);
+
+  const handleSidebarNavigate = (target: string) => {
+    setSidebarVisible(false);
+    if (navigation?.navigate) {
+      if (
+        target === AppRoutes.ADMIN_DASHBOARD_TAB ||
+        target === AppRoutes.ADMIN_MEMBERS_TAB ||
+        target === AppRoutes.ADMIN_APPLICATIONS_TAB ||
+        target === AppRoutes.ADMIN_COMPLAINTS_TAB ||
+        target === AppRoutes.ADMIN_MORE_TAB
+      ) {
+        navigation.navigate(target);
+      } else {
+        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: target });
+      }
+    }
+  };
+
+  const handleBottomTabPress = (tabKey: string) => {
+    if (onBottomTabPress) {
+      onBottomTabPress(tabKey);
+      return;
+    }
+    if (navigation?.navigate) {
+      if (tabKey === 'dashboard') navigation.navigate(AppRoutes.ADMIN_DASHBOARD_TAB);
+      else if (tabKey === 'members') navigation.navigate(AppRoutes.ADMIN_MEMBERS_TAB);
+      else if (tabKey === 'applications') navigation.navigate(AppRoutes.ADMIN_APPLICATIONS_TAB);
+      else if (tabKey === 'complaints') navigation.navigate(AppRoutes.ADMIN_COMPLAINTS_TAB);
+      else if (tabKey === 'users') navigation.navigate(AppRoutes.USERS);
+      else if (tabKey === 'more') navigation.navigate(AppRoutes.ADMIN_MORE_TAB);
+    }
+  };
 
   const [activeTab, setActiveTab] = useState<UserTypeTabKey>('all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | UserStatus>('all');
@@ -133,9 +180,15 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
       {/* Top Header */}
       <UsersHeader
         paddingTop={insets.top}
-        onMenuPress={onMenuPress}
-        onNotificationsPress={onNotificationsPress}
-        onProfilePress={onProfilePress}
+        onMenuPress={onMenuPress || (() => setSidebarVisible(true))}
+        onNotificationsPress={
+          onNotificationsPress ||
+          (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS }))
+        }
+        onProfilePress={
+          onProfilePress ||
+          (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE }))
+        }
       />
 
       {/* Main Scroll Content */}
@@ -143,42 +196,32 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 84 },
+          { paddingBottom: Math.max(insets.bottom, 16) + 88 },
         ]}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.contentWrap}>
-          {/* Title Row: Title, Subtitle & "+ Add User" Button */}
-          <View style={styles.titleRow}>
-            <View style={styles.titleColumn}>
+          {/* Page Header: Title, Subtitle & "+ Add User" Action Button */}
+          <View style={styles.pageHeaderArea}>
+            <View style={styles.titleTopRow}>
               <Text style={styles.pageTitle}>Users</Text>
-              <Text style={styles.pageSubtitle}>
-                Manage all mobile app users including members, donation seekers, donors, and general users.
-              </Text>
-            </View>
 
-            <View style={styles.headerButtonsCol}>
               <TouchableOpacity
                 style={styles.addUserButton}
-                onPress={onAddUserPress}
-                activeOpacity={0.8}
+                onPress={onAddUserPress || (() => navigation?.navigate?.(AppRoutes.ADD_USER))}
+                activeOpacity={0.85}
                 accessibilityRole="button"
                 accessibilityLabel="Add New User"
               >
                 <Text style={styles.addUserPlus}>+</Text>
                 <Text style={styles.addUserText}>Add User</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.signUpButton}
-                onPress={onSignUpPress}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="Sign Up New User"
-              >
-                <Text style={styles.signUpButtonText}>Sign Up</Text>
-              </TouchableOpacity>
             </View>
+
+            <Text style={styles.pageSubtitle}>
+              Manage all mobile app users including members, donation seekers, donors, and general users.
+            </Text>
           </View>
 
           {/* 2x2 Statistics Cards */}
@@ -286,9 +329,21 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
                 <UserCard
                   key={user.id}
                   user={user}
-                  onPress={onUserPress ? () => onUserPress(user) : () => {}}
-                  onEditPress={onEditUserPress ? () => onEditUserPress(user) : () => {}}
-                  onVerifyPress={onVerifyUserPress ? () => onVerifyUserPress(user) : () => {}}
+                  onPress={
+                    onUserPress
+                      ? () => onUserPress(user)
+                      : () => navigation?.navigate?.(AppRoutes.USER_DETAILS, { userId: user.id })
+                  }
+                  onEditPress={
+                    onEditUserPress
+                      ? () => onEditUserPress(user)
+                      : () => navigation?.navigate?.(AppRoutes.EDIT_USER, { userId: user.id })
+                  }
+                  onVerifyPress={
+                    onVerifyUserPress
+                      ? () => onVerifyUserPress(user)
+                      : () => navigation?.navigate?.(AppRoutes.USER_VERIFICATION, { userId: user.id })
+                  }
                   onToggleBlockPress={() => handleToggleBlock(user)}
                   onResetPasswordPress={() => setPasswordResetUser(user)}
                   onStatusChange={(targetUser, newStatus) => {
@@ -300,7 +355,7 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
               <UsersEmptyState
                 title="No Registered Users"
                 message="No user accounts have been registered yet. Whenever someone registers via the Sign Up flow, their account will automatically appear here."
-                onSignUp={onSignUpPress}
+                onSignUp={onSignUpPress || (() => navigation?.navigate?.(AppRoutes.ADD_USER))}
                 onLoadDemo={() => usersStore.seedDevFixtures()}
               />
             ) : (
@@ -346,14 +401,23 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
         onReset={handleResetFilters}
       />
 
-      {/* Bottom Navigation with Users highlighted */}
-      <View style={styles.bottomNavHost}>
-        <UsersBottomNav
-          bottomInset={insets.bottom}
-          activeKey="users"
-          onTabPress={onBottomTabPress}
-        />
-      </View>
+      {/* Bottom Navigation (Only rendered if standalone or explicitly requested) */}
+      {isBottomNavVisible && (
+        <View style={styles.bottomNavHost}>
+          <UsersBottomNav
+            bottomInset={insets.bottom}
+            activeKey="users"
+            onTabPress={handleBottomTabPress}
+          />
+        </View>
+      )}
+
+      {/* Slide-in Admin Sidebar */}
+      <AdminSidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        onNavigate={handleSidebarNavigate}
+      />
     </View>
   );
 };
@@ -375,77 +439,62 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginTop: 4,
-    marginBottom: Spacing.xs,
-    gap: 12,
+  pageHeaderArea: {
+    paddingTop: 8,
+    paddingBottom: 4,
   },
-  titleColumn: {
-    flex: 1,
+  titleTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   pageTitle: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: FontFamilies.display,
     fontSize: 24,
     fontWeight: '700',
-    color: AdminColors.textPrimary,
+    color: '#0B2F52',
     letterSpacing: 0.2,
   },
   pageSubtitle: {
-    fontSize: 12,
+    fontFamily: FontFamilies.sans,
+    fontSize: 13,
     color: '#718096',
-    marginTop: 2,
-    lineHeight: 16,
-    fontWeight: '500',
+    marginTop: 4,
+    lineHeight: 18,
+    fontWeight: '400',
   },
-  headerButtonsCol: {
-    alignItems: 'flex-end',
-    gap: 6,
+  headerButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   addUserButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FAD465',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
+    minHeight: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: BorderRadius.button,
     gap: 4,
     shadowColor: '#011F39',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
     elevation: 2,
-    marginTop: 2,
   },
   addUserPlus: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#011F39',
-    lineHeight: 16,
+    lineHeight: 18,
   },
   addUserText: {
-    fontSize: 12.5,
+    fontFamily: FontFamilies.sans,
+    fontSize: 13,
     fontWeight: '700',
     color: '#011F39',
-  },
-  signUpButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EDF2F7',
-    borderWidth: 1,
-    borderColor: '#DBE5EE',
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    borderRadius: BorderRadius.button,
-    justifyContent: 'center',
-    width: '100%',
-  },
-  signUpButtonText: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    color: '#06294D',
   },
   activeFiltersBar: {
     marginVertical: 6,
@@ -454,29 +503,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   activeFilterPill: {
     backgroundColor: '#EDF2F7',
     borderWidth: 1,
     borderColor: '#DBE5EE',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: BorderRadius.md,
+    minHeight: 32,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: BorderRadius.button,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   activeFilterPillText: {
+    fontFamily: FontFamilies.sans,
     fontSize: 11,
     fontWeight: '700',
     color: '#06294D',
   },
   clearAllBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    minHeight: 32,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   clearAllText: {
+    fontFamily: FontFamilies.sans,
     fontSize: 11,
     fontWeight: '700',
-    color: '#EF4444',
+    color: '#DC2626',
   },
   listContainer: {
     marginTop: 6,

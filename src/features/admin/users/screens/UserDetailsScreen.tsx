@@ -106,10 +106,11 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
   const isMember = user.userType === 'member';
 
   const userTypeLabels: Record<UserType, string> = {
+    admin: 'Admin',
     member: 'Member',
     seeker: 'Donation Seeker',
     donor: 'Donor',
-    general: 'General User',
+    general: 'User',
   };
 
   const statusStyles: Record<
@@ -122,6 +123,7 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
   };
 
   const typeStyles: Record<UserType, { badgeBg: string; text: string }> = {
+    admin: { badgeBg: '#FDF2F8', text: '#831843' },
     member: { badgeBg: '#EFF6FF', text: '#1D4ED8' },
     seeker: { badgeBg: '#FEF3C7', text: '#B45309' },
     donor: { badgeBg: '#ECFDF5', text: '#047857' },

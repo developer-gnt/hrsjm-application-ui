@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Modal,
   RefreshControl,
@@ -17,6 +17,7 @@ import { AppErrorState } from '../../../../core/components/feedback/AppErrorStat
 import { DashboardHeader } from '../../../../app/navigation/DashboardHeader';
 import { AdminStatCard } from '../../../../core/components/admin/AdminStatCard';
 import { Users, FileText, MessageSquare, Calendar } from '../../../../core/components/icons';
+import { AppRoutes } from '../../../../core/constants/routes';
 import {
   useDashboard,
   useDashboardRefresh,
@@ -38,6 +39,8 @@ import { StatusDonutCard } from '../components/StatusDonutCard';
 import { RecentMembersCard } from '../components/RecentMembersCard';
 import { RecentApplicationsCard } from '../components/RecentApplicationsCard';
 import { AdminCalendarModal } from '../components/AdminCalendarModal';
+import { membershipApplicationsStore } from '../../membershipApplications/services/membershipApplicationsStore';
+import type { AdminMemberItem } from '../types/dashboard.types';
 
 const MORE_TAB = 'AdminMoreTab' as const;
 
@@ -73,25 +76,166 @@ export const AdminDashboardScreen: React.FC<{
   const eventsQuery = useEvents();
   const refresh = useDashboardRefresh();
   const [refreshing, setRefreshing] = useState(false);
+  const [storeTick, setStoreTick] = useState(0);
+
+  useEffect(() => {
+    membershipApplicationsStore.loadPersistedApplications();
+    membershipApplicationsStore.fetchApplications().catch(() => {});
+    const unsubscribe = membershipApplicationsStore.subscribe(() => {
+      setStoreTick((t) => t + 1);
+      // Immediately refresh recent members, recent applications, and dashboard counts on approval
+      recentMembersQuery.refetch().catch(() => {});
+      recentApplicationsQuery.refetch().catch(() => {});
+      dashboardQuery.refetch().catch(() => {});
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refresh(), eventsQuery.refetch()]);
+      await Promise.all([
+        refresh(),
+        eventsQuery.refetch(),
+        recentMembersQuery.refetch().catch(() => {}),
+        membershipApplicationsStore.fetchApplications().catch(() => {}),
+        recentApplicationsQuery.refetch().catch(() => {}),
+      ]);
     } finally {
       setRefreshing(false);
     }
-  }, [refresh, eventsQuery]);
+  }, [refresh, eventsQuery, recentMembersQuery, recentApplicationsQuery]);
+
+  const recentApprovedMembers = useMemo(() => {
+    const backendMembers = recentMembersQuery.data ?? [];
+    const storeApps = membershipApplicationsStore.getApplications();
+
+    // Approved member applications from store (keeping Donation Seekers strictly separate)
+    const approvedStoreMembers = (storeApps || [])
+      .filter((a) => {
+        const st = (a.status || '').toLowerCase();
+        const isApproved = st === 'approved' || st === 'active';
+        const isSeeker =
+          (a as any).membership_type?.toLowerCase?.().includes('seeker') ||
+          (a as any).type === 'DONATION_SEEKER';
+        return isApproved && !isSeeker;
+      })
+      .map((a) => ({
+        id: a.id || a.applicationId,
+        full_name: a.applicantName || 'Member',
+        mobile_number: a.phone || '',
+        email: a.email || null,
+        status: 'ACTIVE' as const,
+        roles: [{ name: 'MEMBER' }],
+        created_at: a.submittedDate || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        membership: {
+          id: a.id,
+          membershipNumber: a.applicationId,
+          category: a.membershipType || 'Member',
+          status: 'ACTIVE',
+        },
+      }));
+
+    const seenIds = new Set<string>();
+    const seenNames = new Set<string>();
+    const combined: AdminMemberItem[] = [];
+
+    // Authoritative backend records first
+    for (const m of backendMembers) {
+      const memStatus = String(m.membership?.status || m.status || '').toUpperCase();
+      if (memStatus === 'ACTIVE' || memStatus === 'APPROVED') {
+        const key = m.id || m.mobile_number || m.full_name;
+        const nameKey = (m.full_name || '').toLowerCase().trim();
+        if (!seenIds.has(key)) {
+          seenIds.add(key);
+          if (nameKey) seenNames.add(nameKey);
+          combined.push(m);
+        }
+      }
+    }
+
+    // Then approved store members (if not already in backend list)
+    for (const app of approvedStoreMembers) {
+      const nameKey = app.full_name.toLowerCase().trim();
+      const idKey = app.id;
+      if (!seenIds.has(idKey) && !seenNames.has(nameKey)) {
+        seenIds.add(idKey);
+        seenNames.add(nameKey);
+        combined.push(app as any);
+      }
+    }
+
+    return combined;
+  }, [recentMembersQuery.data, storeTick]);
+
+  const recentApplicationRows = useMemo(() => {
+    const storeApps = membershipApplicationsStore.getApplications();
+    const queryItems = recentApplicationsQuery.data ?? [];
+
+    if (storeApps && storeApps.length > 0) {
+      const statusMap = new Map<string, string>();
+      storeApps.forEach((a) => {
+        if (a.id) statusMap.set(a.id, a.status);
+        if (a.applicationId) statusMap.set(a.applicationId, a.status);
+      });
+
+      if (queryItems.length > 0) {
+        return toRecentApplicationRows(queryItems)
+          .map((row) => {
+            const matchedStatus = statusMap.get(row.id);
+            if (matchedStatus) {
+              const up = matchedStatus.toUpperCase();
+              const mappedStatus: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CLOSED' =
+                up === 'APPROVED' || up === 'ACTIVE'
+                  ? 'APPROVED'
+                  : up === 'UNDER_REVIEW'
+                  ? 'UNDER_REVIEW'
+                  : up === 'REJECTED'
+                  ? 'REJECTED'
+                  : 'PENDING';
+              return { ...row, status: mappedStatus };
+            }
+            return row;
+          })
+          .filter((row) => row.status === 'PENDING' || row.status === 'UNDER_REVIEW');
+      }
+
+      // Only show applications awaiting review (submitted / under review)
+      const pendingStoreApps = storeApps.filter(
+        (app) => app.status === 'submitted' || app.status === 'under_review',
+      );
+
+      const sortedStoreApps = [...pendingStoreApps].sort((a, b) => {
+        const timeA = new Date(a.submittedDate || 0).getTime() || 0;
+        const timeB = new Date(b.submittedDate || 0).getTime() || 0;
+        return timeB - timeA;
+      });
+
+      return sortedStoreApps.slice(0, 5).map((app) => {
+        const up = (app.status || '').toUpperCase();
+        const mappedStatus: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CLOSED' =
+          up === 'UNDER_REVIEW' ? 'UNDER_REVIEW' : 'PENDING';
+        return {
+          id: app.applicationId || app.id,
+          created_at: app.submittedDate || new Date().toISOString(),
+          status: mappedStatus,
+          full_name: app.applicantName,
+        };
+      });
+    }
+
+    return toRecentApplicationRows(queryItems).filter(
+      (row) => row.status === 'PENDING' || row.status === 'UNDER_REVIEW',
+    );
+  }, [recentApplicationsQuery.data, storeTick]);
 
   const dashboard = dashboardQuery.data;
-  const isLoading =
-    dashboardQuery.isLoading ||
-    recentMembersQuery.isLoading ||
-    recentApplicationsQuery.isLoading;
-  const isError =
-    dashboardQuery.isError ||
-    recentMembersQuery.isError ||
-    recentApplicationsQuery.isError;
+  const isLoading = dashboardQuery.isLoading && !dashboard;
+  const isError = dashboardQuery.isError && !dashboard;
 
   const jumpToTab = (tabName: string) => navigation.jumpTo(tabName);
 
@@ -171,7 +315,22 @@ export const AdminDashboardScreen: React.FC<{
   const growthPoints = toGrowthChartPoints(dashboard.memberGrowth);
   const latestPoint = growthPoints[growthPoints.length - 1];
 
-  const totalMembers = dashboard.memberships?.total ?? dashboard.users?.total ?? 0;
+  const approvedStoreCount = (membershipApplicationsStore.getApplications() || []).filter(
+    (a) => {
+      const st = (a.status || '').toLowerCase();
+      const isApproved = st === 'approved' || st === 'active';
+      const isSeeker =
+        (a as any).membership_type?.toLowerCase?.().includes('seeker') ||
+        (a as any).type === 'DONATION_SEEKER';
+      return isApproved && !isSeeker;
+    },
+  ).length;
+
+  const totalMembers = Math.max(
+    dashboard.memberships?.total ?? dashboard.users?.total ?? 0,
+    recentApprovedMembers.length,
+    approvedStoreCount,
+  );
   const membersThisMonth = dashboard.memberships?.thisMonth ?? dashboard.users?.thisMonth ?? 0;
 
   const totalApplications = dashboard.assistance?.total ?? 0;
@@ -285,15 +444,26 @@ export const AdminDashboardScreen: React.FC<{
         <View style={isMobile ? styles.singleColumn : styles.twoColumnRow}>
           <View style={isMobile ? undefined : styles.twoColumnItem}>
             <RecentMembersCard
-              members={recentMembersQuery.data ?? []}
+              members={recentApprovedMembers}
               onViewAll={() => jumpToTab('AdminMembersTab')}
+              onPressRow={() => jumpToTab('AdminMembersTab')}
             />
           </View>
 
           <View style={isMobile ? undefined : styles.twoColumnItem}>
             <RecentApplicationsCard
-              rows={toRecentApplicationRows(recentApplicationsQuery.data ?? [])}
-              onViewAll={() => jumpToTab('AdminApplicationsTab')}
+              rows={recentApplicationRows}
+              onViewAll={() => {
+                (navigation as any).navigate(MORE_TAB, {
+                  screen: AppRoutes.MEMBERSHIP_APPLICATIONS,
+                });
+              }}
+              onPressRow={(rowId) => {
+                (navigation as any).navigate(MORE_TAB, {
+                  screen: AppRoutes.MEMBERSHIP_APPLICATION_DETAILS,
+                  params: { applicationId: rowId },
+                });
+              }}
             />
           </View>
         </View>

@@ -6,6 +6,7 @@ import type { AdminMemberItem } from '../types/dashboard.types';
 interface RecentMembersCardProps {
   members: AdminMemberItem[];
   onViewAll?: () => void;
+  onPressRow?: (memberId: string) => void;
 }
 
 const DEFAULT_MEMBERS = [
@@ -33,15 +34,21 @@ const initialsOf = (fullName?: string | null): string => {
 };
 
 const getDisplayName = (member: any): string => {
-  const raw = member?.full_name || member?.fullName || member?.name;
+  const raw =
+    member?.full_name ||
+    member?.fullName ||
+    member?.name ||
+    member?.user?.full_name ||
+    member?.application_data?.full_name;
   if (raw && raw.trim() && raw.trim().toLowerCase() !== 'member') {
     return raw.trim();
   }
-  if (member?.email) {
-    return member.email.split('@')[0];
+  if (member?.email || member?.user?.email) {
+    return (member.email || member.user.email).split('@')[0];
   }
-  if (member?.mobile_number) {
-    return `Member ${member.mobile_number.slice(-4)}`;
+  if (member?.mobile_number || member?.mobile || member?.user?.mobile_number) {
+    const num = member.mobile_number || member.mobile || member.user.mobile_number;
+    return `Member ${num.slice(-4)}`;
   }
   return 'HRSJM Member';
 };
@@ -49,9 +56,20 @@ const getDisplayName = (member: any): string => {
 export const RecentMembersCard: React.FC<RecentMembersCardProps> = ({
   members,
   onViewAll,
+  onPressRow,
 }) => {
-  const displayList =
-    Array.isArray(members) && members.length > 0 ? members.slice(0, 4) : DEFAULT_MEMBERS;
+  // Show only members whose applications have been approved.
+  // Strictly filter out pending applications and users who have merely registered.
+  const approvedMembers = Array.isArray(members)
+    ? members.filter(member => {
+        const memStatus = String(
+          (member as any)?.membership?.status || (member as any)?.membership_status || '',
+        ).toUpperCase();
+        return memStatus === 'ACTIVE' || memStatus === 'APPROVED';
+      })
+    : [];
+
+  const displayList = approvedMembers.slice(0, 4);
 
   return (
     <View style={styles.card}>
@@ -70,46 +88,65 @@ export const RecentMembersCard: React.FC<RecentMembersCardProps> = ({
         ) : null}
       </View>
 
-      <View style={styles.rows}>
-        {displayList.map(member => {
-          const displayName = getDisplayName(member);
-          const initials = initialsOf(displayName);
-          const isActive = member?.status === 'ACTIVE' || !member?.status;
+      {displayList.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyTitle}>No approved members yet</Text>
+          <Text style={styles.emptySubtitle}>
+            Approved members will appear here once applications are verified and approved.
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.rows}>
+          {displayList.map(member => {
+            const displayName = getDisplayName(member);
+            const initials = initialsOf(displayName);
+            const rawStatus = (
+              (member as any)?.membership?.status ||
+              member?.status ||
+              'ACTIVE'
+            ).toUpperCase();
+            const isActive = rawStatus === 'ACTIVE' || rawStatus === 'APPROVED';
 
-          return (
-            <View key={member.id} style={styles.row}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{initials}</Text>
-              </View>
-
-              <View style={styles.memberInfo}>
-                <Text style={styles.memberName} numberOfLines={1}>
-                  {displayName}
-                </Text>
-                <Text style={styles.memberDate} numberOfLines={1}>
-                  {member?.created_at ? `Joined ${formatDate(member.created_at)}` : 'Active'}
-                </Text>
-              </View>
-
-              <View
-                style={[
-                  styles.activeBadge,
-                  !isActive && styles.inactiveBadge,
-                ]}
+            return (
+              <TouchableOpacity
+                key={member.id}
+                style={styles.row}
+                activeOpacity={0.7}
+                onPress={() => onPressRow?.(member.id)}
               >
-                <Text
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>{initials}</Text>
+                </View>
+
+                <View style={styles.memberInfo}>
+                  <Text style={styles.memberName} numberOfLines={1}>
+                    {displayName}
+                  </Text>
+                  <Text style={styles.memberDate} numberOfLines={1}>
+                    {member?.created_at ? `Joined ${formatDate(member.created_at)}` : 'Active'}
+                  </Text>
+                </View>
+
+                <View
                   style={[
-                    styles.activeBadgeText,
-                    !isActive && styles.inactiveBadgeText,
+                    styles.activeBadge,
+                    !isActive && styles.inactiveBadge,
                   ]}
                 >
-                  {isActive ? 'Active' : member.status}
-                </Text>
-              </View>
-            </View>
-          );
-        })}
-      </View>
+                  <Text
+                    style={[
+                      styles.activeBadgeText,
+                      !isActive && styles.inactiveBadgeText,
+                    ]}
+                  >
+                    {isActive ? 'Active' : member.status || 'Active'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 };
@@ -200,6 +237,25 @@ const styles = StyleSheet.create({
   },
   inactiveBadgeText: {
     color: '#64748B',
+  },
+  emptyContainer: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#06294D',
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: 11.5,
+    fontWeight: '500',
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });
 

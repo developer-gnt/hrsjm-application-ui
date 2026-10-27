@@ -14,24 +14,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ChevronLeftIcon,
   UserOutlineIcon,
+  UsersGroupIcon,
   HeartHandIcon,
   CheckCircleFilledIcon,
-  LockOutlineIcon,
-  EyeOutlineIcon,
-  EyeSlashOutlineIcon,
   ArrowRightIcon,
 } from '../components/AuthIcons';
 import { getRegistrationState, updateRegistrationState } from '../state/registrationState';
 import {
   navigateToCreateAccountVerification,
   navigateToCreateAccountComplete,
+  navigateToMembershipCategories,
 } from '../../../core/navigation/appRouter';
 
-export type AccountTypeOption = 'general' | 'seeker';
+export type AccountTypeOption = 'general' | 'member' | 'seeker';
 
 interface CreateAccountAdditionalScreenProps {
   onBack?: () => void;
-  onContinue?: (accountType: AccountTypeOption, password: string) => void;
+  onContinue?: (accountType: AccountTypeOption, password?: string) => void;
   onTermsPress?: () => void;
   onPrivacyPress?: () => void;
 }
@@ -50,6 +49,7 @@ const STEPS: StepItem[] = [
 
 const ACCOUNT_TYPE_LABELS: Record<AccountTypeOption, string> = {
   general: 'General User',
+  member: 'Member',
   seeker: 'Donation Seeker',
 };
 
@@ -67,26 +67,28 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
   // Phase 2: Account Type state (read from registration state, default to general)
   const [selectedAccountType, setSelectedAccountType] = useState<AccountTypeOption>(() => {
     const saved = getRegistrationState().accountType as AccountTypeOption;
-    return saved === 'seeker' ? 'seeker' : 'general';
+    if (saved === 'member') return 'member';
+    if (saved === 'seeker') return 'seeker';
+    return 'general';
   });
 
-  // Phase 3: Password state
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // Soft error states
+  const [errors, setErrors] = useState<{
+    terms?: string;
+  }>({});
 
-  // Phase 4: Terms & Conditions state
+  // Phase 4: Consents state (Terms, Privacy, Pledge)
   const [termsAccepted, setTermsAccepted] = useState(true);
+  const [privacyAccepted, setPrivacyAccepted] = useState(true);
+  const [pledgeAccepted, setPledgeAccepted] = useState(true);
 
-  // Password requirement validations
-  const hasMinLength = password.length >= 8;
-  const hasUppercase = /[A-Z]/.test(password);
-  const hasLowercase = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const isPasswordValid = hasMinLength && hasUppercase && hasLowercase && hasNumber;
-  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
-  const passwordMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+  const handleToggleTerms = () => {
+    const nextVal = !termsAccepted;
+    setTermsAccepted(nextVal);
+    if (nextVal && errors.terms) {
+      setErrors((prev) => ({ ...prev, terms: undefined }));
+    }
+  };
 
   const handleBack = () => {
     if (onBack) {
@@ -112,45 +114,41 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
     }
   };
 
+  const handlePledgePress = () => {
+    Alert.alert(
+      'HRSJM Member Pledge',
+      'I solemnly pledge to uphold fundamental human rights, promote social justice, observe the Constitution and Code of Conduct of HRSJM, maintain ethical integrity, and certify that all details submitted are accurate.'
+    );
+  };
+
   const handleContinue = () => {
-    if (!isPasswordValid) {
-      Alert.alert(
-        'Password Requirements',
-        'Please ensure your password meets all 4 security requirements.'
-      );
-      return;
-    }
-
-    if (!confirmPassword) {
-      Alert.alert('Confirm Password', 'Please confirm your password.');
-      return;
-    }
-
-    if (!passwordsMatch) {
-      Alert.alert('Password Mismatch', 'Passwords do not match. Please verify.');
-      return;
-    }
+    const newErrors: { terms?: string } = {};
 
     if (!termsAccepted) {
-      Alert.alert(
-        'Terms Required',
-        'Please agree to the Terms & Conditions and Privacy Policy of HRSJM.'
-      );
+      newErrors.terms = 'Please agree to the Terms & Conditions of HRSJM to proceed.';
+    } else if (!privacyAccepted) {
+      newErrors.terms = 'Please accept the Privacy Policy of HRSJM to proceed.';
+    } else if (!pledgeAccepted) {
+      newErrors.terms = 'Please accept the HRSJM Member Pledge to proceed.';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
     updateRegistrationState({
       accountType: selectedAccountType,
       accountTypeLabel: ACCOUNT_TYPE_LABELS[selectedAccountType] || 'General User',
-      password,
-      confirmPassword,
     });
 
     if (onContinue) {
-      onContinue(selectedAccountType, password);
+      onContinue(selectedAccountType);
     } else {
       if (selectedAccountType === 'general') {
         navigateToCreateAccountComplete();
+      } else if (selectedAccountType === 'member') {
+        navigateToMembershipCategories();
       } else {
         navigateToCreateAccountVerification();
       }
@@ -257,7 +255,7 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
               Please select the option that best describes you.
             </Text>
 
-            {/* Account Cards Grid (2-column layout: General User & Donation Seeker) */}
+            {/* Account Cards Grid (3 account types: General User, Member, Donation Seeker) */}
             <View style={styles.cardsGrid}>
               <View style={styles.cardsRow}>
                 {/* Card 1: General User */}
@@ -291,7 +289,40 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
                   </Text>
                 </TouchableOpacity>
 
-                {/* Card 2: Donation Seeker */}
+                {/* Card 2: Member */}
+                <TouchableOpacity
+                  style={[
+                    styles.accountCard,
+                    selectedAccountType === 'member' && styles.accountCardSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectedAccountType('member');
+                    updateRegistrationState({
+                      accountType: 'member',
+                      accountTypeLabel: 'Member',
+                    });
+                  }}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Member Account Type"
+                >
+                  {selectedAccountType === 'member' && (
+                    <View style={styles.checkBadge}>
+                      <CheckCircleFilledIcon size={18} color="#EAA224" />
+                    </View>
+                  )}
+                  <View style={styles.cardIconWrapper}>
+                    <UsersGroupIcon size={24} color="#0F2860" />
+                  </View>
+                  <Text style={styles.cardTitle}>Member</Text>
+                  <Text style={styles.cardDescription}>
+                    Join as an official{'\n'}member of HRSJM
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.cardsRow}>
+                {/* Card 3: Donation Seeker */}
                 <TouchableOpacity
                   style={[
                     styles.accountCard,
@@ -321,207 +352,135 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
                     Request support for{'\n'}approved causes
                   </Text>
                 </TouchableOpacity>
+
+                <View style={styles.cardPlaceholder} />
               </View>
             </View>
           </View>
 
-          {/* 4. Create Password Section */}
-          <View style={[styles.sectionContainer, styles.passwordSection]}>
-            <Text style={styles.sectionHeading}>Create Password</Text>
-            <Text style={styles.sectionDescription}>
-              Use a strong password to keep your account secure.
-            </Text>
-
-            {/* Password Field */}
-            <View style={styles.inputField}>
-              <View style={styles.inputLeftIcon}>
-                <LockOutlineIcon size={18} color="#0F2860" />
-              </View>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Password *"
-                placeholderTextColor="#94A3B8"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                accessibilityLabel="Password"
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.inputRightIcon}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? (
-                  <EyeOutlineIcon size={18} color="#0F2860" />
-                ) : (
-                  <EyeSlashOutlineIcon size={18} color="#94A3B8" />
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {/* Password Requirements Checklist */}
-            <View style={styles.requirementsContainer}>
-              <Text style={styles.requirementsTitle}>Password must contain:</Text>
-
-              {/* Requirement 1: Min 8 chars */}
-              <View style={styles.reqRow}>
-                <View
+          {/* 4. Action Section (Terms, Privacy, Pledge & Continue) */}
+          <View style={styles.actionSectionContainer}>
+            <View style={{ gap: 12, marginBottom: 20 }}>
+              {/* Terms & Conditions */}
+              <View style={styles.termsRow}>
+                <TouchableOpacity
                   style={[
-                    styles.reqCircle,
-                    hasMinLength && styles.reqCircleValid,
+                    styles.checkbox,
+                    termsAccepted && styles.checkboxActive,
+                    errors.terms && !termsAccepted && styles.checkboxError,
                   ]}
+                  onPress={() => {
+                    const nextVal = !termsAccepted;
+                    setTermsAccepted(nextVal);
+                    if (nextVal && errors.terms) {
+                      setErrors((prev) => ({ ...prev, terms: undefined }));
+                    }
+                  }}
+                  activeOpacity={0.8}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: termsAccepted }}
+                  accessibilityLabel="I agree to Terms & Conditions of HRSJM"
                 >
-                  {hasMinLength && <View style={styles.reqDot} />}
-                </View>
-                <Text
-                  style={[
-                    styles.reqText,
-                    hasMinLength && styles.reqTextValid,
-                  ]}
-                >
-                  At least 8 characters
+                  {termsAccepted && (
+                    <View style={styles.checkboxCheckmark}>
+                      <View style={styles.checkboxCheckmarkShort} />
+                      <View style={styles.checkboxCheckmarkLong} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <Text style={styles.termsText}>
+                  I agree to the{' '}
+                  <Text style={styles.termsLink} onPress={handleTermsPress}>
+                    Terms &amp; Conditions
+                  </Text>{' '}
+                  of HRSJM. *
                 </Text>
               </View>
 
-              {/* Requirement 2: Uppercase */}
-              <View style={styles.reqRow}>
-                <View
+              {/* Privacy Policy */}
+              <View style={styles.termsRow}>
+                <TouchableOpacity
                   style={[
-                    styles.reqCircle,
-                    hasUppercase && styles.reqCircleValid,
+                    styles.checkbox,
+                    privacyAccepted && styles.checkboxActive,
+                    errors.terms && !privacyAccepted && styles.checkboxError,
                   ]}
+                  onPress={() => {
+                    const nextVal = !privacyAccepted;
+                    setPrivacyAccepted(nextVal);
+                    if (nextVal && errors.terms) {
+                      setErrors((prev) => ({ ...prev, terms: undefined }));
+                    }
+                  }}
+                  activeOpacity={0.8}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: privacyAccepted }}
+                  accessibilityLabel="I accept the Privacy Policy of HRSJM"
                 >
-                  {hasUppercase && <View style={styles.reqDot} />}
-                </View>
-                <Text
-                  style={[
-                    styles.reqText,
-                    hasUppercase && styles.reqTextValid,
-                  ]}
-                >
-                  One uppercase letter (A–Z)
+                  {privacyAccepted && (
+                    <View style={styles.checkboxCheckmark}>
+                      <View style={styles.checkboxCheckmarkShort} />
+                      <View style={styles.checkboxCheckmarkLong} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <Text style={styles.termsText}>
+                  I accept the{' '}
+                  <Text style={styles.termsLink} onPress={handlePrivacyPress}>
+                    Privacy Policy
+                  </Text>{' '}
+                  and consent to data processing for membership. *
                 </Text>
               </View>
 
-              {/* Requirement 3: Lowercase */}
-              <View style={styles.reqRow}>
-                <View
+              {/* Member Pledge */}
+              <View style={styles.termsRow}>
+                <TouchableOpacity
                   style={[
-                    styles.reqCircle,
-                    hasLowercase && styles.reqCircleValid,
+                    styles.checkbox,
+                    pledgeAccepted && styles.checkboxActive,
+                    errors.terms && !pledgeAccepted && styles.checkboxError,
                   ]}
+                  onPress={() => {
+                    const nextVal = !pledgeAccepted;
+                    setPledgeAccepted(nextVal);
+                    if (nextVal && errors.terms) {
+                      setErrors((prev) => ({ ...prev, terms: undefined }));
+                    }
+                  }}
+                  activeOpacity={0.8}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: pledgeAccepted }}
+                  accessibilityLabel="I take the HRSJM Member Pledge"
                 >
-                  {hasLowercase && <View style={styles.reqDot} />}
-                </View>
-                <Text
-                  style={[
-                    styles.reqText,
-                    hasLowercase && styles.reqTextValid,
-                  ]}
-                >
-                  One lowercase letter (a–z)
+                  {pledgeAccepted && (
+                    <View style={styles.checkboxCheckmark}>
+                      <View style={styles.checkboxCheckmarkShort} />
+                      <View style={styles.checkboxCheckmarkLong} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <Text style={styles.termsText}>
+                  I solemnly take the{' '}
+                  <Text style={styles.termsLink} onPress={handlePledgePress}>
+                    HRSJM Member Pledge
+                  </Text>{' '}
+                  to defend human rights and uphold the NGO&apos;s Code of Conduct. *
                 </Text>
               </View>
 
-              {/* Requirement 4: Number */}
-              <View style={styles.reqRow}>
-                <View
-                  style={[
-                    styles.reqCircle,
-                    hasNumber && styles.reqCircleValid,
-                  ]}
-                >
-                  {hasNumber && <View style={styles.reqDot} />}
-                </View>
-                <Text
-                  style={[
-                    styles.reqText,
-                    hasNumber && styles.reqTextValid,
-                  ]}
-                >
-                  One number (0–9)
-                </Text>
-              </View>
-            </View>
-
-            {/* Confirm Password Field */}
-            <View
-              style={[
-                styles.inputField,
-                passwordMismatch && styles.inputFieldError,
-                passwordsMatch && styles.inputFieldSuccess,
-              ]}
-            >
-              <View style={styles.inputLeftIcon}>
-                <LockOutlineIcon size={18} color="#0F2860" />
-              </View>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Confirm Password *"
-                placeholderTextColor="#94A3B8"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword}
-                autoCapitalize="none"
-                accessibilityLabel="Confirm Password"
-              />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={styles.inputRightIcon}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-                accessibilityLabel={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-              >
-                {showConfirmPassword ? (
-                  <EyeOutlineIcon size={18} color="#0F2860" />
-                ) : (
-                  <EyeSlashOutlineIcon size={18} color="#94A3B8" />
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {/* Password mismatch feedback */}
-            {passwordMismatch && (
-              <Text style={styles.errorFeedbackText}>Passwords do not match.</Text>
-            )}
-
-            {/* 5. Terms & Conditions Agreement Row */}
-            <View style={styles.termsRow}>
-              <TouchableOpacity
-                style={[
-                  styles.checkbox,
-                  termsAccepted && styles.checkboxActive,
-                ]}
-                onPress={() => setTermsAccepted(!termsAccepted)}
-                activeOpacity={0.8}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: termsAccepted }}
-                accessibilityLabel="I agree to Terms & Conditions and Privacy Policy of HRSJM"
-              >
-                {termsAccepted && (
-                  <View style={styles.checkboxCheckmark}>
-                    <View style={styles.checkboxCheckmarkShort} />
-                    <View style={styles.checkboxCheckmarkLong} />
+              {/* Terms Soft Error */}
+              {errors?.terms && (
+                <View style={styles.softErrorRow}>
+                  <View style={styles.softErrorBadge}>
+                    <Text style={styles.softErrorExclamation}>!</Text>
                   </View>
-                )}
-              </TouchableOpacity>
-              <Text style={styles.termsText}>
-                I agree to the{' '}
-                <Text style={styles.termsLink} onPress={handleTermsPress}>
-                  Terms &amp; Conditions
-                </Text>{' '}
-                and{' '}
-                <Text style={styles.termsLink} onPress={handlePrivacyPress}>
-                  Privacy Policy
-                </Text>{' '}
-                of HRSJM.
-              </Text>
+                  <Text style={styles.softErrorText}>{errors.terms}</Text>
+                </View>
+              )}
             </View>
 
-            {/* 6. Continue Button */}
+            {/* Continue Button */}
             <TouchableOpacity
               style={styles.continueButton}
               onPress={handleContinue}
@@ -752,101 +711,45 @@ const styles = StyleSheet.create({
   cardPlaceholder: {
     flex: 1,
   },
-  passwordSection: {
-    paddingTop: 8,
+  actionSectionContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
-  inputField: {
+  softErrorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.2,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    height: 50,
-    marginBottom: 14,
+    marginTop: 6,
+    paddingHorizontal: 4,
+    gap: 6,
   },
-  inputFieldError: {
-    borderColor: '#EF4444',
-  },
-  inputFieldSuccess: {
-    borderColor: '#10B981',
-  },
-  inputLeftIcon: {
-    marginRight: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inputRightIcon: {
-    marginLeft: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 4,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#0F172A',
-    paddingVertical: 0,
-    height: '100%',
-  },
-  requirementsContainer: {
-    marginBottom: 16,
-    paddingLeft: 2,
-  },
-  requirementsTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  reqRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  reqCircle: {
+  softErrorBadge: {
     width: 14,
     height: 14,
     borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    marginRight: 8,
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reqCircleValid: {
-    borderColor: '#10B981',
-    backgroundColor: '#D1FAE5',
+  softErrorExclamation: {
+    color: '#DC2626',
+    fontSize: 10,
+    fontWeight: '800',
+    lineHeight: 12,
   },
-  reqDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#10B981',
-  },
-  reqText: {
+  softErrorText: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#DC2626',
     fontWeight: '500',
+    flex: 1,
   },
-  reqTextValid: {
-    color: '#0F2860',
-    fontWeight: '600',
-  },
-  errorFeedbackText: {
-    fontSize: 12,
-    color: '#EF4444',
-    marginTop: -8,
-    marginBottom: 10,
-    paddingLeft: 4,
-    fontWeight: '500',
+  termsWrapper: {
+    marginTop: 4,
+    marginBottom: 20,
   },
   termsRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: 4,
-    marginBottom: 24,
     paddingHorizontal: 2,
   },
   checkbox: {
@@ -864,6 +767,10 @@ const styles = StyleSheet.create({
   checkboxActive: {
     backgroundColor: '#EAA224',
     borderColor: '#EAA224',
+  },
+  checkboxError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
   },
   checkboxCheckmark: {
     width: 10,
@@ -899,7 +806,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 3,
-    marginBottom: 10,
+    marginBottom: 4,
   },
   continueButtonText: {
     fontSize: 15,

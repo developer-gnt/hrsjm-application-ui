@@ -52,14 +52,29 @@ export const RootNavigator: React.FC = () => {
 
   const roleNames = (user?.roles ?? []).map(r => r.name.toUpperCase());
   const isAdmin = roleNames.includes('ADMIN') || roleNames.includes('SUPER_ADMIN');
-  const isMember = roleNames.includes('MEMBER');
-  const isUser = roleNames.includes('USER') || roleNames.includes('GENERAL_USER');
-  const isSeeker = roleNames.includes('SEEKER') || roleNames.includes('DONATION_SEEKER');
+  const isMemberRole = roleNames.includes('MEMBER');
+  const isSeekerRole = roleNames.includes('SEEKER') || roleNames.includes('DONATION_SEEKER');
 
-  let activeRoleType: 'member' | 'user' | 'seeker' | 'default' = 'default';
-  if (isMember) activeRoleType = 'member';
-  else if (isSeeker) activeRoleType = 'seeker';
-  else if (isUser) activeRoleType = 'user';
+  // Approved/Active members get the full MemberTabNavigator.
+  // Pending or unverified applicants route to UserTabNavigator (User dashboard).
+  const isMemberApproved =
+    isMemberRole &&
+    (user?.membership_status === 'ACTIVE' || user?.membership_status === 'APPROVED');
+
+  // Approved seekers get SeekerTabNavigator; pending seekers route to UserTabNavigator.
+  const isSeekerApproved =
+    isSeekerRole &&
+    user?.assistance_status === 'APPROVED';
+
+  let activeRoleType: 'member' | 'user' | 'seeker' | 'default' = 'user';
+  if (isMemberApproved) {
+    activeRoleType = 'member';
+  } else if (isSeekerApproved) {
+    activeRoleType = 'seeker';
+  } else {
+    // Both General Users, pending Members, and pending Donation Seekers open User dashboard
+    activeRoleType = 'user';
+  }
 
   return (
     <NavigationContainer>

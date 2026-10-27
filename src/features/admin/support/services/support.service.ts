@@ -27,6 +27,7 @@ export const supportService = {
     };
     if (query.status) params.status = query.status;
     if (query.category && query.category !== 'ALL') params.category = query.category;
+    if (query.source && query.source !== 'ALL') params.source = query.source;
     if (query.from_date) params.from_date = query.from_date;
     if (query.to_date) params.to_date = query.to_date;
     if (query.search) params.search = query.search;
@@ -36,13 +37,17 @@ export const supportService = {
   },
 
   async create(body: CreateTicketBody): Promise<SupportTicket> {
-    const payload: { subject: string; description: string } = {
+    const sourceTag = body.source
+      ? `[Source: ${body.source === 'website' ? 'Website' : body.source === 'web' ? 'Web App' : 'App'}]\n`
+      : '';
+    const payload: { subject: string; description: string; source?: string } = {
       subject: body.category && body.category !== 'ALL' && !body.subject.includes(`[${body.category}]`)
         ? `[${body.category}] ${body.subject.trim()}`
         : body.subject.trim(),
-      description: body.priority && body.priority !== 'NORMAL'
+      description: `${sourceTag}${body.priority && body.priority !== 'NORMAL'
         ? `[Priority: ${body.priority}]\n\n${body.description.trim()}`
-        : body.description.trim(),
+        : body.description.trim()}`,
+      source: body.source,
     };
     const res = await api.post<ApiEnvelope<SupportTicket>>('/support-tickets', payload);
     return unwrap(res.data);
@@ -52,6 +57,7 @@ export const supportService = {
     const params: Record<string, any> = {};
     if (query.status) params.status = query.status;
     if (query.category && query.category !== 'ALL') params.category = query.category;
+    if (query.source && query.source !== 'ALL') params.source = query.source;
     if (query.from_date) params.from_date = query.from_date;
     if (query.to_date) params.to_date = query.to_date;
     if (query.search) params.search = query.search;

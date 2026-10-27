@@ -61,19 +61,12 @@ describe('UsersListScreen (Screen 1) Dynamic Tests', () => {
     expect(onAddUserMock).toHaveBeenCalledTimes(1);
   });
 
-  it('renders Sign Up button in header and triggers onSignUpPress callback when pressed', async () => {
-    const onSignUpMock = jest.fn();
-    const renderer = await renderScreen({ onSignUpPress: onSignUpMock });
+  it('does not render duplicate sign up button in header, keeping clean Add User action', async () => {
+    const renderer = await renderScreen();
     const root = renderer.root;
 
-    const signUpButton = root.findByProps({ accessibilityLabel: 'Sign Up New User' });
-    expect(signUpButton).toBeDefined();
-
-    await act(async () => {
-      signUpButton.props.onPress();
-    });
-
-    expect(onSignUpMock).toHaveBeenCalledTimes(1);
+    expect(root.findAllByProps({ accessibilityLabel: 'Sign Up New User' })).toHaveLength(0);
+    expect(root.findByProps({ accessibilityLabel: 'Add New User' })).toBeDefined();
   });
 
   it('renders 2x2 statistics cards calculating counts dynamically from actual user records', async () => {
@@ -99,7 +92,7 @@ describe('UsersListScreen (Screen 1) Dynamic Tests', () => {
     expect(root.findByProps({ children: 'Members (2)' })).toBeDefined();
     expect(root.findByProps({ children: 'Donation Seekers (1)' })).toBeDefined();
     expect(root.findByProps({ children: 'Donors (1)' })).toBeDefined();
-    expect(root.findByProps({ children: 'General Users (1)' })).toBeDefined();
+    expect(root.findByProps({ children: 'Users (1)' })).toBeDefined();
   });
 
   it('renders user cards with names, emails, phones, and badges', async () => {
