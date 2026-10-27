@@ -39,8 +39,8 @@ export const DISTRICT_STATE_POSTS: MembershipPostData[] = [
     id: 'state-active-member',
     postName: 'State Active Member',
     qualification: 'Minimum 8th Class',
-    fee: '₹ 900',
-    feeAmount: 900,
+    fee: '₹ 800',
+    feeAmount: 800,
     validity: '1 Year',
     checklistItems: [
       'Appointment Letter',
@@ -104,7 +104,7 @@ export const LETTER_PAD_POSTS: MembershipPostData[] = [
   {
     id: 'lion-of-state',
     postName: 'Lion of State',
-    qualification: 'Graduation / Degree',
+    qualification: 'Minimum 12th Pass',
     fee: '₹ 5,000',
     feeAmount: 5000,
     validity: '5 Years',
@@ -126,8 +126,8 @@ export const LETTER_PAD_POSTS: MembershipPostData[] = [
   },
   {
     id: 'counselor-of-state',
-    postName: 'Counselor of State',
-    qualification: 'Graduation / Degree',
+    postName: 'Counsellor of State',
+    qualification: 'Minimum 12th Pass',
     fee: '₹ 5,000',
     feeAmount: 5000,
     validity: '5 Years',
@@ -150,7 +150,7 @@ export const LETTER_PAD_POSTS: MembershipPostData[] = [
   {
     id: 'ambassador-of-state',
     postName: 'Ambassador of State',
-    qualification: 'Graduation / Degree',
+    qualification: 'Minimum 12th Pass',
     fee: '₹ 5,000',
     feeAmount: 5000,
     validity: '5 Years',
@@ -173,7 +173,7 @@ export const LETTER_PAD_POSTS: MembershipPostData[] = [
   {
     id: 'honble-state-director',
     postName: 'Hon’ble State Director',
-    qualification: 'Post Graduation',
+    qualification: 'Minimum Graduate / Degree',
     fee: '₹ 10,000',
     feeAmount: 10000,
     validity: '10 Years',
@@ -199,7 +199,7 @@ export const NATIONAL_LEVEL_POSTS: MembershipPostData[] = [
   {
     id: 'national-legal-council-cell',
     postName: 'National Legal Council Cell',
-    qualification: 'Post Graduation',
+    qualification: 'Advocate / Retd. Judge',
     fee: '₹ 10,000',
     feeAmount: 10000,
     validity: '10 Years',
@@ -222,7 +222,7 @@ export const NATIONAL_LEVEL_POSTS: MembershipPostData[] = [
   {
     id: 'national-minority-council-cell',
     postName: 'National Minority Council Cell',
-    qualification: 'Post Graduation',
+    qualification: 'Graduate / Degree (Muslim, Christian, Buddhist, Parsi, Jain & Sikh)',
     fee: '₹ 10,000',
     feeAmount: 10000,
     validity: '10 Years',
@@ -244,8 +244,8 @@ export const NATIONAL_LEVEL_POSTS: MembershipPostData[] = [
   },
   {
     id: 'national-women-council-cell',
-    postName: 'National Women Council Cell',
-    qualification: 'Post Graduation',
+    postName: 'National Woman Council Cell',
+    qualification: 'Graduate / Degree (Only for Women)',
     fee: '₹ 10,000',
     feeAmount: 10000,
     validity: '10 Years',
@@ -268,7 +268,7 @@ export const NATIONAL_LEVEL_POSTS: MembershipPostData[] = [
   {
     id: 'national-political-council-cell',
     postName: 'National Political Council Cell',
-    qualification: 'Post Graduation',
+    qualification: 'Graduate / Degree (For Politicians)',
     fee: '₹ 10,000',
     feeAmount: 10000,
     validity: '10 Years',

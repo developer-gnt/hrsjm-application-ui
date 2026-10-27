@@ -21,6 +21,27 @@ describe('Membership Details Amount and Payment Status Display', () => {
     expect(getApplicationFeeAmount(app)).toBe('₹10,000');
   });
 
+  it('resolves fee amount correctly for State Active Member as ₹800', () => {
+    const app: Partial<MembershipApplicationItem> = {
+      membershipType: 'State Active Member',
+    };
+    expect(getApplicationFeeAmount(app)).toBe('₹800');
+  });
+
+  it('resolves fee amount correctly for Lion of State as ₹5,000', () => {
+    const app: Partial<MembershipApplicationItem> = {
+      membershipType: 'Lion of State',
+    };
+    expect(getApplicationFeeAmount(app)).toBe('₹5,000');
+  });
+
+  it('resolves fee amount correctly for National Woman Council Cell as ₹10,000', () => {
+    const app: Partial<MembershipApplicationItem> = {
+      membershipType: 'National Woman Council Cell',
+    };
+    expect(getApplicationFeeAmount(app)).toBe('₹10,000');
+  });
+
   it('resolves fee amount correctly when explicit amount is set', () => {
     const app: Partial<MembershipApplicationItem> = {
       amount: 3000,

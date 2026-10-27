@@ -60,10 +60,7 @@ export function getApplicationFeeAmount(application: Partial<MembershipApplicati
   if (typeStr.includes('district unit')) {
     return '₹1,300';
   }
-  if (typeStr.includes('state active')) {
-    return '₹900';
-  }
-  if (typeStr.includes('district active') || typeStr.includes('standard') || typeStr.includes('individual')) {
+  if (typeStr.includes('state active') || typeStr.includes('district active') || typeStr.includes('standard') || typeStr.includes('individual')) {
     return '₹800';
   }
 
