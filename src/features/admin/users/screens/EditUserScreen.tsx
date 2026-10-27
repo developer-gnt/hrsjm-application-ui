@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -172,30 +174,39 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
     return Object.keys(err).length === 0;
   };
 
-  const handleSaveChanges = () => {
-    if (!validate()) {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveChanges = async () => {
+    if (!validate() || isSaving) {
       return;
     }
 
+    setIsSaving(true);
     const formattedPhone = `${countryCode} ${phone.trim()}`;
-    const updated = usersStore.updateUser(user.id, {
-      name: fullName.trim(),
-      email: email.trim(),
-      phone: formattedPhone,
-      userType,
-      status,
-      dob: dob.trim() || undefined,
-      gender: (gender as UserGender) || undefined,
-      address: address.trim() || undefined,
-      remarks: remarks.trim() || undefined,
-      notes: remarks.trim() || undefined,
-      avatarUrl: avatarUri,
-    });
+    try {
+      const updated = await usersStore.updateUser(user.id, {
+        name: fullName.trim(),
+        email: email.trim(),
+        phone: formattedPhone,
+        userType,
+        status,
+        dob: dob.trim() || undefined,
+        gender: (gender as UserGender) || undefined,
+        address: address.trim() || undefined,
+        remarks: remarks.trim() || undefined,
+        notes: remarks.trim() || undefined,
+        avatarUrl: avatarUri,
+      });
 
-    if (updated && onSuccess) {
-      onSuccess(updated);
-    } else if (onBack) {
-      onBack();
+      if (updated && onSuccess) {
+        onSuccess(updated);
+      } else if (onBack) {
+        onBack();
+      }
+    } catch (err: any) {
+      Alert.alert('Save Failed', err?.message || 'Could not update user details. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -608,14 +619,21 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.saveBtn}
+                style={[styles.saveBtn, isSaving && { opacity: 0.7 }]}
                 onPress={handleSaveChanges}
+                disabled={isSaving}
                 activeOpacity={0.85}
                 accessibilityRole="button"
                 accessibilityLabel="Save Changes"
               >
-                <Text style={styles.saveBtnCheck}>✓</Text>
-                <Text style={styles.saveBtnText}>Save Changes</Text>
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.saveBtnCheck}>✓</Text>
+                    <Text style={styles.saveBtnText}>Save Changes</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           </View>

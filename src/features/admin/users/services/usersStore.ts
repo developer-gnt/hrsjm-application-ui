@@ -13,6 +13,7 @@ import {
 import { INITIAL_DEV_USERS } from '../data/userFixtures';
 import { RegistrationState } from '../../../auth/state/registrationState';
 import { apiClient } from '../../../../core/api/client';
+import { useAuthStore } from '../../../auth/store/authStore';
 
 const STORAGE_KEY = 'hrsjm_registered_users';
 
@@ -588,7 +589,64 @@ class UsersStore {
     return newUser;
   }
 
-  public updateUser(id: string, payload: EditUserPayload): UserItem | undefined {
+  private async syncUserUpdateToBackend(userId: string, payload: EditUserPayload): Promise<void> {
+    try {
+      const cleanMobile = payload.phone
+        ? payload.phone.replace(/\D/g, '').slice(-10)
+        : undefined;
+
+      const patchData: any = {};
+      if (payload.name !== undefined) patchData.full_name = payload.name.trim();
+      if (payload.email !== undefined) patchData.email = payload.email.trim();
+      if (cleanMobile && cleanMobile.length === 10) patchData.mobile_number = cleanMobile;
+      if (payload.dob !== undefined) patchData.dob = payload.dob.trim();
+      if (payload.avatarUrl !== undefined) patchData.avatar = payload.avatarUrl;
+
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId);
+      let targetId = isUuid ? userId : null;
+
+      if (!targetId) {
+        try {
+          const res: any = await apiClient.get<any>('/users', {
+            params: { search: cleanMobile || payload.email || undefined },
+          });
+          const items = Array.isArray(res?.data)
+            ? res.data
+            : Array.isArray(res?.data?.items)
+            ? res.data.items
+            : Array.isArray(res)
+            ? res
+            : null;
+          if (items && items.length > 0) {
+            const found = items.find((u: any) =>
+              (cleanMobile && u.mobile_number && u.mobile_number.includes(cleanMobile)) ||
+              (payload.email && u.email && u.email.toLowerCase() === payload.email.toLowerCase())
+            );
+            if (found && found.id) {
+              targetId = found.id;
+            }
+          }
+        } catch {
+          // ignore lookup errors
+        }
+      }
+
+      if (targetId) {
+        if (Object.keys(patchData).length > 0) {
+          await apiClient.patch(`/users/${targetId}`, patchData);
+        }
+
+        if (payload.status !== undefined) {
+          const apiStatus = payload.status === 'blocked' ? 'INACTIVE' : 'ACTIVE';
+          await apiClient.patch(`/users/${targetId}/status`, { status: apiStatus }).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.warn('syncUserUpdateToBackend error:', err);
+    }
+  }
+
+  public async updateUser(id: string, payload: EditUserPayload): Promise<UserItem | undefined> {
     const index = this.users.findIndex(u => u.id === id || u.memberId === id);
     if (index === -1) return undefined;
 
@@ -609,7 +667,32 @@ class UsersStore {
     };
 
     this.users[index] = updated;
+    this.sortUsersInternal();
     this.notify();
+
+    // 1. Persist directly to backend database
+    await this.syncUserUpdateToBackend(current.id, payload);
+
+    // 2. Keep active auth session in sync if the edited user is currently logged in
+    try {
+      const authUser = useAuthStore.getState().user;
+      if (
+        authUser &&
+        (authUser.id === current.id ||
+          (authUser.email && current.email && authUser.email.toLowerCase() === current.email.toLowerCase()) ||
+          (authUser.mobile_number && current.phone && authUser.mobile_number.replace(/\D/g, '') === current.phone.replace(/\D/g, '')))
+      ) {
+        useAuthStore.getState().setUser({
+          ...authUser,
+          full_name: updated.name,
+          email: updated.email,
+          mobile_number: updated.phone,
+        });
+      }
+    } catch {
+      // test safe
+    }
+
     return updated;
   }
 
@@ -623,6 +706,14 @@ class UsersStore {
       remarks: remarks || this.users[index].remarks,
     };
     this.notify();
+
+    const target = this.users[index];
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(target.id);
+    if (isUuid) {
+      const apiStatus = status === 'blocked' ? 'INACTIVE' : 'ACTIVE';
+      apiClient.patch(`/users/${target.id}/status`, { status: apiStatus }).catch(() => {});
+    }
+
     return true;
   }
 
