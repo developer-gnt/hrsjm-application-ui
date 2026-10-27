@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { AdminColors, BorderRadius, Spacing } from '../../../core';
+import { Calendar } from '../../../core/components/icons';
 import { SupportTicket, TicketAttachment } from '../types/ticket.types';
 import { APPROVED_TICKET_CATEGORIES } from '../data/categories';
 import { CategoryIcon } from './SupportIcons';
@@ -163,9 +164,12 @@ export const SupportTicketDetailsModal: React.FC<SupportTicketDetailsModalProps>
                 </Text>
               </TouchableOpacity>
 
-              <Text style={styles.dateText}>
-                📅 {ticket.formattedDate}
-              </Text>
+              <View style={styles.dateRow}>
+                <Calendar size={13} color="#64748B" style={{ marginRight: 4 }} />
+                <Text style={styles.dateText}>
+                  {ticket.formattedDate}
+                </Text>
+              </View>
             </View>
 
             {/* Category Box */}
@@ -455,6 +459,10 @@ const styles = StyleSheet.create({
   },
   copyChipTextActive: {
     color: '#16A34A',
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   dateText: {
     fontSize: 11.5,

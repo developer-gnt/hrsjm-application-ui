@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdminColors, BorderRadius, Spacing, Typography } from '../../../../../core/theme';
+import { Calendar, Clock } from '../../../../../core/components/icons';
 import { CategoryChip, STATUS_LABELS } from './NewsCard';
 import type { NewsListItem, NewsStatus } from '../types/news.types';
 
@@ -284,9 +285,11 @@ export const NewsPreviewSheet: React.FC<NewsPreviewSheetProps> = ({
                     <Text style={styles.authorRoleBadge}>Editor</Text>
                   </View>
                   <View style={styles.metaSubRow}>
-                    <Text style={styles.metaItemText}>📅 {news.date || 'Today'}</Text>
+                    <Calendar size={12} color="#64748B" style={{ marginRight: 3 }} />
+                    <Text style={styles.metaItemText}>{news.date || 'Today'}</Text>
                     <Text style={styles.metaDivider}>•</Text>
-                    <Text style={styles.metaItemText}>🕐 {news.time || 'Immediate'}</Text>
+                    <Clock size={12} color="#64748B" style={{ marginRight: 3 }} />
+                    <Text style={styles.metaItemText}>{news.time || 'Immediate'}</Text>
                   </View>
                 </View>
               </View>

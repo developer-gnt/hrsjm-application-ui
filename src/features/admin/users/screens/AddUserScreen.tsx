@@ -458,7 +458,7 @@ export const AddUserScreen: React.FC<AddUserScreenProps> = ({
                     >
                       {dob || 'Select date'}
                     </Text>
-                    <Text style={styles.calendarIcon}>📅</Text>
+                    <CalendarOutlineIcon size={18} color="#64748B" />
                   </TouchableOpacity>
                 </View>
 

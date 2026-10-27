@@ -16,6 +16,7 @@ import { AppRoutes } from '../../../core/constants/routes';
 import { useAuthStore } from '../../auth/store/authStore';
 import { DEFAULT_ADMIN_AVATAR } from '../../auth/components/UserProfileModal';
 import { FontFamilies, BorderRadius } from '../../../core/theme';
+import { Calendar } from '../../../core/components/icons';
 
 const HRSJM_EMBLEM = require('../../../assets/hrsjm_logo.png');
 
@@ -116,7 +117,7 @@ export const MemberHomeScreen: React.FC = () => {
               activeOpacity={0.75}
             >
               <View style={[styles.shortcutIconBox, { backgroundColor: '#EEF3FC' }]}>
-                <Text style={styles.shortcutIcon}>📅</Text>
+                <Calendar size={20} color="#1E40AF" />
               </View>
               <Text style={styles.shortcutTitle}>Events</Text>
               <Text style={styles.shortcutSub}>Volunteer & drives</Text>

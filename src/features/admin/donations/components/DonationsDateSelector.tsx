@@ -5,6 +5,7 @@ import {
   Spacing,
   BorderRadius,
 } from '../../../../core';
+import { Calendar } from '../../../../core/components/icons';
 
 interface DonationsDateSelectorProps {
   /** Defaults to the current month, e.g. "Oct 2026". */
@@ -32,7 +33,7 @@ export const DonationsDateSelector: React.FC<DonationsDateSelectorProps> = ({
       accessibilityRole="button"
       accessibilityLabel={`Select month, ${monthLabel}`}
     >
-      <Text style={styles.calendarEmoji}>📅</Text>
+      <Calendar size={15} color={AdminColors.primaryDark} strokeWidth={2} style={styles.calendarIcon} />
       <Text style={styles.label}>{monthLabel}</Text>
       <Text style={styles.chevron}>▾</Text>
     </TouchableOpacity>
@@ -51,8 +52,7 @@ const styles = StyleSheet.create({
     height: 44,
     gap: 4,
   },
-  calendarEmoji: {
-    fontSize: 14,
+  calendarIcon: {
     marginRight: 2,
   },
   label: {

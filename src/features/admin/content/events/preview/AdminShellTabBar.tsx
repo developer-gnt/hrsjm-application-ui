@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdminColors, BorderRadius, Spacing } from '../../../../../core/theme';
+import { Calendar } from '../../../../../core/components';
 
 /**
  * TEMPORARY PREVIEW COMPONENT — NOT THE REAL GLOBAL NAVIGATION.
@@ -30,7 +31,7 @@ export type AdminShellTabKey =
 interface ShellTab {
   key: AdminShellTabKey;
   label: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 const SHELL_TABS: ShellTab[] = [
@@ -40,7 +41,11 @@ const SHELL_TABS: ShellTab[] = [
   { key: 'donationSeekers', label: 'Donation Seekers', icon: '🤝' },
   { key: 'donations', label: 'Donations', icon: '💌' },
   { key: 'complaints', label: 'Complaints', icon: '💬' },
-  { key: 'events', label: 'Events', icon: '📅' },
+  {
+    key: 'events',
+    label: 'Events',
+    icon: <Calendar size={18} color={AdminColors.textMuted} strokeWidth={1.8} />,
+  },
   { key: 'news', label: 'News', icon: '📰' },
   { key: 'blogs', label: 'Blogs', icon: '📝' },
   { key: 'rights', label: 'Rights', icon: '⚖️' },
@@ -88,9 +93,13 @@ export const AdminShellTabBar: React.FC<AdminShellTabBarProps> = ({
             accessibilityState={{ selected: isActive }}
             accessibilityLabel={`${tab.label} tab`}
           >
-            <Text style={[styles.tabIcon, isActive && styles.tabIconActive]}>
-              {tab.icon}
-            </Text>
+            {typeof tab.icon === 'string' ? (
+              <Text style={[styles.tabIcon, isActive && styles.tabIconActive]}>
+                {tab.icon}
+              </Text>
+            ) : (
+              <View style={{ marginBottom: 2 }}>{tab.icon}</View>
+            )}
             <Text
               style={[styles.tabLabel, isActive && styles.tabLabelActive]}
               numberOfLines={1}

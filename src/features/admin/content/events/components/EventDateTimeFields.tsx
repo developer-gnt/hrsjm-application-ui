@@ -6,6 +6,7 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
+import { Calendar, Clock } from '../../../../../core/components/icons';
 import { EventFormField } from './EventFormField';
 import { EventPickerSheet } from './EventPickerSheet';
 import { formatDate } from '../../../../../core/utils';
@@ -105,7 +106,11 @@ export const EventDateTimeFields: React.FC<EventDateTimeFieldsProps> = ({
             accessibilityState={{ disabled: values.allDay }}
             accessibilityLabel={label}
           >
-            <Text style={styles.pickerIcon}>{type === 'date' ? '📅' : '🕐'}</Text>
+            {type === 'date' ? (
+              <Calendar size={16} color={AdminColors.primary} style={styles.pickerIcon} />
+            ) : (
+              <Clock size={16} color={AdminColors.primary} style={styles.pickerIcon} />
+            )}
             <Text
               style={[styles.pickerValue, !value && styles.pickerPlaceholder]}
               numberOfLines={1}
@@ -184,7 +189,6 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   pickerIcon: {
-    fontSize: 14,
     marginRight: Spacing.sm,
   },
   pickerValue: {

@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { AdminColors, BorderRadius, Spacing } from '../../../core';
+import { Calendar } from '../../../core/components/icons';
 import { DateFilter } from '../types/ticket.types';
 
 interface SupportFilterModalProps {
@@ -189,8 +190,12 @@ export const SupportFilterModal: React.FC<SupportFilterModalProps> = ({
               accessibilityRole="tab"
               accessibilityLabel="Single Day Date Mode"
             >
+              <Calendar
+                size={14}
+                color={mode === 'single' ? AdminColors.primary : '#64748B'}
+              />
               <Text style={[styles.modeTabText, mode === 'single' && styles.modeTabTextActive]}>
-                📅 Single Day Date
+                Single Day Date
               </Text>
             </TouchableOpacity>
 
@@ -201,8 +206,12 @@ export const SupportFilterModal: React.FC<SupportFilterModalProps> = ({
               accessibilityRole="tab"
               accessibilityLabel="From - To Range Mode"
             >
+              <Calendar
+                size={14}
+                color={mode === 'range' ? AdminColors.primary : '#64748B'}
+              />
               <Text style={[styles.modeTabText, mode === 'range' && styles.modeTabTextActive]}>
-                🗓️ From — To
+                From — To
               </Text>
             </TouchableOpacity>
           </View>
@@ -463,6 +472,8 @@ const styles = StyleSheet.create({
   },
   modeTab: {
     flex: 1,
+    flexDirection: 'row',
+    gap: 6,
     paddingVertical: 7,
     alignItems: 'center',
     justifyContent: 'center',

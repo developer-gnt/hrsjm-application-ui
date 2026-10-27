@@ -5,12 +5,13 @@ import {
   Typography,
   Spacing,
   BorderRadius,
+  Calendar,
 } from '../../../../core';
 
 export interface NavItem {
   key: string;
   label: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
@@ -26,7 +27,7 @@ export const MEMBER_NAV_ITEMS: NavItem[] = [
   { key: 'home', label: 'Home', icon: '🏠' },
   { key: 'rights', label: 'Know Your Rights', icon: '📖' },
   { key: 'complaints', label: 'Complaints', icon: '📄' },
-  { key: 'events', label: 'Events', icon: '📅' },
+  { key: 'events', label: 'Events', icon: <Calendar size={18} color="#475569" strokeWidth={1.8} /> },
   { key: 'news', label: 'News', icon: '📰' },
   { key: 'profile', label: 'Profile', icon: '👤' },
 ];
@@ -70,9 +71,13 @@ export const DonationsBottomNav: React.FC<DonationsBottomNavProps> = ({
             <View
               style={[styles.iconContainer, active && styles.iconContainerActive]}
             >
-              <Text style={[styles.icon, active && styles.iconActive]}>
-                {item.icon}
-              </Text>
+              {typeof item.icon === 'string' ? (
+                <Text style={[styles.icon, active && styles.iconActive]}>
+                  {item.icon}
+                </Text>
+              ) : (
+                item.icon
+              )}
             </View>
             <Text
               style={[styles.label, active && styles.labelActive]}

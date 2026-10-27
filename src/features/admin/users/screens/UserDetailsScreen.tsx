@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core';
+import { Calendar } from '../../../../core/components/icons';
 import { usersStore } from '../services/usersStore';
 import { UserItem, UserType, UserStatus } from '../types/user.types';
 import { UsersHeader } from '../components/UsersHeader';
@@ -421,7 +422,7 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
             {/* Row 5: Date of Birth */}
             <View style={styles.tableRow}>
               <View style={styles.tableRowLeft}>
-                <Text style={styles.tableRowIcon}>📅</Text>
+                <Calendar size={15} color={AdminColors.primary} style={{ marginRight: 6 }} />
                 <Text style={styles.tableRowLabel}>Date of Birth</Text>
               </View>
               <Text style={styles.tableRowValue}>

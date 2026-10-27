@@ -23,6 +23,7 @@ import {
   AppErrorState,
   AppPagination,
   AppSearchBar,
+  Calendar,
   SkeletonCard,
 } from '../../../../../core/components';
 import { formatDate } from '../../../../../core/utils';
@@ -82,7 +83,7 @@ const EmptyStateView: React.FC<{
       />
     ) : (
       <AppEmptyState
-        icon="📅"
+        icon={<Calendar size={42} color={AdminColors.textMuted} strokeWidth={1.5} />}
         title="No Events Found"
         description="There are no events to display yet."
         actionTitle={allowCreate ? 'Add Event' : undefined}

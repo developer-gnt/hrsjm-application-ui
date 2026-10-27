@@ -374,7 +374,7 @@ export const AdminDashboardScreen: React.FC<{
               onPress={() => setMonthPickerVisible(true)}
               activeOpacity={0.7}
             >
-              <Text style={styles.calendarIcon}>📅</Text>
+              <Calendar size={14} color="#06294D" strokeWidth={2} style={styles.calendarIcon} />
               <Text style={styles.monthText}>{selectedMonthOption.label}</Text>
               <Text style={styles.dropdownChevron}>▾</Text>
             </TouchableOpacity>
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   calendarIcon: {
-    fontSize: 12,
+    marginRight: 2,
   },
   monthText: {
     fontSize: 11,

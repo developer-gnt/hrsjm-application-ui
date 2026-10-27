@@ -18,6 +18,7 @@ import {
 } from '../../../../../core/theme';
 import { AppAvatar, AppEmptyState, AppLoader } from '../../../../../core/components';
 import { feedback } from '../../../../../core';
+import { Calendar, Eye } from '../../../../../core/components/icons';
 import {
   RightsCategoryChip,
   RIGHTS_STATUS_TONES,
@@ -274,7 +275,7 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
             </View>
             <View style={styles.metadataDivider} />
             <View style={styles.metadataGroup}>
-              <Text style={styles.metadataIcon}>📅</Text>
+              <Calendar size={15} color={AdminColors.primary} />
               <View style={styles.metadataTextCol}>
                 <Text style={styles.metadataValue}>{article.lastUpdatedDate}</Text>
                 <Text style={styles.metadataLabel}>{article.lastUpdatedTime}</Text>
@@ -282,7 +283,7 @@ export const RightArticleDetailsScreen: React.FC<RightArticleDetailsScreenProps>
             </View>
             <View style={styles.metadataDivider} />
             <View style={styles.metadataGroup}>
-              <Text style={styles.metadataIcon}>👁</Text>
+              <Eye size={15} color={AdminColors.primary} />
               <View style={styles.metadataTextCol}>
                 <Text style={styles.metadataValue}>{formatRightsViews(article.views)}</Text>
                 <Text style={styles.metadataLabel}>Views</Text>

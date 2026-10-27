@@ -23,6 +23,8 @@ import {
 import {
   AppButton,
   AppMediaUploadSheet,
+  Calendar,
+  Clock,
   DatePickerModal,
   TimePickerModal,
 } from '../../../../../core/components';
@@ -182,7 +184,7 @@ const FieldShell: React.FC<FieldShellProps> = ({
 
 /** Dropdown-style select display field (icon + value + chevron). */
 const SelectField: React.FC<{
-  icon: string;
+  icon: React.ReactNode;
   value: string | null;
   placeholder: string;
   hasError: boolean;
@@ -194,7 +196,11 @@ const SelectField: React.FC<{
     accessibilityRole="button"
     accessibilityLabel={placeholder}
   >
-    <Text style={styles.selectIcon}>{icon}</Text>
+    {typeof icon === 'string' ? (
+      <Text style={styles.selectIcon}>{icon}</Text>
+    ) : (
+      <View style={styles.selectIconContainer}>{icon}</View>
+    )}
     <Text style={[styles.selectValue, !value && styles.selectPlaceholder]} numberOfLines={1}>
       {value ?? placeholder}
     </Text>
@@ -711,11 +717,14 @@ export const NewsForm: React.FC<NewsFormProps> = ({
             </NewsFormSection>
 
             {/* 5. Publish Settings with Calendar & Clock Modals */}
-            <NewsFormSection icon="📅" title="Publish Settings">
+            <NewsFormSection
+              icon={<Calendar size={16} color={AdminColors.primaryDark} strokeWidth={2} />}
+              title="Publish Settings"
+            >
               {/* Publish Date (Calendar) */}
               <FieldShell label="Publish Date" required error={errors.publishDate}>
                 <SelectField
-                  icon="📅"
+                  icon={<Calendar size={15} color={AdminColors.textMuted} strokeWidth={2} />}
                   value={form.publishDate ? formatDate(form.publishDate) : null}
                   placeholder="Select publish date (interactive calendar)"
                   hasError={Boolean(errors.publishDate)}
@@ -726,7 +735,7 @@ export const NewsForm: React.FC<NewsFormProps> = ({
               {/* Publish Time (Clock) */}
               <FieldShell label="Publish Time" required error={errors.publishTime}>
                 <SelectField
-                  icon="🕐"
+                  icon={<Clock size={15} color={AdminColors.textMuted} strokeWidth={2} />}
                   value={form.publishTime ? formatTimeLabel(form.publishTime) : null}
                   placeholder="Select publish time (interactive clock)"
                   hasError={Boolean(errors.publishTime)}
@@ -1239,6 +1248,11 @@ const styles = StyleSheet.create({
   selectIcon: {
     fontSize: 14,
     marginRight: Spacing.sm,
+  },
+  selectIconContainer: {
+    marginRight: Spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   selectValue: {
     ...Typography.body,

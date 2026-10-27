@@ -18,6 +18,7 @@ import {
 } from '../../../../../core/theme';
 import { AppBadge, AppEmptyState, AppLoader } from '../../../../../core/components';
 import { feedback } from '../../../../../core';
+import { Calendar, Eye, User } from '../../../../../core/components/icons';
 import {
   BlogCategoryChip,
   BLOG_STATUS_LABELS,
@@ -260,7 +261,7 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
           {/* Metadata: date/time / views / author groups with dividers */}
           <View style={styles.metadataRow}>
             <View style={styles.metadataGroup}>
-              <Text style={styles.metadataIcon}>📅</Text>
+              <Calendar size={15} color={AdminColors.primary} />
               <View style={styles.metadataTextCol}>
                 <Text style={styles.metadataValue}>{blog.date}</Text>
                 <Text style={styles.metadataLabel}>{blog.time}</Text>
@@ -268,7 +269,7 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
             </View>
             <View style={styles.metadataDivider} />
             <View style={styles.metadataGroup}>
-              <Text style={styles.metadataIcon}>👁</Text>
+              <Eye size={15} color={AdminColors.primary} />
               <View style={styles.metadataTextCol}>
                 <Text style={styles.metadataValue}>{formatBlogViews(blog.views)}</Text>
                 <Text style={styles.metadataLabel}>Views</Text>
@@ -278,7 +279,7 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
               <>
                 <View style={styles.metadataDivider} />
                 <View style={styles.metadataGroup}>
-                  <Text style={styles.metadataIcon}>👤</Text>
+                  <User size={15} color={AdminColors.primary} />
                   <View style={styles.metadataTextCol}>
                     <Text style={styles.metadataValue}>{author.name}</Text>
                     {author.role ? (

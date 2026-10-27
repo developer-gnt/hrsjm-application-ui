@@ -490,7 +490,7 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
                   >
                     {formatDobDisplay(dob)}
                   </Text>
-                  <Text style={styles.calendarRightIcon}>📅</Text>
+                  <Text style={styles.calendarRightIcon}>▾</Text>
                 </TouchableOpacity>
               </View>
 
