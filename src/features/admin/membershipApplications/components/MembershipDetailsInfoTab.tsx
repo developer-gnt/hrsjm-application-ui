@@ -43,10 +43,6 @@ export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> =
       value: application.gender && application.gender !== '—' ? application.gender : 'Not specified',
     },
     {
-      label: "Father's Name",
-      value: application.fatherName && application.fatherName !== '—' ? application.fatherName : 'Not specified',
-    },
-    {
       label: 'Phone Number',
       value: application.phone && application.phone !== '—' ? application.phone : 'Not provided',
     },
@@ -61,10 +57,6 @@ export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> =
     {
       label: 'Nearby Police Station',
       value: application.policeStation || 'Not specified',
-    },
-    {
-      label: 'Occupation',
-      value: application.occupation && application.occupation !== '—' ? application.occupation : 'Not specified',
     },
   ];
 
