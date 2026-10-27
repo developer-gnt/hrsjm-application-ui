@@ -26,6 +26,7 @@ interface UserDetailsScreenProps {
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   onProfilePress?: () => void;
+  showBottomNav?: boolean;
 }
 
 export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
@@ -37,6 +38,7 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
+  showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -75,13 +77,15 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
             <Text style={styles.backLinkText}>Return to Users List</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.bottomNavHost}>
-          <UsersBottomNav
-            bottomInset={insets.bottom}
-            activeKey="users"
-            onTabPress={onBottomTabPress}
-          />
-        </View>
+        {showBottomNav && (
+          <View style={styles.bottomNavHost}>
+            <UsersBottomNav
+              bottomInset={insets.bottom}
+              activeKey="users"
+              onTabPress={onBottomTabPress}
+            />
+          </View>
+        )}
       </View>
     );
   }
@@ -550,14 +554,16 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
         onClose={() => setShowPasswordResetModal(false)}
       />
 
-      {/* Persistent Bottom Nav */}
-      <View style={styles.bottomNavHost}>
-        <UsersBottomNav
-          bottomInset={insets.bottom}
-          activeKey="users"
-          onTabPress={onBottomTabPress}
-        />
-      </View>
+      {/* Bottom Nav rendered only if explicitly requested */}
+      {showBottomNav && (
+        <View style={styles.bottomNavHost}>
+          <UsersBottomNav
+            bottomInset={insets.bottom}
+            activeKey="users"
+            onTabPress={onBottomTabPress}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -650,7 +656,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileHeaderName: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: FontFamilies.sans,
     fontSize: 22,
     fontWeight: '700',
     color: AdminColors.textPrimary,
@@ -738,7 +744,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   metricValue: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: FontFamilies.sans,
     fontSize: 13,
     fontWeight: '700',
     color: '#0B2F52',

@@ -49,15 +49,15 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
-  showBottomNav,
+  showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
   // In the admin tab hierarchy, AdminNavigationBar renders the bottom tab bar.
-  // Only render UsersBottomNav if explicitly requested or when onBottomTabPress handler is supplied.
-  const isBottomNavVisible = showBottomNav ?? !!onBottomTabPress;
+  // Only render UsersBottomNav if explicitly requested (e.g. standalone dev preview).
+  const isBottomNavVisible = showBottomNav === true;
 
   useEffect(() => {
     usersStore.fetchUsers().catch(() => {});
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   pageTitle: {
-    fontFamily: FontFamilies.display,
+    fontFamily: FontFamilies.sans,
     fontSize: 24,
     fontWeight: '700',
     color: '#0B2F52',

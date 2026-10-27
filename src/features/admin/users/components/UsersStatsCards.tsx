@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   numberBlue: {
-    fontFamily: FontFamilies.display,
+    fontFamily: FontFamilies.sans,
     fontSize: 22,
     fontWeight: '700',
     color: '#06294D',
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   numberGreen: {
-    fontFamily: FontFamilies.display,
+    fontFamily: FontFamilies.sans,
     fontSize: 22,
     fontWeight: '700',
     color: '#15803D',
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   numberAmber: {
-    fontFamily: FontFamilies.display,
+    fontFamily: FontFamilies.sans,
     fontSize: 22,
     fontWeight: '700',
     color: '#8F6600',
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   numberRed: {
-    fontFamily: FontFamilies.display,
+    fontFamily: FontFamilies.sans,
     fontSize: 22,
     fontWeight: '700',
     color: '#DC2626',

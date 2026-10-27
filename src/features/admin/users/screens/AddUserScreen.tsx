@@ -36,6 +36,7 @@ interface AddUserScreenProps {
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   onProfilePress?: () => void;
+  showBottomNav?: boolean;
 }
 
 interface FormErrors {
@@ -64,6 +65,7 @@ export const AddUserScreen: React.FC<AddUserScreenProps> = ({
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
+  showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -627,14 +629,16 @@ export const AddUserScreen: React.FC<AddUserScreenProps> = ({
         onClose={() => setShowDobModal(false)}
       />
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNavHost}>
-        <UsersBottomNav
-          bottomInset={insets.bottom}
-          activeKey="users"
-          onTabPress={onBottomTabPress}
-        />
-      </View>
+      {/* Bottom Navigation rendered only if explicitly requested */}
+      {showBottomNav && (
+        <View style={styles.bottomNavHost}>
+          <UsersBottomNav
+            bottomInset={insets.bottom}
+            activeKey="users"
+            onTabPress={onBottomTabPress}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -672,7 +676,7 @@ const styles = StyleSheet.create({
     color: '#011F39',
   },
   pageTitle: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: FontFamilies.sans,
     fontSize: 22,
     fontWeight: '700',
     color: AdminColors.textPrimary,
@@ -773,7 +777,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   sectionHeader: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: FontFamilies.sans,
     fontSize: 14,
     fontWeight: '700',
     color: '#0B2F52',

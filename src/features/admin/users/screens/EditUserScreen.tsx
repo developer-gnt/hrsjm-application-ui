@@ -33,6 +33,7 @@ interface EditUserScreenProps {
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   onProfilePress?: () => void;
+  showBottomNav?: boolean;
 }
 
 interface FormErrors {
@@ -67,6 +68,7 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
+  showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -127,13 +129,15 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
             <Text style={styles.backLinkBtnText}>Return to Users List</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.bottomNavHost}>
-          <UsersBottomNav
-            bottomInset={insets.bottom}
-            activeKey="users"
-            onTabPress={onBottomTabPress}
-          />
-        </View>
+        {showBottomNav && (
+          <View style={styles.bottomNavHost}>
+            <UsersBottomNav
+              bottomInset={insets.bottom}
+              activeKey="users"
+              onTabPress={onBottomTabPress}
+            />
+          </View>
+        )}
       </View>
     );
   }
@@ -761,14 +765,16 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
         }}
       />
 
-      {/* Bottom Nav Host */}
-      <View style={styles.bottomNavHost}>
-        <UsersBottomNav
-          bottomInset={insets.bottom}
-          activeKey="users"
-          onTabPress={onBottomTabPress}
-        />
-      </View>
+      {/* Bottom Nav Host rendered only if explicitly requested */}
+      {showBottomNav && (
+        <View style={styles.bottomNavHost}>
+          <UsersBottomNav
+            bottomInset={insets.bottom}
+            activeKey="users"
+            onTabPress={onBottomTabPress}
+          />
+        </View>
+      )}
     </View>
   );
 };

@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   userName: {
-    fontFamily: FontFamilies.display,
+    fontFamily: FontFamilies.sans,
     fontSize: 16,
     fontWeight: '700',
     color: '#0B2F52',
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   statusSheetTitle: {
-    fontFamily: FontFamilies.display,
+    fontFamily: FontFamilies.sans,
     fontSize: 15,
     fontWeight: '700',
     color: '#06294D',
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   menuTitle: {
-    fontFamily: FontFamilies.display,
+    fontFamily: FontFamilies.sans,
     fontSize: 16,
     fontWeight: '700',
     color: '#06294D',

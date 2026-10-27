@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#DBE5EE',
   },
   headerTitle: {
-    fontFamily: FontFamilies.display,
+    fontFamily: FontFamilies.sans,
     fontSize: 18,
     fontWeight: '700',
     color: '#06294D',
