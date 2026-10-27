@@ -9,11 +9,8 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../app/navigation/NavigationTypes';
+import { CreateAccountTypeScreen, AccountTypeOption } from './CreateAccountTypeScreen';
 import { CreateAccountScreen, CreateAccountFormData } from './CreateAccountScreen';
-import {
-  CreateAccountAdditionalScreen,
-  AccountTypeOption,
-} from './CreateAccountAdditionalScreen';
 import {
   CreateAccountVerificationScreen,
   UploadedDocFile,
@@ -33,32 +30,28 @@ import {
 } from '../../admin/membershipApplications';
 import { usersStore } from '../../admin/users/services/usersStore';
 import { AdminColors } from '../../../core/theme/colors';
-import { useMembership } from '../../membership/context/MembershipContext';
-import { DISTRICT_STATE_POSTS } from '../../membership/data/membershipCategoriesData';
 
 type RegisterScreenProps = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
 /**
- * Multi-step Sahil Registration Flow connected directly to the backend REST API:
+ * Redesigned Multi-step Registration Flow:
  *
- * Step 0: Personal Details (Name, Email, Mobile, DOB)
- * Step 1: Account Type & Password (General User / Member / Donation Seeker + Password with security checks)
- * - General User: Direct account creation with role USER, opens User dashboard.
- * - Member: Seamless redirection to existing 3-step Member registration form.
- * - Donation Seeker: 3-step verification flow with document upload, provisioned with role USER while pending approval.
- * Step 2: Verification & Document Upload (Donation Seeker)
- * Step 3: Complete & Confirmation (Activates session into dashboard)
+ * Step 0: Account Type Selection (General User / Member / Donation Seeker)
+ *  - Member: Directly navigates to Membership Categories flow.
+ *  - General User / Seeker: Proceeds to Step 1.
+ * Step 1: Personal Details & Password (Name, Mobile, Email, DOB, Gender, Password)
+ *  - General User: Submits registration immediately with role USER, displays Complete screen, opens User Dashboard.
+ *  - Donation Seeker: Proceeds to Step 2 for KYC document upload.
+ * Step 2: Verification & Document Upload (Donation Seeker only)
+ *  - Submits documents, assigns application number (e.g. HRSJM-SEK-XXXX), provisions role USER while pending review.
+ * Step 3: Complete Screen
+ *  - Displays confirmation & application number, navigates to User Dashboard.
  */
 export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const register = useAuthStore(state => state.register);
   const completeRegistration = useAuthStore(state => state.completeRegistration);
 
-  let membershipCtx: any;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    membershipCtx = useMembership();
-  } catch {}
-
+  // Step 0 = Account Type, Step 1 = Personal Details & Password, Step 2 = Verification (Seeker), Step 3 = Complete
   const [step, setStep] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Creating your account...');
@@ -75,95 +68,45 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     return digitsOnly;
   };
 
-  const getBackendRoleName = (accountType: string): string => {
-    switch (accountType) {
-      case 'member':
-        return 'MEMBER';
-      case 'seeker':
-        return 'DONATION_SEEKER';
-      case 'general':
-      default:
-        return 'USER';
+  // Step 0: Account Type Selected
+  const handleAccountTypeContinue = (accountType: AccountTypeOption) => {
+    if (accountType === 'member') {
+      navigation.navigate('MembershipCategories' as any);
+      return;
     }
+    setStep(1); // Proceed to Personal Details & Password
   };
 
-  // Step 0 -> Step 1
-  const handleContinueFromStep0 = (formData: CreateAccountFormData) => {
+  const handleMemberSelect = () => {
+    navigation.navigate('MembershipCategories' as any);
+  };
+
+  // Step 1: Personal Details & Password submitted
+  const handlePersonalDetailsContinue = async (formData: CreateAccountFormData) => {
+    const state = getRegistrationState();
     const cleanMobile = extractCleanMobile(formData.phone, formData.countryCode);
-    if (!cleanMobile || cleanMobile.length !== 10) {
-      Alert.alert('Invalid Mobile', 'Please enter a valid 10-digit mobile number.');
-      return;
-    }
-    const trimmedName = formData.fullName.trim();
-    if (trimmedName.length < 2) {
-      Alert.alert('Invalid Name', 'Please enter your full name (minimum 2 characters).');
-      return;
-    }
-    if (!/^[a-zA-Z\s.'-]+$/.test(trimmedName)) {
-      Alert.alert('Invalid Name', 'Full name can only contain letters and spaces (no numbers or symbols).');
-      return;
-    }
-    const trimmedEmail = formData.email.trim();
-    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmedEmail)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address (e.g. name@example.com).');
-      return;
-    }
+    const effectivePassword = formData.password && formData.password.trim().length >= 6
+      ? formData.password.trim()
+      : 'Hrsjm@2026';
 
     updateRegistrationState({
-      fullName: trimmedName,
-      email: trimmedEmail,
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim(),
       phone: `${formData.countryCode || '+91'} ${cleanMobile}`,
       countryCode: formData.countryCode || '+91',
       dob: formData.dob.trim(),
       gender: formData.gender?.trim() || '',
+      password: effectivePassword,
     });
 
-    setStep(1);
-  };
-
-  // Step 1 -> Step 2 (Seeker) / Direct Register (General User) / Redirect to Member Form (Member)
-  const handleContinueFromStep1 = async (
-    accountType: AccountTypeOption,
-    password?: string,
-  ) => {
-    const state = getRegistrationState();
-    const cleanMobile = extractCleanMobile(state.phone, state.countryCode);
-    const effectivePassword =
-      password && password.trim().length >= 6
-        ? password.trim()
-        : state.password && state.password.trim().length >= 6
-        ? state.password.trim()
-        : 'Hrsjm@2026';
-
-    if (accountType === 'member') {
-      // Forward collected personal info and password into existing MembershipContext
-      try {
-        if (membershipCtx?.updatePersonalInfo) {
-          membershipCtx.updatePersonalInfo({
-            fullName: state.fullName.trim(),
-            email: state.email ? state.email.trim() : '',
-            mobileNumber: cleanMobile,
-            dateOfBirth: state.dob ? state.dob.trim() : '',
-            gender: (state.gender as any) || '',
-            password: effectivePassword,
-            confirmPassword: effectivePassword,
-          });
-        }
-      } catch {}
-
-      // Redirect to existing Member categories selection screen
-      navigation.navigate('MembershipCategories');
-      return;
-    }
-
-    if (accountType === 'general') {
-      // General User does not require document verification; register with backend immediately
+    if (state.accountType === 'general') {
+      // General User: No document verification needed. Register immediately!
       setSubmitting(true);
       setLoadingMessage('Creating your account...');
       try {
         await register({
-          full_name: state.fullName.trim(),
-          email: state.email ? state.email.trim() : undefined,
+          full_name: formData.fullName.trim(),
+          email: formData.email ? formData.email.trim() : undefined,
           mobile_number: cleanMobile,
           password: effectivePassword,
           confirm_password: effectivePassword,
@@ -171,12 +114,28 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         });
 
         usersStore.registerUserFromRegistration({
-          ...state,
+          fullName: formData.fullName.trim(),
+          email: formData.email ? formData.email.trim() : undefined,
+          phone: `${formData.countryCode || '+91'} ${cleanMobile}`,
+          countryCode: formData.countryCode || '+91',
+          dob: formData.dob.trim(),
+          gender: formData.gender?.trim() || '',
           accountType: 'general',
           accountTypeLabel: 'General User',
         });
 
-        setStep(3); // Go to Complete
+        // Set session user into auth store
+        const authUser = useAuthStore.getState().user;
+        if (authUser) {
+          useAuthStore.getState().setUser({
+            ...authUser,
+            account_type: 'general',
+            status: 'ACTIVE',
+            roles: [{ id: 'role-user', name: 'USER' }],
+          });
+        }
+
+        setStep(3); // Go directly to Complete screen!
       } catch (error) {
         let message = 'Unable to create account. Please try again.';
         if (error instanceof ApiError) {
@@ -191,99 +150,77 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         setSubmitting(false);
       }
     } else {
-      // Donation Seeker proceeds to Step 2 (verification & file upload)
+      // Donation Seeker: Proceed to Step 2 for Document Upload
       setStep(2);
     }
   };
 
-  // Step 2 -> Step 3 (Register with backend for Member/Seeker + Add to applications store)
-  const handleContinueFromStep2 = async (
+  // Step 2: Verification Document Uploaded (for Donation Seeker)
+  const handleVerificationContinue = async (
     selectedDoc: DocumentTypeOption,
     uploadedFile: UploadedDocFile,
   ) => {
     const state = getRegistrationState();
     const cleanMobile = extractCleanMobile(state.phone, state.countryCode);
-    const roleName = getBackendRoleName(state.accountType);
-    const effectivePassword =
-      state.password && state.password.trim().length >= 6
-        ? state.password.trim()
-        : 'Hrsjm@2026';
+    const effectivePassword = state.password && state.password.trim().length >= 6
+      ? state.password.trim()
+      : 'Hrsjm@2026';
+
+    const seekerCount = usersStore.getAllUsers().filter(u => u.userType === 'seeker').length + 1;
+    const applicationNumber = `HRSJM-SEK-${String(seekerCount).padStart(4, '0')}`;
 
     setSubmitting(true);
-    setLoadingMessage('Submitting registration & documents...');
+    setLoadingMessage('Submitting application & verification documents...');
     try {
-      // 1. Submit authentication registration to backend API
+      // 1. Submit auth registration with initial role USER (browses as User until approved)
       await register({
         full_name: state.fullName.trim(),
         email: state.email ? state.email.trim() : undefined,
         mobile_number: cleanMobile,
         password: effectivePassword,
         confirm_password: effectivePassword,
-        role_name: roleName,
+        role_name: 'USER',
       });
 
-      // 2. Also register into Admin stores for administrative review
       const docTitleMap: Record<string, string> = {
-        aadhaar: 'Aadhaar Card',
+        aadhaar: 'Aadhaar Card (Identity Proof)',
         pan: 'PAN Card',
         passport: 'Passport',
         driving: 'Driving Licence',
         voter: 'Voter ID',
-        other: 'Other Document',
+        other: 'Supporting Document',
       };
-      const docTitle = docTitleMap[selectedDoc] || 'Document';
+      const docTitle = docTitleMap[selectedDoc] || 'Verification Document';
 
-      if (state.accountType === 'member') {
-        const newApp = createApplicationFromRegistration({
-          fullName: state.fullName,
-          email: state.email,
-          phone: state.phone,
-          countryCode: state.countryCode,
-          dob: state.dob,
-          gender: state.gender,
-          selectedDocTitle: docTitle,
-          uploadedFileName: uploadedFile.name,
-          uploadedFileSize: uploadedFile.formattedSize,
-          uploadedFileUri: uploadedFile.uri,
-          documents: state.documents,
-        });
-        membershipApplicationsStore.addApplication(newApp);
-        usersStore.registerUserFromRegistration({
-          ...state,
-          accountType: 'member',
-          accountTypeLabel: 'Member',
-          selectedDocTitle: docTitle,
-          uploadedFileName: uploadedFile.name,
-          uploadedFileSize: uploadedFile.formattedSize,
-          uploadedFileUri: uploadedFile.uri,
-        });
-      } else if (state.accountType === 'seeker') {
-        // Register user into admin verification list with pending status
-        usersStore.registerUserFromRegistration({
-          ...state,
-          accountType: 'seeker',
-          accountTypeLabel: 'Donation Seeker',
-          selectedDocTitle: docTitle,
-          uploadedFileName: uploadedFile.name,
-          uploadedFileSize: uploadedFile.formattedSize,
-          uploadedFileUri: uploadedFile.uri,
-        });
-      } else {
-        // General user registration
-        usersStore.registerUserFromRegistration({
-          ...state,
-          accountType: 'general',
-          accountTypeLabel: 'User',
-          selectedDocTitle: docTitle,
-          uploadedFileName: uploadedFile.name,
-          uploadedFileSize: uploadedFile.formattedSize,
-          uploadedFileUri: uploadedFile.uri,
+      // 2. Register into usersStore with pending seeker status
+      usersStore.registerUserFromRegistration({
+        ...state,
+        accountType: 'seeker',
+        accountTypeLabel: 'Donation Seeker',
+        applicationNumber,
+        selectedDocTitle: docTitle,
+        uploadedFileName: uploadedFile.name,
+        uploadedFileSize: uploadedFile.formattedSize,
+        uploadedFileUri: uploadedFile.uri,
+      });
+
+      // 3. Update auth store with assistance application tracking
+      const authUser = useAuthStore.getState().user;
+      if (authUser) {
+        useAuthStore.getState().setUser({
+          ...authUser,
+          assistance_status: 'PENDING',
+          assistance_application_number: applicationNumber,
+          account_type: 'seeker',
+          roles: [{ id: 'role-user', name: 'USER' }],
         });
       }
 
-      setStep(3); // Go to Complete
+      updateRegistrationState({ applicationNumber });
+
+      setStep(3); // Go to Complete screen
     } catch (error) {
-      let message = 'Unable to complete registration. Please try again.';
+      let message = 'Unable to submit application. Please try again.';
       if (error instanceof ApiError) {
         if (error.statusCode === 409) {
           message = 'An account with this mobile number or email already exists. Please log in.';
@@ -297,7 +234,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     }
   };
 
-  // Step 3 -> Finish
+  // Step 3 -> Finish & Open Dashboard
   const handleFinish = () => {
     completeRegistration();
     resetRegistrationState();
@@ -305,28 +242,34 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
 
   return (
     <View style={styles.container}>
+      {/* Step 0: Account Type */}
       {step === 0 && (
-        <CreateAccountScreen
+        <CreateAccountTypeScreen
           onBack={() => navigation.goBack()}
+          onContinue={handleAccountTypeContinue}
+          onMemberSelect={handleMemberSelect}
           onLoginPress={() => navigation.navigate('Login')}
-          onContinue={handleContinueFromStep0}
         />
       )}
 
+      {/* Step 1: Personal Details & Password */}
       {step === 1 && (
-        <CreateAccountAdditionalScreen
+        <CreateAccountScreen
           onBack={() => setStep(0)}
-          onContinue={handleContinueFromStep1}
+          onLoginPress={() => navigation.navigate('Login')}
+          onContinue={handlePersonalDetailsContinue}
         />
       )}
 
+      {/* Step 2: Verification Documents (Donation Seeker only) */}
       {step === 2 && (
         <CreateAccountVerificationScreen
           onBack={() => setStep(1)}
-          onContinue={handleContinueFromStep2}
+          onContinue={handleVerificationContinue}
         />
       )}
 
+      {/* Step 3: Complete & Confirmation */}
       {step === 3 && (
         <CreateAccountCompleteScreen
           onBack={() => {

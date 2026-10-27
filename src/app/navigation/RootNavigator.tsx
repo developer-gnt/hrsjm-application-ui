@@ -53,7 +53,10 @@ export const RootNavigator: React.FC = () => {
   const roleNames = (user?.roles ?? []).map(r => r.name.toUpperCase());
   const isAdmin = roleNames.includes('ADMIN') || roleNames.includes('SUPER_ADMIN');
   const isMemberRole = roleNames.includes('MEMBER');
-  const isSeekerRole = roleNames.includes('SEEKER') || roleNames.includes('DONATION_SEEKER');
+  const isSeekerRole =
+    roleNames.includes('SEEKER') ||
+    roleNames.includes('DONATION_SEEKER') ||
+    (user as any)?.account_type === 'seeker';
 
   // Approved/Active members get the full MemberTabNavigator.
   // Pending or unverified applicants route to UserTabNavigator (User dashboard).
@@ -64,7 +67,7 @@ export const RootNavigator: React.FC = () => {
   // Approved seekers get SeekerTabNavigator; pending seekers route to UserTabNavigator.
   const isSeekerApproved =
     isSeekerRole &&
-    user?.assistance_status === 'APPROVED';
+    (user?.assistance_status === 'APPROVED' || user?.status?.toUpperCase() === 'ACTIVE');
 
   let activeRoleType: 'member' | 'user' | 'seeker' | 'default' = 'user';
   if (isMemberApproved) {

@@ -36,15 +36,15 @@ interface StepItem {
 }
 
 const STEPS_WITH_VERIFICATION: StepItem[] = [
-  { number: 1, label: 'Personal\nDetails' },
-  { number: 2, label: 'Account\nType' },
+  { number: 1, label: 'Account\nType' },
+  { number: 2, label: 'Personal\nDetails' },
   { number: 3, label: 'Verification' },
   { number: 4, label: 'Complete' },
 ];
 
 const STEPS_WITHOUT_VERIFICATION: StepItem[] = [
-  { number: 1, label: 'Personal\nDetails' },
-  { number: 2, label: 'Account\nType' },
+  { number: 1, label: 'Account\nType' },
+  { number: 2, label: 'Personal\nDetails' },
   { number: 3, label: 'Complete' },
 ];
 

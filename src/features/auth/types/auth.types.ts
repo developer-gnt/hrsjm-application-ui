@@ -22,6 +22,7 @@ export interface UserProfile {
   updated_at: string;
   membership_status?: string | null;
   assistance_status?: string | null;
+  assistance_application_number?: string | null;
   account_type?: 'general' | 'member' | 'seeker' | 'admin';
 }
 
