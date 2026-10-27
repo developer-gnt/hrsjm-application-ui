@@ -326,7 +326,6 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
 
       {/* Top Brand Header */}
       <AdminHeader
-        unreadCount={3}
         onNavigate={target => {
           if (
             target === 'AdminDashboardTab' ||

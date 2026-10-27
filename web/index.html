@@ -176,11 +176,37 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       }
       #root > div {
         height: 100%;
         display: flex;
         flex-direction: column;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      [dir="auto"], a, button, div, input, p, select, span, textarea {
+        font-family: inherit;
+      }
+      .r-fontWeight-1vr29t4 {
+        font-weight: 700 !important;
+      }
+      /* Ensure Webpack dev server runtime error overlay is completely suppressed and never covers the app */
+      #webpack-dev-server-client-overlay,
+      iframe#webpack-dev-server-client-overlay,
+      iframe[id*="webpack-dev-server-client-overlay"],
+      iframe[id*="webpack"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        max-width: 0 !important;
+        max-height: 0 !important;
+        position: absolute !important;
+        top: -99999px !important;
+        left: -99999px !important;
+        z-index: -999999 !important;
       }
       /* Suppress webpack-dev-server dev overlay from obscuring third-party PG events */
       #webpack-dev-server-client-overlay,
@@ -195,8 +221,114 @@
         height: 0 !important;
       }
     </style>
+    <script>
+      (function() {
+        // Immediate and persistent suppression of webpack error overlay
+        function purgeWebpackOverlay() {
+          var overlay = document.getElementById('webpack-dev-server-client-overlay');
+          if (overlay && overlay.parentNode) {
+            try { overlay.parentNode.removeChild(overlay); } catch (e) {}
+          }
+          var iframes = document.querySelectorAll('iframe');
+          for (var i = 0; i < iframes.length; i++) {
+            if (iframes[i].id && iframes[i].id.indexOf('webpack') !== -1) {
+              try { iframes[i].parentNode && iframes[i].parentNode.removeChild(iframes[i]); } catch (e) {}
+            }
+          }
+        }
+
+        // Suppress browser report for cross-origin third-party script errors
+        window.onerror = function(msg) {
+          if (msg === 'Script error.' || (typeof msg === 'string' && msg.indexOf('Script error') !== -1)) {
+            purgeWebpackOverlay();
+            return true;
+          }
+          return false;
+        };
+
+        window.addEventListener('error', function(e) {
+          if (e && (e.message === 'Script error.' || (typeof e.message === 'string' && e.message.indexOf('Script error') !== -1))) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            purgeWebpackOverlay();
+            return true;
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(e) {
+          var reason = e && e.reason;
+          var msg = (reason && reason.message) || String(reason || '');
+          if (msg.indexOf('Script error') !== -1) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            purgeWebpackOverlay();
+          }
+        }, true);
+
+        // Continuous DOM observer to remove overlay if appended
+        try {
+          var observer = new MutationObserver(function() {
+            purgeWebpackOverlay();
+          });
+          if (document.documentElement) {
+            observer.observe(document.documentElement, { childList: true, subtree: true });
+          }
+        } catch (err) {}
+        setInterval(purgeWebpackOverlay, 100);
+
+        // Check if Cashfree redirected here
+        var isCallback =
+          window.location.pathname.indexOf('/payments/callback') !== -1 ||
+          window.location.search.indexOf('cashfree_callback=true') !== -1 ||
+          (window.location.search.indexOf('order_id=') !== -1 && window.opener);
+
+        if (isCallback) {
+          try {
+            var targetWin = window.opener || (window.parent !== window ? window.parent : null);
+            if (targetWin) {
+              targetWin.postMessage({
+                type: 'CASHFREE_PAYMENT_CALLBACK',
+                search: window.location.search,
+                href: window.location.href
+              }, '*');
+            }
+          } catch (err) {}
+
+          // If in a popup, close the popup cleanly
+          if (window.opener) {
+            try {
+              window.close();
+            } catch (err) {}
+            setTimeout(function() {
+              try { window.close(); } catch (e) {}
+            }, 300);
+          }
+        }
+      })();
+    </script>
   </head>
   <body>
+    <div id="payment-callback-fallback" style="display:none;padding:50px 20px;text-align:center;font-family:Inter,system-ui,sans-serif;color:#011F39;background:#FAF7F0;min-height:100vh;">
+      <div style="max-width:400px;margin:40px auto;background:#fff;padding:32px 24px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,0.08);">
+        <div style="width:48px;height:48px;margin:0 auto 16px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#2e7d32;font-size:24px;">✓</div>
+        <h3 style="margin:0 0 8px;font-size:20px;font-weight:700;">Payment Completed</h3>
+        <p style="margin:0 0 20px;color:#666;font-size:14px;line-height:1.5;">You can now close this window and continue in the application.</p>
+        <button onclick="window.close()" style="width:100%;padding:12px;background:#011F39;color:#fff;border:none;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;">Close Window</button>
+      </div>
+    </div>
     <div id="root"></div>
+    <script>
+      var isCallbackPage =
+        window.location.pathname.indexOf('/payments/callback') !== -1 ||
+        window.location.search.indexOf('cashfree_callback=true') !== -1 ||
+        (window.location.search.indexOf('order_id=') !== -1 && window.opener);
+
+      if (isCallbackPage && window.opener) {
+        var fallbackEl = document.getElementById('payment-callback-fallback');
+        if (fallbackEl) fallbackEl.style.display = 'block';
+        var rootEl = document.getElementById('root');
+        if (rootEl) rootEl.style.display = 'none';
+      }
+    </script>
   </body>
 </html>

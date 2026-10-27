@@ -8,7 +8,10 @@ import {
 } from 'react-native';
 import { BorderRadius, Spacing } from '../../../../core';
 import { FileText, ChevronRight } from '../../../../core/components/icons';
-import { MembershipApplicationItem } from '../types/membershipApplications.types';
+import {
+  MembershipApplicationItem,
+  getApplicationAccountType,
+} from '../types/membershipApplications.types';
 
 interface MembershipApplicationCardProps {
   application: MembershipApplicationItem;
@@ -21,16 +24,18 @@ export const MembershipApplicationCard: React.FC<MembershipApplicationCardProps>
   application,
   onView,
 }) => {
+  const accountType = getApplicationAccountType ? getApplicationAccountType(application) : undefined;
   const isSeeker =
+    accountType === 'seeker' ||
     (application.membershipType || '').toLowerCase().includes('seeker') ||
     Boolean(application.applicationId && application.applicationId.startsWith('HRSJM-SEK'));
 
   const getInitials = (name: string): string => {
-    const parts = name.trim().split(/\s+/);
+    const parts = (name || '').trim().split(/\s+/);
     if (parts.length >= 2) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     }
-    return (name.slice(0, 2) || 'NA').toUpperCase();
+    return (name?.slice(0, 2) || 'NA').toUpperCase();
   };
 
   const renderStatusBadge = () => {

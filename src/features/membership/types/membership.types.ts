@@ -63,6 +63,10 @@ export interface MembershipApplicationRecord {
   validFrom?: string; // e.g. '14 Sep 2026'
   validTill?: string; // e.g. '14 Sep 2027'
   rejectionReason?: string;
+  paymentStatus?: 'Completed' | 'Pending' | 'Failed';
+  paymentId?: string;
+  paymentAmount?: number;
+  receiptNumber?: string;
   personalInfo: PersonalInfo;
   addressInfo: AddressInfo;
   documents: DocumentUploads;

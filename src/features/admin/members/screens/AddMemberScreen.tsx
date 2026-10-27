@@ -1134,7 +1134,6 @@ export const AddMemberScreen: React.FC<AddMemberScreenProps> = ({
 
       {/* Top Admin Header */}
       <AdminHeader
-        unreadCount={3}
         onNavigate={(target: string) => {
           if (onNavigate) onNavigate(target);
         }}

@@ -49,15 +49,15 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
-  showBottomNav,
+  showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
   // In the admin tab hierarchy, AdminNavigationBar renders the bottom tab bar.
-  // Only render UsersBottomNav if explicitly requested or when onBottomTabPress handler is supplied.
-  const isBottomNavVisible = showBottomNav ?? !!onBottomTabPress;
+  // Only render UsersBottomNav if explicitly requested (e.g. standalone dev preview).
+  const isBottomNavVisible = showBottomNav === true;
 
   useEffect(() => {
     usersStore.fetchUsers().catch(() => {});
@@ -126,7 +126,7 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
     searchQuery,
     joinedFrom: extraFilters.joinedFrom,
     joinedTo: extraFilters.joinedTo,
-    sortBy: extraFilters.sortBy,
+    sortBy: extraFilters.sortBy || 'newest',
   });
 
   const handleSelectStatusFromCard = (status: 'all' | 'active' | 'pending' | 'blocked') => {
@@ -142,13 +142,17 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
     setConfirmAction(user.status === 'blocked' ? 'unblock' : 'block');
   };
 
-  const handleConfirmToggleBlock = () => {
+  const handleConfirmToggleBlock = async () => {
     if (confirmModalUser && confirmAction) {
       const nextStatus: UserStatus = confirmAction === 'block' ? 'blocked' : 'active';
-      usersStore.updateStatus(confirmModalUser.id, nextStatus);
+      const targetId = confirmModalUser.id;
+      setConfirmModalUser(null);
+      setConfirmAction(null);
+      await usersStore.updateStatus(targetId, nextStatus);
+    } else {
+      setConfirmModalUser(null);
+      setConfirmAction(null);
     }
-    setConfirmModalUser(null);
-    setConfirmAction(null);
   };
 
   const handleResetFilters = () => {
@@ -258,7 +262,7 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
                     activeOpacity={0.7}
                   >
                     <Text style={styles.activeFilterPillText}>
-                      {`Status: ${selectedStatus.toUpperCase()} ✕`}
+                      {`Status: ${selectedStatus === 'active' ? 'Approved' : selectedStatus.toUpperCase()} ✕`}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -450,7 +454,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   pageTitle: {
-    fontFamily: FontFamilies.display,
+    fontFamily: FontFamilies.sans,
     fontSize: 24,
     fontWeight: '700',
     color: '#0B2F52',

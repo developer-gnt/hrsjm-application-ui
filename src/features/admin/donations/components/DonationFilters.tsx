@@ -20,10 +20,12 @@ interface DonationFiltersProps {
   visible: boolean;
   selectedStatus: DonationStatus | null;
   selectedCategory?: DonationCategory | null;
+  selectedSource?: string | null;
   onClose: () => void;
   onApply: (filters: {
     status: DonationStatus | null;
     category: DonationCategory | null;
+    source: string | null;
   }) => void;
 }
 
@@ -41,22 +43,32 @@ const CATEGORY_OPTIONS: { value: DonationCategory | null; label: string }[] = [
   { value: 'OFFLINE', label: 'Offline' },
 ];
 
+const SOURCE_OPTIONS: { value: string | null; label: string }[] = [
+  { value: null, label: 'All Sources' },
+  { value: 'Website', label: '🌐 Website' },
+  { value: 'Web App', label: '💻 Web App' },
+  { value: 'Application UI', label: '📱 Application UI' },
+];
+
 export const DonationFilters: React.FC<DonationFiltersProps> = ({
   visible,
   selectedStatus,
   selectedCategory = null,
+  selectedSource = null,
   onClose,
   onApply,
 }) => {
   const [draftStatus, setDraftStatus] = useState<DonationStatus | null>(selectedStatus);
   const [draftCategory, setDraftCategory] = useState<DonationCategory | null>(selectedCategory);
+  const [draftSource, setDraftSource] = useState<string | null>(selectedSource);
 
   useEffect(() => {
     if (visible) {
       setDraftStatus(selectedStatus);
       setDraftCategory(selectedCategory);
+      setDraftSource(selectedSource);
     }
-  }, [visible, selectedStatus, selectedCategory]);
+  }, [visible, selectedStatus, selectedCategory, selectedSource]);
 
   return (
     <Modal
@@ -67,7 +79,17 @@ export const DonationFilters: React.FC<DonationFiltersProps> = ({
     >
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.sheet}>
-          <Text style={styles.title}>Filters</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Filters</Text>
+            <TouchableOpacity
+              onPress={onClose}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Close filters"
+            >
+              <Text style={styles.closeIcon}>✕</Text>
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.sectionLabel}>Status</Text>
           <View style={styles.optionsGrid}>
@@ -111,6 +133,27 @@ export const DonationFilters: React.FC<DonationFiltersProps> = ({
             })}
           </View>
 
+          <Text style={[styles.sectionLabel, { marginTop: Spacing.md }]}>Platform / Source</Text>
+          <View style={styles.optionsGrid}>
+            {SOURCE_OPTIONS.map(option => {
+              const selected = draftSource === option.value;
+              return (
+                <TouchableOpacity
+                  key={option.label}
+                  style={styles.optionRow}
+                  onPress={() => setDraftSource(option.value)}
+                >
+                  <View
+                    style={[styles.radio, selected && styles.radioSelected]}
+                  >
+                    {selected ? <View style={styles.radioInner} /> : null}
+                  </View>
+                  <Text style={styles.optionLabel}>{option.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
           <View style={styles.footer}>
             <AppButton
               title="Clear"
@@ -120,13 +163,20 @@ export const DonationFilters: React.FC<DonationFiltersProps> = ({
               onPress={() => {
                 setDraftStatus(null);
                 setDraftCategory(null);
+                setDraftSource(null);
               }}
             />
             <AppButton
               title="Apply"
               size="sm"
               style={styles.footerButton}
-              onPress={() => onApply({ status: draftStatus, category: draftCategory })}
+              onPress={() =>
+                onApply({
+                  status: draftStatus,
+                  category: draftCategory,
+                  source: draftSource,
+                })
+              }
             />
           </View>
         </Pressable>
@@ -149,10 +199,21 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.xl,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
+  },
   title: {
     ...Typography.sectionHeader,
     color: AdminColors.textPrimary,
-    marginBottom: Spacing.md,
+  },
+  closeIcon: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: AdminColors.textSecondary,
+    padding: Spacing.xs,
   },
   sectionLabel: {
     ...Typography.secondaryMedium,

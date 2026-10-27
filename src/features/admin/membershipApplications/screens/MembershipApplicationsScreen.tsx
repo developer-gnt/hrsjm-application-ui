@@ -22,7 +22,10 @@ import { MembershipApplicationCard } from '../components/MembershipApplicationCa
 import { MembershipApplicationsBottomNav } from '../components/MembershipApplicationsBottomNav';
 import { MembershipFilterModal, FilterOptions } from '../components/MembershipFilterModal';
 import { membershipApplicationsStore } from '../services/membershipApplicationsStore';
-import { MembershipApplicationItem } from '../types/membershipApplications.types';
+import {
+  MembershipApplicationItem,
+  getApplicationAccountType,
+} from '../types/membershipApplications.types';
 
 interface MembershipApplicationsScreenProps {
   onViewApplication?: (application: MembershipApplicationItem) => void;
@@ -76,6 +79,9 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   const [pageSize, setPageSize] = useState(25);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     status: 'all',
+    type: 'all',
+    accountType: 'all',
+    memberType: 'All Types',
     membershipType: 'All Types',
     sortBy: 'newest',
   });
@@ -134,6 +140,9 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     setActiveTab('all');
     setFilterOptions({
       status: 'all',
+      type: 'all',
+      accountType: 'all',
+      memberType: 'All Types',
       membershipType: 'All Types',
       sortBy: 'newest',
     });
@@ -156,7 +165,8 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   };
 
   const hasActiveFilters =
-    filterOptions.membershipType !== 'All Types' ||
+    (filterOptions.type && filterOptions.type !== 'all') ||
+    (filterOptions.accountType && filterOptions.accountType !== 'all') ||
     filterOptions.sortBy !== 'newest';
 
   const memberAppsCount = useMemo(
@@ -190,23 +200,26 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
       } else if (activeTab !== 'all' && app.status !== activeTab) {
         return false;
       }
-      // Membership type filter
-      if (filterOptions.membershipType !== 'All Types') {
-        const isSeeker =
-          app.membershipType?.toLowerCase().includes('seeker') ||
-          app.applicationId?.startsWith('HRSJM-SEK');
-        if (filterOptions.membershipType === 'Donation Seeker' && !isSeeker) {
-          return false;
-        } else if (filterOptions.membershipType === 'Members' && isSeeker) {
-          return false;
-        } else if (
-          filterOptions.membershipType !== 'Donation Seeker' &&
-          filterOptions.membershipType !== 'Members' &&
-          app.membershipType !== filterOptions.membershipType
-        ) {
+      const isSeeker =
+        (app.membershipType?.toLowerCase().includes('seeker') ||
+        app.applicationId?.startsWith('HRSJM-SEK')) ?? false;
+
+      // Category chip filter: Members vs Donation Seeker
+      if (filterOptions.membershipType === 'Donation Seeker' && !isSeeker) {
+        return false;
+      } else if (filterOptions.membershipType === 'Members' && isSeeker) {
+        return false;
+      }
+
+      // Modal Type filter: All, Membership, Donor Seeker
+      const selectedType = filterOptions.type || filterOptions.accountType;
+      if (selectedType && selectedType !== 'all') {
+        const appAccountType = isSeeker ? 'seeker' : 'membership';
+        if (appAccountType !== selectedType) {
           return false;
         }
       }
+
       // Search query filter (matches name, application ID, phone, or email)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();

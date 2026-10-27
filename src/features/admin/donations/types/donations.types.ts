@@ -16,6 +16,8 @@ export const DONATION_STATUSES = ['PENDING', 'SUCCESS', 'FAILED', 'REFUNDED'] as
 
 export type DonationStatus = (typeof DONATION_STATUSES)[number];
 
+export type DonationSource = 'Website' | 'Web App' | 'Application UI';
+
 /** Donation entity as returned by GET /api/v1/donations. */
 export interface Donation {
   id: string;
@@ -26,6 +28,7 @@ export interface Donation {
   amount: number;
   status: string;
   remark: string | null;
+  source?: DonationSource | string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -43,6 +46,7 @@ export interface DonationQuery {
   limit?: number;
   status?: string;
   search?: string;
+  source?: string;
 }
 
 export type DonationCategory = 'ALL' | 'ONE_TIME' | 'RECURRING' | 'OFFLINE';
@@ -62,6 +66,7 @@ export interface CreateDonationInput {
   amount: number;
   is_anonymous?: boolean;
   remark?: string;
+  source?: DonationSource | string;
   donation_type?: 'ONE_TIME' | 'RECURRING' | 'OFFLINE';
 }
 
@@ -80,6 +85,7 @@ export interface DonationReceiptModel {
   transactionId?: string | null;
   status: string;
   notes?: string | null;
+  source?: DonationSource | string | null;
 }
 
 /**
@@ -101,6 +107,7 @@ export interface DonationRowModel {
   statusTone: BadgeStatus;
   hasReceipt: boolean;
   donationType?: 'ONE_TIME' | 'RECURRING' | 'OFFLINE';
+  source?: DonationSource | string | null;
   rawStatus?: string;
   rawDonation?: Donation;
 }

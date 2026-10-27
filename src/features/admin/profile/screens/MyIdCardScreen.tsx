@@ -35,6 +35,7 @@ import {
   IdCardIcon,
 } from '../components/ProfileIcons';
 import { useIdCardFiles } from '../hooks/useIdCardFiles';
+import { useMembership } from '../../../membership/context/MembershipContext';
 
 export interface MyIdCardScreenProps {
   onBack?: () => void;
@@ -84,6 +85,29 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
     roleLower.includes('donation seeker');
 
   const isAllowed = isMember || isAdmin || isSeeker;
+
+  const membershipCtx = useMembership();
+  const effectiveMemberId =
+    profile.memberId ||
+    membershipCtx.activeApplication?.applicationId ||
+    (membershipCtx.applications && membershipCtx.applications[0]?.applicationId) ||
+    'HRSJM-47611';
+
+  const effectiveMembershipType =
+    profile.membershipType ||
+    membershipCtx.activeApplication?.membershipType ||
+    'Individual Member';
+
+  const cardProfile = {
+    ...profile,
+    fullName: profile.fullName || profile.accountName || 'Member',
+    memberId: effectiveMemberId,
+    adminId: profile.adminId || effectiveMemberId,
+    membershipType: effectiveMembershipType,
+    accountStatus: profile.accountStatus || 'Active',
+    validTill: profile.validTill || '31 Dec 2027',
+    memberSince: profile.memberSince || '12 Oct 2024',
+  };
 
   const handleBack = () => {
     if (onBack) {
@@ -161,7 +185,7 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
           <>
             {/* Large ID card preview */}
             <View style={styles.cardWrap}>
-              <MyIdCard profile={profile} width={cardWidth} />
+              <MyIdCard profile={cardProfile} width={cardWidth} />
             </View>
 
             {/* Actions */}
@@ -174,7 +198,7 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
               loading={busyAction === 'download'}
               disabled={busyAction !== null}
               icon={<DownloadIcon color={AdminColors.textOnDark} size={16} />}
-              onPress={() => download(profile)}
+              onPress={() => download(cardProfile)}
               style={styles.downloadButton}
             />
             <AppButton
@@ -186,7 +210,7 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
               loading={busyAction === 'share'}
               disabled={busyAction !== null}
               icon={<ShareIcon color={AdminColors.primary} size={16} />}
-              onPress={() => share(profile)}
+              onPress={() => share(cardProfile)}
               style={styles.shareButton}
             />
 

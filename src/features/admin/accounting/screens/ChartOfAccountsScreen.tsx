@@ -625,7 +625,6 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
       <AdminHeader
-        unreadCount={3}
         onNavigate={(target: string) => {
           if (onNavigate) onNavigate(target);
         }}

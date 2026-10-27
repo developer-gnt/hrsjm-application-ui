@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -68,7 +69,7 @@ export const MembershipDetailsBottomBar: React.FC<MembershipDetailsBottomBarProp
     );
   }
 
-  // Case 2: Status is Approved
+  // Case 2: Status is Approved (Terminal state - button is disabled)
   if (status === 'approved') {
     return (
       <View style={[styles.container, { paddingBottom: Math.max(bottomInset, Spacing.sm) }]}>
@@ -83,11 +84,12 @@ export const MembershipDetailsBottomBar: React.FC<MembershipDetailsBottomBarProp
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.statusButton, styles.statusButtonApproved]}
-          onPress={onUnderReviewPress}
-          activeOpacity={0.8}
+          style={[styles.statusButton, styles.statusButtonApproved, styles.statusButtonDisabled]}
+          disabled={true}
+          activeOpacity={1}
           accessibilityRole="button"
-          accessibilityLabel="Approved - Tap to change status"
+          accessibilityLabel="Approved"
+          accessibilityState={{ disabled: true }}
         >
           <Text style={styles.statusDocIconLight}>✓</Text>
           <Text style={styles.statusTextApproved}>Approved</Text>
@@ -235,6 +237,10 @@ const styles = StyleSheet.create({
   },
   statusButtonApproved: {
     backgroundColor: '#10B981',
+  },
+  statusButtonDisabled: {
+    opacity: 0.85,
+    ...(Platform.OS === 'web' ? ({ cursor: 'default' } as any) : {}),
   },
   statusButtonRejected: {
     backgroundColor: '#EF4444',

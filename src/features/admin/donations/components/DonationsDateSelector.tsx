@@ -5,6 +5,7 @@ import {
   Spacing,
   BorderRadius,
 } from '../../../../core';
+import { Calendar } from '../../../../core/components/icons';
 
 interface DonationsDateSelectorProps {
   /** Defaults to the current month, e.g. "Oct 2026". */
@@ -32,11 +33,9 @@ export const DonationsDateSelector: React.FC<DonationsDateSelectorProps> = ({
       accessibilityRole="button"
       accessibilityLabel={`Select month, ${monthLabel}`}
     >
-      <View style={styles.calendarIcon}>
-        <View style={styles.calendarHeader} />
-      </View>
+      <Calendar size={15} color={AdminColors.primaryDark} strokeWidth={2} style={styles.calendarIcon} />
       <Text style={styles.label}>{monthLabel}</Text>
-      <Text style={styles.chevron}>⌄</Text>
+      <Text style={styles.chevron}>▾</Text>
     </TouchableOpacity>
   );
 };
@@ -51,29 +50,20 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.base,
     height: 44,
+    gap: 4,
   },
   calendarIcon: {
-    width: 15,
-    height: 15,
-    borderRadius: 3,
-    borderWidth: 1.5,
-    borderColor: AdminColors.primary,
-    marginRight: 6,
-    overflow: 'hidden',
-  },
-  calendarHeader: {
-    width: 15,
-    height: 4,
-    backgroundColor: AdminColors.primary,
+    marginRight: 2,
   },
   label: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: AdminColors.primaryDark,
   },
   chevron: {
     fontSize: 12,
+    fontWeight: '700',
     color: AdminColors.primary,
-    marginLeft: 4,
+    marginLeft: 2,
   },
 });

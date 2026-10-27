@@ -221,6 +221,7 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
       appData.applicationId ||
       `APP-${backend.id.substring(0, 8).toUpperCase()}`,
     applicantName: name,
+    accountType: isSeekerApp ? 'seeker' : 'membership',
     membershipType:
       backend.application_data?.membership_type ||
       (backend.membership_number?.startsWith('HRSJM-SEK') || (backend.application_data as any)?.type === 'DONATION_SEEKER'
@@ -268,8 +269,100 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
       appData.occupation ||
       user.occupation ||
       undefined,
+    amount:
+      backend.amount ??
+      backend.fee ??
+      backend.category?.fee ??
+      appData.amount ??
+      appData.fee ??
+      appData.package_fee ??
+      appData.payment_amount ??
+      backend.payment?.amount ??
+      undefined,
+    paymentStatus: (() => {
+      const raw = String(
+        backend.payment_status ||
+        backend.paymentStatus ||
+        backend.payment?.payment_status ||
+        backend.payment?.status ||
+        appData.payment_status ||
+        appData.paymentStatus ||
+        (appData.paymentCompleted ? 'PAID' : undefined) ||
+        (backend.status === 'APPROVED' || backend.status === 'ACTIVE' || status === 'approved' ? 'PAID' : undefined) ||
+        (appData.payment_order_id || appData.gateway_payment_id || appData.transaction_id ? 'PAID' : undefined) ||
+        ''
+      ).toUpperCase();
+      return raw === 'PAID' || raw === 'SUCCESS' || raw === 'SUCCESSFUL' || raw === 'COMPLETED' || status === 'approved'
+        ? 'PAID'
+        : 'UNPAID';
+    })(),
     documents,
     activityLog,
+  };
+}
+
+export function mapAssistanceRequestToApplicationItem(item: any): MembershipApplicationItem {
+  const rawStatus = (item.status || '').toUpperCase();
+  let status: ApplicationStatus = 'submitted';
+  if (rawStatus === 'ACTIVE' || rawStatus === 'APPROVED') {
+    status = 'approved';
+  } else if (rawStatus === 'REJECTED' || rawStatus === 'CLOSED' || rawStatus === 'CANCELLED') {
+    status = 'rejected';
+  } else if (rawStatus === 'UNDER_REVIEW') {
+    status = 'under_review';
+  } else {
+    status = 'submitted';
+  }
+
+  const rawDate = item.created_at || new Date().toISOString();
+  let submittedAt = '—';
+  try {
+    const d = new Date(rawDate);
+    submittedAt =
+      d.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }) +
+      ', ' +
+      d.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+  } catch {
+    submittedAt = String(rawDate);
+  }
+
+  const user = item.user || {};
+  const appId =
+    item.application_number ||
+    `HRSJM-SEK-${(item.id || '').replace(/-/g, '').slice(0, 6).toUpperCase()}`;
+
+  return {
+    id: item.id,
+    applicationId: appId,
+    applicantName: item.full_name?.trim() || user.full_name?.trim() || 'Donation Seeker Applicant',
+    accountType: 'seeker',
+    membershipType: item.reason ? `Donation Seeker (${item.reason})` : 'Donation Seeker',
+    status,
+    submittedAt,
+    submittedDate: rawDate,
+    phone: item.mobile?.trim() || user.mobile_number?.trim() || undefined,
+    email: item.email?.trim() || user.email?.trim() || undefined,
+    address: user.address_line1 || user.city || user.state || undefined,
+    amount: item.amount || item.requested_amount || undefined,
+    paymentStatus: 'EXEMPT',
+    documents: [],
+    activityLog: [
+      {
+        id: `log-sub-${item.id}`,
+        title: 'Donation Seeker Application Submitted',
+        description: item.description || item.reason || 'Assistance request submitted online.',
+        timestamp: submittedAt,
+        status,
+      },
+    ],
   };
 }
 
@@ -343,8 +436,11 @@ class MembershipApplicationsStore {
         try {
           const allRegisteredUsers = usersStore.getAllUsers();
           for (const u of allRegisteredUsers) {
-            if (u.status === 'pending' || u.userType === 'member' || u.userType === 'seeker') {
-              const appId = u.applicationNumber || u.memberId || `APP-${u.id}`;
+            const isSeeker = u.userType === 'seeker';
+            const isMember = u.userType === 'member';
+            if (u.status === 'pending' || isMember || isSeeker) {
+              const defaultAppId = isSeeker ? `HRSJM-SEK-${u.id.replace(/\D/g, '').slice(-4) || '0001'}` : `APP-${u.id}`;
+              const appId = u.applicationNumber || u.memberId || defaultAppId;
               const exists = this.applications.some(
                 a => a.id === u.id || a.applicationId === appId || (u.email && a.email?.toLowerCase() === u.email.toLowerCase())
               );
@@ -362,16 +458,19 @@ class MembershipApplicationsStore {
                   id: u.id,
                   applicationId: appId,
                   applicantName: u.name,
-                  membershipType: mType,
+                  accountType: isSeeker ? 'seeker' : 'membership',
+                  membershipType: isSeeker ? 'Donation Seeker' : mType,
                   status: sStatus,
                   submittedAt: u.joinedDate ? new Date(u.joinedDate).toLocaleDateString('en-GB') : 'Recently',
                   submittedDate: u.joinedDate || new Date().toISOString(),
                   phone: u.phone,
                   email: u.email,
                   dob: u.dob,
+                  amount: isSeeker ? undefined : 800,
+                  paymentStatus: 'UNPAID',
                   documents: u.documents?.map((d, idx) => ({
                     id: d.id || `doc-${idx + 1}`,
-                    title: d.title || 'Identification Document',
+                    title: d.title || (isSeeker ? 'Income / Medical Proof' : 'Identification Document'),
                     fileName: d.fileName || 'document.pdf',
                     fileSize: d.fileSize || '1.5 MB',
                     uploadDate: d.uploadedAt || 'Recently',
@@ -380,8 +479,8 @@ class MembershipApplicationsStore {
                   activityLog: [
                     {
                       id: `log-reg-${u.id}`,
-                      title: 'Application Submitted',
-                      description: `${mType} submitted for verification.`,
+                      title: isSeeker ? 'Donation Seeker Application Submitted' : 'Application Submitted',
+                      description: isSeeker ? 'Donation Seeker application submitted for verification.' : `${mType} submitted for verification.`,
                       timestamp: u.joinedDate || new Date().toLocaleString(),
                       status: sStatus,
                     },
@@ -482,6 +581,13 @@ class MembershipApplicationsStore {
               fatherName: userRec.personalInfo?.fatherOrHusbandName || undefined,
               address: addressParts.join(', ') || undefined,
               occupation: userRec.personalInfo?.occupation || undefined,
+              amount: userRec.paymentAmount || userRec.fee || userRec.amount,
+              paymentStatus:
+                userRec.paymentStatus === 'Completed' ||
+                userRec.paymentCompleted === true ||
+                statusKey === 'approved'
+                  ? 'PAID'
+                  : 'UNPAID',
               documents: userDocs,
               activityLog: [
                 {
@@ -512,6 +618,8 @@ class MembershipApplicationsStore {
                 submittedAt: userAppItem.submittedAt || this.applications[existingIdx].submittedAt,
                 submittedDate: userAppItem.submittedDate || this.applications[existingIdx].submittedDate,
                 membershipType: userAppItem.membershipType || this.applications[existingIdx].membershipType,
+                amount: userAppItem.amount || this.applications[existingIdx].amount,
+                paymentStatus: userAppItem.paymentStatus || this.applications[existingIdx].paymentStatus,
               };
             } else {
               this.applications = [userAppItem, ...this.applications];
@@ -573,11 +681,16 @@ class MembershipApplicationsStore {
   }
 
   public getApplications(): MembershipApplicationItem[] {
-    return this.applications.filter(
-      a =>
-        a.membershipType !== 'Donation Seeker' &&
-        !(a.applicationId && a.applicationId.startsWith('HRSJM-SEK'))
+    return this.applications;
+  }
+
+  public removeApplication(idOrAppId: string): void {
+    this.applications = this.applications.filter(
+      a => a.id !== idOrAppId && a.applicationId !== idOrAppId
     );
+    this.savePersistedApplications();
+    this.recalculateStatsFromItems();
+    this.notify();
   }
 
   /**
@@ -625,19 +738,36 @@ class MembershipApplicationsStore {
     this.notify();
 
     try {
-      const response = await apiClient.get<any>(ApiRoutes.MEMBERSHIPS.BASE, {
-        params: { limit: 100, page: 1 },
-      });
+      const [membershipsRes, assistanceRes] = await Promise.allSettled([
+        apiClient.get<any>(ApiRoutes.MEMBERSHIPS.BASE, {
+          params: { limit: 100, page: 1 },
+        }),
+        apiClient.get<any>(ApiRoutes.ASSISTANCE_REQUESTS, {
+          params: { limit: 100, page: 1 },
+        }),
+      ]);
 
-      const resData =
-        (response as any)?.data !== undefined
-          ? (response as any).data
-          : response;
-      const rawItems = Array.isArray(resData)
-        ? resData
-        : (resData as any)?.items || [];
+      let rawItems: any[] = [];
+      if (membershipsRes.status === 'fulfilled') {
+        const resData =
+          (membershipsRes.value as any)?.data !== undefined
+            ? (membershipsRes.value as any).data
+            : membershipsRes.value;
+        const items = Array.isArray(resData) ? resData : (resData as any)?.items || [];
+        rawItems.push(...items);
+      }
 
       const mapped: MembershipApplicationItem[] = rawItems.map(mapBackendToApplicationItem);
+
+      if (assistanceRes.status === 'fulfilled') {
+        const aData =
+          (assistanceRes.value as any)?.data !== undefined
+            ? (assistanceRes.value as any).data
+            : assistanceRes.value;
+        const aItems = Array.isArray(aData) ? aData : (aData as any)?.items || [];
+        const mappedSeekers = aItems.map(mapAssistanceRequestToApplicationItem);
+        mapped.push(...mappedSeekers);
+      }
 
       // Preserve any locally added applications that are not yet in backend items
       const backendIds = new Set(mapped.map((m: MembershipApplicationItem) => m.id));
@@ -847,10 +977,16 @@ class MembershipApplicationsStore {
       ...current,
       status: newStatus,
       rejectionReason: newStatus === 'rejected' ? (notes || 'Incomplete documents') : undefined,
+      paymentStatus: newStatus === 'approved' ? 'PAID' : current.paymentStatus,
       activityLog: [newLogItem, ...(current.activityLog || [])],
     };
 
-    // If status updated to approved, convert user role to MEMBER
+    const isSeeker =
+      current.accountType === 'seeker' ||
+      current.applicationId?.startsWith('HRSJM-SEK') ||
+      (current.membershipType || '').toLowerCase().includes('seeker');
+
+    // If status updated to approved, convert user role to MEMBER or DONATION_SEEKER
     if (newStatus === 'approved') {
       try {
         const authUser = useAuthStore.getState().user;
@@ -864,7 +1000,10 @@ class MembershipApplicationsStore {
                 ...authUser,
                 roles: [
                   ...(authUser.roles?.filter(r => r.name?.toUpperCase() !== 'USER') || []),
-                  { id: 'role-member', name: 'MEMBER' },
+                  {
+                    id: isSeeker ? 'role-seeker' : 'role-member',
+                    name: isSeeker ? 'DONATION_SEEKER' : 'MEMBER',
+                  },
                 ],
               },
             });
@@ -932,19 +1071,30 @@ class MembershipApplicationsStore {
 
     try {
       if (/^[0-9a-fA-F-]{36}$/.test(current.id)) {
-        const patchRes = await apiClient.patch<any>(ApiRoutes.MEMBERSHIPS.STATUS(current.id), {
-          status: backendStatus,
-          admin_notes: notes,
-          rejection_reason:
-            newStatus === 'rejected'
-              ? notes || 'Application rejected by admin'
-              : undefined,
-        });
-        const patchData = (patchRes as any)?.data || patchRes;
-        if (patchData?.membership_number) {
-          this.applications[index].applicationId = patchData.membership_number;
-          this.savePersistedApplications();
-          this.notify();
+        if (isSeeker) {
+          await apiClient.patch<any>(`/assistance-requests/${current.id}/status`, {
+            status: backendStatus,
+            admin_notes: notes,
+            rejection_reason:
+              newStatus === 'rejected'
+                ? notes || 'Application rejected by admin'
+                : undefined,
+          });
+        } else {
+          const patchRes = await apiClient.patch<any>(ApiRoutes.MEMBERSHIPS.STATUS(current.id), {
+            status: backendStatus,
+            admin_notes: notes,
+            rejection_reason:
+              newStatus === 'rejected'
+                ? notes || 'Application rejected by admin'
+                : undefined,
+          });
+          const patchData = (patchRes as any)?.data || patchRes;
+          if (patchData?.membership_number) {
+            this.applications[index].applicationId = patchData.membership_number;
+            this.savePersistedApplications();
+            this.notify();
+          }
         }
       }
     } catch (e) {
@@ -952,6 +1102,20 @@ class MembershipApplicationsStore {
     }
 
     return true;
+  }
+
+  public updatePaymentStatus(id: string, paymentStatus: 'PAID' | 'UNPAID'): void {
+    const index = this.applications.findIndex(
+      a => a.id === id || a.applicationId === id
+    );
+    if (index !== -1) {
+      this.applications[index] = {
+        ...this.applications[index],
+        paymentStatus,
+      };
+      this.savePersistedApplications();
+      this.notify();
+    }
   }
 
   public addApplication(application: MembershipApplicationItem): void {
@@ -1004,6 +1168,7 @@ export interface RegistrationInputData {
   phone?: string;
   countryCode?: string;
   dob?: string;
+  gender?: string;
   selectedDocTitle?: string;
   uploadedFileName?: string;
   uploadedFileSize?: string;
@@ -1080,7 +1245,7 @@ export const createApplicationFromRegistration = (
     phone: data.phone,
     email: data.email,
     dob: data.dob,
-    gender: 'Not specified',
+    gender: data.gender || 'Not specified',
     fatherName: 'Not specified',
     address: 'Submitted online via Member Registration',
     occupation: 'Member',

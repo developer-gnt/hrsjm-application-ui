@@ -19,6 +19,7 @@ import {
   UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
+import { Calendar } from '../../../../core/components/icons';
 import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeBlogItem, HomeTab } from '../../home/types/home.types';
@@ -272,9 +273,12 @@ export const UserBlogsScreen: React.FC<UserBlogsScreenProps> = ({
                 {featuredBlog.excerpt}
               </Text>
               <View style={styles.featuredMetaRow}>
-                <Text style={styles.featuredMetaText}>
-                  📅 {featuredBlog.date} • ✍️ {featuredBlog.author}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Calendar size={12} color={AdminColors.textOnDark} style={{ marginRight: 4 }} />
+                  <Text style={styles.featuredMetaText}>
+                    {featuredBlog.date} • ✍️ {featuredBlog.author}
+                  </Text>
+                </View>
                 <View style={styles.featuredArrow}>
                   <AppIcon name="arrow-right" size={14} color={AdminColors.textOnDark} />
                 </View>

@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -25,6 +26,8 @@ interface DonationReceiptModalProps {
   onClose: () => void;
 }
 
+const LOGO_SOURCE = require('../../../../assets/logo/logo.png');
+
 export const DonationReceiptModal: React.FC<DonationReceiptModalProps> = ({
   visible,
   row,
@@ -45,9 +48,12 @@ export const DonationReceiptModal: React.FC<DonationReceiptModalProps> = ({
         <Pressable style={styles.card}>
           <View style={styles.header}>
             <View style={styles.brandingRow}>
-              <View style={styles.logoBadge}>
-                <Text style={styles.logoLetter}>H</Text>
-              </View>
+              <Image
+                source={LOGO_SOURCE}
+                style={styles.logoImage}
+                resizeMode="contain"
+                accessibilityLabel="HRSJM Logo"
+              />
               <View style={styles.identityCol}>
                 <Text style={styles.orgName}>HRSJM</Text>
                 <Text style={styles.orgFullName}>
@@ -124,6 +130,16 @@ export const DonationReceiptModal: React.FC<DonationReceiptModalProps> = ({
                   </Text>
                 </View>
               ) : null}
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Platform / Source</Text>
+                <Text style={styles.detailValue}>
+                  {row.source === 'Application UI'
+                    ? 'Application UI'
+                    : row.source === 'Web App'
+                    ? 'Web App'
+                    : 'Website'}
+                </Text>
+              </View>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Payment Status</Text>
                 <AppBadge
@@ -206,21 +222,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  logoBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: BorderRadius.base,
-    backgroundColor: AdminColors.cardSurface,
-    borderWidth: 1.5,
-    borderColor: AdminColors.accentGold,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 44,
+    height: 44,
     marginRight: Spacing.sm,
-  },
-  logoLetter: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: AdminColors.primary,
   },
   identityCol: {
     flex: 1,

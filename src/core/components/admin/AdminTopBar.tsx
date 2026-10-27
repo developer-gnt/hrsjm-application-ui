@@ -59,7 +59,7 @@ export function AdminTopBar() {
           <Icon name="bell" size={24} color={colors.primary} strokeWidth={1.9} />
           {unreadCount > 0 ? (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+              <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
             </View>
           ) : null}
         </TouchableOpacity>

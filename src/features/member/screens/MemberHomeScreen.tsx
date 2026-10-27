@@ -10,13 +10,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { AdminHeader } from '../../../app/navigation/AdminHeader';
+import { MemberHeader } from '../components/MemberHeader';
 import { useNotifications } from '../../admin/notifications';
 import { AppRoutes } from '../../../core/constants/routes';
 import { useAuthStore } from '../../auth/store/authStore';
 import { DEFAULT_ADMIN_AVATAR } from '../../auth/components/UserProfileModal';
 import { FontFamilies, BorderRadius } from '../../../core/theme';
 import { useMembershipDetailsData } from '../../membership/hooks/useMembershipDetailsData';
+import { Calendar } from '../../../core/components/icons';
 
 const HRSJM_EMBLEM = require('../../../assets/hrsjm_logo.png');
 
@@ -38,9 +39,10 @@ export const MemberHomeScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <AdminHeader
+      <MemberHeader
         unreadCount={unreadCount}
         onPressNotifications={() => navigation.navigate(AppRoutes.NOTIFICATIONS)}
+        onPressDonate={() => navigation.navigate('UserActionPage', { pageId: 'donate' })}
       />
 
       <ScrollView
@@ -120,7 +122,7 @@ export const MemberHomeScreen: React.FC = () => {
               activeOpacity={0.75}
             >
               <View style={[styles.shortcutIconBox, { backgroundColor: '#EEF3FC' }]}>
-                <Text style={styles.shortcutIcon}>📅</Text>
+                <Calendar size={20} color="#1E40AF" />
               </View>
               <Text style={styles.shortcutTitle}>Events</Text>
               <Text style={styles.shortcutSub}>Volunteer & drives</Text>

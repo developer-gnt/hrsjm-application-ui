@@ -14,6 +14,7 @@ import {
   Typography,
 } from '../../../../core';
 import { Menu, Bell } from '../../../../core/components/icons';
+import { useDynamicUnreadCount } from '../../notifications/store/notificationsStore';
 
 const HRSJM_LOGO = require('../../../../assets/hrsjm_logo.png');
 
@@ -36,6 +37,8 @@ export const MembershipApplicationsHeader: React.FC<MembershipApplicationsHeader
   onProfilePress,
   onSignupPress,
 }) => {
+  const unreadCount = useDynamicUnreadCount();
+
   return (
     <View style={[styles.wrapper, { paddingTop: paddingTop + Spacing.sm }]}>
       {/* Top Bar */}
@@ -65,12 +68,16 @@ export const MembershipApplicationsHeader: React.FC<MembershipApplicationsHeader
             onPress={onNotificationsPress}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="Notifications"
+            accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
           >
             <Bell size={22} color="#1E293B" strokeWidth={2} />
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>3</Text>
-            </View>
+            {unreadCount > 0 ? (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadBadgeText}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            ) : null}
           </TouchableOpacity>
 
           <TouchableOpacity

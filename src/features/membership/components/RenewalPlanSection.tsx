@@ -2,21 +2,26 @@ import React from 'react';
 import {
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { BorderRadius, Spacing } from '../../../core';
-import { RENEWAL_PLANS, RenewalPlanOption } from '../data/renewalPlansData';
+import { getDynamicRenewalPlan, RenewalPlanOption } from '../data/renewalPlansData';
 
 interface RenewalPlanSectionProps {
-  selectedPlanId: string;
-  onSelectPlan: (plan: RenewalPlanOption) => void;
+  plan?: RenewalPlanOption;
+  selectedPlanId?: string;
+  onSelectPlan?: (plan: RenewalPlanOption) => void;
+  sequenceNumber?: number;
 }
 
 export const RenewalPlanSection: React.FC<RenewalPlanSectionProps> = ({
+  plan,
   selectedPlanId,
   onSelectPlan,
+  sequenceNumber = 1,
 }) => {
+  const activePlan = plan || getDynamicRenewalPlan(sequenceNumber);
+
   return (
     <View style={styles.container}>
       {/* Header Row: Heading + Equal-fee Badge */}
@@ -27,63 +32,53 @@ export const RenewalPlanSection: React.FC<RenewalPlanSectionProps> = ({
         </View>
       </View>
 
-      {/* Plan Selection Cards */}
+      {/* Plan Selection Cards - Displays Only the Single Applicable Plan */}
       <View style={styles.plansContainer}>
-        {RENEWAL_PLANS.map((plan) => {
-          const isSelected = selectedPlanId === plan.id;
+        <View
+          style={[
+            styles.planCard,
+            styles.planCardSelected,
+          ]}
+          accessible={true}
+          accessibilityLabel={`${activePlan.label}, ${activePlan.price}, ${activePlan.badge}`}
+        >
+          {/* Active Confirmed Checkmark (Replaces redundant multiple radio options) */}
+          <View style={styles.activeCheckCircle}>
+            <Text style={styles.activeCheckIcon}>✓</Text>
+          </View>
 
-          return (
-            <TouchableOpacity
-              key={plan.id}
-              style={[
-                styles.planCard,
-                isSelected && styles.planCardSelected,
-              ]}
-              onPress={() => onSelectPlan(plan)}
-              activeOpacity={0.75}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: isSelected }}
-              accessibilityLabel={`${plan.label}, ${plan.price}, ${plan.badge}`}
-            >
-              {/* Radio Button Indicator */}
-              <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
-                {isSelected ? <View style={styles.radioInner} /> : null}
-              </View>
+          {/* Calendar Icon Badge */}
+          <View style={[styles.calendarBadge, { borderColor: activePlan.themeColor }]}>
+            {/* Top Binder Pins */}
+            <View style={styles.binderPinsRow}>
+              <View style={[styles.binderPin, { backgroundColor: activePlan.themeColor }]} />
+              <View style={[styles.binderPin, { backgroundColor: activePlan.themeColor }]} />
+            </View>
+            {/* Calendar Header */}
+            <View style={[styles.calendarHeader, { backgroundColor: activePlan.themeColor }]} />
+            {/* Year Content */}
+            <View style={styles.calendarBody}>
+              <Text style={[styles.calendarYearText, { color: activePlan.themeColor }]}>
+                {activePlan.yearNumber}
+              </Text>
+              <Text style={styles.calendarSubText}>YEAR</Text>
+            </View>
+          </View>
 
-              {/* Calendar Icon Badge */}
-              <View style={[styles.calendarBadge, { borderColor: plan.themeColor }]}>
-                {/* Top Binder Pins */}
-                <View style={styles.binderPinsRow}>
-                  <View style={[styles.binderPin, { backgroundColor: plan.themeColor }]} />
-                  <View style={[styles.binderPin, { backgroundColor: plan.themeColor }]} />
-                </View>
-                {/* Calendar Header */}
-                <View style={[styles.calendarHeader, { backgroundColor: plan.themeColor }]} />
-                {/* Year Content */}
-                <View style={styles.calendarBody}>
-                  <Text style={[styles.calendarYearText, { color: plan.themeColor }]}>
-                    {plan.yearNumber}
-                  </Text>
-                  <Text style={styles.calendarSubText}>YEAR</Text>
-                </View>
-              </View>
+          {/* Middle Group: Title & Duration */}
+          <View style={styles.planInfoGroup}>
+            <Text style={styles.planTitleText}>{activePlan.label}</Text>
+            <Text style={styles.planDurationText}>{activePlan.duration}</Text>
+          </View>
 
-              {/* Middle Group: Title & Duration */}
-              <View style={styles.planInfoGroup}>
-                <Text style={styles.planTitleText}>{plan.label}</Text>
-                <Text style={styles.planDurationText}>{plan.duration}</Text>
-              </View>
-
-              {/* Right Group: Price & Savings Badge */}
-              <View style={styles.priceGroup}>
-                <Text style={styles.priceText}>{plan.price}</Text>
-                <View style={styles.savingsBadge}>
-                  <Text style={styles.savingsBadgeText}>{plan.badge}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+          {/* Right Group: Price & Savings Badge */}
+          <View style={styles.priceGroup}>
+            <Text style={styles.priceText}>{activePlan.price}</Text>
+            <View style={styles.savingsBadge}>
+              <Text style={styles.savingsBadgeText}>{activePlan.badge}</Text>
+            </View>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -143,6 +138,23 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     shadowOpacity: 0.06,
     shadowRadius: 5,
+  },
+  activeCheckCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#0F2860',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    borderWidth: 1.5,
+    borderColor: '#3B82F6',
+  },
+  activeCheckIcon: {
+    color: '#FAD465',
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 14,
   },
   radioOuter: {
     width: 20,

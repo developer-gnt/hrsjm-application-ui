@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
+  Platform,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { BorderRadius, FontFamilies, Spacing } from '../../../../core';
+import { usersStore } from '../services/usersStore';
 import { UserItem } from '../types/user.types';
 
 interface UserPasswordResetModalProps {
@@ -16,21 +20,81 @@ interface UserPasswordResetModalProps {
   onClose: () => void;
 }
 
+const generateRandomPassword = (): string => {
+  const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let rand = '';
+  for (let i = 0; i < 4; i++) {
+    rand += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `Hrsjm@${rand}`;
+};
+
 export const UserPasswordResetModal: React.FC<UserPasswordResetModalProps> = ({
   visible,
   user,
   onClose,
 }) => {
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   if (!user) return null;
 
-  const handleSendLink = () => {
-    setSent(true);
+  const handleGenerate = () => {
+    const generated = generateRandomPassword();
+    setPassword(generated);
+    setShowPassword(true);
+    setErrorMessage(null);
+  };
+
+  const handleResetSubmit = async () => {
+    const trimmed = password.trim();
+    if (!trimmed || trimmed.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await usersStore.resetPassword(user.id, trimmed);
+      if (res.success) {
+        setSuccess(true);
+      } else {
+        setErrorMessage(res.message || 'Failed to update user password.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'An unexpected error occurred.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      const nav = typeof navigator !== 'undefined' ? (navigator as any) : null;
+      if (nav?.clipboard?.writeText) {
+        await nav.clipboard.writeText(password.trim());
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleDone = () => {
-    setSent(false);
+    setPassword('');
+    setShowPassword(false);
+    setIsSubmitting(false);
+    setErrorMessage(null);
+    setSuccess(false);
+    setCopied(false);
     onClose();
   };
 
@@ -45,62 +109,156 @@ export const UserPasswordResetModal: React.FC<UserPasswordResetModalProps> = ({
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
             <View style={styles.card}>
-              <View style={styles.iconCircle}>
-                <Text style={styles.icon}>{sent ? '✉️' : '🔑'}</Text>
+              <View
+                style={[
+                  styles.iconCircle,
+                  success && styles.iconCircleSuccess,
+                ]}
+              >
+                <Text style={styles.icon}>{success ? '✓' : '🔑'}</Text>
               </View>
 
-              <Text style={styles.title}>Reset Password</Text>
+              <Text style={styles.title}>
+                {success ? 'Password Updated!' : 'Reset User Password'}
+              </Text>
 
-              {sent ? (
+              {/* Target User Summary Pill */}
+              <View style={styles.userSummaryBox}>
+                <Text style={styles.userSummaryName}>{user.name}</Text>
+                <Text style={styles.userSummaryMeta}>
+                  {user.email || user.phone}
+                </Text>
+              </View>
+
+              {success ? (
                 <>
                   <Text style={styles.message}>
-                    A secure password reset link has been dispatched to{' '}
-                    <Text style={styles.boldText}>{user.email}</Text>. The user
-                    can follow the instructions in the email to set a new password.
+                    The new password has been securely saved to the database.
+                    Existing sessions have been revoked. The user can now log in
+                    with the credentials below:
                   </Text>
-                  <View style={styles.noticeBox}>
-                    <Text style={styles.noticeText}>
-                      Notice: This operates in simulation mode as the backend email
-                      service is not configured in this demo environment.
-                    </Text>
+
+                  {/* Password Display Box with Copy Button */}
+                  <View style={styles.passwordDisplayCard}>
+                    <Text style={styles.passwordLabel}>NEW LOGIN PASSWORD</Text>
+                    <View style={styles.passwordDisplayRow}>
+                      <Text style={styles.passwordText}>{password}</Text>
+                      <TouchableOpacity
+                        style={[styles.copyBtn, copied && styles.copyBtnCopied]}
+                        onPress={handleCopy}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel="Copy password to clipboard"
+                      >
+                        <Text
+                          style={[
+                            styles.copyBtnText,
+                            copied && styles.copyBtnTextCopied,
+                          ]}
+                        >
+                          {copied ? '✓ Copied' : '📋 Copy'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
+
                   <TouchableOpacity
                     style={styles.doneBtn}
                     onPress={handleDone}
                     activeOpacity={0.8}
                     accessibilityRole="button"
-                    accessibilityLabel="Close reset confirmation"
+                    accessibilityLabel="Close modal"
                   >
-                    <Text style={styles.doneBtnText}>Close</Text>
+                    <Text style={styles.doneBtnText}>Done</Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
                   <Text style={styles.message}>
-                    Initiate a password reset for{' '}
-                    <Text style={styles.boldText}>{user.name}</Text> (
-                    {user.email}). A temporary recovery link will be sent to their
-                    registered email.
+                    Enter a new password or generate a secure one. This will
+                    immediately overwrite their existing password in the system.
                   </Text>
+
+                  {/* Error Notification */}
+                  {errorMessage ? (
+                    <View style={styles.errorBox}>
+                      <Text style={styles.errorText}>⚠️ {errorMessage}</Text>
+                    </View>
+                  ) : null}
+
+                  {/* Password Input Field */}
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>New Password</Text>
+                    <View style={styles.inputRow}>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter at least 6 characters"
+                        placeholderTextColor="#94A3B8"
+                        value={password}
+                        onChangeText={text => {
+                          setPassword(text);
+                          if (errorMessage) setErrorMessage(null);
+                        }}
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        editable={!isSubmitting}
+                      />
+                      <TouchableOpacity
+                        style={styles.toggleVisibilityBtn}
+                        onPress={() => setShowPassword(prev => !prev)}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        <Text style={styles.toggleVisibilityIcon}>
+                          {showPassword ? '🙈' : '👁️'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Generate Password Helper */}
+                  <TouchableOpacity
+                    style={styles.generateBtn}
+                    onPress={handleGenerate}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Generate strong password"
+                    disabled={isSubmitting}
+                  >
+                    <Text style={styles.generateBtnText}>🎲 Generate Strong Password</Text>
+                  </TouchableOpacity>
+
+                  {/* Button Actions */}
                   <View style={styles.btnRow}>
                     <TouchableOpacity
                       style={styles.cancelBtn}
                       onPress={handleDone}
                       activeOpacity={0.8}
+                      disabled={isSubmitting}
                       accessibilityRole="button"
-                      accessibilityLabel="Cancel reset modal"
+                      accessibilityLabel="Cancel password reset"
                     >
                       <Text style={styles.cancelBtnText}>Cancel</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={styles.actionBtn}
-                      onPress={handleSendLink}
+                      style={[
+                        styles.actionBtn,
+                        (password.trim().length < 6 || isSubmitting) && styles.actionBtnDisabled,
+                      ]}
+                      onPress={handleResetSubmit}
                       activeOpacity={0.8}
+                      disabled={password.trim().length < 6 || isSubmitting}
                       accessibilityRole="button"
-                      accessibilityLabel="Send Password Reset Link"
+                      accessibilityLabel="Set New Password"
                     >
-                      <Text style={styles.actionBtnText}>Send Reset Link</Text>
+                      {isSubmitting ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.actionBtnText}>Set Password</Text>
+                      )}
                     </TouchableOpacity>
                   </View>
                 </>
@@ -116,71 +274,187 @@ export const UserPasswordResetModal: React.FC<UserPasswordResetModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(1, 31, 57, 0.5)',
+    backgroundColor: 'rgba(1, 31, 57, 0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.base,
   },
   card: {
     width: '100%',
-    maxWidth: 360,
+    maxWidth: 380,
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
     alignItems: 'center',
     shadowColor: '#011F39',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
     elevation: 8,
   },
   iconCircle: {
-    width: 56,
-    height: 56,
+    width: 54,
+    height: 54,
     borderRadius: BorderRadius.full,
-    backgroundColor: '#EDF2F7',
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  iconCircleSuccess: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
   },
   icon: {
-    fontSize: 26,
+    fontSize: 24,
+    color: '#059669',
+    fontWeight: '700',
   },
   title: {
-    fontFamily: FontFamilies.display,
-    fontSize: 18,
+    fontFamily: FontFamilies.serif,
+    fontSize: 19,
     fontWeight: '700',
     color: '#06294D',
     textAlign: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  userSummaryBox: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  userSummaryName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  userSummaryMeta: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
   },
   message: {
-    fontFamily: FontFamilies.sans,
     fontSize: 13,
-    color: '#718096',
+    color: '#64748B',
     textAlign: 'center',
-    lineHeight: 19,
+    lineHeight: 18,
     marginBottom: Spacing.base,
   },
-  boldText: {
-    fontFamily: FontFamilies.sans,
-    fontWeight: '700',
-    color: '#0B2F52',
+  errorBox: {
+    width: '100%',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: BorderRadius.sm,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginBottom: 12,
   },
-  noticeBox: {
+  errorText: {
+    fontSize: 12,
+    color: '#DC2626',
+    fontWeight: '600',
+  },
+  inputContainer: {
+    width: '100%',
+    marginBottom: 10,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+    marginBottom: 6,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: BorderRadius.md,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 12,
+    height: 46,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    color: '#0F172A',
+    paddingVertical: 0,
+  },
+  toggleVisibilityBtn: {
+    padding: 6,
+  },
+  toggleVisibilityIcon: {
+    fontSize: 16,
+  },
+  generateBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     backgroundColor: '#FFF9E6',
+    borderRadius: BorderRadius.sm,
     borderWidth: 1,
     borderColor: '#FAD465',
-    borderRadius: BorderRadius.button,
-    padding: 10,
     marginBottom: Spacing.base,
-    width: '100%',
   },
-  noticeText: {
-    fontFamily: FontFamilies.sans,
-    fontSize: 11,
+  generateBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
     color: '#8F6600',
-    lineHeight: 16,
+  },
+  passwordDisplayCard: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#059669',
+    borderRadius: BorderRadius.lg,
+    padding: 12,
+    marginBottom: Spacing.lg,
+  },
+  passwordLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#059669',
+    letterSpacing: 0.6,
+    marginBottom: 6,
+  },
+  passwordDisplayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  passwordText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    letterSpacing: 1,
+  },
+  copyBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: '#E2E8F0',
+  },
+  copyBtnCopied: {
+    backgroundColor: '#ECFDF5',
+  },
+  copyBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  copyBtnTextCopied: {
+    color: '#059669',
   },
   btnRow: {
     flexDirection: 'row',
@@ -189,47 +463,44 @@ const styles = StyleSheet.create({
   },
   cancelBtn: {
     flex: 1,
-    minHeight: 44,
-    paddingVertical: 12,
+    height: 44,
     borderRadius: BorderRadius.button,
     borderWidth: 1,
     borderColor: '#DBE5EE',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EDF2F7',
+    backgroundColor: '#F1F5F9',
   },
   cancelBtnText: {
-    fontFamily: FontFamilies.sans,
     fontSize: 13,
     fontWeight: '700',
-    color: '#06294D',
+    color: '#475569',
   },
   actionBtn: {
-    flex: 1,
-    minHeight: 44,
-    paddingVertical: 12,
+    flex: 1.2,
+    height: 44,
     borderRadius: BorderRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#06294D',
+    backgroundColor: '#0F2860',
+  },
+  actionBtnDisabled: {
+    backgroundColor: '#94A3B8',
   },
   actionBtnText: {
-    fontFamily: FontFamilies.sans,
     fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   doneBtn: {
     width: '100%',
-    minHeight: 44,
-    paddingVertical: 12,
+    height: 44,
     borderRadius: BorderRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#06294D',
+    backgroundColor: '#0F2860',
   },
   doneBtnText: {
-    fontFamily: FontFamilies.sans,
     fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',

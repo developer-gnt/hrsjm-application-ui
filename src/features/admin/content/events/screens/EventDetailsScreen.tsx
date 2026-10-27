@@ -20,6 +20,7 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
+import { Calendar, Clock, MapPin } from '../../../../../core/components/icons';
 import {
   AppBadge,
   AppButton,
@@ -222,7 +223,7 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
               />
             ) : (
               <View style={[styles.coverImage, styles.coverFallback]}>
-                <Text style={styles.coverFallbackIcon}>📅</Text>
+                <Calendar size={36} color={AdminColors.textMuted} />
               </View>
             )}
           </View>
@@ -246,18 +247,18 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
           {/* Date / time / location */}
           <AppCard variant="outlined" padding="base" style={styles.infoCard}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>📅</Text>
+              <Calendar size={18} color={AdminColors.primary} />
               <Text style={styles.infoValue}>{formatDate(event.startAt)}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>🕐</Text>
+              <Clock size={18} color={AdminColors.primary} />
               <Text style={styles.infoValue}>
                 {formatTimeRange(event.startAt, event.endAt)}
               </Text>
             </View>
             {event.location ? (
               <View style={styles.infoRow}>
-                <Text style={styles.infoIcon}>📍</Text>
+                <MapPin size={18} color={AdminColors.primary} />
                 <Text style={styles.infoValue}>{event.location}</Text>
               </View>
             ) : null}

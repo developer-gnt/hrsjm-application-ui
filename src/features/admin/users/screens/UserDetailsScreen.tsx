@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core';
+import { Calendar } from '../../../../core/components/icons';
 import { usersStore } from '../services/usersStore';
 import { UserItem, UserType, UserStatus } from '../types/user.types';
 import { UsersHeader } from '../components/UsersHeader';
@@ -26,6 +27,7 @@ interface UserDetailsScreenProps {
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   onProfilePress?: () => void;
+  showBottomNav?: boolean;
 }
 
 export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
@@ -37,6 +39,7 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
+  showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -75,31 +78,34 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
             <Text style={styles.backLinkText}>Return to Users List</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.bottomNavHost}>
-          <UsersBottomNav
-            bottomInset={insets.bottom}
-            activeKey="users"
-            onTabPress={onBottomTabPress}
-          />
-        </View>
+        {showBottomNav && (
+          <View style={styles.bottomNavHost}>
+            <UsersBottomNav
+              bottomInset={insets.bottom}
+              activeKey="users"
+              onTabPress={onBottomTabPress}
+            />
+          </View>
+        )}
       </View>
     );
   }
 
   // Handle status toggle (Block / Unblock / Delete)
-  const handleConfirmAction = () => {
-    if (!confirmAction) return;
+  const handleConfirmAction = async () => {
+    if (!confirmAction || !user) return;
 
-    if (confirmAction === 'delete') {
-      usersStore.deleteUser(user.id);
-      setConfirmAction(null);
+    const action = confirmAction;
+    const targetUserId = user.id;
+    setConfirmAction(null);
+
+    if (action === 'delete') {
+      usersStore.deleteUser(targetUserId);
       if (onBack) onBack();
-    } else if (confirmAction === 'block') {
-      usersStore.updateStatus(user.id, 'blocked');
-      setConfirmAction(null);
-    } else if (confirmAction === 'unblock') {
-      usersStore.updateStatus(user.id, 'active');
-      setConfirmAction(null);
+    } else if (action === 'block') {
+      await usersStore.updateStatus(targetUserId, 'blocked');
+    } else if (action === 'unblock') {
+      await usersStore.updateStatus(targetUserId, 'active');
     }
   };
 
@@ -117,7 +123,12 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
     UserStatus,
     { badgeBg: string; text: string; dot: string; label: string }
   > = {
-    active: { badgeBg: '#ECFDF5', text: '#059669', dot: '#10B981', label: 'Active' },
+    active: {
+      badgeBg: '#ECFDF5',
+      text: '#059669',
+      dot: '#10B981',
+      label: user.userType === 'general' ? 'Active' : 'Approved',
+    },
     pending: { badgeBg: '#FFFBEB', text: '#D97706', dot: '#F59E0B', label: 'Pending' },
     blocked: { badgeBg: '#FEF2F2', text: '#DC2626', dot: '#EF4444', label: 'Blocked' },
   };
@@ -411,7 +422,7 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
             {/* Row 5: Date of Birth */}
             <View style={styles.tableRow}>
               <View style={styles.tableRowLeft}>
-                <Text style={styles.tableRowIcon}>📅</Text>
+                <Calendar size={15} color={AdminColors.primary} style={{ marginRight: 6 }} />
                 <Text style={styles.tableRowLabel}>Date of Birth</Text>
               </View>
               <Text style={styles.tableRowValue}>
@@ -550,14 +561,16 @@ export const UserDetailsScreen: React.FC<UserDetailsScreenProps> = ({
         onClose={() => setShowPasswordResetModal(false)}
       />
 
-      {/* Persistent Bottom Nav */}
-      <View style={styles.bottomNavHost}>
-        <UsersBottomNav
-          bottomInset={insets.bottom}
-          activeKey="users"
-          onTabPress={onBottomTabPress}
-        />
-      </View>
+      {/* Bottom Nav rendered only if explicitly requested */}
+      {showBottomNav && (
+        <View style={styles.bottomNavHost}>
+          <UsersBottomNav
+            bottomInset={insets.bottom}
+            activeKey="users"
+            onTabPress={onBottomTabPress}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -650,7 +663,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileHeaderName: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: FontFamilies.sans,
     fontSize: 22,
     fontWeight: '700',
     color: AdminColors.textPrimary,
@@ -738,7 +751,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   metricValue: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: FontFamilies.sans,
     fontSize: 13,
     fontWeight: '700',
     color: '#0B2F52',

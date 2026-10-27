@@ -18,7 +18,7 @@ import {
   Spacing,
   Typography,
 } from '../../../../core';
-import { CreateDonationInput, DonationCategory } from '../types/donations.types';
+import { CreateDonationInput, DonationCategory, DonationSource } from '../types/donations.types';
 
 interface AddDonationModalProps {
   visible: boolean;
@@ -31,6 +31,12 @@ const TYPE_OPTIONS: { key: Exclude<DonationCategory, 'ALL'>; label: string }[] =
   { key: 'ONE_TIME', label: 'One-time' },
   { key: 'RECURRING', label: 'Recurring' },
   { key: 'OFFLINE', label: 'Offline' },
+];
+
+const SOURCE_OPTIONS: { key: DonationSource; label: string }[] = [
+  { key: 'Website', label: '🌐 Website' },
+  { key: 'Web App', label: '💻 Web App' },
+  { key: 'Application UI', label: '📱 App UI' },
 ];
 
 export const AddDonationModal: React.FC<AddDonationModalProps> = ({
@@ -47,6 +53,7 @@ export const AddDonationModal: React.FC<AddDonationModalProps> = ({
   const [donationType, setDonationType] = useState<
     'ONE_TIME' | 'RECURRING' | 'OFFLINE'
   >('ONE_TIME');
+  const [source, setSource] = useState<DonationSource>('Application UI');
   const [remark, setRemark] = useState('');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -75,6 +82,7 @@ export const AddDonationModal: React.FC<AddDonationModalProps> = ({
     setCause('General Donation');
     setAmount('');
     setDonationType('ONE_TIME');
+    setSource('Application UI');
     setRemark('');
     setErrors({});
   };
@@ -90,6 +98,7 @@ export const AddDonationModal: React.FC<AddDonationModalProps> = ({
         cause: cause.trim() || 'General Donation',
         amount: parseFloat(amount.trim()),
         donation_type: donationType,
+        source: source,
         remark: remark.trim() || undefined,
       });
       handleReset();
@@ -192,6 +201,35 @@ export const AddDonationModal: React.FC<AddDonationModalProps> = ({
                           isSelected && styles.typePillActive,
                         ]}
                         onPress={() => setDonationType(opt.key)}
+                        accessibilityRole="button"
+                      >
+                        <Text
+                          style={[
+                            styles.typePillText,
+                            isSelected && styles.typePillTextActive,
+                          ]}
+                        >
+                          {opt.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={styles.typeSection}>
+                <Text style={styles.typeLabel}>Platform / Source</Text>
+                <View style={styles.typePillsRow}>
+                  {SOURCE_OPTIONS.map(opt => {
+                    const isSelected = source === opt.key;
+                    return (
+                      <TouchableOpacity
+                        key={opt.key}
+                        style={[
+                          styles.typePill,
+                          isSelected && styles.typePillActive,
+                        ]}
+                        onPress={() => setSource(opt.key)}
                         accessibilityRole="button"
                       >
                         <Text

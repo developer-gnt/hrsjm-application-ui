@@ -23,6 +23,7 @@ import {
   AppErrorState,
   AppPagination,
   AppSearchBar,
+  Calendar,
   SkeletonCard,
 } from '../../../../../core/components';
 import { formatDate } from '../../../../../core/utils';
@@ -82,7 +83,7 @@ const EmptyStateView: React.FC<{
       />
     ) : (
       <AppEmptyState
-        icon="📅"
+        icon={<Calendar size={42} color={AdminColors.textMuted} strokeWidth={1.5} />}
         title="No Events Found"
         description="There are no events to display yet."
         actionTitle={allowCreate ? 'Add Event' : undefined}
@@ -403,7 +404,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
   return (
     <View style={styles.root}>
       {/* Unified official Admin Header - Fixed at Top */}
-      <AdminHeader onNavigate={handleDrawerNavigate} unreadCount={3} />
+      <AdminHeader onNavigate={handleDrawerNavigate} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <FlatList
@@ -479,7 +480,6 @@ const styles = StyleSheet.create({
   pageHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.base,
     paddingTop: Spacing.sm,
     gap: Spacing.md,
   },
@@ -520,14 +520,12 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     marginTop: Spacing.md,
-    paddingHorizontal: Spacing.base,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     marginTop: Spacing.md,
-    paddingHorizontal: Spacing.base,
   },
   searchBar: {
     flex: 1,
@@ -558,16 +556,15 @@ const styles = StyleSheet.create({
   },
   filtersSection: {
     marginTop: Spacing.sm,
+    marginHorizontal: -16,
   },
   skeletonList: {
-    paddingHorizontal: Spacing.base,
     paddingTop: Spacing.base,
     gap: Spacing.md,
   },
   skeletonRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    paddingHorizontal: Spacing.base + Spacing.sm,
   },
   skeletonThumb: {
     width: 34,
@@ -581,7 +578,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   listContent: {
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: 16,
     paddingBottom: Spacing.xl,
     flexGrow: 1,
   },

@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { AdminColors, BorderRadius, Spacing, Typography } from '../../../../../core/theme';
 
 interface NewsFormSectionProps {
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   children: React.ReactNode;
   style?: ViewStyle;
@@ -17,7 +17,7 @@ export const NewsFormSection: React.FC<NewsFormSectionProps> = ({ icon, title, c
   return (
     <View style={[styles.card, style]}>
       <View style={styles.header}>
-        <Text style={styles.icon}>{icon}</Text>
+        {typeof icon === 'string' ? <Text style={styles.icon}>{icon}</Text> : icon}
         <Text style={styles.title}>{title}</Text>
       </View>
       <View style={styles.divider} />

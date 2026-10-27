@@ -27,18 +27,17 @@ interface UserFilterModalProps {
 }
 
 const TYPE_OPTIONS: { key: UserTypeTabKey; label: string }[] = [
-  { key: 'all', label: 'All Types' },
-  { key: 'member', label: 'Members' },
+  { key: 'all', label: 'All Roles' },
   { key: 'admin', label: 'Admins' },
-  { key: 'seeker', label: 'Donation Seekers' },
+  { key: 'member', label: 'Members' },
   { key: 'donor', label: 'Donors' },
+  { key: 'seeker', label: 'Donation Seekers' },
   { key: 'general', label: 'Users' },
 ];
 
 const STATUS_OPTIONS: { key: 'all' | UserStatus; label: string }[] = [
-  { key: 'all', label: 'All Statuses' },
-  { key: 'active', label: 'Active' },
-  { key: 'pending', label: 'Pending' },
+  { key: 'all', label: 'All Users' },
+  { key: 'active', label: 'Approved Users' },
   { key: 'blocked', label: 'Blocked' },
 ];
 
@@ -370,7 +369,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#DBE5EE',
   },
   headerTitle: {
-    fontFamily: FontFamilies.display,
+    fontFamily: FontFamilies.sans,
     fontSize: 18,
     fontWeight: '700',
     color: '#06294D',

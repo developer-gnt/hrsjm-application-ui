@@ -238,41 +238,8 @@ export function MembershipStep2Screen() {
               <Text style={styles.helperText}>Area, Landmark (Optional)</Text>
             </View>
 
-            {/* 3. City & State Row (2 Columns with Dropdown Selectors) */}
+            {/* 3. State & City Row (2 Columns with Dropdown Selectors) */}
             <View style={styles.rowTwoCols}>
-              {/* City Dropdown */}
-              <View style={[styles.fieldGroup, styles.col]}>
-                <Text style={styles.fieldLabel}>
-                  City <Text style={styles.requiredStar}>*</Text>
-                </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.inputWrap,
-                    errors.city ? styles.inputError : undefined,
-                  ]}
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    setCitySearch('');
-                    setCityModalVisible(true);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`City, ${addressInfo.city || 'Enter city'}`}>
-                  <Icon name="building" size={16} color="#64748B" strokeWidth={2} />
-                  <Text
-                    style={[
-                      styles.selectText,
-                      !addressInfo.city && styles.placeholderText,
-                    ]}
-                    numberOfLines={1}>
-                    {addressInfo.city || 'Enter city'}
-                  </Text>
-                  <Icon name="chevron-down" size={14} color="#64748B" strokeWidth={2.2} />
-                </TouchableOpacity>
-                {errors.city ? (
-                  <Text style={styles.errorText}>{errors.city}</Text>
-                ) : null}
-              </View>
-
               {/* State Dropdown */}
               <View style={[styles.fieldGroup, styles.col]}>
                 <Text style={styles.fieldLabel}>
@@ -303,6 +270,39 @@ export function MembershipStep2Screen() {
                 </TouchableOpacity>
                 {errors.state ? (
                   <Text style={styles.errorText}>{errors.state}</Text>
+                ) : null}
+              </View>
+
+              {/* City Dropdown */}
+              <View style={[styles.fieldGroup, styles.col]}>
+                <Text style={styles.fieldLabel}>
+                  City <Text style={styles.requiredStar}>*</Text>
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.inputWrap,
+                    errors.city ? styles.inputError : undefined,
+                  ]}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setCitySearch('');
+                    setCityModalVisible(true);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`City, ${addressInfo.city || 'Enter city'}`}>
+                  <Icon name="building" size={16} color="#64748B" strokeWidth={2} />
+                  <Text
+                    style={[
+                      styles.selectText,
+                      !addressInfo.city && styles.placeholderText,
+                    ]}
+                    numberOfLines={1}>
+                    {addressInfo.city || 'Enter city'}
+                  </Text>
+                  <Icon name="chevron-down" size={14} color="#64748B" strokeWidth={2.2} />
+                </TouchableOpacity>
+                {errors.city ? (
+                  <Text style={styles.errorText}>{errors.city}</Text>
                 ) : null}
               </View>
             </View>

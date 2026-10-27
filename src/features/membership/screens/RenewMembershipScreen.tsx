@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -16,14 +18,18 @@ import { MembershipRenewalEligibilitySection } from '../components/MembershipRen
 import { FreeRenewalPolicyCard } from '../components/FreeRenewalPolicyCard';
 import { RenewContactBar } from '../components/RenewContactBar';
 import { RenewNowButton } from '../components/RenewNowButton';
-import { RenewalPlanOption, RENEWAL_PLANS } from '../data/renewalPlansData';
+import { MembershipArrearsCard } from '../components/MembershipArrearsCard';
+import { getDynamicRenewalPlan, RenewalPlanOption } from '../data/renewalPlansData';
 import { GlobalPaymentModal, PaymentPayload } from '../../payments';
+import { RenewalQuotePayload } from '../../payments/types/payment.types';
+import { apiClient } from '../../../core/api/client';
+import { ApiRoutes } from '../../../core/constants/api-routes';
+import { useMembershipDetailsData } from '../hooks/useMembershipDetailsData';
+import { calculateRenewalQuoteClientSide } from '../utils/renewalCalculation';
 import {
-  navigateToMembershipApplications,
   navigateToProfile,
 } from '../../../core/navigation/appRouter';
 import { BorderRadius, Spacing, FontFamilies } from '../../../core';
-import { useMembershipDetailsData } from '../hooks/useMembershipDetailsData';
 
 interface RenewMembershipScreenProps {
   onBack?: () => void;
@@ -59,17 +65,51 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
   const [paymentModalVisible, setPaymentModalVisible] = useState<boolean>(false);
   const [paymentPayload, setPaymentPayload] = useState<PaymentPayload | null>(null);
 
-  const effectivePostName =
-    propPostName ||
-    (memberData.hasData && memberData.membershipType && memberData.membershipType !== 'Individual Member'
-      ? memberData.membershipType
-      : 'District Unit');
-  const effectiveValidTill = propValidTill || (memberData.hasData && memberData.validTill ? memberData.validTill : '15 Oct 2026');
-  const effectiveDaysRemaining = propDaysRemaining || (memberData.hasData && memberData.daysRemaining ? memberData.daysRemaining : '7 days');
-  const alertDaysNumber = parseInt(String(effectiveDaysRemaining), 10) || 7;
+  // Authoritative Renewal Quotation State
+  const [quote, setQuote] = useState<RenewalQuotePayload | null>(null);
+  const [isLoadingQuote, setIsLoadingQuote] = useState<boolean>(true);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   const isTabletOrDesktop = width > 520;
   const contentMaxWidth = isTabletOrDesktop ? 460 : width;
+
+  const fetchQuote = async () => {
+    try {
+      setIsLoadingQuote(true);
+      setQuoteError(null);
+      const res = await apiClient.get<any>(ApiRoutes.RENEWALS.QUOTE);
+      const data = (res as any)?.data !== undefined ? (res as any).data : res;
+      if (data && typeof data === 'object' && ('total_payable' in data || 'periods' in data)) {
+        setQuote(data);
+        return;
+      }
+      throw new Error('Invalid quotation data');
+    } catch (err: any) {
+      // Graceful fallback: calculate quote locally from member details
+      // Never block the user with an "Internal server error" banner
+      const expiryCandidate =
+        memberData?.validTill && memberData.validTill !== 'Pending Approval'
+          ? memberData.validTill
+          : null;
+
+      const fallbackQuote = calculateRenewalQuoteClientSide({
+        currentExpiry: expiryCandidate,
+        registrationDate: memberData?.joinDate || null,
+        membershipId: memberData?.memberId || 'current_membership',
+        membershipNumber: memberData?.memberId || null,
+        status: memberData?.status || 'Active',
+      });
+
+      setQuote(fallbackQuote);
+      setQuoteError(null);
+    } finally {
+      setIsLoadingQuote(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchQuote();
+  }, [memberData?.validTill, memberData?.memberId]);
 
   const handleMenu = () => {
     if (onMenuPress) {
@@ -103,18 +143,59 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
       onRenewPress(selectedPlanId);
       return;
     }
-    const plan = RENEWAL_PLANS.find(p => p.id === selectedPlanId) || RENEWAL_PLANS[0];
+
+    if (quote?.requires_verification) {
+      return;
+    }
+
+    const hasArrears = !!quote?.is_overdue && !!quote?.periods && quote.periods.length > 0;
+    const nextRenewalSequence = (quote?.paid_periods_count || 0) + 1;
+    const applicablePlan = getDynamicRenewalPlan(nextRenewalSequence);
+
+    const finalAmount = hasArrears ? quote.total_payable : applicablePlan.priceAmount;
+    const title = hasArrears
+      ? `Membership Renewal (${quote.unpaid_periods_count} Years Arrears)`
+      : `Membership Renewal (${applicablePlan.label})`;
+
     setPaymentPayload({
       purpose: 'membership',
-      title: `Membership Renewal (${plan.duration})`,
+      title,
       category: 'Membership',
-      amount: plan.priceAmount,
-      entityId: 'membership_renewal',
+      amount: finalAmount,
+      entityId: quote?.membership_id || 'membership_renewal',
+      renewalQuote: quote || undefined,
     });
     setPaymentModalVisible(true);
   };
 
   const bottomPadding = Math.max(insets.bottom, 20) + Spacing.lg;
+  const hasArrears = !!quote?.is_overdue && !!quote?.periods && quote.periods.length > 0;
+
+  const formattedExpiry = propValidTill || (quote?.current_expiry
+    ? new Date(quote.current_expiry).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
+    : (memberData.hasData && memberData.validTill ? memberData.validTill : '15 Oct 2026'));
+
+  const expiryDaysLabel = propDaysRemaining || (quote?.is_overdue
+    ? `${quote.days_overdue} days overdue`
+    : `${quote?.days_remaining ?? (memberData.hasData && memberData.daysRemaining ? memberData.daysRemaining : 7)} days`);
+
+  const effectivePostName =
+    propPostName ||
+    (quote?.membership_number
+      ? `Member #${quote.membership_number}`
+      : memberData.hasData && memberData.membershipType && memberData.membershipType !== 'Individual Member'
+      ? memberData.membershipType
+      : memberData?.memberId
+      ? `Member #${memberData.memberId}`
+      : 'District Unit');
+
+  const nextRenewalSequence = (quote?.paid_periods_count || 0) + 1;
+  const applicablePlan = getDynamicRenewalPlan(nextRenewalSequence);
+  const payableButtonAmount = hasArrears ? quote!.total_payable : applicablePlan.priceAmount;
 
   return (
     <View style={styles.screenContainer}>
@@ -158,35 +239,73 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
             <Text style={styles.pageTitleText}>Renew Membership</Text>
           </View>
 
+          {/* Loading Indicator */}
+          {isLoadingQuote && (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator size="small" color="#0F2860" />
+              <Text style={styles.loadingText}>Fetching renewal quotation...</Text>
+            </View>
+          )}
+
+          {/* Error Banner with Retry */}
+          {!!quoteError && !isLoadingQuote && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>⚠️ {quoteError}</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={fetchQuote} activeOpacity={0.7}>
+                <Text style={styles.retryBtnText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Inconsistent History Verification Alert */}
+          {quote?.requires_verification && (
+            <View style={styles.verificationAlertBox}>
+              <Text style={styles.verificationAlertIcon}>⚠️</Text>
+              <View style={styles.verificationAlertCol}>
+                <Text style={styles.verificationAlertTitle}>Administrative Verification Required</Text>
+                <Text style={styles.verificationAlertDesc}>
+                  {quote.verification_reason ||
+                    'Membership history is incomplete or requires verification before arrears can be calculated.'}
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Section 03: Membership Expiry Alert */}
           <MembershipExpiryAlert
-            daysRemaining={alertDaysNumber}
-            message="Your membership is expiring soon!"
+            daysRemaining={quote?.is_overdue ? quote.days_overdue : (quote?.days_remaining ?? (parseInt(String(expiryDaysLabel), 10) || 7))}
+            message={quote?.is_overdue ? 'Your membership has expired!' : 'Your membership is expiring soon!'}
+            isOverdue={!!quote?.is_overdue}
           />
 
           {/* Section 04: Current Membership Card */}
           <CurrentMembershipCard
             postName={effectivePostName}
-            validTill={effectiveValidTill}
-            daysRemaining={effectiveDaysRemaining}
+            validTill={formattedExpiry}
+            daysRemaining={expiryDaysLabel}
           />
 
-          {/* Section 05: Renewal Plan Section */}
-          <RenewalPlanSection
-            selectedPlanId={selectedPlanId}
-            onSelectPlan={handleSelectPlan}
-          />
+          {/* Section 05: Outstanding Arrears Breakdown (Rendered when arrears exist) */}
+          {hasArrears && <MembershipArrearsCard quote={quote!} />}
 
-          {/* Section 06: Three Year Renewal Information */}
+          {/* Section 06: Renewal Plan Section (Rendered when member has no overdue arrears) */}
+          {!hasArrears && (
+            <RenewalPlanSection
+              plan={applicablePlan}
+              sequenceNumber={nextRenewalSequence}
+            />
+          )}
+
+          {/* Section 07: Three Year Renewal Information */}
           <ThreeYearRenewalInfoCard />
 
-          {/* Section 07: Membership Renewal Eligibility */}
+          {/* Section 08: Membership Renewal Eligibility */}
           <MembershipRenewalEligibilitySection />
 
-          {/* Section 08: Note for Free Renewal Policy */}
+          {/* Section 09: Note for Free Renewal Policy */}
           <FreeRenewalPolicyCard />
 
-          {/* Section 09: Website + WhatsApp Contact Bar */}
+          {/* Section 10: Website + WhatsApp Contact Bar */}
           <RenewContactBar
             websiteUrl="https://hrsjm.org/"
             whatsAppNumber="7021057853"
@@ -194,8 +313,19 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
             onWhatsAppPress={onWhatsAppPress}
           />
 
-          {/* Section 10: Renew Now Button */}
-          <RenewNowButton onPress={handleRenew} />
+          {/* Section 11: Renew Now Button with Dynamic Amount */}
+          <RenewNowButton
+            onPress={handleRenew}
+            amount={payableButtonAmount}
+            disabled={isLoadingQuote || quote?.requires_verification}
+            label={
+              quote?.requires_verification
+                ? 'Verification Required'
+                : hasArrears
+                ? `Pay ₹${payableButtonAmount.toLocaleString('en-IN')} & Clear Arrears →`
+                : `Pay ₹${payableButtonAmount.toLocaleString('en-IN')} & Renew →`
+            }
+          />
         </ScrollView>
       </View>
 
@@ -237,5 +367,85 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0B2F52',
     letterSpacing: -0.2,
+  },
+  loadingBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginHorizontal: Spacing.md,
+    gap: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: Spacing.sm,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: '#0F2860',
+    fontWeight: '600',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: BorderRadius.md,
+    padding: 12,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 12.5,
+    color: '#DC2626',
+    fontWeight: '600',
+  },
+  retryBtn: {
+    backgroundColor: '#DC2626',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginLeft: 8,
+  },
+  retryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  verificationAlertBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1.5,
+    borderColor: '#FED7AA',
+    borderRadius: BorderRadius.md,
+    padding: 12,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
+    gap: 10,
+  },
+  verificationAlertIcon: {
+    fontSize: 18,
+    marginTop: 1,
+  },
+  verificationAlertCol: {
+    flex: 1,
+  },
+  verificationAlertTitle: {
+    fontFamily: FontFamilies.display,
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#C2410C',
+    lineHeight: 18,
+  },
+  verificationAlertDesc: {
+    fontSize: 12,
+    color: '#9A3412',
+    marginTop: 2,
+    lineHeight: 16,
   },
 });

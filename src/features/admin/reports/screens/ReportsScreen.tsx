@@ -163,7 +163,6 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <AdminHeader
-        unreadCount={3}
         showBack={Boolean(onBack)}
         onBack={onBack}
         onNavigate={onNavigate}

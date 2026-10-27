@@ -1,226 +1,154 @@
 import React from 'react';
-import { ScrollView, Text, View, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
-  AdminColors,
-  Typography,
   Spacing,
-  BorderRadius,
   SkeletonCard,
+  StatusToneKey,
 } from '../../../../core';
+import { AdminStatCard } from '../../../../core/components/admin/AdminStatCard';
+import {
+  Banknote,
+  Users,
+  HeartHandshake,
+  RefreshCw,
+  AppIconComponent,
+} from '../../../../core/components/icons';
 
 export interface DonationStatItem {
   id: string;
   label: string;
-  value: string;
+  value: string | number;
   supportText: string;
   /** Optional change indicator, e.g. "↑ 22%" (reference design). */
   indicator?: string;
-  icon: string;
-  background: string;
+  icon?: string;
+  Icon?: AppIconComponent;
+  tone?: StatusToneKey;
+  background?: string;
+  onPress?: () => void;
 }
 
 interface DonationStatsProps {
   stats: DonationStatItem[];
   loading?: boolean;
-  /** Fixed card width; 4 cards fit across on wide viewports. */
   cardWidth?: number;
-  /** 'scroll' = horizontal 4-across carousel; 'grid' = 2x2 wrapped grid. */
   layout?: 'scroll' | 'grid';
+  onPressCard?: (statId: string) => void;
 }
 
 /**
- * Pastel statistic cards matching the approved reference proportions,
- * horizontally scrollable on small screens. Values must come from
- * backend-derived counts or clearly-marked preview data.
+ * Universal KPI Stat Cards for Donations matching the HRSJM official 2×2
+ * reference design (Dashboard Image 1) with pastel backgrounds, solid circle
+ * icon badges, large bold values, title, and trend indicators.
  */
 export const DonationStats: React.FC<DonationStatsProps> = ({
   stats,
   loading = false,
-  cardWidth = 190,
-  layout = 'scroll',
+  layout = 'grid',
+  onPressCard,
 }) => {
-  // 4-across cards are narrow; use the reference's compact metrics there.
-  const narrow = cardWidth < 130;
+  // Resolves tone and Lucide icon for each card matching Dashboard 2x2 styling
+  const resolveToneAndIcon = (stat: DonationStatItem, index: number) => {
+    if (stat.id === 'total-donations' || index === 0) {
+      return { tone: 'navy' as StatusToneKey, Icon: Banknote };
+    }
+    if (stat.id === 'total-donors' || index === 1) {
+      return { tone: 'warning' as StatusToneKey, Icon: Users };
+    }
+    if (stat.id === 'one-time-donations' || index === 2) {
+      return { tone: 'success' as StatusToneKey, Icon: HeartHandshake };
+    }
+    if (stat.id === 'recurring-donations' || index === 3) {
+      return { tone: 'gold' as StatusToneKey, Icon: RefreshCw };
+    }
+    return { tone: 'navy' as StatusToneKey, Icon: Banknote };
+  };
 
-  // Admin-dashboard card layout: icon on the left, label + value (with
-  // change indicator) beside it, support text underneath.
-  const renderStatCard = (stat: DonationStatItem) => (
-    <View
-      key={stat.id}
-      style={[
-        styles.card,
-        narrow && styles.cardSm,
-        layout === 'grid' ? styles.gridCard : { width: cardWidth },
-        { backgroundColor: stat.background },
-      ]}
-    >
-      <View style={styles.topRow}>
-        <View style={styles.iconCircle}>
-          <Text style={styles.icon}>{stat.icon}</Text>
-        </View>
-        <View style={styles.topText}>
-          <Text style={[styles.label, narrow && styles.labelSm]}>
-            {stat.label}
-          </Text>
-          <View style={styles.valueRow}>
-            <Text
-              style={[styles.value, narrow && styles.valueSm]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.6}
-            >
-              {stat.value}
-            </Text>
-            {stat.indicator ? (
-              <View style={styles.indicatorPill}>
-                <Text style={styles.indicatorText}>{stat.indicator}</Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
-      </View>
-      <Text style={[styles.support, narrow && styles.supportSm]}>
-        {stat.supportText}
-      </Text>
-    </View>
-  );
+  const renderCard = (stat: DonationStatItem, index: number) => {
+    const { tone: defaultTone, Icon: defaultIcon } = resolveToneAndIcon(stat, index);
+    const activeTone = stat.tone || defaultTone;
+    const ActiveIcon = stat.Icon || defaultIcon;
+
+    // Subtext/note format: e.g. "+22% this month" or "Total donations received"
+    const note = stat.indicator
+      ? `${stat.indicator} ${stat.supportText}`
+      : stat.supportText;
+
+    const handlePress = () => {
+      if (stat.onPress) {
+        stat.onPress();
+      } else if (onPressCard) {
+        onPressCard(stat.id);
+      }
+    };
+
+    return (
+      <AdminStatCard
+        key={stat.id}
+        title={stat.label}
+        value={stat.value}
+        note={note}
+        tone={activeTone}
+        Icon={ActiveIcon}
+        loading={loading}
+        onPress={stat.onPress || onPressCard ? handlePress : undefined}
+      />
+    );
+  };
 
   if (loading && layout === 'grid') {
     return (
       <View style={styles.grid}>
-        {stats.map(stat => (
-          <View
-            key={stat.id}
-            style={[styles.skeletonWrapper, styles.gridCard]}
-          >
-            <SkeletonCard height={96} />
+        <View style={styles.row}>
+          <View style={styles.skeletonWrapper}>
+            <SkeletonCard height={106} />
           </View>
-        ))}
+          <View style={styles.skeletonWrapper}>
+            <SkeletonCard height={106} />
+          </View>
+        </View>
+        <View style={styles.row}>
+          <View style={styles.skeletonWrapper}>
+            <SkeletonCard height={106} />
+          </View>
+          <View style={styles.skeletonWrapper}>
+            <SkeletonCard height={106} />
+          </View>
+        </View>
       </View>
     );
   }
 
-  if (layout === 'grid') {
-    return (
-      <View style={styles.grid}>{stats.map(renderStatCard)}</View>
-    );
-  }
-  if (loading) {
-    return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {stats.map(stat => (
-          <View
-            key={stat.id}
-            style={[styles.skeletonWrapper, { width: cardWidth }]}
-          >
-            <SkeletonCard height={96} />
-          </View>
-        ))}
-      </ScrollView>
-    );
-  }
+  // Split into 2 rows of 2 cards (2x2 grid) exactly matching Dashboard Image 1
+  const row1 = stats.slice(0, 2);
+  const row2 = stats.slice(2, 4);
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.content}
-    >
-      {stats.map(renderStatCard)}
-    </ScrollView>
+    <View style={styles.grid}>
+      <View style={styles.row}>
+        {row1.map((stat, i) => renderCard(stat, i))}
+      </View>
+      {row2.length > 0 && (
+        <View style={styles.row}>
+          {row2.map((stat, i) => renderCard(stat, i + 2))}
+        </View>
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  content: {
-    paddingRight: Spacing.base,
+  grid: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
   },
   skeletonWrapper: {
-    marginRight: Spacing.sm,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  gridCard: {
-    marginRight: 0,
-    marginBottom: Spacing.sm,
-    width: '48%',
-  },
-  card: {
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.md,
-    marginRight: Spacing.sm,
-  },
-  cardSm: {
-    padding: 10,
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.xs,
-  },
-  topText: {
     flex: 1,
-    marginLeft: Spacing.sm,
-  },
-  valueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 1,
-  },
-  iconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: BorderRadius.full,
-    backgroundColor: AdminColors.cardSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  icon: {
-    fontSize: 16,
-  },
-  labelSm: {
-    fontSize: 8.5,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: AdminColors.primaryDark,
-  },
-  valueSm: {
-    fontSize: 13,
-  },
-  value: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: AdminColors.primaryDark,
-    flexShrink: 1,
-  },
-  indicatorPill: {
-    backgroundColor: AdminColors.statusActiveLight,
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    marginLeft: Spacing.xs,
-    flexShrink: 0,
-  },
-  indicatorText: {
-    ...Typography.caption,
-    color: AdminColors.success,
-    fontWeight: '600',
-  },
-  supportSm: {
-    fontSize: 9,
-    lineHeight: 12,
-  },
-  support: {
-    ...Typography.caption,
-    color: AdminColors.textSecondary,
   },
 });
+
+export default DonationStats;

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Check } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Check, BarChart2 } from 'lucide-react-native';
 import { AdminColors, BorderRadius, Spacing, Shadows, FontFamilies } from '../../../../core/theme';
 import type { EventListItem } from '../../content/events/types/events.types';
 
@@ -281,10 +281,15 @@ export const AdminCalendarModal: React.FC<AdminCalendarModalProps> = ({
               onPress={() => setActiveTab('calendar')}
               activeOpacity={0.8}
             >
+              <CalendarIcon
+                size={14}
+                color={activeTab === 'calendar' ? '#06294D' : '#718096'}
+                style={{ marginRight: 6 }}
+              />
               <Text
                 style={[styles.tabText, activeTab === 'calendar' && styles.tabTextActive]}
               >
-                📅 Interactive Calendar
+                Interactive Calendar
               </Text>
             </TouchableOpacity>
 
@@ -293,10 +298,15 @@ export const AdminCalendarModal: React.FC<AdminCalendarModalProps> = ({
               onPress={() => setActiveTab('periods')}
               activeOpacity={0.8}
             >
+              <BarChart2
+                size={14}
+                color={activeTab === 'periods' ? '#06294D' : '#718096'}
+                style={{ marginRight: 6 }}
+              />
               <Text
                 style={[styles.tabText, activeTab === 'periods' && styles.tabTextActive]}
               >
-                📊 Monthly Periods
+                Monthly Periods
               </Text>
             </TouchableOpacity>
           </View>
@@ -594,6 +604,8 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
     paddingVertical: 8,
     alignItems: 'center',
     borderRadius: BorderRadius.sm,

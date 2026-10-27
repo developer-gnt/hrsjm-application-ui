@@ -14,7 +14,7 @@ const STATUS_META: Record<MemberStatus, { label: string; bg: string; text: strin
     bg: StatusTones.warning.bg,
     text: StatusTones.warning.text,
   },
-  INACTIVE: { label: 'Inactive', bg: StatusTones.danger.bg, text: StatusTones.danger.text },
+  INACTIVE: { label: 'Blocked', bg: StatusTones.danger.bg, text: StatusTones.danger.text },
   PENDING: { label: 'Pending', bg: StatusTones.neutral.bg, text: StatusTones.neutral.text },
 };
 

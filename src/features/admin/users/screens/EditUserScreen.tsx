@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -33,6 +35,7 @@ interface EditUserScreenProps {
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   onProfilePress?: () => void;
+  showBottomNav?: boolean;
 }
 
 interface FormErrors {
@@ -44,15 +47,15 @@ interface FormErrors {
 }
 
 const USER_TYPE_OPTIONS: { label: string; value: UserType }[] = [
-  { label: 'Member', value: 'member' },
   { label: 'Admin', value: 'admin' },
-  { label: 'Donation Seeker', value: 'seeker' },
+  { label: 'Member', value: 'member' },
   { label: 'Donor', value: 'donor' },
+  { label: 'Donation Seeker', value: 'seeker' },
   { label: 'User', value: 'general' },
 ];
 
 const STATUS_OPTIONS: { label: string; value: UserStatus; color: string }[] = [
-  { label: 'Active', value: 'active', color: '#059669' },
+  { label: 'Approved', value: 'active', color: '#059669' },
   { label: 'Pending', value: 'pending', color: '#D97706' },
   { label: 'Blocked', value: 'blocked', color: '#DC2626' },
 ];
@@ -67,6 +70,7 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
+  showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -127,13 +131,15 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
             <Text style={styles.backLinkBtnText}>Return to Users List</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.bottomNavHost}>
-          <UsersBottomNav
-            bottomInset={insets.bottom}
-            activeKey="users"
-            onTabPress={onBottomTabPress}
-          />
-        </View>
+        {showBottomNav && (
+          <View style={styles.bottomNavHost}>
+            <UsersBottomNav
+              bottomInset={insets.bottom}
+              activeKey="users"
+              onTabPress={onBottomTabPress}
+            />
+          </View>
+        )}
       </View>
     );
   }
@@ -168,30 +174,39 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
     return Object.keys(err).length === 0;
   };
 
-  const handleSaveChanges = () => {
-    if (!validate()) {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveChanges = async () => {
+    if (!validate() || isSaving) {
       return;
     }
 
+    setIsSaving(true);
     const formattedPhone = `${countryCode} ${phone.trim()}`;
-    const updated = usersStore.updateUser(user.id, {
-      name: fullName.trim(),
-      email: email.trim(),
-      phone: formattedPhone,
-      userType,
-      status,
-      dob: dob.trim() || undefined,
-      gender: (gender as UserGender) || undefined,
-      address: address.trim() || undefined,
-      remarks: remarks.trim() || undefined,
-      notes: remarks.trim() || undefined,
-      avatarUrl: avatarUri,
-    });
+    try {
+      const updated = await usersStore.updateUser(user.id, {
+        name: fullName.trim(),
+        email: email.trim(),
+        phone: formattedPhone,
+        userType,
+        status,
+        dob: dob.trim() || undefined,
+        gender: (gender as UserGender) || undefined,
+        address: address.trim() || undefined,
+        remarks: remarks.trim() || undefined,
+        notes: remarks.trim() || undefined,
+        avatarUrl: avatarUri,
+      });
 
-    if (updated && onSuccess) {
-      onSuccess(updated);
-    } else if (onBack) {
-      onBack();
+      if (updated && onSuccess) {
+        onSuccess(updated);
+      } else if (onBack) {
+        onBack();
+      }
+    } catch (err: any) {
+      Alert.alert('Save Failed', err?.message || 'Could not update user details. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -222,6 +237,9 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
   };
 
   const getStatusLabel = (val: UserStatus) => {
+    if (val === 'active') {
+      return userType === 'general' ? 'Active' : 'Approved';
+    }
     const found = STATUS_OPTIONS.find(o => o.value === val);
     return found ? found.label : 'Select status';
   };
@@ -472,7 +490,7 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
                   >
                     {formatDobDisplay(dob)}
                   </Text>
-                  <Text style={styles.calendarRightIcon}>📅</Text>
+                  <Text style={styles.calendarRightIcon}>▾</Text>
                 </TouchableOpacity>
               </View>
 
@@ -601,14 +619,21 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.saveBtn}
+                style={[styles.saveBtn, isSaving && { opacity: 0.7 }]}
                 onPress={handleSaveChanges}
+                disabled={isSaving}
                 activeOpacity={0.85}
                 accessibilityRole="button"
                 accessibilityLabel="Save Changes"
               >
-                <Text style={styles.saveBtnCheck}>✓</Text>
-                <Text style={styles.saveBtnText}>Save Changes</Text>
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.saveBtnCheck}>✓</Text>
+                    <Text style={styles.saveBtnText}>Save Changes</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -670,7 +695,9 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
             <TouchableWithoutFeedback>
               <View style={styles.pickerSheet}>
                 <Text style={styles.pickerSheetTitle}>Select Account Status</Text>
-                {STATUS_OPTIONS.map(opt => (
+                {STATUS_OPTIONS.filter(
+                  opt => userType !== 'general' || opt.value !== 'pending'
+                ).map(opt => (
                   <TouchableOpacity
                     key={opt.value}
                     style={[
@@ -695,7 +722,7 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
                           status === opt.value && styles.pickerItemTextActive,
                         ]}
                       >
-                        {opt.label}
+                        {opt.value === 'active' && userType === 'general' ? 'Active' : opt.label}
                       </Text>
                     </View>
                     {status === opt.value && (
@@ -761,14 +788,16 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
         }}
       />
 
-      {/* Bottom Nav Host */}
-      <View style={styles.bottomNavHost}>
-        <UsersBottomNav
-          bottomInset={insets.bottom}
-          activeKey="users"
-          onTabPress={onBottomTabPress}
-        />
-      </View>
+      {/* Bottom Nav Host rendered only if explicitly requested */}
+      {showBottomNav && (
+        <View style={styles.bottomNavHost}>
+          <UsersBottomNav
+            bottomInset={insets.bottom}
+            activeKey="users"
+            onTabPress={onBottomTabPress}
+          />
+        </View>
+      )}
     </View>
   );
 };

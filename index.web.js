@@ -3,6 +3,10 @@
  * Runs the same React Native app (and the same feature code) in the
  * browser via react-native-web. This is development tooling only.
  */
+// Ensure __DEV__ global is defined in web browser environment
+if (typeof globalThis !== 'undefined' && typeof globalThis.__DEV__ === 'undefined') {
+  globalThis.__DEV__ = process.env.NODE_ENV !== 'production';
+}
 if (typeof window !== 'undefined') {
   if (typeof window.__DEV__ === 'undefined') {
     window.__DEV__ = process.env.NODE_ENV !== 'production';
@@ -32,6 +36,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('error', function (event) {
     if (
       event.message === 'Script error.' ||
+      (typeof event.message === 'string' && event.message.includes('Script error')) ||
       (event.filename && event.filename.includes('cashfree')) ||
       (event.target && (event.target.id === 'cashfree-js-sdk' || event.target.src?.includes('cashfree')))
     ) {
@@ -45,10 +50,14 @@ if (typeof window !== 'undefined') {
   }, true);
 
   window.addEventListener('unhandledrejection', function (event) {
-    if (event.reason && (String(event.reason).includes('cashfree') || String(event.reason).includes('Script error'))) {
+    const reasonMsg = event?.reason?.message || String(event?.reason || '');
+    if (reasonMsg.includes('cashfree') || reasonMsg.includes('Script error')) {
       event.preventDefault();
+      if (typeof event.stopImmediatePropagation === 'function') {
+        event.stopImmediatePropagation();
+      }
     }
-  });
+  }, true);
 }
 
 import { AppRegistry } from 'react-native';

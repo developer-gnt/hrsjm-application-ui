@@ -30,7 +30,11 @@ export const AppEmptyState: React.FC<AppEmptyStateProps> = ({
   const displayBtn = actionLabel || actionTitle;
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.icon}>{icon}</Text>
+      {React.isValidElement(icon) ? (
+        <View style={styles.iconWrapper}>{icon}</View>
+      ) : (
+        <Text style={styles.icon}>{icon}</Text>
+      )}
       <Text style={styles.title}>{title}</Text>
       {displayMsg && <Text style={styles.description}>{displayMsg}</Text>}
       {displayBtn && onAction && (
@@ -49,6 +53,11 @@ export const AppEmptyState: React.FC<AppEmptyStateProps> = ({
 const styles = StyleSheet.create({
   container: {
     padding: Spacing.xxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconWrapper: {
+    marginBottom: Spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
   },

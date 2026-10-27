@@ -334,19 +334,57 @@ export function MembershipStep3Screen() {
     try {
       let newRecord: any;
       if (submitApplicationAsync) {
-        newRecord = await submitApplicationAsync({ documents });
+        newRecord = await submitApplicationAsync({
+          documents,
+          paymentCompleted: true,
+          paymentId: receipt.paymentId,
+          paymentAmount: receipt.amount,
+          receiptNumber: receipt.receiptNumber,
+        });
       } else {
-        newRecord = submitApplication({ documents });
+        newRecord = submitApplication({
+          documents,
+          paymentCompleted: true,
+          paymentId: receipt.paymentId,
+          paymentAmount: receipt.amount,
+          receiptNumber: receipt.receiptNumber,
+        });
       }
       setSubmitting(false);
+
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          window.sessionStorage.setItem(`hrsjm_payment_done_${newRecord.applicationId}`, 'true');
+        } catch {}
+      }
+
       navigation.navigate('MembershipSubmitted', {
         applicationId: newRecord.applicationId,
+        paymentCompleted: true,
+        paymentId: receipt.paymentId,
+        receipt,
       });
     } catch {
       setSubmitting(false);
-      const newRecord = submitApplication({ documents });
+      const newRecord = submitApplication({
+        documents,
+        paymentCompleted: true,
+        paymentId: receipt.paymentId,
+        paymentAmount: receipt.amount,
+        receiptNumber: receipt.receiptNumber,
+      });
+
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          window.sessionStorage.setItem(`hrsjm_payment_done_${newRecord.applicationId}`, 'true');
+        } catch {}
+      }
+
       navigation.navigate('MembershipSubmitted', {
         applicationId: newRecord.applicationId,
+        paymentCompleted: true,
+        paymentId: receipt.paymentId,
+        receipt,
       });
     }
   };
@@ -593,15 +631,12 @@ export function MembershipStep3Screen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.payLaterBtn}
-          activeOpacity={0.7}
-          onPress={handleSubmit}
-          disabled={submitting}
-          accessibilityRole="button"
-          accessibilityLabel="Submit Application and Pay Fee Later">
-          <Text style={styles.payLaterBtnText}>or Submit Application & Pay Fee Later</Text>
-        </TouchableOpacity>
+        <View style={styles.secureNoticeRow}>
+          <Icon name="lock" size={13} color="#64748B" strokeWidth={2.2} />
+          <Text style={styles.secureNoticeText}>
+            Payment is 256-bit encrypted and verified instantly via Cashfree
+          </Text>
+        </View>
       </ScrollView>
 
       {/* Interactive Document Picker Bottom Sheet */}
@@ -933,6 +968,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: colors.white,
+  },
+  secureNoticeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.sm,
+  },
+  secureNoticeText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
   },
 
   /* Document Picker Sheet Styles */

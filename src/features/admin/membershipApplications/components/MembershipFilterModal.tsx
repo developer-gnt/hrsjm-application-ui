@@ -14,10 +14,16 @@ import {
 } from '../../../../core';
 import { StatusTabKey } from './MembershipStatusTabs';
 
+export type ApplicationTypeFilter = 'all' | 'membership' | 'seeker';
+export type AccountTypeFilter = ApplicationTypeFilter;
+
 export interface FilterOptions {
   status: StatusTabKey;
-  membershipType: string;
+  type: ApplicationTypeFilter;
   sortBy: 'newest' | 'oldest' | 'name_asc';
+  accountType?: ApplicationTypeFilter;
+  memberType?: string;
+  membershipType?: string;
 }
 
 interface MembershipFilterModalProps {
@@ -28,17 +34,13 @@ interface MembershipFilterModalProps {
   onReset: () => void;
 }
 
-const MEMBERSHIP_TYPES = [
-  'All Types',
-  'Donation Seeker',
-  'Signup Verification',
-  'District Unit',
-  'State Unit',
-  'Individual Membership',
-  'Family Membership',
-  'Life Membership',
-  'Corporate Membership',
+export const TYPE_OPTIONS: { key: ApplicationTypeFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'membership', label: 'Membership' },
+  { key: 'seeker', label: 'Donor Seeker' },
 ];
+
+export const ACCOUNT_TYPE_OPTIONS = TYPE_OPTIONS;
 
 const SORT_OPTIONS: { key: FilterOptions['sortBy']; label: string }[] = [
   { key: 'newest', label: 'Newest First' },
@@ -61,14 +63,22 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
   onReset,
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<StatusTabKey>(currentFilters.status);
-  const [selectedType, setSelectedType] = useState<string>(currentFilters.membershipType);
+  const [selectedType, setSelectedType] = useState<ApplicationTypeFilter>(
+    currentFilters.type ||
+      currentFilters.accountType ||
+      (currentFilters.membershipType === 'Donation Seeker' ? 'seeker' : 'all')
+  );
   const [selectedSort, setSelectedSort] = useState<FilterOptions['sortBy']>(currentFilters.sortBy);
 
   // Sync state when opened
   React.useEffect(() => {
     if (visible) {
       setSelectedStatus(currentFilters.status);
-      setSelectedType(currentFilters.membershipType);
+      setSelectedType(
+        currentFilters.type ||
+          currentFilters.accountType ||
+          (currentFilters.membershipType === 'Donation Seeker' ? 'seeker' : 'all')
+      );
       setSelectedSort(currentFilters.sortBy);
     }
   }, [visible, currentFilters]);
@@ -76,7 +86,15 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
   const handleApply = () => {
     onApply({
       status: selectedStatus,
-      membershipType: selectedType,
+      type: selectedType,
+      accountType: selectedType,
+      memberType: 'All Types',
+      membershipType:
+        selectedType === 'seeker'
+          ? 'Donation Seeker'
+          : selectedType === 'membership'
+          ? 'Membership'
+          : 'All Types',
       sortBy: selectedSort,
     });
     onClose();
@@ -84,7 +102,7 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
 
   const handleReset = () => {
     setSelectedStatus('all');
-    setSelectedType('All Types');
+    setSelectedType('all');
     setSelectedSort('newest');
     onReset();
     onClose();
@@ -118,7 +136,7 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
               >
-                {/* Status Section */}
+                {/* 1. Status Section */}
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Application Status</Text>
                   <View style={styles.chipsRow}>
@@ -140,21 +158,21 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
                   </View>
                 </View>
 
-                {/* Membership Type Section */}
+                {/* 2. Type Section (All, Membership, Donor Seeker) */}
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Membership Type</Text>
+                  <Text style={styles.sectionTitle}>Type</Text>
                   <View style={styles.chipsRow}>
-                    {MEMBERSHIP_TYPES.map(type => {
-                      const isSelected = selectedType === type;
+                    {TYPE_OPTIONS.map(opt => {
+                      const isSelected = selectedType === opt.key;
                       return (
                         <TouchableOpacity
-                          key={type}
+                          key={opt.key}
                           style={[styles.chip, isSelected && styles.chipSelected]}
-                          onPress={() => setSelectedType(type)}
+                          onPress={() => setSelectedType(opt.key)}
                           activeOpacity={0.7}
                         >
                           <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                            {type}
+                            {opt.label}
                           </Text>
                         </TouchableOpacity>
                       );
@@ -162,7 +180,7 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
                   </View>
                 </View>
 
-                {/* Sort Order Section */}
+                {/* 3. Sort Order Section */}
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Sort By</Text>
                   <View style={styles.chipsRow}>

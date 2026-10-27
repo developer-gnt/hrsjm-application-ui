@@ -24,7 +24,7 @@ import {
   AppLoader,
   feedback,
 } from '../../../../../core';
-import { Pencil } from '../../../../../core/components/icons';
+import { Pencil, Calendar, Clock, Eye, User } from '../../../../../core/components/icons';
 import {
   CategoryChip,
   STATUS_BADGE_TONES,
@@ -267,21 +267,21 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
           {/* Metadata: date / time / views, then author */}
           <View style={styles.metadataRow}>
             <View style={styles.metadataItem}>
-              <Text style={styles.metadataIcon}>📅</Text>
+              <Calendar size={13} color={AdminColors.textSecondary} />
               <Text style={styles.metadataText}>{news.date}</Text>
             </View>
             <View style={styles.metadataItem}>
-              <Text style={styles.metadataIcon}>🕐</Text>
+              <Clock size={13} color={AdminColors.textSecondary} />
               <Text style={styles.metadataText}>{news.time}</Text>
             </View>
             <View style={styles.metadataItem}>
-              <Text style={styles.metadataIcon}>👁</Text>
+              <Eye size={13} color={AdminColors.textSecondary} />
               <Text style={styles.metadataText}>{formatViews(news.views)}</Text>
             </View>
           </View>
           {news.author ? (
             <View style={styles.metadataItem}>
-              <Text style={styles.metadataIcon}>👤</Text>
+              <User size={13} color={AdminColors.textSecondary} />
               <Text style={styles.metadataText}>{news.author}</Text>
             </View>
           ) : null}
@@ -419,7 +419,7 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
             ) : null}
             <View style={styles.additionalRow}>
               <View style={styles.additionalLabel}>
-                <Text style={styles.additionalIcon}>📅</Text>
+                <Calendar size={13} color={AdminColors.textSecondary} />
                 <Text style={styles.additionalLabelText}>Published Date</Text>
               </View>
               <Text style={styles.additionalValue}>
@@ -428,7 +428,7 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
             </View>
             <View style={[styles.additionalRow, styles.additionalRowLast]}>
               <View style={styles.additionalLabel}>
-                <Text style={styles.additionalIcon}>👁</Text>
+                <Eye size={13} color={AdminColors.textSecondary} />
                 <Text style={styles.additionalLabelText}>Views</Text>
               </View>
               <Text style={styles.additionalValue}>{news.views.toLocaleString('en-IN')} Views</Text>

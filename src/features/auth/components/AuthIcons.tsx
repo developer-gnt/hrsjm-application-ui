@@ -184,6 +184,32 @@ export const ChevronDownIcon: React.FC<IconProps> = ({ size = 12, color = '#4755
   </Container>
 );
 
+export const GenderIcon: React.FC<IconProps> = ({ size = 20, color = '#475569' }) => (
+  <Container size={size}>
+    <View
+      style={{
+        width: size * 0.44,
+        height: size * 0.44,
+        borderRadius: size * 0.22,
+        borderWidth: 1.6,
+        borderColor: color,
+      }}
+    />
+    <View
+      style={{
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        width: size * 0.26,
+        height: size * 0.26,
+        borderTopWidth: 1.6,
+        borderRightWidth: 1.6,
+        borderColor: color,
+      }}
+    />
+  </Container>
+);
+
 export const CheckCircleFilledIcon: React.FC<IconProps> = ({ size = 18, color = '#EAA224' }) => (
   <Container size={size}>
     <View

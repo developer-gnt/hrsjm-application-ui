@@ -14,6 +14,7 @@ import {
   Donation,
   DonationCategory,
   DonationListItem,
+  DonationSource,
   DonationStatus,
   DateRange,
 } from '../types/donations.types';
@@ -29,6 +30,7 @@ export interface UseDonationsParams {
   status?: DonationStatus | null;
   category?: DonationCategory | null;
   dateRange?: DateRange | null;
+  source?: string | null;
 }
 
 /** Inactive categories or types are classified based on cause and remarks */
@@ -45,6 +47,20 @@ export const inferDonationType = (
   return 'ONE_TIME';
 };
 
+/** Inactive or unstated sources are classified based on source field and remarks */
+export const inferDonationSource = (donation: Donation): DonationSource => {
+  if (donation.source) {
+    const s = donation.source.toLowerCase();
+    if (s.includes('web app')) return 'Web App';
+    if (s.includes('application') || s.includes('app ui') || s.includes('mobile')) return 'Application UI';
+    return 'Website';
+  }
+  const text = `${donation.cause || ''} ${donation.remark || ''}`.toLowerCase();
+  if (text.includes('web app')) return 'Web App';
+  if (text.includes('application') || text.includes('app ui') || text.includes('mobile')) return 'Application UI';
+  return 'Website';
+};
+
 /**
  * Server state for the paginated donation list.
  * Handles append pages, pull-to-refresh, client-side category/date-range/search filtering,
@@ -55,12 +71,13 @@ export const useDonations = ({
   status,
   category,
   dateRange,
+  source,
 }: UseDonationsParams) => {
   const query = useInfiniteQuery({
     queryKey: [
       'donations',
       'list',
-      { search: search ?? '', status: status ?? 'ALL' },
+      { search: search ?? '', status: status ?? 'ALL', source: source ?? 'ALL' },
     ],
     queryFn: ({ pageParam }) =>
       donationsService.getDonations({
@@ -68,6 +85,7 @@ export const useDonations = ({
         limit: DONATIONS_PAGE_SIZE,
         status: status ?? undefined,
         search: search ?? undefined,
+        source: source && source !== 'ALL' ? source : undefined,
       }),
     initialPageParam: 1,
     getNextPageParam: lastPage => {
@@ -92,12 +110,18 @@ export const useDonations = ({
     }
   }
 
-  // Filter combined conditions (category, date range, and fine search)
+  // Filter combined conditions (category, date range, source, and fine search)
   const donations = rawDonations.filter(item => {
     const itemType = inferDonationType(item);
+    const itemSource = inferDonationSource(item);
 
     // Category tab filter
     if (category && category !== 'ALL' && itemType !== category) {
+      return false;
+    }
+
+    // Source platform filter
+    if (source && source !== 'ALL' && itemSource.toLowerCase() !== source.toLowerCase()) {
       return false;
     }
 
@@ -108,13 +132,14 @@ export const useDonations = ({
       }
     }
 
-    // Fine-grained client search (for amount, mobile, ID, etc.)
+    // Fine-grained client search (for amount, mobile, ID, source, etc.)
     if (search && search.trim().length > 0) {
       const q = search.trim().toLowerCase();
       const name = (item.donor_name || '').toLowerCase();
       const mobile = (item.donor_mobile || '').toLowerCase();
       const cause = (item.cause || '').toLowerCase();
       const remark = (item.remark || '').toLowerCase();
+      const src = itemSource.toLowerCase();
       const amountStr = String(item.amount);
       const idStr = item.id.toLowerCase();
       const match =
@@ -122,6 +147,7 @@ export const useDonations = ({
         mobile.includes(q) ||
         cause.includes(q) ||
         remark.includes(q) ||
+        src.includes(q) ||
         amountStr.includes(q) ||
         idStr.includes(q);
       if (!match) return false;
@@ -230,35 +256,33 @@ export const computeLiveStats = (
       id: 'total-donations',
       label: 'Total Donations',
       value: `₹${totalAmount.toLocaleString('en-IN')}`,
-      supportText: hasRange ? 'In selected period' : 'Total donations received',
-      indicator: '↑ 22%',
-      icon: '💰',
+      supportText: hasRange ? 'In selected period' : '+22% this month',
+      tone: 'navy',
       background: AdminColors.primaryLight,
     },
     {
       id: 'total-donors',
       label: 'Total Donors',
       value: String(uniqueDonors.size),
-      supportText: hasRange ? 'In selected period' : 'Unique active donors',
-      indicator: '↑ 18%',
-      icon: '👥',
-      background: AdminColors.statusActiveLight,
+      supportText: hasRange ? 'In selected period' : '+18% this month',
+      tone: 'warning',
+      background: AdminColors.warningLight,
     },
     {
       id: 'one-time-donations',
       label: 'One-time Donations',
       value: `₹${oneTimeAmount.toLocaleString('en-IN')}`,
-      supportText: `${oneTimePct}% of total`,
-      icon: '⏰',
-      background: AdminColors.accentGoldLight,
+      supportText: hasRange ? `${oneTimePct}% of total` : `${oneTimePct}% of total`,
+      tone: 'success',
+      background: AdminColors.successLight,
     },
     {
       id: 'recurring-donations',
       label: 'Recurring Donations',
       value: `₹${recurringAmount.toLocaleString('en-IN')}`,
-      supportText: `${recurringPct}% of total`,
-      icon: '🔄',
-      background: '#F3E8FF',
+      supportText: hasRange ? `${recurringPct}% of total` : `${recurringPct}% of total`,
+      tone: 'gold',
+      background: AdminColors.accentGoldLight,
     },
   ];
 

@@ -16,7 +16,7 @@ import {
   donationStatusPresentation,
 } from './DonationStatusBadge';
 
-import { inferDonationType } from '../hooks/useDonations';
+import { inferDonationType, inferDonationSource } from '../hooks/useDonations';
 
 /**
  * Maps a backend donation entity to the row view-model.
@@ -39,6 +39,7 @@ export const toDonationRowModel = (donation: Donation): DonationRowModel => {
     statusTone: presentation.tone,
     hasReceipt: true,
     donationType: inferDonationType(donation),
+    source: inferDonationSource(donation),
     rawStatus: donation.status,
     rawDonation: donation,
   };
@@ -165,6 +166,15 @@ export const DonationRow: React.FC<DonationRowProps> = ({
 
         <View style={styles.tStatusCol}>
           <DonationStatusBadge label={row.statusLabel} tone={row.statusTone} small />
+          <View style={styles.sourcePillTable}>
+            <Text style={styles.sourcePillTextTable} numberOfLines={1}>
+              {row.source === 'Application UI'
+                ? '📱 App UI'
+                : row.source === 'Web App'
+                ? '💻 Web App'
+                : '🌐 Website'}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.tReceiptCol}>
@@ -226,6 +236,15 @@ export const DonationRow: React.FC<DonationRowProps> = ({
           style={styles.statusBadge}
           textStyle={styles.statusText}
         />
+        <View style={styles.sourcePill}>
+          <Text style={styles.sourcePillText}>
+            {row.source === 'Application UI'
+              ? '📱 App UI'
+              : row.source === 'Web App'
+              ? '💻 Web App'
+              : '🌐 Website'}
+          </Text>
+        </View>
         <View style={styles.actionsSpacer} />
         {receiptButton}
         {actionMenu}
@@ -462,6 +481,36 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
   receiptLabelSm: {
+    fontSize: 8,
+    fontWeight: '600',
+    color: AdminColors.primary,
+  },
+  sourcePill: {
+    backgroundColor: '#EDF2F7',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginLeft: Spacing.xs,
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderColor: '#DCE4EC',
+  },
+  sourcePillText: {
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: AdminColors.primary,
+  },
+  sourcePillTable: {
+    backgroundColor: '#EDF2F7',
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1.5,
+    marginTop: 2,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#DCE4EC',
+  },
+  sourcePillTextTable: {
     fontSize: 8,
     fontWeight: '600',
     color: AdminColors.primary,

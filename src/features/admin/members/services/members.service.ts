@@ -140,6 +140,7 @@ export function mapBackendMembershipToMember(backend: BackendMembership): Member
 
   return {
     id: backend.id,
+    userId: backend.user_id || backend.user?.id,
     name,
     phone,
     email,

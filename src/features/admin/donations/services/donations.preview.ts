@@ -31,6 +31,7 @@ export interface DonationPreviewRow {
   transaction_id: string;
   created_at: string;
   has_receipt: boolean;
+  source?: 'Website' | 'Web App' | 'Application UI';
 }
 
 const PREVIEW_DONATIONS: DonationPreviewRow[] = [
@@ -46,6 +47,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     payment_method: 'UPI (Google Pay)',
     transaction_id: 'UPI1234567890',
     donation_type: 'ONE_TIME',
+    source: 'Website',
     created_at: '2026-09-28T11:24:00',
     has_receipt: true,
   },
@@ -61,6 +63,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     payment_method: 'UPI (PhonePe)',
     transaction_id: 'UPI987654321102',
     donation_type: 'ONE_TIME',
+    source: 'Application UI',
     created_at: '2026-09-27T16:15:00',
     has_receipt: true,
   },
@@ -76,6 +79,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     payment_method: 'Bank Transfer (NEFT)',
     transaction_id: 'NEFT2026092612',
     donation_type: 'ONE_TIME',
+    source: 'Web App',
     created_at: '2026-09-26T14:40:00',
     has_receipt: true,
   },
@@ -91,6 +95,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     payment_method: 'UPI (Paytm)',
     transaction_id: 'UPI8811224455',
     donation_type: 'ONE_TIME',
+    source: 'Website',
     created_at: '2026-09-25T10:05:00',
     has_receipt: true,
   },
@@ -106,6 +111,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     payment_method: 'Bank Transfer (RTGS)',
     transaction_id: 'RTGS2026092401',
     donation_type: 'ONE_TIME',
+    source: 'Application UI',
     created_at: '2026-09-24T18:20:00',
     has_receipt: true,
   },
@@ -121,6 +127,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     payment_method: 'UPI (Google Pay)',
     transaction_id: 'UPI7788990011',
     donation_type: 'RECURRING',
+    source: 'Web App',
     created_at: '2026-09-24T09:10:00',
     has_receipt: true,
   },
@@ -136,6 +143,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     payment_method: 'Bank Transfer (NEFT)',
     transaction_id: 'NEFT2026092317',
     donation_type: 'ONE_TIME',
+    source: 'Website',
     created_at: '2026-09-23T17:30:00',
     has_receipt: true,
   },
@@ -151,6 +159,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     payment_method: 'UPI (PhonePe)',
     transaction_id: 'UPI5566778899',
     donation_type: 'RECURRING',
+    source: 'Application UI',
     created_at: '2026-09-22T11:12:00',
     has_receipt: true,
   },
@@ -168,6 +177,7 @@ export const addPreviewDonation = (input: {
   amount: number;
   is_anonymous?: boolean;
   remark?: string;
+  source?: 'Website' | 'Web App' | 'Application UI' | string;
   donation_type?: 'ONE_TIME' | 'RECURRING' | 'OFFLINE';
 }): DonationPreviewRow => {
   const newRow: DonationPreviewRow = {
@@ -180,6 +190,7 @@ export const addPreviewDonation = (input: {
     amount: input.amount,
     status: 'SUCCESS',
     donation_type: input.donation_type || 'ONE_TIME',
+    source: (input.source as any) || 'Application UI',
     payment_method: 'Online',
     transaction_id: `TXN${Date.now()}`,
     created_at: new Date().toISOString(),
@@ -205,6 +216,7 @@ const toPreviewRowModel = (row: DonationPreviewRow): DonationRowModel => {
     statusTone: presentation.tone,
     hasReceipt: true,
     donationType: row.donation_type,
+    source: row.source || 'Website',
     rawStatus: row.status,
   };
 };
@@ -236,6 +248,7 @@ export const getPreviewReceipt = (
     transactionId: row.transaction_id,
     status: row.status,
     notes: row.description,
+    source: row.source || 'Website',
   };
 };
 
@@ -243,6 +256,7 @@ export interface FilterPreviewParams {
   tab?: DonationPreviewTabKey | string;
   search?: string | null;
   status?: string | null;
+  source?: string | null;
   from?: string | null;
   to?: string | null;
 }
@@ -317,14 +331,21 @@ export const filterPreviewRowsAdvanced = (
     );
   }
 
-  // 3. Custom date range filter (From – To)
+  // 3. Source platform filter
+  if (params.source && params.source !== 'ALL') {
+    list = list.filter(
+      row => (row.source ?? '').toLowerCase() === params.source?.toLowerCase(),
+    );
+  }
+
+  // 4. Custom date range filter (From – To)
   if (params.from || params.to) {
     list = list.filter(row =>
       isWithinDateRange(row.created_at, params.from, params.to),
     );
   }
 
-  // 4. Search filter
+  // 5. Search filter
   if (params.search && params.search.trim().length > 0) {
     const q = params.search.trim().toLowerCase();
     list = list.filter(row => {
@@ -333,6 +354,7 @@ export const filterPreviewRowsAdvanced = (
       const code = (row.member_code ?? '').toLowerCase();
       const cause = row.cause.toLowerCase();
       const desc = (row.description ?? '').toLowerCase();
+      const source = (row.source ?? '').toLowerCase();
       const amountStr = String(row.amount);
       return (
         name.includes(q) ||
@@ -340,6 +362,7 @@ export const filterPreviewRowsAdvanced = (
         code.includes(q) ||
         cause.includes(q) ||
         desc.includes(q) ||
+        source.includes(q) ||
         amountStr.includes(q)
       );
     });
@@ -393,35 +416,33 @@ export const getPreviewStats = (
       id: 'total-donations',
       label: 'Total Donations',
       value: `₹${totalAmount.toLocaleString('en-IN')}`,
-      supportText: hasRange ? 'In selected period' : '₹1,52,000 this month',
-      indicator: '↑ 22%',
-      icon: '💰',
+      supportText: hasRange ? 'In selected period' : '+22% this month',
+      tone: 'navy',
       background: AdminColors.primaryLight,
     },
     {
       id: 'total-donors',
       label: 'Total Donors',
       value: String(uniqueDonors),
-      supportText: hasRange ? 'In selected period' : '+28 this month',
-      indicator: '↑ 18%',
-      icon: '👥',
-      background: AdminColors.statusActiveLight,
+      supportText: hasRange ? 'In selected period' : '+18% this month',
+      tone: 'warning',
+      background: AdminColors.warningLight,
     },
     {
       id: 'one-time-donations',
       label: 'One-time Donations',
       value: `₹${oneTimeAmount.toLocaleString('en-IN')}`,
       supportText: `${oneTimePct}% of total`,
-      icon: '⏰',
-      background: AdminColors.accentGoldLight,
+      tone: 'success',
+      background: AdminColors.successLight,
     },
     {
       id: 'recurring-donations',
       label: 'Recurring Donations',
       value: `₹${recurringAmount.toLocaleString('en-IN')}`,
       supportText: `${recurringPct}% of total`,
-      icon: '🔄',
-      background: '#F3E8FF',
+      tone: 'gold',
+      background: AdminColors.accentGoldLight,
     },
   ];
 };
@@ -432,36 +453,33 @@ export const PREVIEW_STATS: DonationStatItem[] = [
     id: 'total-donations',
     label: 'Total Donations',
     value: '₹8,45,000',
-    supportText: '₹1,52,000 this month',
-    indicator: '↑ 22%',
-    icon: '💰',
+    supportText: '+22% this month',
+    tone: 'navy',
     background: AdminColors.primaryLight,
   },
   {
     id: 'total-donors',
     label: 'Total Donors',
     value: '186',
-    supportText: '+28 this month',
-    indicator: '↑ 18%',
-    icon: '👥',
-    background: AdminColors.statusActiveLight,
+    supportText: '+18% this month',
+    tone: 'warning',
+    background: AdminColors.warningLight,
   },
   {
     id: 'one-time-donations',
     label: 'One-time Donations',
     value: '₹6,20,000',
     supportText: '73% of total',
-    icon: '⏰',
-    background: AdminColors.accentGoldLight,
+    tone: 'success',
+    background: AdminColors.successLight,
   },
   {
     id: 'recurring-donations',
     label: 'Recurring Donations',
     value: '₹2,25,000',
     supportText: '27% of total',
-    icon: '🔄',
-    // Light purple tint from the reference — no shared token exists yet.
-    background: '#F3E8FF',
+    tone: 'gold',
+    background: AdminColors.accentGoldLight,
   },
 ];
 

@@ -11,7 +11,6 @@ import {
   useWindowDimensions,
   Platform,
   KeyboardAvoidingView,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,10 +23,15 @@ import {
   ArrowRightIcon,
   GoogleGIcon,
   ChevronDownIcon,
+  GenderIcon,
+  LockOutlineIcon,
+  EyeOutlineIcon,
+  EyeSlashOutlineIcon,
+  CheckCircleFilledIcon,
 } from '../components/AuthIcons';
 import { DobDatePickerModal } from '../components/DobDatePickerModal';
+import { GenderPickerModal } from '../components/GenderPickerModal';
 import { getRegistrationState, updateRegistrationState } from '../state/registrationState';
-import { navigateToCreateAccountAdditional } from '../../../core/navigation/appRouter';
 import { authService } from '../services/auth.service';
 
 const HRSJM_LOGO = require('../../../assets/hrsjm_logo.png');
@@ -46,6 +50,13 @@ export interface CreateAccountFormData {
   phone: string;
   countryCode: string;
   dob: string;
+  gender?: string;
+  password?: string;
+}
+
+interface StepItem {
+  number: number;
+  label: string;
 }
 
 export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
@@ -55,7 +66,26 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   onGoogleSignUp,
 }) => {
   const { width } = useWindowDimensions();
+  const isTabletOrDesktop = width > 520;
+  const contentMaxWidth = isTabletOrDesktop ? 440 : width;
+
   const regState = getRegistrationState();
+  const accountType = regState.accountType || 'general';
+  const isSeeker = accountType === 'seeker';
+
+  const steps: StepItem[] = isSeeker
+    ? [
+        { number: 1, label: 'Account\nType' },
+        { number: 2, label: 'Personal\nDetails' },
+        { number: 3, label: 'Verification' },
+        { number: 4, label: 'Complete' },
+      ]
+    : [
+        { number: 1, label: 'Account\nType' },
+        { number: 2, label: 'Personal\nDetails' },
+        { number: 3, label: 'Complete' },
+      ];
+
   const [fullName, setFullName] = useState(() => regState.fullName || '');
   const [email, setEmail] = useState(() => regState.email || '');
   const [phone, setPhone] = useState(() => {
@@ -66,255 +96,143 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   });
   const [countryCode, setCountryCode] = useState(() => regState.countryCode || '+91');
   const [dob, setDob] = useState(() => regState.dob || '');
+  const [gender, setGender] = useState(() => regState.gender || '');
+  const [password, setPassword] = useState(() => regState.password || '');
+  const [confirmPassword, setConfirmPassword] = useState(() => regState.password || '');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(true);
+  const [privacyAccepted, setPrivacyAccepted] = useState(true);
+
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+  const [isGenderPickerVisible, setIsGenderPickerVisible] = useState(false);
 
   // Field validation and database check states
   const [errors, setErrors] = useState<{
     fullName?: string;
     email?: string;
     phone?: string;
+    password?: string;
+    confirmPassword?: string;
+    terms?: string;
   }>({});
   const [isValidating, setIsValidating] = useState(false);
-  const [checkingPhone, setCheckingPhone] = useState(false);
-  const [checkingEmail, setCheckingEmail] = useState(false);
 
   // Validation Rules
   const validateFullName = (name: string): string | null => {
     const trimmed = name.trim();
-    if (!trimmed) {
-      return 'Full name is required';
-    }
-    if (trimmed.length < 2) {
-      return 'Full name must be at least 2 characters';
-    }
-    const nameRegex = /^[a-zA-Z\s.'-]+$/;
-    if (!nameRegex.test(trimmed)) {
-      return 'Full name can only contain letters and spaces (no numbers or symbols)';
-    }
-    if (trimmed.length > 70) {
-      return 'Full name cannot exceed 70 characters';
+    if (!trimmed) return 'Full name is required';
+    if (trimmed.length < 2) return 'Full name must be at least 2 characters';
+    if (!/^[a-zA-Z\s.'-]+$/.test(trimmed)) {
+      return 'Full name can only contain letters and spaces';
     }
     return null;
   };
 
   const validateEmail = (emailStr: string): string | null => {
     const trimmed = emailStr.trim();
-    if (!trimmed) {
-      return 'Email address is required';
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-    if (!emailRegex.test(trimmed)) {
-      return 'Please enter a valid email address (e.g. name@example.com)';
+    if (!trimmed) return 'Email address is required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) {
+      return 'Please enter a valid email address';
     }
     return null;
   };
 
   const validatePhone = (phoneStr: string): string | null => {
     const digitsOnly = phoneStr.replace(/\D/g, '');
-    if (!digitsOnly) {
-      return 'Mobile number is required';
-    }
-    if (digitsOnly.length !== 10) {
-      return 'Mobile number must be exactly 10 digits';
-    }
+    if (!digitsOnly) return 'Mobile number is required';
+    if (digitsOnly.length !== 10) return 'Mobile number must be exactly 10 digits';
     if (!/^[6-9]\d{9}$/.test(digitsOnly)) {
       return 'Mobile number must start with 6, 7, 8, or 9';
     }
     return null;
   };
 
-  // Change Handlers
-  const handleFullNameChange = (text: string) => {
-    setFullName(text);
-    updateRegistrationState({ fullName: text });
-    if (errors.fullName) {
-      setErrors((prev) => ({ ...prev, fullName: undefined }));
-    }
+  const validatePassword = (pwd: string): string | null => {
+    if (!pwd) return 'Password is required';
+    if (pwd.length < 6) return 'Password must be at least 6 characters';
+    return null;
   };
 
-  const handleFullNameBlur = () => {
-    const err = validateFullName(fullName);
-    if (err) {
-      setErrors((prev) => ({ ...prev, fullName: err }));
-    }
-  };
-
-  const handleEmailChange = (text: string) => {
-    setEmail(text);
-    updateRegistrationState({ email: text });
-    if (errors.email) {
-      setErrors((prev) => ({ ...prev, email: undefined }));
-    }
-  };
-
-  const handleEmailBlur = async () => {
-    const err = validateEmail(email);
-    if (err) {
-      setErrors((prev) => ({ ...prev, email: err }));
-      return;
-    }
-    // Pre-check database for email duplication
-    try {
-      setCheckingEmail(true);
-      const res = await authService.checkDuplicates(undefined, email.trim().toLowerCase());
-      if (res.email_taken) {
-        setErrors((prev) => ({
-          ...prev,
-          email: res.email_message || 'Email address is already registered in the database.',
-        }));
-      }
-    } catch {
-      // Ignore background check failure
-    } finally {
-      setCheckingEmail(false);
-    }
-  };
-
-  const handlePhoneChange = (text: string) => {
-    // Sanitize to only numeric digits
-    const digitsOnly = text.replace(/\D/g, '').slice(0, 10);
-    setPhone(digitsOnly);
-    updateRegistrationState({
-      phone: digitsOnly ? `${countryCode} ${digitsOnly}` : '',
-    });
-    if (errors.phone) {
-      setErrors((prev) => ({ ...prev, phone: undefined }));
-    }
-  };
-
-  const handlePhoneBlur = async () => {
-    const err = validatePhone(phone);
-    if (err) {
-      setErrors((prev) => ({ ...prev, phone: err }));
-      return;
-    }
-    // Pre-check database for mobile duplication
-    try {
-      setCheckingPhone(true);
-      const res = await authService.checkDuplicates(phone.replace(/\D/g, ''), undefined);
-      if (res.mobile_taken) {
-        setErrors((prev) => ({
-          ...prev,
-          phone: res.mobile_message || 'Mobile number is already registered in the database.',
-        }));
-      }
-    } catch {
-      // Ignore background check failure
-    } finally {
-      setCheckingPhone(false);
-    }
-  };
-
-  // Sizing calculations for responsive layout
-  const isTabletOrDesktop = width > 520;
-  const contentMaxWidth = isTabletOrDesktop ? 440 : width;
-
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else if (typeof globalThis !== 'undefined' && (globalThis as any).window?.history) {
-      (globalThis as any).window.history.back();
-    } else {
-      Alert.alert('Navigation', 'Back button pressed');
-    }
+  const validateConfirmPassword = (pwd: string, confirm: string): string | null => {
+    if (!confirm) return 'Please confirm your password';
+    if (pwd !== confirm) return 'Passwords do not match';
+    return null;
   };
 
   const handleContinue = async () => {
-    // 1. Synchronous format validation
     const nameErr = validateFullName(fullName);
     const emailErr = validateEmail(email);
     const phoneErr = validatePhone(phone);
+    const passwordErr = validatePassword(password);
+    const confirmPasswordErr = validateConfirmPassword(password, confirmPassword);
+    let termsErr: string | undefined;
+    if (!termsAccepted) {
+      termsErr = 'Please accept Terms & Conditions to proceed';
+    } else if (!privacyAccepted) {
+      termsErr = 'Please accept Privacy Policy to proceed';
+    }
 
-    if (nameErr || emailErr || phoneErr) {
+    if (nameErr || emailErr || phoneErr || passwordErr || confirmPasswordErr || termsErr) {
       setErrors({
         fullName: nameErr || undefined,
         email: emailErr || undefined,
         phone: phoneErr || undefined,
+        password: passwordErr || undefined,
+        confirmPassword: confirmPasswordErr || undefined,
+        terms: termsErr,
       });
       return;
     }
 
-    // 2. Database Duplication Check
+    // Database Duplication Check
     setIsValidating(true);
-    try {
-      const cleanMobile = phone.replace(/\D/g, '').slice(-10);
-      const cleanEmail = email.trim().toLowerCase();
+    const cleanMobile = phone.replace(/\D/g, '').slice(-10);
+    const cleanEmail = email.trim().toLowerCase();
 
+    try {
       const dupRes = await authService.checkDuplicates(cleanMobile, cleanEmail);
 
       if (!dupRes.available) {
         setErrors({
           phone: dupRes.mobile_taken
-            ? dupRes.mobile_message || 'Mobile number is already registered in the database.'
+            ? dupRes.mobile_message || 'Mobile number is already registered.'
             : undefined,
           email: dupRes.email_taken
-            ? dupRes.email_message || 'Email address is already registered in the database.'
+            ? dupRes.email_message || 'Email address is already registered.'
             : undefined,
         });
+        setIsValidating(false);
         return;
       }
-
-      // Both format validation and database duplication checks passed!
-      setErrors({});
-      const formattedPhone = `${countryCode} ${cleanMobile}`;
-      updateRegistrationState({
-        fullName: fullName.trim(),
-        email: cleanEmail,
-        phone: formattedPhone,
-        countryCode,
-        dob: dob.trim(),
-      });
-      if (onContinue) {
-        onContinue({
-          fullName: fullName.trim(),
-          email: cleanEmail,
-          phone: cleanMobile,
-          countryCode,
-          dob: dob.trim(),
-        });
-      } else {
-        navigateToCreateAccountAdditional();
-      }
-    } catch (err: any) {
+    } catch {
       // In case of network check failure, proceed with standard registration pipeline
-      const cleanMobile = phone.replace(/\D/g, '').slice(-10);
-      const cleanEmail = email.trim().toLowerCase();
-      updateRegistrationState({
+    }
+
+    setIsValidating(false);
+    setErrors({});
+    const formattedPhone = `${countryCode} ${cleanMobile}`;
+
+    updateRegistrationState({
+      fullName: fullName.trim(),
+      email: cleanEmail,
+      phone: formattedPhone,
+      countryCode,
+      dob: dob.trim(),
+      gender: gender.trim(),
+      password: password.trim(),
+    });
+
+    if (onContinue) {
+      onContinue({
         fullName: fullName.trim(),
         email: cleanEmail,
-        phone: `${countryCode} ${cleanMobile}`,
+        phone: cleanMobile,
         countryCode,
         dob: dob.trim(),
+        gender: gender.trim(),
+        password: password.trim(),
       });
-      if (onContinue) {
-        onContinue({
-          fullName: fullName.trim(),
-          email: cleanEmail,
-          phone: cleanMobile,
-          countryCode,
-          dob: dob.trim(),
-        });
-      } else {
-        navigateToCreateAccountAdditional();
-      }
-    } finally {
-      setIsValidating(false);
-    }
-  };
-
-  const handleGoogleSignUp = () => {
-    if (onGoogleSignUp) {
-      onGoogleSignUp();
-    } else {
-      Alert.alert('Google Sign Up', 'Sign up with Google pressed');
-    }
-  };
-
-  const handleLogin = () => {
-    if (onLoginPress) {
-      onLoginPress();
-    } else {
-      Alert.alert('Login', 'Navigate to Login screen');
     }
   };
 
@@ -335,7 +253,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
           bounces={false}
         >
           <View style={[styles.mainWrapper, { width: contentMaxWidth }]}>
-            {/* Top Hero Image Section covering the entire sky & landscape backdrop */}
+            {/* Top Hero Image Section */}
             <ImageBackground
               source={HERO_BG}
               style={styles.heroBackground}
@@ -344,18 +262,20 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
             >
               {/* Top Bar with Back Button */}
               <View style={styles.headerRow}>
-                <TouchableOpacity
-                  onPress={handleBack}
-                  style={styles.backButton}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="Go back"
-                >
-                  <ChevronLeftIcon size={16} color="#0F2860" />
-                </TouchableOpacity>
+                {onBack && (
+                  <TouchableOpacity
+                    onPress={onBack}
+                    style={styles.backButton}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Go back to Account Type"
+                  >
+                    <ChevronLeftIcon size={16} color="#0F2860" />
+                  </TouchableOpacity>
+                )}
               </View>
 
-              {/* Branding Section with Official HRSJM Logo */}
+              {/* Branding Section */}
               <View style={styles.brandingSection}>
                 <Image
                   source={HRSJM_LOGO}
@@ -368,33 +288,71 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
               {/* Main Heading & Subtitle */}
               <View style={styles.headingSection}>
                 <Text style={styles.heroHeading}>
-                  <Text style={styles.headingNavy}>Create Your </Text>
-                  <Text style={styles.headingGold}>Account</Text>
+                  <Text style={styles.headingNavy}>Personal </Text>
+                  <Text style={styles.headingGold}>Details</Text>
                 </Text>
                 <Text style={styles.heroSubheading}>
-                  Join HRSJM and be part of a movement{'\n'}for a fairer, more just and equal society.
+                  Enter your details and secure password to register.
                 </Text>
               </View>
 
-              {/* Quote positioned naturally above sunrise / landscape */}
-              <View style={styles.quoteRow}>
-                <View style={styles.quoteWrapper}>
-                  <Text style={styles.quoteText}>
-                    “People{'\n'}Rights{'\n'}Justice{'\n'}Change.”
-                  </Text>
-                  <View style={styles.quoteUnderline} />
-                </View>
-              </View>
-
-              {/* Spacer so the people with backpacks are positioned right above/at the card overlap */}
+              {/* Bottom Spacer */}
               <View style={styles.peopleBottomSpacer} />
             </ImageBackground>
 
-            {/* Overlapping White Personal Information Card */}
+            {/* Overlapping White Information Card */}
             <View style={styles.cardContainer}>
-              <Text style={styles.cardHeading}>Personal Information</Text>
+              {/* Stepper Bar at top of card */}
+              <View style={styles.stepperContainer}>
+                <View style={styles.stepsRow}>
+                  {steps.map((s, idx) => {
+                    const isDone = s.number < 2;
+                    const isActive = s.number === 2;
+                    return (
+                      <React.Fragment key={s.number}>
+                        <View style={styles.stepNode}>
+                          <View
+                            style={[
+                              styles.stepCircle,
+                              isDone && styles.stepCircleDone,
+                              isActive && styles.stepCircleActive,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.stepCircleText,
+                                (isDone || isActive) && styles.stepCircleTextActive,
+                              ]}
+                            >
+                              {isDone ? '✓' : s.number}
+                            </Text>
+                          </View>
+                          <Text
+                            style={[
+                              styles.stepLabel,
+                              (isDone || isActive) && styles.stepLabelActive,
+                            ]}
+                          >
+                            {s.label}
+                          </Text>
+                        </View>
+                        {idx < steps.length - 1 && (
+                          <View
+                            style={[
+                              styles.stepLine,
+                              isDone && styles.stepLineDone,
+                            ]}
+                          />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <Text style={styles.cardHeading}>Personal Information &amp; Password</Text>
               <Text style={styles.cardDescription}>
-                Fill in your details to create an account.
+                Fill in your details and password to register your account.
               </Text>
 
               {/* Field 1: Full Name */}
@@ -416,8 +374,10 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                     placeholder="Full Name *"
                     placeholderTextColor="#94A3B8"
                     value={fullName}
-                    onChangeText={handleFullNameChange}
-                    onBlur={handleFullNameBlur}
+                    onChangeText={(t) => {
+                      setFullName(t);
+                      if (errors.fullName) setErrors(p => ({ ...p, fullName: undefined }));
+                    }}
                     autoCapitalize="words"
                     accessibilityLabel="Full Name"
                   />
@@ -427,7 +387,43 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                 )}
               </View>
 
-              {/* Field 2: Email Address */}
+              {/* Field 2: Phone Number */}
+              <View style={styles.fieldWrapper}>
+                <View
+                  style={[
+                    styles.inputField,
+                    errors.phone ? styles.inputFieldError : null,
+                  ]}
+                >
+                  <View style={styles.inputLeftIcon}>
+                    <PhoneOutlineIcon
+                      size={18}
+                      color={errors.phone ? '#DC2626' : '#475569'}
+                    />
+                  </View>
+                  <View style={styles.countryCodeBadge}>
+                    <Text style={styles.countryCodeText}>{countryCode}</Text>
+                  </View>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Mobile Number *"
+                    placeholderTextColor="#94A3B8"
+                    value={phone}
+                    onChangeText={(t) => {
+                      setPhone(t);
+                      if (errors.phone) setErrors(p => ({ ...p, phone: undefined }));
+                    }}
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    accessibilityLabel="Mobile Number"
+                  />
+                </View>
+                {errors.phone && (
+                  <Text style={styles.fieldErrorText}>{errors.phone}</Text>
+                )}
+              </View>
+
+              {/* Field 3: Email Address */}
               <View style={styles.fieldWrapper}>
                 <View
                   style={[
@@ -446,63 +442,22 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                     placeholder="Email Address *"
                     placeholderTextColor="#94A3B8"
                     value={email}
-                    onChangeText={handleEmailChange}
-                    onBlur={handleEmailBlur}
+                    onChangeText={(t) => {
+                      setEmail(t);
+                      if (errors.email) setErrors(p => ({ ...p, email: undefined }));
+                    }}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
                     accessibilityLabel="Email Address"
                   />
-                  {checkingEmail && (
-                    <ActivityIndicator size="small" color="#EAA224" style={{ marginLeft: 6 }} />
-                  )}
                 </View>
                 {errors.email && (
                   <Text style={styles.fieldErrorText}>{errors.email}</Text>
                 )}
               </View>
 
-              {/* Field 3: Mobile Number with Flag +91 */}
-              <View style={styles.fieldWrapper}>
-                <View
-                  style={[
-                    styles.inputField,
-                    errors.phone ? styles.inputFieldError : null,
-                  ]}
-                >
-                  <View style={styles.inputLeftIcon}>
-                    <PhoneOutlineIcon
-                      size={18}
-                      color={errors.phone ? '#DC2626' : '#475569'}
-                    />
-                  </View>
-                  <View style={styles.countryPicker}>
-                    <Text style={styles.flagEmoji}>🇮🇳</Text>
-                    <Text style={styles.countryCodeText}>{countryCode}</Text>
-                    <ChevronDownIcon size={10} color="#64748B" />
-                  </View>
-                  <View style={styles.verticalDivider} />
-                  <TextInput
-                    style={[styles.textInput, styles.phoneInput]}
-                    placeholder="Mobile Number *"
-                    placeholderTextColor="#94A3B8"
-                    value={phone}
-                    onChangeText={handlePhoneChange}
-                    onBlur={handlePhoneBlur}
-                    keyboardType="phone-pad"
-                    maxLength={10}
-                    accessibilityLabel="Mobile Number"
-                  />
-                  {checkingPhone && (
-                    <ActivityIndicator size="small" color="#EAA224" style={{ marginLeft: 6 }} />
-                  )}
-                </View>
-                {errors.phone && (
-                  <Text style={styles.fieldErrorText}>{errors.phone}</Text>
-                )}
-              </View>
-
-              {/* Field 4: Date of Birth with Calendar Picker */}
+              {/* Field 4: Date of Birth */}
               <View style={styles.fieldWrapper}>
                 <TouchableOpacity
                   style={styles.inputField}
@@ -524,23 +479,178 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                     {dob || 'Date of Birth (Optional)'}
                   </Text>
                   <View style={styles.inputRightIcon}>
-                    <CalendarOutlineIcon size={18} color="#94A3B8" />
+                    <ChevronDownIcon size={12} color="#94A3B8" />
                   </View>
                 </TouchableOpacity>
               </View>
 
-              {/* DOB Calendar Picker Modal */}
               <DobDatePickerModal
                 visible={isDatePickerVisible}
                 selectedDate={dob}
-                onSelectDate={(date) => {
-                  setDob(date);
-                  updateRegistrationState({ dob: date });
+                onSelectDate={(selected) => {
+                  setDob(selected);
+                  updateRegistrationState({ dob: selected });
                 }}
                 onClose={() => setIsDatePickerVisible(false)}
               />
 
-              {/* Continue Button */}
+              {/* Field 5: Gender with Picker */}
+              <View style={styles.fieldWrapper}>
+                <TouchableOpacity
+                  style={styles.inputField}
+                  onPress={() => setIsGenderPickerVisible(true)}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select Gender"
+                >
+                  <View style={styles.inputLeftIcon}>
+                    <GenderIcon size={18} color="#475569" />
+                  </View>
+                  <Text
+                    style={[
+                      styles.textInput,
+                      styles.dobText,
+                      !gender && styles.placeholderText,
+                    ]}
+                  >
+                    {gender || 'Select Gender (Optional)'}
+                  </Text>
+                  <View style={styles.inputRightIcon}>
+                    <ChevronDownIcon size={12} color="#94A3B8" />
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              <GenderPickerModal
+                visible={isGenderPickerVisible}
+                selectedGender={gender}
+                onSelectGender={(selected) => {
+                  setGender(selected);
+                  updateRegistrationState({ gender: selected });
+                }}
+                onClose={() => setIsGenderPickerVisible(false)}
+              />
+
+              {/* Field 6: Password */}
+              <View style={styles.fieldWrapper}>
+                <View
+                  style={[
+                    styles.inputField,
+                    errors.password ? styles.inputFieldError : null,
+                  ]}
+                >
+                  <View style={styles.inputLeftIcon}>
+                    <LockOutlineIcon
+                      size={18}
+                      color={errors.password ? '#DC2626' : '#475569'}
+                    />
+                  </View>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Create Password (min. 6 chars) *"
+                    placeholderTextColor="#94A3B8"
+                    value={password}
+                    onChangeText={(t) => {
+                      setPassword(t);
+                      if (errors.password) setErrors(p => ({ ...p, password: undefined }));
+                    }}
+                    secureTextEntry={!showPassword}
+                    accessibilityLabel="Password"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(p => !p)}
+                    style={styles.inputRightIcon}
+                    activeOpacity={0.7}
+                  >
+                    {showPassword ? (
+                      <EyeSlashOutlineIcon size={18} color="#64748B" />
+                    ) : (
+                      <EyeOutlineIcon size={18} color="#64748B" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                {errors.password && (
+                  <Text style={styles.fieldErrorText}>{errors.password}</Text>
+                )}
+              </View>
+
+              {/* Field 7: Confirm Password */}
+              <View style={styles.fieldWrapper}>
+                <View
+                  style={[
+                    styles.inputField,
+                    errors.confirmPassword ? styles.inputFieldError : null,
+                  ]}
+                >
+                  <View style={styles.inputLeftIcon}>
+                    <LockOutlineIcon
+                      size={18}
+                      color={errors.confirmPassword ? '#DC2626' : '#475569'}
+                    />
+                  </View>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Confirm Password *"
+                    placeholderTextColor="#94A3B8"
+                    value={confirmPassword}
+                    onChangeText={(t) => {
+                      setConfirmPassword(t);
+                      if (errors.confirmPassword) setErrors(p => ({ ...p, confirmPassword: undefined }));
+                    }}
+                    secureTextEntry={!showConfirmPassword}
+                    accessibilityLabel="Confirm Password"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowConfirmPassword(p => !p)}
+                    style={styles.inputRightIcon}
+                    activeOpacity={0.7}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeSlashOutlineIcon size={18} color="#64748B" />
+                    ) : (
+                      <EyeOutlineIcon size={18} color="#64748B" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                {errors.confirmPassword && (
+                  <Text style={styles.fieldErrorText}>{errors.confirmPassword}</Text>
+                )}
+              </View>
+
+              {/* Consents: Terms and Privacy */}
+              <View style={styles.consentsContainer}>
+                <TouchableOpacity
+                  style={styles.consentRow}
+                  onPress={() => setTermsAccepted(v => !v)}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.checkbox, termsAccepted && styles.checkboxActive]}>
+                    {termsAccepted && <Text style={styles.checkboxCheck}>✓</Text>}
+                  </View>
+                  <Text style={styles.consentText}>
+                    I agree to the <Text style={styles.consentLink}>Terms &amp; Conditions</Text> of HRSJM. *
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.consentRow}
+                  onPress={() => setPrivacyAccepted(v => !v)}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.checkbox, privacyAccepted && styles.checkboxActive]}>
+                    {privacyAccepted && <Text style={styles.checkboxCheck}>✓</Text>}
+                  </View>
+                  <Text style={styles.consentText}>
+                    I accept the <Text style={styles.consentLink}>Privacy Policy</Text> and consent to data processing. *
+                  </Text>
+                </TouchableOpacity>
+
+                {errors.terms && (
+                  <Text style={styles.fieldErrorText}>{errors.terms}</Text>
+                )}
+              </View>
+
+              {/* Action Button */}
               <TouchableOpacity
                 style={[
                   styles.continueButton,
@@ -550,51 +660,36 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                 disabled={isValidating}
                 activeOpacity={0.85}
                 accessibilityRole="button"
-                accessibilityLabel="Continue"
+                accessibilityLabel={isSeeker ? 'Continue to Document Upload' : 'Create Account'}
               >
                 {isValidating ? (
-                  <ActivityIndicator size="small" color="#0F2860" />
+                  <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <>
-                    <Text style={styles.continueButtonText}>Continue</Text>
+                    <Text style={styles.continueButtonText}>
+                      {isSeeker ? 'Continue to Document Upload' : 'Create Account'}
+                    </Text>
                     <View style={styles.continueArrowWrapper}>
-                      <ArrowRightIcon size={16} color="#0F2860" />
+                      <ArrowRightIcon size={16} color="#FFFFFF" />
                     </View>
                   </>
                 )}
               </TouchableOpacity>
 
-              {/* OR Divider */}
-              <View style={styles.orDividerContainer}>
-                <View style={styles.orDividerLine} />
-                <Text style={styles.orText}>OR</Text>
-                <View style={styles.orDividerLine} />
-              </View>
-
-              {/* Google Sign Up Button */}
-              <TouchableOpacity
-                style={styles.googleButton}
-                onPress={handleGoogleSignUp}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="Sign up with Google"
-              >
-                <GoogleGIcon size={18} />
-                <Text style={styles.googleButtonText}>Sign up with Google</Text>
-              </TouchableOpacity>
-
               {/* Login Link */}
-              <View style={styles.loginRow}>
-                <Text style={styles.loginQuestion}>Already have an account? </Text>
-                <TouchableOpacity
-                  onPress={handleLogin}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="Login"
-                >
-                  <Text style={styles.loginLink}>Login</Text>
-                </TouchableOpacity>
-              </View>
+              {onLoginPress && (
+                <View style={styles.loginRow}>
+                  <Text style={styles.loginQuestion}>Already have an account? </Text>
+                  <TouchableOpacity
+                    onPress={onLoginPress}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Login"
+                  >
+                    <Text style={styles.loginLink}>Login</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
         </ScrollView>
@@ -613,281 +708,271 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    paddingBottom: 30,
+    flexGrow: 1,
+    paddingBottom: 40,
   },
   mainWrapper: {
+    alignSelf: 'center',
     width: '100%',
-    backgroundColor: '#FFFFFF',
   },
   heroBackground: {
     width: '100%',
-    height: 520, // Ample height so the sky holds all text comfortably above the people
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 28,
   },
   heroBackgroundImage: {
-    width: '100%',
-    height: '100%',
+    opacity: 0.95,
   },
   headerRow: {
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 14 : 8,
-    paddingBottom: 0,
-    alignItems: 'flex-start',
-    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-    borderWidth: 1,
-    borderColor: 'rgba(230, 235, 245, 0.95)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0F2860',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 3,
   },
   brandingSection: {
     alignItems: 'center',
-    marginTop: -18,
-    marginBottom: 4,
+    marginVertical: 4,
   },
   logoImage: {
-    width: 160,
-    height: 115,
+    width: 60,
+    height: 60,
   },
   headingSection: {
     alignItems: 'center',
-    marginTop: 0,
-    paddingHorizontal: 20,
+    marginTop: 4,
   },
   heroHeading: {
-    fontSize: 27,
+    fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
-    letterSpacing: 0.3,
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   headingNavy: {
     color: '#0F2860',
   },
   headingGold: {
-    color: '#E9A11F',
+    color: '#EAA224',
   },
   heroSubheading: {
     fontSize: 13,
-    color: '#0F2860',
+    color: '#334155',
     textAlign: 'center',
-    lineHeight: 18,
     marginTop: 4,
-    fontWeight: '600',
-    textShadowColor: 'rgba(255, 255, 255, 0.85)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  quoteRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingRight: 20,
-    marginTop: 22,
-  },
-  quoteWrapper: {
-    alignItems: 'flex-end',
-  },
-  quoteText: {
-    fontSize: 16,
-    fontStyle: 'italic',
-    fontWeight: '800',
-    color: '#0F2860',
-    textAlign: 'right',
-    lineHeight: 20,
-    fontFamily: Platform.select({ ios: 'Snell Roundhand', android: 'sans-serif-condensed', default: 'cursive' }),
-    textShadowColor: 'rgba(255, 255, 255, 0.95)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
-  },
-  quoteUnderline: {
-    width: 50,
-    height: 2.4,
-    backgroundColor: '#E9A11F',
-    marginTop: 3,
-    borderRadius: 1.2,
   },
   peopleBottomSpacer: {
-    flex: 1,
+    height: 12,
   },
   cardContainer: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingHorizontal: 20,
-    paddingTop: 22,
-    paddingBottom: 24,
-    marginTop: -55, // Overlap onto backpacks leaving people and sunrise visible
-    shadowColor: '#0F2860',
-    shadowOffset: { width: 0, height: -4 },
+    paddingTop: 16,
+    paddingBottom: 32,
+    marginTop: -16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  stepperContainer: {
+    marginBottom: 16,
+  },
+  stepsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  stepNode: {
+    alignItems: 'center',
+    width: 58,
+  },
+  stepCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  stepCircleDone: {
+    backgroundColor: '#059669',
+  },
+  stepCircleActive: {
+    backgroundColor: '#EAA224',
+  },
+  stepCircleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  stepCircleTextActive: {
+    color: '#FFFFFF',
+  },
+  stepLabel: {
+    fontSize: 10,
+    color: '#94A3B8',
+    textAlign: 'center',
+    lineHeight: 12,
+  },
+  stepLabelActive: {
+    color: '#0F2860',
+    fontWeight: '700',
+  },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 4,
+    marginBottom: 16,
+  },
+  stepLineDone: {
+    backgroundColor: '#059669',
   },
   cardHeading: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0F2860',
-    letterSpacing: 0.2,
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
+    marginBottom: 4,
   },
   cardDescription: {
     fontSize: 13,
     color: '#64748B',
-    marginTop: 4,
-    marginBottom: 18,
+    marginBottom: 16,
   },
   fieldWrapper: {
-    marginBottom: 13,
+    marginBottom: 12,
   },
   inputField: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
     borderColor: '#E2E8F0',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 12,
     height: 48,
-    marginBottom: 0,
   },
   inputFieldError: {
-    borderColor: '#EF4444',
+    borderColor: '#DC2626',
     backgroundColor: '#FEF2F2',
-  },
-  fieldErrorText: {
-    fontSize: 11.5,
-    color: '#DC2626',
-    marginTop: 4,
-    marginLeft: 4,
-    fontWeight: '500',
   },
   inputLeftIcon: {
     marginRight: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   inputRightIcon: {
-    marginLeft: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 6,
+    marginLeft: 6,
+  },
+  countryCodeBadge: {
+    backgroundColor: '#E2E8F0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  countryCodeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F2860',
   },
   textInput: {
     flex: 1,
     fontSize: 14,
-    color: '#0F172A',
-    paddingVertical: 0,
-    height: '100%',
+    color: '#0F2860',
   },
   dobText: {
-    lineHeight: 46,
-    color: '#0F172A',
+    paddingVertical: 12,
   },
   placeholderText: {
     color: '#94A3B8',
   },
-  countryPicker: {
+  fieldErrorText: {
+    fontSize: 12,
+    color: '#DC2626',
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  consentsContainer: {
+    marginVertical: 12,
+    gap: 8,
+  },
+  consentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingRight: 8,
+    gap: 10,
   },
-  flagEmoji: {
-    fontSize: 15,
-  },
-  countryCodeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginRight: 2,
-  },
-  verticalDivider: {
-    width: 1,
+  checkbox: {
+    width: 20,
     height: 20,
-    backgroundColor: '#CBD5E1',
-    marginRight: 10,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
   },
-  phoneInput: {
+  checkboxActive: {
+    backgroundColor: '#EAA224',
+    borderColor: '#EAA224',
+  },
+  checkboxCheck: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  consentText: {
     flex: 1,
+    fontSize: 12,
+    color: '#475569',
+    lineHeight: 16,
+  },
+  consentLink: {
+    color: '#0F2860',
+    fontWeight: '700',
   },
   continueButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EAA224',
-    height: 48,
-    borderRadius: 10,
-    marginTop: 6,
-    shadowColor: '#EAA224',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: '#0F2860',
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 8,
+    marginTop: 8,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   continueButtonDisabled: {
-    opacity: 0.65,
+    opacity: 0.7,
   },
   continueButtonText: {
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
-    color: '#0F2860',
-    letterSpacing: 0.3,
   },
   continueArrowWrapper: {
-    marginLeft: 8,
-  },
-  orDividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  orDividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E2E8F0',
-  },
-  orText: {
-    marginHorizontal: 12,
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#94A3B8',
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    height: 48,
-    borderRadius: 10,
-    gap: 10,
-  },
-  googleButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0F2860',
+    marginLeft: 4,
   },
   loginRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 18,
-    marginBottom: 4,
   },
   loginQuestion: {
     fontSize: 13,
@@ -896,6 +981,6 @@ const styles = StyleSheet.create({
   loginLink: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#2563EB',
+    color: '#0F2860',
   },
 });

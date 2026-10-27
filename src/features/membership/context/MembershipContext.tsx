@@ -43,16 +43,25 @@ interface MembershipContextType {
     addressInfo?: Partial<AddressInfo>;
     documents?: Partial<DocumentUploads>;
     post?: MembershipPostData | null;
+    paymentCompleted?: boolean;
+    paymentId?: string;
+    paymentAmount?: number;
+    receiptNumber?: string;
   }) => MembershipApplicationRecord;
   submitApplicationAsync: (overrides?: {
     personalInfo?: Partial<PersonalInfo>;
     addressInfo?: Partial<AddressInfo>;
     documents?: Partial<DocumentUploads>;
     post?: MembershipPostData | null;
+    paymentCompleted?: boolean;
+    paymentId?: string;
+    paymentAmount?: number;
+    receiptNumber?: string;
   }) => Promise<MembershipApplicationRecord>;
   updateApplicationStatus: (appId: string, status: MembershipStatus) => void;
   reapply: () => void;
   cancelReapply: () => void;
+  removeApplication: (appId?: string) => void;
   isReapplying: boolean;
 }
 
@@ -202,6 +211,12 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         try {
           const parsed = JSON.parse(saved);
           if (parsed && (parsed.applicationId || parsed.id)) {
+            parsed.status = 'Rejected';
+            parsed.rejectionReason =
+              parsed.rejectionReason ||
+              'Application returned for re-submission. Please re-apply to complete registration and payment verification.';
+            parsed.timeline = buildDefaultTimeline('Rejected', parsed.submittedAt || 'Recently');
+            safeSetStorageItem('hrsjm_user_membership_record', JSON.stringify(sanitizeForStorage(parsed)));
             return [parsed];
           }
         } catch {}
@@ -220,6 +235,11 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         try {
           const parsed = JSON.parse(saved);
           if (parsed && (parsed.applicationId || parsed.id)) {
+            parsed.status = 'Rejected';
+            parsed.rejectionReason =
+              parsed.rejectionReason ||
+              'Application returned for re-submission. Please re-apply to complete registration and payment verification.';
+            parsed.timeline = buildDefaultTimeline('Rejected', parsed.submittedAt || 'Recently');
             return parsed;
           }
         } catch {}
@@ -405,6 +425,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     addressInfo?: Partial<AddressInfo>;
     documents?: Partial<DocumentUploads>;
     post?: MembershipPostData | null;
+    paymentCompleted?: boolean;
+    paymentId?: string;
+    paymentAmount?: number;
+    receiptNumber?: string;
   }): MembershipApplicationRecord => {
     const timestamp = new Date();
     const formattedDate = timestamp.toLocaleDateString('en-GB', {
@@ -553,6 +577,8 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       address: fullAddress || 'Not specified',
       policeStation: effectivePersonalInfo.policeStation || effectiveAddressInfo.policeStation || undefined,
       occupation: 'Member',
+      amount: overrides?.paymentAmount || effectivePost?.feeAmount || 800,
+      paymentStatus: overrides?.paymentCompleted ? 'PAID' : 'UNPAID',
       documents: uploadedDocs.map(d => ({ ...d, uri: sanitizeUri(d.uri) })),
       activityLog: [
         {
@@ -578,6 +604,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       validFrom: formattedDate,
       validTill: `${formattedDate.slice(0, -4)}${Number(timestamp.getFullYear()) + 1}`,
       rejectionReason: 'Documents are not clear. Please upload a valid address proof and clear photograph.',
+      paymentStatus: overrides?.paymentCompleted ? 'Completed' : 'Pending',
+      paymentId: overrides?.paymentId,
+      paymentAmount: overrides?.paymentAmount,
+      receiptNumber: overrides?.receiptNumber,
       personalInfo: { ...effectivePersonalInfo },
       addressInfo: { ...effectiveAddressInfo },
       documents: { ...effectiveDocuments },
@@ -739,6 +769,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     addressInfo?: Partial<AddressInfo>;
     documents?: Partial<DocumentUploads>;
     post?: MembershipPostData | null;
+    paymentCompleted?: boolean;
+    paymentId?: string;
+    paymentAmount?: number;
+    receiptNumber?: string;
   }): Promise<MembershipApplicationRecord> => {
     const timestamp = new Date();
     const formattedDate = timestamp.toLocaleDateString('en-GB', {
@@ -881,6 +915,8 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       address: fullAddress || 'Not specified',
       policeStation: effectivePersonalInfo.policeStation || effectiveAddressInfo.policeStation || undefined,
       occupation: 'Member',
+      amount: overrides?.paymentAmount || effectivePost?.feeAmount || 800,
+      paymentStatus: overrides?.paymentCompleted ? 'PAID' : 'UNPAID',
       documents: uploadedDocs,
       activityLog: [
         {
@@ -920,6 +956,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       validFrom: formattedDate,
       validTill: `${formattedDate.slice(0, -4)}${Number(timestamp.getFullYear()) + validityYears}`,
       rejectionReason: 'Documents are not clear. Please upload a valid address proof and clear photograph.',
+      paymentStatus: overrides?.paymentCompleted ? 'Completed' : 'Pending',
+      paymentId: overrides?.paymentId,
+      paymentAmount: overrides?.paymentAmount,
+      receiptNumber: overrides?.receiptNumber,
       personalInfo: { ...effectivePersonalInfo },
       addressInfo: { ...effectiveAddressInfo },
       documents: { ...effectiveDocuments },
@@ -995,6 +1035,13 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
 
   const reapply = () => {
     setIsReapplying(true);
+    setHasAppliedLocally(false);
+    const storage = getSessionStorage();
+    if (storage) {
+      try {
+        storage.removeItem('hrsjm_has_applied');
+      } catch {}
+    }
     // Pre-populate personal and address info from existing application so applicant doesn't have to retype
     const sourceApp = activeApplication || applications[0];
     if (sourceApp) {
@@ -1010,9 +1057,34 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const removeApplication = (appId?: string) => {
+    setApplications([]);
+    setActiveApplication(null);
+    setHasAppliedLocally(false);
+    setIsReapplying(false);
+    const storage = getSessionStorage();
+    if (storage) {
+      try {
+        storage.removeItem('hrsjm_has_applied');
+        storage.removeItem('hrsjm_user_membership_record');
+      } catch {}
+    }
+    if (appId) {
+      try {
+        membershipApplicationsStore.removeApplication(appId);
+      } catch {}
+    }
+  };
+
   const cancelReapply = () => {
     setIsReapplying(false);
   };
+
+  const hasAppliedCalculated = Boolean(
+    (hasAppliedLocally || activeApplication || applications.length > 0) &&
+    applications.some(a => a.status !== 'Rejected') &&
+    !isReapplying
+  );
 
   return (
     <MembershipContext.Provider
@@ -1030,7 +1102,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         resetDraft,
         applications,
         activeApplication,
-        hasApplied: Boolean(hasAppliedLocally || activeApplication || applications.length > 0),
+        hasApplied: hasAppliedCalculated,
         isReapplying,
         refreshApplications,
         setActiveApplication,
@@ -1039,6 +1111,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         updateApplicationStatus,
         reapply,
         cancelReapply,
+        removeApplication,
       }}>
       {children}
     </MembershipContext.Provider>

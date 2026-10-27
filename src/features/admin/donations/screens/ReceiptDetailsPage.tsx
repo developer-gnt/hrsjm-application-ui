@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Modal,
   Platform,
   Pressable,
@@ -44,6 +45,8 @@ export interface ReceiptDetailsPageProps {
   onBack?: () => void;
   onNavigate?: (target: string) => void;
 }
+
+const LOGO_SOURCE = require('../../../../assets/logo/logo.png');
 
 const formatAmount = (amount: number): string =>
   `₹${Number(amount || 0).toLocaleString('en-IN')}`;
@@ -407,7 +410,6 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
         showBack={Boolean(onBack)}
         onBack={handleBack}
         onNavigate={onNavigate}
-        unreadCount={3}
       />
       <ScrollView
         style={styles.scroll}
@@ -463,9 +465,12 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
             {/* Donation receipt card */}
             <View style={styles.receiptCard}>
               <View style={styles.brandRow}>
-                <View style={styles.logoBadge}>
-                  <Text style={styles.logoLetter}>H</Text>
-                </View>
+                <Image
+                  source={LOGO_SOURCE}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                  accessibilityLabel="HRSJM Logo"
+                />
                 <View style={styles.brandText}>
                   <Text style={styles.orgName}>HRSJM</Text>
                   <Text style={styles.orgFull}>
@@ -749,21 +754,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: Spacing.sm,
   },
-  logoBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.md,
-    backgroundColor: AdminColors.cardSurface,
-    borderWidth: 2,
-    borderColor: AdminColors.accentGold,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 48,
+    height: 48,
     marginRight: Spacing.sm,
-  },
-  logoLetter: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: AdminColors.primary,
   },
   brandText: {
     alignItems: 'flex-start',

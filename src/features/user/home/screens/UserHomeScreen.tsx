@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   Alert,
   ScrollView,
@@ -25,6 +25,7 @@ import { NewsCard } from '../components/NewsCard';
 import { BlogArticleCard } from '../components/BlogArticleCard';
 import { DonationBanner } from '../components/DonationBanner';
 import { UserBottomNavigation } from '../components/UserBottomNavigation';
+import { SeekerApplicationStatusModal } from '../components/SeekerApplicationStatusModal';
 import {
   GUEST_QUICK_ACTIONS,
   LATEST_NEWS,
@@ -137,8 +138,14 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   const [latestNews, setLatestNews] = useState<HomeNewsItem[]>(LATEST_NEWS);
   const [blogs, setBlogs] = useState<HomeBlogItem[]>(DEFAULT_HOME_BLOGS);
   const [upcomingEvents, setUpcomingEvents] = useState<HomeEvent[]>(UPCOMING_EVENTS);
-  const [hasPendingSeekerApp, setHasPendingSeekerApp] = useState(false);
-  const [pendingSeekerAppNumber, setPendingSeekerAppNumber] = useState<string | null>(null);
+  const [showSeekerStatusModal, setShowSeekerStatusModal] = useState(false);
+
+  // Subscribe to live usersStore updates (auto re-renders whenever admin updates any user/status)
+  const usersVersion = useSyncExternalStore(
+    usersStore.subscribe,
+    usersStore.getSnapshot,
+    usersStore.getSnapshot
+  );
 
   const authUser = useAuthStore(state => state.user);
   const isMemberRole = (authUser?.roles ?? []).some(r => r.name.toUpperCase() === 'MEMBER');
@@ -146,29 +153,102 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
     (hasApplied && !isReapplying) ||
     (isMemberRole && (authUser?.membership_status === 'PENDING' || authUser?.membership_status === 'UNDER_REVIEW'));
 
-  useEffect(() => {
-    try {
-      const user = useAuthStore.getState().user;
-      const phone = user?.mobile_number?.replace(/\D/g, '');
-      const email = user?.email?.toLowerCase();
-      const isSeekerRole = (user?.roles ?? []).some(r => ['SEEKER', 'DONATION_SEEKER'].includes(r.name.toUpperCase()));
-      const isBackendPending = user?.assistance_status === 'PENDING' || user?.assistance_status === 'UNDER_REVIEW';
+  // Live lookup of seeker application in usersStore
+  const matchedSeeker = React.useMemo(() => {
+    if (!authUser) return undefined;
+    const phone = authUser?.mobile_number?.replace(/\D/g, '');
+    const email = authUser?.email?.toLowerCase().trim();
+    const appNo = (authUser as any)?.assistance_application_number;
+    const allUsers = usersStore.getAllUsers();
 
-      const allUsers = usersStore.getAllUsers();
-      const matched = allUsers.find(
-        u =>
-          u.userType === 'seeker' &&
-          u.status === 'pending' &&
-          ((phone && u.phone && u.phone.replace(/\D/g, '').includes(phone)) ||
-            (email && u.email && u.email.toLowerCase() === email))
+    return allUsers.find(u => {
+      if (u.userType !== 'seeker') return false;
+      if (appNo && u.applicationNumber === appNo) return true;
+      if (phone && u.phone && u.phone.replace(/\D/g, '').includes(phone)) return true;
+      if (email && u.email && u.email.toLowerCase().trim() === email) return true;
+      return false;
+    });
+  }, [authUser, usersVersion]);
+
+  const hasSeekerApp = Boolean(
+    matchedSeeker ||
+    (authUser as any)?.assistance_application_number ||
+    (authUser as any)?.account_type === 'seeker' ||
+    authUser?.assistance_status === 'PENDING' ||
+    authUser?.assistance_status === 'UNDER_REVIEW' ||
+    authUser?.assistance_status === 'APPROVED' ||
+    authUser?.assistance_status === 'REJECTED'
+  );
+
+  const seekerStatus =
+    matchedSeeker?.status ||
+    (authUser?.assistance_status === 'APPROVED'
+      ? 'active'
+      : authUser?.assistance_status === 'REJECTED'
+      ? 'blocked'
+      : 'pending');
+  const isSeekerApproved = seekerStatus === 'active';
+  const isSeekerRejected = seekerStatus === 'blocked';
+  const isSeekerUnderReview = !isSeekerApproved && !isSeekerRejected;
+
+  // Real-time automatic upgrade when Admin marks status active/approved:
+  // "and if he approved that user role with update to the with the applied account type and he will be redriect to that dashboard and no longer he will be user"
+  useEffect(() => {
+    if (isSeekerApproved && authUser) {
+      const hasSeekerRole = (authUser.roles ?? []).some(r =>
+        ['SEEKER', 'DONATION_SEEKER'].includes(r.name.toUpperCase())
       );
-      if (matched || (isSeekerRole && isBackendPending) || user?.assistance_status === 'PENDING') {
-        setHasPendingSeekerApp(true);
+      if (!hasSeekerRole || authUser.assistance_status !== 'APPROVED') {
+        useAuthStore.getState().setUser({
+          ...authUser,
+          status: 'ACTIVE',
+          assistance_status: 'APPROVED',
+          account_type: 'seeker',
+          roles: [{ id: 'role-seeker', name: 'DONATION_SEEKER' }],
+        });
       }
-    } catch {
-      // test safe
     }
-  }, []);
+  }, [isSeekerApproved, authUser]);
+
+  const handleReapplySeeker = () => {
+    Alert.alert(
+      'Re-apply for Donation Seeker',
+      'Would you like to re-submit your application for document review?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm & Re-submit',
+          onPress: () => {
+            if (matchedSeeker) {
+              usersStore.updateStatus(
+                matchedSeeker.id,
+                'pending',
+                'Re-application submitted by applicant for verification.'
+              );
+            }
+            if (authUser) {
+              useAuthStore.getState().setUser({
+                ...authUser,
+                assistance_status: 'PENDING',
+              });
+            }
+            setShowSeekerStatusModal(false);
+            Alert.alert(
+              'Application Re-submitted',
+              'Your application has been re-submitted for admin verification. You can track status live anytime.'
+            );
+          },
+        },
+      ]
+    );
+  };
+
+  const handleApplyMembershipInstead = () => {
+    setShowSeekerStatusModal(false);
+    if (onOpenActionPage) {
+      onOpenActionPage('membership');
+    }
+  };
 
   const loadDynamicData = React.useCallback(async () => {
     try {
@@ -321,18 +401,91 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
           </TouchableOpacity>
         )}
 
-        {hasPendingSeekerApp && (
-          <View style={styles.seekerPendingBanner}>
-            <View style={styles.seekerPendingIconBox}>
-              <Text style={styles.seekerPendingEmoji}>🤲</Text>
+        {hasSeekerApp && (
+          <View
+            style={[
+              styles.seekerPendingBanner,
+              isSeekerRejected && styles.seekerBannerRejected,
+              isSeekerApproved && styles.seekerBannerApproved,
+            ]}
+          >
+            <View
+              style={[
+                styles.seekerPendingIconBox,
+                isSeekerRejected && styles.seekerIconBoxRejected,
+                isSeekerApproved && styles.seekerIconBoxApproved,
+              ]}
+            >
+              <Text style={styles.seekerPendingEmoji}>
+                {isSeekerApproved ? '✅' : isSeekerRejected ? '⚠️' : '🤲'}
+              </Text>
             </View>
+
             <View style={styles.seekerPendingTextBox}>
-              <Text style={styles.seekerPendingTitle}>
-                Donation Seeker Application Under Review
-              </Text>
+              <View style={styles.seekerPendingTitleRow}>
+                <Text
+                  style={[
+                    styles.seekerPendingTitle,
+                    isSeekerRejected && styles.seekerTitleRejected,
+                    isSeekerApproved && styles.seekerTitleApproved,
+                  ]}
+                >
+                  {isSeekerApproved
+                    ? 'Donation Seeker Approved!'
+                    : isSeekerRejected
+                    ? 'Donation Seeker Application Rejected'
+                    : 'Donation Seeker Application Under Review'}
+                </Text>
+                <View
+                  style={[
+                    styles.seekerAppBadge,
+                    isSeekerRejected && styles.seekerBadgeRejected,
+                    isSeekerApproved && styles.seekerBadgeApproved,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.seekerAppBadgeText,
+                      isSeekerRejected && styles.seekerBadgeTextRejected,
+                      isSeekerApproved && styles.seekerBadgeTextApproved,
+                    ]}
+                  >
+                    {isSeekerApproved
+                      ? 'Approved'
+                      : isSeekerRejected
+                      ? 'Action Needed'
+                      : 'Under Review'}
+                  </Text>
+                </View>
+              </View>
+
               <Text style={styles.seekerPendingDesc}>
-                Your application and verification documents are being reviewed by the admin. You are currently browsing as a User. Once approved, your role will update to Donation Seeker and your seeker dashboard will unlock automatically.
+                {isSeekerApproved
+                  ? 'Your application has been approved by admin. Your role has been updated to Donation Seeker.'
+                  : isSeekerRejected
+                  ? `Application ${matchedSeeker?.applicationNumber || (authUser as any)?.assistance_application_number || ''} was rejected. ${matchedSeeker?.remarks ? `Reason: ${matchedSeeker.remarks}` : 'You can review reason and re-apply.'}`
+                  : `Application ${matchedSeeker?.applicationNumber || (authUser as any)?.assistance_application_number || 'HRSJM-SEK-XXXX'} is being reviewed by admin. You are currently browsing as a User.`}
               </Text>
+
+              <View style={styles.seekerBannerBtnRow}>
+                <TouchableOpacity
+                  style={styles.seeAppBtn}
+                  onPress={() => setShowSeekerStatusModal(true)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.seeAppBtnText}>See My Application ↗</Text>
+                </TouchableOpacity>
+
+                {isSeekerRejected && (
+                  <TouchableOpacity
+                    style={styles.reapplyQuickBtn}
+                    onPress={handleReapplySeeker}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.reapplyQuickBtnText}>Re-apply</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         )}
@@ -521,6 +674,27 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
       {!hideBottomNav && (
         <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
       )}
+
+      <SeekerApplicationStatusModal
+        visible={showSeekerStatusModal}
+        applicationNumber={matchedSeeker?.applicationNumber || (authUser as any)?.assistance_application_number}
+        userItem={matchedSeeker}
+        onClose={() => setShowSeekerStatusModal(false)}
+        onReapply={handleReapplySeeker}
+        onApplyMembership={handleApplyMembershipInstead}
+        onOpenSeekerDashboard={() => {
+          setShowSeekerStatusModal(false);
+          if (authUser) {
+            useAuthStore.getState().setUser({
+              ...authUser,
+              status: 'ACTIVE',
+              assistance_status: 'APPROVED',
+              account_type: 'seeker',
+              roles: [{ id: 'role-seeker', name: 'DONATION_SEEKER' }],
+            });
+          }
+        }}
+      />
     </SafeAreaView>
   );
 };
@@ -623,5 +797,68 @@ const styles = StyleSheet.create({
   seekerPendingBoldRef: {
     fontWeight: '700',
     color: '#92400E',
+  },
+  seekerBannerRejected: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#EF4444',
+  },
+  seekerBannerApproved: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#22C55E',
+  },
+  seekerIconBoxRejected: {
+    backgroundColor: '#FEE2E2',
+  },
+  seekerIconBoxApproved: {
+    backgroundColor: '#DCFCE7',
+  },
+  seekerTitleRejected: {
+    color: '#991B1B',
+  },
+  seekerTitleApproved: {
+    color: '#166534',
+  },
+  seekerBadgeRejected: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FECACA',
+  },
+  seekerBadgeApproved: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#BBF7D0',
+  },
+  seekerBadgeTextRejected: {
+    color: '#B91C1C',
+  },
+  seekerBadgeTextApproved: {
+    color: '#15803D',
+  },
+  seekerBannerBtnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 10,
+  },
+  seeAppBtn: {
+    backgroundColor: '#0F172A',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  seeAppBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  reapplyQuickBtn: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  reapplyQuickBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

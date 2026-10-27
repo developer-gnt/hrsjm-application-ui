@@ -17,10 +17,10 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { key: 'all', label: 'All Users', getCount: s => s.total },
-  { key: 'member', label: 'Members', getCount: s => s.membersCount },
   { key: 'admin', label: 'Admins', getCount: s => s.adminsCount || 0 },
-  { key: 'seeker', label: 'Donation Seekers', getCount: s => s.seekersCount },
+  { key: 'member', label: 'Members', getCount: s => s.membersCount },
   { key: 'donor', label: 'Donors', getCount: s => s.donorsCount },
+  { key: 'seeker', label: 'Donation Seekers', getCount: s => s.seekersCount },
   { key: 'general', label: 'Users', getCount: s => s.generalCount },
 ];
 

@@ -263,7 +263,7 @@ export const AdminDashboardScreen: React.FC<{
       : 'Something went wrong while loading the dashboard. Please try again.';
     return (
       <View style={styles.container}>
-        <DashboardHeader unreadCount={unreadQuery.data ?? 0} onNavigate={handleDrawerNavigate} />
+        <DashboardHeader onNavigate={handleDrawerNavigate} />
         <AppErrorState message={message} onRetry={handleRefresh} />
       </View>
     );
@@ -272,7 +272,7 @@ export const AdminDashboardScreen: React.FC<{
   if (isLoading || !dashboard) {
     return (
       <View style={styles.container}>
-        <DashboardHeader unreadCount={unreadQuery.data ?? 0} onNavigate={handleDrawerNavigate} />
+        <DashboardHeader onNavigate={handleDrawerNavigate} />
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
@@ -397,7 +397,6 @@ export const AdminDashboardScreen: React.FC<{
   return (
     <View style={styles.container}>
       <DashboardHeader
-        unreadCount={unreadQuery.data ?? 0}
         onNavigate={handleDrawerNavigate}
       />
 
@@ -424,7 +423,7 @@ export const AdminDashboardScreen: React.FC<{
               onPress={() => setMonthPickerVisible(true)}
               activeOpacity={0.7}
             >
-              <Text style={styles.calendarIcon}>📅</Text>
+              <Calendar size={14} color="#06294D" strokeWidth={2} style={styles.calendarIcon} />
               <Text style={styles.monthText}>{selectedMonthOption.label}</Text>
               <Text style={styles.dropdownChevron}>▾</Text>
             </TouchableOpacity>
@@ -594,7 +593,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   calendarIcon: {
-    fontSize: 12,
+    marginRight: 2,
   },
   monthText: {
     fontSize: 11,

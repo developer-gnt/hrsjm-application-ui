@@ -30,6 +30,7 @@ interface UserVerificationScreenProps {
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   onProfilePress?: () => void;
+  showBottomNav?: boolean;
 }
 
 const REUPLOAD_REASONS = [
@@ -48,6 +49,7 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
+  showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -91,13 +93,15 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
             <Text style={styles.backLinkText}>Return to Users List</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.bottomNavHost}>
-          <UsersBottomNav
-            bottomInset={insets.bottom}
-            activeKey="users"
-            onTabPress={onBottomTabPress}
-          />
-        </View>
+        {showBottomNav && (
+          <View style={styles.bottomNavHost}>
+            <UsersBottomNav
+              bottomInset={insets.bottom}
+              activeKey="users"
+              onTabPress={onBottomTabPress}
+            />
+          </View>
+        )}
       </View>
     );
   }
@@ -119,7 +123,12 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
     UserStatus,
     { badgeBg: string; text: string; dot: string; label: string }
   > = {
-    active: { badgeBg: '#ECFDF5', text: '#059669', dot: '#10B981', label: 'Active / Verified' },
+    active: {
+      badgeBg: '#ECFDF5',
+      text: '#059669',
+      dot: '#10B981',
+      label: user.userType === 'general' ? 'Active' : 'Approved',
+    },
     pending: { badgeBg: '#FFFBEB', text: '#D97706', dot: '#F59E0B', label: 'Pending Review' },
     blocked: { badgeBg: '#FEF2F2', text: '#DC2626', dot: '#EF4444', label: 'Rejected / Blocked' },
   };
@@ -687,14 +696,16 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Persistent Bottom Nav */}
-      <View style={styles.bottomNavHost}>
-        <UsersBottomNav
-          bottomInset={insets.bottom}
-          activeKey="users"
-          onTabPress={onBottomTabPress}
-        />
-      </View>
+      {/* Bottom Nav rendered only if explicitly requested */}
+      {showBottomNav && (
+        <View style={styles.bottomNavHost}>
+          <UsersBottomNav
+            bottomInset={insets.bottom}
+            activeKey="users"
+            onTabPress={onBottomTabPress}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -733,7 +744,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   pageTitle: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: FontFamilies.sans,
     fontSize: 24,
     fontWeight: '700',
     color: AdminColors.textPrimary,
@@ -780,7 +791,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontFamily: FontFamilies.serif,
+    fontFamily: FontFamilies.sans,
     fontSize: 18,
     fontWeight: '700',
     color: AdminColors.textPrimary,

@@ -45,6 +45,8 @@ import { AddMemberModal } from '../components/AddMemberModal';
 import { AddMemberScreen } from './AddMemberScreen';
 import { EditMemberModal } from '../components/EditMemberModal';
 import { MemberProfileModal } from '../components/MemberProfileModal';
+import { UserPasswordResetModal } from '../../users/components/UserPasswordResetModal';
+import { usersStore } from '../../users/services/usersStore';
 import {
   useMembers,
   useCreateMember,
@@ -127,6 +129,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   const [isAddMemberView, setIsAddMemberView] = useState(false);
   const [editMember, setEditMember] = useState<Member | null>(null);
   const [viewMember, setViewMember] = useState<Member | null>(null);
+  const [resetPasswordMember, setResetPasswordMember] = useState<Member | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
@@ -235,23 +238,25 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
 
   const handleMemberAction = useCallback(
     (key: string, member: Member) => {
-      if (key === 'deactivate') {
+      if (key === 'deactivate' || key === 'block') {
         showFeedback({
           tone: 'warning',
-          title: 'Deactivate Member Account',
-          message: `Are you sure you want to deactivate ${member.name}'s account? In the database, their account status will be set to INACTIVE and all active login sessions will be terminated immediately. They will not be able to log in.`,
-          badgeText: 'DEACTIVATE',
+          title: 'Block Member Account',
+          message: `Are you sure you want to block ${member.name}'s account? In the database, their status will be set to INACTIVE / SUSPENDED and all active login sessions will be terminated immediately. They will not be able to log in until unblocked.`,
+          badgeText: 'BLOCK USER',
           secondaryAction: { text: 'Cancel' },
           primaryAction: {
-            text: 'Deactivate Account',
+            text: 'Block User',
             variant: 'destructive',
             onPress: async () => {
               try {
                 await members.handleUpdateStatus(member.id, 'SUSPENDED');
+                setViewMember(prev => (prev && prev.id === member.id ? { ...prev, status: 'INACTIVE' } : prev));
+                usersStore.updateStatus(member.userId || member.id, 'blocked');
                 showFeedback({
                   tone: 'success',
-                  title: 'Account Deactivated',
-                  message: `${member.name}'s account has been deactivated in the database. Login access is now blocked.`,
+                  title: 'Member Blocked',
+                  message: `${member.name}'s account has been blocked in the database. Login access is now prohibited.`,
                   badgeText: 'BLOCKED',
                 });
               } catch (e: any) {
@@ -264,29 +269,31 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
             },
           },
         });
-      } else if (key === 'activate') {
+      } else if (key === 'activate' || key === 'unblock') {
         showFeedback({
           tone: 'info',
-          title: 'Activate Member Account',
-          message: `Are you sure you want to restore and activate ${member.name}'s membership and login account?`,
-          badgeText: 'ACTIVATION',
+          title: 'Unblock Member Account',
+          message: `Are you sure you want to restore access and unblock ${member.name}'s membership and login account? They will be able to log in again.`,
+          badgeText: 'UNBLOCK',
           secondaryAction: { text: 'Cancel' },
           primaryAction: {
-            text: 'Activate Account',
+            text: 'Unblock User',
             onPress: async () => {
               try {
                 await members.handleUpdateStatus(member.id, 'ACTIVE');
+                setViewMember(prev => (prev && prev.id === member.id ? { ...prev, status: 'ACTIVE' } : prev));
+                usersStore.updateStatus(member.userId || member.id, 'active');
                 showFeedback({
                   tone: 'success',
-                  title: 'Account Activated',
-                  message: `${member.name}'s account has been activated in the database. Login access is restored.`,
+                  title: 'Member Unblocked',
+                  message: `${member.name}'s account has been unblocked in the database. Login access is restored.`,
                   badgeText: 'ACTIVE',
                 });
               } catch (e: any) {
                 showFeedback({
                   tone: 'error',
                   title: 'Action Failed',
-                  message: e?.message || 'Failed to activate member.',
+                  message: e?.message || 'Failed to unblock member.',
                 });
               }
             },
@@ -297,35 +304,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
       } else if (key === 'edit') {
         setEditMember(member);
       } else if (key === 'reset-password') {
-        showFeedback({
-          tone: 'info',
-          title: 'Reset Member Password',
-          message: `Are you sure you want to reset the password for ${member.name} (${member.membershipId})? A secure password reset token will be created in the database and linked to ${member.email || member.phone}.`,
-          badgeText: 'SECURITY',
-          secondaryAction: { text: 'Cancel' },
-          primaryAction: {
-            text: 'Reset Password',
-            onPress: async () => {
-              try {
-                const res = await membersService.resetPassword(member.id);
-                showFeedback({
-                  tone: 'success',
-                  title: 'Password Reset Initiated',
-                  message:
-                    res.message ||
-                    `Password reset request generated and saved in database for ${member.name}.`,
-                  badgeText: 'DATABASE CONNECTED',
-                });
-              } catch (e: any) {
-                showFeedback({
-                  tone: 'error',
-                  title: 'Reset Failed',
-                  message: e?.message || 'Failed to initiate password reset in database.',
-                });
-              }
-            },
-          },
-        });
+        setResetPasswordMember(member);
       }
     },
     [members, showFeedback]
@@ -504,7 +483,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
 
   return (
     <View style={styles.screen}>
-      <AdminHeader unreadCount={3} onNavigate={onNavigate} />
+      <AdminHeader onNavigate={onNavigate} />
 
       <FlatList
         data={members.isLoading || members.hasError ? [] : paginatedMembers}
@@ -591,10 +570,28 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
         }}
         onToggleStatus={(m) => {
           handleMemberAction(
-            m.status === 'ACTIVE' ? 'deactivate' : 'activate',
+            m.status === 'ACTIVE' ? 'block' : 'unblock',
             m
           );
         }}
+      />
+
+      <UserPasswordResetModal
+        visible={Boolean(resetPasswordMember)}
+        user={
+          resetPasswordMember
+            ? {
+                id: resetPasswordMember.userId || resetPasswordMember.id,
+                name: resetPasswordMember.name,
+                email: resetPasswordMember.email !== '—' ? resetPasswordMember.email : '',
+                phone: resetPasswordMember.phone !== '—' ? resetPasswordMember.phone : '',
+                userType: 'member',
+                status: resetPasswordMember.status === 'ACTIVE' ? 'active' : 'blocked',
+                joinedDate: resetPasswordMember.joinedDate || '',
+              }
+            : null
+        }
+        onClose={() => setResetPasswordMember(null)}
       />
 
       <AppFeedbackModal

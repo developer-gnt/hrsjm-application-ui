@@ -52,7 +52,9 @@ export type IconName =
   | 'building'
   | 'lock'
   | 'eye'
-  | 'eye-off';
+  | 'eye-off'
+  | 'alert-circle'
+  | 'trash-2';
 
 interface IconProps extends Omit<SvgProps, 'viewBox'> {
   name: IconName;
@@ -334,6 +336,21 @@ const paths: Record<IconName, React.ReactNode> = {
     <G>
       <Path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
       <Path d="m1 1 22 22" />
+    </G>
+  ),
+  'alert-circle': (
+    <G>
+      <Circle cx={12} cy={12} r={10} />
+      <Path d="M12 8v4" />
+      <Path d="M12 16h.01" />
+    </G>
+  ),
+  'trash-2': (
+    <G>
+      <Path d="M3 6h18" />
+      <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <Path d="M10 11v6" />
+      <Path d="M14 11v6" />
     </G>
   ),
 };
