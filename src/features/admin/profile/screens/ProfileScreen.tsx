@@ -29,6 +29,7 @@ import { AppButton } from '../../../../core/components/common/AppButton';
 import { AppBadge } from '../../../../core/components/common/AppBadge';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useProfileStore } from '../profileStore';
+import { AdminProfile } from '../types/profile.types';
 import { useAuthStore } from '../../../auth/store/authStore';
 import {
   navigateToProfileEditPersonal,

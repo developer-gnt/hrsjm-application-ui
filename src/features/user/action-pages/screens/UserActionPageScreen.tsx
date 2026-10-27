@@ -49,6 +49,7 @@ export interface UserActionPageScreenProps {
   onOpenNews?: () => void;
   onOpenContact?: () => void;
   onOpenMembershipCategories?: () => void;
+  onOpenDonations?: () => void;
   onOpenStatus?: () => void;
   showBottomNav?: boolean;
   hideBottomNav?: boolean;

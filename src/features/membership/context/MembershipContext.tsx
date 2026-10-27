@@ -425,6 +425,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     addressInfo?: Partial<AddressInfo>;
     documents?: Partial<DocumentUploads>;
     post?: MembershipPostData | null;
+    paymentCompleted?: boolean;
+    paymentId?: string;
+    paymentAmount?: number;
+    receiptNumber?: string;
   }): MembershipApplicationRecord => {
     const timestamp = new Date();
     const formattedDate = timestamp.toLocaleDateString('en-GB', {
@@ -749,6 +753,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     addressInfo?: Partial<AddressInfo>;
     documents?: Partial<DocumentUploads>;
     post?: MembershipPostData | null;
+    paymentCompleted?: boolean;
+    paymentId?: string;
+    paymentAmount?: number;
+    receiptNumber?: string;
   }): Promise<MembershipApplicationRecord> => {
     const timestamp = new Date();
     const formattedDate = timestamp.toLocaleDateString('en-GB', {
