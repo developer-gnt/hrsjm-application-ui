@@ -9,6 +9,8 @@ interface DonationSummaryProps {
   statusLabel?: string | null;
   /** Active search term, if any. */
   search?: string | null;
+  /** Active source filter label, if any. */
+  sourceLabel?: string | null;
 }
 
 /** One-line summary of the current donation list result set. */
@@ -16,6 +18,7 @@ export const DonationSummary: React.FC<DonationSummaryProps> = ({
   total,
   statusLabel,
   search,
+  sourceLabel,
 }) => {
   if (total === undefined) {
     return null;
@@ -26,6 +29,9 @@ export const DonationSummary: React.FC<DonationSummaryProps> = ({
   ];
   if (statusLabel) {
     parts.push(statusLabel);
+  }
+  if (sourceLabel) {
+    parts.push(`Source: ${sourceLabel}`);
   }
   if (search) {
     parts.push(`"${search}"`);

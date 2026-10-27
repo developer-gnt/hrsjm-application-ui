@@ -125,6 +125,16 @@ export const DonationReceiptModal: React.FC<DonationReceiptModalProps> = ({
                 </View>
               ) : null}
               <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Platform / Source</Text>
+                <Text style={styles.detailValue}>
+                  {row.source === 'Application UI'
+                    ? 'Application UI'
+                    : row.source === 'Web App'
+                    ? 'Web App'
+                    : 'Website'}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Payment Status</Text>
                 <AppBadge
                   label={row.statusLabel}

@@ -102,6 +102,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
 
   const [search, setSearch] = useState<string | null>(null);
   const [status, setStatus] = useState<DonationStatus | null>(null);
+  const [source, setSource] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DonationCategory>('ALL');
   const [dateRange, setDateRange] = useState<DateRange>({
     from: null,
@@ -138,6 +139,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
     status,
     category: activeTab === 'ALL' ? null : activeTab,
     dateRange,
+    source,
   });
 
   const createDonationMutation = useCreateDonation();
@@ -160,6 +162,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
         tab: activeTab,
         search,
         status,
+        source,
         from: dateRange.from,
         to: dateRange.to,
       });
@@ -171,6 +174,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
     activeTab,
     search,
     status,
+    source,
     dateRange,
     donations,
     previewRefreshCount,
@@ -186,7 +190,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
 
   React.useEffect(() => {
     setPage(1);
-  }, [search, status, activeTab, dateRange]);
+  }, [search, status, source, activeTab, dateRange]);
 
   // Tab counts
   const tabCounts = useMemo(() => {
@@ -236,6 +240,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
   const handleClearFilters = () => {
     setSearch(null);
     setStatus(null);
+    setSource(null);
     setActiveTab('ALL');
     setDateRange({ from: null, to: null });
   };
@@ -323,7 +328,14 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
       : status
     : null;
 
-  const isFiltered = Boolean(search || status || activeTab !== 'ALL');
+  const isFiltered = Boolean(
+    search ||
+      status ||
+      source ||
+      activeTab !== 'ALL' ||
+      dateRange.from ||
+      dateRange.to,
+  );
 
   const renderHeader = () => (
     <View>
@@ -406,6 +418,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
             total={total}
             statusLabel={activeStatusLabel}
             search={search}
+            sourceLabel={source}
           />
         </View>
       ) : (
@@ -534,10 +547,16 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
         visible={filtersVisible}
         selectedStatus={status}
         selectedCategory={activeTab === 'ALL' ? null : activeTab}
+        selectedSource={source}
         onClose={() => setFiltersVisible(false)}
-        onApply={({ status: appliedStatus, category: appliedCategory }) => {
+        onApply={({
+          status: appliedStatus,
+          category: appliedCategory,
+          source: appliedSource,
+        }) => {
           setStatus(appliedStatus);
           setActiveTab(appliedCategory || 'ALL');
+          setSource(appliedSource);
           setFiltersVisible(false);
         }}
       />

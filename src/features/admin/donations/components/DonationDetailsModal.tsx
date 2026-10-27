@@ -123,6 +123,17 @@ export const DonationDetailsModal: React.FC<DonationDetailsModalProps> = ({
               </View>
 
               <View style={styles.row}>
+                <Text style={styles.rowLabel}>Source / Platform</Text>
+                <Text style={styles.rowValueBold}>
+                  {row.source === 'Application UI'
+                    ? '📱 Application UI'
+                    : row.source === 'Web App'
+                    ? '💻 Web App'
+                    : '🌐 Website'}
+                </Text>
+              </View>
+
+              <View style={styles.row}>
                 <Text style={styles.rowLabel}>Status</Text>
                 <AppBadge label={row.statusLabel} status={row.statusTone} />
               </View>
