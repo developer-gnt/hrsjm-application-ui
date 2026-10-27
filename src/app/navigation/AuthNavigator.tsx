@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SplashScreen } from '../../features/auth/screens/SplashScreen';
-import { OnboardingScreen } from '../../features/auth/screens/OnboardingScreen';
+// import { OnboardingScreen } from '../../features/auth/screens/OnboardingScreen';
 import { LoginScreen } from '../../features/auth/screens/LoginScreen';
 import { RegisterIntroScreen } from '../../features/auth/screens/RegisterIntroScreen';
 import { RegisterScreen } from '../../features/auth/screens/RegisterScreen';
@@ -17,7 +17,7 @@ import { AuthStackParamList } from './NavigationTypes';
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 /**
- * Auth stack: Splash → Onboarding → Login → (Register) → Forgot/Reset Password
+ * Auth stack: Splash → (Onboarding commented out) → Login → (Register) → Forgot/Reset Password
  * + Existing Member Registration flow (Categories → Step1 → Step2 → Step3 → Submitted).
  * Header rendering is delegated to each screen (AppHeader / custom bands).
  */
@@ -28,11 +28,14 @@ export const AuthNavigator: React.FC = () => (
       component={SplashScreen}
       options={{ headerShown: false, animation: 'fade' }}
     />
+    {/* Onboarding commented out for now - direct to login */}
+    {/*
     <Stack.Screen
       name="Onboarding"
       component={OnboardingScreen}
       options={{ headerShown: false, gestureEnabled: false }}
     />
+    */}
     <Stack.Screen
       name="Login"
       component={LoginScreen}

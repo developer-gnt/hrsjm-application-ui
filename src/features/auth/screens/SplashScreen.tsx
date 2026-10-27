@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AdminColors } from '../../../core/theme/colors';
 import { Typography } from '../../../core/theme/typography';
 import { Spacing } from '../../../core/theme/spacing';
-import { appPreferences } from '../../../core/storage/app-storage';
+// import { appPreferences } from '../../../core/storage/app-storage';
 import { AuthLogo } from '../components/AuthLogo';
 import { useAuthStore } from '../store/authStore';
 import { AuthStackParamList } from '../../../app/navigation/NavigationTypes';
@@ -13,7 +13,7 @@ type SplashScreenProps = NativeStackScreenProps<AuthStackParamList, 'Splash'>;
 
 /**
  * Boot decision screen: token validation & initial route determination.
- * - First launch (no onboarding) → Onboarding
+ * - (Onboarding commented out for now → show direct Login)
  * - Stored session → POST /auth/refresh restore; success → app, failure → Login
  * - Nothing stored → Login
  */
@@ -28,10 +28,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
     didRun.current = true;
 
     const decide = async () => {
-      if (!appPreferences.isOnboardingCompleted()) {
-        navigation.replace('Onboarding');
-        return;
-      }
+      // Onboarding screen commented out for now - navigate directly to Login
+      // if (!appPreferences.isOnboardingCompleted()) {
+      //   navigation.replace('Onboarding');
+      //   return;
+      // }
 
       const restored = await useAuthStore.getState().restoreSession();
       if (!restored) {
