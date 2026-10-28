@@ -35,7 +35,6 @@ import {
   BarChart3,
   Calendar,
   ChevronDown,
-  ChevronLeft,
   Download,
   EllipsisVertical,
   Eye,
@@ -637,15 +636,6 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
         <View style={styles.pageHeader}>
           <View style={styles.pageHeaderText}>
             <View style={styles.titleRow}>
-              {onBack && (
-                <TouchableOpacity
-                  onPress={onBack}
-                  style={styles.backBtn}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                >
-                  <ChevronLeft size={22} color="#0F2C59" />
-                </TouchableOpacity>
-              )}
               <Text style={styles.pageTitle}>Passbook & Balance</Text>
             </View>
             <Text style={styles.pageSubtitle}>
