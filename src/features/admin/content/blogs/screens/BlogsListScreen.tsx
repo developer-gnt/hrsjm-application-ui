@@ -368,7 +368,8 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
         <FlatList
           data={uiState === 'loading' ? [] : paginatedBlogs}
           keyExtractor={item => item.id}
-          ListHeaderComponent={renderListHeader}
+          ListHeaderComponent={renderListHeader()}
+          
           ListFooterComponent={
             filteredBlogs.length > 0 ? (
               <AppPagination
@@ -419,7 +420,7 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
               colors={[AdminColors.primary]}
             />
           }
-          keyboardShouldPersistTaps="handled"
+          
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}

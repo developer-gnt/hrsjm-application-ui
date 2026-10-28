@@ -3,6 +3,211 @@ import type {
   AssistanceRequestItem,
 } from '../types/dashboard.types';
 
+export type GrowthRange = '7d' | '30d' | '3m' | '6m' | '12m' | 3 | 6 | 12 | number | string;
+
+export interface DynamicGrowthPoint {
+  label: string;
+  dateLabel: string;
+  total: number;
+  newCount: number;
+}
+
+export interface GrowthMemberRecord {
+  id?: string;
+  created_at?: string | null;
+  applied_at?: string | null;
+  approval_date?: string | null;
+  status?: string | null;
+  membership?: {
+    approval_date?: string | null;
+    startDate?: string | null;
+    created_at?: string | null;
+    status?: string | null;
+    [key: string]: any;
+  } | null;
+  [key: string]: any;
+}
+
+const extractRecordDate = (m: GrowthMemberRecord): Date | null => {
+  const raw =
+    m.membership?.approval_date ||
+    m.membership?.startDate ||
+    m.approval_date ||
+    m.membership?.created_at ||
+    m.created_at ||
+    m.applied_at;
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  return isNaN(parsed.getTime()) ? null : parsed;
+};
+
+/**
+ * Computes dynamic, interactive membership growth points for daily ('7d', '30d')
+ * or monthly (3, 6, 12) timeframes. Uses live member records with fallback to backend growth.
+ */
+export const computeDynamicGrowthPoints = (
+  range: GrowthRange = '7d',
+  backendGrowth?: AdminDashboardResponse['memberGrowth'],
+  memberRecords?: GrowthMemberRecord[],
+  targetDate?: string | Date,
+): DynamicGrowthPoint[] => {
+  const normRange = String(range || '7d').toLowerCase();
+  const records = memberRecords || [];
+  const refDate = targetDate ? new Date(targetDate) : new Date();
+
+  // '7d' — Last 7 Days (daily progression)
+  if (normRange === '7d' || normRange === '7') {
+    const points: DynamicGrowthPoint[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(refDate);
+      d.setDate(d.getDate() - i);
+
+      const startOfDay = new Date(d);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(d);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const total = records.filter((m) => {
+        const dt = extractRecordDate(m);
+        return dt ? dt <= endOfDay : false;
+      }).length;
+
+      const newCount = records.filter((m) => {
+        const dt = extractRecordDate(m);
+        return dt ? dt >= startOfDay && dt <= endOfDay : false;
+      }).length;
+
+      const dayNum = d.getDate();
+      const monthStr = d.toLocaleDateString('en-US', { month: 'short' });
+      points.push({
+        label: `${dayNum} ${monthStr}`,
+        dateLabel: `${dayNum} ${monthStr} ${d.getFullYear()}`,
+        total,
+        newCount,
+      });
+    }
+
+    // If records list is empty or smaller than backend latest total, calibrate endpoint
+    const latestBackend =
+      backendGrowth && backendGrowth.length > 0
+        ? backendGrowth[backendGrowth.length - 1].total
+        : 0;
+    if (points.length > 0 && points[points.length - 1].total < latestBackend) {
+      const diff = latestBackend - points[points.length - 1].total;
+      points[points.length - 1].total = latestBackend;
+      points[points.length - 1].newCount += diff;
+    }
+
+    return points;
+  }
+
+  // '30d' — Last 30 Days (10 sampled intervals across the past month)
+  if (normRange === '30d' || normRange === '30') {
+    const points: DynamicGrowthPoint[] = [];
+    const stepDays = 3;
+    const intervals = [27, 24, 21, 18, 15, 12, 9, 6, 3, 0];
+
+    for (const ago of intervals) {
+      const d = new Date(refDate);
+      d.setDate(d.getDate() - ago);
+
+      const endOfDay = new Date(d);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const startOfInterval = new Date(d);
+      startOfInterval.setDate(startOfInterval.getDate() - stepDays + 1);
+      startOfInterval.setHours(0, 0, 0, 0);
+
+      const total = records.filter((m) => {
+        const dt = extractRecordDate(m);
+        return dt ? dt <= endOfDay : false;
+      }).length;
+
+      const newCount = records.filter((m) => {
+        const dt = extractRecordDate(m);
+        return dt ? dt >= startOfInterval && dt <= endOfDay : false;
+      }).length;
+
+      const dayNum = d.getDate();
+      const monthStr = d.toLocaleDateString('en-US', { month: 'short' });
+      points.push({
+        label: `${dayNum} ${monthStr}`,
+        dateLabel: `${dayNum} ${monthStr} ${d.getFullYear()}`,
+        total,
+        newCount,
+      });
+    }
+
+    const latestBackend =
+      backendGrowth && backendGrowth.length > 0
+        ? backendGrowth[backendGrowth.length - 1].total
+        : 0;
+    if (points.length > 0 && points[points.length - 1].total < latestBackend) {
+      const diff = latestBackend - points[points.length - 1].total;
+      points[points.length - 1].total = latestBackend;
+      points[points.length - 1].newCount += diff;
+    }
+
+    return points;
+  }
+
+  // Monthly views: 3, 6, 12
+  const monthCount =
+    normRange === '3m' || normRange === '3'
+      ? 3
+      : normRange === '12m' || normRange === '12'
+      ? 12
+      : 6;
+
+  if (backendGrowth && backendGrowth.length > 0) {
+    const sliced = backendGrowth.slice(-monthCount);
+    return sliced.map((p, idx) => {
+      const [year, mth] = (p.month || '').split('-').map(Number);
+      const mDate = new Date(year || 2026, (mth || 1) - 1, 1);
+      const shortMonth = mDate.toLocaleDateString('en-US', { month: 'short' });
+      const prevTotal = idx > 0 ? sliced[idx - 1].total : 0;
+      const pointTotal =
+        idx === sliced.length - 1 && records.length > p.total
+          ? records.length
+          : p.total;
+      return {
+        label: shortMonth,
+        dateLabel: `${shortMonth} ${year || 2026}`,
+        total: pointTotal,
+        newCount: Math.max(pointTotal - prevTotal, 0),
+      };
+    });
+  }
+
+  // Monthly fallback derived from memberRecords
+  const points: DynamicGrowthPoint[] = [];
+  for (let i = monthCount - 1; i >= 0; i--) {
+    const d = new Date(refDate.getFullYear(), refDate.getMonth() - i, 1);
+    const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+    const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
+
+    const total = records.filter((m) => {
+      const dt = extractRecordDate(m);
+      return dt ? dt <= endOfMonth : false;
+    }).length;
+
+    const newCount = records.filter((m) => {
+      const dt = extractRecordDate(m);
+      return dt ? dt >= startOfMonth && dt <= endOfMonth : false;
+    }).length;
+
+    const shortMonth = d.toLocaleDateString('en-US', { month: 'short' });
+    points.push({
+      label: shortMonth,
+      dateLabel: `${shortMonth} ${d.getFullYear()}`,
+      total,
+      newCount,
+    });
+  }
+  return points;
+};
+
 /** Safely computes MoM growth percent; null when there is nothing to compare. */
 export const computeGrowthPercent = (
   current: number | undefined,

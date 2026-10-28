@@ -206,21 +206,10 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.contentWrap}>
-          {/* Page Header: Title, Subtitle & "+ Add User" Action Button */}
+          {/* Page Header: Title & Subtitle */}
           <View style={styles.pageHeaderArea}>
             <View style={styles.titleTopRow}>
               <Text style={styles.pageTitle}>Users</Text>
-
-              <TouchableOpacity
-                style={styles.addUserButton}
-                onPress={onAddUserPress || (() => navigation?.navigate?.(AppRoutes.ADD_USER))}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="Add New User"
-              >
-                <Text style={styles.addUserPlus}>+</Text>
-                <Text style={styles.addUserText}>Add User</Text>
-              </TouchableOpacity>
             </View>
 
             <Text style={styles.pageSubtitle}>

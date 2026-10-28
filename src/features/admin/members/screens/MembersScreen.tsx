@@ -244,7 +244,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
           title: 'Block Member Account',
           message: `Are you sure you want to block ${member.name}'s account? In the database, their status will be set to INACTIVE / SUSPENDED and all active login sessions will be terminated immediately. They will not be able to log in until unblocked.`,
           badgeText: 'BLOCK USER',
-          secondaryAction: { text: 'Cancel' },
+          secondaryAction: { text: 'Cancel', onPress: closeFeedback },
           primaryAction: {
             text: 'Block User',
             variant: 'destructive',
@@ -258,12 +258,14 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
                   title: 'Member Blocked',
                   message: `${member.name}'s account has been blocked in the database. Login access is now prohibited.`,
                   badgeText: 'BLOCKED',
+                  primaryAction: { text: 'Great, Done', onPress: closeFeedback },
                 });
               } catch (e: any) {
                 showFeedback({
                   tone: 'error',
                   title: 'Action Failed',
                   message: e?.message || 'Failed to update member status in database.',
+                  primaryAction: { text: 'Dismiss', onPress: closeFeedback },
                 });
               }
             },
@@ -275,7 +277,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
           title: 'Unblock Member Account',
           message: `Are you sure you want to restore access and unblock ${member.name}'s membership and login account? They will be able to log in again.`,
           badgeText: 'UNBLOCK',
-          secondaryAction: { text: 'Cancel' },
+          secondaryAction: { text: 'Cancel', onPress: closeFeedback },
           primaryAction: {
             text: 'Unblock User',
             onPress: async () => {
@@ -288,12 +290,14 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
                   title: 'Member Unblocked',
                   message: `${member.name}'s account has been unblocked in the database. Login access is restored.`,
                   badgeText: 'ACTIVE',
+                  primaryAction: { text: 'Great, Done', onPress: closeFeedback },
                 });
               } catch (e: any) {
                 showFeedback({
                   tone: 'error',
                   title: 'Action Failed',
                   message: e?.message || 'Failed to unblock member.',
+                  primaryAction: { text: 'Dismiss', onPress: closeFeedback },
                 });
               }
             },

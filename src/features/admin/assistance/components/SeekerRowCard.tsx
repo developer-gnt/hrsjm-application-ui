@@ -69,6 +69,15 @@ export const SeekerRowCard: React.FC<SeekerRowCardProps> = ({
   // Category Theme
   const getCategoryMeta = () => {
     const text = `${(request.reason || '').toLowerCase()} ${(request.description || '').toLowerCase()}`;
+    if (text.includes('verification') || text.includes('registration') || text.includes('account')) {
+      return {
+        icon: '🪪',
+        name: 'KYC Verification',
+        bg: '#F0FDF4',
+        border: '#BBF7D0',
+        text: '#15803D',
+      };
+    }
     if (
       text.includes('med') ||
       text.includes('hosp') ||

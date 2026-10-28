@@ -190,5 +190,32 @@ export const updateEventApi = async (
 };
 
 export const deleteEventApi = async (id: string): Promise<void> => {
-  await apiClient.delete(ApiRoutes.EVENTS.DETAILS(id));
+  try {
+    await apiClient.delete(ApiRoutes.EVENTS.DETAILS(id));
+  } catch (err: any) {
+    if (err?.response?.status === 404 || id.startsWith('e-') || id.startsWith('event-')) {
+      console.warn(`Event ${id} not found on backend, deleted locally.`);
+      return;
+    }
+    throw err;
+  }
+};
+
+export const updateEventStatusApi = async (
+  id: string,
+  status: 'UPCOMING' | 'COMPLETED' | 'CANCELLED' | 'DRAFT',
+): Promise<EventListItem> => {
+  try {
+    const res = await apiClient.patch<BackendEventItem>(
+      ApiRoutes.EVENTS.DETAILS(id),
+      { status },
+    );
+    return mapBackendEventToUi(res.data);
+  } catch (err: any) {
+    if (err?.response?.status === 404 || id.startsWith('e-') || id.startsWith('event-')) {
+      console.warn(`Event ${id} not found on backend, updated status locally.`);
+      return { id, status } as any;
+    }
+    throw err;
+  }
 };

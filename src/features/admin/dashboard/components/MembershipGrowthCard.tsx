@@ -22,6 +22,8 @@ import { ChevronDown, TrendingUp } from '../../../../core/components/icons';
 export interface GrowthChartPoint {
   label: string;
   total: number;
+  dateLabel?: string;
+  newCount?: number;
 }
 
 interface MembershipGrowthCardProps {
@@ -29,6 +31,8 @@ interface MembershipGrowthCardProps {
   points: GrowthChartPoint[];
   /** Callout for the latest point, e.g. "Oct 2026". */
   latestLabel?: string;
+  selectedRange?: string | number;
+  onRangeChange?: (range: string | number) => void;
   selectedRangeMonths?: number;
   onRangeMonthsChange?: (months: number) => void;
 }
@@ -37,10 +41,16 @@ const WIDTH = 340;
 const HEIGHT = 180;
 const PADDING = { top: 38, right: 20, bottom: 26, left: 32 };
 
-const RANGE_OPTIONS = [
-  { label: 'Last 3 Months', value: 3 },
-  { label: 'Last 6 Months', value: 6 },
-  { label: 'Last 12 Months', value: 12 },
+export const RANGE_OPTIONS: Array<{
+  label: string;
+  value: string | number;
+  sublabel?: string;
+}> = [
+  { label: 'Last 7 Days', value: '7d', sublabel: 'Daily progression' },
+  { label: 'Last 30 Days', value: '30d', sublabel: 'Past month progression' },
+  { label: 'Last 3 Months', value: 3, sublabel: 'Quarterly monthly view' },
+  { label: 'Last 6 Months', value: 6, sublabel: 'Half-year monthly view' },
+  { label: 'Last 12 Months', value: 12, sublabel: 'Full year monthly view' },
 ];
 
 /**
@@ -52,6 +62,7 @@ const computeNiceScale = (max: number): { yMax: number; ticks: number[] } => {
   if (max <= 4) return { yMax: 4, ticks: [0, 1, 2, 3, 4] };
   if (max <= 8) return { yMax: 8, ticks: [0, 2, 4, 6, 8] };
   if (max <= 12) return { yMax: 12, ticks: [0, 3, 6, 9, 12] };
+  if (max <= 16) return { yMax: 16, ticks: [0, 4, 8, 12, 16] };
   if (max <= 20) return { yMax: 20, ticks: [0, 5, 10, 15, 20] };
   if (max <= 40) return { yMax: 40, ticks: [0, 10, 20, 30, 40] };
   if (max <= 60) return { yMax: 60, ticks: [0, 15, 30, 45, 60] };
@@ -97,7 +108,9 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
   title = 'Membership Growth',
   points,
   latestLabel,
-  selectedRangeMonths = 6,
+  selectedRange,
+  onRangeChange,
+  selectedRangeMonths,
   onRangeMonthsChange,
 }) => {
   const [rangeModalVisible, setRangeModalVisible] = useState(false);
@@ -106,17 +119,34 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
   const innerWidth = WIDTH - PADDING.left - PADDING.right;
   const innerHeight = HEIGHT - PADDING.top - PADDING.bottom;
 
-  // Actual backend points or fallback zero series
-  const chartPoints =
+  const currentRange = selectedRange ?? selectedRangeMonths ?? '7d';
+  const selectedOption =
+    RANGE_OPTIONS.find(o => String(o.value) === String(currentRange)) || RANGE_OPTIONS[0];
+  const selectedRangeLabel = selectedOption.label;
+
+  const handleSelectRange = (val: string | number) => {
+    if (onRangeChange) {
+      onRangeChange(val);
+    }
+    if (typeof val === 'number' && onRangeMonthsChange) {
+      onRangeMonthsChange(val);
+    }
+    setSelectedPointIndex(null);
+    setRangeModalVisible(false);
+  };
+
+  // Actual backend points or fallback dynamic series
+  const chartPoints: GrowthChartPoint[] =
     points && points.length > 0
       ? points
       : [
-          { label: 'May', total: 0 },
-          { label: 'Jun', total: 0 },
-          { label: 'Jul', total: 0 },
-          { label: 'Aug', total: 0 },
-          { label: 'Sep', total: 0 },
-          { label: 'Oct', total: 0 },
+          { label: 'Oct 22', dateLabel: '22 Oct 2026', total: 0, newCount: 0 },
+          { label: 'Oct 23', dateLabel: '23 Oct 2026', total: 0, newCount: 0 },
+          { label: 'Oct 24', dateLabel: '24 Oct 2026', total: 2, newCount: 2 },
+          { label: 'Oct 25', dateLabel: '25 Oct 2026', total: 2, newCount: 0 },
+          { label: 'Oct 26', dateLabel: '26 Oct 2026', total: 3, newCount: 1 },
+          { label: 'Oct 27', dateLabel: '27 Oct 2026', total: 6, newCount: 3 },
+          { label: 'Oct 28', dateLabel: '28 Oct 2026', total: 11, newCount: 5 },
         ];
 
   const maxVal = Math.max(...chartPoints.map(p => p.total), 0);
@@ -140,12 +170,9 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
   const activeIndex = selectedPointIndex !== null ? selectedPointIndex : coords.length - 1;
   const activePoint = coords[activeIndex] || coords[coords.length - 1];
 
-  const selectedRangeLabel =
-    RANGE_OPTIONS.find(o => o.value === selectedRangeMonths)?.label || `Last ${selectedRangeMonths} Months`;
-
   // Dynamic tooltip calculation (anchored neatly above the active point)
-  const tooltipWidth = 86;
-  const tooltipHeight = 36;
+  const tooltipWidth = 104;
+  const tooltipHeight = 40;
   const clampedX = Math.max(
     PADDING.left + tooltipWidth / 2,
     Math.min(WIDTH - PADDING.right - tooltipWidth / 2, activePoint.x),
@@ -156,9 +183,9 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
       : activePoint.y - tooltipHeight - 12;
 
   // Growth calculation for the header metric badge
-  const prevPoint = activeIndex > 0 ? coords[activeIndex - 1] : null;
-  const diffFromPrev = prevPoint ? activePoint.total - prevPoint.total : activePoint.total;
-  const isPositiveTrend = diffFromPrev >= 0;
+  const firstPoint = coords[0];
+  const periodDiff = activePoint.total - (firstPoint ? firstPoint.total : 0);
+  const isPositiveTrend = periodDiff >= 0;
 
   return (
     <View style={styles.card}>
@@ -187,7 +214,7 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
                   isPositiveTrend ? styles.trendTextPositive : styles.trendTextNeutral,
                 ]}
               >
-                {diffFromPrev >= 0 ? `+${diffFromPrev}` : `${diffFromPrev}`} this period
+                {periodDiff >= 0 ? `+${periodDiff}` : `${periodDiff}`} this period
               </Text>
             </View>
           </View>
@@ -306,42 +333,49 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
                 rx={8}
                 fill="#0F2860"
               />
-              {/* Tooltip Month Label */}
+              {/* Tooltip Date Label */}
               <SvgText
                 x={clampedX}
-                y={tooltipY + 13}
-                fontSize={8.5}
+                y={tooltipY + 14}
+                fontSize={9}
                 fontWeight="600"
                 fill="#94A3B8"
                 textAnchor="middle"
               >
-                {activeIndex === coords.length - 1 && latestLabel
-                  ? latestLabel
-                  : `${activePoint.label} 2026`}
+                {activePoint.dateLabel ||
+                  (activeIndex === coords.length - 1 && latestLabel
+                    ? latestLabel
+                    : `${activePoint.label} 2026`)}
               </SvgText>
               {/* Tooltip Metric Value */}
               <SvgText
                 x={clampedX}
-                y={tooltipY + 28}
+                y={tooltipY + 30}
                 fontSize={11.5}
                 fontWeight="800"
                 fill="#FFFFFF"
                 textAnchor="middle"
               >
-                {`${activePoint.total} members`}
+                {`${activePoint.total} members${activePoint.newCount !== undefined && activePoint.newCount > 0 ? ` (+${activePoint.newCount})` : ''}`}
               </SvgText>
             </G>
           ) : null}
 
-          {/* X-Axis Month Labels */}
+          {/* X-Axis Month / Date Labels (smart stride to prevent crowding) */}
           {coords.map((coord, idx) => {
             const isPointActive = idx === activeIndex;
+            const stride = coords.length <= 7 ? 1 : Math.ceil(coords.length / 5);
+            const shouldShowLabel =
+              idx % stride === 0 || idx === coords.length - 1 || isPointActive;
+
+            if (!shouldShowLabel) return null;
+
             return (
               <SvgText
-                key={`x-${coord.label}`}
+                key={`x-${coord.label}-${idx}`}
                 x={coord.x}
                 y={HEIGHT - 6}
-                fontSize={9.5}
+                fontSize={9}
                 fontWeight={isPointActive ? '800' : '600'}
                 fill={isPointActive ? '#0F2860' : '#64748B'}
                 textAnchor="middle"
@@ -379,30 +413,31 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
 
             <View style={styles.rangeList}>
               {RANGE_OPTIONS.map(opt => {
-                const isSelected = selectedRangeMonths === opt.value;
+                const isSelected = String(currentRange) === String(opt.value);
                 return (
                   <TouchableOpacity
-                    key={opt.value}
+                    key={String(opt.value)}
                     style={[
                       styles.rangeOption,
                       isSelected && styles.rangeOptionActive,
                     ]}
-                    onPress={() => {
-                      if (onRangeMonthsChange) {
-                        onRangeMonthsChange(opt.value);
-                      }
-                      setSelectedPointIndex(null);
-                      setRangeModalVisible(false);
-                    }}
+                    onPress={() => handleSelectRange(opt.value)}
                   >
-                    <Text
-                      style={[
-                        styles.rangeOptionText,
-                        isSelected && styles.rangeOptionTextActive,
-                      ]}
-                    >
-                      {opt.label}
-                    </Text>
+                    <View style={styles.rangeOptionTextWrap}>
+                      <Text
+                        style={[
+                          styles.rangeOptionText,
+                          isSelected && styles.rangeOptionTextActive,
+                        ]}
+                      >
+                        {opt.label}
+                      </Text>
+                      {opt.sublabel ? (
+                        <Text style={styles.rangeOptionSublabel}>
+                          {opt.sublabel}
+                        </Text>
+                      ) : null}
+                    </View>
                     {isSelected ? <Text style={styles.rangeCheck}>✓</Text> : null}
                   </TouchableOpacity>
                 );
@@ -516,7 +551,7 @@ const styles = StyleSheet.create({
   },
   rangeModalCard: {
     width: '100%',
-    maxWidth: 280,
+    maxWidth: 290,
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.xl,
     padding: Spacing.md,
@@ -555,6 +590,9 @@ const styles = StyleSheet.create({
   rangeOptionActive: {
     backgroundColor: '#EFF6FF',
   },
+  rangeOptionTextWrap: {
+    flex: 1,
+  },
   rangeOptionText: {
     fontSize: 13,
     fontWeight: '600',
@@ -563,6 +601,11 @@ const styles = StyleSheet.create({
   rangeOptionTextActive: {
     color: '#2563EB',
     fontWeight: '800',
+  },
+  rangeOptionSublabel: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
   },
   rangeCheck: {
     fontSize: 14,

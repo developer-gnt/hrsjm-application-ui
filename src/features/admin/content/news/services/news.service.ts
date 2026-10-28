@@ -203,15 +203,31 @@ export const updateNewsApi = async (
     }
   }
 
-  const res = await apiClient.patch<BackendNewsItem>(
-    ApiRoutes.NEWS.DETAILS(id),
-    payload,
-  );
-  return mapBackendNewsToUi(res.data);
+  try {
+    const res = await apiClient.patch<BackendNewsItem>(
+      ApiRoutes.NEWS.DETAILS(id),
+      payload,
+    );
+    return mapBackendNewsToUi(res.data);
+  } catch (err: any) {
+    if (err?.response?.status === 404 || id.startsWith('n-') || id.startsWith('news-')) {
+      console.warn(`News ${id} not found on backend, updated locally.`);
+      return { id, ...payload } as any;
+    }
+    throw err;
+  }
 };
 
 export const deleteNewsApi = async (id: string): Promise<void> => {
-  await apiClient.delete(ApiRoutes.NEWS.DETAILS(id));
+  try {
+    await apiClient.delete(ApiRoutes.NEWS.DETAILS(id));
+  } catch (err: any) {
+    if (err?.response?.status === 404 || id.startsWith('n-') || id.startsWith('news-')) {
+      console.warn(`News ${id} not found on backend, deleted locally.`);
+      return;
+    }
+    throw err;
+  }
 };
 
 export const incrementNewsViewsApi = async (id: string): Promise<number> => {

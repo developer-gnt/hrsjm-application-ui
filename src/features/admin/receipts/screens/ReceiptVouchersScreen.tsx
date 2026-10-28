@@ -557,10 +557,11 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
             }
           />
         )}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={renderHeader()}
+        
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={ListSeparator}
-        keyboardShouldPersistTaps="handled"
+        
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

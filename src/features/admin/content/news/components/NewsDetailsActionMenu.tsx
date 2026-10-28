@@ -37,8 +37,6 @@ const actionsForStatus = (status: NewsStatus): ActionRow[] => {
       { key: 'edit', icon: '✏️', label: 'Edit' },
       { key: 'unpublish', icon: '🚫', label: 'Unpublish', destructive: true },
       { key: 'archive', icon: '📦', label: 'Archive' },
-      { key: 'share', icon: '🔗', label: 'Share' },
-      { key: 'copyLink', icon: '📋', label: 'Copy Link' },
       { key: 'delete', icon: '🗑️', label: 'Delete', destructive: true },
     ];
   }
@@ -47,8 +45,6 @@ const actionsForStatus = (status: NewsStatus): ActionRow[] => {
       { key: 'edit', icon: '✏️', label: 'Edit' },
       { key: 'publish', icon: '📣', label: 'Publish' },
       { key: 'archive', icon: '📦', label: 'Archive' },
-      { key: 'share', icon: '🔗', label: 'Share' },
-      { key: 'copyLink', icon: '📋', label: 'Copy Link' },
       { key: 'delete', icon: '🗑️', label: 'Delete', destructive: true },
     ];
   }

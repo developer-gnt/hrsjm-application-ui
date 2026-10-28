@@ -15,6 +15,9 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { AppRoutes } from '../../../../core/constants/routes';
+import { AdminSidebar } from '../../../../app/navigation/AdminSidebar';
 import { usersStore } from '../services/usersStore';
 import { UserItem, UserType, UserStatus, UserGender } from '../types/user.types';
 import { UsersHeader } from '../components/UsersHeader';
@@ -73,6 +76,25 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
   showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+
+  const handleSidebarNavigate = (target: string) => {
+    setSidebarVisible(false);
+    if (navigation?.navigate) {
+      if (
+        target === AppRoutes.ADMIN_DASHBOARD_TAB ||
+        target === AppRoutes.ADMIN_MEMBERS_TAB ||
+        target === AppRoutes.ADMIN_APPLICATIONS_TAB ||
+        target === AppRoutes.ADMIN_COMPLAINTS_TAB ||
+        target === AppRoutes.ADMIN_MORE_TAB
+      ) {
+        navigation.navigate(target);
+      } else {
+        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: target });
+      }
+    }
+  };
 
   const user = userId ? usersStore.getUserById(userId) : undefined;
 
@@ -111,9 +133,15 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
       <View style={styles.screen}>
         <UsersHeader
           paddingTop={insets.top}
-          onMenuPress={onMenuPress}
-          onNotificationsPress={onNotificationsPress}
-          onProfilePress={onProfilePress}
+          onMenuPress={onMenuPress || (() => setSidebarVisible(true))}
+          onNotificationsPress={
+            onNotificationsPress ||
+            (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS }))
+          }
+          onProfilePress={
+            onProfilePress ||
+            (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE }))
+          }
         />
         <View style={styles.notFoundWrap}>
           <Text style={styles.notFoundTitle}>User Not Found</Text>
@@ -140,6 +168,11 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
             />
           </View>
         )}
+        <AdminSidebar
+          visible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          onNavigate={handleSidebarNavigate}
+        />
       </View>
     );
   }
@@ -285,9 +318,15 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
     <View style={styles.screen}>
       <UsersHeader
         paddingTop={insets.top}
-        onMenuPress={onMenuPress}
-        onNotificationsPress={onNotificationsPress}
-        onProfilePress={onProfilePress}
+        onMenuPress={onMenuPress || (() => setSidebarVisible(true))}
+        onNotificationsPress={
+          onNotificationsPress ||
+          (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS }))
+        }
+        onProfilePress={
+          onProfilePress ||
+          (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE }))
+        }
       />
 
       <KeyboardAvoidingView
@@ -798,6 +837,13 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
           />
         </View>
       )}
+
+      {/* Slide-in Admin Sidebar */}
+      <AdminSidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        onNavigate={handleSidebarNavigate}
+      />
     </View>
   );
 };

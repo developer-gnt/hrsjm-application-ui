@@ -36,12 +36,10 @@ import {
   LogOut,
   MessageSquare,
   Newspaper,
-  Plus,
   Receipt,
   Scale,
   Search,
   Settings,
-  ShieldCheck,
   User,
   Users,
   X,
@@ -94,8 +92,6 @@ export const ADMIN_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[
     groupTitle: 'USER MODULE',
     items: [
       { id: 'all_users', icon: Users, title: 'All Users Directory', target: AppRoutes.USERS },
-      { id: 'add_user', icon: Plus, title: 'Add New User', target: AppRoutes.ADD_USER },
-      { id: 'roles', icon: ShieldCheck, title: 'Roles & Permissions', target: AppRoutes.ROLES_PERMISSIONS },
     ],
   },
   {

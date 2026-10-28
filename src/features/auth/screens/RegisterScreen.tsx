@@ -172,14 +172,14 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     setSubmitting(true);
     setLoadingMessage('Submitting application & verification documents...');
     try {
-      // 1. Submit auth registration with initial role USER (browses as User until approved)
+      // 1. Submit auth registration with role DONATION_SEEKER (automatically creates assistance request & notifies admin)
       await register({
         full_name: state.fullName.trim(),
         email: state.email ? state.email.trim() : undefined,
         mobile_number: cleanMobile,
         password: effectivePassword,
         confirm_password: effectivePassword,
-        role_name: 'USER',
+        role_name: 'DONATION_SEEKER',
       });
 
       const docTitleMap: Record<string, string> = {
