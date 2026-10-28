@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   StatusBar,
@@ -15,14 +15,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AdminColors } from '../../../core/theme/colors';
 import { Typography } from '../../../core/theme/typography';
 import { Spacing, BorderRadius } from '../../../core/theme/spacing';
-import { feedback } from '../../../core/feedback/FeedbackContext';
 import { ApiError } from '../../../core/api/api-error';
-import { appPreferences } from '../../../core/storage/app-storage';
 import { AuthLogo } from '../components/AuthLogo';
 import { LoginForm } from '../components/LoginForm';
-import { GoogleGIcon, ArrowRightIcon, LockOutlineIcon } from '../components/AuthIcons';
+import { ArrowRightIcon } from '../components/AuthIcons';
 import { useAuthStore } from '../store/authStore';
-import { useBiometrics } from '../hooks/useBiometrics';
 import { LoginFormData } from '../types/auth.schemas';
 import { AuthStackParamList } from '../../../app/navigation/NavigationTypes';
 
@@ -53,22 +50,12 @@ const resolveLoginError = (error: unknown): string => {
  * - Deep royal navy branding band with official bilingual emblem & golden motto
  * - Modern card container with sleek inputs and vector icons
  * - Radiant gold primary action button with tactile elevation
- * - Crisp, high-contrast Google sign-in and biometric unlock options
  */
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const signIn = useAuthStore(state => state.signIn);
-  const restoreSession = useAuthStore(state => state.restoreSession);
-  const {
-    isAvailable,
-    isEnabled,
-    biometryLabel,
-    authenticate,
-    setEnabled,
-  } = useBiometrics();
 
   const [submitting, setSubmitting] = useState(false);
-  const [biometricBusy, setBiometricBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const submitRef = React.useRef<(() => void) | null>(null);
 
@@ -76,26 +63,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  const showBiometricEnablePrompt = useCallback(() => {
-    if (!isAvailable || appPreferences.isBiometricEnabled()) {
-      return;
-    }
-    feedback.confirm({
-      title: 'Enable Biometric Unlock',
-      message: `Would you like to use ${biometryLabel} to quickly unlock the HRSJM app next time?`,
-      confirmText: 'Enable',
-      cancelText: 'Not Now',
-      onConfirm: () => setEnabled(true),
-      onCancel: () => setEnabled(false),
-    });
-  }, [isAvailable, biometryLabel, setEnabled]);
-
   const handleSubmit = async (values: LoginFormData, rememberMe: boolean) => {
     setSubmitting(true);
     setFormError(null);
     try {
       await signIn(values.identifier, values.password, rememberMe);
-      showBiometricEnablePrompt();
       // RootNavigator swaps to the app area on status change.
     } catch (error) {
       setFormError(resolveLoginError(error));
@@ -103,28 +75,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       setSubmitting(false);
     }
   };
-
-  const handleBiometricUnlock = async () => {
-    setBiometricBusy(true);
-    setFormError(null);
-    try {
-      const passed = await authenticate();
-      if (!passed) {
-        setFormError('Biometric authentication cancelled.');
-        return;
-      }
-      const restored = await restoreSession();
-      if (!restored) {
-        setFormError('Session expired. Please login with your password.');
-      }
-    } catch {
-      setFormError('Unable to restore session. Please login with your password.');
-    } finally {
-      setBiometricBusy(false);
-    }
-  };
-
-  const showBiometricButton = isAvailable && isEnabled && !submitting;
 
   return (
     <KeyboardAvoidingView
@@ -198,55 +148,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               </View>
             )}
           </TouchableOpacity>
-
-          {/* OR Divider */}
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <View style={styles.dividerBadge}>
-              <Text style={styles.dividerText}>OR</Text>
-            </View>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Google Sign-in Button */}
-          <TouchableOpacity
-            style={styles.googleButton}
-            onPress={() =>
-              feedback.info(
-                'Coming Soon',
-                'Google sign-in integration will be available in an upcoming release.',
-              )
-            }
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Continue with Google"
-          >
-            <GoogleGIcon size={20} />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
-
-          {/* Biometric Unlock */}
-          {showBiometricButton && (
-            <TouchableOpacity
-              style={styles.biometricButton}
-              onPress={handleBiometricUnlock}
-              disabled={biometricBusy}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel={`Unlock with ${biometryLabel}`}
-            >
-              {biometricBusy ? (
-                <ActivityIndicator size="small" color="#0F2860" />
-              ) : (
-                <>
-                  <LockOutlineIcon size={18} color="#0F2860" />
-                  <Text style={styles.biometricButtonText}>
-                    Unlock with {biometryLabel}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )}
 
           {/* Sign Up Link */}
           <View style={styles.signupRow}>
@@ -371,63 +272,6 @@ const styles = StyleSheet.create({
   },
   arrowIconWrap: {
     marginLeft: 8,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E2E8F0',
-  },
-  dividerBadge: {
-    paddingHorizontal: 12,
-  },
-  dividerText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#94A3B8',
-    letterSpacing: 0.5,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FAFAFC',
-    borderWidth: 1.2,
-    borderColor: '#E2E8F0',
-    borderRadius: 14,
-    height: 50,
-    shadowColor: '#0F2860',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  googleButtonText: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginLeft: 10,
-  },
-  biometricButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#EEF4FF',
-    borderWidth: 1,
-    borderColor: '#D0E1FD',
-    borderRadius: 14,
-    height: 50,
-    marginTop: 12,
-    gap: 8,
-  },
-  biometricButtonText: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    color: '#0F2860',
   },
   signupRow: {
     flexDirection: 'row',

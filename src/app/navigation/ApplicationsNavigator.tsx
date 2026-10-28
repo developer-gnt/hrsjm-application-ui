@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppRoutes } from '../../core/constants/routes';
 import {
@@ -38,10 +38,14 @@ export const ApplicationsNavigator: React.FC = () => (
       name={AppRoutes.MEMBERSHIP_APPLICATIONS}
       component={MembershipApplicationsScreen}
     />
-    <Stack.Screen
-      name={AppRoutes.MEMBERSHIP_APPLICATION_DETAILS}
-      component={MembershipApplicationDetailsScreen as any}
-    />
+    <Stack.Screen name={AppRoutes.MEMBERSHIP_APPLICATION_DETAILS}>
+      {({ route, navigation }) => (
+        <MembershipApplicationDetailsScreen
+          applicationId={(route.params as any)?.applicationId || (route.params as any)?.id || ''}
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
     <Stack.Screen
       name={AppRoutes.ASSISTANCE_REQUESTS}
       component={AssistanceRequestsScreen}

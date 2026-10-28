@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppRoutes } from '../../core/constants/routes';
 import { MoreMenuScreen } from './MoreMenuScreen';
@@ -94,12 +94,12 @@ export const MoreNavigator: React.FC = () => (
         <MembershipApplicationsScreen
           onViewApplication={app =>
             navigation.navigate(AppRoutes.MEMBERSHIP_APPLICATION_DETAILS as any, {
-              applicationId: app.applicationId || app.id,
+              applicationId: app.id || app.applicationId, id: app.id,
             })
           }
           onReviewApplication={app =>
             navigation.navigate(AppRoutes.MEMBERSHIP_APPLICATION_DETAILS as any, {
-              applicationId: app.applicationId || app.id,
+              applicationId: app.id || app.applicationId, id: app.id,
             })
           }
         />

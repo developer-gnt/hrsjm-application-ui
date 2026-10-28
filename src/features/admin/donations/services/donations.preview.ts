@@ -48,7 +48,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     transaction_id: 'UPI1234567890',
     donation_type: 'ONE_TIME',
     source: 'Website',
-    created_at: '2026-09-28T11:24:00',
+    created_at: '2026-10-28T11:24:00',
     has_receipt: true,
   },
   {
@@ -64,7 +64,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     transaction_id: 'UPI987654321102',
     donation_type: 'ONE_TIME',
     source: 'Application UI',
-    created_at: '2026-09-27T16:15:00',
+    created_at: '2026-10-27T16:15:00',
     has_receipt: true,
   },
   {
@@ -80,7 +80,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     transaction_id: 'NEFT2026092612',
     donation_type: 'ONE_TIME',
     source: 'Web App',
-    created_at: '2026-09-26T14:40:00',
+    created_at: '2026-10-26T14:40:00',
     has_receipt: true,
   },
   {
@@ -96,7 +96,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     transaction_id: 'UPI8811224455',
     donation_type: 'ONE_TIME',
     source: 'Website',
-    created_at: '2026-09-25T10:05:00',
+    created_at: '2026-10-25T10:05:00',
     has_receipt: true,
   },
   {
@@ -112,7 +112,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     transaction_id: 'RTGS2026092401',
     donation_type: 'ONE_TIME',
     source: 'Application UI',
-    created_at: '2026-09-24T18:20:00',
+    created_at: '2026-10-24T18:20:00',
     has_receipt: true,
   },
   {
@@ -128,7 +128,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     transaction_id: 'UPI7788990011',
     donation_type: 'RECURRING',
     source: 'Web App',
-    created_at: '2026-09-24T09:10:00',
+    created_at: '2026-10-24T09:10:00',
     has_receipt: true,
   },
   {
@@ -144,7 +144,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     transaction_id: 'NEFT2026092317',
     donation_type: 'ONE_TIME',
     source: 'Website',
-    created_at: '2026-09-23T17:30:00',
+    created_at: '2026-10-23T17:30:00',
     has_receipt: true,
   },
   {
@@ -160,7 +160,7 @@ const PREVIEW_DONATIONS: DonationPreviewRow[] = [
     transaction_id: 'UPI5566778899',
     donation_type: 'RECURRING',
     source: 'Application UI',
-    created_at: '2026-09-22T11:12:00',
+    created_at: '2026-10-22T11:12:00',
     has_receipt: true,
   },
 ];

@@ -77,6 +77,12 @@ export function TicketStatusModal({
         style={styles.noteInput}
       />
 
+      <View style={styles.emailNoticeBox}>
+        <Text style={styles.emailNoticeText}>
+          📧 An official status email will be automatically sent to the complainant upon confirming this action.
+        </Text>
+      </View>
+
       {error ? (
         <View style={styles.errorBox} accessibilityRole="alert">
           <Text style={styles.errorText}>{error}</Text>
@@ -110,6 +116,21 @@ const styles = StyleSheet.create({
   noteInput: {
     minHeight: 80,
     textAlignVertical: 'top',
+  },
+  emailNoticeBox: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  emailNoticeText: {
+    ...typography.secondary,
+    color: '#1E40AF',
+    fontSize: 12,
+    lineHeight: 16,
   },
   errorBox: {
     backgroundColor: '#FEE2E2',

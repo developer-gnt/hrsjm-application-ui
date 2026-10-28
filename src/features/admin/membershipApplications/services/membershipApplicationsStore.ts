@@ -1,4 +1,4 @@
-import {
+﻿import {
   MembershipApplicationItem,
   ApplicationStatsData,
   ApplicationStatus,
@@ -304,9 +304,10 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
         (appData.payment_order_id || appData.gateway_payment_id || appData.transaction_id ? 'PAID' : undefined) ||
         ''
       ).toUpperCase();
-      return raw === 'PAID' || raw === 'SUCCESS' || raw === 'SUCCESSFUL' || raw === 'COMPLETED' || status === 'approved'
-        ? 'PAID'
-        : 'UNPAID';
+      if (raw === 'FAILED' || raw === 'CANCELLED' || raw === 'DECLINED') {
+        return 'UNPAID';
+      }
+      return 'PAID';
     })(),
     documents,
     activityLog,
@@ -479,7 +480,7 @@ class MembershipApplicationsStore {
                   email: u.email,
                   dob: u.dob,
                   amount: isSeeker ? undefined : 800,
-                  paymentStatus: 'UNPAID',
+                  paymentStatus: isSeeker ? 'EXEMPT' : 'PAID',
                   documents: u.documents?.map((d, idx) => ({
                     id: d.id || `doc-${idx + 1}`,
                     title: d.title || (isSeeker ? 'Income / Medical Proof' : 'Identification Document'),
@@ -595,11 +596,9 @@ class MembershipApplicationsStore {
               occupation: userRec.personalInfo?.occupation || undefined,
               amount: userRec.paymentAmount || userRec.fee || userRec.amount,
               paymentStatus:
-                userRec.paymentStatus === 'Completed' ||
-                userRec.paymentCompleted === true ||
-                statusKey === 'approved'
-                  ? 'PAID'
-                  : 'UNPAID',
+                userRec.paymentStatus === 'Failed' || userRec.paymentStatus === 'Cancelled'
+                  ? 'UNPAID'
+                  : 'PAID',
               documents: userDocs,
               activityLog: [
                 {
@@ -725,7 +724,15 @@ class MembershipApplicationsStore {
   }
 
   public getApplicationById(id: string): MembershipApplicationItem | undefined {
-    return this.applications.find(a => a.id === id || a.applicationId === id);
+    if (!id) return undefined;
+    const cleanId = String(id).trim();
+    return this.applications.find(
+      a =>
+        a.id === cleanId ||
+        a.applicationId === cleanId ||
+        (a.id && a.id.toLowerCase() === cleanId.toLowerCase()) ||
+        (a.applicationId && a.applicationId.toLowerCase() === cleanId.toLowerCase())
+    );
   }
 
   public getStats(): ApplicationStatsData {
@@ -861,12 +868,17 @@ class MembershipApplicationsStore {
   public async fetchApplicationById(
     id: string,
   ): Promise<MembershipApplicationItem | undefined> {
+    if (!id) return undefined;
     if (process.env.NODE_ENV === 'test') {
       return this.getApplicationById(id);
     }
 
     try {
-      const localApp = this.getApplicationById(id);
+      let localApp = this.getApplicationById(id);
+      if (!localApp && this.applications.length === 0) {
+        await this.fetchApplications();
+        localApp = this.getApplicationById(id);
+      }
       const queryId = (localApp && /^[0-9a-fA-F-]{36}$/.test(localApp.id)) ? localApp.id : id;
       if (!/^[0-9a-fA-F-]{36}$/.test(queryId)) {
         return localApp;

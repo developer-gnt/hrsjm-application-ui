@@ -578,7 +578,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       policeStation: effectivePersonalInfo.policeStation || effectiveAddressInfo.policeStation || undefined,
       occupation: 'Member',
       amount: overrides?.paymentAmount || effectivePost?.feeAmount || 800,
-      paymentStatus: overrides?.paymentCompleted ? 'PAID' : 'UNPAID',
+      paymentStatus: 'PAID',
       documents: uploadedDocs.map(d => ({ ...d, uri: sanitizeUri(d.uri) })),
       activityLog: [
         {
@@ -604,7 +604,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       validFrom: formattedDate,
       validTill: `${formattedDate.slice(0, -4)}${Number(timestamp.getFullYear()) + 1}`,
       rejectionReason: 'Documents are not clear. Please upload a valid address proof and clear photograph.',
-      paymentStatus: overrides?.paymentCompleted ? 'Completed' : 'Pending',
+      paymentStatus: 'Completed',
       paymentId: overrides?.paymentId,
       paymentAmount: overrides?.paymentAmount,
       receiptNumber: overrides?.receiptNumber,
@@ -741,6 +741,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         validity_days: resolvedValidityDays,
         documents: docsForBackend,
         police_station: effectivePersonalInfo.policeStation?.trim() || effectiveAddressInfo.policeStation?.trim() || undefined,
+        payment_status: 'SUCCESS',
+        payment_completed: true,
+        payment_amount: adminAppItem.amount || 800,
+        amount: adminAppItem.amount || 800,
       },
     });
 
@@ -916,7 +920,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       policeStation: effectivePersonalInfo.policeStation || effectiveAddressInfo.policeStation || undefined,
       occupation: 'Member',
       amount: overrides?.paymentAmount || effectivePost?.feeAmount || 800,
-      paymentStatus: overrides?.paymentCompleted ? 'PAID' : 'UNPAID',
+      paymentStatus: 'PAID',
       documents: uploadedDocs,
       activityLog: [
         {
@@ -956,7 +960,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       validFrom: formattedDate,
       validTill: `${formattedDate.slice(0, -4)}${Number(timestamp.getFullYear()) + validityYears}`,
       rejectionReason: 'Documents are not clear. Please upload a valid address proof and clear photograph.',
-      paymentStatus: overrides?.paymentCompleted ? 'Completed' : 'Pending',
+      paymentStatus: 'Completed',
       paymentId: overrides?.paymentId,
       paymentAmount: overrides?.paymentAmount,
       receiptNumber: overrides?.receiptNumber,

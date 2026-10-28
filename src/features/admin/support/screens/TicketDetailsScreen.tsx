@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -33,10 +33,10 @@ type ModalAction = 'START_REVIEW' | 'RESOLVE' | 'CLOSE';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <AppCard style={styles.section}>
+    <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {children}
-    </AppCard>
+      <AppCard>{children}</AppCard>
+    </View>
   );
 }
 
@@ -47,18 +47,85 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
       {typeof value === 'string' || typeof value === 'number' ? (
         <Text style={styles.infoValue}>{value}</Text>
       ) : (
-        value
+        <View style={styles.infoValueWrap}>{value}</View>
       )}
     </View>
   );
 }
 
+function parseTicketDescription(rawDescription?: string) {
+  const text = (rawDescription || '').trim();
+  if (!text) {
+    return {
+      complainantMeta: null,
+      concernDetails: '',
+      hasStructuredSubmission: false,
+    };
+  }
+
+  if (
+    text.includes('Complainant Information:') ||
+    text.includes('--- Verified Documents') ||
+    text.includes('Details of Concern:') ||
+    text.includes('Verified Document Attachments:')
+  ) {
+    const lines = text.split('\n');
+    const complainantMeta: Array<{ label: string; value: string }> = [];
+    let concernText = '';
+    let readingSection: 'complainant' | 'concern' | 'ignore' | 'none' = 'none';
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (/^Complainant Information:/i.test(line)) {
+        readingSection = 'complainant';
+        continue;
+      }
+      if (/^Details of Concern:/i.test(line)) {
+        readingSection = 'concern';
+        continue;
+      }
+      if (
+        /^--- Verified Documents/i.test(line) ||
+        /^Verified Document Attachments:/i.test(line)
+      ) {
+        readingSection = 'ignore';
+        continue;
+      }
+
+      if (readingSection === 'complainant') {
+        const match = /^-\s*([^:]+)\s*:\s*(.+)$/.exec(line);
+        if (match) {
+          const key = match[1].trim();
+          const val = match[2].trim();
+          if (key.toLowerCase() !== 'source') {
+            complainantMeta.push({ label: key, value: val });
+          }
+        }
+      } else if (readingSection === 'concern') {
+        concernText += rawLine + '\n';
+      }
+    }
+
+    return {
+      complainantMeta: complainantMeta.length > 0 ? complainantMeta : null,
+      concernDetails: concernText.trim() || text,
+      hasStructuredSubmission: true,
+    };
+  }
+
+  return {
+    complainantMeta: null,
+    concernDetails: text,
+    hasStructuredSubmission: false,
+  };
+}
+
 export function TicketDetailsScreen({ route, navigation }: ScreenProps) {
   const { ticketId } = route.params;
   const { user } = useAuth();
-  const { ticket, initialLoading, refreshing, error, refresh, applyUpdate, retry } =
+  const { ticket, initialLoading, refreshing, error, retry, refresh, applyUpdate } =
     useTicketDetails(ticketId);
-  const { acting, error: actionError, startReview, resolve, close, clearError } =
+  const { startReview, resolve, close, acting, error: actionError, clearError } =
     useTicketActions();
   const [modalAction, setModalAction] = useState<ModalAction | null>(null);
 
@@ -68,13 +135,12 @@ export function TicketDetailsScreen({ route, navigation }: ScreenProps) {
     }
     const run =
       modalAction === 'START_REVIEW'
-        ? startReview(ticketId)
+        ? startReview(ticketId, note)
         : modalAction === 'RESOLVE'
           ? resolve(ticketId, note)
           : close(ticketId, note);
     const result = await run;
     if (result.ok && ticket) {
-      // Reflect the transition locally; useTicketDetails refreshes on focus.
       const newStatus =
         modalAction === 'START_REVIEW'
           ? 'UNDER_REVIEW'
@@ -88,13 +154,18 @@ export function TicketDetailsScreen({ route, navigation }: ScreenProps) {
       });
       setModalAction(null);
       feedback.success(
-        'Ticket Updated',
-        `Ticket #${shortTicketId(ticket.id)} status changed to ${ticketStatusMeta(newStatus).label}.`,
+        'Action Completed & Email Sent',
+        `Ticket #${shortTicketId(ticket.id)} marked as ${ticketStatusMeta(newStatus).label}. An official email notification has been dispatched to the complainant.`,
       );
-    } else if (!result.ok && 'error' in result && result.error) {
+    } else if (!result.ok && result.error) {
       feedback.error('Update Failed', result.error);
     }
   };
+
+  const parsedDesc = useMemo(
+    () => parseTicketDescription(ticket?.description),
+    [ticket?.description],
+  );
 
   const renderBody = () => {
     if (initialLoading && !ticket) {
@@ -127,15 +198,23 @@ export function TicketDetailsScreen({ route, navigation }: ScreenProps) {
           </View>
         </AppCard>
 
-        <Section title="Reporter">
-          <View style={styles.reporterRow}>
-            <AppAvatar name={ticket.user?.full_name ?? '—'} size={44} />
-            <View style={styles.reporterInfo}>
-              <Text style={styles.reporterName}>{ticket.user?.full_name ?? 'Unknown user'}</Text>
-              <Text style={styles.reporterMeta}>{ticket.user?.email ?? '—'}</Text>
+        {parsedDesc.complainantMeta ? (
+          <Section title="Complainant Information">
+            {parsedDesc.complainantMeta.map((item, idx) => (
+              <InfoRow key={idx} label={item.label} value={item.value} />
+            ))}
+          </Section>
+        ) : (
+          <Section title="Reporter">
+            <View style={styles.reporterRow}>
+              <AppAvatar name={ticket.user?.full_name ?? '—'} size={44} />
+              <View style={styles.reporterInfo}>
+                <Text style={styles.reporterName}>{ticket.user?.full_name ?? 'Unknown user'}</Text>
+                <Text style={styles.reporterMeta}>{ticket.user?.email ?? '—'}</Text>
+              </View>
             </View>
-          </View>
-        </Section>
+          </Section>
+        )}
 
         <Section title="Ticket Information">
           <InfoRow
@@ -167,12 +246,14 @@ export function TicketDetailsScreen({ route, navigation }: ScreenProps) {
           ) : null}
         </Section>
 
-        <Section title="Description">
-          <Text style={styles.bodyText}>{ticket.description}</Text>
+        <Section title="Details of Concern">
+          <Text style={styles.bodyText}>
+            {parsedDesc.concernDetails || 'No details provided'}
+          </Text>
         </Section>
 
         <Section title="Attachments">
-          <TicketAttachments ticketId={ticket.id} />
+          <TicketAttachments ticketId={ticket.id} description={ticket.description} />
         </Section>
 
         <Section title="Actions">
@@ -261,7 +342,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxl * 2,
+    paddingBottom: 160,
   },
   headerCard: {
     marginBottom: spacing.md,
@@ -312,6 +393,7 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.divider,
@@ -328,9 +410,14 @@ const styles = StyleSheet.create({
     flex: 2,
     textAlign: 'right',
   },
+  infoValueWrap: {
+    flex: 2,
+    alignItems: 'flex-end',
+  },
   bodyText: {
     ...typography.body,
     color: colors.textPrimary,
+    lineHeight: 22,
   },
   sourceBadge: {
     paddingHorizontal: 8,
@@ -344,11 +431,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   actionsWrap: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   actionNote: {
-    ...typography.body,
+    ...typography.secondary,
     color: colors.textSecondary,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
   },
 });
 

@@ -8,8 +8,11 @@ export interface TicketDocumentItem {
   document_name: string;
   document_type: string;
   original_file_name: string;
+  file_name?: string;
   mime_type: string;
   file_size: number;
+  storage_path?: string;
+  file_url?: string;
   description: string | null;
   is_archived: boolean;
   created_at: string;

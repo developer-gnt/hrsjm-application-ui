@@ -134,6 +134,7 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
   // Determine backend status parameter if tab is filtered
   const apiStatusFilter = useMemo(() => {
     if (activeTab === 'ACTIVE') return 'ACTIVE';
+    if (activeTab === 'PENDING') return 'PENDING';
     if (activeTab === 'INACTIVE') return 'SUSPENDED'; // or EXPIRED
     return undefined;
   }, [activeTab]);
@@ -149,11 +150,10 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
     refetch: refetchList,
     isRefetching,
   } = useQuery({
-    queryKey: MEMBERS_QUERY_KEYS.list(apiStatusFilter, searchQuery),
+    queryKey: MEMBERS_QUERY_KEYS.list(undefined, searchQuery),
     queryFn: () =>
       membersService.list({
         search: searchQuery.trim() || undefined,
-        status: apiStatusFilter,
         page: 1,
         limit: 100,
       }),
@@ -165,8 +165,10 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
     data: serverStats,
     refetch: refetchStats,
   } = useQuery({
-    queryKey: ['memberships', 'stats', searchQuery],
-    queryFn: () => membersService.getStats({ search: searchQuery }),
+    // Global KPI stats — always fetched without search so the header cards always
+    // show aggregate totals across all members, not filtered by search term.
+    queryKey: MEMBERS_QUERY_KEYS.stats,
+    queryFn: () => membersService.getStats(),
     enabled: !isDevMockMode,
     staleTime: 30_000,
   });
@@ -197,13 +199,20 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
           active: searched.filter(m => m.status === 'ACTIVE').length,
           expiringSoon: searched.filter(m => m.status === 'EXPIRING_SOON').length,
           inactive: searched.filter(m => m.status === 'INACTIVE').length,
+          pending: searched.filter(m => m.status === 'PENDING').length,
         };
       }
       return MEMBER_STATS;
     }
 
+    const approvedMembers = members.filter(m => m.status !== 'PENDING');
+    const localActive = approvedMembers.filter(m => m.status === 'ACTIVE').length;
+    const localExpiring = approvedMembers.filter(m => m.status === 'EXPIRING_SOON').length;
+    const localInactive = approvedMembers.filter(m => m.status === 'INACTIVE').length;
+    const localTotal = approvedMembers.length;
+
     if (searchQuery.trim()) {
-      const searched = members.filter(m => matchesMemberSearch(m, searchQuery));
+      const searched = approvedMembers.filter(m => matchesMemberSearch(m, searchQuery));
       return {
         total: searched.length,
         active: searched.filter(m => m.status === 'ACTIVE').length,
@@ -212,19 +221,31 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
       };
     }
 
+    // serverStats comes from the dedicated /memberships/stats endpoint.
+    // If the server stats are desynced (e.g. counting pending applications in total,
+    // or missing inactive/blocked counts), sanitize against loaded approved members.
     if (serverStats) {
-      return serverStats;
+      const inactive = Math.max(serverStats.inactive ?? 0, localInactive);
+      const active = Math.max(serverStats.active ?? 0, localActive);
+      const expiringSoon = Math.max(serverStats.expiringSoon ?? 0, localExpiring);
+      const validSum = active + expiringSoon + inactive;
+      const total = serverStats.total === validSum ? serverStats.total : Math.max(validSum, localTotal);
+
+      return {
+        total,
+        active,
+        expiringSoon,
+        inactive,
+      };
     }
-    if (queryData?.stats) {
-      return queryData.stats;
-    }
+
     return {
-      total: members.length,
-      active: members.filter(m => m.status === 'ACTIVE').length,
-      expiringSoon: members.filter(m => m.status === 'EXPIRING_SOON').length,
-      inactive: members.filter(m => m.status === 'INACTIVE').length,
+      total: localTotal,
+      active: localActive,
+      expiringSoon: localExpiring,
+      inactive: localInactive,
     };
-  }, [isDevMockMode, searchQuery, serverStats, queryData, members]);
+  }, [isDevMockMode, searchQuery, serverStats, members]);
 
   // Tab counts for UI filter badges
   const tabCounts = useMemo<TabCount[]>(
@@ -238,10 +259,13 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
   );
 
   // Filter and sort members for display
+  // Only approved members (active, expiring soon, blocked/inactive) show in this directory.
+  // Pending applications belong in the Applications section.
   const filteredMembers = useMemo(() => {
     if (isLoading || hasError) return [];
     const filtered = members.filter(
       member =>
+        member.status !== 'PENDING' &&
         matchesMemberFilterTab(member, activeTab) &&
         matchesMemberSearch(member, searchQuery)
     );

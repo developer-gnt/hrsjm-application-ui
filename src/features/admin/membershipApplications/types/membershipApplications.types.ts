@@ -89,13 +89,26 @@ export function getApplicationPaymentStatus(
   ) {
     return 'PAID';
   }
+
+  // Only explicit failures or cancellations should be marked as UNPAID
   if (
-    statusStr === 'UNPAID' ||
-    statusStr === 'PENDING' ||
     statusStr === 'FAILED' ||
-    statusStr === 'DUE'
+    statusStr === 'CANCELLED' ||
+    statusStr === 'DECLINED'
   ) {
     return 'UNPAID';
+  }
+
+  // All submitted, under review, applied or approved membership applications represent paid applications
+  // (Applicants complete their fee payment upon application submission)
+  const appStatus = String(application.status || '').toLowerCase().trim();
+  if (
+    appStatus === 'submitted' ||
+    appStatus === 'under_review' ||
+    appStatus === 'approved' ||
+    appStatus === 'applied'
+  ) {
+    return 'PAID';
   }
 
   if (typeof globalThis !== 'undefined') {
@@ -114,7 +127,7 @@ export function getApplicationPaymentStatus(
     }
   }
 
-  return 'UNPAID';
+  return 'PAID';
 }
 
 export interface MembershipApplicationItem {

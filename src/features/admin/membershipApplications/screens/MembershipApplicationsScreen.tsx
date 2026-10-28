@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -66,7 +66,8 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
       onViewApplication(app);
     } else if (navigation?.navigate) {
       navigation.navigate(AppRoutes.MEMBERSHIP_APPLICATION_DETAILS, {
-        applicationId: app.applicationId || app.id,
+        applicationId: app.id || app.applicationId,
+        id: app.id,
       });
     }
   };

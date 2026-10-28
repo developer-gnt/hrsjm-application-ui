@@ -37,6 +37,7 @@ import {
   FontFamilies,
   Shadows,
 } from '../../../../core/theme';
+import { formatINR } from '../../../../core/utils';
 import { AppRoutes } from '../../../../core/constants/routes';
 import { useReceiptsPaginated, useReceiptStats } from '../hooks/useReceipts';
 import { ReceiptVoucherCard } from '../components/ReceiptVoucherCard';
@@ -72,8 +73,8 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
   const receiptsQuery = useReceiptsPaginated({
     payment_method: paymentMethod,
     search: debouncedSearch || undefined,
-    page,
-    limit: pageSize,
+    page: 1,
+    limit: 100,
   });
   const vouchers = receiptsQuery.data?.items ?? [];
   const totalCount = receiptsQuery.data?.meta?.total ?? 0;
@@ -87,46 +88,70 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
     return vouchers.map(v => ({ voucher: v, classified: classifyReceipt(v) }));
   }, [vouchers]);
 
-  // Compute breakdown counts across streams
+  // Compute breakdown counts and total amounts across streams
   const categoryCounts = useMemo(() => {
     const all = vouchers.length;
+    let allAmount = 0;
     let ngoDonations = 0;
+    let ngoAmount = 0;
     let causeDonations = 0;
+    let causeAmount = 0;
     let membership = 0;
+    let membershipAmount = 0;
     let renewals = 0;
+    let renewalsAmount = 0;
     let otherIncome = 0;
+    let otherAmount = 0;
 
-    classifiedItems.forEach(({ classified }) => {
+    classifiedItems.forEach(({ voucher, classified }) => {
+      const amt = Number(voucher.amount) || 0;
+      const isNotCancelled = voucher.status !== 'CANCELLED';
+      if (isNotCancelled) {
+        allAmount += amt;
+      }
+
       if (classified.category === 'CAUSE_DONATION') {
         causeDonations++;
+        if (isNotCancelled) causeAmount += amt;
       } else if (
         classified.category === 'NGO_DONATION' ||
         classified.category === 'GENERAL_DONATION'
       ) {
         ngoDonations++;
+        if (isNotCancelled) ngoAmount += amt;
       } else if (
         classified.category === 'MEMBERSHIP_PAYMENT' ||
         classified.category === 'NEW_MEMBERSHIP'
       ) {
         membership++;
+        if (isNotCancelled) membershipAmount += amt;
       } else if (
         classified.category === 'RENEWAL_PAYMENT' ||
         classified.category === 'RENEW_MEMBERSHIP'
       ) {
         renewals++;
+        if (isNotCancelled) renewalsAmount += amt;
       } else {
         otherIncome++;
+        if (isNotCancelled) otherAmount += amt;
       }
     });
 
     return {
       all,
+      allAmount,
       ngoDonations,
+      ngoAmount,
       causeDonations,
+      causeAmount,
       membership,
+      membershipAmount,
       renewals,
+      renewalsAmount,
       membershipAndRenewals: membership + renewals,
+      membershipAndRenewalsAmount: membershipAmount + renewalsAmount,
       otherIncome,
+      otherAmount,
     };
   }, [vouchers.length, classifiedItems]);
 
@@ -337,16 +362,16 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
             }}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel={`Total Income: ${categoryCounts.all}`}
+            accessibilityLabel={`Total Income: ${formatINR(categoryCounts.allAmount, { noDecimals: true })}`}
           >
             <View style={[styles.kpiIconBadge, styles.kpiIconBadgeNavy]}>
               <FileText size={18} color="#FFFFFF" strokeWidth={2.2} />
             </View>
             <Text style={styles.kpiValue} numberOfLines={1}>
-              {categoryCounts.all}
+              {formatINR(categoryCounts.allAmount, { noDecimals: true })}
             </Text>
             <Text style={[styles.kpiLabel, styles.kpiLabelNavy]} numberOfLines={1}>
-              Total Income
+              Total Income ({categoryCounts.all})
             </Text>
           </TouchableOpacity>
 
@@ -363,16 +388,16 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
             }}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel={`NGO Donations: ${categoryCounts.ngoDonations}`}
+            accessibilityLabel={`NGO Donations: ${formatINR(categoryCounts.ngoAmount, { noDecimals: true })}`}
           >
             <View style={[styles.kpiIconBadge, styles.kpiIconBadgeWarning]}>
               <Heart size={18} color="#FFFFFF" strokeWidth={2.2} />
             </View>
             <Text style={styles.kpiValue} numberOfLines={1}>
-              {categoryCounts.ngoDonations}
+              {formatINR(categoryCounts.ngoAmount, { noDecimals: true })}
             </Text>
             <Text style={[styles.kpiLabel, styles.kpiLabelWarning]} numberOfLines={1}>
-              NGO Donations
+              NGO Donations ({categoryCounts.ngoDonations})
             </Text>
           </TouchableOpacity>
         </View>
@@ -392,16 +417,16 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
             }}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel={`Cause Donations: ${categoryCounts.causeDonations}`}
+            accessibilityLabel={`Cause Donations: ${formatINR(categoryCounts.causeAmount, { noDecimals: true })}`}
           >
             <View style={[styles.kpiIconBadge, styles.kpiIconBadgeSuccess]}>
               <TrendingUp size={18} color="#FFFFFF" strokeWidth={2.2} />
             </View>
             <Text style={styles.kpiValue} numberOfLines={1}>
-              {categoryCounts.causeDonations}
+              {formatINR(categoryCounts.causeAmount, { noDecimals: true })}
             </Text>
             <Text style={[styles.kpiLabel, styles.kpiLabelSuccess]} numberOfLines={1}>
-              Cause Donations
+              Cause Donations ({categoryCounts.causeDonations})
             </Text>
           </TouchableOpacity>
 
@@ -418,16 +443,16 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
             }}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel={`Membership & Renewals: ${categoryCounts.membershipAndRenewals}`}
+            accessibilityLabel={`Membership & Renewals: ${formatINR(categoryCounts.membershipAndRenewalsAmount, { noDecimals: true })}`}
           >
             <View style={[styles.kpiIconBadge, styles.kpiIconBadgePurple]}>
               <UserCheck size={18} color="#FFFFFF" strokeWidth={2.2} />
             </View>
             <Text style={styles.kpiValue} numberOfLines={1}>
-              {categoryCounts.membershipAndRenewals}
+              {formatINR(categoryCounts.membershipAndRenewalsAmount, { noDecimals: true })}
             </Text>
             <Text style={[styles.kpiLabel, styles.kpiLabelPurple]} numberOfLines={1}>
-              Membership & Renewals
+              Membership ({categoryCounts.membershipAndRenewals})
             </Text>
           </TouchableOpacity>
         </View>
@@ -516,14 +541,6 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
   return (
     <View style={styles.flex}>
       <AdminHeader
-        showBack={navigation.canGoBack()}
-        onBack={() => {
-          if (navigation.canGoBack()) {
-            navigation.goBack();
-          } else {
-            navigation.navigate('MoreMenu' as any);
-          }
-        }}
         onNavigate={target => navigation.navigate(target as any)}
       />
 
@@ -727,7 +744,7 @@ const styles = StyleSheet.create({
 
   // Large bold number matching Image 1
   kpiValue: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0B2F52',
     letterSpacing: -0.3,

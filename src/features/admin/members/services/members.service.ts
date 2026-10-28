@@ -1,4 +1,4 @@
-import { apiClient } from '../../../../core/api/client';
+﻿import { apiClient } from '../../../../core/api/client';
 import { ApiRoutes } from '../../../../core/constants/api-routes';
 import { Member, MemberStats, MemberStatus } from '../types';
 
@@ -142,8 +142,9 @@ export function mapBackendMembershipToMember(backend: BackendMembership): Member
       status = 'ACTIVE';
     }
   } else {
-    // PENDING / UNDER_REVIEW
-    status = 'ACTIVE';
+    // PENDING / UNDER_REVIEW — unapproved applicants; shown with a 'Pending' badge
+    // and excluded from the member directory list (belong in the Applications page)
+    status = 'PENDING';
   }
 
   const avatarUri = backend.user?.avatar;
@@ -192,11 +193,13 @@ export const membersService = {
     let active = 0;
     let expiringSoon = 0;
     let inactive = 0;
+    let pending = 0;
 
     items.forEach(m => {
       if (m.status === 'ACTIVE') active++;
       else if (m.status === 'EXPIRING_SOON') expiringSoon++;
       else if (m.status === 'INACTIVE') inactive++;
+      else if (m.status === 'PENDING') pending++;
     });
 
     const stats: MemberStats = {
@@ -204,6 +207,7 @@ export const membersService = {
       active,
       expiringSoon,
       inactive,
+      pending,
     };
 
     return {

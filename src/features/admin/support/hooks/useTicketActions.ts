@@ -44,7 +44,7 @@ export function useTicketActions() {
     [],
   );
 
-  const startReview = useCallback((id: string) => run('START_REVIEW', id), [run]);
+  const startReview = useCallback((id: string, note?: string) => run('START_REVIEW', id, note), [run]);
   const resolve = useCallback((id: string, resolutionNote?: string) => run('RESOLVE', id, resolutionNote), [run]);
   const close = useCallback((id: string, note?: string) => run('CLOSE', id, note), [run]);
 

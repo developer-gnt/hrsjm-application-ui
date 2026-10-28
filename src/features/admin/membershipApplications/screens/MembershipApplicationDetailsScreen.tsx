@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -8,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { BorderRadius, Spacing } from '../../../../core';
 import { MembershipDetailsHeader } from '../components/MembershipDetailsHeader';
 import { MembershipApplicantSummaryCard } from '../components/MembershipApplicantSummaryCard';
@@ -25,36 +27,96 @@ import { ApplicationStatus, MembershipApplicationItem } from '../types/membershi
 export type DetailsTabKey = 'details' | 'documents' | 'activity';
 
 interface MembershipApplicationDetailsScreenProps {
-  applicationId: string;
-  onBack: () => void;
+  applicationId?: string;
+  onBack?: () => void;
   onStatusChange?: (newStatus: ApplicationStatus) => void;
+  route?: any;
+  navigation?: any;
 }
 
 export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationDetailsScreenProps> = ({
-  applicationId,
-  onBack,
+  applicationId: propApplicationId,
+  onBack: propOnBack,
   onStatusChange,
+  route: propRoute,
+  navigation: propNavigation,
 }) => {
   const insets = useSafeAreaInsets();
+  let routeHook: any = null;
+  let navHook: any = null;
+  try {
+    routeHook = useRoute<any>();
+  } catch {}
+  try {
+    navHook = useNavigation<any>();
+  } catch {}
+
+  const applicationId =
+    propApplicationId ||
+    propRoute?.params?.applicationId ||
+    propRoute?.params?.id ||
+    routeHook?.params?.applicationId ||
+    routeHook?.params?.id ||
+    '';
+
+  const onBack = () => {
+    if (propOnBack) {
+      propOnBack();
+    } else if (propNavigation?.goBack) {
+      propNavigation.goBack();
+    } else if (navHook?.goBack) {
+      navHook.goBack();
+    }
+  };
+
   const [activeTab, setActiveTab] = useState<DetailsTabKey>('details');
   const [underReviewActive, setUnderReviewActive] = useState(false);
   const [confirmationType, setConfirmationType] = useState<ConfirmationType | null>(null);
 
   const [application, setApplication] = useState<MembershipApplicationItem | undefined>(() =>
-    membershipApplicationsStore.getApplicationById(applicationId)
+    applicationId ? membershipApplicationsStore.getApplicationById(applicationId) : undefined
   );
+  const [loading, setLoading] = useState<boolean>(() => !application && Boolean(applicationId));
 
   useEffect(() => {
+    let mounted = true;
     if (applicationId) {
-      membershipApplicationsStore.fetchApplicationById(applicationId);
+      const existing = membershipApplicationsStore.getApplicationById(applicationId);
+      if (existing) {
+        setApplication(existing);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+      membershipApplicationsStore
+        .fetchApplicationById(applicationId)
+        .then(fetched => {
+          if (mounted && fetched) {
+            setApplication(fetched);
+          }
+        })
+        .finally(() => {
+          if (mounted) setLoading(false);
+        });
+    } else {
+      setLoading(false);
     }
+
     const unsubscribe = membershipApplicationsStore.subscribe(() => {
-      setApplication(membershipApplicationsStore.getApplicationById(applicationId));
+      if (mounted && applicationId) {
+        const updated = membershipApplicationsStore.getApplicationById(applicationId);
+        if (updated) setApplication(updated);
+      }
     });
-    return unsubscribe;
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, [applicationId]);
 
   const handleSelectStatus = async (newStatus: ApplicationStatus, notes?: string) => {
+    if (!applicationId) return;
     await membershipApplicationsStore.updateStatus(applicationId, newStatus, notes);
     onStatusChange?.(newStatus);
   };
@@ -94,6 +156,24 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
     setConfirmationType(null);
   };
 
+  if (loading && !application) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" />
+        <MembershipDetailsHeader
+          paddingTop={insets.top}
+          onBack={onBack}
+        />
+        <View style={styles.notFoundContainer}>
+          <ActivityIndicator size="large" color="#0B2F52" />
+          <Text style={[styles.notFoundText, { marginTop: 12 }]}>
+            Loading application details...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   if (!application) {
     return (
       <View style={styles.container}>
@@ -105,7 +185,7 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
         <View style={styles.notFoundContainer}>
           <Text style={styles.notFoundTitle}>Application Not Found</Text>
           <Text style={styles.notFoundText}>
-            Unable to find membership application with ID: {applicationId}
+            Unable to find membership application with ID: {applicationId || 'N/A'}
           </Text>
           <TouchableOpacity style={styles.returnButton} onPress={onBack}>
             <Text style={styles.returnButtonText}>Back to Applications</Text>
@@ -269,3 +349,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 });
+
+export default MembershipApplicationDetailsScreen;

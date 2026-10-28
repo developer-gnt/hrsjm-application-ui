@@ -157,8 +157,11 @@ export function determineIncomeSource(voucher: ReceiptEntryItem): IncomeSourceIn
   const rec = (voucher.received_from || '').toLowerCase();
 
   // 1. Explicit Website indicators:
-  // Strictly matched to public website donations
   if (
+    desc.includes('source: website') ||
+    desc.includes('[website') ||
+    desc.includes('via website') ||
+    desc.includes('from website') ||
     desc.includes('donation from website') ||
     desc.includes('source: donation from website') ||
     desc.includes('anonymous donation from website') ||
@@ -182,10 +185,13 @@ export function determineIncomeSource(voucher: ReceiptEntryItem): IncomeSourceIn
   // 2. Web App / Admin portal indicators
   const method = String(voucher.payment_method || '').toUpperCase();
   if (
+    desc.includes('source: web app') ||
+    desc.includes('[web app') ||
     desc.includes('web app') ||
     desc.includes('web-app') ||
     desc.includes('web_app') ||
     desc.includes('portal') ||
+    desc.includes('admin portal') ||
     ref.startsWith('manual-') ||
     ref.startsWith('pay_acc_') ||
     ref.startsWith('pay_p13_') ||
@@ -208,9 +214,9 @@ export function determineIncomeSource(voucher: ReceiptEntryItem): IncomeSourceIn
     key: 'APPLICATION',
     label: 'Application',
     badgeText: '📱 Application',
-    badgeBg: '#F5F3FF',
-    badgeColor: '#6D28D9',
-    badgeBorder: '#DDD6FE',
+    badgeBg: '#FFF7ED',
+    badgeColor: '#C2410C',
+    badgeBorder: '#FED7AA',
   };
 }
 
@@ -252,14 +258,24 @@ export function classifyReceipt(voucher: ReceiptEntryItem): ClassifiedReceipt {
     ? causePart.replace(/^\[.*?\]\s*/, '').replace(/^(Donation for Cause:|Cause:)\s*/, '').trim()
     : '';
   const rawCauseLower = rawCause.toLowerCase();
-  const isSpecificCause =
-    Boolean(rawCause) &&
-    rawCauseLower !== 'general donation' &&
-    rawCauseLower !== 'general cause' &&
-    rawCauseLower !== 'ngo support' &&
-    rawCauseLower !== 'ngo general support' &&
-    !rawCauseLower.includes('hrsjm donation') &&
-    !rawCauseLower.includes('awareness and education');
+  const descLower = (voucher.description || '').toLowerCase();
+
+  // NGO General Donation criteria (Image 3: Website/app "Choose an Amount" donation)
+  // Sent with remark "Donation from Website - NGO General Support" or cause "Human Rights Protection & Legal Aid"
+  const isNgoGeneralDonation =
+    descLower.includes('ngo general support') ||
+    descLower.includes('general support') ||
+    rawCauseLower === '' ||
+    rawCauseLower === 'general donation' ||
+    rawCauseLower === 'general cause' ||
+    rawCauseLower === 'ngo support' ||
+    rawCauseLower === 'ngo general support' ||
+    rawCauseLower.includes('human rights protection') ||
+    rawCauseLower.includes('human rights verification') ||
+    rawCauseLower.includes('awareness and education');
+
+  // Emergency or specific welfare cause donation (Image 4: Emergency cases like Medical, Education, Disaster Relief, Housing)
+  const isSpecificCause = !isNgoGeneralDonation && Boolean(rawCause);
 
   const rawPaymentId = refPart
     ? refPart.replace(/^\[.*?\]\s*/, '').replace(/^(Payment ID:|Ref:)\s*/, '').trim()
@@ -429,12 +445,12 @@ export function classifyReceipt(voucher: ReceiptEntryItem): ClassifiedReceipt {
       category: 'RENEWAL_PAYMENT',
       categoryLabel: 'RENEWAL PAYMENT',
       categorySubtitle: 'Annual membership renewal extension fee',
-      badgeBg: '#F0FDF4',
-      badgeColor: '#15803D',
-      badgeBorder: '#BBF7D0',
-      iconBg: '#DCFCE7',
-      iconBorder: '#BBF7D0',
-      iconColor: '#16A34A',
+      badgeBg: '#FAF5FF',
+      badgeColor: '#7E22CE',
+      badgeBorder: '#E9D5FF',
+      iconBg: '#F3E8FF',
+      iconBorder: '#DDD6FE',
+      iconColor: '#9333EA',
       iconType: 'rotate-cw',
       sourceKey: sourceInfo.key,
       sourceLabel: sourceInfo.label,
@@ -445,9 +461,9 @@ export function classifyReceipt(voucher: ReceiptEntryItem): ClassifiedReceipt {
       sourceHighlightLabel: highlightText ? 'Renewal:' : null,
       sourceHighlightValue: highlightText,
       sourceHighlightIcon: highlightText ? 'rotate-cw' : null,
-      sourceHighlightBg: '#F0FDF4',
-      sourceHighlightColor: '#15803D',
-      sourceHighlightBorder: '#BBF7D0',
+      sourceHighlightBg: '#FAF5FF',
+      sourceHighlightColor: '#7E22CE',
+      sourceHighlightBorder: '#E9D5FF',
       sourceTitle: extension ? `Membership Renewal (${extension})` : 'Membership Renewal',
       sourceDescription: payerName ? `Validity renewed for ${payerName}` : null,
       payerName,
