@@ -26,11 +26,13 @@ import {
   AppButton,
   AppCard,
   AppErrorState,
+  ConfirmDialog,
 } from '../../../../../core/components';
 import { formatDate } from '../../../../../core/utils';
 import { AdminHeader } from '../../../../../app/navigation';
 import type { EventListItem, EventUiStatus } from '../types/events.types';
 import { EventStatusBadge } from '../components/EventStatusBadge';
+import { useDeleteEvent } from '../hooks/useEvents';
 
 /**
  * TEMPORARY local time formatting helpers.
@@ -136,6 +138,7 @@ interface EventDetailsScreenProps {
   onEdit?: () => void;
   /** Whether the current viewer can manage/edit the event (admin) or only view/participate (member). */
   canManage?: boolean;
+  onDelete?: (event: EventListItem) => void;
 }
 
 /**
@@ -153,6 +156,20 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
   canManage = true,
 }) => {
   const [coverFailed, setCoverFailed] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const deleteMutation = useDeleteEvent();
+
+  const handleConfirmDelete = async () => {
+    if (!event) return;
+    try {
+      await deleteMutation.mutateAsync(event.id);
+      setDeleteModalVisible(false);
+      onBack();
+    } catch (err: any) {
+      console.error('Failed to delete event:', err);
+      Alert.alert('Error', err?.message || 'Failed to delete event. Please try again.');
+    }
+  };
 
   // Android hardware back returns to the Events list (no-op on iOS).
   useEffect(() => {
@@ -352,7 +369,7 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
                   title="Delete Event"
                   variant="outline"
                   size="sm"
-                  onPress={() => handlePlaceholderAction('Delete Event')}
+                  onPress={() => setDeleteModalVisible(true)}
                   icon={<Text style={styles.actionIcon}>🗑️</Text>}
                   style={styles.dangerActionButton}
                   textStyle={styles.dangerOutlineText}
@@ -380,6 +397,17 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
           )}
         </ScrollView>
       </SafeAreaView>
+
+      <ConfirmDialog
+        visible={deleteModalVisible}
+        title="Delete Event"
+        message={`Are you sure you want to delete "${event?.title}"? This action cannot be undone.`}
+        confirmTitle="Delete"
+        cancelTitle="Cancel"
+        loading={deleteMutation.isPending}
+        onCancel={() => setDeleteModalVisible(false)}
+        onConfirm={handleConfirmDelete}
+      />
     </View>
   );
 };

@@ -63,6 +63,7 @@ export const useDeleteEvent = () => {
     mutationFn: (id: string) => deleteEventApi(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
     },
   });
 };

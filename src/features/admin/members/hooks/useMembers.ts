@@ -149,11 +149,10 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
     refetch: refetchList,
     isRefetching,
   } = useQuery({
-    queryKey: MEMBERS_QUERY_KEYS.list(apiStatusFilter, searchQuery),
+    queryKey: ['memberships', 'list', searchQuery],
     queryFn: () =>
       membersService.list({
         search: searchQuery.trim() || undefined,
-        status: apiStatusFilter,
         page: 1,
         limit: 100,
       }),
@@ -212,7 +211,27 @@ export const useMembers = (previewState: MembersPreviewState = 'default') => {
       };
     }
 
-    if (serverStats) {
+    // Always compute accurate stats directly from live members if available
+    if (members && members.length > 0) {
+      let active = 0;
+      let expiringSoon = 0;
+      let inactive = 0;
+
+      members.forEach(m => {
+        if (m.status === 'ACTIVE') active++;
+        else if (m.status === 'EXPIRING_SOON') expiringSoon++;
+        else if (m.status === 'INACTIVE') inactive++;
+      });
+
+      return {
+        total: queryData?.meta?.total ?? members.length,
+        active,
+        expiringSoon,
+        inactive,
+      };
+    }
+
+    if (serverStats && (serverStats.total > 0 || serverStats.active > 0)) {
       return serverStats;
     }
     if (queryData?.stats) {

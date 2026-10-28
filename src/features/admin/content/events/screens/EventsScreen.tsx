@@ -24,6 +24,7 @@ import {
   AppPagination,
   AppSearchBar,
   Calendar,
+  ConfirmDialog,
   SkeletonCard,
 } from '../../../../../core/components';
 import { formatDate } from '../../../../../core/utils';
@@ -33,7 +34,9 @@ import { EventCard, EventListHeader } from '../components/EventCard';
 import { EventFilters } from '../components/EventFilters';
 import { EventSummaryStats } from '../components/EventSummaryStats';
 import { AdminHeader } from '../../../../../app/navigation';
-import { useEvents, useRefreshEvents } from '../hooks/useEvents';
+import { useEvents, useRefreshEvents, useDeleteEvent } from '../hooks/useEvents';
+import { CreateEventScreen } from './CreateEventScreen';
+import { EditEventScreen } from './EditEventScreen';
 import { SAMPLE_EVENTS, SAMPLE_EVENT_CATEGORIES } from '../data/sample-events';
 import { EventDetailsScreen } from './EventDetailsScreen';
 import type {
@@ -127,6 +130,10 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
   const allowCreate = canCreate !== undefined ? canCreate : Boolean(isAdmin);
 
   const [internalSelectedEvent, setInternalSelectedEvent] = useState<EventListItem | null>(null);
+  const [creatingEvent, setCreatingEvent] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<EventListItem | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<EventListItem | null>(null);
+  const deleteMutation = useDeleteEvent();
   const [uiState, setUiState] = useState<EventsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -243,17 +250,12 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
     setActiveCategory(null);
   };
 
-  // Placeholder handlers — the Create/Details/Edit/Delete screens arrive in the
-  // next phase of the Events module.
   const handleAddEvent = () => {
     if (onAddEvent) {
       onAddEvent();
       return;
     }
-    Alert.alert(
-      'Add Event',
-      'The Create Event screen will be implemented in the next phase of the Events module.',
-    );
+    setCreatingEvent(true);
   };
 
   const handleEventPress = (event: EventListItem) => {
@@ -265,27 +267,22 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
   };
 
   const handleEditEvent = (event: EventListItem) => {
-    Alert.alert(
-      'Edit Event',
-      `The Edit Event screen for "${event.title}" will be implemented in the next phase of the Events module.`,
-    );
+    setEditingEvent(event);
   };
 
   const handleDeleteEvent = (event: EventListItem) => {
-    Alert.alert(
-      'Delete Event',
-      `Are you sure you want to delete "${event.title}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('Event Deleted', `"${event.title}" has been deleted.`);
-          },
-        },
-      ],
-    );
+    setEventToDelete(event);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!eventToDelete) return;
+    try {
+      await deleteMutation.mutateAsync(eventToDelete.id);
+      setEventToDelete(null);
+    } catch (err: any) {
+      console.error('Failed to delete event:', err);
+      Alert.alert('Error', err?.message || 'Failed to delete event. Please try again.');
+    }
   };
 
   const handleStatusChange = (status: EventStatusFilter) => setActiveStatus(status);
@@ -318,11 +315,41 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
     }
   };
 
+  if (creatingEvent) {
+    return (
+      <CreateEventScreen
+        onCancel={() => {
+          setCreatingEvent(false);
+          refetch();
+        }}
+      />
+    );
+  }
+
+  if (editingEvent) {
+    return (
+      <EditEventScreen
+        event={editingEvent}
+        onBack={() => {
+          setEditingEvent(null);
+          refetch();
+        }}
+      />
+    );
+  }
+
   if (internalSelectedEvent) {
     return (
       <EventDetailsScreen
         event={internalSelectedEvent}
         onBack={() => setInternalSelectedEvent(null)}
+        onEdit={() => {
+          setEditingEvent(internalSelectedEvent);
+          setInternalSelectedEvent(null);
+        }}
+        onDelete={(ev) => {
+          setEventToDelete(ev);
+        }}
         canManage={allowCreate}
       />
     );
@@ -464,6 +491,17 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
           contentContainerStyle={styles.listContent}
         />
       </SafeAreaView>
+
+      <ConfirmDialog
+        visible={Boolean(eventToDelete)}
+        title="Delete Event"
+        message={`Are you sure you want to delete "${eventToDelete?.title}"? This action cannot be undone.`}
+        confirmTitle="Delete"
+        cancelTitle="Cancel"
+        loading={deleteMutation.isPending}
+        onCancel={() => setEventToDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </View>
   );
 };

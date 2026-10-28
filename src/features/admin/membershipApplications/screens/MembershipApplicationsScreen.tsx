@@ -385,6 +385,8 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
       <StatusBar barStyle="dark-content" />
       <MembershipApplicationsHeader
         paddingTop={insets.top}
+        title="Membership Applications"
+        subtitle="Review, verify and manage membership applications."
         onMenuPress={() => setSidebarVisible(true)}
         onNotificationsPress={() => {
           if (navigation?.navigate) {

@@ -18,7 +18,7 @@ jest.mock('../src/core/api/client', () => ({
   },
 }));
 
-const mockedApiClient = apiClient as jest.Mocked<typeof apiClient>;
+const mockedApiClient: any = apiClient;
 
 describe('Recent Applications and Recent Members Dashboard Data Flow', () => {
   beforeEach(() => {

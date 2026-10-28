@@ -119,30 +119,31 @@ export function mapBackendMembershipToMember(backend: BackendMembership): Member
   // Determine UI status: ACTIVE, EXPIRING_SOON, or INACTIVE
   let status: MemberStatus = 'ACTIVE';
 
-  if (
+  const isUserInactive =
+    backend.user?.status === 'INACTIVE' ||
+    backend.user?.status === 'SUSPENDED';
+
+  const isMembershipInactive =
     backend.status === 'EXPIRED' ||
     backend.status === 'SUSPENDED' ||
     backend.status === 'REJECTED' ||
-    backend.status === 'CANCELLED'
-  ) {
+    backend.status === 'CANCELLED';
+
+  if (isMembershipInactive || isUserInactive) {
     status = 'INACTIVE';
-  } else if (backend.status === 'ACTIVE' || backend.status === 'APPROVED') {
-    if (backend.expiry_date) {
-      const expiry = new Date(backend.expiry_date).getTime();
-      const now = Date.now();
-      const daysLeft = (expiry - now) / (1000 * 60 * 60 * 24);
-      if (daysLeft >= 0 && daysLeft <= 30) {
-        status = 'EXPIRING_SOON';
-      } else if (daysLeft < 0) {
-        status = 'INACTIVE';
-      } else {
-        status = 'ACTIVE';
-      }
+  } else if (backend.expiry_date) {
+    const expiry = new Date(backend.expiry_date).getTime();
+    const now = Date.now();
+    const daysLeft = (expiry - now) / (1000 * 60 * 60 * 24);
+    if (daysLeft >= 0 && daysLeft <= 30) {
+      status = 'EXPIRING_SOON';
+    } else if (daysLeft < 0) {
+      status = 'INACTIVE';
     } else {
       status = 'ACTIVE';
     }
   } else {
-    // PENDING / UNDER_REVIEW
+    // Approved, active, or application registered for an active user
     status = 'ACTIVE';
   }
 

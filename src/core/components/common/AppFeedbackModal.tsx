@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   Pressable,
   StyleSheet,
@@ -99,17 +100,28 @@ export const AppFeedbackModal: React.FC<AppFeedbackModalProps> = ({
 }) => {
   const config = TONE_CONFIG[tone] || TONE_CONFIG.success;
   const ToneIcon = config.Icon;
+  const [isLoading, setIsLoading] = useState(false);
 
   const handlePrimaryPress = async () => {
     if (primaryAction?.onPress) {
-      await primaryAction.onPress();
+      try {
+        setIsLoading(true);
+        await primaryAction.onPress();
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      onClose();
     }
-    onClose();
   };
 
   const handleSecondaryPress = async () => {
     if (secondaryAction?.onPress) {
-      await secondaryAction.onPress();
+      try {
+        await secondaryAction.onPress();
+      } catch (err) {
+        console.error('Secondary action failed:', err);
+      }
     }
     onClose();
   };
@@ -190,17 +202,23 @@ export const AppFeedbackModal: React.FC<AppFeedbackModalProps> = ({
 
               <TouchableOpacity
                 onPress={handlePrimaryPress}
+                disabled={isLoading || primaryAction?.loading}
                 style={[
                   styles.primaryBtn,
                   primaryAction?.variant === 'destructive'
                     ? styles.destructiveBtn
                     : { backgroundColor: config.btnBg },
+                  (isLoading || primaryAction?.loading) && { opacity: 0.7 },
                 ]}
                 activeOpacity={0.8}
               >
-                <Text style={styles.primaryBtnText}>
-                  {primaryAction?.text || config.defaultBtnText}
-                </Text>
+                {isLoading || primaryAction?.loading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>
+                    {primaryAction?.text || config.defaultBtnText}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>

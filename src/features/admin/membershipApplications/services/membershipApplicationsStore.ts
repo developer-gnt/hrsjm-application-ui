@@ -693,7 +693,12 @@ class MembershipApplicationsStore {
   }
 
   public getApplications(): MembershipApplicationItem[] {
-    return this.applications;
+    return this.applications.filter(
+      a =>
+        a.accountType !== 'seeker' &&
+        !a.applicationId?.startsWith('HRSJM-SEK') &&
+        !(a.membershipType || '').toLowerCase().includes('seeker')
+    );
   }
 
   public removeApplication(idOrAppId: string): void {

@@ -672,23 +672,50 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     effectivePost?: MembershipPostData | null,
   ): Promise<MembershipApplicationRecord> => {
     const CATEGORY_MAP: Record<string, string> = {
-      'district': 'd8907f1c-7c4e-4ed4-bee9-c47d51e5b97a',
-      'state unit': 'b21232e5-1939-45d0-85d7-cc0458b718ae',
-      'state active': 'b21232e5-1939-45d0-85d7-cc0458b718ae',
-      'state': 'b21232e5-1939-45d0-85d7-cc0458b718ae',
-      'lion': '1bfe436b-fe99-433d-bb1e-7b302eb1f34e',
-      'counselor': '1bfe436b-fe99-433d-bb1e-7b302eb1f34e',
-      'ambassador': '1bfe436b-fe99-433d-bb1e-7b302eb1f34e',
-      'director': 'bf1f97f0-3a47-42fa-8f82-4f7de3426b58',
-      'national': '7c396966-5f56-4f17-9f82-11a487681cbf',
-      'council': '7c396966-5f56-4f17-9f82-11a487681cbf',
+      'district unit post': '340f622e-bae7-4ba6-b15f-33eeecb23851',
+      'district active': 'f91a6b5a-90d8-4c8b-ae72-3275c70d287d',
+      'district': 'e33a2dd6-996d-4991-b2bc-88ecebd19aba',
+      'state unit post': 'c658b0ee-68bf-4648-b3d4-664a7c7010e3',
+      'state active': '917ff128-555c-40df-b9dc-e07d050b3c90',
+      'state unit': 'c658b0ee-68bf-4648-b3d4-664a7c7010e3',
+      'state': 'c658b0ee-68bf-4648-b3d4-664a7c7010e3',
+      'lion': '82f72f9c-b79e-470d-8160-f29b392e28b4',
+      'counselor': '8fc6d22b-24d3-4401-a750-cb9eec279c24',
+      'counsellor': '8fc6d22b-24d3-4401-a750-cb9eec279c24',
+      'ambassador': '025d6313-4b39-4c42-b91a-4811a0583dbb',
+      'director': '812214df-9f5c-42d7-803f-64705ce53379',
+      'national': '3085dbf3-f8fa-4c65-8999-ed203e8ad2ba',
+      'council': '3085dbf3-f8fa-4c65-8999-ed203e8ad2ba',
     };
     const rawMobile = (effectivePersonalInfo.mobileNumber || '').replace(/[^0-9]/g, '');
     const cleanMobile = rawMobile.length >= 10 ? rawMobile.slice(-10) : (rawMobile || authUser?.mobile_number || '9876543210');
     const rawEmail = (effectivePersonalInfo.email || '').trim();
     const validEmail = rawEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail) ? rawEmail : (authUser?.email || undefined);
-    const matchedKey = Object.keys(CATEGORY_MAP).find(k => categoryTitle.toLowerCase().includes(k.toLowerCase()));
-    const catId = matchedKey ? CATEGORY_MAP[matchedKey] : 'd8907f1c-7c4e-4ed4-bee9-c47d51e5b97a';
+
+    let catId = 'e33a2dd6-996d-4991-b2bc-88ecebd19aba';
+    try {
+      const catRes = await apiClient.get<any>(ApiRoutes.MEMBERSHIPS.CATEGORIES);
+      const serverCats = Array.isArray(catRes.data) ? catRes.data : ((catRes.data as any)?.items || []);
+      const matched = serverCats.find((c: any) =>
+        c.status === 'ACTIVE' &&
+        (c.name?.toLowerCase() === categoryTitle.toLowerCase() ||
+         categoryTitle.toLowerCase().includes(c.name?.toLowerCase()) ||
+         c.name?.toLowerCase().includes(categoryTitle.toLowerCase()))
+      );
+      if (matched?.id) {
+        catId = matched.id;
+      } else {
+        const matchedKey = Object.keys(CATEGORY_MAP).find(k => categoryTitle.toLowerCase().includes(k.toLowerCase()));
+        if (matchedKey && CATEGORY_MAP[matchedKey]) {
+          catId = CATEGORY_MAP[matchedKey];
+        } else if (serverCats.length > 0 && serverCats[0]?.id) {
+          catId = serverCats[0].id;
+        }
+      }
+    } catch {
+      const matchedKey = Object.keys(CATEGORY_MAP).find(k => categoryTitle.toLowerCase().includes(k.toLowerCase()));
+      catId = matchedKey ? CATEGORY_MAP[matchedKey] : 'e33a2dd6-996d-4991-b2bc-88ecebd19aba';
+    }
 
     let resolvedValidity = effectivePost?.validity || '1 Year';
     let resolvedValidityDays = 365;

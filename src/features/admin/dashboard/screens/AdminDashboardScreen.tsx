@@ -26,12 +26,14 @@ import {
   useRecentApplications,
   useUnreadNotifications,
 } from '../hooks/useDashboard';
+import { getFallbackDashboard } from '../services/dashboard.service';
 import { useEvents } from '../../content/events/hooks/useEvents';
 import {
   computeGrowthPercent,
   toApplicationStatusSegments,
   toComplaintsSegments,
   toGrowthChartPoints,
+  computeDynamicGrowthPoints,
   toRecentApplicationRows,
 } from '../utils/dashboard.utils';
 import { MembershipGrowthCard } from '../components/MembershipGrowthCard';
@@ -63,15 +65,18 @@ export const AdminDashboardScreen: React.FC<{
 }> = ({ navigation }) => {
   const monthOptions = useMemo(() => generateMonthOptions(), []);
   const [selectedMonthOption, setSelectedMonthOption] = useState(monthOptions[0]);
-  const [selectedRangeMonths, setSelectedRangeMonths] = useState(6);
+  const [selectedRange, setSelectedRange] = useState<string | number>('7d');
   const [monthPickerVisible, setMonthPickerVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('2026-10-23');
 
   const { width } = useWindowDimensions();
   const isMobile = width < 680;
 
-  const dashboardQuery = useDashboard(selectedMonthOption.value, selectedRangeMonths);
-  const recentMembersQuery = useRecentMembers();
+  const dashboardQuery = useDashboard(
+    selectedMonthOption.value,
+    typeof selectedRange === 'number' ? selectedRange : 6,
+  );
+  const recentMembersQuery = useRecentMembers(100);
   const recentApplicationsQuery = useRecentApplications();
   const unreadQuery = useUnreadNotifications();
   const eventsQuery = useEvents();
@@ -237,8 +242,8 @@ export const AdminDashboardScreen: React.FC<{
     );
   }, [recentApplicationsQuery.data, storeTick]);
 
-  const dashboard = dashboardQuery.data;
-  const isLoading = dashboardQuery.isLoading && !dashboard;
+  const dashboard = dashboardQuery.data || getFallbackDashboard();
+  const isLoading = dashboardQuery.isLoading && !dashboardQuery.data && !dashboard;
   const isError = dashboardQuery.isError && !dashboard;
 
   const jumpToTab = (tabName: string) => navigation.jumpTo(tabName);
@@ -269,7 +274,7 @@ export const AdminDashboardScreen: React.FC<{
     );
   }
 
-  if (isLoading || !dashboard) {
+  if (isLoading && !dashboard) {
     return (
       <View style={styles.container}>
         <DashboardHeader onNavigate={handleDrawerNavigate} />
@@ -282,17 +287,17 @@ export const AdminDashboardScreen: React.FC<{
             <SkeletonCard height={14} lines={1} style={styles.skeletonSubtitle} />
           </View>
           <View style={styles.statsRow}>
-            <SkeletonCard height={88} lines={1} />
-            <SkeletonCard height={88} lines={1} />
+            <SkeletonCard height={88} lines={1} style={{ flex: 1 }} />
+            <SkeletonCard height={88} lines={1} style={{ flex: 1 }} />
           </View>
           <View style={styles.statsRow}>
-            <SkeletonCard height={88} lines={1} />
-            <SkeletonCard height={88} lines={1} />
+            <SkeletonCard height={88} lines={1} style={{ flex: 1 }} />
+            <SkeletonCard height={88} lines={1} style={{ flex: 1 }} />
           </View>
           <SkeletonCard height={200} lines={1} />
           <View style={styles.twoColumnRow}>
-            <SkeletonCard height={180} lines={1} />
-            <SkeletonCard height={180} lines={1} />
+            <SkeletonCard height={180} lines={1} style={{ flex: 1 }} />
+            <SkeletonCard height={180} lines={1} style={{ flex: 1 }} />
           </View>
           <View style={isMobile ? styles.singleColumn : styles.twoColumnRow}>
             <SkeletonCard height={180} lines={1} />
@@ -304,19 +309,26 @@ export const AdminDashboardScreen: React.FC<{
   }
 
   const memberGrowth = computeGrowthPercent(
-    dashboard.users.thisMonth,
-    dashboard.users.prevMonth,
+    (dashboard.users?.thisMonth ?? 0),
+    (dashboard.users?.prevMonth ?? 0),
   );
   const applicationGrowth = computeGrowthPercent(
-    dashboard.assistance.thisMonth,
-    dashboard.assistance.prevMonth,
+    (dashboard.assistance?.thisMonth ?? 0),
+    (dashboard.assistance?.prevMonth ?? 0),
   );
   const complaintsGrowth = computeGrowthPercent(
-    dashboard.tickets.thisMonth,
-    dashboard.tickets.prevMonth,
+    (dashboard.tickets?.thisMonth ?? 0),
+    (dashboard.tickets?.prevMonth ?? 0),
   );
 
-  const growthPoints = toGrowthChartPoints(dashboard.memberGrowth);
+  const growthPoints = useMemo(() => {
+    return computeDynamicGrowthPoints(
+      selectedRange,
+      (dashboard.memberGrowth || []),
+      recentApprovedMembers,
+      selectedDate,
+    );
+  }, [selectedRange, (dashboard.memberGrowth || []), recentApprovedMembers, selectedDate]);
   const latestPoint = growthPoints[growthPoints.length - 1];
 
   const approvedStoreCount = (membershipApplicationsStore.getApplications() || []).filter(
@@ -476,9 +488,9 @@ export const AdminDashboardScreen: React.FC<{
         {/* Membership Growth Line Chart */}
         <MembershipGrowthCard
           points={growthPoints}
-          latestLabel={latestPoint ? `${latestPoint.label} 2026` : selectedMonthOption.label}
-          selectedRangeMonths={selectedRangeMonths}
-          onRangeMonthsChange={setSelectedRangeMonths}
+          latestLabel={latestPoint ? latestPoint.dateLabel || `${latestPoint.label} 2026` : selectedMonthOption.label}
+          selectedRange={selectedRange}
+          onRangeChange={setSelectedRange}
         />
 
         {/* 2 Donut Charts Side-by-Side */}
