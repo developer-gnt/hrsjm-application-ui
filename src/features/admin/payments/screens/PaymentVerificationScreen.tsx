@@ -162,7 +162,8 @@ export const PaymentVerificationScreen: React.FC<
             }
           />
         )}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={renderHeader()}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={ListSeparator}
         keyboardShouldPersistTaps="handled"

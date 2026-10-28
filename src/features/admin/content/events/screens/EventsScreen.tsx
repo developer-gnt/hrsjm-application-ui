@@ -36,6 +36,7 @@ import { AdminHeader } from '../../../../../app/navigation';
 import { useEvents, useRefreshEvents } from '../hooks/useEvents';
 import { SAMPLE_EVENTS, SAMPLE_EVENT_CATEGORIES } from '../data/sample-events';
 import { EventDetailsScreen } from './EventDetailsScreen';
+import { CreateEventScreen } from './CreateEventScreen';
 import type {
   EventListItem,
   EventStatusFilter,
@@ -127,6 +128,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
   const allowCreate = canCreate !== undefined ? canCreate : Boolean(isAdmin);
 
   const [internalSelectedEvent, setInternalSelectedEvent] = useState<EventListItem | null>(null);
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [uiState, setUiState] = useState<EventsUiState>('loading');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -250,10 +252,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
       onAddEvent();
       return;
     }
-    Alert.alert(
-      'Add Event',
-      'The Create Event screen will be implemented in the next phase of the Events module.',
-    );
+    setIsCreatingEvent(true);
   };
 
   const handleEventPress = (event: EventListItem) => {
@@ -318,11 +317,25 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
     }
   };
 
+  if (isCreatingEvent) {
+    return (
+      <CreateEventScreen
+        onCancel={() => {
+          setIsCreatingEvent(false);
+          refetch();
+        }}
+      />
+    );
+  }
+
   if (internalSelectedEvent) {
     return (
       <EventDetailsScreen
         event={internalSelectedEvent}
-        onBack={() => setInternalSelectedEvent(null)}
+        onBack={() => {
+          setInternalSelectedEvent(null);
+          refetch();
+        }}
         canManage={allowCreate}
       />
     );
@@ -410,7 +423,8 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
         <FlatList
           data={isLoading && !data ? [] : paginatedEvents}
           keyExtractor={item => item.id}
-          ListHeaderComponent={renderListHeader}
+          ListHeaderComponent={renderListHeader()}
+          keyboardShouldPersistTaps="handled"
           ListFooterComponent={
             filteredEvents.length > 0 ? (
               <AppPagination

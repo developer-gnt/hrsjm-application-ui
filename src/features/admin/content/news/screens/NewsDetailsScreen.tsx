@@ -37,6 +37,7 @@ import {
 } from '../components/NewsDetailsActionMenu';
 import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { updateNewsApi, deleteNewsApi } from '../services/news.service';
+import { EditNewsScreen } from './EditNewsScreen';
 import type { NewsListItem } from '../types/news.types';
 
 interface NewsDetailsScreenProps {
@@ -82,6 +83,7 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
   loading = false,
 }) => {
   const [news, setNews] = useState<NewsListItem | null>(initialNews);
+  const [isEditing, setIsEditing] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
   const [galleryFailed, setGalleryFailed] = useState<Record<string, boolean>>({});
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
@@ -94,17 +96,34 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
   // Android hardware back returns to the News list.
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (isEditing) {
+        setIsEditing(false);
+        return true;
+      }
       onBack();
       return true;
     });
     return () => subscription.remove();
-  }, [onBack]);
+  }, [onBack, isEditing]);
 
   // Reset the image fallbacks whenever a different news item is opened.
   useEffect(() => {
     setCoverFailed(false);
     setGalleryFailed({});
   }, [news?.id]);
+
+  if (isEditing && news) {
+    return (
+      <EditNewsScreen
+        news={news}
+        onBack={() => setIsEditing(false)}
+        onSuccess={updated => {
+          setNews(updated);
+          setIsEditing(false);
+        }}
+      />
+    );
+  }
 
   const handleShellTabPress = (tab: string) => {
     if (tab === 'news') {
@@ -130,7 +149,7 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
         onEdit(news);
         return;
       }
-      feedback.info('Edit News', 'Edit navigation is not configured.');
+      setIsEditing(true);
       return;
     }
     if (action === 'publish') {

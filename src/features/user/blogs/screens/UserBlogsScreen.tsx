@@ -307,7 +307,8 @@ export const UserBlogsScreen: React.FC<UserBlogsScreenProps> = ({
       <FlatList
         data={!searchQuery && selectedCategory === 'ALL' && featuredBlog ? regularBlogs : filteredBlogs}
         keyExtractor={item => `blog-${item.id}`}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={renderHeader()}
+        keyboardShouldPersistTaps="handled"
         renderItem={renderBlogItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}

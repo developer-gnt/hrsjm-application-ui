@@ -31,6 +31,8 @@ import { formatDate } from '../../../../../core/utils';
 import { AdminHeader } from '../../../../../app/navigation';
 import type { EventListItem, EventUiStatus } from '../types/events.types';
 import { EventStatusBadge } from '../components/EventStatusBadge';
+import { EditEventScreen } from './EditEventScreen';
+import { useDeleteEvent, useUpdateEventStatus } from '../hooks/useEvents';
 
 /**
  * TEMPORARY local time formatting helpers.
@@ -152,23 +154,48 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
   onEdit,
   canManage = true,
 }) => {
+  const [currentEvent, setCurrentEvent] = useState<EventListItem | null>(event);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isUnpublishing, setIsUnpublishing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
+
+  const deleteEventMutation = useDeleteEvent();
+  const updateEventStatusMutation = useUpdateEventStatus();
+
+  useEffect(() => {
+    setCurrentEvent(event);
+  }, [event]);
 
   // Android hardware back returns to the Events list (no-op on iOS).
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (isEditing) {
+        setIsEditing(false);
+        return true;
+      }
       onBack();
       return true;
     });
     return () => subscription.remove();
-  }, [onBack]);
+  }, [onBack, isEditing]);
 
   // Reset the cover-image fallback whenever a different event is opened.
   useEffect(() => {
     setCoverFailed(false);
-  }, [event?.id]);
+  }, [currentEvent?.id]);
 
-  if (!event) {
+  if (isEditing && currentEvent) {
+    return (
+      <EditEventScreen
+        event={currentEvent}
+        onBack={() => setIsEditing(false)}
+      />
+    );
+  }
+
+  if (!currentEvent) {
     return (
       <View style={styles.root}>
         <AdminHeader showBack title="Event Details" onBack={onBack} />
@@ -182,21 +209,125 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
     );
   }
 
-  const statusMeta = STATUS_SECTION_META[event.status];
+  const statusMeta = STATUS_SECTION_META[currentEvent.status] || STATUS_SECTION_META.UPCOMING;
 
-  const handlePlaceholderAction = (actionName: string) => {
-    // UI placeholder only: functionality is connected in a later phase.
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit();
+      return;
+    }
+    setIsEditing(true);
+  };
+
+  const handlePublish = async () => {
+    if (!currentEvent) return;
+    if (currentEvent.status === 'UPCOMING') {
+      Alert.alert('Already Published', 'This event is already published as Upcoming.');
+      return;
+    }
+
     Alert.alert(
-      actionName,
-      'This is a UI placeholder. Actual functionality will be connected in a later phase after backend integration.',
+      'Publish Event',
+      `Publish "${currentEvent.title}" to make it public and open for registration?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Publish',
+          onPress: async () => {
+            setIsPublishing(true);
+            try {
+              await updateEventStatusMutation.mutateAsync({
+                id: currentEvent.id,
+                status: 'UPCOMING',
+              });
+              setCurrentEvent(prev => (prev ? { ...prev, status: 'UPCOMING' } : null));
+              Alert.alert('Event Published', `"${currentEvent.title}" is now published and open for registration.`);
+            } catch (err: any) {
+              const msg = err?.response?.data?.message || err?.message || 'Failed to publish event.';
+              Alert.alert('Error', Array.isArray(msg) ? msg[0] : msg);
+            } finally {
+              setIsPublishing(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleUnpublish = async () => {
+    if (!currentEvent) return;
+    if (currentEvent.status === 'DRAFT') {
+      Alert.alert('Already Draft', 'This event is already in Draft status.');
+      return;
+    }
+
+    Alert.alert(
+      'Unpublish Event',
+      `Are you sure you want to unpublish "${currentEvent.title}"? It will be moved to Draft and will no longer be visible to members.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Unpublish',
+          style: 'destructive',
+          onPress: async () => {
+            setIsUnpublishing(true);
+            try {
+              await updateEventStatusMutation.mutateAsync({
+                id: currentEvent.id,
+                status: 'DRAFT',
+              });
+              setCurrentEvent(prev => (prev ? { ...prev, status: 'DRAFT' } : null));
+              Alert.alert('Event Unpublished', `"${currentEvent.title}" has been moved to Draft.`);
+            } catch (err: any) {
+              const msg = err?.response?.data?.message || err?.message || 'Failed to unpublish event.';
+              Alert.alert('Error', Array.isArray(msg) ? msg[0] : msg);
+            } finally {
+              setIsUnpublishing(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDelete = () => {
+    if (!currentEvent) return;
+
+    Alert.alert(
+      'Delete Event',
+      `Are you sure you want to permanently delete "${currentEvent.title}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              await deleteEventMutation.mutateAsync(currentEvent.id);
+              Alert.alert('Event Deleted', `"${currentEvent.title}" has been deleted.`, [
+                {
+                  text: 'OK',
+                  onPress: onBack,
+                },
+              ]);
+            } catch (err: any) {
+              const msg = err?.response?.data?.message || err?.message || 'Failed to delete event.';
+              Alert.alert('Error', Array.isArray(msg) ? msg[0] : msg);
+            } finally {
+              setIsDeleting(false);
+            }
+          },
+        },
+      ],
     );
   };
 
   const handleShareEvent = async () => {
     try {
       await Share.share({
-        title: event.title,
-        message: `Join "${event.title}" on ${formatDate(event.startAt)} at ${event.location || 'HRSJM'}. Organized by ${event.organizer || 'HRSJM'}.`,
+        title: currentEvent.title,
+        message: `Join "${currentEvent.title}" on ${formatDate(currentEvent.startAt)} at ${currentEvent.location || 'HRSJM'}. Organized by ${currentEvent.organizer || 'HRSJM'}.`,
       });
     } catch {
       // ignore
@@ -214,9 +345,9 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
         >
           {/* Cover image */}
           <View style={styles.coverWrapper}>
-            {event.coverImageUrl && !coverFailed ? (
+            {currentEvent.coverImageUrl && !coverFailed ? (
               <Image
-                source={{ uri: event.coverImageUrl }}
+                source={{ uri: currentEvent.coverImageUrl }}
                 style={styles.coverImage}
                 resizeMode="cover"
                 onError={() => setCoverFailed(true)}
@@ -229,72 +360,71 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>{event.title}</Text>
+          <Text style={styles.title}>{currentEvent.title}</Text>
 
           {/* Category + status badges */}
           <View style={styles.badgesRow}>
-            {event.category ? (
+            {currentEvent.category ? (
               <AppBadge
-                label={event.category}
+                label={currentEvent.category}
                 customBg={AdminColors.successLight}
                 customTextColor={AdminColors.success}
                 style={styles.badge}
               />
             ) : null}
-            <EventStatusBadge status={event.status} style={styles.badge} />
+            <EventStatusBadge status={currentEvent.status} style={styles.badge} />
           </View>
 
           {/* Date / time / location */}
           <AppCard variant="outlined" padding="base" style={styles.infoCard}>
             <View style={styles.infoRow}>
               <Calendar size={18} color={AdminColors.primary} />
-              <Text style={styles.infoValue}>{formatDate(event.startAt)}</Text>
+              <Text style={styles.infoValue}>{formatDate(currentEvent.startAt)}</Text>
             </View>
             <View style={styles.infoRow}>
               <Clock size={18} color={AdminColors.primary} />
               <Text style={styles.infoValue}>
-                {formatTimeRange(event.startAt, event.endAt)}
+                {formatTimeRange(currentEvent.startAt, currentEvent.endAt)}
               </Text>
             </View>
-            {event.location ? (
+            {currentEvent.location ? (
               <View style={styles.infoRow}>
                 <MapPin size={18} color={AdminColors.primary} />
-                <Text style={styles.infoValue}>{event.location}</Text>
+                <Text style={styles.infoValue}>{currentEvent.location}</Text>
               </View>
             ) : null}
           </AppCard>
 
-
           {/* Description */}
           <Text style={styles.sectionHeader}>Description</Text>
           <Text style={styles.descriptionText}>
-            {event.description ?? 'No description available yet.'}
+            {currentEvent.description ?? 'No description available yet.'}
           </Text>
 
           {/* Additional information — only fields supported by the current Event type */}
-          {(event.organizer || event.category) && (
+          {(currentEvent.organizer || currentEvent.category) && (
             <>
               <Text style={styles.sectionHeader}>Additional Information</Text>
               <View style={styles.additionalList}>
-                {event.organizer ? (
+                {currentEvent.organizer ? (
                   <AppCard variant="outlined" padding="sm" style={styles.additionalCard}>
                     <View style={styles.additionalIconBox}>
                       <Text style={styles.additionalIcon}>🏛️</Text>
                     </View>
                     <View style={styles.additionalText}>
                       <Text style={styles.additionalLabel}>Organized By</Text>
-                      <Text style={styles.additionalValue}>{event.organizer}</Text>
+                      <Text style={styles.additionalValue}>{currentEvent.organizer}</Text>
                     </View>
                   </AppCard>
                 ) : null}
-                {event.category ? (
+                {currentEvent.category ? (
                   <AppCard variant="outlined" padding="sm" style={styles.additionalCard}>
                     <View style={styles.additionalIconBox}>
                       <Text style={styles.additionalIcon}>🏷️</Text>
                     </View>
                     <View style={styles.additionalText}>
                       <Text style={styles.additionalLabel}>Event Type</Text>
-                      <Text style={styles.additionalValue}>{event.category}</Text>
+                      <Text style={styles.additionalValue}>{currentEvent.category}</Text>
                     </View>
                   </AppCard>
                 ) : null}
@@ -325,7 +455,7 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
                   title="Edit Event"
                   variant="outline"
                   size="sm"
-                  onPress={onEdit ?? (() => handlePlaceholderAction('Edit Event'))}
+                  onPress={handleEdit}
                   icon={<Text style={styles.actionIcon}>✏️</Text>}
                   style={styles.actionButton}
                 />
@@ -333,7 +463,9 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
                   title="Publish Event"
                   variant="primary"
                   size="sm"
-                  onPress={() => handlePlaceholderAction('Publish Event')}
+                  loading={isPublishing}
+                  disabled={isPublishing || isUnpublishing || isDeleting}
+                  onPress={handlePublish}
                   icon={<Text style={styles.actionIcon}>📣</Text>}
                   style={styles.actionButton}
                 />
@@ -343,7 +475,9 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
                   title="Unpublish Event"
                   variant="outline"
                   size="sm"
-                  onPress={() => handlePlaceholderAction('Unpublish Event')}
+                  loading={isUnpublishing}
+                  disabled={isPublishing || isUnpublishing || isDeleting}
+                  onPress={handleUnpublish}
                   icon={<Text style={styles.actionIcon}>🚫</Text>}
                   style={styles.dangerActionButton}
                   textStyle={styles.dangerOutlineText}
@@ -352,18 +486,13 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
                   title="Delete Event"
                   variant="outline"
                   size="sm"
-                  onPress={() => handlePlaceholderAction('Delete Event')}
+                  loading={isDeleting}
+                  disabled={isPublishing || isUnpublishing || isDeleting}
+                  onPress={handleDelete}
                   icon={<Text style={styles.actionIcon}>🗑️</Text>}
                   style={styles.dangerActionButton}
                   textStyle={styles.dangerOutlineText}
                 />
-              </View>
-              <View style={styles.placeholderNote}>
-                <Text style={styles.placeholderIcon}>ⓘ</Text>
-                <Text style={styles.placeholderText}>
-                  Publish, unpublish and delete are UI placeholders. They will be
-                  connected in a later phase after backend integration.
-                </Text>
               </View>
             </>
           ) : (

@@ -12,7 +12,10 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core';
+import { AppRoutes } from '../../../../core/constants/routes';
+import { AdminSidebar } from '../../../../app/navigation/AdminSidebar';
 import { usersStore } from '../services/usersStore';
 import { UserType, UserGender } from '../types/user.types';
 import { UsersHeader } from '../components/UsersHeader';
@@ -68,6 +71,25 @@ export const AddUserScreen: React.FC<AddUserScreenProps> = ({
   showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+
+  const handleSidebarNavigate = (target: string) => {
+    setSidebarVisible(false);
+    if (navigation?.navigate) {
+      if (
+        target === AppRoutes.ADMIN_DASHBOARD_TAB ||
+        target === AppRoutes.ADMIN_MEMBERS_TAB ||
+        target === AppRoutes.ADMIN_APPLICATIONS_TAB ||
+        target === AppRoutes.ADMIN_COMPLAINTS_TAB ||
+        target === AppRoutes.ADMIN_MORE_TAB
+      ) {
+        navigation.navigate(target);
+      } else {
+        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: target });
+      }
+    }
+  };
 
   // Form Field States
   const [fullName, setFullName] = useState('');
@@ -182,9 +204,15 @@ export const AddUserScreen: React.FC<AddUserScreenProps> = ({
       {/* Top Header */}
       <UsersHeader
         paddingTop={insets.top}
-        onMenuPress={onMenuPress}
-        onNotificationsPress={onNotificationsPress}
-        onProfilePress={onProfilePress}
+        onMenuPress={onMenuPress || (() => setSidebarVisible(true))}
+        onNotificationsPress={
+          onNotificationsPress ||
+          (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS }))
+        }
+        onProfilePress={
+          onProfilePress ||
+          (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE }))
+        }
       />
 
       <KeyboardAvoidingView
@@ -639,6 +667,13 @@ export const AddUserScreen: React.FC<AddUserScreenProps> = ({
           />
         </View>
       )}
+
+      {/* Slide-in Admin Sidebar */}
+      <AdminSidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        onNavigate={handleSidebarNavigate}
+      />
     </View>
   );
 };
