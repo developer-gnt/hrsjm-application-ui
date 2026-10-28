@@ -339,7 +339,7 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
           data={uiState === 'loading' ? [] : paginatedNews}
           keyExtractor={item => item.id}
           ListHeaderComponent={renderListHeader()}
-          keyboardShouldPersistTaps="handled"
+          
           ListFooterComponent={
             filteredNews.length > 0 ? (
               <AppPagination
@@ -385,7 +385,7 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
               colors={[AdminColors.primary]}
             />
           }
-          keyboardShouldPersistTaps="handled"
+          
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}

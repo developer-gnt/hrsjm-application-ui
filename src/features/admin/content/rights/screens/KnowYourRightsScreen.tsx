@@ -474,7 +474,7 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
             data={filteredArticles}
             keyExtractor={item => item.id}
             ListHeaderComponent={renderHeader()}
-            keyboardShouldPersistTaps="handled"
+            
             renderItem={({ item }) => (
               <RightsCard
                 article={item}
@@ -501,7 +501,7 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
                 colors={[AdminColors.primary]}
               />
             }
-            keyboardShouldPersistTaps="handled"
+            
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}

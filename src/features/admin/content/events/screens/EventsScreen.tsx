@@ -35,7 +35,6 @@ import { EventFilters } from '../components/EventFilters';
 import { EventSummaryStats } from '../components/EventSummaryStats';
 import { AdminHeader } from '../../../../../app/navigation';
 import { useEvents, useRefreshEvents, useDeleteEvent } from '../hooks/useEvents';
-import { CreateEventScreen } from './CreateEventScreen';
 import { EditEventScreen } from './EditEventScreen';
 import { SAMPLE_EVENTS, SAMPLE_EVENT_CATEGORIES } from '../data/sample-events';
 import { EventDetailsScreen } from './EventDetailsScreen';
@@ -442,7 +441,7 @@ onBack={() => {
           data={isLoading && !data ? [] : paginatedEvents}
           keyExtractor={item => item.id}
           ListHeaderComponent={renderListHeader()}
-          keyboardShouldPersistTaps="handled"
+          
           ListFooterComponent={
             filteredEvents.length > 0 ? (
               <AppPagination
@@ -490,7 +489,7 @@ onBack={() => {
               colors={[AdminColors.primary]}
             />
           }
-          keyboardShouldPersistTaps="handled"
+          
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}

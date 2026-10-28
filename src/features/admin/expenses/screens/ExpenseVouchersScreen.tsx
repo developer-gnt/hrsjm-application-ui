@@ -231,10 +231,10 @@ export const ExpenseVouchersScreen: React.FC<ExpenseVouchersScreenProps> = ({
           />
         )}
         ListHeaderComponent={renderHeader()}
-        keyboardShouldPersistTaps="handled"
+        
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={ListSeparator}
-        keyboardShouldPersistTaps="handled"
+        
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
