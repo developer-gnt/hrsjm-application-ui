@@ -12,7 +12,10 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { AdminColors, BorderRadius, FontFamilies, Spacing } from '../../../../core';
+import { AppRoutes } from '../../../../core/constants/routes';
+import { AdminSidebar } from '../../../../app/navigation/AdminSidebar';
 import { apiClient } from '../../../../core/api/client';
 import { useAuthStore } from '../../../auth/store/authStore';
 import { usersStore } from '../services/usersStore';
@@ -52,6 +55,25 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
   showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+
+  const handleSidebarNavigate = (target: string) => {
+    setSidebarVisible(false);
+    if (navigation?.navigate) {
+      if (
+        target === AppRoutes.ADMIN_DASHBOARD_TAB ||
+        target === AppRoutes.ADMIN_MEMBERS_TAB ||
+        target === AppRoutes.ADMIN_APPLICATIONS_TAB ||
+        target === AppRoutes.ADMIN_COMPLAINTS_TAB ||
+        target === AppRoutes.ADMIN_MORE_TAB
+      ) {
+        navigation.navigate(target);
+      } else {
+        navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: target });
+      }
+    }
+  };
 
   useSyncExternalStore(usersStore.subscribe, usersStore.getSnapshot, usersStore.getSnapshot);
 
@@ -73,9 +95,15 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
       <View style={styles.screen}>
         <UsersHeader
           paddingTop={insets.top}
-          onMenuPress={onMenuPress}
-          onNotificationsPress={onNotificationsPress}
-          onProfilePress={onProfilePress}
+          onMenuPress={onMenuPress || (() => setSidebarVisible(true))}
+          onNotificationsPress={
+            onNotificationsPress ||
+            (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS }))
+          }
+          onProfilePress={
+            onProfilePress ||
+            (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE }))
+          }
         />
         <View style={styles.notFoundWrap}>
           <Text style={styles.notFoundTitle}>User Not Found</Text>
@@ -102,6 +130,11 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
             />
           </View>
         )}
+        <AdminSidebar
+          visible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          onNavigate={handleSidebarNavigate}
+        />
       </View>
     );
   }
@@ -192,9 +225,15 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
     <View style={styles.screen}>
       <UsersHeader
         paddingTop={insets.top}
-        onMenuPress={onMenuPress}
-        onNotificationsPress={onNotificationsPress}
-        onProfilePress={onProfilePress}
+        onMenuPress={onMenuPress || (() => setSidebarVisible(true))}
+        onNotificationsPress={
+          onNotificationsPress ||
+          (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS }))
+        }
+        onProfilePress={
+          onProfilePress ||
+          (() => navigation?.navigate?.(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE }))
+        }
       />
 
       <KeyboardAvoidingView
@@ -706,6 +745,13 @@ export const UserVerificationScreen: React.FC<UserVerificationScreenProps> = ({
           />
         </View>
       )}
+
+      {/* Slide-in Admin Sidebar */}
+      <AdminSidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        onNavigate={handleSidebarNavigate}
+      />
     </View>
   );
 };

@@ -338,7 +338,8 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
         <FlatList
           data={uiState === 'loading' ? [] : paginatedNews}
           keyExtractor={item => item.id}
-          ListHeaderComponent={renderListHeader}
+          ListHeaderComponent={renderListHeader()}
+          keyboardShouldPersistTaps="handled"
           ListFooterComponent={
             filteredNews.length > 0 ? (
               <AppPagination

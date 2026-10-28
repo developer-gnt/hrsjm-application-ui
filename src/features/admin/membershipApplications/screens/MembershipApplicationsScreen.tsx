@@ -220,14 +220,16 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
         }
       }
 
-      // Search query filter (matches name, application ID, phone, or email)
+      // Search query filter (matches name, application ID, ID, membership type, phone, or email)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const matchName = (app.applicantName || '').toLowerCase().includes(query);
         const matchAppId = (app.applicationId || '').toLowerCase().includes(query);
-        const matchPhone = app.phone ? app.phone.toLowerCase().includes(query) : false;
-        const matchEmail = app.email ? app.email.toLowerCase().includes(query) : false;
-        return matchName || matchAppId || matchPhone || matchEmail;
+        const matchId = (app.id || '').toLowerCase().includes(query);
+        const matchType = (app.membershipType || '').toLowerCase().includes(query);
+        const matchPhone = app.phone ? String(app.phone).toLowerCase().includes(query) : false;
+        const matchEmail = app.email ? String(app.email).toLowerCase().includes(query) : false;
+        return matchName || matchAppId || matchId || matchType || matchPhone || matchEmail;
       }
       return true;
     });
@@ -404,8 +406,9 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
       <FlatList
         data={paginatedApplications}
         keyExtractor={item => item.id}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={renderHeader()}
         ListEmptyComponent={renderEmptyState}
+        keyboardShouldPersistTaps="handled"
         ListFooterComponent={
           filteredApplications.length > 0 ? (
             <AppPagination

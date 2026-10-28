@@ -473,7 +473,8 @@ export const KnowYourRightsScreen: React.FC<KnowYourRightsScreenProps> = ({
           <FlatList
             data={filteredArticles}
             keyExtractor={item => item.id}
-            ListHeaderComponent={renderHeader}
+            ListHeaderComponent={renderHeader()}
+            keyboardShouldPersistTaps="handled"
             renderItem={({ item }) => (
               <RightsCard
                 article={item}

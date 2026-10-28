@@ -66,17 +66,14 @@ interface EditNewsScreenProps {
   news: NewsListItem;
   /** Back navigation to News Details (back arrow, Cancel, discard). */
   onBack: () => void;
+  /** Called after successful update. */
+  onSuccess?: (updated: NewsListItem) => void;
 }
 
 /**
  * Edit News screen (Edit News reference / PRD).
- *
- * The SAME shared NewsForm as Create News, pre-filled with the selected
- * news item's data. UI-only phase: validation is local and both save actions
- * show UI-only confirmations — NO API is called and nothing claims the news
- * was actually updated on a backend.
  */
-export const EditNewsScreen: React.FC<EditNewsScreenProps> = ({ news, onBack }) => {
+export const EditNewsScreen: React.FC<EditNewsScreenProps> = ({ news, onBack, onSuccess }) => {
   const initialForm = useMemo(() => mapNewsToForm(news), [news]);
 
   return (
@@ -87,6 +84,7 @@ export const EditNewsScreen: React.FC<EditNewsScreenProps> = ({ news, onBack }) 
       initialForm={initialForm}
       newsId={news.id}
       onCancel={onBack}
+      onSuccess={onSuccess || onBack}
     />
   );
 };

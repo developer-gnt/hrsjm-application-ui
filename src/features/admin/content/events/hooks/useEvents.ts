@@ -6,6 +6,7 @@ import {
   createEventApi,
   updateEventApi,
   deleteEventApi,
+  updateEventStatusApi,
   EventsFilterParams,
 } from '../services/events.service';
 import type { CreateEventFormState } from '../types/events.types';
@@ -64,6 +65,25 @@ export const useDeleteEvent = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
+    },
+  });
+};
+
+export const useUpdateEventStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: 'UPCOMING' | 'COMPLETED' | 'CANCELLED' | 'DRAFT';
+    }) => updateEventStatusApi(id, status),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEYS.all });
+      queryClient.invalidateQueries({
+        queryKey: EVENTS_QUERY_KEYS.details(variables.id),
+      });
     },
   });
 };

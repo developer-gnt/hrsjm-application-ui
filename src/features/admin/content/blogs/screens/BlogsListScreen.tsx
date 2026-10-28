@@ -368,7 +368,8 @@ export const BlogsListScreen: React.FC<BlogsListScreenProps> = ({
         <FlatList
           data={uiState === 'loading' ? [] : paginatedBlogs}
           keyExtractor={item => item.id}
-          ListHeaderComponent={renderListHeader}
+          ListHeaderComponent={renderListHeader()}
+          keyboardShouldPersistTaps="handled"
           ListFooterComponent={
             filteredBlogs.length > 0 ? (
               <AppPagination

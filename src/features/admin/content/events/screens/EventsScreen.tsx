@@ -39,6 +39,7 @@ import { CreateEventScreen } from './CreateEventScreen';
 import { EditEventScreen } from './EditEventScreen';
 import { SAMPLE_EVENTS, SAMPLE_EVENT_CATEGORIES } from '../data/sample-events';
 import { EventDetailsScreen } from './EventDetailsScreen';
+import { CreateEventScreen } from './CreateEventScreen';
 import type {
   EventListItem,
   EventStatusFilter,
@@ -130,7 +131,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
   const allowCreate = canCreate !== undefined ? canCreate : Boolean(isAdmin);
 
   const [internalSelectedEvent, setInternalSelectedEvent] = useState<EventListItem | null>(null);
-  const [creatingEvent, setCreatingEvent] = useState(false);
+const [creatingEvent, setCreatingEvent] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventListItem | null>(null);
   const [eventToDelete, setEventToDelete] = useState<EventListItem | null>(null);
   const deleteMutation = useDeleteEvent();
@@ -255,7 +256,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
       onAddEvent();
       return;
     }
-    setCreatingEvent(true);
+setCreatingEvent(true);
   };
 
   const handleEventPress = (event: EventListItem) => {
@@ -315,7 +316,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
     }
   };
 
-  if (creatingEvent) {
+if (creatingEvent) {
     return (
       <CreateEventScreen
         onCancel={() => {
@@ -342,7 +343,10 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
     return (
       <EventDetailsScreen
         event={internalSelectedEvent}
-        onBack={() => setInternalSelectedEvent(null)}
+onBack={() => {
+          setInternalSelectedEvent(null);
+          refetch();
+        }}
         onEdit={() => {
           setEditingEvent(internalSelectedEvent);
           setInternalSelectedEvent(null);
@@ -437,7 +441,8 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({
         <FlatList
           data={isLoading && !data ? [] : paginatedEvents}
           keyExtractor={item => item.id}
-          ListHeaderComponent={renderListHeader}
+          ListHeaderComponent={renderListHeader()}
+          keyboardShouldPersistTaps="handled"
           ListFooterComponent={
             filteredEvents.length > 0 ? (
               <AppPagination
