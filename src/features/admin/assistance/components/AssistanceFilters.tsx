@@ -604,8 +604,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 46,
     borderRadius: BorderRadius.lg,
-    backgroundColor: '#0F2C59',
-    shadowColor: '#0F2C59',
+    backgroundColor: '#FAD465',
+    shadowColor: '#FAD465',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3,
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
   applyBtnText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#06294D',
   },
 });
 

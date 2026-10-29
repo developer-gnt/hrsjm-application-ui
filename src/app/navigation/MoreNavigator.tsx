@@ -8,6 +8,7 @@ import { ExpenseVouchersScreen, CreateExpenseVoucherScreen, ExpenseDetailsScreen
 import { ReceiptVouchersScreen, CreateReceiptVoucherScreen, ReceiptVoucherDetailsScreen } from '../../features/admin/receipts';
 import {
   ChartOfAccountsScreen,
+  PassbookScreen,
   GeneralLedgerScreen,
   JournalEntriesScreen,
 } from '../../features/admin/accounting';
@@ -153,18 +154,11 @@ export const MoreNavigator: React.FC = () => (
       component={ReceiptVoucherDetailsScreen}
     />
 
-    {/* Accounting — Phase 6 (Real integrated screens) */}
+    {/* Accounting — Passbook & Daily Cash */}
     <Stack.Screen name={AppRoutes.ACCOUNTING}>
       {({ navigation }) => (
-        <ChartOfAccountsScreen
+        <PassbookScreen
           onBack={navigation.goBack}
-          onViewAccountLedger={node =>
-            navigation.navigate(AppRoutes.GENERAL_LEDGER as any, {
-              accountId: node.id,
-              accountName: node.account_name,
-              accountCode: node.account_code,
-            })
-          }
           onNavigate={(target: string) => {
             if (target === 'AdminMoreTab') {
               navigation.navigate('MoreMenu' as any);

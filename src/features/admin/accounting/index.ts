@@ -19,3 +19,4 @@ export * from './components/PaymentMethodSelector';
 export * from './screens/ChartOfAccountsScreen';
 export * from './screens/GeneralLedgerScreen';
 export * from './screens/JournalEntriesScreen';
+export * from './screens/PassbookScreen';

@@ -120,6 +120,51 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
   const stats = usersStore.getStats();
   const allUsers = usersStore.getAllUsers();
 
+  // Dynamic real-time counts for the type tabs:
+  // Reflects users matching active status filters & search query
+  const tabStats = useMemo(() => {
+    let pool = allUsers;
+    if (selectedStatus !== 'all') {
+      pool = pool.filter(u => u.status === selectedStatus);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      pool = pool.filter(u =>
+        (u.name || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.phone || '').toLowerCase().includes(q) ||
+        (u.memberId && u.memberId.toLowerCase().includes(q))
+      );
+    }
+
+    let admins = 0;
+    let members = 0;
+    let seekers = 0;
+    let donors = 0;
+    let general = 0;
+
+    for (const u of pool) {
+      if (u.userType === 'admin') admins++;
+      else if (u.userType === 'member') members++;
+      else if (u.userType === 'seeker') seekers++;
+      else if (u.userType === 'donor') donors++;
+      else if (u.userType === 'general') general++;
+    }
+
+    return {
+      total: pool.length,
+      adminsCount: admins,
+      membersCount: members,
+      seekersCount: seekers,
+      donorsCount: donors,
+      generalCount: general,
+      active: stats.active,
+      approved: stats.approved,
+      pending: stats.pending,
+      blocked: stats.blocked,
+    };
+  }, [allUsers, selectedStatus, searchQuery, stats]);
+
   const usersList = usersStore.getUsers({
     typeTab: activeTab,
     status: selectedStatus,
@@ -176,6 +221,7 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
   let activeFilterCount = 0;
   if (selectedStatus !== 'all') activeFilterCount++;
   if (activeTab !== 'all') activeFilterCount++;
+  if (searchQuery.trim().length > 0) activeFilterCount++;
   if (extraFilters.joinedFrom || extraFilters.joinedTo) activeFilterCount++;
   if (extraFilters.sortBy && extraFilters.sortBy !== 'newest') activeFilterCount++;
 
@@ -237,7 +283,7 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
           <UsersTypeTabs
             activeTab={activeTab}
             onSelectTab={setActiveTab}
-            stats={stats}
+            stats={tabStats}
           />
 
           {/* Active Filters Summary Bar */}
@@ -247,11 +293,23 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
                 {selectedStatus !== 'all' && (
                   <TouchableOpacity
                     style={styles.activeFilterPill}
-                    onPress={() => setSelectedStatus('all')}
+                    onPress={() => {
+                      setSelectedStatus('all');
+                      setExtraFilters(prev => ({ ...prev, status: 'all' }));
+                    }}
                     activeOpacity={0.7}
+                    accessibilityLabel="Remove status filter"
                   >
                     <Text style={styles.activeFilterPillText}>
-                      {`Status: ${selectedStatus === 'active' ? 'Approved' : selectedStatus.toUpperCase()} ✕`}
+                      {`Status: ${
+                        selectedStatus === 'active'
+                          ? 'Approved'
+                          : selectedStatus === 'pending'
+                          ? 'Pending Review'
+                          : selectedStatus === 'blocked'
+                          ? 'Blocked'
+                          : selectedStatus
+                      } ✕`}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -259,11 +317,40 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
                 {activeTab !== 'all' && (
                   <TouchableOpacity
                     style={styles.activeFilterPill}
-                    onPress={() => setActiveTab('all')}
+                    onPress={() => {
+                      setActiveTab('all');
+                      setExtraFilters(prev => ({ ...prev, typeTab: 'all' }));
+                    }}
                     activeOpacity={0.7}
+                    accessibilityLabel="Remove user type filter"
                   >
                     <Text style={styles.activeFilterPillText}>
-                      {`Type: ${activeTab.toUpperCase()} ✕`}
+                      {`Type: ${
+                        activeTab === 'admin'
+                          ? 'Admins'
+                          : activeTab === 'member'
+                          ? 'Members'
+                          : activeTab === 'seeker'
+                          ? 'Donation Seekers'
+                          : activeTab === 'donor'
+                          ? 'Donors'
+                          : activeTab === 'general'
+                          ? 'Users'
+                          : activeTab
+                      } ✕`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {searchQuery.trim().length > 0 && (
+                  <TouchableOpacity
+                    style={styles.activeFilterPill}
+                    onPress={() => setSearchQuery('')}
+                    activeOpacity={0.7}
+                    accessibilityLabel="Clear search query"
+                  >
+                    <Text style={styles.activeFilterPillText}>
+                      {`Search: "${searchQuery.trim()}" ✕`}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -298,7 +385,15 @@ export const UsersListScreen: React.FC<UsersListScreenProps> = ({
                     activeOpacity={0.7}
                   >
                     <Text style={styles.activeFilterPillText}>
-                      {`Sort: ${extraFilters.sortBy} ✕`}
+                      {`Sort: ${
+                        extraFilters.sortBy === 'oldest'
+                          ? 'Oldest First'
+                          : extraFilters.sortBy === 'name_asc'
+                          ? 'Name (A to Z)'
+                          : extraFilters.sortBy === 'name_desc'
+                          ? 'Name (Z to A)'
+                          : extraFilters.sortBy
+                      } ✕`}
                     </Text>
                   </TouchableOpacity>
                 )}
