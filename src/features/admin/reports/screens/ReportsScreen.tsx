@@ -43,7 +43,7 @@ import {
   useReportsAnalytics,
   useTrialBalanceSummary,
 } from '../hooks/useReports';
-import { getDefaultDatePreset } from '../utils/reportDates';
+import { getDatePresets, getDefaultDatePreset } from '../utils/reportDates';
 import { formatINR } from '../../../../core/utils/currency';
 import type { DatePresetKey, DateRangePreset } from '../types/reports.types';
 
@@ -283,7 +283,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               </View>
             </View>
             <View style={styles.timeDropdownChip}>
-              <Text style={styles.timeDropdownText}>Last 30 Days</Text>
+              <Text style={styles.timeDropdownText}>{currentPresetLabel}</Text>
             </View>
           </View>
 
@@ -405,7 +405,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               </View>
             </View>
             <View style={styles.timeDropdownChip}>
-              <Text style={styles.timeDropdownText}>Last 30 Days</Text>
+              <Text style={styles.timeDropdownText}>{currentPresetLabel}</Text>
             </View>
           </View>
 
@@ -494,7 +494,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               </View>
             </View>
             <View style={styles.timeDropdownChip}>
-              <Text style={styles.timeDropdownText}>Last 30 Days</Text>
+              <Text style={styles.timeDropdownText}>{currentPresetLabel}</Text>
             </View>
           </View>
 
@@ -611,7 +611,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               </View>
             </View>
             <View style={styles.timeDropdownChip}>
-              <Text style={styles.timeDropdownText}>Last 30 Days</Text>
+              <Text style={styles.timeDropdownText}>{currentPresetLabel}</Text>
             </View>
           </View>
 
@@ -673,7 +673,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               </View>
             </View>
             <View style={styles.timeDropdownChip}>
-              <Text style={styles.timeDropdownText}>Last 30 Days</Text>
+              <Text style={styles.timeDropdownText}>{currentPresetLabel}</Text>
             </View>
           </View>
 
