@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -51,7 +50,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
   onSubmit,
   isSubmitting = false,
 }) => {
-  const { data: categories = [], isLoading: isLoadingCategories } = useMembershipCategories();
+  const { data: categories = [] } = useMembershipCategories();
 
   const [fullName, setFullName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -131,10 +130,6 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
 
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       newErrors.email = 'Please enter a valid email address.';
-    }
-
-    if (!selectedCategoryId) {
-      newErrors.category = 'Please select a membership category.';
     }
 
     if (qualification === 'Other' && !customQualification.trim()) {
@@ -221,79 +216,6 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Membership Category Section */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Membership Category</Text>
-                <Text style={styles.sectionRequired}>*</Text>
-              </View>
-              <Text style={styles.sectionHint}>
-                Select the official unit designation for this member
-              </Text>
-
-              {isLoadingCategories ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color={BrandColors.navy} />
-                  <Text style={styles.loadingText}>Loading membership tiers...</Text>
-                </View>
-              ) : (
-                <View style={styles.categoryList}>
-                  {categories.map((cat) => {
-                    const isSelected = selectedCategoryId === cat.id;
-                    const rawFee = Number(cat.fee) || 3000;
-                    const feeFormatted = `₹${rawFee.toLocaleString('en-IN')}`;
-
-                    return (
-                      <TouchableOpacity
-                        key={cat.id}
-                        onPress={() => setSelectedCategoryId(cat.id)}
-                        style={[
-                          styles.categoryCard,
-                          isSelected && styles.categoryCardSelected,
-                        ]}
-                        activeOpacity={0.8}
-                      >
-                        <View style={styles.categoryRadio}>
-                          <View
-                            style={[
-                              styles.radioOuter,
-                              isSelected && styles.radioOuterSelected,
-                            ]}
-                          >
-                            {isSelected && <View style={styles.radioInner} />}
-                          </View>
-                        </View>
-                        <View style={styles.categoryInfo}>
-                          <View style={styles.categoryTitleRow}>
-                            <Text
-                              style={[
-                                styles.categoryName,
-                                isSelected && styles.categoryNameSelected,
-                              ]}
-                              numberOfLines={1}
-                            >
-                              {cat.name}
-                            </Text>
-                            <View style={styles.feeBadge}>
-                              <Text style={styles.feeText}>{feeFormatted}</Text>
-                            </View>
-                          </View>
-                          {cat.description ? (
-                            <Text style={styles.categoryDescription} numberOfLines={2}>
-                              {cat.description}
-                            </Text>
-                          ) : null}
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              )}
-              {errors.category ? (
-                <Text style={styles.errorText}>{errors.category}</Text>
-              ) : null}
-            </View>
-
             {/* Applicant Details Section */}
             <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Personal Details</Text>
@@ -339,7 +261,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
 
               {/* Email Address */}
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Email Address (Optional)</Text>
+                <Text style={styles.label}>Email Address</Text>
                 <TextInput
                   value={email}
                   onChangeText={setEmail}

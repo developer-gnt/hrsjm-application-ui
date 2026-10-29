@@ -14,6 +14,7 @@ import { Icon } from '../../../core/components/common/Icon';
 import type { AppStackParamList } from '../../../core/navigation/types';
 import { useMembership } from '../context/MembershipContext';
 import { MembershipTopBar } from '../components/MembershipTopBar';
+import { useAuthStore } from '../../auth/store/authStore';
 
 type RouteProps = NativeStackScreenProps<AppStackParamList, 'MembershipSubmitted'>['route'];
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
@@ -21,7 +22,16 @@ type NavProp = NativeStackNavigationProp<AppStackParamList>;
 export function MembershipSubmittedScreen() {
   const navigation = useNavigation<NavProp>();
   const route = useRoute<RouteProps>();
-  const { applications, activeApplication } = useMembership();
+  const { applications, activeApplication, resetDraft } = useMembership();
+  const authUser = useAuthStore(state => state.user);
+  const roleNames = [
+    (authUser as any)?.role?.name,
+    (authUser as any)?.roleName,
+    ...((authUser as any)?.roles || []).map((r: any) => (typeof r === 'string' ? r : r?.name)),
+  ]
+    .filter(Boolean)
+    .map(r => String(r).toUpperCase());
+  const isAdmin = roleNames.includes('ADMIN') || roleNames.includes('SUPER_ADMIN');
 
   const [copied, setCopied] = useState(false);
 
@@ -59,6 +69,32 @@ export function MembershipSubmittedScreen() {
 
   const handleGoToMyApplication = () => {
     navigation.navigate('MyApplication' as any);
+  };
+
+  const handleViewMembers = () => {
+    resetDraft();
+    const navAny = navigation as any;
+    const state = navAny.getState?.();
+    const routeNames: string[] = state?.routeNames || [];
+    if (routeNames.includes('Members')) {
+      navAny.navigate('Members');
+    } else if (routeNames.includes('MembersDirectory')) {
+      navAny.navigate('MembersDirectory');
+    } else if (routeNames.includes('Tabs')) {
+      navAny.navigate('Tabs', { screen: 'MembersTab' });
+    } else {
+      try {
+        navAny.navigate('Members');
+      } catch {
+        navAny.navigate('UserHome');
+      }
+    }
+  };
+
+  const handleAddAnotherMember = () => {
+    resetDraft();
+    const navAny = navigation as any;
+    navAny.navigate('MembershipCategories');
   };
 
   const handleCompletePayment = () => {
@@ -203,23 +239,47 @@ export function MembershipSubmittedScreen() {
 
             {/* Bottom Action Buttons */}
             <View style={styles.actionsWrap}>
-              <TouchableOpacity
-                style={styles.primaryBtn}
-                activeOpacity={0.85}
-                onPress={handleGoToMyApplication}
-                accessibilityRole="button"
-                accessibilityLabel="Go to My Application">
-                <Text style={styles.primaryBtnText}>Go to My Application</Text>
-              </TouchableOpacity>
+              {isAdmin ? (
+                <>
+                  <TouchableOpacity
+                    style={styles.primaryBtn}
+                    activeOpacity={0.85}
+                    onPress={handleViewMembers}
+                    accessibilityRole="button"
+                    accessibilityLabel="View Members Directory">
+                    <Text style={styles.primaryBtnText}>View Members Directory</Text>
+                  </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.secondaryBtn}
-                activeOpacity={0.7}
-                onPress={handleBackToHome}
-                accessibilityRole="button"
-                accessibilityLabel="Back to Home">
-                <Text style={styles.secondaryBtnText}>Back to Home</Text>
-              </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.secondaryBtn}
+                    activeOpacity={0.7}
+                    onPress={handleAddAnotherMember}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add Another Member">
+                    <Text style={styles.secondaryBtnText}>+ Add Another Member</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={styles.primaryBtn}
+                    activeOpacity={0.85}
+                    onPress={handleGoToMyApplication}
+                    accessibilityRole="button"
+                    accessibilityLabel="Go to My Application">
+                    <Text style={styles.primaryBtnText}>Go to My Application</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.secondaryBtn}
+                    activeOpacity={0.7}
+                    onPress={handleBackToHome}
+                    accessibilityRole="button"
+                    accessibilityLabel="Back to Home">
+                    <Text style={styles.secondaryBtnText}>Back to Home</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           </>
         )}

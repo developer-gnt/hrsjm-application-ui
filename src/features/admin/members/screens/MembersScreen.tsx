@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -47,6 +47,7 @@ import { EditMemberModal } from '../components/EditMemberModal';
 import { MemberProfileModal } from '../components/MemberProfileModal';
 import { UserPasswordResetModal } from '../../users/components/UserPasswordResetModal';
 import { usersStore } from '../../users/services/usersStore';
+import { useSafeMembership } from '../../../membership/context/MembershipContext';
 import {
   useMembers,
   useCreateMember,
@@ -127,6 +128,30 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [isAddMemberView, setIsAddMemberView] = useState(false);
+  const membershipCtx = useSafeMembership();
+  const resetDraft = membershipCtx?.resetDraft;
+
+  const handleAddMemberPress = useCallback(() => {
+    resetDraft?.();
+    const state = navigation?.getState?.();
+    const hasCategoryRoute = state?.routeNames?.includes('MembershipCategories');
+    if (hasCategoryRoute) {
+      navigation.navigate('MembershipCategories');
+    } else if (onNavigate) {
+      onNavigate('MembershipCategories');
+    } else {
+      try {
+        // If route exists in parent navigator
+        if (state?.routeNames && state.routeNames.length > 0) {
+          navigation.navigate('MembershipCategories');
+        } else {
+          setIsAddMemberView(true);
+        }
+      } catch {
+        setIsAddMemberView(true);
+      }
+    }
+  }, [navigation, onNavigate, resetDraft]);
   const [editMember, setEditMember] = useState<Member | null>(null);
   const [viewMember, setViewMember] = useState<Member | null>(null);
   const [resetPasswordMember, setResetPasswordMember] = useState<Member | null>(null);
@@ -395,7 +420,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
     <View>
       <View>
         <MembersPageHeader
-          onAddMember={() => setIsAddMemberView(true)}
+          onAddMember={handleAddMemberPress}
           onViewApplications={handleViewApplications}
         />
         <View style={styles.sectionGap}>

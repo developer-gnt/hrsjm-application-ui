@@ -108,17 +108,83 @@ export const authService = {
     mobile_message?: string;
     email_message?: string;
   }> {
-    const response = await apiClient.post<{
-      available: boolean;
-      mobile_taken: boolean;
-      email_taken: boolean;
-      mobile_message?: string;
-      email_message?: string;
-    }>(ApiRoutes.AUTH.CHECK_DUPLICATES, {
-      mobile_number: mobileNumber,
-      email,
-      exclude_user_id: excludeUserId,
-    });
-    return (response as any)?.data || response;
+    try {
+      const response = await apiClient.post<{
+        available: boolean;
+        mobile_taken: boolean;
+        email_taken: boolean;
+        mobile_message?: string;
+        email_message?: string;
+      }>(ApiRoutes.AUTH.CHECK_DUPLICATES, {
+        mobile_number: mobileNumber,
+        email,
+        exclude_user_id: excludeUserId,
+      });
+      const data = (response as any)?.data || response;
+      if (data && (typeof data.available === 'boolean' || typeof data.mobile_taken === 'boolean')) {
+        return data;
+      }
+    } catch {
+      // In offline mode or when network fails, fallback to local storage
+      try {
+        const cleanMobile = mobileNumber ? mobileNumber.replace(/\\D/g, '').slice(-10) : undefined;
+        const cleanEmail = email ? email.trim().toLowerCase() : undefined;
+        let mobile_taken = false;
+        let email_taken = false;
+
+        const win = typeof window !== 'undefined' ? window : null;
+        if (win && win.localStorage) {
+          const rawUsers = win.localStorage.getItem('hrsjm_registered_users');
+          if (rawUsers) {
+            const users = JSON.parse(rawUsers);
+            if (Array.isArray(users)) {
+              for (const u of users) {
+                if (excludeUserId && (u.id === excludeUserId || u._id === excludeUserId)) continue;
+                if (cleanMobile && cleanMobile.length === 10) {
+                  const uMobile = (u.phone || u.mobile_number || '').replace(/\\D/g, '').slice(-10);
+                  if (uMobile === cleanMobile) mobile_taken = true;
+                }
+                if (cleanEmail && (u.email || '').trim().toLowerCase() === cleanEmail) {
+                  email_taken = true;
+                }
+              }
+            }
+          }
+          const rawApps = win.localStorage.getItem('hrsjm_local_membership_applications');
+          if (rawApps) {
+            const apps = JSON.parse(rawApps);
+            if (Array.isArray(apps)) {
+              for (const a of apps) {
+                if (cleanMobile && cleanMobile.length === 10) {
+                  const aMobile = (a.phone || a.mobile_number || '').replace(/\\D/g, '').slice(-10);
+                  if (aMobile === cleanMobile) mobile_taken = true;
+                }
+                if (cleanEmail && (a.email || '').trim().toLowerCase() === cleanEmail) {
+                  email_taken = true;
+                }
+              }
+            }
+          }
+        }
+
+        if (mobile_taken || email_taken) {
+          return {
+            available: false,
+            mobile_taken,
+            email_taken,
+            mobile_message: mobile_taken ? 'Mobile number is already registered. Please sign in or use another number.' : undefined,
+            email_message: email_taken ? 'Email address is already registered. Please sign in or use another email.' : undefined,
+          };
+        }
+      } catch {
+        // Ignore fallback errors
+      }
+    }
+
+    return {
+      available: true,
+      mobile_taken: false,
+      email_taken: false,
+    };
   },
 };

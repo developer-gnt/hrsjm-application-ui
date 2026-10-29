@@ -172,7 +172,7 @@ const buildDefaultTimeline = (status: MembershipStatus, submittedAt: string): Ti
   ];
 };
 
-const MembershipContext = createContext<MembershipContextType | undefined>(undefined);
+export const MembershipContext = createContext<MembershipContextType | undefined>(undefined);
 
 export function MembershipProvider({ children }: { children: ReactNode }) {
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>(INITIAL_PERSONAL_INFO);
@@ -1147,6 +1147,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       {children}
     </MembershipContext.Provider>
   );
+}
+
+export function useSafeMembership() {
+  return useContext(MembershipContext);
 }
 
 export function useMembership() {

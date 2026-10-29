@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -23,6 +24,7 @@ import { AppBottomSheet } from '../../../core/components/common/AppBottomSheet';
 import { DatePickerSheet } from '../components/DatePickerSheet';
 import { ImagePickerSheet } from '../components/ImagePickerSheet';
 import { useAuthStore } from '../../auth/store/authStore';
+import { authService } from '../../auth/services/auth.service';
 import { useProfileStore } from '../../admin/profile/profileStore';
 import type { MembershipPostData } from '../data/membershipCategoriesData';
 
@@ -56,6 +58,14 @@ export function MembershipStep1Screen() {
   const routePost = route?.params?.post as MembershipPostData | undefined;
   const activePost = routePost || selectedPost;
   const authUser = useAuthStore(state => state.user);
+  const roleNames = [
+    (authUser as any)?.role?.name,
+    (authUser as any)?.roleName,
+    ...((authUser as any)?.roles || []).map((r: any) => (typeof r === 'string' ? r : r?.name)),
+  ]
+    .filter(Boolean)
+    .map(r => String(r).toUpperCase());
+  const isAdmin = roleNames.includes('ADMIN') || roleNames.includes('SUPER_ADMIN');
   const profileAvatar = useProfileStore(state => state.profile?.avatar);
   const userAvatar = authUser?.avatar || profileAvatar;
   const [userRemovedPhoto, setUserRemovedPhoto] = useState(false);
@@ -77,14 +87,109 @@ export function MembershipStep1Screen() {
     }
   }, [authUser?.full_name]);
 
-  // Pre-fill profile photo from account avatar if available and no photo selected yet
+  // Pre-fill profile photo from account avatar if available and no photo selected yet (skip for admin adding members)
   React.useEffect(() => {
-    if (userAvatar && !personalInfo.profilePhotoUri && !userRemovedPhoto) {
+    if (userAvatar && !personalInfo.profilePhotoUri && !userRemovedPhoto && !isAdmin) {
       updatePersonalInfo({ profilePhotoUri: userAvatar });
     }
-  }, [userAvatar, personalInfo.profilePhotoUri, userRemovedPhoto]);
+  }, [userAvatar, personalInfo.profilePhotoUri, userRemovedPhoto, isAdmin]);
 
-  const [errors, setErrors] = useState<FormErrors>({});
+  const currentUserId = isAdmin ? undefined : (authUser?.id || (authUser as any)?._id || (authUser as any)?.sub);
+  const [checkingMobile, setCheckingMobile] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [verifiedMobile, setVerifiedMobile] = useState<string | null>(null);
+  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+
+  const checkMobileDuplicate = useCallback(async (phoneToCheck: string) => {
+    const cleanPhone = phoneToCheck.replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length !== 10) return;
+    setCheckingMobile(true);
+    try {
+      const res = await authService.checkDuplicates(cleanPhone, undefined, currentUserId);
+      if (res?.mobile_taken) {
+        setErrors(prev => ({
+          ...prev,
+          mobileNumber: res.mobile_message || 'Mobile number is already registered. Please sign in or use another number.',
+        }));
+        setVerifiedMobile(null);
+      } else {
+        setVerifiedMobile(cleanPhone);
+        setErrors(prev => {
+          if (prev.mobileNumber && prev.mobileNumber.toLowerCase().includes('already registered')) {
+            const next = { ...prev };
+            delete next.mobileNumber;
+            return next;
+          }
+          return prev;
+        });
+      }
+    } catch {
+      // Ignore background check network error
+    } finally {
+      setCheckingMobile(false);
+    }
+  }, [currentUserId]);
+
+  const checkEmailDuplicate = useCallback(async (emailToCheck: string) => {
+    const cleanEmail = emailToCheck.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) return;
+    setCheckingEmail(true);
+    try {
+      const res = await authService.checkDuplicates(undefined, cleanEmail, currentUserId);
+      if (res?.email_taken) {
+        setErrors(prev => ({
+          ...prev,
+          email: res.email_message || 'Email address is already registered. Please sign in or use another email.',
+        }));
+        setVerifiedEmail(null);
+      } else {
+        setVerifiedEmail(cleanEmail);
+        setErrors(prev => {
+          if (prev.email && prev.email.toLowerCase().includes('already registered')) {
+            const next = { ...prev };
+            delete next.email;
+            return next;
+          }
+          return prev;
+        });
+      }
+    } catch {
+      // Ignore background check network error
+    } finally {
+      setCheckingEmail(false);
+    }
+  }, [currentUserId]);
+
+  // Debounced live duplicate check for mobile number
+  useEffect(() => {
+    const cleanPhone = (personalInfo.mobileNumber || '').replace(/\D/g, '').slice(-10);
+    if (cleanPhone.length !== 10) {
+      setVerifiedMobile(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      checkMobileDuplicate(cleanPhone);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [personalInfo.mobileNumber, checkMobileDuplicate]);
+
+  // Debounced live duplicate check for email address
+  useEffect(() => {
+    const cleanEmail = (personalInfo.email || '').trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      setVerifiedEmail(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      checkEmailDuplicate(cleanEmail);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [personalInfo.email, checkEmailDuplicate]);
+
+  const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [genderModalVisible, setGenderModalVisible] = useState(false);
@@ -104,7 +209,7 @@ export function MembershipStep1Screen() {
     const newErrors: FormErrors = {};
 
     // 1. Full Name validation (effective name uses input or falls back to authUser full_name)
-    const effectiveName = (personalInfo.fullName || authUser?.full_name || '').trim();
+    const effectiveName = (personalInfo.fullName || (isAdmin ? '' : authUser?.full_name) || '').trim();
     if (!effectiveName) {
       newErrors.fullName = 'Full name is required';
     } else if (effectiveName.length < 3) {
@@ -166,13 +271,41 @@ export function MembershipStep1Screen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleContinue = () => {
-    if (validateForm()) {
-      if (!personalInfo.fullName && authUser?.full_name) {
-        updatePersonalInfo({ fullName: authUser.full_name });
-      }
-      navigation.navigate('MembershipStep2Address');
+  const handleContinue = async () => {
+    if (!validateForm()) {
+      return;
     }
+
+    const cleanMobile = (personalInfo.mobileNumber || '').replace(/\D/g, '').slice(-10);
+    const cleanEmail = (personalInfo.email || '').trim().toLowerCase();
+
+    // Check duplicate email and mobile on Step 1 before proceeding
+    setIsValidating(true);
+    try {
+      const dupRes = await authService.checkDuplicates(cleanMobile, cleanEmail, currentUserId);
+      if (!dupRes.available) {
+        setErrors(prev => ({
+          ...prev,
+          mobileNumber: dupRes.mobile_taken
+            ? dupRes.mobile_message || 'Mobile number is already registered. Please sign in or use another number.'
+            : prev.mobileNumber,
+          email: dupRes.email_taken
+            ? dupRes.email_message || 'Email address is already registered. Please sign in or use another email.'
+            : prev.email,
+        }));
+        setIsValidating(false);
+        return;
+      }
+    } catch {
+      // In case of check failure, proceed
+    } finally {
+      setIsValidating(false);
+    }
+
+    if (!personalInfo.fullName && authUser?.full_name && !isAdmin) {
+      updatePersonalInfo({ fullName: authUser.full_name });
+    }
+    navigation.navigate('MembershipStep2Address');
   };
 
   return (
@@ -308,7 +441,7 @@ export function MembershipStep1Screen() {
                 <Icon name="person" size={18} color="#64748B" strokeWidth={2} />
                 <TextInput
                   style={styles.textInput}
-                  placeholder={authUser?.full_name || 'Enter your full name'}
+                  placeholder={isAdmin ? 'Enter full name' : (authUser?.full_name || 'Enter full name')}
                   placeholderTextColor="#94A3B8"
                   value={personalInfo.fullName}
                   onChangeText={text => {
@@ -408,6 +541,11 @@ export function MembershipStep1Screen() {
                   maxLength={10}
                   accessibilityLabel="Mobile Number"
                 />
+                {checkingMobile ? (
+                  <ActivityIndicator size="small" color="#D97706" style={styles.fieldStatusIcon} />
+                ) : verifiedMobile && (personalInfo.mobileNumber || '').replace(/\D/g, '').slice(-10) === verifiedMobile && !errors.mobileNumber ? (
+                  <Icon name="check" size={16} color="#059669" strokeWidth={2.5} style={styles.fieldStatusIcon} />
+                ) : null}
               </View>
               {errors.mobileNumber ? (
                 <Text style={styles.errorText}>{errors.mobileNumber}</Text>
@@ -439,6 +577,11 @@ export function MembershipStep1Screen() {
                   autoCorrect={false}
                   accessibilityLabel="Email Address"
                 />
+                {checkingEmail ? (
+                  <ActivityIndicator size="small" color="#D97706" style={styles.fieldStatusIcon} />
+                ) : verifiedEmail && (personalInfo.email || '').trim().toLowerCase() === verifiedEmail && !errors.email ? (
+                  <Icon name="check" size={16} color="#059669" strokeWidth={2.5} style={styles.fieldStatusIcon} />
+                ) : null}
               </View>
               {errors.email ? (
                 <Text style={styles.errorText}>{errors.email}</Text>
@@ -563,13 +706,20 @@ export function MembershipStep1Screen() {
 
           {/* Continue Button */}
           <TouchableOpacity
-            style={styles.continueBtn}
+            style={[styles.continueBtn, isValidating && styles.continueBtnDisabled]}
             activeOpacity={0.85}
             onPress={handleContinue}
+            disabled={isValidating}
             accessibilityRole="button"
             accessibilityLabel="Continue to Address Details">
-            <Text style={styles.continueBtnText}>Continue</Text>
-            <Icon name="arrow-right" size={18} color="#011F39" strokeWidth={2.4} />
+            {isValidating ? (
+              <ActivityIndicator size="small" color="#011F39" />
+            ) : (
+              <>
+                <Text style={styles.continueBtnText}>Continue</Text>
+                <Icon name="arrow-right" size={18} color="#011F39" strokeWidth={2.4} />
+              </>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -835,6 +985,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#011F39',
+  },
+  continueBtnDisabled: {
+    opacity: 0.7,
+  },
+  fieldStatusIcon: {
+    marginLeft: 4,
   },
   genderList: {
     gap: spacing.sm,

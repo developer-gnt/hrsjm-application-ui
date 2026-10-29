@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppRoutes } from '../../core/constants/routes';
 import { MembersScreen } from '../../features/admin/members/screens/MembersScreen';
@@ -7,14 +7,18 @@ import {
   MembershipApplicationsScreen,
   MembershipApplicationDetailsScreen,
 } from '../../features/admin/membershipApplications';
-import { MembersStackParamList } from './NavigationTypes';
+import { MembershipCategoriesScreen } from '../../features/membership/screens/MembershipCategoriesScreen';
+import { MembershipStep1Screen } from '../../features/membership/screens/MembershipStep1Screen';
+import { MembershipStep2Screen } from '../../features/membership/screens/MembershipStep2Screen';
+import { MembershipStep3Screen } from '../../features/membership/screens/MembershipStep3Screen';
+import { MembershipSubmittedScreen } from '../../features/membership/screens/MembershipSubmittedScreen';
 
-const Stack = createNativeStackNavigator<MembersStackParamList>();
+const Stack = createNativeStackNavigator<any>();
 
 /**
  * Members tab navigator:
  * Connects the Member Directory (MembersScreen), Membership Applications list,
- * Application Details review, and Add Member full page within the Members tab stack.
+ * Application Details review, and Add Member full multi-step registration flow.
  */
 export const MembersNavigator: React.FC = () => (
   <Stack.Navigator
@@ -41,6 +45,41 @@ export const MembersNavigator: React.FC = () => (
         />
       )}
     </Stack.Screen>
+
+    {/* Membership Flow for Add Member */}
+    <Stack.Screen
+      name="MembershipCategories"
+      options={{ headerShown: false }}
+    >
+      {({ navigation }: any) => (
+        <MembershipCategoriesScreen
+          onBack={navigation.goBack}
+          onApplyPost={(post) => {
+            navigation.navigate('MembershipStep1Personal', { post });
+          }}
+        />
+      )}
+    </Stack.Screen>
+    <Stack.Screen
+      name="MembershipStep1Personal"
+      component={MembershipStep1Screen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="MembershipStep2Address"
+      component={MembershipStep2Screen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="MembershipStep3Documents"
+      component={MembershipStep3Screen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="MembershipSubmitted"
+      component={MembershipSubmittedScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 

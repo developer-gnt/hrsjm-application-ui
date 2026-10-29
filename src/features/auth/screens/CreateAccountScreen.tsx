@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -117,6 +117,96 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
     terms?: string;
   }>({});
   const [isValidating, setIsValidating] = useState(false);
+  const [checkingPhone, setCheckingPhone] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
+  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+
+  const checkPhoneDuplicate = useCallback(async (phoneToCheck: string) => {
+    const cleanPhone = phoneToCheck.replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length !== 10) return;
+    setCheckingPhone(true);
+    try {
+      const res = await authService.checkDuplicates(cleanPhone, undefined);
+      if (res?.mobile_taken) {
+        setErrors(prev => ({
+          ...prev,
+          phone: res.mobile_message || 'Mobile number is already registered.',
+        }));
+        setVerifiedPhone(null);
+      } else {
+        setVerifiedPhone(cleanPhone);
+        setErrors(prev => {
+          if (prev.phone && prev.phone.toLowerCase().includes('already registered')) {
+            const next = { ...prev };
+            delete next.phone;
+            return next;
+          }
+          return prev;
+        });
+      }
+    } catch {
+      // Ignore background check error
+    } finally {
+      setCheckingPhone(false);
+    }
+  }, []);
+
+  const checkEmailDuplicate = useCallback(async (emailToCheck: string) => {
+    const cleanEmail = emailToCheck.trim().toLowerCase();
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanEmail)) return;
+    setCheckingEmail(true);
+    try {
+      const res = await authService.checkDuplicates(undefined, cleanEmail);
+      if (res?.email_taken) {
+        setErrors(prev => ({
+          ...prev,
+          email: res.email_message || 'Email address is already registered.',
+        }));
+        setVerifiedEmail(null);
+      } else {
+        setVerifiedEmail(cleanEmail);
+        setErrors(prev => {
+          if (prev.email && prev.email.toLowerCase().includes('already registered')) {
+            const next = { ...prev };
+            delete next.email;
+            return next;
+          }
+          return prev;
+        });
+      }
+    } catch {
+      // Ignore background check error
+    } finally {
+      setCheckingEmail(false);
+    }
+  }, []);
+
+  // Live debounced duplicate check for mobile number
+  useEffect(() => {
+    const clean = phone.replace(/\D/g, '').slice(-10);
+    if (clean.length !== 10) {
+      setVerifiedPhone(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      checkPhoneDuplicate(clean);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [phone, checkPhoneDuplicate]);
+
+  // Live debounced duplicate check for email
+  useEffect(() => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) {
+      setVerifiedEmail(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      checkEmailDuplicate(trimmed);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [email, checkEmailDuplicate]);
 
   // Validation Rules
   const validateFullName = (name: string): string | null => {
@@ -417,6 +507,13 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                     maxLength={10}
                     accessibilityLabel="Mobile Number"
                   />
+                  {checkingPhone ? (
+                    <ActivityIndicator size="small" color="#EAA224" style={styles.inputRightIcon} />
+                  ) : verifiedPhone && phone.replace(/\D/g, '').slice(-10) === verifiedPhone && !errors.phone ? (
+                    <View style={styles.inputRightIcon}>
+                      <CheckCircleFilledIcon size={18} color="#059669" />
+                    </View>
+                  ) : null}
                 </View>
                 {errors.phone && (
                   <Text style={styles.fieldErrorText}>{errors.phone}</Text>
@@ -451,6 +548,13 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                     autoCorrect={false}
                     accessibilityLabel="Email Address"
                   />
+                  {checkingEmail ? (
+                    <ActivityIndicator size="small" color="#EAA224" style={styles.inputRightIcon} />
+                  ) : verifiedEmail && email.trim().toLowerCase() === verifiedEmail && !errors.email ? (
+                    <View style={styles.inputRightIcon}>
+                      <CheckCircleFilledIcon size={18} color="#059669" />
+                    </View>
+                  ) : null}
                 </View>
                 {errors.email && (
                   <Text style={styles.fieldErrorText}>{errors.email}</Text>

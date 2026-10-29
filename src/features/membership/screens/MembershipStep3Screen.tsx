@@ -312,6 +312,25 @@ export function MembershipStep3Screen() {
   };
 
   const handleProceedToPayment = () => {
+    // 1. Check all validations from previous steps before payment
+    if (!personalInfo.fullName?.trim()) {
+      Alert.alert('Incomplete Details', 'Please complete the Full Name in Personal Information before proceeding to payment.');
+      return;
+    }
+    if (!personalInfo.mobileNumber?.trim() || personalInfo.mobileNumber.replace(/\D/g, '').length < 10) {
+      Alert.alert('Incomplete Details', 'Please provide a valid 10-digit Mobile Number in Personal Information.');
+      return;
+    }
+    if (!personalInfo.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalInfo.email.trim())) {
+      Alert.alert('Incomplete Details', 'Please provide a valid Email Address in Personal Information.');
+      return;
+    }
+    if (!addressInfo.addressLine1?.trim() || !addressInfo.state?.trim() || !addressInfo.pincode?.trim()) {
+      Alert.alert('Incomplete Address', 'Please complete the Address Details before proceeding to payment.');
+      return;
+    }
+
+    // 2. Check document uploads and required pledges / consents
     if (!validateUploads() || !validateConsents()) return;
 
     setPaymentPayload({
@@ -320,9 +339,9 @@ export function MembershipStep3Screen() {
       subtitle: 'Human Rights & Social Justice Mission',
       category: 'New Membership Registration',
       amount: postFeeAmount,
-      donorName: authUser?.full_name || 'Applicant',
-      donorMobile: authUser?.mobile_number || '',
-      donorEmail: authUser?.email || '',
+      donorName: personalInfo.fullName?.trim() || authUser?.full_name || 'Applicant',
+      donorMobile: personalInfo.mobileNumber?.trim() || authUser?.mobile_number || '',
+      donorEmail: personalInfo.email?.trim() || authUser?.email || '',
       entityId: `mem-app-${Date.now()}`,
     });
     setPaymentModalVisible(true);
