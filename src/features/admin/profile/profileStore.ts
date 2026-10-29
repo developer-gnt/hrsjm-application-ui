@@ -195,6 +195,10 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         membershipStatus === 'Approved' ||
         user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
 
+      if (isApprovedMember && !membershipStatus) {
+        membershipStatus = 'Approved';
+      }
+
       const memberId =
         membershipData?.membership_number ||
         (isApprovedMember ? generateAutoMemberId(user.id, 1) : '');

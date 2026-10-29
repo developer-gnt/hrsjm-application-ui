@@ -148,10 +148,14 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   );
 
   const authUser = useAuthStore(state => state.user);
-  const isMemberRole = (authUser?.roles ?? []).some(r => r.name.toUpperCase() === 'MEMBER');
+  const isMemberRole =
+    (authUser?.roles ?? []).some(r => r.name.toUpperCase() === 'MEMBER') ||
+    (authUser as any)?.account_type === 'member';
   const hasPendingMemberApp =
-    (hasApplied && !isReapplying) ||
-    (isMemberRole && (authUser?.membership_status === 'PENDING' || authUser?.membership_status === 'UNDER_REVIEW'));
+    !isMemberRole &&
+    ((hasApplied && !isReapplying) ||
+      authUser?.membership_status === 'PENDING' ||
+      authUser?.membership_status === 'UNDER_REVIEW');
 
   // Live lookup of seeker application in usersStore
   const matchedSeeker = React.useMemo(() => {

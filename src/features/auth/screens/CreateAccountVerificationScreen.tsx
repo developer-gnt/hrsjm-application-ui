@@ -26,8 +26,6 @@ import {
   UploadDocSheetIcon,
   UploadTrayIcon,
   LockOutlineIcon,
-  EyeOutlineIcon,
-  EyeSlashOutlineIcon,
   ArrowRightIcon,
   ImageIcon,
   EyeIcon,
@@ -104,7 +102,7 @@ const DOCUMENT_OPTIONS: DocumentConfig[] = [
 
 interface CreateAccountVerificationScreenProps {
   onBack?: () => void;
-  onContinue?: (selectedDoc: DocumentTypeOption, uploadedFile: UploadedDocFile) => void;
+  onContinue?: (selectedDoc: DocumentTypeOption, uploadedFile: UploadedDocFile) => void | Promise<void>;
 }
 
 interface StepItem {
@@ -187,78 +185,6 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
     docTitle: string;
     file: UploadedDocFile;
   } | null>(null);
-
-  // Password state for Donation Seeker account creation
-  const [password, setPassword] = useState(() => regState.password || '');
-  const [confirmPassword, setConfirmPassword] = useState(() => regState.confirmPassword || '');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
-  const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false);
-  const [passwordTouched, setPasswordTouched] = useState(false);
-  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
-  const [passwordErrors, setPasswordErrors] = useState<{
-    password?: string;
-    confirmPassword?: string;
-  }>({});
-
-  // Password requirement validations
-  const hasMinLength = password.length >= 8;
-  const hasUppercase = /[A-Z]/.test(password);
-  const hasLowercase = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const isPasswordValid = hasMinLength && hasUppercase && hasLowercase && hasNumber;
-  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
-
-  const handlePasswordChange = (text: string) => {
-    setPassword(text);
-    if (passwordErrors.password) {
-      setPasswordErrors(prev => ({ ...prev, password: undefined }));
-    }
-    if (confirmPassword.length > 0 && confirmPasswordTouched) {
-      if (text === confirmPassword) {
-        setPasswordErrors(prev => ({ ...prev, confirmPassword: undefined }));
-      } else {
-        setPasswordErrors(prev => ({ ...prev, confirmPassword: 'Passwords do not match.' }));
-      }
-    }
-  };
-
-  const handlePasswordBlur = () => {
-    setPasswordFocused(false);
-    setPasswordTouched(true);
-    if (!password.trim()) {
-      setPasswordErrors(prev => ({ ...prev, password: 'Password is required.' }));
-    } else if (!isPasswordValid) {
-      setPasswordErrors(prev => ({
-        ...prev,
-        password: 'Password must satisfy all 4 security requirements below.',
-      }));
-    } else {
-      setPasswordErrors(prev => ({ ...prev, password: undefined }));
-    }
-  };
-
-  const handleConfirmPasswordChange = (text: string) => {
-    setConfirmPassword(text);
-    if (passwordErrors.confirmPassword) {
-      if (text === password) {
-        setPasswordErrors(prev => ({ ...prev, confirmPassword: undefined }));
-      }
-    }
-  };
-
-  const handleConfirmPasswordBlur = () => {
-    setConfirmPasswordFocused(false);
-    setConfirmPasswordTouched(true);
-    if (!confirmPassword.trim()) {
-      setPasswordErrors(prev => ({ ...prev, confirmPassword: 'Confirm Password is required.' }));
-    } else if (password !== confirmPassword) {
-      setPasswordErrors(prev => ({ ...prev, confirmPassword: 'Passwords do not match.' }));
-    } else {
-      setPasswordErrors(prev => ({ ...prev, confirmPassword: undefined }));
-    }
-  };
 
   const currentUploadedFile = uploadedFiles[selectedDoc];
   const selectedDocConfig = DOCUMENT_OPTIONS.find(d => d.id === selectedDoc);
@@ -442,7 +368,27 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
   };
 
   const handleContinue = () => {
-    const currentUploadedDocs = getRegistrationState().documents;
+    let currentUploadedDocs = getRegistrationState().documents || [];
+
+    // Fallback: If registrationState documents is empty, check local uploadedFiles
+    if (currentUploadedDocs.length === 0 && Object.keys(uploadedFiles).length > 0) {
+      const entries = Object.entries(uploadedFiles).filter(([_, f]) => Boolean(f));
+      if (entries.length > 0) {
+        currentUploadedDocs = entries.map(([id, f]) => ({
+          id: id as DocumentTypeOption,
+          title: DOCUMENT_OPTIONS.find(d => d.id === id)?.title || 'Document',
+          name: f!.name,
+          sizeBytes: f!.sizeBytes,
+          type: f!.type,
+          formattedSize: f!.formattedSize,
+          uri: f!.uri,
+          uploadDate: f!.uploadDate,
+          status: 'ready' as const,
+        }));
+        updateRegistrationState({ documents: currentUploadedDocs, hasUploadedDocument: true });
+      }
+    }
+
     if (!currentUploadedDocs || currentUploadedDocs.length === 0) {
       setUploadError(
         `Please choose and upload your ${selectedDocConfig?.title || 'document'} before continuing.`
@@ -450,44 +396,31 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
       return;
     }
 
-    // Password validation for Donation Seeker
-    const newPasswordErrors: { password?: string; confirmPassword?: string } = {};
-    if (!password.trim()) {
-      newPasswordErrors.password = 'Password is required.';
-    } else if (!isPasswordValid) {
-      newPasswordErrors.password = 'Password must meet all 4 security requirements below.';
-    }
-
-    if (!confirmPassword.trim()) {
-      newPasswordErrors.confirmPassword = 'Confirm Password is required.';
-    } else if (password !== confirmPassword) {
-      newPasswordErrors.confirmPassword = 'Passwords do not match.';
-    }
-
-    if (Object.keys(newPasswordErrors).length > 0) {
-      setPasswordErrors(newPasswordErrors);
-      setPasswordTouched(true);
-      setConfirmPasswordTouched(true);
-      return;
-    }
-
     setUploadError(null);
 
-    // Save password to shared registration state
-    updateRegistrationState({
-      password,
-      confirmPassword,
-    });
+    const primary = currentUploadedDocs[0];
+    const primaryFile: UploadedDocFile = {
+      name: primary.name,
+      sizeBytes: primary.sizeBytes,
+      type: primary.type,
+      formattedSize: primary.formattedSize,
+      uri: primary.uri,
+      uploadDate: primary.uploadDate,
+    };
 
     if (onContinue) {
-      const primary = currentUploadedDocs[0];
-      onContinue(primary.id, {
-        name: primary.name,
-        sizeBytes: primary.sizeBytes,
-        type: primary.type,
-        formattedSize: primary.formattedSize,
-        uri: primary.uri,
-      });
+      try {
+        const result = onContinue(primary.id, primaryFile);
+        if (result && typeof (result as any).then === 'function') {
+          (result as any).catch((err: any) => {
+            console.warn('onContinue rejected, navigating to complete screen:', err);
+            navigateToCreateAccountComplete();
+          });
+        }
+      } catch (err) {
+        console.warn('onContinue error, navigating to complete screen:', err);
+        navigateToCreateAccountComplete();
+      }
     } else {
       navigateToCreateAccountComplete();
     }
@@ -903,226 +836,7 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
               </View>
             )}
 
-            {/* 5. Create Password Section (Donation Seeker) */}
-            <View style={styles.passwordCard}>
-              <View style={styles.passwordCardAccentBar} />
-
-              <View style={styles.passwordHeaderRow}>
-                <View style={styles.passwordIconBadge}>
-                  <LockOutlineIcon size={18} color="#0F2860" />
-                </View>
-                <View style={styles.passwordHeaderTextWrap}>
-                  <Text style={styles.passwordSectionHeading}>Create Password</Text>
-                  <Text style={styles.passwordSectionDescription}>
-                    Use a strong password to keep your account secure.
-                  </Text>
-                </View>
-              </View>
-
-              {/* Password Field */}
-              <View style={styles.passwordFieldWrapper}>
-                <View
-                  style={[
-                    styles.passwordInputField,
-                    passwordFocused && styles.passwordInputFieldFocused,
-                    passwordErrors.password && styles.passwordInputFieldError,
-                  ]}
-                >
-                  <View style={styles.passwordInputLeftIcon}>
-                    <LockOutlineIcon
-                      size={18}
-                      color={
-                        passwordErrors.password
-                          ? '#DC2626'
-                          : passwordFocused
-                          ? '#0F2860'
-                          : '#475569'
-                      }
-                    />
-                  </View>
-                  <TextInput
-                    style={styles.passwordTextInput}
-                    placeholder="Password *"
-                    placeholderTextColor="#94A3B8"
-                    value={password}
-                    onChangeText={handlePasswordChange}
-                    onFocus={() => setPasswordFocused(true)}
-                    onBlur={handlePasswordBlur}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    accessibilityLabel="Password"
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.passwordInputRightIcon}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    accessibilityRole="button"
-                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? (
-                      <EyeOutlineIcon size={18} color="#0F2860" />
-                    ) : (
-                      <EyeSlashOutlineIcon size={18} color="#94A3B8" />
-                    )}
-                  </TouchableOpacity>
-                </View>
-
-                {passwordErrors.password && (
-                  <View style={styles.softErrorRow}>
-                    <View style={styles.softErrorBadge}>
-                      <Text style={styles.softErrorExclamation}>!</Text>
-                    </View>
-                    <Text style={styles.softErrorText}>{passwordErrors.password}</Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Password Requirements Checklist */}
-              <View style={styles.requirementsContainer}>
-                <Text style={styles.requirementsTitle}>Password must contain:</Text>
-
-                <View style={styles.reqRow}>
-                  <View
-                    style={[
-                      styles.reqCircle,
-                      hasMinLength && styles.reqCircleValid,
-                    ]}
-                  >
-                    {hasMinLength && <View style={styles.reqDot} />}
-                  </View>
-                  <Text
-                    style={[
-                      styles.reqText,
-                      hasMinLength && styles.reqTextValid,
-                    ]}
-                  >
-                    At least 8 characters
-                  </Text>
-                </View>
-
-                <View style={styles.reqRow}>
-                  <View
-                    style={[
-                      styles.reqCircle,
-                      hasUppercase && styles.reqCircleValid,
-                    ]}
-                  >
-                    {hasUppercase && <View style={styles.reqDot} />}
-                  </View>
-                  <Text
-                    style={[
-                      styles.reqText,
-                      hasUppercase && styles.reqTextValid,
-                    ]}
-                  >
-                    One uppercase letter (A–Z)
-                  </Text>
-                </View>
-
-                <View style={styles.reqRow}>
-                  <View
-                    style={[
-                      styles.reqCircle,
-                      hasLowercase && styles.reqCircleValid,
-                    ]}
-                  >
-                    {hasLowercase && <View style={styles.reqDot} />}
-                  </View>
-                  <Text
-                    style={[
-                      styles.reqText,
-                      hasLowercase && styles.reqTextValid,
-                    ]}
-                  >
-                    One lowercase letter (a–z)
-                  </Text>
-                </View>
-
-                <View style={styles.reqRow}>
-                  <View
-                    style={[
-                      styles.reqCircle,
-                      hasNumber && styles.reqCircleValid,
-                    ]}
-                  >
-                    {hasNumber && <View style={styles.reqDot} />}
-                  </View>
-                  <Text
-                    style={[
-                      styles.reqText,
-                      hasNumber && styles.reqTextValid,
-                    ]}
-                  >
-                    One number (0–9)
-                  </Text>
-                </View>
-              </View>
-
-              {/* Confirm Password Field */}
-              <View style={styles.passwordFieldWrapper}>
-                <View
-                  style={[
-                    styles.passwordInputField,
-                    confirmPasswordFocused && styles.passwordInputFieldFocused,
-                    passwordErrors.confirmPassword && styles.passwordInputFieldError,
-                    passwordsMatch && !passwordErrors.confirmPassword && styles.passwordInputFieldSuccess,
-                  ]}
-                >
-                  <View style={styles.passwordInputLeftIcon}>
-                    <LockOutlineIcon
-                      size={18}
-                      color={
-                        passwordErrors.confirmPassword
-                          ? '#DC2626'
-                          : passwordsMatch && !passwordErrors.confirmPassword
-                          ? '#10B981'
-                          : confirmPasswordFocused
-                          ? '#0F2860'
-                          : '#475569'
-                      }
-                    />
-                  </View>
-                  <TextInput
-                    style={styles.passwordTextInput}
-                    placeholder="Confirm Password *"
-                    placeholderTextColor="#94A3B8"
-                    value={confirmPassword}
-                    onChangeText={handleConfirmPasswordChange}
-                    onFocus={() => setConfirmPasswordFocused(true)}
-                    onBlur={handleConfirmPasswordBlur}
-                    secureTextEntry={!showConfirmPassword}
-                    autoCapitalize="none"
-                    accessibilityLabel="Confirm Password"
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={styles.passwordInputRightIcon}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'
-                    }
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOutlineIcon size={18} color="#0F2860" />
-                    ) : (
-                      <EyeSlashOutlineIcon size={18} color="#94A3B8" />
-                    )}
-                  </TouchableOpacity>
-                </View>
-
-                {passwordErrors.confirmPassword && (
-                  <View style={styles.softErrorRow}>
-                    <View style={styles.softErrorBadge}>
-                      <Text style={styles.softErrorExclamation}>!</Text>
-                    </View>
-                    <Text style={styles.softErrorText}>{passwordErrors.confirmPassword}</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            {/* 6. Security Message (Positioned right below upload / documents list) */}
+            {/* 5. Security Message (Positioned right below upload / documents list) */}
             <View style={styles.securityContainer}>
               <LockOutlineIcon size={14} color="#64748B" />
               <Text style={styles.securityText}>
@@ -1130,7 +844,7 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
               </Text>
             </View>
 
-            {/* 7. Continue Button */}
+            {/* 6. Continue Button */}
             <TouchableOpacity
               style={styles.continueButton}
               onPress={handleContinue}
@@ -2036,193 +1750,6 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     fontWeight: '700',
     color: '#0F2860',
-  },
-  // Password Card Styles for Donation Seeker
-  passwordCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1.2,
-    borderColor: '#E2E8F0',
-    paddingHorizontal: 18,
-    paddingTop: 20,
-    paddingBottom: 20,
-    marginTop: 16,
-    marginBottom: 8,
-    shadowColor: '#0F2860',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    elevation: 3,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  passwordCardAccentBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3.5,
-    backgroundColor: '#EAA224',
-  },
-  passwordHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-    marginTop: 2,
-    gap: 12,
-  },
-  passwordIconBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: '#FFF9EE',
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  passwordHeaderTextWrap: {
-    flex: 1,
-  },
-  passwordSectionHeading: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F2860',
-    letterSpacing: -0.2,
-    marginBottom: 4,
-  },
-  passwordSectionDescription: {
-    fontSize: 12.5,
-    color: '#64748B',
-    lineHeight: 18,
-  },
-  passwordFieldWrapper: {
-    marginBottom: 12,
-  },
-  passwordInputField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.2,
-    borderColor: '#CBD5E1',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    height: 50,
-  },
-  passwordInputFieldFocused: {
-    borderColor: '#0F2860',
-    borderWidth: 1.5,
-    backgroundColor: '#FCFDFF',
-    shadowColor: '#0F2860',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  passwordInputFieldError: {
-    borderColor: '#EF4444',
-    borderWidth: 1.5,
-    backgroundColor: '#FEF2F2',
-  },
-  passwordInputFieldSuccess: {
-    borderColor: '#10B981',
-    borderWidth: 1.5,
-    backgroundColor: '#F0FDF4',
-  },
-  passwordInputLeftIcon: {
-    marginRight: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  passwordInputRightIcon: {
-    marginLeft: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 4,
-  },
-  passwordTextInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#0F172A',
-    paddingVertical: 0,
-    height: '100%',
-  },
-  softErrorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    paddingHorizontal: 4,
-    gap: 6,
-  },
-  softErrorBadge: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#FEE2E2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  softErrorExclamation: {
-    color: '#DC2626',
-    fontSize: 10,
-    fontWeight: '800',
-    lineHeight: 12,
-  },
-  softErrorText: {
-    fontSize: 12,
-    color: '#DC2626',
-    fontWeight: '500',
-    flex: 1,
-  },
-  requirementsContainer: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#EDF2F7',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 14,
-  },
-  requirementsTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  reqRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  reqCircle: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    marginRight: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  reqCircleValid: {
-    borderColor: '#10B981',
-    backgroundColor: '#D1FAE5',
-  },
-  reqDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#10B981',
-  },
-  reqText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  reqTextValid: {
-    color: '#0F2860',
-    fontWeight: '600',
   },
 });
 

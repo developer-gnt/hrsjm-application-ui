@@ -12,6 +12,11 @@ import { MembershipStep1Screen } from '../../features/membership/screens/Members
 import { MembershipStep2Screen } from '../../features/membership/screens/MembershipStep2Screen';
 import { MembershipStep3Screen } from '../../features/membership/screens/MembershipStep3Screen';
 import { MembershipSubmittedScreen } from '../../features/membership/screens/MembershipSubmittedScreen';
+import { MyApplicationScreen } from '../../features/membership/screens/MyApplicationScreen';
+import { ApplicationDetailsScreen } from '../../features/membership/screens/ApplicationDetailsScreen';
+import { ApplicationAppliedScreen } from '../../features/membership/screens/ApplicationAppliedScreen';
+import { ApplicationApprovedScreen } from '../../features/membership/screens/ApplicationApprovedScreen';
+import { ApplicationRejectedScreen } from '../../features/membership/screens/ApplicationRejectedScreen';
 import { AuthStackParamList } from './NavigationTypes';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -92,6 +97,31 @@ export const AuthNavigator: React.FC = () => (
     <Stack.Screen
       name="MembershipSubmitted"
       component={MembershipSubmittedScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="MyApplication"
+      component={MyApplicationScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ApplicationDetails"
+      component={ApplicationDetailsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ApplicationApplied"
+      component={ApplicationAppliedScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ApplicationApproved"
+      component={ApplicationApprovedScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ApplicationRejected"
+      component={ApplicationRejectedScreen}
       options={{ headerShown: false }}
     />
   </Stack.Navigator>

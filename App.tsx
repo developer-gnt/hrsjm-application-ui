@@ -524,7 +524,12 @@ function App() {
     typeof globalThis !== 'undefined' ? (globalThis as any).window : undefined;
   const isIsolatedDevPreview =
     Platform.OS === 'web' &&
-    Boolean(browserWindow?.location?.hash?.startsWith('#/dev/'));
+    (Boolean(browserWindow?.location?.hash?.startsWith('#/dev/')) ||
+      Boolean(browserWindow?.location?.hash?.startsWith('#/create-account')) ||
+      Boolean(browserWindow?.location?.hash?.startsWith('#/users')) ||
+      Boolean(browserWindow?.location?.hash?.startsWith('#/donations')) ||
+      Boolean(browserWindow?.location?.hash?.startsWith('#/membership')) ||
+      Boolean(browserWindow?.location?.hash?.startsWith('#/profile')));
 
   if (isIsolatedDevPreview) {
     return (

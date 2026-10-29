@@ -81,6 +81,16 @@ export const CreateAccountTypeScreen: React.FC<CreateAccountTypeScreenProps> = (
   };
 
   const handleNext = () => {
+    updateRegistrationState({
+      accountType: selectedType,
+      accountTypeLabel:
+        selectedType === 'general'
+          ? 'General User'
+          : selectedType === 'seeker'
+          ? 'Donation Seeker'
+          : 'Member',
+    });
+
     if (selectedType === 'member') {
       if (onMemberSelect) onMemberSelect();
       return;

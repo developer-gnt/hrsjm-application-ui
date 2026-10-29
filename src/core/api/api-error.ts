@@ -24,10 +24,25 @@ export class ApiError extends Error {
   static fromAxiosError(error: any): ApiError {
     if (error.response) {
       const { data, status } = error.response;
+
+      // Extract specific validation details if available
+      let validationDetails: string | undefined;
+      if (Array.isArray(data?.error?.details) && data.error.details.length > 0) {
+        validationDetails = data.error.details.filter(Boolean).join('\n');
+      } else if (typeof data?.error?.details === 'string') {
+        validationDetails = data.error.details;
+      } else if (Array.isArray(data?.details) && data.details.length > 0) {
+        validationDetails = data.details.filter(Boolean).join('\n');
+      } else if (Array.isArray(data?.message) && data.message.length > 0) {
+        validationDetails = data.message.filter(Boolean).join('\n');
+      }
+
       let message =
+        validationDetails ||
         data?.message ||
         data?.error ||
         (typeof data === 'string' ? data : 'An unexpected server error occurred.');
+
       if (typeof message === 'string') {
         const lower = message.toLowerCase();
         if (
@@ -41,7 +56,12 @@ export class ApiError extends Error {
           message = 'Unable to reach the server. Please check your connection and try again.';
         }
       }
-      return new ApiError(message, status, data?.errors, data);
+      return new ApiError(
+        message,
+        status,
+        data?.error?.details || data?.errors || data?.details,
+        data
+      );
     } else if (error.request) {
       return new ApiError(
         'Unable to reach the server. Please check your internet connection.',

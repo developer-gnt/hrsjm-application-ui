@@ -14,6 +14,7 @@ import { Icon } from '../../../core/components/common/Icon';
 import type { AppStackParamList } from '../../../core/navigation/types';
 import { useMembership } from '../context/MembershipContext';
 import { MembershipTopBar } from '../components/MembershipTopBar';
+import { useAuthStore } from '../../auth/store/authStore';
 
 type RouteProps = NativeStackScreenProps<AppStackParamList, 'MembershipSubmitted'>['route'];
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
@@ -21,7 +22,7 @@ type NavProp = NativeStackNavigationProp<AppStackParamList>;
 export function MembershipSubmittedScreen() {
   const navigation = useNavigation<NavProp>();
   const route = useRoute<RouteProps>();
-  const { applications, activeApplication } = useMembership();
+  const { applications, activeApplication, personalInfo } = useMembership();
 
   const [copied, setCopied] = useState(false);
 
@@ -58,29 +59,131 @@ export function MembershipSubmittedScreen() {
   };
 
   const handleGoToMyApplication = () => {
-    navigation.navigate('MyApplication' as any);
+    const navAny = navigation as any;
+    const currentAuthUser = useAuthStore.getState().user;
+
+    // Ensure session profile is active
+    if (!currentAuthUser) {
+      const targetAny = targetApp as any;
+      const applicantName =
+        targetAny?.applicantName ||
+        targetApp?.personalInfo?.fullName ||
+        personalInfo?.fullName?.trim() ||
+        'Member Applicant';
+      const applicantEmail =
+        targetAny?.email ||
+        targetApp?.personalInfo?.email ||
+        personalInfo?.email?.trim() ||
+        'member@hrsjm.org';
+      const applicantPhone =
+        targetAny?.phone ||
+        targetAny?.mobileNumber ||
+        targetApp?.personalInfo?.mobileNumber ||
+        personalInfo?.mobileNumber?.trim() ||
+        '';
+
+      useAuthStore.getState().setUser({
+        id: targetAny?.userId || targetApp?.id || `user_${Date.now()}`,
+        full_name: applicantName,
+        email: applicantEmail,
+        mobile_number: applicantPhone,
+        roles: [{ id: 'role-user', name: 'USER' }],
+        account_type: 'member',
+        status: 'ACTIVE',
+        membership_status: 'PENDING',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as any);
+    }
+
+    const state = navAny.getState?.();
+    const routeNames: string[] = state?.routeNames || [];
+
+    if (routeNames.includes('MyApplication')) {
+      navAny.navigate('MyApplication', { applicationId });
+      return;
+    }
+
+    const parentNav = navigation.getParent?.();
+    if (parentNav) {
+      const parentState = (parentNav as any).getState?.();
+      const parentRoutes: string[] = parentState?.routeNames || [];
+      if (parentRoutes.includes('MyApplication')) {
+        (parentNav as any).navigate('MyApplication', { applicationId });
+        return;
+      }
+    }
+
+    try {
+      navAny.navigate('MyApplication', { applicationId });
+    } catch {
+      useAuthStore.getState().completeRegistration();
+    }
   };
 
   const handleCompletePayment = () => {
     navigation.navigate('MembershipStep3Documents' as any);
   };
 
-  const handleBackToHome = () => {
+  const handleGoToDashboard = () => {
     const navAny = navigation as any;
+    const currentAuthUser = useAuthStore.getState().user;
+    const targetAny = targetApp as any;
+    const applicantName =
+      targetAny?.applicantName ||
+      targetApp?.personalInfo?.fullName ||
+      personalInfo?.fullName?.trim() ||
+      'Member Applicant';
+    const applicantEmail =
+      targetAny?.email ||
+      targetApp?.personalInfo?.email ||
+      personalInfo?.email?.trim() ||
+      'member@hrsjm.org';
+    const applicantPhone =
+      targetAny?.phone ||
+      targetAny?.mobileNumber ||
+      targetApp?.personalInfo?.mobileNumber ||
+      personalInfo?.mobileNumber?.trim() ||
+      '';
+
+    // 1. Establish session user in authStore with role USER so RootNavigator routes to UserTabNavigator
+    const resolvedUser = {
+      id: targetAny?.userId || targetApp?.id || currentAuthUser?.id || `user_${Date.now()}`,
+      full_name: applicantName,
+      email: applicantEmail,
+      mobile_number: applicantPhone,
+      roles: [{ id: 'role-user', name: 'USER' }],
+      account_type: 'member',
+      status: 'ACTIVE',
+      membership_status: 'PENDING',
+      created_at: currentAuthUser?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    useAuthStore.getState().setUser(resolvedUser as any);
+
+    // 2. Activate session so RootNavigator mounts RoleBasedHomeNavigator (UserTabNavigator -> UserHome)
+    useAuthStore.getState().completeRegistration();
+
+    // 3. If already nested inside UserTabNavigator, switch tab to UserHome
     const state = navAny.getState?.();
     const routeNames: string[] = state?.routeNames || [];
     if (routeNames.includes('UserHome')) {
       navAny.navigate('UserHome');
-    } else if (routeNames.includes('DashboardTab')) {
-      navAny.navigate('DashboardTab');
-    } else {
-      try {
-        navAny.navigate('UserHome');
-      } catch {
-        navAny.navigate('Tabs', { screen: 'MembersTab' });
+      return;
+    }
+    const parentNav = navigation.getParent?.();
+    if (parentNav) {
+      const parentState = (parentNav as any).getState?.();
+      const parentRoutes: string[] = parentState?.routeNames || [];
+      if (parentRoutes.includes('UserHome')) {
+        (parentNav as any).navigate('UserHome');
+        return;
       }
     }
   };
+
+  const handleBackToHome = handleGoToDashboard;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -134,10 +237,10 @@ export function MembershipSubmittedScreen() {
               <TouchableOpacity
                 style={styles.secondaryBtn}
                 activeOpacity={0.7}
-                onPress={handleBackToHome}
+                onPress={handleGoToDashboard}
                 accessibilityRole="button"
-                accessibilityLabel="Back to Home">
-                <Text style={styles.secondaryBtnText}>Back to Home</Text>
+                accessibilityLabel="Go to Dashboard (user)">
+                <Text style={styles.secondaryBtnText}>Go to Dashboard (user)</Text>
               </TouchableOpacity>
             </View>
           </>
@@ -215,10 +318,10 @@ export function MembershipSubmittedScreen() {
               <TouchableOpacity
                 style={styles.secondaryBtn}
                 activeOpacity={0.7}
-                onPress={handleBackToHome}
+                onPress={handleGoToDashboard}
                 accessibilityRole="button"
-                accessibilityLabel="Back to Home">
-                <Text style={styles.secondaryBtnText}>Back to Home</Text>
+                accessibilityLabel="Go to Dashboard (user)">
+                <Text style={styles.secondaryBtnText}>Go to Dashboard (user)</Text>
               </TouchableOpacity>
             </View>
           </>
