@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   saveBtn: {
-    backgroundColor: BrandColors.navy,
+    backgroundColor: '#FAD465',
   },
   datePickerInputRow: {
     flexDirection: 'row',

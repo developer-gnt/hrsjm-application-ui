@@ -278,12 +278,12 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
             accessibilityLabel="Update Password"
           >
             {submitting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color="#011F39" />
             ) : (
               <View style={styles.buttonContent}>
                 <Text style={styles.primaryButtonText}>Update Password</Text>
                 <View style={styles.arrowIconWrap}>
-                  <ArrowRightIcon size={18} color="#FFFFFF" />
+                  <ArrowRightIcon size={18} color="#011F39" />
                 </View>
               </View>
             )}
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 15.5,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#011F39',
     letterSpacing: 0.3,
     fontFamily: FontFamilies.sans,
   },

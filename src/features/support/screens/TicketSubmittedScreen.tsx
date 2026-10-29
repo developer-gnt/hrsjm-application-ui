@@ -461,12 +461,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.base,
   },
   primaryButton: {
-    backgroundColor: AdminColors.primary,
+    backgroundColor: AdminColors.accentGold,
     borderRadius: BorderRadius.lg,
     paddingVertical: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: AdminColors.primary,
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: AdminColors.primaryDark,
   },
   secondaryButton: {
     backgroundColor: '#FFFFFF',

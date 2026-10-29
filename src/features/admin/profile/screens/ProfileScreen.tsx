@@ -679,7 +679,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                     size="sm"
                     loading={busyAction === 'download'}
                     disabled={busyAction !== null}
-                    icon={<DownloadIcon color={AdminColors.textOnDark} />}
+                    icon={<DownloadIcon color={AdminColors.primaryDark} />}
                     onPress={() => download(cardProfile)}
                     style={styles.inlineDownloadButton}
                   />
@@ -748,7 +748,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             size="md"
             loading={busyAction === 'download'}
             disabled={busyAction !== null}
-            icon={<DownloadIcon color={AdminColors.textOnDark} />}
+            icon={<DownloadIcon color={AdminColors.primaryDark} />}
             onPress={() => download(profile)}
             style={styles.downloadButton}
           />

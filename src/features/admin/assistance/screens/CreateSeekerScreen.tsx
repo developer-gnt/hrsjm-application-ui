@@ -831,10 +831,10 @@ export const CreateSeekerScreen: React.FC<CreateSeekerScreenProps> = ({
                 activeOpacity={0.85}
               >
                 {isSubmitting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#011F39" />
                 ) : (
                   <>
-                    <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+                    <Plus size={16} color="#011F39" strokeWidth={2.5} />
                     <Text style={styles.submitBtnText}>Create Request</Text>
                   </>
                 )}
@@ -1312,10 +1312,10 @@ const styles = StyleSheet.create({
     gap: 6,
     height: 48,
     borderRadius: BorderRadius.lg,
-    backgroundColor: '#0F2C59',
-    shadowColor: '#0F2C59',
+    backgroundColor: '#FAD465',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
@@ -1325,7 +1325,7 @@ const styles = StyleSheet.create({
   submitBtnText: {
     fontSize: 14.5,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#011F39',
   },
 });
 

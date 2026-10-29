@@ -593,7 +593,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
               variant="primary"
               loading={isSubmitting}
               disabled={isSubmitting}
-              icon={<Plus size={16} color="#FFFFFF" strokeWidth={2.4} />}
+              icon={<Plus size={16} color="#011F39" strokeWidth={2.4} />}
               onPress={handleSubmit}
               style={styles.submitButton}
             />
@@ -932,7 +932,7 @@ const styles = StyleSheet.create({
     color: BrandColors.textSecondary,
   },
   submitButton: {
-    backgroundColor: BrandColors.navy,
+    backgroundColor: '#FAD465',
     minHeight: 42,
     paddingHorizontal: Spacing.lg,
   },
