@@ -324,6 +324,104 @@ class UsersStore {
     return this.users.find(u => u.id === id || u.memberId === id);
   }
 
+  public async fetchUserById(id: string): Promise<UserItem | undefined> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    let target = this.users.find(u => u.id === id || u.memberId === id);
+
+    try {
+      let apiUser: any = null;
+      if (isUuid) {
+        const res: any = await apiClient.get<any>(`/users/${id}`);
+        apiUser = res?.data || res;
+      } else {
+        const cleanMobile = target?.phone ? target.phone.replace(/\D/g, '').slice(-10) : '';
+        const searchVal = cleanMobile || target?.email || id;
+        const res: any = await apiClient.get<any>('/users', {
+          params: { search: searchVal },
+        });
+        const items = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.items)
+          ? res.data.items
+          : Array.isArray(res)
+          ? res
+          : [];
+        if (items.length > 0) {
+          apiUser = items.find((u: any) =>
+            u.id === id ||
+            (cleanMobile && u.mobile_number && u.mobile_number.includes(cleanMobile)) ||
+            (target?.email && u.email && u.email.toLowerCase() === target.email.toLowerCase())
+          ) || items[0];
+        }
+      }
+
+      if (apiUser && apiUser.id) {
+        const roleNames = (apiUser.roles || []).map((r: any) =>
+          (typeof r === 'string' ? r : r.name || '').toUpperCase()
+        );
+        const isAdmin = roleNames.some((r: string) => r.includes('ADMIN'));
+        const isMember = roleNames.some((r: string) => r.includes('MEMBER')) || Boolean(apiUser.membership_status);
+        const isSeeker =
+          roleNames.some((r: string) => r.includes('SEEKER') || r.includes('DONATION_SEEKER')) ||
+          Boolean(apiUser.assistance_status);
+        const isDonor = roleNames.some((r: string) => r.includes('DONOR'));
+
+        let userType: UserType = 'general';
+        if (isAdmin) userType = 'admin';
+        else if (isMember) userType = 'member';
+        else if (isSeeker) userType = 'seeker';
+        else if (isDonor) userType = 'donor';
+        else userType = 'general';
+
+        const rawStatus = (apiUser.status || '').toUpperCase();
+        let status: UserStatus =
+          rawStatus === 'BLOCKED' || rawStatus === 'INACTIVE' || rawStatus === 'SUSPENDED'
+            ? 'blocked'
+            : rawStatus === 'PENDING'
+            ? 'pending'
+            : 'active';
+
+        const mapped: UserItem = {
+          id: apiUser.id,
+          memberId: apiUser.membership_number || target?.memberId,
+          name: apiUser.full_name || target?.name || 'User',
+          email: apiUser.email || target?.email || '',
+          phone: apiUser.mobile_number || target?.phone || '',
+          userType,
+          status,
+          avatarUrl: apiUser.avatar || target?.avatarUrl,
+          joinedDate: apiUser.created_at || target?.joinedDate || new Date().toISOString(),
+          lastLogin: target?.lastLogin || 'Recently',
+          totalDonations: Number(apiUser.total_donations || target?.totalDonations || 0),
+          donationCount: Number(apiUser.donation_count || target?.donationCount || 0),
+          dob: apiUser.dob || target?.dob,
+          gender: apiUser.gender || target?.gender,
+          address: apiUser.address || target?.address,
+          documents: target?.documents || [],
+          remarks: target?.remarks,
+          notes: target?.notes,
+        };
+
+        const existingIndex = this.users.findIndex(u => u.id === mapped.id || u.id === id);
+        if (existingIndex >= 0) {
+          this.users[existingIndex] = {
+            ...this.users[existingIndex],
+            ...mapped,
+          };
+        } else {
+          this.users.unshift(mapped);
+        }
+        this.sortUsersInternal();
+        this.notify();
+        return mapped;
+      }
+    } catch {
+      // offline / mock fallback
+    }
+
+    return target;
+  }
+
   public getStats(): UserStats {
     let active = 0;
     let pending = 0;
@@ -589,17 +687,23 @@ class UsersStore {
     return newUser;
   }
 
-  private async syncUserUpdateToBackend(userId: string, payload: EditUserPayload): Promise<void> {
+    private async syncUserUpdateToBackend(
+    userId: string,
+    payload: EditUserPayload,
+    current?: UserItem
+  ): Promise<string | null> {
     try {
       const cleanMobile = payload.phone
         ? payload.phone.replace(/\D/g, '').slice(-10)
-        : undefined;
+        : current?.phone ? current.phone.replace(/\D/g, '').slice(-10) : undefined;
 
       const patchData: any = {};
       if (payload.name !== undefined) patchData.full_name = payload.name.trim();
       if (payload.email !== undefined) patchData.email = payload.email.trim();
       if (cleanMobile && cleanMobile.length === 10) patchData.mobile_number = cleanMobile;
       if (payload.dob !== undefined) patchData.dob = payload.dob.trim();
+      if (payload.gender !== undefined) patchData.gender = payload.gender;
+      if (payload.address !== undefined) patchData.address = payload.address.trim();
       if (payload.avatarUrl !== undefined) patchData.avatar = payload.avatarUrl;
 
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId);
@@ -607,8 +711,9 @@ class UsersStore {
 
       if (!targetId) {
         try {
+          const searchVal = cleanMobile || payload.email || current?.email || undefined;
           const res: any = await apiClient.get<any>('/users', {
-            params: { search: cleanMobile || payload.email || undefined },
+            params: { search: searchVal },
           });
           const items = Array.isArray(res?.data)
             ? res.data
@@ -620,7 +725,8 @@ class UsersStore {
           if (items && items.length > 0) {
             const found = items.find((u: any) =>
               (cleanMobile && u.mobile_number && u.mobile_number.includes(cleanMobile)) ||
-              (payload.email && u.email && u.email.toLowerCase() === payload.email.toLowerCase())
+              (payload.email && u.email && u.email.toLowerCase() === payload.email.toLowerCase()) ||
+              (current?.email && u.email && u.email.toLowerCase() === current.email.toLowerCase())
             );
             if (found && found.id) {
               targetId = found.id;
@@ -628,6 +734,27 @@ class UsersStore {
           }
         } catch {
           // ignore lookup errors
+        }
+      }
+
+      // If user does not exist in backend database yet, create them via POST /users
+      if (!targetId && current) {
+        try {
+          const createRes: any = await apiClient.post<any>('/users', {
+            full_name: payload.name || current.name || 'User',
+            mobile_number: cleanMobile || '9800000000',
+            email: payload.email || current.email || undefined,
+            dob: payload.dob || current.dob || undefined,
+            gender: payload.gender || current.gender || undefined,
+            address: payload.address || current.address || undefined,
+            avatar: payload.avatarUrl || current.avatarUrl || undefined,
+          });
+          const created = createRes?.data || createRes;
+          if (created && created.id) {
+            targetId = created.id;
+          }
+        } catch (e) {
+          console.warn('syncUserCreation error:', e);
         }
       }
 
@@ -640,10 +767,12 @@ class UsersStore {
           const apiStatus = payload.status === 'blocked' ? 'INACTIVE' : 'ACTIVE';
           await apiClient.patch(`/users/${targetId}/status`, { status: apiStatus }).catch(() => {});
         }
+        return targetId;
       }
     } catch (err) {
       console.warn('syncUserUpdateToBackend error:', err);
     }
+    return null;
   }
 
   public async updateUser(id: string, payload: EditUserPayload): Promise<UserItem | undefined> {
@@ -651,8 +780,11 @@ class UsersStore {
     if (index === -1) return undefined;
 
     const current = this.users[index];
+    const backendId = await this.syncUserUpdateToBackend(current.id, payload, current);
+
     const updated: UserItem = {
       ...current,
+      id: backendId || current.id,
       name: payload.name !== undefined ? payload.name.trim() : current.name,
       email: payload.email !== undefined ? payload.email.trim() : current.email,
       phone: payload.phone !== undefined ? payload.phone.trim() : current.phone,
@@ -670,10 +802,7 @@ class UsersStore {
     this.sortUsersInternal();
     this.notify();
 
-    // 1. Persist directly to backend database
-    await this.syncUserUpdateToBackend(current.id, payload);
-
-    // 2. Keep active auth session in sync if the edited user is currently logged in
+    // Keep active auth session in sync if the edited user is currently logged in
     try {
       const authUser = useAuthStore.getState().user;
       if (

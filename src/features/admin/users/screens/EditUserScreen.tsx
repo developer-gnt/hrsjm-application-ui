@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -96,7 +96,24 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
     }
   };
 
+  // Subscribe to real-time usersStore updates
+  useSyncExternalStore(
+    usersStore.subscribe,
+    usersStore.getSnapshot,
+    usersStore.getSnapshot
+  );
+
   const user = userId ? usersStore.getUserById(userId) : undefined;
+  const [isLoadingUser, setIsLoadingUser] = useState(Boolean(userId && !user));
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (userId) {
+      usersStore.fetchUserById(userId).finally(() => {
+        setIsLoadingUser(false);
+      });
+    }
+  }, [userId]);
 
   // Extract phone number and country code from existing user
   const initialCountryCode = user?.phone?.startsWith('+')
@@ -106,7 +123,7 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
     ? user.phone.slice(initialCountryCode.length).trim()
     : user?.phone || '';
 
-  // Form Field States pre-populated with user data
+  // Form Field States pre-populated with dynamic database data
   const [fullName, setFullName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [countryCode, setCountryCode] = useState(initialCountryCode);
@@ -114,10 +131,29 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
   const [userType, setUserType] = useState<UserType>(user?.userType || 'general');
   const [status, setStatus] = useState<UserStatus>(user?.status || 'active');
   const [dob, setDob] = useState(user?.dob || '');
-  const [gender, setGender] = useState<UserGender | ''>(user?.gender || '');
+  const [gender, setGender] = useState<UserGender | ''>((user?.gender as UserGender) || '');
   const [address, setAddress] = useState(user?.address || '');
   const [remarks, setRemarks] = useState(user?.remarks || user?.notes || '');
   const [avatarUri, setAvatarUri] = useState<string | undefined>(user?.avatarUrl);
+
+  // Synchronize form fields whenever user record loads or updates from backend database
+  useEffect(() => {
+    if (user) {
+      setFullName(user.name || '');
+      setEmail(user.email || '');
+      const cc = user.phone?.startsWith('+') ? user.phone.split(' ')[0] : '+91';
+      const num = user.phone?.startsWith('+') ? user.phone.slice(cc.length).trim() : user.phone || '';
+      setCountryCode(cc);
+      setPhone(num);
+      setUserType(user.userType || 'general');
+      setStatus(user.status || 'active');
+      setDob(user.dob || '');
+      setGender((user.gender as UserGender) || '');
+      setAddress(user.address || '');
+      setRemarks(user.remarks || user.notes || '');
+      setAvatarUri(user.avatarUrl);
+    }
+  }, [user]);
 
   // Modals
   const [showUserTypeModal, setShowUserTypeModal] = useState(false);
@@ -127,6 +163,17 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
 
   // Validation Errors
   const [errors, setErrors] = useState<FormErrors>({});
+
+  if (isLoadingUser && !user) {
+    return (
+      <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#FAD465" />
+        <Text style={{ marginTop: 12, color: '#011F39', fontWeight: '600', fontSize: 14 }}>
+          Loading user from database...
+        </Text>
+      </View>
+    );
+  }
 
   if (!user) {
     return (
@@ -215,6 +262,7 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
     }
 
     setIsSaving(true);
+    setSaveSuccessMsg(null);
     const formattedPhone = `${countryCode} ${phone.trim()}`;
     try {
       const updated = await usersStore.updateUser(user.id, {
@@ -231,11 +279,14 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
         avatarUrl: avatarUri,
       });
 
-      if (updated && onSuccess) {
-        onSuccess(updated);
-      } else if (onBack) {
-        onBack();
-      }
+      setSaveSuccessMsg('User details saved to database successfully!');
+      setTimeout(() => {
+        if (updated && onSuccess) {
+          onSuccess(updated);
+        } else if (onBack) {
+          onBack();
+        }
+      }, 700);
     } catch (err: any) {
       Alert.alert('Save Failed', err?.message || 'Could not update user details. Please try again.');
     } finally {
@@ -359,6 +410,12 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
           <Text style={styles.pageSubtitle}>
             Update user information and save changes.
           </Text>
+
+          {saveSuccessMsg ? (
+            <View style={styles.successBanner}>
+              <Text style={styles.successBannerText}>✓ {saveSuccessMsg}</Text>
+            </View>
+          ) : null}
 
           {/* Profile Summary Header matching Image 1: Un-carded circular avatar + Name, Email, Phone */}
           <View style={styles.profileHeader}>
@@ -666,7 +723,7 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
                 accessibilityLabel="Save Changes"
               >
                 {isSaving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#011F39" />
                 ) : (
                   <>
                     <Text style={styles.saveBtnCheck}>✓</Text>
@@ -1144,21 +1201,41 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderRadius: 8,
-    backgroundColor: '#0F2860',
+    backgroundColor: '#FAD465',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   saveBtnCheck: {
-    color: '#FFFFFF',
+    color: '#011F39',
     fontSize: 14,
     fontWeight: '800',
     marginRight: 6,
   },
   saveBtnText: {
-    color: '#FFFFFF',
+    color: '#011F39',
     fontSize: 14,
     fontWeight: '700',
+  },
+  successBanner: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#86EFAC',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  successBannerText: {
+    color: '#166534',
+    fontSize: 13,
+    fontWeight: '600',
   },
   errorText: {
     fontSize: 11,
