@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Text, TextInput, View, StyleSheet, TextInputProps } from 'react-native';
-import { AppButton } from './AppButton';
+import { AppButton, ButtonVariant } from './AppButton';
 import { AppModal } from './AppModal';
 import { AdminColors } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
@@ -12,6 +12,7 @@ interface ConfirmDialogProps {
   message: string;
   confirmTitle?: string;
   cancelTitle?: string;
+  confirmVariant?: ButtonVariant;
   /** When set, the dialog asks for a reason text before confirming. */
   requiresReason?: boolean;
   reasonPlaceholder?: string;
@@ -46,6 +47,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   message,
   confirmTitle = 'Confirm',
   cancelTitle = 'Cancel',
+  confirmVariant = 'danger',
   requiresReason = false,
   reasonPlaceholder = 'Reason (optional)',
   loading = false,
@@ -82,7 +84,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         <AppButton
           title={confirmTitle}
           onPress={handleConfirm}
-          variant="danger"
+          variant={confirmVariant}
           style={styles.button}
           loading={loading}
           disabled={loading}
