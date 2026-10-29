@@ -5,7 +5,7 @@ import type {
   ProfitLossReportResponse,
   TrialBalanceReportResponse,
 } from '../types/reports.types';
-import { formatINR } from '../../../../core/utils/currency';
+import { formatPdfINR } from '../../../../core/utils/currency';
 
 const pt = (mm: number) => (mm * 72) / 25.4;
 
@@ -174,8 +174,8 @@ export const generateTrialBalancePdf = (data: TrialBalanceReportResponse): jsPDF
     pdf.text(acc.account.account_name, 42, y);
 
     pdf.setTextColor(15, 23, 42);
-    pdf.text(acc.debit_balance > 0 ? formatINR(acc.debit_balance) : '—', 140, y, { align: 'right' });
-    pdf.text(acc.credit_balance > 0 ? formatINR(acc.credit_balance) : '—', W - 18, y, { align: 'right' });
+    pdf.text(acc.debit_balance > 0 ? formatPdfINR(acc.debit_balance) : '—', 140, y, { align: 'right' });
+    pdf.text(acc.credit_balance > 0 ? formatPdfINR(acc.credit_balance) : '—', W - 18, y, { align: 'right' });
 
     y += 6.5;
   });
@@ -188,8 +188,8 @@ export const generateTrialBalancePdf = (data: TrialBalanceReportResponse): jsPDF
   pdf.setFontSize(9);
   pdf.setTextColor(255, 255, 255);
   pdf.text('TOTAL BALANCES', 18, y + 5.5);
-  pdf.text(formatINR(data.total_debit), 140, y + 5.5, { align: 'right' });
-  pdf.text(formatINR(data.total_credit), W - 18, y + 5.5, { align: 'right' });
+  pdf.text(formatPdfINR(data.total_debit), 140, y + 5.5, { align: 'right' });
+  pdf.text(formatPdfINR(data.total_credit), W - 18, y + 5.5, { align: 'right' });
 
   // Balancing banner
   y += 12;
@@ -206,7 +206,7 @@ export const generateTrialBalancePdf = (data: TrialBalanceReportResponse): jsPDF
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8.5);
     pdf.setTextColor(185, 28, 28);
-    pdf.text(`⚠ OUT OF BALANCE — Net Difference: ${formatINR(Math.abs(data.difference))}`, 18, y + 5.5);
+    pdf.text(`⚠ OUT OF BALANCE — Net Difference: ${formatPdfINR(Math.abs(data.difference))}`, 18, y + 5.5);
   }
 
   drawReportFooter(pdf, H, W);
@@ -247,7 +247,7 @@ export const generateProfitLossPdf = (data: ProfitLossReportResponse): jsPDF => 
     pdf.text(item.account.account_code || '—', 18, y);
     pdf.setTextColor(15, 23, 42);
     pdf.text(item.account.account_name, 42, y);
-    pdf.text(formatINR(item.amount), W - 18, y, { align: 'right' });
+    pdf.text(formatPdfINR(item.amount), W - 18, y, { align: 'right' });
     y += 6;
   });
 
@@ -255,7 +255,7 @@ export const generateProfitLossPdf = (data: ProfitLossReportResponse): jsPDF => 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(15, 40, 96);
   pdf.text('Total Income (A)', 42, y + 2);
-  pdf.text(formatINR(data.total_income), W - 18, y + 2, { align: 'right' });
+  pdf.text(formatPdfINR(data.total_income), W - 18, y + 2, { align: 'right' });
   y += 10;
 
   // --- EXPENSES SECTION ---
@@ -280,7 +280,7 @@ export const generateProfitLossPdf = (data: ProfitLossReportResponse): jsPDF => 
     pdf.text(item.account.account_code || '—', 18, y);
     pdf.setTextColor(15, 23, 42);
     pdf.text(item.account.account_name, 42, y);
-    pdf.text(formatINR(item.amount), W - 18, y, { align: 'right' });
+    pdf.text(formatPdfINR(item.amount), W - 18, y, { align: 'right' });
     y += 6;
   });
 
@@ -288,7 +288,7 @@ export const generateProfitLossPdf = (data: ProfitLossReportResponse): jsPDF => 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(15, 40, 96);
   pdf.text('Total Expenditures (B)', 42, y + 2);
-  pdf.text(formatINR(data.total_expenses), W - 18, y + 2, { align: 'right' });
+  pdf.text(formatPdfINR(data.total_expenses), W - 18, y + 2, { align: 'right' });
   y += 12;
 
   // --- NET SURPLUS / DEFICIT ---
@@ -299,7 +299,7 @@ export const generateProfitLossPdf = (data: ProfitLossReportResponse): jsPDF => 
   pdf.setFontSize(10.5);
   pdf.setTextColor(isSurplus ? 22 : 185, isSurplus ? 101 : 28, isSurplus ? 52 : 28);
   pdf.text(`NET ${data.result_type} (A - B)`, 18, y + 6.8);
-  pdf.text(formatINR(Math.abs(data.net_result)), W - 18, y + 6.8, { align: 'right' });
+  pdf.text(formatPdfINR(Math.abs(data.net_result)), W - 18, y + 6.8, { align: 'right' });
 
   drawReportFooter(pdf, H, W);
   return pdf;
@@ -339,14 +339,14 @@ export const generateBalanceSheetPdf = (data: BalanceSheetReportResponse): jsPDF
     pdf.text(item.account.account_code || '—', 18, y);
     pdf.setTextColor(15, 23, 42);
     pdf.text(item.account.account_name, 42, y);
-    pdf.text(formatINR(item.amount), W - 18, y, { align: 'right' });
+    pdf.text(formatPdfINR(item.amount), W - 18, y, { align: 'right' });
     y += 6;
   });
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(15, 40, 96);
   pdf.text('Total Assets (A)', 42, y + 2);
-  pdf.text(formatINR(data.total_assets), W - 18, y + 2, { align: 'right' });
+  pdf.text(formatPdfINR(data.total_assets), W - 18, y + 2, { align: 'right' });
   y += 10;
 
   // --- LIABILITIES ---
@@ -371,14 +371,14 @@ export const generateBalanceSheetPdf = (data: BalanceSheetReportResponse): jsPDF
     pdf.text(item.account.account_code || '—', 18, y);
     pdf.setTextColor(15, 23, 42);
     pdf.text(item.account.account_name, 42, y);
-    pdf.text(formatINR(item.amount), W - 18, y, { align: 'right' });
+    pdf.text(formatPdfINR(item.amount), W - 18, y, { align: 'right' });
     y += 6;
   });
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(15, 40, 96);
   pdf.text('Total Liabilities (B1)', 42, y + 2);
-  pdf.text(formatINR(data.total_liabilities), W - 18, y + 2, { align: 'right' });
+  pdf.text(formatPdfINR(data.total_liabilities), W - 18, y + 2, { align: 'right' });
   y += 10;
 
   // --- EQUITY ---
@@ -403,20 +403,20 @@ export const generateBalanceSheetPdf = (data: BalanceSheetReportResponse): jsPDF
     pdf.text(item.account.account_code || '—', 18, y);
     pdf.setTextColor(15, 23, 42);
     pdf.text(item.account.account_name, 42, y);
-    pdf.text(formatINR(item.amount), W - 18, y, { align: 'right' });
+    pdf.text(formatPdfINR(item.amount), W - 18, y, { align: 'right' });
     y += 6;
   });
 
   // Current year surplus addition
   pdf.setTextColor(15, 23, 42);
   pdf.text('Current Period Net Surplus / (Deficit)', 42, y);
-  pdf.text(formatINR(data.equity.current_surplus_deficit), W - 18, y, { align: 'right' });
+  pdf.text(formatPdfINR(data.equity.current_surplus_deficit), W - 18, y, { align: 'right' });
   y += 6;
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(15, 40, 96);
   pdf.text('Total Fund Equity (B2)', 42, y + 2);
-  pdf.text(formatINR(data.total_equity), W - 18, y + 2, { align: 'right' });
+  pdf.text(formatPdfINR(data.total_equity), W - 18, y + 2, { align: 'right' });
   y += 10;
 
   // Total Liabilities & Equity
@@ -426,7 +426,7 @@ export const generateBalanceSheetPdf = (data: BalanceSheetReportResponse): jsPDF
   pdf.setFontSize(9);
   pdf.setTextColor(255, 255, 255);
   pdf.text('TOTAL LIABILITIES & EQUITY (B = B1 + B2)', 18, y + 5.5);
-  pdf.text(formatINR(data.total_liabilities_and_equity), W - 18, y + 5.5, { align: 'right' });
+  pdf.text(formatPdfINR(data.total_liabilities_and_equity), W - 18, y + 5.5, { align: 'right' });
 
   y += 12;
   if (data.is_balanced) {
@@ -442,7 +442,7 @@ export const generateBalanceSheetPdf = (data: BalanceSheetReportResponse): jsPDF
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8.5);
     pdf.setTextColor(185, 28, 28);
-    pdf.text(`⚠ OUT OF BALANCE — Net Difference: ${formatINR(Math.abs(data.difference))}`, 18, y + 5.5);
+    pdf.text(`⚠ OUT OF BALANCE — Net Difference: ${formatPdfINR(Math.abs(data.difference))}`, 18, y + 5.5);
   }
 
   drawReportFooter(pdf, H, W);

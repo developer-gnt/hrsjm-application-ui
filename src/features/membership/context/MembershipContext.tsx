@@ -490,44 +490,6 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    if (uploadedDocs.length === 0) {
-      const cleanName = (effectivePersonalInfo.fullName || authUser?.full_name || 'applicant').toLowerCase().replace(/\s+/g, '_');
-      uploadedDocs.push(
-        {
-          id: 'doc-identity',
-          title: 'Aadhaar Card (Identity Proof)',
-          fileName: `aadhaar_card_${cleanName}.pdf`,
-          fileSize: '1.8 MB',
-          uploadDate: formattedDate,
-          uri: effectiveDocuments.identityProof?.fileUri,
-        },
-        {
-          id: 'doc-address',
-          title: 'Address Proof (Residence Verification)',
-          fileName: `address_proof_${cleanName}.pdf`,
-          fileSize: '1.5 MB',
-          uploadDate: formattedDate,
-          uri: effectiveDocuments.addressProof?.fileUri,
-        },
-        {
-          id: 'doc-qualification',
-          title: 'Educational Qualification Proof (Degree / Certificate)',
-          fileName: `qualification_${cleanName}.pdf`,
-          fileSize: '1.9 MB',
-          uploadDate: formattedDate,
-          uri: effectiveDocuments.qualificationProof?.fileUri,
-        },
-        {
-          id: 'doc-photo',
-          title: 'Applicant Photograph',
-          fileName: `photograph_${cleanName}.jpg`,
-          fileSize: '850 KB',
-          uploadDate: formattedDate,
-          uri: effectiveDocuments.photograph?.fileUri || effectivePersonalInfo.profilePhotoUri,
-        }
-      );
-    }
-
     const addressParts = [
       effectiveAddressInfo.addressLine1,
       effectiveAddressInfo.addressLine2,
@@ -863,44 +825,6 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         uploadDate: formattedDate,
         uri: effectiveDocuments.photograph.fileUri,
       });
-    }
-
-    if (uploadedDocs.length === 0) {
-      const cleanName = (effectivePersonalInfo.fullName || authUser?.full_name || 'applicant').toLowerCase().replace(/\s+/g, '_');
-      uploadedDocs.push(
-        {
-          id: 'doc-identity',
-          title: 'Aadhaar Card (Identity Proof)',
-          fileName: `aadhaar_card_${cleanName}.pdf`,
-          fileSize: '1.8 MB',
-          uploadDate: formattedDate,
-          uri: effectiveDocuments.identityProof?.fileUri,
-        },
-        {
-          id: 'doc-address',
-          title: 'Address Proof (Residence Verification)',
-          fileName: `address_proof_${cleanName}.pdf`,
-          fileSize: '1.5 MB',
-          uploadDate: formattedDate,
-          uri: effectiveDocuments.addressProof?.fileUri,
-        },
-        {
-          id: 'doc-qualification',
-          title: 'Educational Qualification Proof (Degree / Certificate)',
-          fileName: `qualification_${cleanName}.pdf`,
-          fileSize: '1.9 MB',
-          uploadDate: formattedDate,
-          uri: effectiveDocuments.qualificationProof?.fileUri,
-        },
-        {
-          id: 'doc-photo',
-          title: 'Applicant Photograph',
-          fileName: `photograph_${cleanName}.jpg`,
-          fileSize: '850 KB',
-          uploadDate: formattedDate,
-          uri: effectiveDocuments.photograph?.fileUri || effectivePersonalInfo.profilePhotoUri,
-        }
-      );
     }
 
     const addressParts = [

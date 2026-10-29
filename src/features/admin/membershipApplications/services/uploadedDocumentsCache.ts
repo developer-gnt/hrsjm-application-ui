@@ -16,15 +16,5 @@ export function resolveUploadedFileUri(fileName?: string, explicitUri?: string):
     return UPLOADED_DOCUMENTS_CACHE[cleanName];
   }
 
-  if (cleanName.includes('154246') || cleanName.includes('identity') || cleanName.includes('aadhaar')) {
-    return UPLOADED_DOCUMENTS_CACHE["screenshot 2026-02-20 154246.png"];
-  }
-  if (cleanName.includes('213828') || cleanName.includes('address') || cleanName.includes('residence')) {
-    return UPLOADED_DOCUMENTS_CACHE["screenshot 2026-02-20 213828.png"];
-  }
-  if (cleanName.includes('151534') || cleanName.includes('photo') || cleanName.includes('photograph') || cleanName.includes('avatar') || cleanName.includes('mubasshir')) {
-    return UPLOADED_DOCUMENTS_CACHE["screenshot 2026-02-21 151534.png"];
-  }
-
   return explicitUri || undefined;
 }

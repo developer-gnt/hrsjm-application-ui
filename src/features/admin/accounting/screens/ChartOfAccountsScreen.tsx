@@ -54,7 +54,12 @@ import {
   PassbookMonthPickerModal,
   PassbookPeriodSelection,
 } from '../components/PassbookMonthPickerModal';
+import {
+  PassbookExportModal,
+  PassbookExportPeriod,
+} from '../components/PassbookExportModal';
 import { exportPassbookPdf } from '../services/passbookPdfExport';
+import { fetchAggregatedPassbookLedger } from '../services/ledger.service';
 
 interface ChartOfAccountsScreenProps {
   onBack?: () => void;
@@ -103,6 +108,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
   const [activeDimensionTab, setActiveDimensionTab] = useState<DimensionTab>('Date Wise');
   const [searchQuery, setSearchQuery] = useState('');
   const [monthPickerVisible, setMonthPickerVisible] = useState(false);
+  const [exportModalVisible, setExportModalVisible] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedTx, setSelectedTx] = useState<LedgerTransaction | null>(null);
 
@@ -285,17 +291,29 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
     });
   }, [transactions, closingBal]);
 
-  const handleExport = async () => {
+  const handleOpenExportModal = () => {
+    setExportModalVisible(true);
+  };
+
+  const handleExecuteExport = async (period: PassbookExportPeriod) => {
     if (isExporting) return;
     try {
       setIsExporting(true);
-      await exportPassbookPdf({
-        periodLabel: dateLabel || 'Passbook Statement',
-        fromDate,
-        toDate,
-        summary,
-        transactions,
+      // Fetch data specifically for the selected export period (month, year, or custom range)
+      const dataset = await fetchAggregatedPassbookLedger({
+        fromDate: period.fromDate,
+        toDate: period.toDate,
       });
+
+      await exportPassbookPdf({
+        periodLabel: period.label || 'Passbook Statement',
+        fromDate: period.fromDate,
+        toDate: period.toDate,
+        summary: dataset.summary,
+        transactions: dataset.transactions,
+      });
+
+      setExportModalVisible(false);
     } catch (err: any) {
       Alert.alert('Export Failed', err?.message || 'Could not generate PDF statement');
     } finally {
@@ -437,7 +455,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
 
           <TouchableOpacity
             style={styles.hubLinkChip}
-            onPress={handleExport}
+            onPress={handleOpenExportModal}
             disabled={isExporting}
             activeOpacity={0.8}
           >
@@ -877,7 +895,7 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
                 </View>
                 <TouchableOpacity
                   style={styles.exportBtn}
-                  onPress={handleExport}
+                  onPress={handleOpenExportModal}
                   disabled={isExporting}
                   activeOpacity={0.8}
                 >
@@ -1258,6 +1276,16 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
               toDate: selection.toDate,
             });
           }}
+        />
+
+        {/* Passbook Export Period Selection Modal */}
+        <PassbookExportModal
+          visible={exportModalVisible}
+          onClose={() => setExportModalVisible(false)}
+          onConfirmExport={handleExecuteExport}
+          isExporting={isExporting}
+          initialFromDate={fromDate}
+          initialToDate={toDate}
         />
       </SafeAreaView>
     </View>

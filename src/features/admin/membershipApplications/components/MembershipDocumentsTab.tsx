@@ -25,9 +25,6 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
   const [selectedDoc, setSelectedDoc] = useState<DocumentItemData | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
 
-  const applicantSlug = (application.applicantName || 'applicant').toLowerCase().replace(/\s+/g, '_');
-  const docDate = application.submittedAt ? application.submittedAt.split(',')[0] : 'Recently';
-
   const photoDoc = application.documents?.find(
     doc => (doc.title || doc.fileName || doc.id || '').toLowerCase().includes('photo')
   );
@@ -38,8 +35,56 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
     resolveUploadedFileUri(application.applicantName) ||
     undefined;
 
+  // Filter to show ONLY documents that were actually uploaded by the user
+  const isUploadedByUser = (d: any): boolean => {
+    if (!d) return false;
+
+    // Documents with a valid file URI (from camera scan, device file picker, or remote server upload)
+    const hasValidUri = Boolean(
+      (d.uri && typeof d.uri === 'string' && d.uri.trim().length > 0) ||
+      (d.fileUri && typeof d.fileUri === 'string' && d.fileUri.trim().length > 0) ||
+      (d.url && typeof d.url === 'string' && d.url.trim().length > 0)
+    );
+    if (hasValidUri) return true;
+
+    // Filter out known fake preset file placeholders that were never uploaded by the user
+    const fileName = (d.fileName || '').toLowerCase().trim();
+    const fakePlaceholderNames = [
+      'aadhaar_card_scanned.pdf',
+      'electricity_bill_sept.pdf',
+      'degree_certificate.pdf',
+      'passport_size_white_bg.jpg',
+      'pan_card_front_back.pdf',
+      'passport_scan_page1.pdf',
+      'voter_id_official.pdf',
+      'driving_license_valid.jpg',
+      'rent_agreement_notarized.pdf',
+      'bank_statement_last_month.pdf',
+      'lpg_gas_bill_aug.pdf',
+      'qualification_marksheet.pdf',
+      'diploma_certificate.pdf',
+      'board_passing_cert.pdf',
+      'recent_headshot_hd.jpg',
+      'studio_formal_photo.png',
+    ];
+    if (fakePlaceholderNames.includes(fileName)) {
+      return false;
+    }
+
+    if (fileName.includes('_applicant.pdf') || fileName.includes('_applicant.jpg')) {
+      return false;
+    }
+
+    if (d.isUploaded !== undefined) {
+      return Boolean(d.isUploaded);
+    }
+
+    // Default to true for authentic document objects with valid file names
+    return Boolean(d.fileName && d.fileName.trim().length > 0);
+  };
+
   const rawDocs = application.documents && application.documents.length > 0
-    ? application.documents
+    ? application.documents.filter(isUploadedByUser)
     : [];
 
   const documents: DocumentItemData[] = rawDocs.map(d => ({
@@ -61,7 +106,8 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
     const isImage =
       doc.fileName.toLowerCase().endsWith('.jpg') ||
       doc.fileName.toLowerCase().endsWith('.jpeg') ||
-      doc.fileName.toLowerCase().endsWith('.png');
+      doc.fileName.toLowerCase().endsWith('.png') ||
+      doc.fileName.toLowerCase().endsWith('.webp');
 
     if (isImage) {
       return (

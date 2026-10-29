@@ -40,41 +40,12 @@ interface UploadErrors {
 
 type DocCategory = 'identity' | 'address' | 'qualification' | 'photo';
 
-// Sample official document presets for quick testing
-const PRESET_OPTIONS: Record<
-  DocCategory,
-  Array<{ name: string; fileName: string; size: string }>
-> = {
-  identity: [
-    { name: 'Aadhaar Card (Front & Back)', fileName: 'aadhaar_card_scanned.pdf', size: '1.8 MB' },
-    { name: 'PAN Card Copy', fileName: 'pan_card_front_back.pdf', size: '1.2 MB' },
-    { name: 'Passport Bio Page', fileName: 'passport_scan_page1.pdf', size: '2.4 MB' },
-    { name: 'Voter ID Card', fileName: 'voter_id_official.pdf', size: '1.5 MB' },
-    { name: 'Driving License Scan', fileName: 'driving_license_valid.jpg', size: '1.7 MB' },
-  ],
-  address: [
-    { name: 'Electricity Bill (Recent)', fileName: 'electricity_bill_sept.pdf', size: '2.1 MB' },
-    { name: 'Registered Rent Agreement', fileName: 'rent_agreement_notarized.pdf', size: '3.5 MB' },
-    { name: 'Bank Passbook / Statement', fileName: 'bank_statement_last_month.pdf', size: '1.6 MB' },
-    { name: 'LPG Gas Connection Bill', fileName: 'lpg_gas_bill_aug.pdf', size: '1.4 MB' },
-  ],
-  qualification: [
-    { name: 'Graduation / Degree Certificate', fileName: 'degree_certificate.pdf', size: '2.2 MB' },
-    { name: 'Highest Qualification Marksheet', fileName: 'qualification_marksheet.pdf', size: '1.9 MB' },
-    { name: 'Diploma / Educational Certificate', fileName: 'diploma_certificate.pdf', size: '1.6 MB' },
-    { name: '10th / 12th Board Passing Certificate', fileName: 'board_passing_cert.pdf', size: '1.4 MB' },
-  ],
-  photo: [
-    { name: 'Passport Size Photograph', fileName: 'passport_size_white_bg.jpg', size: '850 KB' },
-    { name: 'Color Studio Headshot', fileName: 'recent_headshot_hd.jpg', size: '1.1 MB' },
-    { name: 'Formal Studio Portrait', fileName: 'studio_formal_photo.png', size: '920 KB' },
-  ],
-};
 
 export function MembershipStep3Screen() {
   const navigation = useNavigation<NavProp>();
   const {
     personalInfo,
+    addressInfo,
     documents,
     updateDocuments,
     submitApplication,
@@ -747,35 +718,7 @@ export function MembershipStep3Screen() {
                   </TouchableOpacity>
                 </View>
 
-                {/* Preset Options */}
-                <View style={styles.presetsSection}>
-                  <Text style={styles.presetsHeading}>Official Document Presets:</Text>
-                  <View style={styles.presetsList}>
-                    {PRESET_OPTIONS[activePickerType].map((item, idx) => (
-                      <TouchableOpacity
-                        key={idx}
-                        style={styles.presetCard}
-                        activeOpacity={0.7}
-                        onPress={() => applyUploadedDocument(activePickerType, item)}>
-                        <View style={styles.presetIconWrap}>
-                          <Icon
-                            name={item.fileName.endsWith('.pdf') ? 'file-pdf' : 'file-text'}
-                            size={20}
-                            color={colors.primary}
-                            strokeWidth={2}
-                          />
-                        </View>
-                        <View style={styles.presetTextWrap}>
-                          <Text style={styles.presetName}>{item.name}</Text>
-                          <Text style={styles.presetMeta}>
-                            {item.fileName} • {item.size}
-                          </Text>
-                        </View>
-                        <Icon name="upload" size={18} color={colors.primary} strokeWidth={2} />
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
+                
               </>
             )}
           </ScrollView>

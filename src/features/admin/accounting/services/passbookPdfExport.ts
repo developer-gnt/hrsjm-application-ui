@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { formatINR } from '../../../../core/utils/currency';
+import { formatPdfINR } from '../../../../core/utils/currency';
 import {
   downloadReportPdf,
   shareReportPdf,
@@ -95,25 +95,25 @@ export const generatePassbookPdf = (data: PassbookExportData): jsPDF => {
   const kpis = [
     {
       label: 'TOTAL CREDITS',
-      value: formatINR(data.summary.total_credit || 0, { noDecimals: true }),
+      value: formatPdfINR(data.summary.total_credit || 0, { noDecimals: true }),
       color: [37, 99, 235], // Blue
       bg: [238, 244, 255],
     },
     {
       label: 'TOTAL EXPENSES',
-      value: formatINR(data.summary.total_debit || 0, { noDecimals: true }),
+      value: formatPdfINR(data.summary.total_debit || 0, { noDecimals: true }),
       color: [220, 38, 38], // Red
       bg: [254, 242, 242],
     },
     {
       label: 'OPENING BALANCE',
-      value: formatINR(data.summary.opening_balance || 0, { noDecimals: true }),
+      value: formatPdfINR(data.summary.opening_balance || 0, { noDecimals: true }),
       color: [180, 83, 9], // Amber
       bg: [255, 251, 235],
     },
     {
       label: 'CLOSING BALANCE',
-      value: formatINR(data.summary.closing_balance || 0, { noDecimals: true }),
+      value: formatPdfINR(data.summary.closing_balance || 0, { noDecimals: true }),
       color: [15, 40, 96], // Navy
       bg: [248, 250, 252],
     },

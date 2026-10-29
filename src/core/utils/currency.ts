@@ -37,3 +37,24 @@ export const formatINR = (
   // Normalize spacing between currency symbol and amount if needed
   return formatted.replace('₹', '₹ ');
 };
+
+/**
+ * Formats an amount for PDF generation.
+ * Uses 'Rs.' prefix instead of Unicode '₹' to prevent character corruption
+ * (e.g. '¹' superscript one) when using standard PDF fonts like Helvetica.
+ * Example: 296258 -> "Rs. 2,96,258"
+ */
+export const formatPdfINR = (
+  amount: number | string | null | undefined,
+  options?: {
+    noDecimals?: boolean;
+    compact?: boolean;
+  }
+): string => {
+  if (amount === null || amount === undefined || isNaN(Number(amount))) {
+    return options?.noDecimals ? 'Rs. 0' : 'Rs. 0.00';
+  }
+  const formatted = formatINR(amount, options);
+  return formatted.replace(/₹\s?/, 'Rs. ').trim();
+};
+

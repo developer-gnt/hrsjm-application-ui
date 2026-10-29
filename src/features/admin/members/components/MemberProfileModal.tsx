@@ -167,43 +167,23 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
 
   if (!member) return null;
 
-  // Documents list
-  const submittedDocs = [
-    {
-      id: 'doc-aadhaar-front',
-      name: 'Aadhaar Card (Front)',
-      type: 'Identity Proof',
-      status: 'VERIFIED',
-      uploadDate: joinedDate,
-      size: '1.4 MB',
-    },
-    {
-      id: 'doc-aadhaar-back',
-      name: 'Aadhaar Card (Back)',
-      type: 'Address Proof',
-      status: 'VERIFIED',
-      uploadDate: joinedDate,
-      size: '1.2 MB',
-    },
-    {
-      id: 'doc-photo',
-      name: 'Passport Photograph',
-      type: 'Photo Identification',
-      status: 'VERIFIED',
-      uploadDate: joinedDate,
-      size: '850 KB',
-    },
-    {
-      id: 'doc-qualification',
-      name: `Educational Certificate (${qualification})`,
-      type: 'Eligibility Document',
-      status: 'SUBMITTED',
-      uploadDate: joinedDate,
-      size: '2.1 MB',
-    },
-  ];
+  // Documents uploaded by the member
+  const memberDocsRaw =
+    (documentsData?.documents && documentsData.documents.length > 0
+      ? documentsData.documents
+      : (member as any)?.documents || []
+    );
 
-  const actualDocs = documentsData?.documents || [];
+  const actualDocs = (memberDocsRaw || [])
+    .filter((d: any) => Boolean(d && (d.url || d.fileUrl || d.uri || d.fileUri || d.isUploaded || d.fileName)))
+    .map((d: any, idx: number) => ({
+      id: d.id || `doc-${idx + 1}`,
+      name: d.title || d.name || d.fileName || 'Uploaded Document',
+      type: d.type || (d.title ? 'Verification Document' : 'Document Proof'),
+      status: d.verified ? 'VERIFIED' : 'SUBMITTED',
+      uploadDate: d.uploadDate || joinedDate,
+      size: d.size || d.fileSize || '1.5 MB',
+    }));
 
   return (
     <Modal
@@ -568,26 +548,36 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 <View style={styles.infoCard}>
                   <Text style={styles.cardTitle}>Uploaded Verification Records</Text>
 
-                  <View style={styles.docList}>
-                    {submittedDocs.map((doc) => (
-                      <View key={doc.id} style={styles.docRow}>
-                        <View style={styles.docIconBg}>
-                          <FileText size={20} color={BrandColors.navy} />
+                  {actualDocs.length === 0 ? (
+                    <View style={styles.emptyDocsWrap}>
+                      <Text style={styles.emptyDocsIcon}>📁</Text>
+                      <Text style={styles.emptyDocsTitle}>No Documents Uploaded</Text>
+                      <Text style={styles.emptyDocsSubtitle}>
+                        No verification documents have been uploaded for this member.
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={styles.docList}>
+                      {actualDocs.map((doc: any) => (
+                        <View key={doc.id} style={styles.docRow}>
+                          <View style={styles.docIconBg}>
+                            <FileText size={20} color={BrandColors.navy} />
+                          </View>
+                          <View style={styles.docTextCol}>
+                            <Text style={styles.docName} numberOfLines={1}>
+                              {doc.name}
+                            </Text>
+                            <Text style={styles.docMeta}>
+                              {doc.type} · {doc.size}
+                            </Text>
+                          </View>
+                          <View style={styles.docStatusBadge}>
+                            <Text style={styles.docStatusText}>{doc.status}</Text>
+                          </View>
                         </View>
-                        <View style={styles.docTextCol}>
-                          <Text style={styles.docName} numberOfLines={1}>
-                            {doc.name}
-                          </Text>
-                          <Text style={styles.docMeta}>
-                            {doc.type} · {doc.size}
-                          </Text>
-                        </View>
-                        <View style={styles.docStatusBadge}>
-                          <Text style={styles.docStatusText}>{doc.status}</Text>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
               </View>
             )}
@@ -1067,6 +1057,28 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     color: '#1E40AF',
+  },
+  emptyDocsWrap: {
+    paddingVertical: 28,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyDocsIcon: {
+    fontSize: 28,
+    marginBottom: 8,
+  },
+  emptyDocsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: BrandColors.textPrimary,
+    marginBottom: 4,
+  },
+  emptyDocsSubtitle: {
+    fontSize: 12,
+    color: BrandColors.textMuted,
+    textAlign: 'center',
+    maxWidth: 280,
   },
   footer: {
     flexDirection: 'row',
