@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -7,7 +7,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { BorderRadius, FontFamilies, Spacing } from '../../../../core';
@@ -34,6 +33,7 @@ export const UserPasswordResetModal: React.FC<UserPasswordResetModalProps> = ({
   user,
   onClose,
 }) => {
+  const inputRef = useRef<any>(null);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -105,168 +105,182 @@ export const UserPasswordResetModal: React.FC<UserPasswordResetModalProps> = ({
       animationType="fade"
       onRequestClose={handleDone}
     >
-      <TouchableWithoutFeedback onPress={handleDone}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View style={styles.card}>
-              <View
-                style={[
-                  styles.iconCircle,
-                  success && styles.iconCircleSuccess,
-                ]}
-              >
-                <Text style={styles.icon}>{success ? '✓' : '🔑'}</Text>
-              </View>
+      <View style={styles.overlay}>
+        <TouchableOpacity
+          style={styles.backdropTouch}
+          onPress={handleDone}
+          activeOpacity={1}
+          accessibilityLabel="Close overlay"
+        />
+        <View style={styles.card}>
+          <View
+            style={[
+              styles.iconCircle,
+              success && styles.iconCircleSuccess,
+            ]}
+          >
+            <Text style={styles.icon}>{success ? '✓' : '🔑'}</Text>
+          </View>
 
-              <Text style={styles.title}>
-                {success ? 'Password Updated!' : 'Reset User Password'}
+          <Text style={styles.title}>
+            {success ? 'Password Updated!' : 'Reset User Password'}
+          </Text>
+
+          {/* Target User Summary Pill */}
+          <View style={styles.userSummaryBox}>
+            <Text style={styles.userSummaryName}>{user.name}</Text>
+            <Text style={styles.userSummaryMeta}>
+              {user.email || user.phone}
+            </Text>
+          </View>
+
+          {success ? (
+            <>
+              <Text style={styles.message}>
+                The new password has been securely saved to the database.
+                Existing sessions have been revoked. The user can now log in
+                with the credentials below:
               </Text>
 
-              {/* Target User Summary Pill */}
-              <View style={styles.userSummaryBox}>
-                <Text style={styles.userSummaryName}>{user.name}</Text>
-                <Text style={styles.userSummaryMeta}>
-                  {user.email || user.phone}
-                </Text>
-              </View>
-
-              {success ? (
-                <>
-                  <Text style={styles.message}>
-                    The new password has been securely saved to the database.
-                    Existing sessions have been revoked. The user can now log in
-                    with the credentials below:
-                  </Text>
-
-                  {/* Password Display Box with Copy Button */}
-                  <View style={styles.passwordDisplayCard}>
-                    <Text style={styles.passwordLabel}>NEW LOGIN PASSWORD</Text>
-                    <View style={styles.passwordDisplayRow}>
-                      <Text style={styles.passwordText}>{password}</Text>
-                      <TouchableOpacity
-                        style={[styles.copyBtn, copied && styles.copyBtnCopied]}
-                        onPress={handleCopy}
-                        activeOpacity={0.7}
-                        accessibilityRole="button"
-                        accessibilityLabel="Copy password to clipboard"
-                      >
-                        <Text
-                          style={[
-                            styles.copyBtnText,
-                            copied && styles.copyBtnTextCopied,
-                          ]}
-                        >
-                          {copied ? '✓ Copied' : '📋 Copy'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
+              {/* Password Display Box with Copy Button */}
+              <View style={styles.passwordDisplayCard}>
+                <Text style={styles.passwordLabel}>NEW LOGIN PASSWORD</Text>
+                <View style={styles.passwordDisplayRow}>
+                  <Text style={styles.passwordText}>{password}</Text>
                   <TouchableOpacity
-                    style={styles.doneBtn}
-                    onPress={handleDone}
-                    activeOpacity={0.8}
-                    accessibilityRole="button"
-                    accessibilityLabel="Close modal"
-                  >
-                    <Text style={styles.doneBtnText}>Done</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.message}>
-                    Enter a new password or generate a secure one. This will
-                    immediately overwrite their existing password in the system.
-                  </Text>
-
-                  {/* Error Notification */}
-                  {errorMessage ? (
-                    <View style={styles.errorBox}>
-                      <Text style={styles.errorText}>⚠️ {errorMessage}</Text>
-                    </View>
-                  ) : null}
-
-                  {/* Password Input Field */}
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>New Password</Text>
-                    <View style={styles.inputRow}>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Enter at least 6 characters"
-                        placeholderTextColor="#94A3B8"
-                        value={password}
-                        onChangeText={text => {
-                          setPassword(text);
-                          if (errorMessage) setErrorMessage(null);
-                        }}
-                        secureTextEntry={!showPassword}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        editable={!isSubmitting}
-                      />
-                      <TouchableOpacity
-                        style={styles.toggleVisibilityBtn}
-                        onPress={() => setShowPassword(prev => !prev)}
-                        activeOpacity={0.7}
-                        accessibilityRole="button"
-                        accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        <Text style={styles.toggleVisibilityIcon}>
-                          {showPassword ? '🙈' : '👁️'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  {/* Generate Password Helper */}
-                  <TouchableOpacity
-                    style={styles.generateBtn}
-                    onPress={handleGenerate}
+                    style={[styles.copyBtn, copied && styles.copyBtnCopied]}
+                    onPress={handleCopy}
                     activeOpacity={0.7}
                     accessibilityRole="button"
-                    accessibilityLabel="Generate strong password"
-                    disabled={isSubmitting}
+                    accessibilityLabel="Copy password to clipboard"
                   >
-                    <Text style={styles.generateBtnText}>🎲 Generate Strong Password</Text>
-                  </TouchableOpacity>
-
-                  {/* Button Actions */}
-                  <View style={styles.btnRow}>
-                    <TouchableOpacity
-                      style={styles.cancelBtn}
-                      onPress={handleDone}
-                      activeOpacity={0.8}
-                      disabled={isSubmitting}
-                      accessibilityRole="button"
-                      accessibilityLabel="Cancel password reset"
-                    >
-                      <Text style={styles.cancelBtnText}>Cancel</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
+                    <Text
                       style={[
-                        styles.actionBtn,
-                        (password.trim().length < 6 || isSubmitting) && styles.actionBtnDisabled,
+                        styles.copyBtnText,
+                        copied && styles.copyBtnTextCopied,
                       ]}
-                      onPress={handleResetSubmit}
-                      activeOpacity={0.8}
-                      disabled={password.trim().length < 6 || isSubmitting}
-                      accessibilityRole="button"
-                      accessibilityLabel="Set New Password"
                     >
-                      {isSubmitting ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                      ) : (
-                        <Text style={styles.actionBtnText}>Set Password</Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
-            </View>
-          </TouchableWithoutFeedback>
+                      {copied ? '✓ Copied' : '📋 Copy'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.doneBtn}
+                onPress={handleDone}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Close modal"
+              >
+                <Text style={styles.doneBtnText}>Done</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.message}>
+                Enter a new password or generate a secure one. This will
+                immediately overwrite their existing password in the system.
+              </Text>
+
+              {/* Error Notification */}
+              {errorMessage ? (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>⚠️ {errorMessage}</Text>
+                </View>
+              ) : null}
+
+              {/* Password Input Field */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>New Password</Text>
+                <TouchableOpacity
+                  style={styles.inputRow}
+                  activeOpacity={1}
+                  onPress={() => inputRef.current?.focus()}
+                >
+                  <TextInput
+                    ref={inputRef}
+                    style={styles.input}
+                    placeholder="Enter at least 6 characters"
+                    placeholderTextColor="#94A3B8"
+                    value={password}
+                    onChangeText={text => {
+                      setPassword(text);
+                      if (errorMessage) setErrorMessage(null);
+                    }}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!isSubmitting}
+                  />
+                  <TouchableOpacity
+                    style={styles.toggleVisibilityBtn}
+                    onPress={() => setShowPassword(prev => !prev)}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    <Text style={styles.toggleVisibilityIcon}>
+                      {showPassword ? '🙈' : '👁️'}
+                    </Text>
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
+
+              {/* Generate Password Helper */}
+              <TouchableOpacity
+                style={styles.generateBtn}
+                onPress={handleGenerate}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Generate strong password"
+                disabled={isSubmitting}
+              >
+                <Text style={styles.generateBtnText}>🎲 Generate Strong Password</Text>
+              </TouchableOpacity>
+
+              {/* Button Actions */}
+              <View style={styles.btnRow}>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={handleDone}
+                  activeOpacity={0.8}
+                  disabled={isSubmitting}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel password reset"
+                >
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.actionBtn,
+                    (password.trim().length < 6 || isSubmitting) && styles.actionBtnDisabled,
+                  ]}
+                  onPress={handleResetSubmit}
+                  activeOpacity={0.8}
+                  disabled={password.trim().length < 6 || isSubmitting}
+                  accessibilityRole="button"
+                  accessibilityLabel="Set New Password"
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator size="small" color="#011F39" />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.actionBtnText,
+                        (password.trim().length < 6 || isSubmitting) && styles.actionBtnTextDisabled,
+                      ]}
+                    >
+                      Set Password
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 };
@@ -278,6 +292,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.base,
+  },
+  backdropTouch: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   card: {
     width: '100%',
@@ -291,6 +312,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 12,
     elevation: 8,
+    zIndex: 10,
   },
   iconCircle: {
     width: 54,
@@ -385,9 +407,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    height: '100%',
     fontSize: 14,
     color: '#0F172A',
     paddingVertical: 0,
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : {}),
   },
   toggleVisibilityBtn: {
     padding: 6,
@@ -482,15 +506,25 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0F2860',
+    backgroundColor: '#FAD465',
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   actionBtnDisabled: {
-    backgroundColor: '#94A3B8',
+    backgroundColor: '#E2E8F0',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   actionBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#011F39',
+  },
+  actionBtnTextDisabled: {
+    color: '#94A3B8',
   },
   doneBtn: {
     width: '100%',
@@ -498,11 +532,16 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0F2860',
+    backgroundColor: '#FAD465',
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   doneBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#011F39',
   },
 });

@@ -280,7 +280,7 @@ export const ReviewSupportTicketScreen: React.FC<ReviewSupportTicketScreenProps>
               accessibilityLabel="Submit Ticket"
             >
               {isSubmitting ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color="#011F39" />
               ) : (
                 <Text style={styles.submitButtonText}>Submit Ticket ✓</Text>
               )}
@@ -680,8 +680,8 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: AdminColors.primary,
-    shadowColor: AdminColors.primary,
+    backgroundColor: AdminColors.accentGold,
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: 13.5,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: AdminColors.primaryDark,
   },
   bottomNavHost: {
     position: 'absolute',

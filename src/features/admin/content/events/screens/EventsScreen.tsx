@@ -350,8 +350,9 @@ onBack={() => {
           setEditingEvent(internalSelectedEvent);
           setInternalSelectedEvent(null);
         }}
-        onDelete={(ev) => {
-          setEventToDelete(ev);
+        onDelete={() => {
+          setInternalSelectedEvent(null);
+          refetch();
         }}
         canManage={allowCreate}
       />

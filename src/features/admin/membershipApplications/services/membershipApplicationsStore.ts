@@ -773,22 +773,18 @@ class MembershipApplicationsStore {
 
       let rawItems: any[] = [];
       if (membershipsRes.status === 'fulfilled') {
-        const resData =
-          (membershipsRes.value as any)?.data !== undefined
-            ? (membershipsRes.value as any).data
-            : membershipsRes.value;
-        const items = Array.isArray(resData) ? resData : (resData as any)?.items || [];
+        const raw = membershipsRes.value;
+        const resData = (raw as any)?.data?.data || (raw as any)?.data || raw;
+        const items = Array.isArray(resData) ? resData : (resData as any)?.items || (raw as any)?.items || [];
         rawItems.push(...items);
       }
 
       const mapped: MembershipApplicationItem[] = rawItems.map(mapBackendToApplicationItem);
 
       if (assistanceRes.status === 'fulfilled') {
-        const aData =
-          (assistanceRes.value as any)?.data !== undefined
-            ? (assistanceRes.value as any).data
-            : assistanceRes.value;
-        const aItems = Array.isArray(aData) ? aData : (aData as any)?.items || [];
+        const raw = assistanceRes.value;
+        const aData = (raw as any)?.data?.data || (raw as any)?.data || raw;
+        const aItems = Array.isArray(aData) ? aData : (aData as any)?.items || (raw as any)?.items || [];
         const mappedSeekers = aItems.map(mapAssistanceRequestToApplicationItem);
         mapped.push(...mappedSeekers);
       }

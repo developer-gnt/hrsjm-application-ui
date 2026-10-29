@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   ScrollView,
   StatusBar,
@@ -15,6 +16,8 @@ import { Typography } from '../../core/theme/typography';
 import { Spacing, BorderRadius, Shadows } from '../../core/theme/spacing';
 import { AppRoutes } from '../../core/constants/routes';
 import { MoreStackParamList } from './NavigationTypes';
+import { apiClient } from '../../core/api/client';
+import { appStorage } from '../../core/storage/app-storage';
 import {
   Activity,
   ArrowDownToLine,
