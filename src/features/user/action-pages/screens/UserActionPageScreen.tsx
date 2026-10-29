@@ -250,6 +250,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
       : 500;
 
   const paymentPayload: PaymentPayload = {
+    userId: authUser?.id,
     purpose: 'donation',
     title:
       pageId === 'donate' && selectedCause

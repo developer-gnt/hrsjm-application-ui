@@ -20,6 +20,7 @@ export const DonorHomeScreen: React.FC = () => {
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
 
   const paymentPayload: PaymentPayload = {
+    userId: user?.id,
     purpose: 'donation',
     title: 'HRSJM General Welfare Donation',
     subtitle: 'Human Rights and Social Justice Mission',

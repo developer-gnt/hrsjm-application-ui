@@ -471,6 +471,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       const result = await globalPaymentService.executePayment(
         {
           ...payload,
+          userId: payload?.userId || user?.id,
           amount: activeAmount,
           donorName,
           donorMobile,

@@ -334,6 +334,7 @@ export function MembershipStep3Screen() {
     if (!validateUploads() || !validateConsents()) return;
 
     setPaymentPayload({
+      userId: authUser?.id,
       purpose: 'membership',
       title: `Membership Fee - ${postTitle}`,
       subtitle: 'Human Rights & Social Justice Mission',

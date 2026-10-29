@@ -69,8 +69,13 @@ export function DonationHistoryScreen({
   const loadDonations = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get<any>('/donation-payments');
-      const rawItems = res?.data?.items || (res as any)?.items || [];
+      let res: any = null;
+      try {
+        res = await apiClient.get<any>('/donation-payments/my');
+      } catch {
+        res = await apiClient.get<any>('/donation-payments', { params: { my_only: true } });
+      }
+      const rawItems = res?.data?.items || (res as any)?.items || (Array.isArray(res?.data) ? res.data : []);
 
       // 1. Verify any pending payments with Cashfree
       const pendingItems = rawItems.filter(
@@ -158,13 +163,10 @@ export function DonationHistoryScreen({
         }
       }
 
-      if (realRecords.length > 0) {
-        setDonationRecords(realRecords);
-      } else {
-        setDonationRecords(MOCK_DONATION_RECORDS.filter(item => item.type === 'Donation'));
-      }
+      // Set real user donation records (empty if user has not donated yet)
+      setDonationRecords(realRecords);
     } catch (err) {
-      setDonationRecords(MOCK_DONATION_RECORDS.filter(item => item.type === 'Donation'));
+      setDonationRecords([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
