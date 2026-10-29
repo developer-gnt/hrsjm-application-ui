@@ -40,10 +40,10 @@ export function ReceiptPdfPreviewScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.topBarBtn}>
-            <Icon name="x" size={20} color={colors.white} strokeWidth={2.5} />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Icon name="chevron-down" size={22} color={colors.primary} style={styles.backIconRotated} />
           </TouchableOpacity>
-          <Text style={styles.topBarTitle}>Receipt Preview</Text>
+          <Text style={styles.pdfTitle}>Receipt Preview</Text>
           <View style={{ width: 36 }} />
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>

@@ -94,7 +94,8 @@ export function getApplicationPaymentStatus(
   if (
     statusStr === 'FAILED' ||
     statusStr === 'CANCELLED' ||
-    statusStr === 'DECLINED'
+    statusStr === 'DECLINED' ||
+    statusStr === 'UNPAID'
   ) {
     return 'UNPAID';
   }

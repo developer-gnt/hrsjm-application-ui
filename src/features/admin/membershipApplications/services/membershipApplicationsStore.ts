@@ -1,4 +1,4 @@
-﻿import {
+import {
   MembershipApplicationItem,
   ApplicationStatsData,
   ApplicationStatus,
@@ -304,7 +304,10 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
         (appData.payment_order_id || appData.gateway_payment_id || appData.transaction_id ? 'PAID' : undefined) ||
         ''
       ).toUpperCase();
-      if (raw === 'FAILED' || raw === 'CANCELLED' || raw === 'DECLINED') {
+      if (raw === 'FAILED' || raw === 'CANCELLED' || raw === 'DECLINED' || raw === 'UNPAID') {
+        return 'UNPAID';
+      }
+      if (!raw && backend.payment === null && (backend.status === 'PENDING' || status === 'submitted')) {
         return 'UNPAID';
       }
       return 'PAID';

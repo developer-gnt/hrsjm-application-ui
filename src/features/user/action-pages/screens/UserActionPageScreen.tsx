@@ -298,7 +298,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
       return;
     }
     if (pageId === 'donate' || content.ctaLabel === 'Donate Now') {
-      handleDonatePress();
+      handleNgoDonatePress();
       return;
     }
     showPendingAction(content.ctaLabel);
@@ -837,7 +837,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
             donorName: authUser?.full_name || 'Donor',
             donorEmail: authUser?.email || undefined,
             donorPhone: authUser?.mobile_number || undefined,
-            imageType: isNgo ? 'general' : 'education',
+            imageType: (isNgo ? 'medical' : 'education') as any,
           });
 
           if (!isNgo) {

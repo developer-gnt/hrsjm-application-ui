@@ -57,6 +57,11 @@ export function ReceiptDetailScreen() {
   const [printSheetVisible, setPrintSheetVisible] = useState(false);
   const [downloadSuccessToast, setDownloadSuccessToast] = useState<string | null>(null);
 
+  const backLabel =
+    fromScreen === 'DonationHistory' || fromScreen === 'DonationDetail'
+      ? 'Back to Donation History'
+      : 'Back to Receipts List';
+
   // Find corresponding donation or membership record
   const record: DonationRecord | undefined =
     (route.params as any)?.record ||
@@ -82,11 +87,6 @@ export function ReceiptDetailScreen() {
 
   const statusMeta = STATUS_META[record.status] || STATUS_META.Completed;
   const isMembership = record.type === 'Membership';
-
-  const backLabel =
-    fromScreen === 'DonationHistory' || fromScreen === 'DonationDetail'
-      ? 'Back to Donation History'
-      : 'Back to Receipts List';
 
   const handleDownload = () => {
     navigation.navigate('ReceiptPdfPreview', {

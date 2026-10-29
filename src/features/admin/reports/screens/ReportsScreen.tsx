@@ -74,6 +74,9 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   const [asOfDate, setAsOfDate] = useState(defaultPreset.asOfDate);
   const [activeContentTab, setActiveContentTab] = useState<ContentTab>('Rights');
 
+  const currentPresetLabel =
+    getDatePresets().find(p => p.key === selectedPreset)?.label || defaultPreset.label;
+
   const analytics = useReportsAnalytics(startDate, endDate);
   const tbSummary = useTrialBalanceSummary(asOfDate);
   const plSummary = useProfitLossSummary(startDate, endDate);
