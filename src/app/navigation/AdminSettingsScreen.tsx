@@ -136,7 +136,7 @@ export const SETTING_SECTIONS: SettingSection[] = [
         icon: Briefcase,
         title: 'Accounting & Ledger',
         description: 'Chart of accounts, general ledger, and journal entries.',
-        route: AppRoutes.CHART_OF_ACCOUNTS,
+        route: AppRoutes.ACCOUNTING,
       },
       {
         icon: BarChart3,
@@ -499,12 +499,12 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
               onPress={() => navigation.navigate(AppRoutes.CHART_OF_ACCOUNTS)}
             >
               <View style={styles.itemIconBadge}>
-                <FolderTree size={16} color="#1E3A8A" strokeWidth={2} />
+                <BarChart3 size={16} color="#1E3A8A" strokeWidth={2} />
               </View>
               <View style={styles.itemTextBlock}>
                 <Text style={styles.itemTitle}>Chart of Accounts</Text>
                 <Text style={styles.itemDescription}>
-                  Hierarchical structure of organizational ledger accounts
+                  Financial charts, revenue analytics, and performance reports
                 </Text>
               </View>
               <ChevronRight size={16} color="#94A3B8" strokeWidth={2.2} />

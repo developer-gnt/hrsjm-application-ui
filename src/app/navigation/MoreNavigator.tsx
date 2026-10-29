@@ -8,7 +8,6 @@ import { ExpenseVouchersScreen, CreateExpenseVoucherScreen, ExpenseDetailsScreen
 import { ReceiptVouchersScreen, CreateReceiptVoucherScreen, ReceiptVoucherDetailsScreen } from '../../features/admin/receipts';
 import {
   ChartOfAccountsScreen,
-  PassbookScreen,
   GeneralLedgerScreen,
   JournalEntriesScreen,
 } from '../../features/admin/accounting';
@@ -154,11 +153,18 @@ export const MoreNavigator: React.FC = () => (
       component={ReceiptVoucherDetailsScreen}
     />
 
-    {/* Accounting — Passbook & Daily Cash */}
+    {/* Accounting — Phase 6 (Real integrated screens) */}
     <Stack.Screen name={AppRoutes.ACCOUNTING}>
       {({ navigation }) => (
-        <PassbookScreen
+        <ChartOfAccountsScreen
           onBack={navigation.goBack}
+          onViewAccountLedger={node =>
+            navigation.navigate(AppRoutes.GENERAL_LEDGER as any, {
+              accountId: node.id,
+              accountName: node.account_name,
+              accountCode: node.account_code,
+            })
+          }
           onNavigate={(target: string) => {
             if (target === 'AdminMoreTab') {
               navigation.navigate('MoreMenu' as any);
@@ -172,15 +178,12 @@ export const MoreNavigator: React.FC = () => (
 
     <Stack.Screen name={AppRoutes.CHART_OF_ACCOUNTS}>
       {({ navigation }) => (
-        <ChartOfAccountsScreen
+        <ReportsScreen
           onBack={navigation.goBack}
-          onViewAccountLedger={node =>
-            navigation.navigate(AppRoutes.GENERAL_LEDGER as any, {
-              accountId: node.id,
-              accountName: node.account_name,
-              accountCode: node.account_code,
-            })
-          }
+          onOpenTrialBalance={() => navigation.navigate(AppRoutes.TRIAL_BALANCE as any)}
+          onOpenProfitLoss={() => navigation.navigate(AppRoutes.PROFIT_LOSS as any)}
+          onOpenBalanceSheet={() => navigation.navigate(AppRoutes.BALANCE_SHEET as any)}
+          onOpenLedger={() => navigation.navigate(AppRoutes.GENERAL_LEDGER as any)}
           onNavigate={(target: string) => {
             if (target === 'AdminMoreTab') {
               navigation.navigate('MoreMenu' as any);
