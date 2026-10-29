@@ -30,6 +30,7 @@ import {
   navigateToProfile,
 } from '../../../core/navigation/appRouter';
 import { BorderRadius, Spacing, FontFamilies } from '../../../core';
+import { useAuthStore } from '../../auth/store/authStore';
 
 interface RenewMembershipScreenProps {
   onBack?: () => void;
@@ -60,6 +61,7 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const authUser = useAuthStore(state => state.user);
   const memberData = useMembershipDetailsData();
   const [selectedPlanId, setSelectedPlanId] = useState<string>('1-year');
   const [paymentModalVisible, setPaymentModalVisible] = useState<boolean>(false);
@@ -158,6 +160,10 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
       : `Membership Renewal (${applicablePlan.label})`;
 
     setPaymentPayload({
+      userId: authUser?.id,
+      donorName: authUser?.full_name || 'Member',
+      donorMobile: authUser?.mobile_number || '',
+      donorEmail: authUser?.email || '',
       purpose: 'membership',
       title,
       category: 'Membership',

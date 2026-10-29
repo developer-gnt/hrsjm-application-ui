@@ -197,7 +197,7 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
               size="lg"
               loading={busyAction === 'download'}
               disabled={busyAction !== null}
-              icon={<DownloadIcon color={AdminColors.textOnDark} size={16} />}
+              icon={<DownloadIcon color={AdminColors.primaryDark} size={16} />}
               onPress={() => download(cardProfile)}
               style={styles.downloadButton}
             />

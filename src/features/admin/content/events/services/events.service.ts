@@ -5,6 +5,7 @@ import type {
   EventStatsSummary,
   CreateEventFormState,
 } from '../types/events.types';
+import { SAMPLE_EVENTS } from '../data/sample-events';
 
 export interface BackendEventItem {
   id: string;
@@ -101,11 +102,17 @@ export const getEventsList = async (
 };
 
 export const getEventDetails = async (id: string): Promise<EventListItem> => {
-  const res = await apiClient.get<BackendEventItem>(
-    ApiRoutes.EVENTS.DETAILS(id),
-  );
-  const rawData: any = res?.data ?? res ?? {};
-  return mapBackendEventToUi(rawData);
+  try {
+    const res = await apiClient.get<BackendEventItem>(
+      ApiRoutes.EVENTS.DETAILS(id),
+    );
+    const rawData: any = res?.data ?? res ?? {};
+    return mapBackendEventToUi(rawData);
+  } catch (err: any) {
+    const sample = SAMPLE_EVENTS.find(e => e.id === id);
+    if (sample) return sample;
+    throw err;
+  }
 };
 
 export const createEventApi = async (

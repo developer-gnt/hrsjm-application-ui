@@ -197,7 +197,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
             <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={submitting}>
               {submitting ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color="#011F39" />
               ) : (
                 <Text style={styles.saveText}>Create Account</Text>
               )}
@@ -361,17 +361,22 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   saveBtn: {
-    backgroundColor: AdminColors.primary,
+    backgroundColor: AdminColors.accentGold,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
     minWidth: 100,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   saveText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#011F39',
   },
 });

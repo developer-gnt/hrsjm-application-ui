@@ -13,7 +13,7 @@ import { AdminColors } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
 import { Spacing, BorderRadius } from '../../theme/spacing';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'gold' | 'ghost' | 'success' | 'text';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'gold' | 'ghost' | 'success' | 'text' | 'navy';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface AppButtonProps {
@@ -77,14 +77,20 @@ export const AppButton: React.FC<AppButtonProps> = ({
         return {
           backgroundColor: '#10B981',
         };
-      case 'gold':
+      case 'navy':
         return {
-          backgroundColor: AdminColors.accentGold,
+          backgroundColor: AdminColors.primary,
         };
+      case 'gold':
       case 'primary':
       default:
         return {
-          backgroundColor: AdminColors.primary,
+          backgroundColor: AdminColors.accentGold,
+          shadowColor: '#011F39',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 3,
+          elevation: 2,
         };
     }
   };
@@ -112,14 +118,16 @@ export const AppButton: React.FC<AppButtonProps> = ({
         return {
           color: AdminColors.textOnDark,
         };
-      case 'gold':
+      case 'navy':
         return {
-          color: AdminColors.primaryDark, // Navy text on gold button per docs/design.md §7 & §14
+          color: AdminColors.textOnDark,
         };
+      case 'gold':
       case 'primary':
       default:
         return {
-          color: AdminColors.textOnDark,
+          color: AdminColors.primaryDark, // Navy text on gold button per docs/design.md §7 & §14
+          fontWeight: '700',
         };
     }
   };
@@ -184,7 +192,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
           color={
             variant === 'outline' || variant === 'secondary' || variant === 'ghost' || variant === 'text'
               ? AdminColors.primary
-              : variant === 'gold'
+              : variant === 'gold' || variant === 'primary' || !variant
               ? AdminColors.primaryDark
               : '#FFFFFF'
           }

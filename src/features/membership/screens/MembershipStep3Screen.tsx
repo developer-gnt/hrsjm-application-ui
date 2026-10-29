@@ -305,6 +305,7 @@ export function MembershipStep3Screen() {
     if (!validateUploads() || !validateConsents()) return;
 
     setPaymentPayload({
+      userId: authUser?.id,
       purpose: 'membership',
       title: `Membership Fee - ${postTitle}`,
       subtitle: 'Human Rights & Social Justice Mission',
@@ -611,10 +612,10 @@ export function MembershipStep3Screen() {
             accessibilityRole="button"
             accessibilityLabel={`Pay ₹${postFeeAmount} & Submit Application`}>
             {submitting ? (
-              <ActivityIndicator size="small" color={colors.white} />
+              <ActivityIndicator size="small" color="#011F39" />
             ) : (
               <View style={styles.btnContentRow}>
-                <Icon name="award" size={16} color={colors.white} strokeWidth={2.4} />
+                <Icon name="award" size={16} color="#011F39" strokeWidth={2.4} />
                 <Text style={styles.submitBtnText}>Pay ₹{postFeeAmount} & Submit</Text>
               </View>
             )}
@@ -919,17 +920,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: radius.md,
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
+    backgroundColor: '#FAD465',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
   },
   submitBtnText: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.white,
+    color: '#011F39',
   },
   secureNoticeRow: {
     flexDirection: 'row',

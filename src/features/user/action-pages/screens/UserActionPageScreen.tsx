@@ -45,6 +45,22 @@ import { MemberCausesContainer } from '../../../member/screens/MemberCausesConta
 import type { MemberCause } from '../../../member/types/causes.types';
 import { recentDonationsStore } from '../../../donations/services/recent-donations.store';
 
+export interface CauseCategoryFilter {
+  key: string;
+  label: string;
+  icon: React.ComponentProps<typeof AppIcon>['name'];
+}
+
+export const CAUSE_CATEGORIES: CauseCategoryFilter[] = [
+  { key: 'all', label: 'All Causes', icon: 'heart' },
+  { key: 'education', label: 'Education Support', icon: 'book-open' },
+  { key: 'healthcare', label: 'Medical & Healthcare', icon: 'heart-pulse' },
+  { key: 'relief', label: 'Emergency Relief & Food', icon: 'heart-hands' },
+  { key: 'women', label: 'Women & Child Welfare', icon: 'users' },
+  { key: 'human_rights', label: 'Human Rights & Legal Aid', icon: 'scale' },
+  { key: 'environment', label: 'Environment & Welfare', icon: 'globe' },
+];
+
 export interface UserActionPageScreenProps {
   pageId: ActionPageId;
   onBack: () => void;
@@ -151,11 +167,10 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
 
   const content = ACTION_PAGE_CONTENT[pageId];
   const { width } = useWindowDimensions();
-  const [selectedCause, setSelectedCause] = useState<string>(
-    content.cards?.[0]?.title || 'Awareness and Education',
-  );
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>('all');
   const [dynamicCauses, setDynamicCauses] = useState<MemberCause[]>([]);
   const [showCauseDirectory, setShowCauseDirectory] = useState<boolean>(false);
+  const [activePaymentPayload, setActivePaymentPayload] = useState<PaymentPayload | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -163,7 +178,8 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
       causesService
         .getCauses()
         .then(res => {
-          if (mounted && Array.isArray(res) && res.length > 0) {
+          if (mounted && Array.isArray(res)) {
+            // Strictly real, verified causes without mock/test/complaint data
             setDynamicCauses(res);
           }
         })
@@ -174,54 +190,17 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
     };
   }, [pageId]);
 
-  const availableCauses = useMemo(() => {
-    if (pageId !== 'donate') return content.cards;
-    const dynamicList = dynamicCauses
-      .filter(dc => {
-        const titleLower = (dc.title || '').toLowerCase();
-        const descLower = (dc.description || '').toLowerCase();
-        return (
-          !titleLower.includes('account verification') &&
-          !titleLower.includes('seeker verification') &&
-          !descLower.includes('account verification') &&
-          !descLower.includes('registration pending') &&
-          !titleLower.includes('mock') &&
-          !titleLower.includes('test')
-        );
-      })
-      .map(dc => {
-        let iconName: any = 'heart';
-        if (dc.categoryKey === 'healthcare') iconName = 'heart-pulse';
-        else if (dc.categoryKey === 'education') iconName = 'book-open';
-        else if (dc.categoryKey === 'relief') iconName = 'heart-hands';
-        else if (dc.categoryKey === 'women') iconName = 'users';
-        else if (dc.categoryKey === 'environment') iconName = 'globe';
-        return {
-          title: dc.title,
-          description: dc.description || `Support ${dc.category} cause`,
-          icon: iconName,
-        };
-      });
-
-    const base = content.cards.map(c => ({
-      title: c.title,
-      description: c.description,
-      icon: c.icon,
-    }));
-
-    // Dynamic latest causes first, followed by base causes that are not duplicates
-    const combined = [
-      ...dynamicList,
-      ...base.filter(b => !dynamicList.some(d => d.title.toLowerCase() === b.title.toLowerCase())),
-    ];
-    return combined;
-  }, [pageId, content.cards, dynamicCauses]);
-
-  // Show only 4 latest causes on the donate page, with full access via "View All Causes"
-  const displayedCauses = useMemo(() => {
-    if (pageId !== 'donate') return availableCauses;
-    return availableCauses.slice(0, 4);
-  }, [pageId, availableCauses]);
+  // Filter verified causes by active category key
+  const categoryCauses = useMemo(() => {
+    if (pageId !== 'donate') return [];
+    if (selectedCategoryKey === 'all') return dynamicCauses;
+    return dynamicCauses.filter(cause => {
+      const keyMatch = cause.categoryKey === selectedCategoryKey;
+      const catMatch = (cause.category || '').toLowerCase().includes(selectedCategoryKey.toLowerCase());
+      const textMatch = (cause.title || '').toLowerCase().includes(selectedCategoryKey.toLowerCase());
+      return keyMatch || catMatch || textMatch;
+    });
+  }, [pageId, dynamicCauses, selectedCategoryKey]);
 
   const [selectedAmount, setSelectedAmount] = useState<number | 'custom'>(500);
   const [customAmountInput, setCustomAmountInput] = useState('');
@@ -249,24 +228,41 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
       ? donationAmount
       : 500;
 
-  const paymentPayload: PaymentPayload = {
-    purpose: 'donation',
-    title:
-      pageId === 'donate' && selectedCause
-        ? `HRSJM Donation - ${selectedCause}`
-        : 'HRSJM General Donation',
-    subtitle: 'Human Rights and Social Justice Mission',
-    amount: resolvedDonationAmount,
-    donorName: authUser?.full_name || 'Donor',
-    donorMobile: authUser?.mobile_number || (authUser as any)?.phone || '',
-    donorEmail: authUser?.email || '',
-    category:
-      pageId === 'donate' && selectedCause ? selectedCause : 'General Public Aid',
-    location: 'National / All India',
-    entityId: `don-${(selectedCause || 'gen').toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`,
+  // 1. Direct NGO Donation from Choose Donation Amount
+  const handleNgoDonatePress = () => {
+    const payload: PaymentPayload = {
+      userId: authUser?.id,
+      purpose: 'donation',
+      category: 'NGO Donation',
+      title: 'HRSJM NGO Donation - General Fund',
+      subtitle: 'Human Rights & Social Justice Mission',
+      amount: resolvedDonationAmount,
+      donorName: authUser?.full_name || 'Donor',
+      donorMobile: authUser?.mobile_number || (authUser as any)?.phone || '',
+      donorEmail: authUser?.email || '',
+      location: 'National / All India',
+      entityId: `don-ngo-${Date.now()}`,
+    };
+    setActivePaymentPayload(payload);
+    setPaymentModalVisible(true);
   };
 
-  const handleDonatePress = () => {
+  // 2. Specific Cause Donation from Cause Card
+  const handleCauseDonatePress = (cause: MemberCause) => {
+    const payload: PaymentPayload = {
+      userId: authUser?.id,
+      purpose: 'donation',
+      category: 'Cause Donation',
+      title: `HRSJM Cause Donation - ${cause.title}`,
+      subtitle: `Verified Cause: ${cause.category}`,
+      amount: resolvedDonationAmount,
+      donorName: authUser?.full_name || 'Donor',
+      donorMobile: authUser?.mobile_number || (authUser as any)?.phone || '',
+      donorEmail: authUser?.email || '',
+      location: cause.location || 'National / All India',
+      entityId: `don-cause-${cause.id.slice(0, 8)}-${Date.now()}`,
+    };
+    setActivePaymentPayload(payload);
     setPaymentModalVisible(true);
   };
 
@@ -480,12 +476,12 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
                   : null,
               ]}
               disabled={selectedAmount === 'custom' && (!customAmount || customAmount <= 0)}
-              onPress={handleDonatePress}
+              onPress={handleNgoDonatePress}
               accessibilityRole="button"
-              accessibilityLabel={`Donate Now${donationAmount ? ` ${formatRupees(donationAmount)}` : ''}`}
+              accessibilityLabel={`Donate to NGO${donationAmount ? ` ${formatRupees(donationAmount)}` : ''}`}
             >
               <Text style={styles.donateButtonText}>
-                Donate Now{donationAmount && donationAmount > 0 ? ` · ${formatRupees(donationAmount)}` : ''}
+                Donate to NGO{donationAmount && donationAmount > 0 ? ` · ${formatRupees(donationAmount)}` : ''}
               </Text>
               <AppIcon
                 name="arrow-right"
@@ -496,7 +492,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
             <View style={styles.secureNote}>
               <AppIcon name="lock" size={13} color={AdminColors.textSecondary} />
               <Text style={styles.secureNoteText}>
-                Secure 256-bit encrypted donation. Eligible for 80G tax benefit.
+                Direct contribution to HRSJM NGO General Fund · 256-bit encrypted · Eligible for 80G benefit.
               </Text>
             </View>
           </View>
@@ -543,47 +539,173 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
               ))}
             </View>
           </View>
-        ) : (
+        ) : pageId === 'donate' ? (
           <View style={styles.palePanel}>
             <View style={styles.causesHeaderRow}>
-              <SectionTitle title={pageId === 'donate' ? 'Select a Cause to Support' : content.cardsTitle} />
-              {pageId === 'donate' ? (
-                <TouchableOpacity
-                  style={styles.viewAllCausesBtn}
-                  onPress={() => setShowCauseDirectory(true)}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="View all causes directory"
-                >
-                  <Text style={styles.viewAllCausesText}>View All Causes</Text>
-                  <AppIcon name="arrow-right" size={13} color={AdminColors.primaryDark} />
-                </TouchableOpacity>
-              ) : null}
+              <View style={styles.causesHeaderCopy}>
+                <SectionTitle title="Select a Cause to Support" />
+                <Text style={styles.causesSectionSubtitle}>
+                  Choose a verified cause or browse categories below
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.viewAllCausesBtn}
+                onPress={() => setShowCauseDirectory(true)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="View all causes directory"
+              >
+                <Text style={styles.viewAllCausesText}>View All Causes</Text>
+                <AppIcon name="arrow-right" size={13} color={AdminColors.primaryDark} />
+              </TouchableOpacity>
             </View>
-            <View style={styles.featureGrid}>
-              {displayedCauses.map(card => {
-                const isCauseSelected =
-                  pageId === 'donate' && selectedCause === card.title;
+
+            {/* Horizontal Cause Categories Filter Chips */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryTabsScroll}
+              style={styles.categoryTabsWrapper}
+            >
+              {CAUSE_CATEGORIES.map(cat => {
+                const isCatActive = selectedCategoryKey === cat.key;
                 return (
-                  <View
-                    key={card.title}
-                    style={[styles.gridCell, { width: gridCardWidth }]}
+                  <TouchableOpacity
+                    key={cat.key}
+                    onPress={() => setSelectedCategoryKey(cat.key)}
+                    activeOpacity={0.75}
+                    style={[
+                      styles.categoryTabChip,
+                      isCatActive && styles.categoryTabChipActive,
+                    ]}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: isCatActive }}
                   >
-                    <FeatureCard
-                      title={card.title}
-                      description={card.description}
-                      icon={card.icon}
-                      selected={isCauseSelected}
-                      selectable={pageId === 'donate'}
-                      onPress={
-                        pageId === 'donate'
-                          ? () => setSelectedCause(card.title)
-                          : undefined
-                      }
+                    <AppIcon
+                      name={cat.icon}
+                      size={14}
+                      color={isCatActive ? AdminColors.primaryDark : '#64748B'}
                     />
-                  </View>
+                    <Text
+                      style={[
+                        styles.categoryTabLabel,
+                        isCatActive && styles.categoryTabLabelActive,
+                      ]}
+                    >
+                      {cat.label}
+                    </Text>
+                  </TouchableOpacity>
                 );
               })}
+            </ScrollView>
+
+            {/* Render Causes in the Selected Category or Empty State */}
+            {categoryCauses.length > 0 ? (
+              <View style={styles.causeCardList}>
+                {categoryCauses.map(cause => {
+                  const progressPct =
+                    cause.targetAmount > 0
+                      ? Math.min(100, Math.round(((cause.raisedAmount || 0) / cause.targetAmount) * 100))
+                      : 0;
+                  return (
+                    <View key={cause.id} style={styles.causeRowCard}>
+                      <View style={styles.causeCardHeader}>
+                        <View style={styles.causeCategoryBadge}>
+                          <Text style={styles.causeCategoryBadgeText}>
+                            {cause.categoryIcon || '🎯'} {cause.category}
+                          </Text>
+                        </View>
+                        <View style={styles.verifiedBadge}>
+                          <AppIcon name="check" size={12} color="#059669" />
+                          <Text style={styles.verifiedBadgeText}>Verified Cause</Text>
+                        </View>
+                      </View>
+
+                      <Text style={styles.causeCardTitle} numberOfLines={2}>
+                        {cause.title}
+                      </Text>
+                      <Text style={styles.causeCardDesc} numberOfLines={3}>
+                        {cause.description}
+                      </Text>
+
+                      {/* Progress Bar and Stats */}
+                      <View style={styles.causeProgressRow}>
+                        <Text style={styles.causeRaisedText}>
+                          ₹{(cause.raisedAmount || 0).toLocaleString('en-IN')} raised
+                        </Text>
+                        <Text style={styles.causeTargetText}>
+                          Goal: ₹{cause.targetAmount.toLocaleString('en-IN')} ({progressPct}%)
+                        </Text>
+                      </View>
+                      <View style={styles.causeProgressBarBg}>
+                        <View style={[styles.causeProgressBarFill, { width: `${progressPct}%` }]} />
+                      </View>
+
+                      {/* Cause Donation Button */}
+                      <TouchableOpacity
+                        style={styles.causeDonateBtn}
+                        onPress={() => handleCauseDonatePress(cause)}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Donate to cause: ${cause.title}`}
+                      >
+                        <Text style={styles.causeDonateBtnText}>
+                          Donate to this Cause{donationAmount && donationAmount > 0 ? ` · ${formatRupees(donationAmount)}` : ''}
+                        </Text>
+                        <AppIcon name="arrow-right" size={14} color="#011F39" />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={styles.categoryEmptyBox}>
+                <View style={styles.categoryEmptyIconWrap}>
+                  <AppIcon
+                    name={
+                      CAUSE_CATEGORIES.find(c => c.key === selectedCategoryKey)?.icon || 'heart'
+                    }
+                    size={28}
+                    color={AdminColors.primaryDark}
+                  />
+                </View>
+                <Text style={styles.categoryEmptyTitle}>
+                  No Active Causes in {CAUSE_CATEGORIES.find(c => c.key === selectedCategoryKey)?.label || 'Category'}
+                </Text>
+                <Text style={styles.categoryEmptyDesc}>
+                  There are currently no urgent donation requests listed under this category. Every cause undergoes strict background verification by HRSJM before approval.
+                </Text>
+                <TouchableOpacity
+                  style={styles.categoryEmptyCtaBtn}
+                  onPress={handleNgoDonatePress}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Donate to HRSJM NGO General Fund"
+                >
+                  <AppIcon name="heart" size={14} color="#011F39" />
+                  <Text style={styles.categoryEmptyCtaText}>
+                    Donate to HRSJM NGO General Fund
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={styles.palePanel}>
+            <SectionTitle title={content.cardsTitle} />
+            <View style={styles.featureGrid}>
+              {content.cards.map(card => (
+                <View
+                  key={card.title}
+                  style={[styles.gridCell, { width: gridCardWidth }]}
+                >
+                  <FeatureCard
+                    title={card.title}
+                    description={card.description}
+                    icon={card.icon}
+                  />
+                </View>
+              ))}
             </View>
           </View>
         )}
@@ -662,12 +784,33 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
       )}
       <GlobalPaymentModal
         visible={paymentModalVisible}
-        payload={paymentPayload}
+        payload={
+          activePaymentPayload || {
+            userId: authUser?.id,
+            purpose: 'donation',
+            category: 'NGO Donation',
+            title: 'HRSJM NGO Donation - General Fund',
+            subtitle: 'Human Rights and Social Justice Mission',
+            amount: resolvedDonationAmount,
+            donorName: authUser?.full_name || 'Donor',
+            donorMobile: authUser?.mobile_number || (authUser as any)?.phone || '',
+            donorEmail: authUser?.email || '',
+            location: 'National / All India',
+            entityId: `don-ngo-${Date.now()}`,
+          }
+        }
         initialStage="checkout"
         onClose={() => setPaymentModalVisible(false)}
         onSuccess={(receipt) => {
-          const donatedAmount = receipt?.amount || resolvedDonationAmount;
-          const causeTitle = selectedCause || 'Awareness and Education';
+          const isNgo = activePaymentPayload?.category === 'NGO Donation';
+          const donatedAmount = receipt?.amount || activePaymentPayload?.amount || resolvedDonationAmount;
+          const causeTitle = isNgo
+            ? 'NGO Donation'
+            : activePaymentPayload?.title?.replace('HRSJM Cause Donation - ', '') || 'Cause Donation';
+          const title = isNgo
+            ? 'HRSJM NGO Donation - General Fund'
+            : activePaymentPayload?.title || `HRSJM Cause Donation - ${causeTitle}`;
+
           const now = new Date();
           const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
           const timeStr = now.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
@@ -676,10 +819,12 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
             id: receipt?.paymentId || `rec-don-${Date.now()}`,
             receiptNo: receipt?.receiptNumber || receipt?.orderId || `REC-${Date.now().toString().slice(-6)}`,
             type: 'Donation',
-            title: `HRSJM Donation - ${causeTitle}`,
+            title,
             cause: causeTitle,
-            category: 'Donation',
-            description: `Donation contribution of ₹${donatedAmount.toLocaleString('en-IN')}`,
+            category: isNgo ? 'NGO Donation' : 'Cause Donation',
+            description: isNgo
+              ? `Direct contribution of ₹${donatedAmount.toLocaleString('en-IN')} to HRSJM General NGO Fund`
+              : `Cause donation of ₹${donatedAmount.toLocaleString('en-IN')} for ${causeTitle}`,
             amount: donatedAmount,
             amountInWords: formatRupees(donatedAmount),
             date: dateStr,
@@ -692,14 +837,12 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
             donorName: authUser?.full_name || 'Donor',
             donorEmail: authUser?.email || undefined,
             donorPhone: authUser?.mobile_number || undefined,
-            imageType: 'education',
+            imageType: isNgo ? 'general' : 'education',
           });
 
-          causesService.recordDonation(
-            selectedCause || 'General Public Aid',
-            donatedAmount,
-            receipt?.paymentId,
-          );
+          if (!isNgo) {
+            causesService.recordDonation(causeTitle, donatedAmount, receipt?.paymentId);
+          }
         }}
         onNavigateHome={onBack}
       />
@@ -736,8 +879,8 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
           <MemberCausesContainer
             hideHeader={true}
             onSelectCause={(cause) => {
-              setSelectedCause(cause.title);
               setShowCauseDirectory(false);
+              handleCauseDonatePress(cause);
             }}
             onClose={() => setShowCauseDirectory(false)}
           />
@@ -1206,4 +1349,194 @@ const styles = StyleSheet.create({
   directoryCloseBtn: {
     padding: 6,
   },
+  causesHeaderCopy: {
+    flex: 1,
+    marginRight: 12,
+  },
+  causesSectionSubtitle: {
+    fontSize: 12,
+    color: AdminColors.textSecondary,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  categoryTabsWrapper: {
+    marginTop: 6,
+    marginBottom: 14,
+  },
+  categoryTabsScroll: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingRight: 16,
+  },
+  categoryTabChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 13,
+    borderRadius: BorderRadius.full,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  categoryTabChipActive: {
+    backgroundColor: '#FAD465',
+    borderColor: '#FAD465',
+  },
+  categoryTabLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  categoryTabLabelActive: {
+    color: '#011F39',
+    fontWeight: '700',
+  },
+  causeCardList: {
+    gap: 12,
+  },
+  causeRowCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.card,
+  },
+  causeCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  causeCategoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: '#EFF6FF',
+    borderRadius: BorderRadius.sm,
+  },
+  causeCategoryBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1D4ED8',
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: '#ECFDF5',
+    borderRadius: BorderRadius.sm,
+  },
+  verifiedBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  causeCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: AdminColors.textPrimary,
+    lineHeight: 19,
+    marginBottom: 4,
+  },
+  causeCardDesc: {
+    fontSize: 12,
+    color: AdminColors.textSecondary,
+    lineHeight: 16,
+    marginBottom: 10,
+  },
+  causeProgressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  causeRaisedText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  causeTargetText: {
+    fontSize: 11,
+    color: AdminColors.textMuted,
+    fontWeight: '600',
+  },
+  causeProgressBarBg: {
+    height: 6,
+    backgroundColor: '#E2E8F0',
+    borderRadius: BorderRadius.full,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  causeProgressBarFill: {
+    height: '100%',
+    backgroundColor: '#059669',
+    borderRadius: BorderRadius.full,
+  },
+  causeDonateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: BorderRadius.md,
+    backgroundColor: '#FAD465',
+  },
+  causeDonateBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#011F39',
+  },
+  categoryEmptyBox: {
+    padding: Spacing.xl,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+  },
+  categoryEmptyIconWrap: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  categoryEmptyTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: AdminColors.textPrimary,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  categoryEmptyDesc: {
+    fontSize: 12,
+    color: AdminColors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 17,
+    marginBottom: 16,
+    paddingHorizontal: 10,
+  },
+  categoryEmptyCtaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    backgroundColor: '#FAD465',
+    borderRadius: BorderRadius.md,
+  },
+  categoryEmptyCtaText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#011F39',
+  },
+
 });

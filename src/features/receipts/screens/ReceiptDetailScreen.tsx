@@ -15,6 +15,7 @@ import { AppLogo } from '../../../core/components/common/AppLogo';
 import { formatCurrency, amountToWords } from '../../../core/utils/format';
 import type { AppStackParamList } from '../../../core/navigation/types';
 import { MOCK_DONATION_RECORDS } from '../../donations/data/donations.mock';
+import { recentDonationsStore } from '../../donations/services/recent-donations.store';
 import type { DonationRecord, DonationStatus } from '../../donations/types/donation.types';
 import { ShareReceiptSheet } from '../components/ShareReceiptSheet';
 import { PrintReceiptSheet } from '../components/PrintReceiptSheet';
@@ -57,10 +58,27 @@ export function ReceiptDetailScreen() {
   const [downloadSuccessToast, setDownloadSuccessToast] = useState<string | null>(null);
 
   // Find corresponding donation or membership record
-  const record: DonationRecord =
+  const record: DonationRecord | undefined =
     (route.params as any)?.record ||
-    MOCK_DONATION_RECORDS.find(r => r.receiptNo === receiptNo) ||
-    MOCK_DONATION_RECORDS[0];
+    recentDonationsStore.getRecentDonations().find(r => r.receiptNo === receiptNo || r.id === receiptNo) ||
+    MOCK_DONATION_RECORDS.find(r => r.receiptNo === receiptNo);
+
+  if (!record) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Icon name="chevron-down" size={18} color={colors.primary} style={styles.backIconRotated} />
+            <Text style={styles.backText}>{backLabel}</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.primary, marginBottom: 8 }}>Receipt Not Found</Text>
+          <Text style={{ fontSize: 14, color: colors.textMuted, textAlign: 'center' }}>This receipt record could not be located.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const statusMeta = STATUS_META[record.status] || STATUS_META.Completed;
   const isMembership = record.type === 'Membership';

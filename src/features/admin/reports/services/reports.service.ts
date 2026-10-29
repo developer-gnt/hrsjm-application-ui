@@ -20,7 +20,8 @@ export const reportsService = {
       '/reports/analytics',
       { params },
     );
-    return res.data;
+    const data = (res as any)?.data?.data || (res as any)?.data || res;
+    return data as ReportsAnalyticsResponse;
   },
 
   // 1. Trial Balance
@@ -32,7 +33,8 @@ export const reportsService = {
       ApiRoutes.REPORTS.TRIAL_BALANCE,
       { params },
     );
-    return res.data;
+    const data = (res as any)?.data?.data || (res as any)?.data || res;
+    return data as TrialBalanceReportResponse;
   },
 
   async getTrialBalanceSummary(params: {
@@ -42,7 +44,8 @@ export const reportsService = {
       `${ApiRoutes.REPORTS.TRIAL_BALANCE}/summary`,
       { params },
     );
-    return res.data;
+    const data = (res as any)?.data?.data || (res as any)?.data || res;
+    return data as TrialBalanceSummaryResponse;
   },
 
   // 2. Profit & Loss
@@ -54,7 +57,8 @@ export const reportsService = {
       ApiRoutes.REPORTS.PROFIT_LOSS,
       { params },
     );
-    return res.data;
+    const data = (res as any)?.data?.data || (res as any)?.data || res;
+    return data as ProfitLossReportResponse;
   },
 
   async getProfitLossSummary(params: {
@@ -65,7 +69,8 @@ export const reportsService = {
       `${ApiRoutes.REPORTS.PROFIT_LOSS}/summary`,
       { params },
     );
-    return res.data;
+    const data = (res as any)?.data?.data || (res as any)?.data || res;
+    return data as ProfitLossSummaryResponse;
   },
 
   // 3. Balance Sheet
@@ -76,7 +81,8 @@ export const reportsService = {
       ApiRoutes.REPORTS.BALANCE_SHEET,
       { params },
     );
-    return res.data;
+    const data = (res as any)?.data?.data || (res as any)?.data || res;
+    return data as BalanceSheetReportResponse;
   },
 
   async getBalanceSheetSummary(params: {
@@ -86,6 +92,7 @@ export const reportsService = {
       `${ApiRoutes.REPORTS.BALANCE_SHEET}/summary`,
       { params },
     );
-    return res.data;
+    const data = (res as any)?.data?.data || (res as any)?.data || res;
+    return data as BalanceSheetSummaryResponse;
   },
 };

@@ -342,7 +342,7 @@ export const AccountPickerModal: React.FC<AccountPickerModalProps> = ({
                 disabled={formLoading}
               >
                 {formLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#011F39" />
                 ) : (
                   <Text style={styles.saveBtnText}>Create &amp; Select</Text>
                 )}
@@ -417,7 +417,7 @@ export const AccountPickerModal: React.FC<AccountPickerModalProps> = ({
                 disabled={formLoading}
               >
                 {formLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#011F39" />
                 ) : (
                   <Text style={styles.saveBtnText}>Save Changes</Text>
                 )}
@@ -727,18 +727,23 @@ const styles = StyleSheet.create({
     color: AdminColors.textSecondary,
   },
   saveBtn: {
-    backgroundColor: AdminColors.primary,
+    backgroundColor: AdminColors.accentGold,
     paddingHorizontal: 16,
     paddingVertical: 9,
     borderRadius: BorderRadius.md,
     minWidth: 90,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   saveBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#011F39',
   },
   deleteDialogHeader: {
     alignItems: 'center',

@@ -15,18 +15,30 @@ class CausesService {
         ? payload.items
         : [];
 
-      // Filter out internal registration/account verification tickets and 0-amount requests
+      // Filter out internal registration/verification tickets, trivial amounts, complaints, and fake/mock test entries
       const validCausesList = rawList.filter((item: any) => {
         const reasonLower = (item.reason || '').toLowerCase().trim();
         const descLower = (item.description || '').toLowerCase().trim();
+        const nameLower = (item.full_name || '').toLowerCase().trim();
         const amount = Number(item.requested_amount || 0);
 
         if (
-          amount <= 0 ||
+          amount < 500 ||
           reasonLower.includes('account verification') ||
           reasonLower.includes('seeker verification') ||
           descLower.includes('registration pending') ||
-          descLower.includes('account verification')
+          descLower.includes('account verification') ||
+          reasonLower.startsWith('[complaint:') ||
+          reasonLower.includes('unlawful detention') ||
+          reasonLower.includes('police station') ||
+          descLower.includes('citizen complaint') ||
+          descLower.includes('police station') ||
+          descLower === 'hello' ||
+          descLower === 'test' ||
+          nameLower.includes('test') ||
+          nameLower.includes('mock') ||
+          reasonLower.includes('test') ||
+          reasonLower.includes('mock')
         ) {
           return false;
         }

@@ -32,8 +32,10 @@ import { formatDate } from '../../../../../core/utils';
 import { AdminHeader } from '../../../../../app/navigation';
 import type { EventListItem, EventUiStatus } from '../types/events.types';
 import { EventStatusBadge } from '../components/EventStatusBadge';
+import { EventFormToast } from '../components/EventFormToast';
+import type { ButtonVariant } from '../../../../../core/components/common/AppButton';
 import { EditEventScreen } from './EditEventScreen';
-import { useDeleteEvent, useUpdateEventStatus } from '../hooks/useEvents';
+import { useDeleteEvent, useUpdateEventStatus, useEventDetails } from '../hooks/useEvents';
 
 /**
  * TEMPORARY local time formatting helpers.
@@ -130,6 +132,14 @@ const EventDetailsPreviewHeader: React.FC<{ onBack: () => void }> = ({ onBack })
   );
 };
 
+interface ConfirmActionState {
+  type: 'publish' | 'unpublish' | 'delete';
+  title: string;
+  message: string;
+  confirmTitle: string;
+  confirmVariant: ButtonVariant;
+}
+
 interface EventDetailsScreenProps {
   /** The event row selected on the Events list. */
   event: EventListItem | null;
@@ -140,21 +150,22 @@ interface EventDetailsScreenProps {
   /** Whether the current viewer can manage/edit the event (admin) or only view/participate (member). */
   canManage?: boolean;
   onDelete?: (event: EventListItem) => void;
+  onEventUpdated?: (event: EventListItem) => void;
 }
 
 /**
  * Event Details screen (spec section 11).
  *
- * UI-only phase: renders the selected sample event. Action buttons are
- * placeholders — no edit/publish/unpublish/delete functionality is connected
- * yet. The `event` prop is the list-row record; when the backend contract is
- * confirmed this screen receives the full event DTO instead.
+ * Full management actions: edit, publish, unpublish, delete with in-app
+ * confirmation modals and toast feedback working seamlessly on mobile and web.
  */
 export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
   event,
   onBack,
   onEdit,
   canManage = true,
+  onDelete,
+  onEventUpdated,
 }) => {
   const [currentEvent, setCurrentEvent] = useState<EventListItem | null>(event);
   const [isEditing, setIsEditing] = useState(false);
@@ -162,26 +173,23 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const deleteMutation = useDeleteEvent();
-
-  const handleConfirmDelete = async () => {
-    if (!event) return;
-    try {
-      await deleteMutation.mutateAsync(event.id);
-      setDeleteModalVisible(false);
-      onBack();
-    } catch (err: any) {
-      console.error('Failed to delete event:', err);
-      Alert.alert('Error', err?.message || 'Failed to delete event. Please try again.');
-    }
-  };
+  const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(null);
+  const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null);
 
   const deleteEventMutation = useDeleteEvent();
   const updateEventStatusMutation = useUpdateEventStatus();
+  const eventDetailsQuery = useEventDetails(event?.id ?? '');
 
   useEffect(() => {
-    setCurrentEvent(event);
+    if (eventDetailsQuery.data) {
+      setCurrentEvent(eventDetailsQuery.data);
+    }
+  }, [eventDetailsQuery.data]);
+
+  useEffect(() => {
+    if (event) {
+      setCurrentEvent(event);
+    }
   }, [event]);
 
   // Android hardware back returns to the Events list (no-op on iOS).
@@ -206,7 +214,10 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
     return (
       <EditEventScreen
         event={currentEvent}
-        onBack={() => setIsEditing(false)}
+        onBack={() => {
+          setIsEditing(false);
+          eventDetailsQuery.refetch();
+        }}
       />
     );
   }
@@ -235,108 +246,128 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
     setIsEditing(true);
   };
 
-  const handlePublish = async () => {
+  const handlePublish = () => {
     if (!currentEvent) return;
     if (currentEvent.status === 'UPCOMING') {
-      Alert.alert('Already Published', 'This event is already published as Upcoming.');
+      setToast({
+        message: 'This event is already published as Upcoming.',
+        variant: 'success',
+      });
       return;
     }
 
-    Alert.alert(
-      'Publish Event',
-      `Publish "${currentEvent.title}" to make it public and open for registration?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Publish',
-          onPress: async () => {
-            setIsPublishing(true);
-            try {
-              await updateEventStatusMutation.mutateAsync({
-                id: currentEvent.id,
-                status: 'UPCOMING',
-              });
-              setCurrentEvent(prev => (prev ? { ...prev, status: 'UPCOMING' } : null));
-              Alert.alert('Event Published', `"${currentEvent.title}" is now published and open for registration.`);
-            } catch (err: any) {
-              const msg = err?.response?.data?.message || err?.message || 'Failed to publish event.';
-              Alert.alert('Error', Array.isArray(msg) ? msg[0] : msg);
-            } finally {
-              setIsPublishing(false);
-            }
-          },
-        },
-      ],
-    );
+    setConfirmAction({
+      type: 'publish',
+      title: 'Publish Event',
+      message: `Publish "${currentEvent.title}" to make it public and open for registration?`,
+      confirmTitle: 'Publish',
+      confirmVariant: 'primary',
+    });
   };
 
-  const handleUnpublish = async () => {
+  const handleUnpublish = () => {
     if (!currentEvent) return;
     if (currentEvent.status === 'DRAFT') {
-      Alert.alert('Already Draft', 'This event is already in Draft status.');
+      setToast({
+        message: 'This event is already in Draft status.',
+        variant: 'success',
+      });
       return;
     }
 
-    Alert.alert(
-      'Unpublish Event',
-      `Are you sure you want to unpublish "${currentEvent.title}"? It will be moved to Draft and will no longer be visible to members.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Unpublish',
-          style: 'destructive',
-          onPress: async () => {
-            setIsUnpublishing(true);
-            try {
-              await updateEventStatusMutation.mutateAsync({
-                id: currentEvent.id,
-                status: 'DRAFT',
-              });
-              setCurrentEvent(prev => (prev ? { ...prev, status: 'DRAFT' } : null));
-              Alert.alert('Event Unpublished', `"${currentEvent.title}" has been moved to Draft.`);
-            } catch (err: any) {
-              const msg = err?.response?.data?.message || err?.message || 'Failed to unpublish event.';
-              Alert.alert('Error', Array.isArray(msg) ? msg[0] : msg);
-            } finally {
-              setIsUnpublishing(false);
-            }
-          },
-        },
-      ],
-    );
+    setConfirmAction({
+      type: 'unpublish',
+      title: 'Unpublish Event',
+      message: `Move "${currentEvent.title}" to Draft? It will no longer be visible to members.`,
+      confirmTitle: 'Unpublish',
+      confirmVariant: 'danger',
+    });
   };
 
   const handleDelete = () => {
     if (!currentEvent) return;
+    setConfirmAction({
+      type: 'delete',
+      title: 'Delete Event',
+      message: `Are you sure you want to permanently delete "${currentEvent.title}"? This action cannot be undone.`,
+      confirmTitle: 'Delete',
+      confirmVariant: 'danger',
+    });
+  };
 
-    Alert.alert(
-      'Delete Event',
-      `Are you sure you want to permanently delete "${currentEvent.title}"? This action cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setIsDeleting(true);
-            try {
-              await deleteEventMutation.mutateAsync(currentEvent.id);
-              Alert.alert('Event Deleted', `"${currentEvent.title}" has been deleted.`, [
-                {
-                  text: 'OK',
-                  onPress: onBack,
-                },
-              ]);
-            } catch (err: any) {
-              const msg = err?.response?.data?.message || err?.message || 'Failed to delete event.';
-              Alert.alert('Error', Array.isArray(msg) ? msg[0] : msg);
-            } finally {
-              setIsDeleting(false);
-            }
-          },
-        },
-      ],
-    );
+  const handleExecuteConfirm = async () => {
+    if (!confirmAction || !currentEvent) return;
+    const action = confirmAction.type;
+    setConfirmAction(null);
+
+    if (action === 'publish') {
+      setIsPublishing(true);
+      try {
+        await updateEventStatusMutation.mutateAsync({
+          id: currentEvent.id,
+          status: 'UPCOMING',
+        });
+        const updated = { ...currentEvent, status: 'UPCOMING' as const };
+        setCurrentEvent(updated);
+        onEventUpdated?.(updated);
+        setToast({
+          message: `"${currentEvent.title}" is now published as Upcoming.`,
+          variant: 'success',
+        });
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || err?.message || 'Failed to publish event.';
+        setToast({
+          message: Array.isArray(msg) ? msg[0] : msg,
+          variant: 'error',
+        });
+      } finally {
+        setIsPublishing(false);
+      }
+    } else if (action === 'unpublish') {
+      setIsUnpublishing(true);
+      try {
+        await updateEventStatusMutation.mutateAsync({
+          id: currentEvent.id,
+          status: 'DRAFT',
+        });
+        const updated = { ...currentEvent, status: 'DRAFT' as const };
+        setCurrentEvent(updated);
+        onEventUpdated?.(updated);
+        setToast({
+          message: `"${currentEvent.title}" moved to Draft.`,
+          variant: 'success',
+        });
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || err?.message || 'Failed to unpublish event.';
+        setToast({
+          message: Array.isArray(msg) ? msg[0] : msg,
+          variant: 'error',
+        });
+      } finally {
+        setIsUnpublishing(false);
+      }
+    } else if (action === 'delete') {
+      setIsDeleting(true);
+      try {
+        await deleteEventMutation.mutateAsync(currentEvent.id);
+        setToast({
+          message: `"${currentEvent.title}" deleted.`,
+          variant: 'success',
+        });
+        onDelete?.(currentEvent);
+        setTimeout(() => {
+          onBack();
+        }, 700);
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || err?.message || 'Failed to delete event.';
+        setToast({
+          message: Array.isArray(msg) ? msg[0] : msg,
+          variant: 'error',
+        });
+      } finally {
+        setIsDeleting(false);
+      }
+    }
   };
 
   const handleShareEvent = async () => {
@@ -527,14 +558,21 @@ loading={isDeleting}
       </SafeAreaView>
 
       <ConfirmDialog
-        visible={deleteModalVisible}
-        title="Delete Event"
-        message={`Are you sure you want to delete "${event?.title}"? This action cannot be undone.`}
-        confirmTitle="Delete"
+        visible={Boolean(confirmAction)}
+        title={confirmAction?.title ?? ''}
+        message={confirmAction?.message ?? ''}
+        confirmTitle={confirmAction?.confirmTitle ?? 'Confirm'}
+        confirmVariant={confirmAction?.confirmVariant ?? 'danger'}
         cancelTitle="Cancel"
-        loading={deleteMutation.isPending}
-        onCancel={() => setDeleteModalVisible(false)}
-        onConfirm={handleConfirmDelete}
+        loading={isPublishing || isUnpublishing || isDeleting}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={handleExecuteConfirm}
+      />
+
+      <EventFormToast
+        message={toast?.message ?? null}
+        variant={toast?.variant ?? 'success'}
+        onDismiss={() => setToast(null)}
       />
     </View>
   );

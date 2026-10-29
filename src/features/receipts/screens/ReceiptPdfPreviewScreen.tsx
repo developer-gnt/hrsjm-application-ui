@@ -15,6 +15,7 @@ import { AppLogo } from '../../../core/components/common/AppLogo';
 import { formatCurrency, amountToWords } from '../../../core/utils/format';
 import type { AppStackParamList } from '../../../core/navigation/types';
 import { MOCK_DONATION_RECORDS } from '../../donations/data/donations.mock';
+import { recentDonationsStore } from '../../donations/services/recent-donations.store';
 import { ShareReceiptSheet } from '../components/ShareReceiptSheet';
 import { PrintReceiptSheet } from '../components/PrintReceiptSheet';
 
@@ -32,8 +33,26 @@ export function ReceiptPdfPreviewScreen() {
 
   const record =
     (route.params as any)?.record ||
-    MOCK_DONATION_RECORDS.find(r => r.receiptNo === receiptNo) ||
-    MOCK_DONATION_RECORDS[0];
+    recentDonationsStore.getRecentDonations().find(r => r.receiptNo === receiptNo || r.id === receiptNo) ||
+    MOCK_DONATION_RECORDS.find(r => r.receiptNo === receiptNo);
+
+  if (!record) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.topBarBtn}>
+            <Icon name="x" size={20} color={colors.white} strokeWidth={2.5} />
+          </TouchableOpacity>
+          <Text style={styles.topBarTitle}>Receipt Preview</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.primary, marginBottom: 8 }}>Receipt Not Found</Text>
+          <Text style={{ fontSize: 14, color: colors.textMuted, textAlign: 'center' }}>This receipt preview could not be loaded.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const fileName = `HRSJM_${record.type}_Receipt.pdf`;
 

@@ -11,6 +11,7 @@ export interface CreateDonationOrderParams {
   donorName: string;
   donorMobile?: string;
   donorEmail?: string;
+  userId?: string;
   panNumber?: string;
   need80G?: boolean;
   idempotencyKey?: string;
@@ -22,6 +23,7 @@ export interface CreateMembershipOrderParams {
   customerName?: string;
   customerMobile?: string;
   customerEmail?: string;
+  userId?: string;
   membershipType?: string;
   idempotencyKey?: string;
 }
@@ -57,6 +59,7 @@ export const cashfreeApi = {
       donor_email: params.donorEmail || undefined,
       cause: params.cause,
       amount: params.amount,
+      user_id: params.userId,
       remark,
     });
 
@@ -66,6 +69,7 @@ export const cashfreeApi = {
     const paymentRes = await apiClient.post<{ id: string }>(API_ENDPOINTS.PAYMENTS.DONATION_PAYMENTS, {
       donation_id: donationId,
       amount: params.amount,
+      user_id: params.userId,
       payment_method: 'CASHFREE',
     });
 
@@ -89,6 +93,7 @@ export const cashfreeApi = {
         customer_phone: params.donorMobile,
         customer_name: params.donorName,
         customer_email: params.donorEmail,
+        user_id: params.userId,
         return_url: getReturnUrl(),
       },
       { headers },
@@ -125,6 +130,7 @@ export const cashfreeApi = {
       customer_name: params.customerName || 'HRSJM Member',
       customer_phone: customerPhone,
       customer_email: params.customerEmail || 'member@hrsjm.org',
+      user_id: params.userId,
       order_note: params.membershipType || 'Membership Registration Fee',
       return_url: getReturnUrl(),
     };

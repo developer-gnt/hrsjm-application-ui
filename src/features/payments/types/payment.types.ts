@@ -58,6 +58,7 @@ export interface RenewalQuotePayload {
 }
 
 export interface PaymentPayload {
+  userId?: string;
   purpose: PaymentPurposeType;
   title: string;
   subtitle?: string;

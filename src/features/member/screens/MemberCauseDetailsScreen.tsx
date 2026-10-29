@@ -14,6 +14,7 @@ import { MemberCause } from '../types/causes.types';
 import { causesService } from '../services/causes.service';
 import { GlobalPaymentModal } from '../../payments';
 import { FontFamilies } from '../../../core/theme';
+import { useAuthStore } from '../../auth/store/authStore';
 
 interface MemberCauseDetailsScreenProps {
   cause: MemberCause;
@@ -27,6 +28,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
   onDonationSuccess,
 }) => {
   const insets = useSafeAreaInsets();
+  const user = useAuthStore(state => state.user);
   const [currentCause, setCurrentCause] = useState<MemberCause>(cause);
   const [donationModalVisible, setDonationModalVisible] = useState(false);
 
@@ -258,6 +260,10 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
       <GlobalPaymentModal
         visible={donationModalVisible}
         payload={{
+          userId: user?.id,
+          donorName: user?.full_name || 'Donor',
+          donorMobile: user?.mobile_number || '',
+          donorEmail: user?.email || '',
           purpose: 'donation',
           title: currentCause.title,
           category: currentCause.category,

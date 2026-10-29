@@ -14,6 +14,7 @@ import { Icon } from '../../../core/components/common/Icon';
 import { formatCurrency } from '../../../core/utils/format';
 import type { AppStackParamList } from '../../../core/navigation/types';
 import { MOCK_DONATION_RECORDS } from '../data/donations.mock';
+import { recentDonationsStore } from '../services/recent-donations.store';
 import type { DonationRecord, DonationStatus } from '../types/donation.types';
 import { CauseHeroBanner } from '../components/CauseHeroBanner';
 
@@ -49,10 +50,32 @@ export function DonationDetailScreen() {
   const route = useRoute<RouteProps>();
   const donationId = route.params?.donationId;
 
-  const donation: DonationRecord =
+  const donation: DonationRecord | undefined =
     (route.params as any)?.donation ||
-    MOCK_DONATION_RECORDS.find(item => item.id === donationId) ||
-    MOCK_DONATION_RECORDS[0];
+    recentDonationsStore.getRecentDonations().find(item => item.id === donationId || item.transactionId === donationId) ||
+    MOCK_DONATION_RECORDS.find(item => item.id === donationId);
+
+  if (!donation) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Donation History"
+            style={styles.backBtn}>
+            <Icon name="chevron-down" size={18} color={colors.primary} style={styles.backIconRotated} />
+            <Text style={styles.backText}>Back to Donation History</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.primary, marginBottom: 8 }}>Donation Not Found</Text>
+          <Text style={{ fontSize: 14, color: colors.textMuted, textAlign: 'center' }}>This donation record could not be located.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const statusMeta =
     STATUS_META[donation.status as DonationStatus] || STATUS_META.Completed;
 

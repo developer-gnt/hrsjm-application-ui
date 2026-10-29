@@ -58,6 +58,7 @@ export class GlobalPaymentService {
           donorName: payload.donorName || 'HRSJM Supporter',
           donorMobile: payload.donorMobile,
           donorEmail: payload.donorEmail,
+          userId: payload.userId,
           panNumber: payload.panNumber,
           need80G: payload.need80GReceipt,
           idempotencyKey,
@@ -69,6 +70,7 @@ export class GlobalPaymentService {
           customerName: payload.donorName || 'HRSJM Member',
           customerMobile: payload.donorMobile,
           customerEmail: payload.donorEmail,
+          userId: payload.userId,
           membershipType: payload.title || 'Membership Registration Fee',
           idempotencyKey,
         });
