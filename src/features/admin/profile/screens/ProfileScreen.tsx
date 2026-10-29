@@ -250,12 +250,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   const currentAppStatus =
     profile.membershipStatus ||
+    (isMember || isMemberContext ? 'Approved' : undefined) ||
     membershipCtx.activeApplication?.status ||
     (membershipCtx.applications[0]?.status) ||
     'Applied';
 
   const effectiveMemberId =
     profile.memberId ||
+    (isMember || isMemberContext ? (profile.adminId || 'HRSJM-00001') : undefined) ||
     membershipCtx.activeApplication?.applicationId ||
     (membershipCtx.applications && membershipCtx.applications[0]?.applicationId) ||
     'HRSJM-47611';

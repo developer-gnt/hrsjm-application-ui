@@ -17,6 +17,11 @@ export type AuthStackParamList = {
   MembershipStep2Address: undefined;
   MembershipStep3Documents: undefined;
   MembershipSubmitted: { applicationId?: string } | undefined;
+  MyApplication: { applicationId?: string } | undefined;
+  ApplicationDetails: { applicationId?: string; status?: 'applied' | 'under_review' | 'approved' | 'rejected' } | undefined;
+  ApplicationApplied: { applicationId?: string } | undefined;
+  ApplicationApproved: { applicationId?: string } | undefined;
+  ApplicationRejected: { applicationId?: string } | undefined;
 };
 
 /** Bottom tabs of the authenticated admin area (spec: 5 tabs). */

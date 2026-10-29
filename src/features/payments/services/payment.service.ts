@@ -107,9 +107,12 @@ export class GlobalPaymentService {
     // 2. Launch Cashfree PG Checkout Interface & Wait for SDK outcome
     if (Platform.OS === 'web' && session.payment_session_id) {
       try {
-        await launchCashfreeWebCheckout(session.payment_session_id, isProduction);
-      } catch {
-        // Fall through to backend verification
+        const outcome = await launchCashfreeWebCheckout(session.payment_session_id, isProduction, session.order_id);
+        if (outcome?.status === 'CLOSED') {
+          sdkError = { code: 'USER_DROPPED', message: 'User closed payment window' };
+        }
+      } catch (err: any) {
+        sdkError = err;
       }
     } else if (Platform.OS !== 'web' && session.payment_session_id) {
       try {
@@ -214,7 +217,7 @@ export class GlobalPaymentService {
     // 3. Reconcile and Verify with Backend Server
     let verifyResponse: CashfreeVerifyResponse | null = null;
     let lastNetworkError: any = null;
-    const maxAttempts = sdkError ? 2 : 5;
+    const maxAttempts = sdkError ? 2 : 8;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         verifyResponse = await cashfreeApi.verifyOrder(session.order_id);

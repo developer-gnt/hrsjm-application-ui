@@ -54,7 +54,8 @@ export const setupRefreshInterceptor = (
         try {
           const refreshToken = await tokenStorage.getRefreshToken();
           if (!refreshToken) {
-            throw new Error('No refresh token available');
+            isRefreshing = false;
+            return Promise.reject(error);
           }
 
           // Backend contract: POST /auth/refresh { refresh_token } →

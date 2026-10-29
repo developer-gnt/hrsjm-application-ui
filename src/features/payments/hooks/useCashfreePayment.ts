@@ -164,21 +164,23 @@ export function validateCardHolderName(name: string): boolean {
 }
 
 /**
- * Safely loads Cashfree Web SDK for web fallback only
+ * Safely loads Cashfree Web SDK for web checkout using an inline DOM container
+ * to avoid triggering browser popup blocker restrictions.
  */
 export async function launchCashfreeWebCheckout(
   paymentSessionId: string,
   isProduction = false,
-): Promise<void> {
-  if (Platform.OS !== 'web' || !paymentSessionId) return;
+  orderId?: string,
+): Promise<{ status?: string; error?: string }> {
+  if (Platform.OS !== 'web' || !paymentSessionId) return { status: 'SKIPPED' };
 
   const globalObj = typeof globalThis !== 'undefined' ? (globalThis as any) : null;
   const win = globalObj?.window;
   const doc = globalObj?.document;
-  if (!win || !doc) return;
+  if (!win || !doc) return { status: 'SKIPPED' };
 
   const sessionId = paymentSessionId.trim();
-  if (!sessionId) return;
+  if (!sessionId) return { status: 'SKIPPED' };
 
   const getCashfree = (): any => {
     return win?.Cashfree || globalObj?.Cashfree || null;
@@ -191,7 +193,6 @@ export async function launchCashfreeWebCheckout(
 
       const existing: any = doc.getElementById('cashfree-js-sdk');
       if (existing) {
-        // Poll briefly in case the script is already executing or loaded
         let pollAttempts = 0;
         const interval = setInterval(() => {
           pollAttempts++;
@@ -236,20 +237,395 @@ export async function launchCashfreeWebCheckout(
     });
   };
 
-  try {
-    const CashfreeFactory = await loadSdk();
-    if (CashfreeFactory) {
-      const cashfree = CashfreeFactory({ mode: isProduction ? 'production' : 'sandbox' });
-      await cashfree.checkout({
-        paymentSessionId: sessionId,
-        redirectTarget: '_modal',
-      });
-    } else {
-      console.warn('Cashfree SDK is unavailable or blocked by browser extensions');
-    }
-  } catch (err) {
-    console.warn('Cashfree web checkout launch error:', err);
+  // Inject responsive styles for modal and Cashfree iframe on web
+  const styleId = 'cashfree-responsive-modal-style';
+  let styleEl: any = doc.getElementById(styleId);
+  if (!styleEl) {
+    styleEl = doc.createElement('style');
+    styleEl.id = styleId;
+    styleEl.innerHTML = `
+      #cashfree-modal-overlay {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        background: rgba(15, 23, 42, 0.75) !important;
+        backdrop-filter: blur(5px) !important;
+        -webkit-backdrop-filter: blur(5px) !important;
+        z-index: 99999999 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 12px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+      }
+      #cashfree-modal-card {
+        position: relative !important;
+        width: 100% !important;
+        max-width: 480px !important;
+        height: 700px !important;
+        max-height: 94vh !important;
+        max-height: 94dvh !important;
+        background: #ffffff !important;
+        border-radius: 16px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45) !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        box-sizing: border-box !important;
+      }
+      #cashfree-modal-header {
+        flex-shrink: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 12px 16px !important;
+        background: #F8FAFC !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+        box-sizing: border-box !important;
+      }
+      #cashfree-checkout-mount {
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 480px !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        background: #ffffff !important;
+        position: relative !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      #cashfree-checkout-mount > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 100% !important;
+        box-sizing: border-box !important;
+      }
+      #cashfree-checkout-mount iframe {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 100% !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+        box-sizing: border-box !important;
+      }
+      @media (max-width: 640px) {
+        #cashfree-modal-overlay {
+          padding: 0 !important;
+          align-items: stretch !important;
+        }
+        #cashfree-modal-card {
+          width: 100vw !important;
+          max-width: 100vw !important;
+          height: 100vh !important;
+          height: 100dvh !important;
+          max-height: 100vh !important;
+          max-height: 100dvh !important;
+          border-radius: 0 !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
+        #cashfree-modal-header {
+          padding: 10px 14px !important;
+          border-radius: 0 !important;
+        }
+        #cashfree-checkout-mount {
+          height: calc(100vh - 52px) !important;
+          height: calc(100dvh - 52px) !important;
+          min-height: calc(100vh - 52px) !important;
+          min-height: calc(100dvh - 52px) !important;
+        }
+      }
+    `;
+    doc.head.appendChild(styleEl);
   }
+
+  // Clean up any stale overlay
+  const existingOverlay = doc.getElementById('cashfree-modal-overlay');
+  if (existingOverlay && existingOverlay.parentNode) {
+    existingOverlay.parentNode.removeChild(existingOverlay);
+  }
+
+  // Create responsive inline modal overlay in the DOM (bypasses browser popup blockers completely)
+  const overlay = doc.createElement('div');
+  overlay.id = 'cashfree-modal-overlay';
+
+  const card = doc.createElement('div');
+  card.id = 'cashfree-modal-card';
+
+  const header = doc.createElement('div');
+  header.id = 'cashfree-modal-header';
+
+  header.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:28px;height:28px;border-radius:8px;background:#E0F2FE;display:flex;align-items:center;justify-content:center;color:#0284C7;font-size:14px;font-weight:bold;">
+        🔒
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:14px;color:#0F2860;line-height:18px;">Cashfree Payment Gateway</div>
+        <div style="font-size:11px;color:#64748B;">Secure 256-bit Encrypted Checkout</div>
+      </div>
+    </div>
+    <button id="cashfree-close-btn" style="border:none;background:#F1F5F9;color:#475569;font-size:22px;width:34px;height:34px;border-radius:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;" title="Close">&times;</button>
+  `;
+
+  const mountPoint = doc.createElement('div');
+  mountPoint.id = 'cashfree-checkout-mount';
+
+  card.appendChild(header);
+  card.appendChild(mountPoint);
+  overlay.appendChild(card);
+  doc.body.appendChild(overlay);
+
+  return new Promise<{ status?: string; error?: string }>(async resolve => {
+    let resolved = false;
+    let pollInterval: any = null;
+    let pollActive = false;
+
+    // Real-time authoritative poller: instantly resolves when payment is paid on backend
+    const checkVerification = async () => {
+      if (!orderId || pollActive || resolved) return;
+      pollActive = true;
+      try {
+        const verifyRes = await cashfreeApi.verifyOrder(orderId);
+        const orderStatus = (verifyRes?.status || verifyRes?.latest_status || (verifyRes as any)?.order_status || '').toUpperCase();
+        if (orderStatus === 'PAID' || orderStatus === 'SUCCESS') {
+          cleanup();
+          win.removeEventListener('message', onMessage);
+          resolve({ status: 'SUCCESS' });
+        }
+      } catch {
+        // silent background retry
+      } finally {
+        pollActive = false;
+      }
+    };
+
+    if (orderId) {
+      setTimeout(() => {
+        if (!resolved) {
+          checkVerification();
+          pollInterval = setInterval(checkVerification, 1200);
+        }
+      }, 1500);
+    }
+
+    // Observer on document.body to instantly suppress Cashfree's dead popup blocker prompt
+    let bodyObserver: any = null;
+    if (typeof win.MutationObserver === 'function') {
+      bodyObserver = new win.MutationObserver((mutations: any[]) => {
+        for (const m of mutations) {
+          for (const node of m.addedNodes) {
+            if (node && node.nodeType === 1) {
+              const text = (node.textContent || '').toLowerCase();
+              if (
+                text.includes('popup blocker') ||
+                text.includes('proceed to payment') ||
+                text.includes('open payment page')
+              ) {
+                try {
+                  node.remove();
+                } catch {
+                  node.style.display = 'none';
+                }
+                if (orderId) {
+                  checkVerification();
+                }
+              }
+            }
+          }
+        }
+      });
+      try {
+        bodyObserver.observe(doc.body, { childList: true });
+      } catch {
+        // ignore
+      }
+    }
+
+    // Mutation observer to ensure child elements and iframe generated by Cashfree stay responsive
+    const enforceDimensions = () => {
+      try {
+        const divs = mountPoint.querySelectorAll('div');
+        divs.forEach((d: any) => {
+          d.style.setProperty('width', '100%', 'important');
+          d.style.setProperty('max-width', '100%', 'important');
+        });
+        const iframes = mountPoint.querySelectorAll('iframe');
+        iframes.forEach((iframe: any) => {
+          iframe.style.setProperty('width', '100%', 'important');
+          iframe.style.setProperty('min-width', '100%', 'important');
+          iframe.style.setProperty('max-width', '100%', 'important');
+          iframe.style.setProperty('height', '100%', 'important');
+          iframe.style.setProperty('min-height', '100%', 'important');
+          iframe.style.setProperty('border', 'none', 'important');
+          iframe.style.setProperty('margin', '0 auto', 'important');
+          iframe.style.setProperty('display', 'block', 'important');
+        });
+      } catch {
+        // ignore
+      }
+    };
+
+    let observer: any = null;
+    if (typeof win.MutationObserver === 'function') {
+      observer = new win.MutationObserver(() => {
+        enforceDimensions();
+      });
+      observer.observe(mountPoint, { childList: true, subtree: true });
+    }
+
+    const cleanup = () => {
+      if (!resolved) {
+        resolved = true;
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+        if (observer) {
+          try {
+            observer.disconnect();
+          } catch {
+            // ignore
+          }
+        }
+        if (bodyObserver) {
+          try {
+            bodyObserver.disconnect();
+          } catch {
+            // ignore
+          }
+        }
+        try {
+          const bodyDivs = doc.body.querySelectorAll('div');
+          bodyDivs.forEach((div: any) => {
+            const txt = (div.textContent || '').toLowerCase();
+            if (txt.includes('popup blocker') || txt.includes('open payment page')) {
+              div.remove();
+            }
+          });
+        } catch {
+          // ignore
+        }
+        if (overlay && overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+      }
+    };
+
+    const closeBtn = doc.getElementById('cashfree-close-btn');
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        cleanup();
+        resolve({ status: 'CLOSED' });
+      };
+    }
+
+    const onMessage = (event: MessageEvent) => {
+      try {
+        const data = event.data;
+        if (typeof data === 'string') {
+          if (data.includes('PAYMENT_SUCCESS') || data.includes('SUCCESS') || data.includes('PAID')) {
+            cleanup();
+            win.removeEventListener('message', onMessage);
+            resolve({ status: 'SUCCESS' });
+            return;
+          }
+          try {
+            const parsed = JSON.parse(data);
+            if (
+              parsed?.event_data?.paymentStatus === 'SUCCESS' ||
+              parsed?.paymentStatus === 'SUCCESS' ||
+              parsed?.status === 'SUCCESS' ||
+              parsed?.order_status === 'PAID'
+            ) {
+              cleanup();
+              win.removeEventListener('message', onMessage);
+              resolve({ status: 'SUCCESS' });
+              return;
+            }
+          } catch {
+            // not JSON
+          }
+        } else if (data && typeof data === 'object') {
+          if (
+            data.status === 'SUCCESS' ||
+            data.name === 'PAYMENT_SUCCESS' ||
+            data.type === 'cashfree_success' ||
+            data?.event_data?.paymentStatus === 'SUCCESS' ||
+            data?.paymentStatus === 'SUCCESS' ||
+            data?.order_status === 'PAID'
+          ) {
+            cleanup();
+            win.removeEventListener('message', onMessage);
+            resolve({ status: 'SUCCESS' });
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+    win.addEventListener('message', onMessage);
+
+    try {
+      const CashfreeFactory = await loadSdk();
+      if (!CashfreeFactory) {
+        console.warn('Cashfree SDK is unavailable or blocked');
+        cleanup();
+        win.removeEventListener('message', onMessage);
+        return resolve({ error: 'SDK_UNAVAILABLE' });
+      }
+
+      const cashfree = CashfreeFactory({ mode: isProduction ? 'production' : 'sandbox' });
+      cashfree
+        .checkout({
+          paymentSessionId: sessionId,
+          redirectTarget: mountPoint,
+          redirect: 'if_required',
+          appearance: {
+            width: '100%',
+            height: '100%',
+          },
+        })
+        .then((result: any) => {
+          if (result?.error) {
+            console.warn('Cashfree checkout error:', result.error);
+            cleanup();
+            win.removeEventListener('message', onMessage);
+            resolve({ error: result.error?.message || 'CHECKOUT_ERROR' });
+          } else if (result?.paymentDetails) {
+            cleanup();
+            win.removeEventListener('message', onMessage);
+            resolve({ status: 'SUCCESS' });
+          }
+        })
+        .catch((err: any) => {
+          console.warn('Cashfree checkout launch error:', err);
+          cleanup();
+          win.removeEventListener('message', onMessage);
+          resolve({ error: err?.message || 'CHECKOUT_EXCEPTION' });
+        });
+    } catch (err: any) {
+      console.warn('Cashfree web checkout launch error:', err);
+      cleanup();
+      win.removeEventListener('message', onMessage);
+      resolve({ error: err?.message || 'LAUNCH_FAILED' });
+    }
+  });
 }
 
 /**
@@ -620,7 +996,13 @@ export function useCashfreePayment(options?: UseCashfreePaymentOptions) {
         } else if (Platform.OS === 'web' && session.payment_session_id) {
           try {
             const isProduction = session.environment === 'PRODUCTION';
-            await launchCashfreeWebCheckout(session.payment_session_id, isProduction);
+            const outcome = await launchCashfreeWebCheckout(session.payment_session_id, isProduction, session.order_id);
+            if (outcome?.status === 'CLOSED') {
+              isSubmittingRef.current = false;
+              setStage('amount_selection');
+              options?.onClose?.();
+              return;
+            }
           } catch {
             // continue to verification
           }

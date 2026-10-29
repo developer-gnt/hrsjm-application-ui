@@ -30,7 +30,7 @@ export interface CreateMembershipOrderParams {
 
 const getReturnUrl = (): string => {
   if (typeof window !== 'undefined' && window.location?.origin) {
-    return `${window.location.origin}/index.html?cashfree_callback=true&order_id={order_id}`;
+    return `${window.location.origin}/?cashfree_callback=true&order_id={order_id}`;
   }
   return 'http://localhost:8089/index.html?cashfree_callback=true&order_id={order_id}';
 };
