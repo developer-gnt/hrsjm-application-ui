@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { BorderRadius, FontFamilies, Spacing } from '../../../../core';
+import { ListFilter } from '../../../../core/components/icons';
 
 interface UsersSearchBarProps {
   value: string;
@@ -62,7 +63,7 @@ export const UsersSearchBar: React.FC<UsersSearchBarProps> = ({
         accessibilityRole="button"
         accessibilityLabel={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
       >
-        <Text style={styles.filterIcon}>⚙️</Text>
+        <ListFilter size={18} color="#06294D" strokeWidth={2} />
         <Text
           style={[
             styles.filterText,
@@ -134,11 +135,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     minHeight: 44,
     height: 44,
-    gap: 6,
+    gap: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   filtersButtonActive: {
     borderColor: '#06294D',
-    backgroundColor: '#EDF2F7',
+    backgroundColor: '#FFFFFF',
   },
   filterIcon: {
     fontSize: 14,
@@ -147,7 +153,7 @@ const styles = StyleSheet.create({
   filterText: {
     fontFamily: FontFamilies.sans,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#06294D',
   },
   filterTextActive: {

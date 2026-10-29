@@ -58,11 +58,13 @@ export const MemberFilterSheet: React.FC<MemberFilterSheetProps> = ({
           />
           <AppButton
             title="Apply"
+            variant="gold"
             onPress={() => {
               onApply(draftSort);
               onClose();
             }}
             style={[styles.footerButton, styles.applyButton]}
+            textStyle={styles.applyButtonText}
           />
         </>
       }
@@ -148,7 +150,18 @@ const styles = StyleSheet.create({
     color: BrandColors.navy,
   },
   applyButton: {
-    backgroundColor: BrandColors.navy,
+    backgroundColor: '#FAD465',
+    borderColor: '#E5BE4A',
+    borderWidth: 1,
+    shadowColor: '#FAD465',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  applyButtonText: {
+    color: '#06294D',
+    fontWeight: '700',
   },
 });
 

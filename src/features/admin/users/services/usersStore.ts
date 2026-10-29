@@ -148,7 +148,7 @@ class UsersStore {
 
     // 2. Fetch users from backend NestJS API
     try {
-      const response = await apiClient.get<any>('/users');
+      const response = await apiClient.get<any>('/users?limit=100');
       const items = Array.isArray(response?.data)
         ? response.data
         : Array.isArray(response?.data?.items)
@@ -887,9 +887,38 @@ class UsersStore {
     id: string,
     newPassword: string
   ): Promise<{ success: boolean; message: string }> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const isUuid = UUID_RE.test(id);
+
+    // ── Fast path: id is already a real UUID → call backend directly ──────────
+    if (isUuid) {
+      try {
+        const res: any = await apiClient.post(`/users/${id}/reset-password`, {
+          new_password: newPassword,
+        });
+        return {
+          success: true,
+          message: res?.data?.message || res?.message || 'Password reset successfully',
+        };
+      } catch (err: any) {
+        // 404 could mean a mock / fixture user; fall through to local update
+        if (err?.response?.status !== 404) {
+          const msg =
+            err?.response?.data?.message ||
+            err?.message ||
+            'Failed to reset password. Please try again.';
+          return { success: false, message: Array.isArray(msg) ? msg.join(', ') : msg };
+        }
+      }
+    }
+
+    // ── Slow path: non-UUID id (e.g. membership number) — resolve UUID first ──
     let target = this.users.find(u => u.id === id || u.memberId === id);
-    let targetId = isUuid ? id : (target && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(target.id) ? target.id : null);
+    let targetId: string | null = null;
+
+    if (target && UUID_RE.test(target.id)) {
+      targetId = target.id;
+    }
 
     if (!targetId && target) {
       try {
@@ -928,12 +957,8 @@ class UsersStore {
           message: res?.data?.message || res?.message || 'Password reset successfully',
         };
       } catch (err: any) {
-        // If not found on backend (e.g. dev/local mock), fallback gracefully to store update
         if (err?.response?.status === 404 || isMockUser(target)) {
-          return {
-            success: true,
-            message: 'Password updated successfully.',
-          };
+          return { success: true, message: 'Password updated successfully.' };
         }
         const msg =
           err?.response?.data?.message ||
@@ -943,12 +968,9 @@ class UsersStore {
       }
     }
 
-    // If local dev fixture or user only in store
+    // Local dev fixture
     if (target) {
-      return {
-        success: true,
-        message: 'Password updated successfully.',
-      };
+      return { success: true, message: 'Password updated successfully.' };
     }
 
     return { success: false, message: 'User record could not be located.' };

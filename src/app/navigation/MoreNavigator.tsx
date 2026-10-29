@@ -178,15 +178,12 @@ export const MoreNavigator: React.FC = () => (
 
     <Stack.Screen name={AppRoutes.CHART_OF_ACCOUNTS}>
       {({ navigation }) => (
-        <ChartOfAccountsScreen
+        <ReportsScreen
           onBack={navigation.goBack}
-          onViewAccountLedger={node =>
-            navigation.navigate(AppRoutes.GENERAL_LEDGER as any, {
-              accountId: node.id,
-              accountName: node.account_name,
-              accountCode: node.account_code,
-            })
-          }
+          onOpenTrialBalance={() => navigation.navigate(AppRoutes.TRIAL_BALANCE as any)}
+          onOpenProfitLoss={() => navigation.navigate(AppRoutes.PROFIT_LOSS as any)}
+          onOpenBalanceSheet={() => navigation.navigate(AppRoutes.BALANCE_SHEET as any)}
+          onOpenLedger={() => navigation.navigate(AppRoutes.GENERAL_LEDGER as any)}
           onNavigate={(target: string) => {
             if (target === 'AdminMoreTab') {
               navigation.navigate('MoreMenu' as any);

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { ListFilter } from '../../../../core/components/icons';
 import {
   AdminColors,
   Spacing,
@@ -66,15 +67,16 @@ export const DonationSearch: React.FC<DonationSearchProps> = ({
         onSearch={onSearch}
         containerStyle={styles.search}
       />
-      <AppButton
-        title="Filters"
-        icon={<FunnelIcon />}
+      <TouchableOpacity
         onPress={onFiltersPress}
-        variant="secondary"
-        size="md"
         style={styles.filtersButton}
-        textStyle={styles.filtersText}
-      />
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Open filters"
+      >
+        <ListFilter size={18} color="#06294D" strokeWidth={2} />
+        <Text style={styles.filtersText}>Filters</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -92,15 +94,24 @@ const styles = StyleSheet.create({
   },
   filtersButton: {
     marginLeft: Spacing.sm,
-    minHeight: 50,
-    backgroundColor: AdminColors.cardSurface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: AdminColors.border,
+    borderColor: '#E2E8F0',
     borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: 14,
+    gap: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   filtersText: {
-    color: AdminColors.primary,
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#06294D',
   },
 });

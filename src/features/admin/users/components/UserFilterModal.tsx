@@ -38,6 +38,7 @@ const TYPE_OPTIONS: { key: UserTypeTabKey; label: string }[] = [
 const STATUS_OPTIONS: { key: 'all' | UserStatus; label: string }[] = [
   { key: 'all', label: 'All Users' },
   { key: 'active', label: 'Approved Users' },
+  { key: 'pending', label: 'Pending Review' },
   { key: 'blocked', label: 'Blocked' },
 ];
 
@@ -110,10 +111,14 @@ export const UserFilterModal: React.FC<UserFilterModalProps> = ({
         animationType="slide"
         onRequestClose={onClose}
       >
-        <TouchableWithoutFeedback onPress={onClose}>
-          <View style={styles.overlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.sheetContainer}>
+        <View style={styles.overlay}>
+          <TouchableOpacity
+            style={styles.backdropTouch}
+            onPress={onClose}
+            activeOpacity={1}
+            accessibilityLabel="Close filter sheet"
+          />
+          <View style={styles.sheetContainer}>
                 {/* Header */}
                 <View style={styles.header}>
                   <Text style={styles.headerTitle}>Filter Users</Text>
@@ -322,9 +327,7 @@ export const UserFilterModal: React.FC<UserFilterModalProps> = ({
                   </TouchableOpacity>
                 </View>
               </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
+        </View>
       </Modal>
 
       {/* Date Picker Modal */}
@@ -351,12 +354,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
     justifyContent: 'flex-end',
   },
+  backdropTouch: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   sheetContainer: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: BorderRadius.xxl,
     borderTopRightRadius: BorderRadius.xxl,
     maxHeight: '85%',
     paddingBottom: Spacing.xl,
+    zIndex: 10,
   },
   header: {
     flexDirection: 'row',
@@ -520,10 +531,15 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#06294D',
+    backgroundColor: '#FAD465',
+    shadowColor: '#FAD465',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 2,
   },
   applyCheck: {
-    color: '#FFFFFF',
+    color: '#06294D',
     fontSize: 14,
     fontWeight: '800',
     marginRight: 6,
@@ -532,6 +548,6 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.sans,
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#06294D',
   },
 });

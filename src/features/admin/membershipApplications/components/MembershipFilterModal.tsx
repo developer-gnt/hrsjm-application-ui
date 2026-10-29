@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import {
@@ -62,24 +61,24 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
   onApply,
   onReset,
 }) => {
-  const [selectedStatus, setSelectedStatus] = useState<StatusTabKey>(currentFilters.status);
-  const [selectedType, setSelectedType] = useState<ApplicationTypeFilter>(
-    currentFilters.type ||
-      currentFilters.accountType ||
-      (currentFilters.membershipType === 'Donation Seeker' ? 'seeker' : 'all')
-  );
-  const [selectedSort, setSelectedSort] = useState<FilterOptions['sortBy']>(currentFilters.sortBy);
+  const resolveCurrentType = (filters: FilterOptions): ApplicationTypeFilter => {
+    if (filters.type && filters.type !== 'all') return filters.type;
+    if (filters.accountType && filters.accountType !== 'all') return filters.accountType;
+    if (filters.membershipType === 'Donation Seeker') return 'seeker';
+    if (filters.membershipType === 'Members') return 'membership';
+    return 'all';
+  };
+
+  const [selectedStatus, setSelectedStatus] = useState<StatusTabKey>(currentFilters.status || 'all');
+  const [selectedType, setSelectedType] = useState<ApplicationTypeFilter>(resolveCurrentType(currentFilters));
+  const [selectedSort, setSelectedSort] = useState<FilterOptions['sortBy']>(currentFilters.sortBy || 'newest');
 
   // Sync state when opened
   React.useEffect(() => {
     if (visible) {
-      setSelectedStatus(currentFilters.status);
-      setSelectedType(
-        currentFilters.type ||
-          currentFilters.accountType ||
-          (currentFilters.membershipType === 'Donation Seeker' ? 'seeker' : 'all')
-      );
-      setSelectedSort(currentFilters.sortBy);
+      setSelectedStatus(currentFilters.status || 'all');
+      setSelectedType(resolveCurrentType(currentFilters));
+      setSelectedSort(currentFilters.sortBy || 'newest');
     }
   }, [visible, currentFilters]);
 
@@ -93,7 +92,7 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
         selectedType === 'seeker'
           ? 'Donation Seeker'
           : selectedType === 'membership'
-          ? 'Membership'
+          ? 'Members'
           : 'All Types',
       sortBy: selectedSort,
     });
@@ -115,115 +114,117 @@ export const MembershipFilterModal: React.FC<MembershipFilterModalProps> = ({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View style={styles.sheetContainer}>
-              {/* Header */}
-              <View style={styles.header}>
-                <Text style={styles.headerTitle}>Filter Applications</Text>
-                <TouchableOpacity
-                  onPress={onClose}
-                  style={styles.closeButton}
-                  activeOpacity={0.7}
-                  accessibilityLabel="Close filter sheet"
-                >
-                  <Text style={styles.closeIcon}>✕</Text>
-                </TouchableOpacity>
-              </View>
+      <View style={styles.overlay}>
+        <TouchableOpacity
+          style={styles.backdropTouch}
+          onPress={onClose}
+          activeOpacity={1}
+          accessibilityLabel="Close filter sheet"
+        />
+        <View style={styles.sheetContainer}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Filter Applications</Text>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeButton}
+              activeOpacity={0.7}
+              accessibilityLabel="Close filter sheet"
+            >
+              <Text style={styles.closeIcon}>✕</Text>
+            </TouchableOpacity>
+          </View>
 
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-              >
-                {/* 1. Status Section */}
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Application Status</Text>
-                  <View style={styles.chipsRow}>
-                    {STATUS_OPTIONS.map(opt => {
-                      const isSelected = selectedStatus === opt.key;
-                      return (
-                        <TouchableOpacity
-                          key={opt.key}
-                          style={[styles.chip, isSelected && styles.chipSelected]}
-                          onPress={() => setSelectedStatus(opt.key)}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                            {opt.label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* 2. Type Section (All, Membership, Donor Seeker) */}
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Type</Text>
-                  <View style={styles.chipsRow}>
-                    {TYPE_OPTIONS.map(opt => {
-                      const isSelected = selectedType === opt.key;
-                      return (
-                        <TouchableOpacity
-                          key={opt.key}
-                          style={[styles.chip, isSelected && styles.chipSelected]}
-                          onPress={() => setSelectedType(opt.key)}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                            {opt.label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* 3. Sort Order Section */}
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Sort By</Text>
-                  <View style={styles.chipsRow}>
-                    {SORT_OPTIONS.map(sort => {
-                      const isSelected = selectedSort === sort.key;
-                      return (
-                        <TouchableOpacity
-                          key={sort.key}
-                          style={[styles.chip, isSelected && styles.chipSelected]}
-                          onPress={() => setSelectedSort(sort.key)}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                            {sort.label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-              </ScrollView>
-
-              {/* Action Buttons Footer */}
-              <View style={styles.footer}>
-                <TouchableOpacity
-                  style={styles.resetButton}
-                  onPress={handleReset}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.resetButtonText}>Reset All</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.applyButton}
-                  onPress={handleApply}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.applyButtonText}>Apply Filters</Text>
-                </TouchableOpacity>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* 1. Status Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Application Status</Text>
+              <View style={styles.chipsRow}>
+                {STATUS_OPTIONS.map(opt => {
+                  const isSelected = selectedStatus === opt.key;
+                  return (
+                    <TouchableOpacity
+                      key={opt.key}
+                      style={[styles.chip, isSelected && styles.chipSelected]}
+                      onPress={() => setSelectedStatus(opt.key)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
-          </TouchableWithoutFeedback>
+
+            {/* 2. Type Section (All, Membership, Donor Seeker) */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Type</Text>
+              <View style={styles.chipsRow}>
+                {TYPE_OPTIONS.map(opt => {
+                  const isSelected = selectedType === opt.key;
+                  return (
+                    <TouchableOpacity
+                      key={opt.key}
+                      style={[styles.chip, isSelected && styles.chipSelected]}
+                      onPress={() => setSelectedType(opt.key)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* 3. Sort Order Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Sort By</Text>
+              <View style={styles.chipsRow}>
+                {SORT_OPTIONS.map(sort => {
+                  const isSelected = selectedSort === sort.key;
+                  return (
+                    <TouchableOpacity
+                      key={sort.key}
+                      style={[styles.chip, isSelected && styles.chipSelected]}
+                      onPress={() => setSelectedSort(sort.key)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                        {sort.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Action Buttons Footer */}
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={styles.resetButton}
+              onPress={handleReset}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.resetButtonText}>Reset All</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.applyButton}
+              onPress={handleApply}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.applyButtonText}>Apply Filters</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 };
@@ -234,12 +235,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
     justifyContent: 'flex-end',
   },
+  backdropTouch: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   sheetContainer: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
     maxHeight: '80%',
     paddingBottom: Spacing.xl,
+    zIndex: 10,
   },
   header: {
     flexDirection: 'row',
@@ -336,13 +345,18 @@ const styles = StyleSheet.create({
     flex: 2,
     paddingVertical: 12,
     borderRadius: BorderRadius.md,
-    backgroundColor: '#0F2860',
+    backgroundColor: '#FAD465',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#FAD465',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 2,
   },
   applyButtonText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#06294D',
   },
 });

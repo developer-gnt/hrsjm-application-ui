@@ -65,7 +65,7 @@ export const MemberSearchFilterBar: React.FC<MemberSearchFilterBarProps> = ({
         testID="members-filters-button"
         style={styles.filterButton}
       >
-        <ListFilter size={20} color={BrandColors.navy} strokeWidth={2} />
+        <ListFilter size={18} color={BrandColors.navy} strokeWidth={2} />
         <Text style={styles.filterText}>Filters</Text>
         {filtersActive && <View style={styles.activeDot} />}
       </PressableScale>
@@ -109,23 +109,29 @@ const styles = StyleSheet.create({
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: CONTROL_HEIGHT,
-    paddingHorizontal: Spacing.base,
-    gap: Spacing.xs,
-    backgroundColor: BrandColors.surface,
+    height: 44,
+    paddingHorizontal: 14,
+    gap: 8,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: BrandColors.border,
+    borderColor: '#E2E8F0',
     borderRadius: BorderRadius.lg,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   filterText: {
-    ...Typography.bodyMedium,
-    color: BrandColors.navy,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#06294D',
   },
   activeDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: BrandColors.gold,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#06294D',
     marginLeft: 2,
   },
 });

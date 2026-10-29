@@ -158,22 +158,26 @@ export const SETTING_SECTIONS: SettingSection[] = [
         description: 'View and manage your administrator profile, official ID card and QR code.',
         route: AppRoutes.MY_PROFILE,
       },
+      /*
       {
         icon: Building2,
         title: 'Organization Profile (About HRSJM)',
         description: 'Organization background, mission, vision, core values, and leadership.',
         route: AppRoutes.ABOUT,
       },
+      */
       {
         icon: Phone,
         title: 'Contact Information',
         description: 'Manage address, phone, email and social media links.',
       },
+      /*
       {
         icon: SlidersHorizontal,
         title: 'App Settings',
         description: 'Configure app name, tagline, maintenance mode and other preferences.',
       },
+      */
       {
         icon: Info,
         title: 'About HRSJM',
@@ -194,6 +198,7 @@ export const SETTING_SECTIONS: SettingSection[] = [
         description: 'View, filter, manage, verify, and edit all registered users across roles.',
         route: AppRoutes.USERS,
       },
+      /*
       {
         icon: ShieldCheck,
         title: 'User Roles & Permissions',
@@ -211,6 +216,7 @@ export const SETTING_SECTIONS: SettingSection[] = [
         title: 'Verification Settings',
         description: 'Configure member verification and approval process.',
       },
+      */
     ],
   },
   {
@@ -229,13 +235,17 @@ export const SETTING_SECTIONS: SettingSection[] = [
         title: 'Push Notifications',
         description: 'Manage in-app push notifications for important updates.',
       },
+      /*
       {
         icon: MessageSquare,
         title: 'SMS Notifications',
         description: 'Configure SMS alerts for critical communications.',
       },
+      */
     ],
   },
+  /*
+  // Sections temporarily commented out per request:
   {
     id: 'content',
     title: 'Content & Platform Settings',
@@ -305,6 +315,7 @@ export const SETTING_SECTIONS: SettingSection[] = [
       },
     ],
   },
+  */
 ];
 
 export interface AdminSettingsScreenProps {
@@ -488,12 +499,12 @@ export const AdminSettingsScreen: React.FC<AdminSettingsScreenProps> = ({ naviga
               onPress={() => navigation.navigate(AppRoutes.CHART_OF_ACCOUNTS)}
             >
               <View style={styles.itemIconBadge}>
-                <FolderTree size={16} color="#1E3A8A" strokeWidth={2} />
+                <BarChart3 size={16} color="#1E3A8A" strokeWidth={2} />
               </View>
               <View style={styles.itemTextBlock}>
                 <Text style={styles.itemTitle}>Chart of Accounts</Text>
                 <Text style={styles.itemDescription}>
-                  Hierarchical structure of organizational ledger accounts
+                  Financial charts, revenue analytics, and performance reports
                 </Text>
               </View>
               <ChevronRight size={16} color="#94A3B8" strokeWidth={2.2} />

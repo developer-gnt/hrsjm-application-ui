@@ -217,11 +217,7 @@ export function SupportTicketsScreen() {
                 style={styles.filtersButton}
                 activeOpacity={0.85}
               >
-                <Filter
-                  size={16}
-                  color="#06294D"
-                  strokeWidth={2.2}
-                />
+                <ListFilter size={18} color="#06294D" strokeWidth={2} />
                 <Text style={styles.filtersText}>
                   Filters{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ''}
                 </Text>
@@ -468,13 +464,18 @@ const styles = StyleSheet.create({
   filtersButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#06294D',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     paddingHorizontal: 14,
     height: 44,
     borderRadius: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   filtersText: {
     ...Typography.body,

@@ -166,6 +166,8 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
   };
 
   const hasActiveFilters =
+    activeTab !== 'all' ||
+    (filterOptions.membershipType && filterOptions.membershipType !== 'All Types') ||
     (filterOptions.type && filterOptions.type !== 'all') ||
     (filterOptions.accountType && filterOptions.accountType !== 'all') ||
     filterOptions.sortBy !== 'newest';
@@ -274,9 +276,16 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
         <TouchableOpacity
           style={[
             styles.categoryChip,
-            filterOptions.membershipType === 'All Types' && styles.categoryChipActiveAll,
+            (!filterOptions.membershipType || filterOptions.membershipType === 'All Types') && styles.categoryChipActiveAll,
           ]}
-          onPress={() => setFilterOptions(prev => ({ ...prev, membershipType: 'All Types' }))}
+          onPress={() =>
+            setFilterOptions(prev => ({
+              ...prev,
+              type: 'all',
+              accountType: 'all',
+              membershipType: 'All Types',
+            }))
+          }
           activeOpacity={0.8}
         >
           <Text
@@ -296,10 +305,15 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
             filterOptions.membershipType === 'Members' && styles.categoryChipActiveMember,
           ]}
           onPress={() =>
-            setFilterOptions(prev => ({
-              ...prev,
-              membershipType: prev.membershipType === 'Members' ? 'All Types' : 'Members',
-            }))
+            setFilterOptions(prev => {
+              const nextVal = prev.membershipType === 'Members' ? 'All Types' : 'Members';
+              return {
+                ...prev,
+                type: nextVal === 'Members' ? 'membership' : 'all',
+                accountType: nextVal === 'Members' ? 'membership' : 'all',
+                membershipType: nextVal,
+              };
+            })
           }
           activeOpacity={0.8}
         >
@@ -322,10 +336,15 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
             filterOptions.membershipType === 'Donation Seeker' && styles.categoryChipActiveSeeker,
           ]}
           onPress={() =>
-            setFilterOptions(prev => ({
-              ...prev,
-              membershipType: prev.membershipType === 'Donation Seeker' ? 'All Types' : 'Donation Seeker',
-            }))
+            setFilterOptions(prev => {
+              const nextVal = prev.membershipType === 'Donation Seeker' ? 'All Types' : 'Donation Seeker';
+              return {
+                ...prev,
+                type: nextVal === 'Donation Seeker' ? 'seeker' : 'all',
+                accountType: nextVal === 'Donation Seeker' ? 'seeker' : 'all',
+                membershipType: nextVal,
+              };
+            })
           }
           activeOpacity={0.8}
         >

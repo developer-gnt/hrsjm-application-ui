@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppSearchBar } from '../../../../core/components/common/AppSearchBar';
+import { ListFilter } from '../../../../core/components/icons';
 import { SkeletonList } from '../../../../core/components/common/AppSkeleton';
 import { AppFeedbackModal } from '../../../../core/components/common/AppFeedbackModal';
 import { useAuth } from '../../../../core/auth/AuthContext';
@@ -245,7 +246,7 @@ export function AssistanceRequestsScreen({
                 style={styles.filtersButton}
                 activeOpacity={0.85}
               >
-                <Text style={styles.filterIcon}>⚙️</Text>
+                <ListFilter size={18} color="#06294D" strokeWidth={2} />
                 <Text style={styles.filtersText}>Filters</Text>
               </TouchableOpacity>
             </View>
@@ -455,13 +456,18 @@ const styles = StyleSheet.create({
   filtersButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DCE4EC',
+    borderColor: '#E2E8F0',
     paddingHorizontal: 14,
     height: 44,
     borderRadius: BorderRadius.button,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   filterIcon: {
     fontSize: 13,
@@ -470,7 +476,7 @@ const styles = StyleSheet.create({
     ...Typography.body,
     fontSize: 13,
     fontWeight: '700',
-    color: '#0B2F52',
+    color: '#06294D',
   },
   tabsContainer: {
     marginBottom: Spacing.md,

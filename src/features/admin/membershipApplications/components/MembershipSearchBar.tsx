@@ -59,7 +59,7 @@ export const MembershipSearchBar: React.FC<MembershipSearchBarProps> = ({
       >
         <ListFilter
           size={18}
-          color={hasActiveFilters ? '#FFFFFF' : '#06294D'}
+          color="#06294D"
           strokeWidth={2}
         />
         <Text style={[styles.filterButtonText, hasActiveFilters && styles.filterButtonTextActive]}>
@@ -118,9 +118,14 @@ const styles = StyleSheet.create({
     height: 44,
     gap: 8,
     position: 'relative',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   filterButtonActive: {
-    backgroundColor: '#06294D',
+    backgroundColor: '#FFFFFF',
     borderColor: '#06294D',
   },
   filterButtonText: {
@@ -129,7 +134,7 @@ const styles = StyleSheet.create({
     color: '#06294D',
   },
   filterButtonTextActive: {
-    color: '#FFFFFF',
+    color: '#06294D',
   },
   activeDot: {
     position: 'absolute',
@@ -138,7 +143,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#EAB308',
+    backgroundColor: '#06294D',
   },
 });
 
