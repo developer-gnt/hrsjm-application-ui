@@ -19,6 +19,7 @@ export interface SupportTicket {
   created_at: string;
   updated_at: string;
   source?: 'website' | 'web' | 'app';
+  documents?: any[];
 }
 
 export interface SupportTicketListData {
@@ -32,6 +33,14 @@ export interface CreateTicketBody {
   category?: string;
   priority?: 'NORMAL' | 'HIGH' | 'URGENT';
   source?: string;
+  attachments?: Array<{
+    name: string;
+    uri?: string;
+    size?: number;
+    formattedSize?: string;
+    type?: string;
+    base64?: string;
+  }>;
 }
 
 export interface SupportFilterState {

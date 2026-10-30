@@ -58,15 +58,17 @@ export const mapBackendTicketToSupportTicket = (item: any): SupportTicket => {
   const rawId = item.id || '';
   const ticketNumber = `#${rawId.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
 
-  const attachments: TicketAttachment[] = Array.isArray(item.documents)
+  const attachments: TicketAttachment[] = Array.isArray(item.documents) && item.documents.length > 0
     ? item.documents.map((doc: any, idx: number) => ({
         id: doc.id || `att-${idx}`,
-        name: doc.document_name || 'document',
+        name: doc.document_name || doc.file_name || 'document',
         size: doc.file_size || 0,
         formattedSize: doc.file_size ? `${(doc.file_size / (1024 * 1024)).toFixed(1)} MB` : '1.0 MB',
         type: doc.mime_type || 'file',
-        uri: doc.file_url,
+        uri: doc.file_url || doc.url,
       }))
+    : Array.isArray(item.attachments)
+    ? item.attachments
     : [];
 
   return {
@@ -123,7 +125,15 @@ class SupportTicketsStore {
       });
 
       const rawItems = Array.isArray(data?.items) ? data.items : [];
-      this.tickets = rawItems.map(mapBackendTicketToSupportTicket);
+      const fetchedTickets = rawItems.map(mapBackendTicketToSupportTicket);
+      const existingMap = new Map(this.tickets.map(t => [t.id, t]));
+      this.tickets = fetchedTickets.map(f => {
+        const existing = existingMap.get(f.id);
+        if ((!f.attachments || f.attachments.length === 0) && existing?.attachments?.length) {
+          return { ...f, attachments: existing.attachments };
+        }
+        return f;
+      });
       this.notify();
       return this.tickets;
     } catch (err) {
@@ -238,9 +248,13 @@ class SupportTicketsStore {
         description: data.description || '',
         priority: 'NORMAL',
         source: Platform.OS === 'web' ? 'web' : 'app',
+        attachments: data.attachments || [],
       });
 
       const mapped = mapBackendTicketToSupportTicket(created);
+      if ((!mapped.attachments || mapped.attachments.length === 0) && data.attachments && data.attachments.length > 0) {
+        mapped.attachments = [...data.attachments];
+      }
       this.tickets = [mapped, ...this.tickets.filter(t => t.id !== mapped.id)];
       this.lastCreatedTicket = mapped;
       this.clearDraft();
@@ -299,9 +313,13 @@ class SupportTicketsStore {
         subject: newTicket.subject,
         description: newTicket.description,
         priority: 'NORMAL',
+        attachments: newTicket.attachments || [],
       })
       .then(created => {
         const mapped = mapBackendTicketToSupportTicket(created);
+        if ((!mapped.attachments || mapped.attachments.length === 0) && newTicket.attachments && newTicket.attachments.length > 0) {
+          mapped.attachments = [...newTicket.attachments];
+        }
         this.tickets = this.tickets.map(t => (t.id === tempId ? mapped : t));
         if (this.lastCreatedTicket?.id === tempId) {
           this.lastCreatedTicket = mapped;
