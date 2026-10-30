@@ -12,7 +12,6 @@ import {
   Platform,
   KeyboardAvoidingView,
   ActivityIndicator,
-  StatusBar,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -905,7 +904,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 36,
     overflow: 'hidden',
-    position: 'relative',
   },
   heroBackgroundImage: {
     position: 'absolute',

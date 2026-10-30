@@ -338,6 +338,18 @@ export function MembershipStep1Screen() {
       {/* Top Header matching Admin Dashboard */}
       <MembershipTopBar />
 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+        style={styles.keyboardAvoid}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardPadding }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          bounces={true}>
+
           {/* Main Title */}
           <View style={styles.titleSection}>
             <Text style={styles.screenTitle}>Apply for Membership</Text>
