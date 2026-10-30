@@ -44,6 +44,7 @@ import {
   type StateLocation,
 } from '../../location/data/india-locations';
 import { supportTicketsStore } from '../../../support/services/supportTicketsStore';
+import { formatAttachmentSize } from '../../../support/types/ticket.types';
 
 const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 const SUPPORTED_ATTACHMENT_EXTENSIONS = ['jpg', 'jpeg', 'png', 'pdf'];
@@ -975,7 +976,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
                   id: `att-${Date.now()}-${idx}`,
                   name: a.name || 'document',
                   size: a.size || 0,
-                  formattedSize: a.size ? `${(a.size / (1024 * 1024)).toFixed(1)} MB` : '1.0 MB',
+                  formattedSize: formatAttachmentSize(a.size),
                   type: a.type || 'file',
                   uri: a.uri,
                 })),

@@ -7,6 +7,7 @@ import {
   TicketDraft,
   TicketAttachment,
   TicketStatus,
+  formatAttachmentSize,
 } from '../types/ticket.types';
 import { INITIAL_DEV_TICKETS } from '../data/ticketFixtures';
 import { supportService } from '../../admin/support/services/support.service';
@@ -63,12 +64,12 @@ export const mapBackendTicketToSupportTicket = (item: any): SupportTicket => {
         id: doc.id || `att-${idx}`,
         name: doc.document_name || doc.file_name || 'document',
         size: doc.file_size || 0,
-        formattedSize: doc.file_size ? `${(doc.file_size / (1024 * 1024)).toFixed(1)} MB` : '1.0 MB',
+        formattedSize: formatAttachmentSize(doc.file_size, doc.formatted_size),
         type: doc.mime_type || 'file',
         uri: doc.file_url || doc.url,
       }))
     : Array.isArray(item.attachments)
-    ? item.attachments
+    ? item.attachments.map((a: any) => ({ ...a, formattedSize: formatAttachmentSize(a.size, a.formattedSize) }))
     : [];
 
   return {

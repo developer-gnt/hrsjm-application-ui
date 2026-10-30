@@ -10,7 +10,13 @@ import {
 } from 'react-native';
 import { AdminColors, BorderRadius, Spacing } from '../../../core';
 import { Calendar } from '../../../core/components/icons';
-import { SupportTicket, TicketAttachment } from '../types/ticket.types';
+import {
+  SupportTicket,
+  TicketAttachment,
+  formatAttachmentSize,
+  isImageFile,
+  getAttachmentIconConfig,
+} from '../types/ticket.types';
 import { APPROVED_TICKET_CATEGORIES } from '../data/categories';
 import { CategoryIcon } from './SupportIcons';
 
@@ -218,7 +224,7 @@ export const SupportTicketDetailsModal: React.FC<SupportTicketDetailsModalProps>
               {ticket.attachments && ticket.attachments.length > 0 ? (
                 <View style={styles.filesGrid}>
                   {ticket.attachments.map(file => {
-                    const iconCfg = getFileIcon(file.type);
+                    const iconCfg = getAttachmentIconConfig(file.type, file.name);
                     return (
                       <View key={file.id} style={styles.fileItem}>
                         <View
@@ -233,9 +239,7 @@ export const SupportTicketDetailsModal: React.FC<SupportTicketDetailsModalProps>
                           <Text style={styles.fileName} numberOfLines={1}>
                             {file.name}
                           </Text>
-                          <Text style={styles.fileSize}>
-                            {file.formattedSize}
-                          </Text>
+                          <Text style={styles.fileSize}>{formatAttachmentSize(file.size, file.formattedSize)}</Text>
                         </View>
                         <TouchableOpacity
                           style={styles.viewFileButton}
@@ -304,7 +308,7 @@ export const SupportTicketDetailsModal: React.FC<SupportTicketDetailsModalProps>
               </View>
 
               <View style={styles.nestedBody}>
-                {['jpg', 'jpeg', 'png', 'webp'].includes(previewFile.type.toLowerCase()) && previewFile.uri ? (
+                {previewFile && isImageFile(previewFile.type, previewFile.name) && previewFile.uri ? (
                   <Image
                     source={{ uri: previewFile.uri }}
                     style={styles.nestedImage}
@@ -312,10 +316,10 @@ export const SupportTicketDetailsModal: React.FC<SupportTicketDetailsModalProps>
                   />
                 ) : (
                   <View style={styles.nestedPlaceholder}>
-                    <Text style={styles.nestedEmoji}>{getFileIcon(previewFile.type).icon}</Text>
+                    <Text style={styles.nestedEmoji}>{getAttachmentIconConfig(previewFile?.type, previewFile?.name).icon}</Text>
                     <Text style={styles.nestedFileName}>{previewFile.name}</Text>
                     <Text style={styles.nestedMeta}>
-                      {previewFile.type.toUpperCase()} • {previewFile.formattedSize}
+                      {(previewFile?.type || 'DOCUMENT').toUpperCase()} • {formatAttachmentSize(previewFile?.size, previewFile?.formattedSize)}
                     </Text>
                   </View>
                 )}
