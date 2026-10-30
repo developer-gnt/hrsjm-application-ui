@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppRoutes } from '../../core/constants/routes';
 import { MoreMenuScreen } from './MoreMenuScreen';
@@ -67,6 +67,7 @@ import {
 } from '../../features/admin/content/rights';
 import {
   MembershipDetailsScreen,
+  MemberBenefitsScreen,
   RenewMembershipScreen,
 } from '../../features/membership';
 import {
@@ -641,10 +642,24 @@ export const MoreNavigator: React.FC = () => (
       component={TicketChatScreen as any}
     />
 
-    {/* Membership Details & Renewal */}
+    {/* Membership Details, Benefits & Renewal */}
     <Stack.Screen name={AppRoutes.MEMBERSHIP_DETAILS}>
       {({ navigation }) => (
         <MembershipDetailsScreen
+          onBack={navigation.goBack}
+          onRenewPress={() =>
+            navigation.navigate(AppRoutes.RENEW_MEMBERSHIP as any)
+          }
+          onBenefitsPress={() =>
+            navigation.navigate(AppRoutes.MEMBERSHIP_BENEFITS as any)
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.MEMBERSHIP_BENEFITS}>
+      {({ navigation }) => (
+        <MemberBenefitsScreen
           onBack={navigation.goBack}
           onRenewPress={() =>
             navigation.navigate(AppRoutes.RENEW_MEMBERSHIP as any)

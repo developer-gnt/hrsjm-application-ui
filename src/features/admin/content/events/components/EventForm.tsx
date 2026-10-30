@@ -24,6 +24,7 @@ import { EventFormToast } from './EventFormToast';
 import type {
   CreateEventFieldErrors,
   CreateEventFormState,
+  EventListItem,
 } from '../types/events.types';
 import { useCreateEvent, useUpdateEvent } from '../hooks/useEvents';
 
@@ -130,7 +131,7 @@ interface EventFormProps {
   /** Leave the screen. */
   onCancel: () => void;
   /** Edit mode only: fired after save completes. */
-  onSaved?: () => void;
+  onSaved?: (updatedEvent?: EventListItem) => void;
 }
 
 /**

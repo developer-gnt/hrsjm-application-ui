@@ -27,6 +27,7 @@ export type AppRoute =
   | { name: 'membership-categories' }
   | { name: 'renew-membership' }
   | { name: 'membership-details' }
+  | { name: 'membership-benefits' }
   | { name: 'support-tickets' }
   | { name: 'create-support-ticket' }
   | { name: 'review-support-ticket' }
@@ -73,6 +74,9 @@ const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/membership-details': { name: 'membership-details' },
   '/membership/details': { name: 'membership-details' },
   '/member-details': { name: 'membership-details' },
+  '/membership-benefits': { name: 'membership-benefits' },
+  '/membership/benefits': { name: 'membership-benefits' },
+  '/member-benefits': { name: 'membership-benefits' },
   '/support': { name: 'support-tickets' },
   '/support-tickets': { name: 'support-tickets' },
   '/support/create': { name: 'create-support-ticket' },
@@ -100,6 +104,7 @@ const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
   'membership-categories': '#/membership-categories',
   'renew-membership': '#/renew-membership',
   'membership-details': '#/membership-details',
+  'membership-benefits': '#/membership-benefits',
   'support-tickets': '#/support',
   'create-support-ticket': '#/support/create',
   'review-support-ticket': '#/support/review',
@@ -316,6 +321,10 @@ export const navigateToRenewMembership = (): void => {
 
 export const navigateToMembershipDetails = (): void => {
   navigate({ name: 'membership-details' });
+};
+
+export const navigateToMembershipBenefits = (): void => {
+  navigate({ name: 'membership-benefits' });
 };
 
 export const navigateToSupportTickets = (): void => {

@@ -40,7 +40,7 @@ import { navigateToMembershipCategories } from '../../../../core/navigation/appR
 import { GlobalPaymentModal, PaymentPayload } from '../../../payments';
 import { useAuthStore } from '../../../auth/store/authStore';
 import { useMembership } from '../../../membership/context/MembershipContext';
-import { causesService } from '../../../member/services/causes.service';
+import { causesService, VERIFIED_FALLBACK_CAUSES } from '../../../member/services/causes.service';
 import { MemberCausesContainer } from '../../../member/screens/MemberCausesContainer';
 import type { MemberCause } from '../../../member/types/causes.types';
 import { recentDonationsStore } from '../../../donations/services/recent-donations.store';
@@ -168,22 +168,36 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
   const content = ACTION_PAGE_CONTENT[pageId];
   const { width } = useWindowDimensions();
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>('all');
-  const [dynamicCauses, setDynamicCauses] = useState<MemberCause[]>([]);
+  const [dynamicCauses, setDynamicCauses] = useState<MemberCause[]>(() => {
+    const existing = causesService.getCausesSync();
+    return existing.length > 0 ? existing : VERIFIED_FALLBACK_CAUSES;
+  });
+  const [causesLoading, setCausesLoading] = useState<boolean>(false);
   const [showCauseDirectory, setShowCauseDirectory] = useState<boolean>(false);
   const [activePaymentPayload, setActivePaymentPayload] = useState<PaymentPayload | null>(null);
 
   useEffect(() => {
     let mounted = true;
     if (pageId === 'donate') {
+      setCausesLoading(true);
       causesService
         .getCauses()
         .then(res => {
-          if (mounted && Array.isArray(res)) {
-            // Strictly real, verified causes without mock/test/complaint data
+          if (mounted && Array.isArray(res) && res.length > 0) {
             setDynamicCauses(res);
           }
         })
-        .catch(() => {});
+        .catch(err => {
+          console.warn('[UserActionPageScreen] Failed to load causes:', err);
+          if (mounted && dynamicCauses.length === 0) {
+            setDynamicCauses(VERIFIED_FALLBACK_CAUSES);
+          }
+        })
+        .finally(() => {
+          if (mounted) {
+            setCausesLoading(false);
+          }
+        });
     }
     return () => {
       mounted = false;
@@ -675,18 +689,31 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
                 <Text style={styles.categoryEmptyDesc}>
                   There are currently no urgent donation requests listed under this category. Every cause undergoes strict background verification by HRSJM before approval.
                 </Text>
-                <TouchableOpacity
-                  style={styles.categoryEmptyCtaBtn}
-                  onPress={handleNgoDonatePress}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Donate to HRSJM NGO General Fund"
-                >
-                  <AppIcon name="heart" size={14} color="#011F39" />
-                  <Text style={styles.categoryEmptyCtaText}>
-                    Donate to HRSJM NGO General Fund
-                  </Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
+                  <TouchableOpacity
+                    style={[styles.categoryEmptyCtaBtn, { flex: 1, backgroundColor: '#E2E8F0' }]}
+                    onPress={() => setSelectedCategoryKey('all')}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="View all causes"
+                  >
+                    <Text style={[styles.categoryEmptyCtaText, { color: AdminColors.primaryDark }]}>
+                      View All Causes
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.categoryEmptyCtaBtn, { flex: 1 }]}
+                    onPress={handleNgoDonatePress}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Donate to HRSJM NGO General Fund"
+                  >
+                    <AppIcon name="heart" size={14} color="#011F39" />
+                    <Text style={styles.categoryEmptyCtaText}>
+                      General Fund
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           </View>

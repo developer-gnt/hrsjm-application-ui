@@ -23,7 +23,7 @@ import {
 } from '../services/donations.preview';
 import type { DonationStatItem } from '../components/DonationStats';
 
-const DONATIONS_PAGE_SIZE = 20;
+const DONATIONS_PAGE_SIZE = 50;
 
 export interface UseDonationsParams {
   search?: string | null;

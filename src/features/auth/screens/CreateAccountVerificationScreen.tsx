@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  KeyboardAvoidingView,
   TouchableOpacity,
   useWindowDimensions,
   Platform,
@@ -14,6 +15,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useKeyboardSpacing } from '../../../core/hooks';
 import {
   ChevronLeftIcon,
   CheckCircleFilledIcon,
@@ -181,6 +183,12 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
   });
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isFilesScreenOpen, setIsFilesScreenOpen] = useState(false);
+
+  const { keyboardPadding, handleInputFocus, dismissKeyboard } = useKeyboardSpacing({
+    basePadding: 80,
+    extraPadding: 60,
+    minKeyboardHeight: 340,
+  });
   const [previewItem, setPreviewItem] = useState<{
     docTitle: string;
     file: UploadedDocFile;
@@ -448,14 +456,23 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          isTabletOrDesktop && { alignItems: 'center' },
-        ]}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: keyboardPadding },
+            isTabletOrDesktop && { alignItems: 'center' },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          bounces={true}
+        >
         <View style={[styles.mainWrapper, { width: contentMaxWidth }]}>
           {/* 1. Header with Back Button & Centered Screen Title */}
           <View style={styles.headerContainer}>
@@ -691,8 +708,8 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
                         Enter your document name
                       </Text>
                       <TextInput
-                        style={[
-                          styles.otherDocTextInput,
+                        onFocus={handleInputFocus}
+                        style={[styles.otherDocTextInput,
                           entry.nameError ? styles.otherDocTextInputError : null,
                         ]}
                         placeholder={placeholderText}
@@ -860,6 +877,7 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
           </View>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* File Preview Modal */}
       <Modal

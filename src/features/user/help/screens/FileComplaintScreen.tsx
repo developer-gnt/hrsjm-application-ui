@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   BackHandler,
   KeyboardAvoidingView,
@@ -142,8 +143,50 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [agreeDeclaration, setAgreeDeclaration] = useState(false);
+  const [countdown, setCountdown] = useState<number>(3);
 
   const stepLabels = ['Complaint Details', 'Your Details', 'Review & Submit'];
+
+  const handleResetForm = () => {
+    setForm(emptyForm);
+    setSelectedHelpTopic(null);
+    setSelectedState(null);
+    setSelectedCity(null);
+    setAttachments([]);
+    setErrors({});
+    setAgreeTerms(false);
+    setAgreePrivacy(false);
+    setAgreeDeclaration(false);
+    setStep(1);
+    setIsSubmitted(false);
+    setSubmittedTicketId('');
+    setCountdown(3);
+  };
+
+  useEffect(() => {
+    if (!isSubmitted) {
+      setCountdown(3);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          if (onViewTickets) {
+            handleResetForm();
+            onViewTickets();
+          } else {
+            handleResetForm();
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isSubmitted, onViewTickets]);
 
   const handleStepBack = () => {
     if (isSubmitted) {
@@ -982,6 +1025,8 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
               });
               setSubmittedTicketId(ticket.ticketNumber || ticket.id);
               setIsSubmitted(true);
+              setCountdown(3);
+              supportTicketsStore.fetchTickets().catch(() => {});
             } catch (err) {
               console.error('Error submitting complaint:', err);
               Alert.alert('Error', 'Unable to submit your complaint. Please try again.');
@@ -1063,27 +1108,53 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
                 Thank you for reaching out to HRSJM. Your complaint has been
                 received and recorded in our support ticket system.
               </Text>
+
+              {/* Auto-refresh Status Notice */}
+              <View style={styles.autoRefreshNotice}>
+                <ActivityIndicator size="small" color={AdminColors.primaryDark} />
+                <Text style={styles.autoRefreshNoticeText}>
+                  {onViewTickets
+                    ? `Auto-redirecting to My Tickets in ${countdown}s...`
+                    : `Auto-refreshing form in ${countdown}s...`}
+                </Text>
+              </View>
+
               <View style={styles.referenceBox}>
                 <Text style={styles.referenceLabel}>Reference Ticket ID</Text>
                 <Text style={styles.referenceId}>{submittedTicketId || 'HRSJM-DEMO-001'}</Text>
               </View>
+
               <View style={styles.successButtonsColumn}>
                 {onViewTickets ? (
                   <AppButton
-                    title="View My Tickets"
-                    onPress={onViewTickets}
-                    variant="outline"
+                    title="View My Tickets Now"
+                    onPress={() => {
+                      handleResetForm();
+                      onViewTickets();
+                    }}
+                    variant="gold"
                     size="lg"
-                    style={styles.successTicketsButton}
+                    style={styles.successButton}
                     textStyle={{ color: AdminColors.primaryDark }}
                   />
                 ) : null}
                 <AppButton
-                  title="Back to Home"
-                  onPress={() => onBack?.()}
-                  variant="gold"
+                  title="File Another Complaint"
+                  onPress={handleResetForm}
+                  variant="outline"
                   size="lg"
-                  style={styles.successButton}
+                  style={styles.successTicketsButton}
+                  textStyle={{ color: AdminColors.primaryDark }}
+                />
+                <AppButton
+                  title="Back to Home"
+                  onPress={() => {
+                    handleResetForm();
+                    onBack?.();
+                  }}
+                  variant="outline"
+                  size="lg"
+                  style={styles.successTicketsButton}
                   textStyle={{ color: AdminColors.primaryDark }}
                 />
               </View>
@@ -1573,6 +1644,25 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: BorderRadius.lg,
     borderColor: AdminColors.primaryDark,
+  },
+  autoRefreshNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: Spacing.md,
+    backgroundColor: '#EEF4FF',
+    borderWidth: 1,
+    borderColor: '#C7D9FB',
+    borderRadius: BorderRadius.base,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    width: '100%',
+  },
+  autoRefreshNoticeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: AdminColors.primaryDark,
   },
   titleActionRow: {
     flexDirection: 'row',

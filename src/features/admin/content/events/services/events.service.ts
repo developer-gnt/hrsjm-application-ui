@@ -1,5 +1,6 @@
 import { apiClient } from '../../../../../core/api/client';
 import { ApiRoutes } from '../../../../../core/constants/api-routes';
+import { combineLocalDateAndTime } from '../../../../../core/utils/date';
 import type {
   EventListItem,
   EventStatsSummary,
@@ -84,15 +85,16 @@ export const getEventsList = async (
   );
 
   const rawData: any = res?.data ?? res ?? {};
-  const rawItems = Array.isArray(rawData?.items)
-    ? rawData.items
-    : Array.isArray(rawData)
-    ? rawData
+  const unwrapped = rawData?.items ? rawData : (rawData?.data || rawData);
+  const rawItems = Array.isArray(unwrapped?.items)
+    ? unwrapped.items
+    : Array.isArray(unwrapped)
+    ? unwrapped
     : [];
 
   return {
     events: rawItems.map(mapBackendEventToUi),
-    stats: rawData?.stats || {
+    stats: unwrapped?.stats || {
       total: 0,
       upcoming: 0,
       completed: 0,
@@ -107,7 +109,8 @@ export const getEventDetails = async (id: string): Promise<EventListItem> => {
       ApiRoutes.EVENTS.DETAILS(id),
     );
     const rawData: any = res?.data ?? res ?? {};
-    return mapBackendEventToUi(rawData);
+    const item = rawData?.id ? rawData : (rawData?.data || rawData);
+    return mapBackendEventToUi(item);
   } catch (err: any) {
     const sample = SAMPLE_EVENTS.find(e => e.id === id);
     if (sample) return sample;
@@ -118,12 +121,11 @@ export const getEventDetails = async (id: string): Promise<EventListItem> => {
 export const createEventApi = async (
   form: CreateEventFormState,
 ): Promise<EventListItem> => {
-  const startAt = form.eventDate
-    ? `${form.eventDate}T${form.startTime || '09:00'}:00`
-    : new Date().toISOString();
-
-  const endAt = form.endDate
-    ? `${form.endDate}T${form.endTime || '17:00'}:00`
+  const eventDate = form.eventDate || new Date().toISOString().slice(0, 10);
+  const endDate = form.endDate || eventDate;
+  const startAt = combineLocalDateAndTime(eventDate, form.startTime, '09:00');
+  const endAt = form.endTime
+    ? combineLocalDateAndTime(endDate, form.endTime, '17:00')
     : undefined;
 
   const payload = {
@@ -152,19 +154,20 @@ export const createEventApi = async (
     ApiRoutes.EVENTS.BASE,
     payload,
   );
-  return mapBackendEventToUi(res.data);
+  const rawData: any = res?.data ?? res ?? {};
+  const item = rawData?.id ? rawData : (rawData?.data || rawData);
+  return mapBackendEventToUi(item);
 };
 
 export const updateEventApi = async (
   id: string,
   form: CreateEventFormState,
 ): Promise<EventListItem> => {
-  const startAt = form.eventDate
-    ? `${form.eventDate}T${form.startTime || '09:00'}:00`
-    : new Date().toISOString();
-
-  const endAt = form.endDate
-    ? `${form.endDate}T${form.endTime || '17:00'}:00`
+  const eventDate = form.eventDate || new Date().toISOString().slice(0, 10);
+  const endDate = form.endDate || eventDate;
+  const startAt = combineLocalDateAndTime(eventDate, form.startTime, '09:00');
+  const endAt = form.endTime
+    ? combineLocalDateAndTime(endDate, form.endTime, '17:00')
     : undefined;
 
   const payload = {
@@ -193,7 +196,9 @@ export const updateEventApi = async (
     ApiRoutes.EVENTS.DETAILS(id),
     payload,
   );
-  return mapBackendEventToUi(res.data);
+  const rawData: any = res?.data ?? res ?? {};
+  const item = rawData?.id ? rawData : (rawData?.data || rawData);
+  return mapBackendEventToUi(item);
 };
 
 export const deleteEventApi = async (id: string): Promise<void> => {
@@ -217,7 +222,9 @@ export const updateEventStatusApi = async (
       ApiRoutes.EVENTS.DETAILS(id),
       { status },
     );
-    return mapBackendEventToUi(res.data);
+    const rawData: any = res?.data ?? res ?? {};
+    const item = rawData?.id ? rawData : (rawData?.data || rawData);
+    return mapBackendEventToUi(item);
   } catch (err: any) {
     if (err?.response?.status === 404 || id.startsWith('e-') || id.startsWith('event-')) {
       console.warn(`Event ${id} not found on backend, updated status locally.`);

@@ -188,7 +188,12 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
 
   useEffect(() => {
     if (event) {
-      setCurrentEvent(event);
+      setCurrentEvent(prev => {
+        if (prev && prev.id === event.id) {
+          return prev;
+        }
+        return event;
+      });
     }
   }, [event]);
 
@@ -217,6 +222,14 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
         onBack={() => {
           setIsEditing(false);
           eventDetailsQuery.refetch();
+        }}
+        onSaved={updated => {
+          if (updated) {
+            setCurrentEvent(updated);
+          }
+          setIsEditing(false);
+          eventDetailsQuery.refetch();
+          onEventUpdated?.(updated || currentEvent);
         }}
       />
     );

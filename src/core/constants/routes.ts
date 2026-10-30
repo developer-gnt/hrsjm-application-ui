@@ -81,6 +81,7 @@ export const AppRoutes = {
 
   // Membership & Renewal
   MEMBERSHIP_DETAILS: 'MembershipDetails',
+  MEMBERSHIP_BENEFITS: 'MembershipBenefits',
   RENEW_MEMBERSHIP: 'RenewMembership',
 
   // Admin User Management Sub-routes

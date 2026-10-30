@@ -35,21 +35,34 @@ export const donationsService = {
       params.search = query.search.trim();
     }
 
+    if (query.source && query.source !== 'ALL') {
+      params.source = query.source;
+    }
+
     try {
-      const response = await apiClient.get<PaginatedResponse<Donation>>(
+      const response = await apiClient.get<any>(
         ApiRoutes.DONATIONS.BASE,
         { params },
       );
 
       const resData = (response as any)?.data || response;
-      if (resData && Array.isArray(resData.items) && resData.items.length > 0) {
-        return resData;
-      }
       if (resData && Array.isArray(resData.items)) {
         return resData;
       }
+      if (Array.isArray(resData)) {
+        return {
+          items: resData,
+          meta: {
+            page: typeof query.page === 'number' ? query.page : 1,
+            limit: typeof query.limit === 'number' ? query.limit : 20,
+            total: resData.length,
+            totalPages: Math.max(1, Math.ceil(resData.length / (typeof query.limit === 'number' ? query.limit : 20))),
+          },
+        };
+      }
     } catch (err) {
-      console.warn('[donationsService] API request failed, will fallback to local preview data if empty:', err);
+      console.warn('[donationsService] API request failed:', err);
+      throw err;
     }
 
     return {
@@ -67,10 +80,10 @@ export const donationsService = {
    * GET /api/v1/donations/:id — single donation record
    */
   async getDonationById(id: string): Promise<Donation> {
-    const response = await apiClient.get<Donation>(
+    const response = await apiClient.get<any>(
       `${ApiRoutes.DONATIONS.BASE}/${id}`,
     );
-    return response.data;
+    return (response as any)?.data || response;
   },
 
   /**

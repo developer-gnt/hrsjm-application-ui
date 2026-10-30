@@ -151,8 +151,13 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   const isMemberRole =
     (authUser?.roles ?? []).some(r => r.name.toUpperCase() === 'MEMBER') ||
     (authUser as any)?.account_type === 'member';
+  const isGeneralUserWithoutApp =
+    ((authUser as any)?.account_type === 'general' ||
+      (authUser?.roles ?? []).every(r => r.name.toUpperCase() === 'USER')) &&
+    !authUser?.membership_status;
   const hasPendingMemberApp =
     !isMemberRole &&
+    !isGeneralUserWithoutApp &&
     ((hasApplied && !isReapplying) ||
       authUser?.membership_status === 'PENDING' ||
       authUser?.membership_status === 'UNDER_REVIEW');

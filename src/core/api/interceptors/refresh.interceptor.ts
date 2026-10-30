@@ -74,10 +74,7 @@ export const setupRefreshInterceptor = (
             throw new Error('Token refresh did not return a valid access_token');
           }
 
-          tokenStorage.setAccessToken(accessToken);
-          if (newRefreshToken) {
-            await tokenStorage.setRefreshToken(newRefreshToken);
-          }
+          await tokenStorage.setTokens(accessToken, newRefreshToken || refreshToken, payload.user);
 
           processQueue(null, accessToken);
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;

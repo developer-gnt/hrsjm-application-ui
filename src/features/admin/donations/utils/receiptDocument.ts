@@ -203,10 +203,11 @@ export const generateReceiptPdf = async (
     throw err;
   }
 
-  const [{ jsPDF }, html2canvasModule] = await Promise.all([
-    import('jspdf'),
-    import('html2canvas'),
-  ]);
+  try {
+    const [{ jsPDF }, html2canvasModule] = await Promise.all([
+      import('jspdf'),
+      import('html2canvas'),
+    ]);
   const html2canvas = html2canvasModule.default;
 
   const host = doc.createElement('div');
@@ -266,7 +267,12 @@ export const generateReceiptPdf = async (
   );
 
   return pdf;
+  } catch (canvasErr) {
+    console.warn("html2canvas PDF generation failed, using direct vector PDF:", canvasErr);
+    return generateReceiptPdfDirect(receipt);
+  }
 };
+
 
 /**
  * Encodes bytes as base64 without relying on btoa or Buffer, neither of
@@ -719,51 +725,39 @@ export const saveReceiptBlob = (
 export const downloadReceiptPDF = async (
   receipt: DonationReceiptModel,
 ): Promise<'downloaded' | 'opened' | 'shared' | 'cancelled'> => {
-  const pdf = await generateReceiptPdf(receipt);
+  let pdf: any;
+  try {
+    // Generate clean vector PDF directly:
+    pdf = await generateReceiptPdfDirect(receipt);
+  } catch (err) {
+    console.warn('Direct PDF generation failed, falling back to html2canvas', err);
+    pdf = await generateReceiptPdf(receipt);
+  }
+
   const fileName = receiptFileName(receipt);
-
   const web: any = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
-  const nav: any = web.navigator;
-  const isIOS =
-    /iPad|iPhone|iPod/.test(nav?.userAgent ?? '') ||
-    (nav?.platform === 'MacIntel' && nav?.maxTouchPoints > 1);
 
-  // iOS Safari — use the Web Share sheet so the user can "Save to Files".
-  if (
-    isIOS &&
-    nav?.share &&
-    typeof nav.canShare === 'function' &&
-    typeof web.File === 'function'
-  ) {
-    const blob = pdf.output('blob');
+  // Standard anchor download via Blob URL
+  if (web.URL?.createObjectURL && web.document) {
     try {
-      const file = new web.File([blob], fileName, {
-        type: 'application/pdf',
-      });
-      if (nav.canShare({ files: [file] })) {
-        await nav.share({ files: [file], title: 'HRSJM Donation Receipt' });
-        return 'shared';
-      }
-    } catch (shareError: any) {
-      if (
-        shareError?.name === 'AbortError' ||
-        shareError?.name === 'NotAllowedError'
-      ) {
-        return 'cancelled'; // user dismissed the share sheet
-      }
-      // Fall through to the anchor / data-URI download path.
+      const blob = pdf.output('blob');
+      return saveReceiptBlob(blob, fileName);
+    } catch (saveErr) {
+      console.warn('saveReceiptBlob failed, trying pdf.save', saveErr);
     }
   }
 
-  // Standard anchor download (Android Chrome, desktop).
-  if (web.URL?.createObjectURL) {
-    const blob = pdf.output('blob');
-    return saveReceiptBlob(blob, fileName);
+  // Built-in jsPDF file save
+  if (typeof pdf.save === 'function') {
+    try {
+      pdf.save(fileName);
+      return 'downloaded';
+    } catch (pdfSaveErr) {
+      console.warn('pdf.save failed', pdfSaveErr);
+    }
   }
 
-  // Fallback for browsers that have a DOM but no createObjectURL (some
-  // Android WebViews, older mobile browsers). Open the PDF as a data URI —
-  // Chrome and Safari will display it inline and the user can save it.
+  // Fallback for browsers without download attribute: open data URI
   const dataUri: string = pdf.output('datauristring');
   const win = web.window;
   if (win?.open) {

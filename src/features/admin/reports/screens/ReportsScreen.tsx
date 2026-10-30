@@ -78,6 +78,23 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   const currentPreset = presets.find(p => p.key === selectedPreset) || defaultPreset;
   const currentPresetLabel = currentPreset?.label || 'This Month';
 
+  const trendSubLabel = useMemo(() => {
+    switch (selectedPreset) {
+      case 'THIS_MONTH':
+        return 'vs last month';
+      case 'LAST_MONTH':
+        return 'vs prev month';
+      case 'THIS_QUARTER':
+        return 'vs last quarter';
+      case 'THIS_FY':
+        return 'vs last FY';
+      case 'LAST_FY':
+        return 'vs prev FY';
+      default:
+        return 'vs prev period';
+    }
+  }, [selectedPreset]);
+
   const analytics = useReportsAnalytics(startDate, endDate);
   const tbSummary = useTrialBalanceSummary(asOfDate);
   const plSummary = useProfitLossSummary(startDate, endDate);
@@ -148,7 +165,10 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   const chartWidth = Math.min(width - 48, 560);
 
   // Dynamic user growth line chart points calculation
-  const maxGrowthCount = Math.max(...userGrowth.map(p => p.count), 200);
+  const rawMax = Math.max(...userGrowth.map(p => p.count), 0);
+  const maxGrowthCount = rawMax > 0
+    ? Math.max(Math.ceil((rawMax * 1.25) / 10) * 10, 10)
+    : 10;
   const chartPoints = userGrowth.map((point, index) => {
     const totalPoints = Math.max(userGrowth.length - 1, 1);
     const x = 30 + (index / totalPoints) * 290;
@@ -216,7 +236,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               <Text style={(kpis?.users_growth_pct ?? 0) >= 0 ? styles.trendGreen : styles.trendRed}>
                 {(kpis?.users_growth_pct ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(kpis?.users_growth_pct ?? 0)}%
               </Text>
-              <Text style={styles.trendSub}> vs last month</Text>
+              <Text style={styles.trendSub}> {trendSubLabel}</Text>
             </View>
           </View>
 
@@ -233,7 +253,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               <Text style={(kpis?.donations_growth_pct ?? 0) >= 0 ? styles.trendGreen : styles.trendRed}>
                 {(kpis?.donations_growth_pct ?? 0) >= 0 ? '↗' : '↘'} {Math.abs(kpis?.donations_growth_pct ?? 0)}%
               </Text>
-              <Text style={styles.trendSub}> vs last month</Text>
+              <Text style={styles.trendSub}> {trendSubLabel}</Text>
             </View>
           </View>
 
@@ -250,7 +270,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               <Text style={(kpis?.complaints_growth_pct ?? 0) <= 0 ? styles.trendGreen : styles.trendRed}>
                 {(kpis?.complaints_growth_pct ?? 0) <= 0 ? '↓' : '↑'} {Math.abs(kpis?.complaints_growth_pct ?? 0)}%
               </Text>
-              <Text style={styles.trendSub}> vs last month</Text>
+              <Text style={styles.trendSub}> {trendSubLabel}</Text>
             </View>
           </View>
 
@@ -265,9 +285,9 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </Text>
             <View style={styles.trendRow}>
               <Text style={(kpis?.events_growth_pct ?? 0) >= 0 ? styles.trendGreen : styles.trendRed}>
-                ↑ {kpis?.events_growth_pct ?? 0}%
+                {(kpis?.events_growth_pct ?? 0) >= 0 ? '↑' : '↓'} {Math.abs(kpis?.events_growth_pct ?? 0)}%
               </Text>
-              <Text style={styles.trendSub}> vs last month</Text>
+              <Text style={styles.trendSub}> {trendSubLabel}</Text>
             </View>
           </View>
         </View>

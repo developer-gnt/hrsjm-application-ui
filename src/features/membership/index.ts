@@ -39,6 +39,7 @@ export * from './screens/ApplicationDetailsScreen';
 export * from './screens/ApplicationApprovedScreen';
 export * from './screens/ApplicationRejectedScreen';
 export * from './screens/MyApplicationScreen';
+export * from './screens/MemberBenefitsScreen';
 
 
 

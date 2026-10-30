@@ -19,6 +19,7 @@ import { ReceiptPdfPreviewScreen } from '../../receipts/screens/ReceiptPdfPrevie
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import {
   MembershipDetailsScreen,
+  MemberBenefitsScreen,
   RenewMembershipScreen,
   MyApplicationScreen,
   MembershipCategoriesScreen,
@@ -230,7 +231,26 @@ export const MemberTabNavigator: React.FC = () => {
               }
             }}
             onRenewPress={() => navigation.navigate('RenewMembership')}
+            onBenefitsPress={() => navigation.navigate('MembershipBenefits')}
             onMemberCardPress={() => navigation.navigate('MyIdCard')}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="MembershipBenefits"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <MemberBenefitsScreen
+            showBottomNav={false}
+            onBack={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MembershipDetails');
+              }
+            }}
+            onRenewPress={() => navigation.navigate('RenewMembership')}
           />
         )}
       </Tab.Screen>

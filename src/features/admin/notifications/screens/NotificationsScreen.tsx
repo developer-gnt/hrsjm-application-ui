@@ -15,6 +15,7 @@ import { SkeletonList } from '../../../../core/components/common/AppSkeleton';
 import { AdminFilterTabs } from '../../../../core/components/admin/AdminFilterTabs';
 import { colors, spacing, typography } from '../../../../core/theme/theme';
 import { formatDateTime } from '../../../../core/utils/format';
+import { AppRoutes } from '../../../../core/constants/routes';
 import { useNotifications } from '../hooks/useNotifications';
 import type { NotificationItem } from '../types/notifications.types';
 import { AppEmptyState, AppErrorState } from '../../../../core';
@@ -72,11 +73,86 @@ export function NotificationsScreen({ onBack: onBackProp }: NotificationsScreenP
     markAllRead,
   } = useNotifications();
 
-  const handleOpen = (item: NotificationItem) => {
-    // Deep links require structured backend payloads (confirmed contract has
-    // none - reported gap), so opening marks the notification read only.
-    // markRead resolves to a boolean and never rejects.
-    markRead(item).then(() => undefined);
+  const handleOpen = async (item: NotificationItem) => {
+    // 1. Mark as read on backend & update unread badge
+    await markRead(item);
+
+    // 2. Intelligent deep-link routing based on notification content
+    const title = (item.notification?.title || '').toLowerCase();
+    const body = (item.notification?.body || '').toLowerCase();
+    const fullText = `${title} ${body}`;
+
+    // A. Support Tickets / Complaints
+    if (fullText.includes('ticket') || fullText.includes('complaint') || fullText.includes('grievance')) {
+      try {
+        navigation.navigate(AppRoutes.SUPPORT_TICKETS);
+        return;
+      } catch {}
+      try {
+        navigation.navigate('SupportTickets');
+        return;
+      } catch {}
+      try {
+        navigation.navigate('MemberComplaint');
+        return;
+      } catch {}
+    }
+
+    // B. Membership Approval / Application
+    if (fullText.includes('membership') || fullText.includes('member') || fullText.includes('application')) {
+      try {
+        navigation.navigate('MembershipDetails');
+        return;
+      } catch {}
+      try {
+        navigation.navigate('MemberProfile');
+        return;
+      } catch {}
+      try {
+        navigation.navigate(AppRoutes.MEMBERSHIP_APPLICATIONS);
+        return;
+      } catch {}
+    }
+
+    // C. Donations / Receipts
+    if (fullText.includes('donation') || fullText.includes('receipt')) {
+      try {
+        navigation.navigate('MemberReceipts');
+        return;
+      } catch {}
+      try {
+        navigation.navigate('Receipts');
+        return;
+      } catch {}
+      try {
+        navigation.navigate(AppRoutes.DONATIONS);
+        return;
+      } catch {}
+    }
+
+    // D. Events
+    if (fullText.includes('event')) {
+      try {
+        navigation.navigate('MemberEvents');
+        return;
+      } catch {}
+      try {
+        navigation.navigate(AppRoutes.EVENTS);
+        return;
+      } catch {}
+    }
+
+    // E. Causes / Relief Assistance
+    if (fullText.includes('cause') || fullText.includes('relief') || fullText.includes('assistance')) {
+      try {
+        navigation.navigate('MemberCauses');
+        return;
+      } catch {}
+      try {
+        navigation.navigate('Causes');
+        return;
+      } catch {}
+    }
   };
 
   const handleMarkAllRead = () => {

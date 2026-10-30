@@ -32,6 +32,7 @@ import {
   downloadReceiptPDF,
   downloadReceiptPdfNative,
   generateReceiptPdf,
+  generateReceiptPdfDirect,
   isWebEnvironment,
   printReceiptDocument,
   receiptFileName,
@@ -183,12 +184,24 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
   const getReceiptSummary = (): string =>
     receipt
       ? [
-          `HRSJM Donation Receipt ${receipt.receiptNumber}`,
-          `Donor: ${receipt.donorName}`,
-          `Amount: ${formatAmount(receipt.amount)}`,
-          `Date: ${formatDateTime(receipt.receiptDate)}`,
-          `Payment: ${receipt.paymentMethod}`,
-        ].join('\n')
+          `*HUMAN RIGHTS & SOCIAL JUSTICE MISSION (HRSJM)*`,
+          `*Donation Receipt:* ${receipt.receiptNumber}`,
+          `--------------------------------`,
+          `*Donor Name:* ${receipt.donorName}`,
+          receipt.memberCode ? `*Member ID:* ${receipt.memberCode}` : null,
+          receipt.donorMobile ? `*Phone:* ${receipt.donorMobile}` : null,
+          `*Donation Cause:* ${receipt.cause}`,
+          `*Amount:* ${formatAmount(receipt.amount)}`,
+          `*Date:* ${formatDateTime(receipt.receiptDate)}`,
+          `*Payment Method:* ${receipt.paymentMethod}`,
+          receipt.transactionId ? `*Transaction ID:* ${receipt.transactionId}` : null,
+          `--------------------------------`,
+          `Eligible for income tax deduction under Section 80G of the IT Act.`,
+          `Registration: NGO/80G/HRSJM/2024`,
+          `Thank you for supporting Human Rights & Social Justice Mission!`,
+        ]
+          .filter(Boolean)
+          .join('\n')
       : '';
 
   const handleDownload = async () => {
@@ -237,23 +250,12 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
 
   const handleShare = async () => {
     if (!receipt || pendingAction) return;
-    console.log('SHARE BUTTON CLICKED');
-    console.log('SHARE HANDLER STARTED');
     setPendingAction('share');
     setActionMessage(null);
     try {
       if (Platform.OS !== 'web' || !isWebEnvironment()) {
-        // ── Native mobile (Android / iOS) ────────────────────────────────
-        // Generate the real PDF and hand the actual FILE to the native
-        // share sheet (via react-native-share's FileProvider). WhatsApp
-        // and every other target app receives the PDF document itself —
-        // never receipt text. The Download button is untouched.
-        console.log('Selected donation:', receipt);
         setShareStage('generating');
-        const result = await shareReceiptPdfNative(receipt);
-        console.log('Native share finished:', result);
-        // 'cancelled' (user backed out of the share sheet) is silent —
-        // a cancel is a normal user action, not an error.
+        await shareReceiptPdfNative(receipt);
         return;
       }
 
@@ -264,51 +266,66 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
       const fileName = getReceiptFileName();
 
       setShareStage('generating');
-      const pdf = await generateReceiptPdf(receipt);
+      let pdf: any;
+      try {
+        pdf = await generateReceiptPdfDirect(receipt);
+      } catch {
+        pdf = await generateReceiptPdf(receipt);
+      }
       const blob = pdf.output('blob');
 
-      // Try native Web Share API with file support first (mobile Chrome,
-      // mobile Safari on web, some desktop Chrome versions).
+      // 1. Try native Web Share API with file first (supported in mobile Safari / Chrome)
       if (
         nav?.share &&
         typeof nav.canShare === 'function' &&
         typeof web.File === 'function'
       ) {
-        const file = new web.File([blob], fileName, {
-          type: 'application/pdf',
-        });
-        if (nav.canShare({ files: [file] })) {
-          setShareStage('sharing');
-          try {
+        try {
+          const file = new web.File([blob], fileName, {
+            type: 'application/pdf',
+          });
+          if (nav.canShare({ files: [file] })) {
+            setShareStage('sharing');
             await nav.share({
               files: [file],
-              title: 'HRSJM Donation Receipt',
+              title: `HRSJM Donation Receipt ${receipt.receiptNumber}`,
+              text: `Donation Receipt from Human Rights & Social Justice Mission for ${receipt.donorName}. Amount: ${formatAmount(receipt.amount)}`,
             });
-            // Shared successfully (or user cancelled — both are silent).
+            setActionMessage('Receipt shared successfully.');
             return;
-          } catch (shareError: any) {
-            if (
-              shareError?.name === 'AbortError' ||
-              shareError?.name === 'NotAllowedError'
-            ) {
-              return; // User cancelled — normal, no error message.
-            }
-            // File share was rejected by the browser — fall through to the
-            // fallback modal so the user can pick another sharing method.
           }
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') {
+            return; // User cancelled
+          }
+          console.warn('File share failed or was blocked, falling back', shareErr);
         }
       }
 
-      // ── Desktop / browser without file-share support ──────────────────
-      // Open the share-options modal so the user can choose HOW to share.
-      // IMPORTANT: do NOT call saveReceiptBlob here — that downloads, which
-      // is the Download button's job, not the Share button's.
+      // 2. Try native Web Share API with text & link
+      if (nav?.share) {
+        try {
+          setShareStage('sharing');
+          await nav.share({
+            title: `HRSJM Donation Receipt ${receipt.receiptNumber}`,
+            text: getReceiptSummary(),
+            url: web.location?.href || undefined,
+          });
+          setActionMessage('Receipt shared successfully.');
+          return;
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') {
+            return; // User cancelled
+          }
+          console.warn('Text share failed, falling back to modal', shareErr);
+        }
+      }
+
+      // 3. Fallback: open interactive share modal with WhatsApp, Email & Copy options
       setShareFallbackVisible(true);
     } catch (error: any) {
       console.error('Share Receipt error:', error);
-      setActionMessage(
-        error?.message || 'Unable to share the receipt. Please try again.',
-      );
+      setShareFallbackVisible(true);
     } finally {
       setPendingAction(null);
       setShareStage(null);
@@ -354,6 +371,35 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
 
   const shareFallbackOptions = [
     {
+      label: 'Share on WhatsApp',
+      icon: '💬',
+      action: async () => {
+        const text = encodeURIComponent(getReceiptSummary());
+        const url = `https://api.whatsapp.com/send?text=${text}`;
+        const web: any = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
+        if (web.window) {
+          web.window.open(url, '_blank');
+          setActionMessage('Opening WhatsApp...');
+        }
+      },
+    },
+    {
+      label: 'Share via Email',
+      icon: '✉️',
+      action: async () => {
+        const subject = encodeURIComponent(
+          `HRSJM Donation Receipt ${receipt?.receiptNumber || ''}`,
+        );
+        const body = encodeURIComponent(getReceiptSummary());
+        const mailto = `mailto:?subject=${subject}&body=${body}`;
+        const web: any = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
+        if (web.window) {
+          web.window.location.href = mailto;
+          setActionMessage('Opening Email client...');
+        }
+      },
+    },
+    {
       label: 'Copy Receipt Link',
       icon: '🔗',
       action: async () => {
@@ -361,18 +407,19 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
           typeof globalThis !== 'undefined'
             ? (globalThis as any).navigator
             : undefined;
-        const web: any = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
+        const web: any =
+          typeof globalThis !== 'undefined' ? (globalThis as any) : {};
         const link = web.location?.href ?? '';
         if (nav?.clipboard?.writeText) {
           await nav.clipboard.writeText(link);
-          setActionMessage('Receipt link copied.');
+          setActionMessage('Receipt link copied to clipboard.');
         } else {
           setActionMessage(link || 'Unable to copy the link.');
         }
       },
     },
     {
-      label: 'Copy Receipt Information',
+      label: 'Copy Receipt Details',
       icon: '📋',
       action: async () => {
         const nav: any =
@@ -381,10 +428,17 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
             : undefined;
         if (nav?.clipboard?.writeText) {
           await nav.clipboard.writeText(getReceiptSummary());
-          setActionMessage('Receipt information copied.');
+          setActionMessage('Receipt details copied to clipboard.');
         } else {
           setActionMessage(getReceiptSummary());
         }
+      },
+    },
+    {
+      label: 'Download PDF',
+      icon: '📥',
+      action: async () => {
+        await handleDownload();
       },
     },
   ];

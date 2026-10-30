@@ -104,6 +104,7 @@ export type MoreStackParamList = {
   [AppRoutes.CREATE_RIGHT]: undefined;
   [AppRoutes.EDIT_RIGHT]: { article: any };
   [AppRoutes.MEMBERSHIP_DETAILS]: undefined;
+  [AppRoutes.MEMBERSHIP_BENEFITS]: undefined;
   [AppRoutes.RENEW_MEMBERSHIP]: undefined;
   [AppRoutes.USERS]: undefined;
   [AppRoutes.USER_DETAILS]: { userId: string };

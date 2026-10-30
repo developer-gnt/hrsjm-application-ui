@@ -32,17 +32,20 @@ export function validatePasswordConfirmation(
 export interface ProfileEditInput {
   fullName: string;
   email: string;
+  mobileNumber?: string;
 }
 
 export interface ProfileEditValidation {
   valid: boolean;
   fullNameError: string | null;
   emailError: string | null;
+  mobileNumberError: string | null;
 }
 
 export function validateProfileEdit(input: ProfileEditInput): ProfileEditValidation {
   const fullName = input.fullName.trim();
   const email = input.email.trim();
+  const mobile = (input.mobileNumber ?? '').trim();
   const fullNameError =
     fullName.length < 2
       ? 'Name must be at least 2 characters.'
@@ -53,9 +56,14 @@ export function validateProfileEdit(input: ProfileEditInput): ProfileEditValidat
   const emailError = email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     ? 'Enter a valid email address.'
     : null;
+  const digits = mobile.replace(/\D/g, '');
+  const mobileNumberError = mobile && digits.length !== 10
+    ? 'Enter a valid 10-digit mobile number.'
+    : null;
   return {
-    valid: fullNameError === null && emailError === null,
+    valid: fullNameError === null && emailError === null && mobileNumberError === null,
     fullNameError,
     emailError,
+    mobileNumberError,
   };
 }
