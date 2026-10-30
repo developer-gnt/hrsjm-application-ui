@@ -262,23 +262,23 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           <View style={styles.rightRow}>
             {rightAction ? (
               <View style={styles.customRightAction}>{rightAction}</View>
-            ) : (
-              <>
-                {/* Main Call to Action: Gold Donate button per docs/design.md §5 (Shown for User and Member, hidden for Seeker) */}
-                {!shouldHideDonate && (
-                  <TouchableOpacity
-                    style={styles.ctaButton}
-                    onPress={handleDonatePress}
-                    activeOpacity={0.82}
-                    accessibilityRole="button"
-                    accessibilityLabel="Donate to HRSJM"
-                  >
-                    <Text style={styles.ctaButtonText}>Donate</Text>
-                  </TouchableOpacity>
-                )}
+            ) : null}
 
-                {/* Notification Bell */}
-                <TouchableOpacity
+            {/* Main Call to Action: Gold Donate button per docs/design.md §5 (Shown for User and Member, hidden for Seeker) */}
+            {!shouldHideDonate && (
+              <TouchableOpacity
+                style={styles.ctaButton}
+                onPress={handleDonatePress}
+                activeOpacity={0.82}
+                accessibilityRole="button"
+                accessibilityLabel="Donate to HRSJM"
+              >
+                <Text style={styles.ctaButtonText}>Donate</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Notification Bell */}
+            <TouchableOpacity
                   style={styles.bellButton}
                   onPress={handleOpenNotifications}
                   activeOpacity={0.7}
@@ -321,8 +321,6 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
                     )}
                   </View>
                 </TouchableOpacity>
-              </>
-            )}
           </View>
         </View>
 

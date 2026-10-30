@@ -7,22 +7,33 @@ import { ABOUT_DESCRIPTION } from '../data/home-preview-data';
 
 const ABOUT_PREVIEW_IMAGE = require('../../../../assets/images/about-hero-rally.jpg');
 
-interface AboutSectionProps {
+export interface AboutSectionProps {
   onMorePress?: () => void;
   onMediaPress?: () => void;
+  description?: string;
+  duration?: string;
+  thumbnailUrl?: string;
+  title?: string;
 }
 
-/** Reference-locked "About HRSJM": description left, media card with play
- * button right. */
+/**
+ * Connected & Dynamic "About HRSJM":
+ * - Dynamic description left
+ * - Media card with play button, dynamic thumbnail, duration badge, and video trigger
+ */
 export const AboutSection: React.FC<AboutSectionProps> = ({
   onMorePress,
   onMediaPress,
+  description = ABOUT_DESCRIPTION,
+  duration = '3:45',
+  thumbnailUrl,
+  title = 'About HRSJM',
 }) => (
   <View style={styles.section}>
-    <SectionHeader title="About HRSJM" linkLabel="View More" onLinkPress={onMorePress} />
+    <SectionHeader title={title} linkLabel="View More" onLinkPress={onMorePress} />
 
     <View style={styles.body}>
-      <Text style={styles.description}>{ABOUT_DESCRIPTION}</Text>
+      <Text style={styles.description}>{description}</Text>
 
       <TouchableOpacity
         style={styles.media}
@@ -32,14 +43,23 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
         accessibilityLabel="Play the HRSJM introduction video"
       >
         <Image
-          source={ABOUT_PREVIEW_IMAGE}
+          source={thumbnailUrl ? { uri: thumbnailUrl } : ABOUT_PREVIEW_IMAGE}
           style={styles.mediaSlot}
           resizeMode="cover"
           accessible={false}
         />
+
+        {/* Center Play Badge */}
         <View style={styles.playBadge}>
-          <AppIcon name="play" size={12} color={AdminColors.primaryDark} />
+          <AppIcon name="play" size={13} color={AdminColors.primaryDark} strokeWidth={2} />
         </View>
+
+        {/* Duration Badge */}
+        {duration ? (
+          <View style={styles.durationBadge}>
+            <Text style={styles.durationText}>{duration}</Text>
+          </View>
+        ) : null}
       </TouchableOpacity>
     </View>
   </View>
@@ -67,6 +87,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: AdminColors.primaryLight,
+    position: 'relative',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
   mediaSlot: {
     width: '100%',
@@ -76,17 +102,32 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: '50%',
     top: '50%',
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    transform: [{ translateX: -13 }, { translateY: -13 }],
+    transform: [{ translateX: -14 }, { translateY: -14 }],
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  durationBadge: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  durationText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
 });

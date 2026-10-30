@@ -29,7 +29,7 @@ import { USER_EVENTS } from '../events/data/user-events';
 import { NewsDetailsScreen } from '../news/screens/NewsDetailsScreen';
 import { RightDetailsScreen } from '../rights/screens/RightDetailsScreen';
 import { FileComplaintScreen } from '../help/screens/FileComplaintScreen';
-import { NotificationsScreen } from '../../admin/notifications';
+import { NotificationsScreen } from '../notifications';
 import { ProfileSettingsScreen } from '../../admin/settings';
 import { UserActionPageScreen } from '../action-pages/screens/UserActionPageScreen';
 import { WhatWeDoDetailScreen } from '../what-we-do/components/WhatWeDoDetailScreen';
@@ -47,6 +47,7 @@ import { useMembership } from '../../membership/context/MembershipContext';
 import { DonationHistoryScreen } from '../../donations/screens/DonationHistoryScreen';
 import { DonationDetailScreen } from '../../donations/screens/DonationDetailScreen';
 import { ReceiptDetailScreen } from '../../receipts/screens/ReceiptDetailScreen';
+import { ReceiptPdfPreviewScreen } from '../../receipts/screens/ReceiptPdfPreviewScreen';
 
 import {
   House,
@@ -89,7 +90,7 @@ const UserHomeScreenComponent: React.FC<any> = ({ navigation }) => {
       onOpenProfile={() => navigation.navigate('UserProfile')}
       onOpenContact={() => navigation.navigate('ContactUs')}
       onOpenRights={() => navigation.navigate('UserRights')}
-      onOpenAbout={() => navigation.navigate('UserAbout')}
+      onOpenAbout={(section?: string) => navigation.navigate('UserAbout', { section })}
       onOpenEvents={() => navigation.navigate('UserEvents')}
       onOpenEvent={(event) => navigation.navigate('UserEventDetails', { event })}
       onOpenNotifications={() => navigation.navigate('Notifications')}
@@ -114,7 +115,7 @@ const UserHomeScreenComponent: React.FC<any> = ({ navigation }) => {
   );
 };
 
-const UserAboutScreenComponent: React.FC<any> = ({ navigation }) => {
+const UserAboutScreenComponent: React.FC<any> = ({ navigation, route }) => {
   let hasApplied = false;
   let isReapplying = false;
   try {
@@ -145,6 +146,8 @@ const UserAboutScreenComponent: React.FC<any> = ({ navigation }) => {
           } else {
             navigation.navigate('MembershipCategories');
           }
+        } else if (target === 'notifications') {
+          navigation.navigate('Notifications');
         } else if (target === 'blogs' || target === 'articles') {
           navigation.navigate('UserBlogs');
         } else {
@@ -445,13 +448,17 @@ export const UserTabNavigator: React.FC = () => {
           <RightDetailsScreen
             rightId={route.params?.rightId || 'human-rights'}
             showBottomNav={false}
-            onBack={navigation.goBack}
+            onBack={() => {
+              if (navigation.canGoBack()) navigation.goBack();
+              else navigation.navigate('UserHome');
+            }}
             onOpenRights={() => navigation.navigate('UserRights')}
             onOpenHome={() => navigation.navigate('UserHome')}
             onOpenAbout={() => navigation.navigate('UserAbout')}
             onOpenContact={() => navigation.navigate('ContactUs')}
             onOpenEvents={() => navigation.navigate('UserEvents')}
             onOpenNews={() => navigation.navigate('UserNews')}
+            onOpenRight={(rightId) => navigation.navigate('RightDetails', { rightId })}
             onFileComplaint={() => navigation.navigate('FileComplaint')}
           />
         )}
@@ -513,8 +520,23 @@ export const UserTabNavigator: React.FC = () => {
       <Tab.Screen
         name="Notifications"
         options={{ tabBarButton: () => null }}
-        component={NotificationsScreen}
-      />
+      >
+        {({ navigation }: any) => (
+          <NotificationsScreen
+            onBack={() => {
+              if (navigation.canGoBack()) navigation.goBack();
+              else navigation.navigate('UserHome');
+            }}
+            onOpenHome={() => navigation.navigate('UserHome')}
+            onOpenAbout={() => navigation.navigate('UserAbout')}
+            onOpenRights={() => navigation.navigate('UserRights')}
+            onOpenEvents={() => navigation.navigate('UserEvents')}
+            onOpenNews={() => navigation.navigate('UserNews')}
+            onOpenContact={() => navigation.navigate('ContactUs')}
+            onOpenSearch={() => navigation.navigate('Search')}
+          />
+        )}
+      </Tab.Screen>
 
       <Tab.Screen
         name="UserActionPage"
@@ -648,13 +670,18 @@ export const UserTabNavigator: React.FC = () => {
             contentId={route.params?.contentId || 'awareness-campaigns'}
             hideBottomNav={true}
             showBottomNav={false}
-            onBack={navigation.goBack}
+            onBack={() => {
+              if (navigation.canGoBack()) navigation.goBack();
+              else navigation.navigate('UserHome');
+            }}
             onOpenHome={() => navigation.navigate('UserHome')}
             onOpenAbout={() => navigation.navigate('UserAbout')}
             onOpenRights={() => navigation.navigate('UserRights')}
             onOpenEvents={() => navigation.navigate('UserEvents')}
             onOpenNews={() => navigation.navigate('UserNews')}
             onOpenContact={() => navigation.navigate('ContactUs')}
+            onOpenJoin={() => navigation.navigate('MembershipCategories')}
+            onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail', { contentId })}
           />
         )}
       </Tab.Screen>
@@ -699,6 +726,12 @@ export const UserTabNavigator: React.FC = () => {
         name="ReceiptDetail"
         options={{ tabBarButton: () => null }}
         component={ReceiptDetailScreen}
+      />
+
+      <Tab.Screen
+        name="ReceiptPdfPreview"
+        options={{ tabBarButton: () => null }}
+        component={ReceiptPdfPreviewScreen}
       />
     </Tab.Navigator>
   );
