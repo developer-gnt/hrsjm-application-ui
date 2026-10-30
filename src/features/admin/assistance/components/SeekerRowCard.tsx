@@ -86,7 +86,6 @@ export const SeekerRowCard: React.FC<SeekerRowCardProps> = ({
       text.includes('doctor')
     ) {
       return {
-        icon: '🏥',
         name: 'Healthcare',
         bg: '#EFF6FF',
         border: '#BFDBFE',
@@ -101,7 +100,6 @@ export const SeekerRowCard: React.FC<SeekerRowCardProps> = ({
       text.includes('student')
     ) {
       return {
-        icon: '📚',
         name: 'Education',
         bg: '#EEF2FF',
         border: '#C7D2FE',
@@ -116,7 +114,6 @@ export const SeekerRowCard: React.FC<SeekerRowCardProps> = ({
       text.includes('disaster')
     ) {
       return {
-        icon: '🍲',
         name: 'Relief & Aid',
         bg: '#FFFBEB',
         border: '#FDE68A',
@@ -130,7 +127,6 @@ export const SeekerRowCard: React.FC<SeekerRowCardProps> = ({
       text.includes('widow')
     ) {
       return {
-        icon: '👩‍👧',
         name: 'Women Welfare',
         bg: '#FDF2F8',
         border: '#FBCFE8',
@@ -138,7 +134,6 @@ export const SeekerRowCard: React.FC<SeekerRowCardProps> = ({
       };
     }
     return {
-      icon: '🤝',
       name: 'Social Support',
       bg: '#F8FAFC',
       border: '#E2E8F0',
@@ -213,9 +208,12 @@ export const SeekerRowCard: React.FC<SeekerRowCardProps> = ({
                   <Text style={styles.idChipText}>{displayId}</Text>
                 </View>
                 {request.mobile ? (
-                  <Text style={styles.metaSubText} numberOfLines={1}>
-                    📱 {request.mobile}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                    <Phone size={11} color="#64748B" />
+                    <Text style={styles.metaSubText} numberOfLines={1}>
+                      {request.mobile}
+                    </Text>
+                  </View>
                 ) : null}
               </View>
             </View>
@@ -229,7 +227,6 @@ export const SeekerRowCard: React.FC<SeekerRowCardProps> = ({
                 { backgroundColor: catMeta.bg, borderColor: catMeta.border },
               ]}
             >
-              <Text style={styles.categoryPillIcon}>{catMeta.icon}</Text>
               <Text style={[styles.categoryPillText, { color: catMeta.text }]}>
                 {request.reason || catMeta.name}
               </Text>
@@ -397,7 +394,6 @@ export const SeekerRowCard: React.FC<SeekerRowCardProps> = ({
                 { backgroundColor: catMeta.bg, borderColor: catMeta.border },
               ]}
             >
-              <Text style={styles.categoryPillIcon}>{catMeta.icon}</Text>
               <Text style={[styles.categoryPillText, { color: catMeta.text }]}>
                 {request.reason || catMeta.name}
               </Text>

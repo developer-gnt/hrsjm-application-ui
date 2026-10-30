@@ -13,7 +13,7 @@ import { useAuthStore } from '../../../auth/store/authStore';
 import { usersStore } from '../../../admin/users/services/usersStore';
 import { AdminColors } from '../../../../core/theme';
 import { UserItem } from '../../../admin/users/types/user.types';
-import { FileText } from '../../../../core/components/icons';
+import { FileText, HeartHandshake, X, Check } from '../../../../core/components/icons';
 
 interface SeekerApplicationStatusModalProps {
   visible: boolean;
@@ -57,7 +57,7 @@ export const SeekerApplicationStatusModal: React.FC<SeekerApplicationStatusModal
               {/* Header */}
               <View style={styles.sheetHeader}>
                 <View style={styles.headerTitleWrap}>
-                  <Text style={styles.headerEmoji}>🤲</Text>
+                  <HeartHandshake size={20} color="#0D47A1" strokeWidth={2} />
                   <Text style={styles.headerTitle}>Donation Seeker Application</Text>
                 </View>
                 <TouchableOpacity
@@ -66,7 +66,7 @@ export const SeekerApplicationStatusModal: React.FC<SeekerApplicationStatusModal
                   activeOpacity={0.7}
                   accessibilityLabel="Close"
                 >
-                  <Text style={styles.closeBtnText}>✕</Text>
+                  <X size={18} color="#64748B" strokeWidth={2.5} />
                 </TouchableOpacity>
               </View>
 
@@ -94,7 +94,7 @@ export const SeekerApplicationStatusModal: React.FC<SeekerApplicationStatusModal
                           isUnderReview && styles.statusBadgeTextPending,
                         ]}
                       >
-                        {isApproved ? 'Approved ✓' : isRejected ? 'Rejected ✕' : 'Under Review ⏳'}
+                        {isApproved ? 'Approved' : isRejected ? 'Rejected' : 'Under Review'}
                       </Text>
                     </View>
                   </View>

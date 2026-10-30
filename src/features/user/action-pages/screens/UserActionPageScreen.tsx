@@ -612,7 +612,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
                       <View style={styles.causeCardHeader}>
                         <View style={styles.causeCategoryBadge}>
                           <Text style={styles.causeCategoryBadgeText}>
-                            {cause.categoryIcon || '🎯'} {cause.category}
+                            {cause.category}
                           </Text>
                         </View>
                         <View style={styles.verifiedBadge}>

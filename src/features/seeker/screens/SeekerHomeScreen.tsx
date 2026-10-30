@@ -36,6 +36,7 @@ import {
   WHAT_WE_DO_ITEMS,
 } from '../../user/home/data/home-preview-data';
 import { getImpactStats } from '../../user/home/data/impact-stats-provider';
+import { Phone } from '../../../core/components/icons';
 import { getEventsList } from '../../admin/content/events/services/events.service';
 import type { EventListItem } from '../../admin/content/events/types/events.types';
 import { fetchLatestPublishedNews } from '../../user/news/services/user-news.service';
@@ -334,7 +335,9 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
         {/* Emergency Helpline Banner */}
         <View style={styles.section}>
           <View style={styles.helplineBanner}>
-            <Text style={styles.helplineIcon}>📞</Text>
+            <View style={{ marginRight: 10 }}>
+              <Phone size={22} color="#0D47A1" strokeWidth={2} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.helplineTitle}>24x7 Emergency Social & Legal Helpline</Text>
               <Text style={styles.helplinePhone}>+91 98888 80004 / 1800-HRSJM-AID</Text>

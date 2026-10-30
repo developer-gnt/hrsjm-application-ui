@@ -54,17 +54,17 @@ interface AddSeekerModalProps {
 interface CauseOption {
   key: string;
   label: string;
-  icon: string;
+  icon?: string;
 }
 
 const CAUSE_OPTIONS: CauseOption[] = [
-  { key: 'Medical Emergency', label: 'Medical Emergency', icon: '🏥' },
-  { key: 'Education Support', label: 'Education & Tuition', icon: '🎓' },
-  { key: 'Disaster Relief', label: 'Disaster Relief', icon: '🌊' },
-  { key: 'Livelihood & Food', label: 'Livelihood & Food', icon: '🌾' },
-  { key: 'Disability Support', label: 'Disability Support', icon: '♿' },
-  { key: 'Housing / Shelter', label: 'Housing / Shelter', icon: '🏠' },
-  { key: 'Other', label: 'Other', icon: '📝' },
+  { key: 'Medical Emergency', label: 'Medical Emergency' },
+  { key: 'Education Support', label: 'Education & Tuition' },
+  { key: 'Disaster Relief', label: 'Disaster Relief' },
+  { key: 'Livelihood & Food', label: 'Livelihood & Food' },
+  { key: 'Disability Support', label: 'Disability Support' },
+  { key: 'Housing / Shelter', label: 'Housing / Shelter' },
+  { key: 'Other', label: 'Other' },
 ];
 
 const PRESET_AMOUNTS = [5000, 10000, 25000, 50000, 100000];
@@ -434,7 +434,6 @@ export const AddSeekerModal: React.FC<AddSeekerModalProps> = ({
                           disabled={isSubmitting}
                           activeOpacity={0.75}
                         >
-                          <Text style={styles.causeChipIcon}>{cause.icon}</Text>
                           <Text
                             style={[
                               styles.causeChipText,

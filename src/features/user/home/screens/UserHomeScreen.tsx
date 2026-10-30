@@ -47,6 +47,12 @@ import type { WhatWeDoId } from '../../what-we-do';
 import type { ActionPageId } from '../../action-pages';
 import { getHomeActionDestination } from '../utils/home-action-destination';
 import { useMembership } from '../../../membership/context/MembershipContext';
+import {
+  AlertCircle,
+  CheckCircle2,
+  ClipboardList,
+  HeartHandshake,
+} from '../../../../core/components/icons';
 
 const mapEventToHomeEvent = (item: EventListItem): HomeEvent => {
   let day = '25';
@@ -387,7 +393,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
             accessibilityLabel="View Membership Application Status"
           >
             <View style={styles.seekerPendingIconBox}>
-              <Text style={styles.seekerPendingEmoji}>📋</Text>
+              <ClipboardList size={20} color="#0D47A1" strokeWidth={2} />
             </View>
             <View style={styles.seekerPendingTextBox}>
               <View style={styles.seekerPendingTitleRow}>
@@ -420,9 +426,13 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
                 isSeekerApproved && styles.seekerIconBoxApproved,
               ]}
             >
-              <Text style={styles.seekerPendingEmoji}>
-                {isSeekerApproved ? '✅' : isSeekerRejected ? '⚠️' : '🤲'}
-              </Text>
+              {isSeekerApproved ? (
+                <CheckCircle2 size={20} color="#15803D" strokeWidth={2} />
+              ) : isSeekerRejected ? (
+                <AlertCircle size={20} color="#DC2626" strokeWidth={2} />
+              ) : (
+                <HeartHandshake size={20} color="#0D47A1" strokeWidth={2} />
+              )}
             </View>
 
             <View style={styles.seekerPendingTextBox}>

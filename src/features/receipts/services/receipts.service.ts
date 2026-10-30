@@ -15,7 +15,26 @@ export interface BackendReceiptItem {
   receipt_type: 'MEMBERSHIP' | 'DONATION' | 'RENEWAL' | string;
   issued_to: string;
   notes: string | null;
+  cause?: string | null;
+  cause_name?: string | null;
   created_at: string;
+  donation_payment?: {
+    id: string;
+    donation?: {
+      id: string;
+      cause?: string;
+      title?: string;
+    };
+  };
+  membership_payment?: {
+    id: string;
+    membership?: {
+      id: string;
+      category?: {
+        name: string;
+      };
+    };
+  };
   user?: {
     id: string;
     full_name: string;
@@ -77,14 +96,26 @@ export function mapBackendReceiptToRecord(item: BackendReceiptItem): DonationRec
     ? 'Annual Membership Fee'
     : 'General Donation';
 
+  const resolvedCause =
+    item.cause ||
+    item.cause_name ||
+    item.donation_payment?.donation?.cause ||
+    (isMembership ? item.membership_payment?.membership?.category?.name : undefined) ||
+    (item.notes &&
+     !item.notes.toLowerCase().startsWith('payment verified') &&
+     !item.notes.toLowerCase().startsWith('donation payment verified')
+      ? item.notes
+      : undefined) ||
+    defaultCause;
+
   return {
     id: item.id,
     receiptNo: item.receipt_number,
     type,
     title,
-    cause: item.notes || defaultCause,
+    cause: resolvedCause,
     category: isRenewal ? 'Renewal' : isMembership ? 'Membership' : 'Donation',
-    description: item.notes || (isRenewal ? 'Official HRSJM renewal receipt' : isMembership ? 'Official HRSJM membership receipt' : 'Official HRSJM 80G donation receipt'),
+    description: resolvedCause || item.notes || (isRenewal ? 'Official HRSJM renewal receipt' : isMembership ? 'Official HRSJM membership receipt' : 'Official HRSJM 80G donation receipt'),
     amount: amount || 0,
     amountInWords,
     date,

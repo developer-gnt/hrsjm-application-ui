@@ -14,6 +14,15 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
+import {
+  Pencil,
+  EyeOff,
+  FolderTree,
+  Send,
+  RotateCcw,
+  Trash2,
+  type AppIconComponent,
+} from '../../../../../core/components/icons';
 import type { BlogListItem, BlogStatus } from '../types/blog.types';
 
 export interface BlogActionMenuAnchor {
@@ -25,30 +34,30 @@ export interface BlogActionMenuAnchor {
 
 interface BlogActionRow {
   key: string;
-  icon: string;
+  Icon: AppIconComponent;
   label: string;
   destructive?: boolean;
 }
 
 /** Actions per status matching the approved wireframe. */
 const actionsForStatus = (status: BlogStatus): BlogActionRow[] => {
-  const rows: BlogActionRow[] = [{ key: 'edit', icon: '✏️', label: 'Edit' }];
+  const rows: BlogActionRow[] = [{ key: 'edit', Icon: Pencil, label: 'Edit' }];
 
   if (status === 'PUBLISHED') {
     rows.push(
-      { key: 'unpublish', icon: '🚫', label: 'Unpublish', destructive: true },
-      { key: 'archive', icon: '📦', label: 'Archive' },
+      { key: 'unpublish', Icon: EyeOff, label: 'Unpublish', destructive: true },
+      { key: 'archive', Icon: FolderTree, label: 'Archive' },
     );
   } else if (status === 'DRAFT') {
     rows.push(
-      { key: 'publish', icon: '📣', label: 'Publish' },
-      { key: 'archive', icon: '📦', label: 'Archive' },
+      { key: 'publish', Icon: Send, label: 'Publish' },
+      { key: 'archive', Icon: FolderTree, label: 'Archive' },
     );
   } else {
-    rows.push({ key: 'restore', icon: '♻️', label: 'Restore' });
+    rows.push({ key: 'restore', Icon: RotateCcw, label: 'Restore' });
   }
 
-  rows.push({ key: 'delete', icon: '🗑️', label: 'Delete', destructive: true });
+  rows.push({ key: 'delete', Icon: Trash2, label: 'Delete', destructive: true });
   return rows;
 };
 
@@ -136,7 +145,13 @@ export const BlogActionMenu: React.FC<BlogActionMenuProps> = ({
               accessibilityLabel={row.label}
               activeOpacity={0.7}
             >
-              <Text style={styles.actionIcon}>{row.icon}</Text>
+              <View style={{ marginRight: 10 }}>
+                <row.Icon
+                  size={16}
+                  color={row.destructive ? '#DC2626' : AdminColors.textPrimary}
+                  strokeWidth={2}
+                />
+              </View>
               <Text
                 style={[
                   styles.actionLabel,

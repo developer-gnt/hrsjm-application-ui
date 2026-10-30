@@ -19,7 +19,7 @@ import {
   UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
-import { Calendar } from '../../../../core/components/icons';
+import { Calendar, FileText } from '../../../../core/components/icons';
 import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeBlogItem, HomeTab } from '../../home/types/home.types';
@@ -276,7 +276,7 @@ export const UserBlogsScreen: React.FC<UserBlogsScreenProps> = ({
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Calendar size={12} color={AdminColors.textOnDark} style={{ marginRight: 4 }} />
                   <Text style={styles.featuredMetaText}>
-                    {featuredBlog.date} • ✍️ {featuredBlog.author}
+                    {featuredBlog.date} • {featuredBlog.author}
                   </Text>
                 </View>
                 <View style={styles.featuredArrow}>
@@ -322,7 +322,9 @@ export const UserBlogsScreen: React.FC<UserBlogsScreenProps> = ({
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📝</Text>
+            <View style={{ marginBottom: 12 }}>
+              <FileText size={42} color="#94A3B8" strokeWidth={1.5} />
+            </View>
             <Text style={styles.emptyTitle}>No articles found</Text>
             <Text style={styles.emptySubtitle}>
               Try adjusting your search query or choosing a different category.

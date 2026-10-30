@@ -36,14 +36,14 @@ const STATUS_OPTIONS: Array<{ key: AssistanceTabKey; label: string }> = [
 ];
 
 const CATEGORY_OPTIONS = [
-  { key: 'ALL', label: 'All Categories', icon: '🌐' },
-  { key: 'Medical', label: 'Medical Treatment', icon: '🏥' },
-  { key: 'Education', label: 'Education Support', icon: '🎓' },
-  { key: 'Disaster', label: 'Disaster Relief', icon: '🌊' },
-  { key: 'Livelihood', label: 'Livelihood Support', icon: '🌾' },
-  { key: 'Disability', label: 'Disability Support', icon: '♿' },
-  { key: 'Housing', label: 'Housing Support', icon: '🏠' },
-  { key: 'Other', label: 'Other', icon: '📝' },
+  { key: 'ALL', label: 'All Categories' },
+  { key: 'Medical', label: 'Medical Treatment' },
+  { key: 'Education', label: 'Education Support' },
+  { key: 'Disaster', label: 'Disaster Relief' },
+  { key: 'Livelihood', label: 'Livelihood Support' },
+  { key: 'Disability', label: 'Disability Support' },
+  { key: 'Housing', label: 'Housing Support' },
+  { key: 'Other', label: 'Other' },
 ];
 
 const AMOUNT_PRESETS = [
@@ -286,7 +286,6 @@ export const AssistanceFilters: React.FC<AssistanceFiltersProps> = ({
                         onPress={() => setDraftCategory(cat.key)}
                         activeOpacity={0.75}
                       >
-                        <Text style={styles.catIcon}>{cat.icon}</Text>
                         <Text
                           style={[
                             styles.chipText,

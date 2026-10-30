@@ -6,6 +6,7 @@ import { AdminColors, BrandColors } from '../../../../core/theme/colors';
 import { Typography } from '../../../../core/theme/typography';
 import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
 import { formatDate, formatCurrency } from '../../../../core/utils/format';
+import { MapPin, User } from '../../../../core/components/icons';
 import { shortRequestId } from '../types/assistance.types';
 import type { AssistanceRequest } from '../types/assistance.types';
 import { AssistanceStatusBadge } from './AssistanceStatusBadge';
@@ -39,14 +40,20 @@ function AssistanceCardBase({ request, onPress }: AssistanceCardProps) {
                 </Text>
               </View>
               {request.city ? (
-                <Text style={styles.locationText} numberOfLines={1}>
-                  📍 {request.city}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                  <MapPin size={11} color={AdminColors.textSecondary} strokeWidth={2} />
+                  <Text style={styles.locationText} numberOfLines={1}>
+                    {request.city}
+                  </Text>
+                </View>
               ) : null}
               {request.age !== undefined ? (
-                <Text style={styles.ageText}>
-                  👤 {request.age} yrs
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                  <User size={11} color={AdminColors.textSecondary} strokeWidth={2} />
+                  <Text style={styles.ageText}>
+                    {request.age} yrs
+                  </Text>
+                </View>
               ) : null}
             </View>
           </View>

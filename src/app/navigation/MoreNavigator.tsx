@@ -1,8 +1,9 @@
-﻿import React from 'react';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppRoutes } from '../../core/constants/routes';
 import { MoreMenuScreen } from './MoreMenuScreen';
 import { ModulePlaceholderScreen } from './ModulePlaceholderScreen';
+import { ShieldCheck } from '../../core/components/icons';
 import { PaymentVerificationScreen, PaymentDetailsScreen } from '../../features/admin/payments';
 import { ExpenseVouchersScreen, CreateExpenseVoucherScreen, ExpenseDetailsScreen } from '../../features/admin/expenses';
 import { ReceiptVouchersScreen, CreateReceiptVoucherScreen, ReceiptVoucherDetailsScreen } from '../../features/admin/receipts';
@@ -333,7 +334,7 @@ export const MoreNavigator: React.FC = () => (
       {({ navigation }) => (
         <ModulePlaceholderScreen
           title="Roles & Permissions"
-          icon="🛡️"
+          icon={<ShieldCheck size={42} color="#0F2C59" strokeWidth={1.5} />}
           phase="Phase 8"
           onBack={navigation.goBack}
         />
@@ -580,7 +581,7 @@ export const MoreNavigator: React.FC = () => (
 
     <Stack.Screen
       name={AppRoutes.BLOG_DETAILS}
-      options={{ tabBarStyle: { display: 'none' } }}
+      options={{ tabBarStyle: { display: 'none' } } as any}
     >
       {({ navigation, route }: any) => (
         <BlogDetailsScreen
@@ -595,7 +596,7 @@ export const MoreNavigator: React.FC = () => (
 
     <Stack.Screen
       name={AppRoutes.CREATE_BLOG}
-      options={{ tabBarStyle: { display: 'none' } }}
+      options={{ tabBarStyle: { display: 'none' } } as any}
     >
       {({ navigation }) => (
         <CreateBlogScreen onCancel={navigation.goBack} />
@@ -604,7 +605,7 @@ export const MoreNavigator: React.FC = () => (
 
     <Stack.Screen
       name={AppRoutes.EDIT_BLOG}
-      options={{ tabBarStyle: { display: 'none' } }}
+      options={{ tabBarStyle: { display: 'none' } } as any}
     >
       {({ navigation, route }: any) => (
         <EditBlogScreen
