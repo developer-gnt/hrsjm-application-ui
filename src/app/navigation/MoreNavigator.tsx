@@ -578,7 +578,10 @@ export const MoreNavigator: React.FC = () => (
       )}
     </Stack.Screen>
 
-    <Stack.Screen name={AppRoutes.BLOG_DETAILS}>
+    <Stack.Screen
+      name={AppRoutes.BLOG_DETAILS}
+      options={{ tabBarStyle: { display: 'none' } }}
+    >
       {({ navigation, route }: any) => (
         <BlogDetailsScreen
           blog={route.params?.blog}
@@ -590,13 +593,19 @@ export const MoreNavigator: React.FC = () => (
       )}
     </Stack.Screen>
 
-    <Stack.Screen name={AppRoutes.CREATE_BLOG}>
+    <Stack.Screen
+      name={AppRoutes.CREATE_BLOG}
+      options={{ tabBarStyle: { display: 'none' } }}
+    >
       {({ navigation }) => (
         <CreateBlogScreen onCancel={navigation.goBack} />
       )}
     </Stack.Screen>
 
-    <Stack.Screen name={AppRoutes.EDIT_BLOG}>
+    <Stack.Screen
+      name={AppRoutes.EDIT_BLOG}
+      options={{ tabBarStyle: { display: 'none' } }}
+    >
       {({ navigation, route }: any) => (
         <EditBlogScreen
           blog={route.params?.blog}
