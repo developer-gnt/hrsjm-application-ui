@@ -21,12 +21,31 @@ import { UserBottomNavigation } from '../../../user/home/components/UserBottomNa
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useNotifications } from '../../../admin/notifications';
 import { useAuthStore } from '../../../auth/store/authStore';
+import { useProfileStore } from '../../../admin/profile/profileStore';
+import { apiClient } from '../../../../core/api/client';
 import type { HomeTab } from '../../../user/home/types/home.types';
 import { MOCK_ACTIVE_MEMBERSHIP } from '../data/member-dashboard';
 import type { MemberMembershipRecord } from '../types/member-dashboard.types';
 import { getEventsList } from '../../../admin/content/events/services/events.service';
 import type { EventListItem } from '../../../admin/content/events/types/events.types';
 import { supportService } from '../../../admin/support/services/support.service';
+
+const formatStartDate = (dateVal?: string | Date | null): string | undefined => {
+  if (!dateVal) return undefined;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) {
+      return typeof dateVal === 'string' ? dateVal : undefined;
+    }
+    return d.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return undefined;
+  }
+};
 
 const MEMBER_HERO_IMAGE = require('../../../../assets/images/member-hero-rally.jpg');
 const DEFAULT_EVENT_IMAGE = require('../../../../assets/images/event-legal-awareness.jpg');
@@ -176,15 +195,87 @@ export const MemberHomeDashboardScreen: React.FC<
   useAdminHeader = true,
 }) => {
   const user = useAuthStore(state => state.user);
+  const profileMemberSince = useProfileStore(state => state.profile?.memberSince);
   const { unreadCount } = useNotifications();
+
+  const [apiMembership, setApiMembership] = useState<any>(null);
+  const [apiStartDate, setApiStartDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchMembershipData = async () => {
+      try {
+        const res: any = await apiClient.get<any>('/memberships/my');
+        const data = res?.data !== undefined ? res.data : res;
+        if (isMounted && data) {
+          setApiMembership(data);
+          const rawStart = data.start_date || data.startDate || data.applied_at || data.created_at;
+          if (rawStart) {
+            const formatted = formatStartDate(rawStart);
+            if (formatted) {
+              setApiStartDate(formatted);
+            }
+          }
+        }
+      } catch {
+        try {
+          const res: any = await apiClient.get<any>('/users/me/membership');
+          const data = res?.data !== undefined ? res.data : res;
+          if (isMounted && data) {
+            setApiMembership(data);
+            const rawStart = data.start_date || data.startDate || data.applied_at || data.created_at;
+            if (rawStart) {
+              const formatted = formatStartDate(rawStart);
+              if (formatted) {
+                setApiStartDate(formatted);
+              }
+            }
+          }
+        } catch {
+          // Keep offline/default state
+        }
+      }
+    };
+
+    fetchMembershipData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const resolvedJoinedDate =
+    apiStartDate ||
+    (membership?.joinedDate && membership.joinedDate !== MOCK_ACTIVE_MEMBERSHIP.joinedDate ? membership.joinedDate : undefined) ||
+    (profileMemberSince ? profileMemberSince : undefined) ||
+    (membership?.joinedDate ? membership.joinedDate : undefined);
+
   const currentMembership: MemberMembershipRecord = {
     ...MOCK_ACTIVE_MEMBERSHIP,
-    memberName: user?.full_name || (membership?.memberName ?? MOCK_ACTIVE_MEMBERSHIP.memberName),
-    memberId: (user as any)?.member_id || (user as any)?.custom_id || (membership?.memberId ?? MOCK_ACTIVE_MEMBERSHIP.memberId),
-    status: membership?.status ?? MOCK_ACTIVE_MEMBERSHIP.status,
-    category: membership?.category ?? MOCK_ACTIVE_MEMBERSHIP.category,
-    joinedDate: membership?.joinedDate ?? MOCK_ACTIVE_MEMBERSHIP.joinedDate,
-    validUntil: membership?.validUntil ?? MOCK_ACTIVE_MEMBERSHIP.validUntil,
+    memberName:
+      user?.full_name ||
+      apiMembership?.user?.full_name ||
+      (membership?.memberName ?? MOCK_ACTIVE_MEMBERSHIP.memberName),
+    memberId:
+      apiMembership?.membership_number ||
+      (user as any)?.member_id ||
+      (user as any)?.custom_id ||
+      (membership?.memberId ?? MOCK_ACTIVE_MEMBERSHIP.memberId),
+    status:
+      membership?.status ??
+      (apiMembership?.status
+        ? String(apiMembership.status).toLowerCase() === 'active' || String(apiMembership.status).toLowerCase() === 'approved'
+          ? 'active'
+          : 'pending'
+        : MOCK_ACTIVE_MEMBERSHIP.status),
+    category:
+      membership?.category ??
+      apiMembership?.category?.name ??
+      MOCK_ACTIVE_MEMBERSHIP.category,
+    joinedDate: resolvedJoinedDate,
+    validUntil:
+      formatStartDate(apiMembership?.expiry_date || apiMembership?.expiryDate) ||
+      membership?.validUntil ||
+      MOCK_ACTIVE_MEMBERSHIP.validUntil,
   };
 
   const [dbEvents, setDbEvents] = useState<EventListItem[]>([]);
@@ -355,7 +446,7 @@ export const MemberHomeDashboardScreen: React.FC<
           <View style={styles.heroCopy}>
             <Text style={styles.heroGreeting}>Welcome,</Text>
             <Text style={styles.heroName} numberOfLines={1}>
-              {currentMembership.memberName || 'Amaan Shaikh'}
+              {currentMembership.memberName || user?.full_name || 'Member'}
             </Text>
             <Text style={styles.heroDescription}>
               Thank you for being a valued member of HRSJM. Together, we work for a fairer, more just and equal society.
@@ -367,7 +458,7 @@ export const MemberHomeDashboardScreen: React.FC<
                 color="#FFFFFF"
               />
               <Text style={styles.memberSinceText}>
-                Member Since  |  {currentMembership.joinedDate || 'Sep 2026'}
+                Member Since  |  {currentMembership.joinedDate || '—'}
               </Text>
             </View>
           </View>
