@@ -45,6 +45,8 @@ export interface RenewalQuotePayload {
   is_overdue: boolean;
   days_overdue?: number;
   days_remaining?: number;
+  is_eligible_for_renewal?: boolean;
+  renewal_validation_message?: string;
   unpaid_periods_count: number;
   paid_periods_count: number;
   periods: RenewalPeriodBreakdown[];

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -30,6 +31,7 @@ import {
   navigateToProfile,
 } from '../../../core/navigation/appRouter';
 import { BorderRadius, Spacing, FontFamilies } from '../../../core';
+import { Clock, Info } from '../../../core/components/icons';
 import { useAuthStore } from '../../auth/store/authStore';
 
 interface RenewMembershipScreenProps {
@@ -140,6 +142,10 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
     }
   };
 
+  const isEligibleForRenewal = quote
+    ? (quote.is_eligible_for_renewal ?? (quote.is_overdue || (quote.days_remaining ?? 0) <= 30))
+    : true;
+
   const handleRenew = () => {
     if (onRenewPress) {
       onRenewPress(selectedPlanId);
@@ -147,6 +153,15 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
     }
 
     if (quote?.requires_verification) {
+      return;
+    }
+
+    if (!isEligibleForRenewal) {
+      Alert.alert(
+        'Renewal Not Allowed',
+        quote?.renewal_validation_message ||
+          'Membership renewal is allowed only within 30 days before the expiry date.',
+      );
       return;
     }
 
@@ -319,14 +334,32 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
             onWhatsAppPress={onWhatsAppPress}
           />
 
+          {/* 30-Day Renewal Window Validation Alert */}
+          {!isEligibleForRenewal && !isLoadingQuote && (
+            <View style={styles.ineligibleAlertBox}>
+              <View style={styles.ineligibleAlertIconWrap}>
+                <Clock size={18} color="#1E40AF" strokeWidth={2} />
+              </View>
+              <View style={styles.ineligibleAlertCol}>
+                <Text style={styles.ineligibleAlertTitle}>Renewal Not Yet Open</Text>
+                <Text style={styles.ineligibleAlertDesc}>
+                  {quote?.renewal_validation_message ||
+                    'Membership renewal is allowed only within 30 days before the expiry date.'}
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Section 11: Renew Now Button with Dynamic Amount */}
           <RenewNowButton
             onPress={handleRenew}
             amount={payableButtonAmount}
-            disabled={isLoadingQuote || quote?.requires_verification}
+            disabled={isLoadingQuote || quote?.requires_verification || !isEligibleForRenewal}
             label={
               quote?.requires_verification
                 ? 'Verification Required'
+                : !isEligibleForRenewal
+                ? 'Renewal Opens 30 Days Before Expiry'
                 : hasArrears
                 ? `Pay ₹${payableButtonAmount.toLocaleString('en-IN')} & Clear Arrears →`
                 : `Pay ₹${payableButtonAmount.toLocaleString('en-IN')} & Renew →`
@@ -451,6 +484,38 @@ const styles = StyleSheet.create({
   verificationAlertDesc: {
     fontSize: 12,
     color: '#9A3412',
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  ineligibleAlertBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
+    borderRadius: BorderRadius.md,
+    padding: 12,
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.sm,
+    gap: 10,
+  },
+  ineligibleAlertIconWrap: {
+    marginTop: 1,
+  },
+  ineligibleAlertCol: {
+    flex: 1,
+  },
+  ineligibleAlertTitle: {
+    fontFamily: FontFamilies.display,
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#1E40AF',
+    lineHeight: 18,
+  },
+  ineligibleAlertDesc: {
+    fontSize: 12,
+    color: '#1E3A8A',
     marginTop: 2,
     lineHeight: 16,
   },

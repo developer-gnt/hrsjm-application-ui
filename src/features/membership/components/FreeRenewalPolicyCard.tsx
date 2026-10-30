@@ -4,7 +4,7 @@ import { BorderRadius, Spacing } from '../../../core';
 import { NoteDocumentIcon } from './MembershipIcons';
 
 const POLICY_POINTS = [
-  'There is no need to wait for the renewal period to arrive. Renewal can be processed anytime.',
+  'Membership renewal is allowed only within 30 days before the expiry date.',
   'When you introduce a new member, your ID will be sent along with theirs, and your renewal period will be extended accordingly.',
   'If you introduce new members multiple times within a year, you will receive a free renewal each time, and a new ID will be issued to you every time.',
 ];
