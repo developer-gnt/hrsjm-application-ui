@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AppButton } from '../../../../core/components/common/AppButton';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
@@ -57,6 +57,7 @@ export interface NotificationsScreenProps {
 }
 
 export function NotificationsScreen({ onBack: onBackProp }: NotificationsScreenProps = {}) {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const {
     items,
