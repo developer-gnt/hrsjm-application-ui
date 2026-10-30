@@ -41,6 +41,7 @@ export const ApiRoutes = {
     CATEGORIES: '/membership-categories',
     ID_CARD: (id: string | number) => `/membership-id/memberships/${id}/card`,
     RESET_PASSWORD: (id: string | number) => `/memberships/${id}/reset-password`,
+    KIT_FULFILLMENT: (id: string | number) => `/memberships/${id}/kit-fulfillment`,
   },
 
   // Renewals

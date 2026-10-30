@@ -1,3 +1,4 @@
+import { apiClient } from '../../../core/api/client';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import {
   getRegistrationState,
@@ -27,6 +28,8 @@ export interface MembershipDetailsData {
   statusRaw: ApplicationStatus | string;
   totalDuration: string;
   daysRemaining: string;
+  address?: string;
+  kitFulfillment?: any;
 }
 
 const formatDateDisplay = (date: Date): string => {
@@ -51,6 +54,33 @@ export const useMembershipDetailsData = (
   const [applications, setApplications] = useState<MembershipApplicationItem[]>(() =>
     membershipApplicationsStore.getApplications()
   );
+  const [backendKit, setBackendKit] = useState<any>(null);
+  const [backendAddress, setBackendAddress] = useState<string>('');
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const res: any = await apiClient.get<any>('/memberships/my');
+        if (res?.data && isMounted) {
+          const appData = res.data.application_data || {};
+          const personal = appData.personal_details || {};
+          const addr = [personal.address, personal.city, personal.state, personal.pincode].filter(Boolean).join(', ');
+          if (addr) setBackendAddress(addr);
+          const kit = res.data.kit_fulfillment || appData.kit_fulfillment;
+          if (kit) {
+            setBackendKit(kit);
+          }
+        }
+      } catch {
+        // fallback to store
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
 
   useEffect(() => {
     const unsubscribe = membershipApplicationsStore.subscribe(() => {
@@ -272,6 +302,8 @@ export const useMembershipDetailsData = (
     statusRaw,
     totalDuration: initialOverride?.totalDuration || planDuration,
     daysRemaining: initialOverride?.daysRemaining || daysRemaining,
+    address: initialOverride?.address || backendAddress || (profile as any)?.address || '',
+    kitFulfillment: initialOverride?.kitFulfillment || backendKit || (profile as any)?.kit_fulfillment || null,
     ...initialOverride,
   };
 

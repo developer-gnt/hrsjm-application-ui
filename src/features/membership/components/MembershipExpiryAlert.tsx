@@ -28,8 +28,8 @@ export const MembershipExpiryAlert: React.FC<MembershipExpiryAlertProps> = ({
   const subtitle = isOverdue
     ? `${daysRemaining} days overdue`
     : isEarly
-    ? `${daysRemaining} days remaining · Membership renewal is allowed only within 30 days before the expiry date.`
-    : `Only ${daysRemaining} days remaining · Renewal is now open`;
+    ? 'Membership renewal is allowed only within 30 days before the expiry date.'
+    : `Only ${daysRemaining} days remaining`;
 
   return (
     <View

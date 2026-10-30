@@ -127,6 +127,8 @@ export {
   Briefcase,
   FileSpreadsheet,
   LogOut,
+  Package,
+  Truck,
 } from 'lucide-react-native';
 
 /**

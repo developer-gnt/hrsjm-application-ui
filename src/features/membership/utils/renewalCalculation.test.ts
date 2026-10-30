@@ -45,3 +45,4 @@ describe('calculateRenewalQuoteClientSide 30-day renewal validation', () => {
     expect(quote.renewal_validation_message).toBeUndefined();
   });
 });
+

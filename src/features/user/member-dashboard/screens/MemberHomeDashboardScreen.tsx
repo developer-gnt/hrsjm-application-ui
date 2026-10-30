@@ -273,6 +273,15 @@ export const MemberHomeDashboardScreen: React.FC<
     else if (tab.id === 'contact') onOpenContact();
   };
 
+  const kitData = (apiMembership as any)?.kit_fulfillment || (apiMembership as any)?.application_data?.kit_fulfillment;
+  const kitStatus = kitData?.status || 'PROCESSING';
+  const kitStatusLabel =
+    kitStatus === 'DELIVERED'
+      ? 'Delivered'
+      : kitStatus === 'DISPATCHED'
+      ? `Dispatched (${kitData?.tracking_number ? kitData.tracking_number : 'Speed Post'})`
+      : 'In Preparation / Dispatch Pending';
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader onBack={onBack} />
@@ -355,6 +364,32 @@ export const MemberHomeDashboardScreen: React.FC<
                 color={AdminColors.primaryDark}
               />
             </Pressable>
+          </Pressable>
+
+          {/* Welcome Kit Dispatch Status Banner */}
+          <Pressable
+            style={styles.kitFulfillmentCard}
+            onPress={onOpenMembershipDetails || onOpenMembershipInfo}
+            accessibilityRole="button"
+            accessibilityLabel="Membership Welcome Kit Status"
+          >
+            <View style={styles.kitFulfillmentLeft}>
+              <View style={styles.kitIconCircle}>
+                <AppIcon name="star" size={15} color={AdminColors.primaryDark} />
+              </View>
+              <View style={styles.kitTextGroup}>
+                <Text style={styles.kitFulfillmentTitle} numberOfLines={1}>
+                  Physical Welcome Kit
+                </Text>
+                <Text style={styles.kitFulfillmentStatus} numberOfLines={1}>
+                  {kitStatusLabel}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.kitActionRight}>
+              <Text style={styles.kitActionText}>View Kit</Text>
+              <AppIcon name="arrow-right" size={12} color={AdminColors.primaryDark} />
+            </View>
           </Pressable>
 
           {/* Quick Actions (4 in a row) */}
@@ -906,5 +941,62 @@ const styles = StyleSheet.create({
     color: '#123F68',
     fontSize: 11.5,
     fontWeight: '700',
+  },
+  kitFulfillmentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 4,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  kitFulfillmentLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  kitIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#FFF2DC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#FDE4B8',
+  },
+  kitTextGroup: {
+    flex: 1,
+  },
+  kitFulfillmentTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F2860',
+  },
+  kitFulfillmentStatus: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  kitActionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  kitActionText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
   },
 });
