@@ -383,6 +383,7 @@ export const RightsArticleForm: React.FC<RightsArticleFormProps> = ({
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
           >
             {/* Page header: back pill + title/subtitle */}
@@ -860,7 +861,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.sm,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 80,
     gap: Spacing.md,
   },
 

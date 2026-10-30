@@ -46,34 +46,34 @@ export const donationsService = {
       );
 
       const resData = (response as any)?.data || response;
-      if (resData && Array.isArray(resData.items)) {
-        return resData;
-      }
-      if (Array.isArray(resData)) {
-        return {
-          items: resData,
-          meta: {
-            page: typeof query.page === 'number' ? query.page : 1,
-            limit: typeof query.limit === 'number' ? query.limit : 20,
-            total: resData.length,
-            totalPages: Math.max(1, Math.ceil(resData.length / (typeof query.limit === 'number' ? query.limit : 20))),
-          },
-        };
-      }
-    } catch (err) {
-      console.warn('[donationsService] API request failed:', err);
-      throw err;
-    }
 
-    return {
-      items: [],
-      meta: {
+      const items = Array.isArray(resData?.items)
+        ? resData.items
+        : Array.isArray((response as any)?.items)
+        ? (response as any).items
+        : Array.isArray(resData)
+        ? resData
+        : [];
+      const meta = resData?.meta || (response as any)?.meta || {
+
         page: typeof query.page === 'number' ? query.page : 1,
         limit: typeof query.limit === 'number' ? query.limit : 20,
-        total: 0,
-        totalPages: 1,
-      },
-    };
+        total: items.length,
+        totalPages: Math.max(1, Math.ceil(items.length / (query.limit || 20))),
+      };
+      return { items, meta };
+    } catch (err) {
+      console.warn('[donationsService] API request failed:', err);
+      return {
+        items: [],
+        meta: {
+          page: typeof query.page === 'number' ? query.page : 1,
+          limit: typeof query.limit === 'number' ? query.limit : 20,
+          total: 0,
+          totalPages: 1,
+        },
+      };
+    }
   },
 
   /**

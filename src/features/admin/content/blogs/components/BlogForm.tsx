@@ -350,6 +350,16 @@ export const BlogForm: React.FC<BlogFormProps> = ({
     categoryPickerVisible ||
     statusPickerVisible;
 
+  const scrollViewRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Ensure form starts at top on open
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+    }
+    scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+  }, []);
+
   const updateField = <K extends keyof CreateBlogFormState>(
     field: K,
     value: CreateBlogFormState[K],
@@ -504,7 +514,7 @@ export const BlogForm: React.FC<BlogFormProps> = ({
 
   return (
     <View style={styles.root}>
-      <AdminHeader showBack onBack={requestCancel} />
+      <AdminHeader showBack title={title} onBack={requestCancel} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <KeyboardAvoidingView
@@ -512,8 +522,10 @@ export const BlogForm: React.FC<BlogFormProps> = ({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView
+            ref={scrollViewRef}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
           >
             {/* Page title block */}
@@ -874,7 +886,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.sm,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 80,
     gap: Spacing.md,
   },
 

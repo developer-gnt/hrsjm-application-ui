@@ -116,6 +116,10 @@ export interface LedgerSummary {
   total_credit: number;
   closing_balance: number;
   net_change?: number;
+  credit_growth_pct?: number;
+  debit_growth_pct?: number;
+  prev_month_credit?: number;
+  prev_month_debit?: number;
 }
 
 export interface AccountLedgerResponse {

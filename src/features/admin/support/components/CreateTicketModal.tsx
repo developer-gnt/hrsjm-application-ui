@@ -158,6 +158,7 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
               style={styles.scrollArea}
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               automaticallyAdjustKeyboardInsets={true}
               showsVerticalScrollIndicator={true}
             >

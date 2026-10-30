@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { CommonActions } from '@react-navigation/native';
+import { CommonActions, getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import type {
   BottomTabBarProps,
   BottomTabNavigationProp,
@@ -115,8 +115,85 @@ const NAV_LABEL_SIZE = 11;
  * - Interactive micro-animation with `PressableScale`.
  * - Safe-area aware on the bottom inset.
  */
-const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
+const HIDE_TAB_BAR_SCREENS = new Set([
+  AppRoutes.EDIT_BLOG,
+  AppRoutes.CREATE_BLOG,
+  AppRoutes.BLOG_DETAILS,
+  AppRoutes.CREATE_EVENT,
+  AppRoutes.EVENT_DETAILS,
+  AppRoutes.CREATE_NEWS,
+  AppRoutes.EDIT_NEWS,
+  AppRoutes.NEWS_DETAILS,
+  AppRoutes.CREATE_RIGHT,
+  AppRoutes.EDIT_RIGHT,
+  AppRoutes.RIGHT_DETAILS,
+  AppRoutes.ADD_USER,
+  AppRoutes.EDIT_USER,
+  AppRoutes.USER_DETAILS,
+  AppRoutes.USER_VERIFICATION,
+  AppRoutes.CREATE_ASSISTANCE_REQUEST,
+  AppRoutes.ADD_SEEKER,
+  AppRoutes.ASSISTANCE_DETAILS,
+  AppRoutes.ASSISTANCE_DOCUMENTS,
+  AppRoutes.MEMBERSHIP_APPLICATION_DETAILS,
+  AppRoutes.DONATION_RECEIPT_DETAILS,
+  AppRoutes.EDIT_PERSONAL_INFO,
+  AppRoutes.MY_ID_CARD,
+  AppRoutes.ABOUT,
+  AppRoutes.RENEW_MEMBERSHIP,
+  AppRoutes.TICKET_DETAILS,
+  AppRoutes.TICKET_CHAT,
+  'EditBlog',
+  'CreateBlog',
+  'BlogDetails',
+  'AddMember',
+  'EditMember',
+  'MemberDetails',
+  'AddSeeker',
+  'CreateSeeker',
+]);
+
+const getDeepActiveRouteName = (route: any): string | undefined => {
+  if (!route) return undefined;
+  if (route.state) {
+    const routes = route.state.routes;
+    const idx = route.state.index ?? (routes?.length ? routes.length - 1 : 0);
+    const child = routes?.[idx];
+    return getDeepActiveRouteName(child) || child?.name;
+  }
+  return route.name;
+};
+
+const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation, descriptors }) => {
   const insets = useSafeAreaInsets();
+  const currentTab = state.routes[state.index];
+  const options = descriptors?.[currentTab.key]?.options;
+
+  // 1. Explicit display none check
+  if ((options?.tabBarStyle as any)?.display === 'none') {
+    return null;
+  }
+
+  // 2. Check focused route in nested stack
+  const focusedRouteName = getFocusedRouteNameFromRoute(currentTab);
+  if (focusedRouteName && HIDE_TAB_BAR_SCREENS.has(focusedRouteName)) {
+    return null;
+  }
+
+  // 3. Deep active route check
+  const deepActiveRoute = getDeepActiveRouteName(currentTab);
+  if (deepActiveRoute && HIDE_TAB_BAR_SCREENS.has(deepActiveRoute)) {
+    return null;
+  }
+
+  // 4. Check child routes in tab state
+  if (currentTab.state?.routes) {
+    const childIdx = currentTab.state.index ?? (currentTab.state.routes.length - 1);
+    const childRoute = currentTab.state.routes[childIdx];
+    if (childRoute?.name && HIDE_TAB_BAR_SCREENS.has(childRoute.name)) {
+      return null;
+    }
+  }
 
   return (
     <View

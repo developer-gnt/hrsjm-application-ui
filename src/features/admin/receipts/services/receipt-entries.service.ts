@@ -28,18 +28,19 @@ export const receiptEntriesService = {
   async list(
     params: ListReceiptsParams,
   ): Promise<ReceiptListResult> {
-    const response = await apiClient.get<ReceiptFlatList>(
+    const response = await apiClient.get<any>(
       ApiRoutes.RECEIPTS.BASE,
       { params },
     );
-    const data = response.data;
+    const data = (response as any)?.data || response;
+    const items = data?.items || (Array.isArray(data) ? data : []);
     return {
-      items: data.items,
+      items,
       meta: {
-        page: data.page,
-        limit: data.limit,
-        total: data.total,
-        totalPages: data.total_pages,
+        page: data?.page || 1,
+        limit: data?.limit || items.length,
+        total: data?.total !== undefined ? data.total : items.length,
+        totalPages: data?.total_pages || 1,
       },
     };
   },

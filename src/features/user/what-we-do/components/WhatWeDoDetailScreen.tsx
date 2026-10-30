@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -23,6 +24,7 @@ import { UserBottomNavigation } from '../../home/components/UserBottomNavigation
 import type { HomeTab } from '../../home/types/home.types';
 import { getWhatWeDoContent } from '../data/what-we-do-content';
 import type { WhatWeDoId } from '../types/what-we-do.types';
+import { aboutService, type DynamicAreaItem } from '../../about/services/about.service';
 
 export interface WhatWeDoDetailScreenProps {
   contentId: WhatWeDoId;
@@ -57,6 +59,31 @@ export const WhatWeDoDetailScreen: React.FC<WhatWeDoDetailScreenProps> = ({
   const { width } = useWindowDimensions();
   const heroHeight = Math.min(220, Math.max(190, width * 0.55));
 
+  const [dynamicData, setDynamicData] = useState<{ title: string; items: DynamicAreaItem[] }>({
+    title: '',
+    items: [],
+  });
+  const [loadingDynamic, setLoadingDynamic] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingDynamic(true);
+    aboutService
+      .getRelatedDynamicItems(contentId)
+      .then(data => {
+        if (isMounted) {
+          setDynamicData(data);
+          setLoadingDynamic(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setLoadingDynamic(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [contentId]);
+
   const handleTabPress = (tab: HomeTab) => {
     if (tab.id === 'home') {
       onOpenHome?.();
@@ -78,6 +105,20 @@ export const WhatWeDoDetailScreen: React.FC<WhatWeDoDetailScreenProps> = ({
       onOpenRights?.();
     } else {
       onOpenContact?.();
+    }
+  };
+
+  const handleDynamicItemPress = (item: DynamicAreaItem) => {
+    if (item.linkType === 'rights' && onOpenRights) {
+      onOpenRights();
+    } else if (item.linkType === 'events' && onOpenEvents) {
+      onOpenEvents();
+    } else if (item.linkType === 'news' && onOpenNews) {
+      onOpenNews();
+    } else if (item.linkType === 'causes' && onOpenContact) {
+      onOpenContact();
+    } else {
+      Alert.alert(item.title, item.description || item.category || 'HRSJM Initiative');
     }
   };
 
@@ -142,6 +183,59 @@ export const WhatWeDoDetailScreen: React.FC<WhatWeDoDetailScreenProps> = ({
             ))}
           </View>
         </View>
+
+        {/* Dynamic Database Content Section */}
+        {loadingDynamic ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="small" color={AdminColors.primaryDark} />
+            <Text style={styles.loadingText}>Connecting live database resources...</Text>
+          </View>
+        ) : dynamicData.items.length > 0 ? (
+          <View style={styles.dynamicSection}>
+            <View style={styles.dynamicHeaderRow}>
+              <Text style={styles.dynamicSectionTitle}>{dynamicData.title}</Text>
+              <View style={styles.liveBadge}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveBadgeText}>Live Database</Text>
+              </View>
+            </View>
+            <View style={styles.dynamicCardList}>
+              {dynamicData.items.map(item => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.dynamicCard}
+                  onPress={() => handleDynamicItemPress(item)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.dynamicCardTop}>
+                    {item.category ? (
+                      <View style={styles.categoryPill}>
+                        <Text style={styles.categoryPillText}>{item.category}</Text>
+                      </View>
+                    ) : null}
+                    {item.date ? (
+                      <Text style={styles.dynamicDate}>{item.date}</Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.dynamicCardTitle} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  {item.description ? (
+                    <Text style={styles.dynamicCardDesc} numberOfLines={2}>
+                      {item.description}
+                    </Text>
+                  ) : null}
+                  <View style={styles.dynamicCardFooter}>
+                    <Text style={styles.actionLabel}>
+                      {item.actionLabel || 'View Details'}
+                    </Text>
+                    <AppIcon name="arrow-right" size={13} color={AdminColors.primaryDark} />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.section}>
           <SectionHeading title="Why It Matters" />
@@ -298,64 +392,175 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
+    marginTop: Spacing.xs,
   },
   activityCard: {
-    width: '48.5%',
-    minHeight: 68,
+    width: '48%',
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.xs,
     padding: Spacing.xs,
     borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    backgroundColor: AdminColors.cardSurface,
-    ...Shadows.card,
+    backgroundColor: AdminColors.primaryLight,
   },
   activityIcon: {
-    width: 36,
-    height: 36,
-    flexShrink: 0,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.xs,
-    borderRadius: BorderRadius.full,
+    borderRadius: 16,
     backgroundColor: AdminColors.accentGoldLight,
   },
   activityCopy: {
     flex: 1,
-    minWidth: 0,
   },
   activityTitle: {
     color: AdminColors.primaryDark,
-    fontSize: 9.5,
-    lineHeight: 12,
+    fontSize: 11,
+    lineHeight: 13,
     fontWeight: '700',
   },
   activityDescription: {
-    marginTop: 3,
+    marginTop: 2,
     color: AdminColors.textSecondary,
-    fontSize: 8.5,
+    fontSize: 9,
     lineHeight: 11,
+  },
+  loadingWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: Spacing.md,
+    paddingVertical: 12,
+  },
+  loadingText: {
+    fontSize: 12,
+    color: AdminColors.textSecondary,
+  },
+  dynamicSection: {
+    marginTop: Spacing.md,
+    marginHorizontal: Spacing.base,
+    padding: 12,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: AdminColors.cardSurface,
+    borderWidth: 1,
+    borderColor: AdminColors.border,
+    ...Shadows.card,
+  },
+  dynamicHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  dynamicSectionTitle: {
+    color: AdminColors.primaryDark,
+    fontFamily: UserFontFamilies.heading,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 12,
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16A34A',
+  },
+  liveBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#166534',
+  },
+  dynamicCardList: {
+    gap: 8,
+  },
+  dynamicCard: {
+    padding: 10,
+    borderRadius: BorderRadius.md,
+    backgroundColor: AdminColors.primaryLight,
+    borderWidth: 1,
+    borderColor: AdminColors.border,
+  },
+  dynamicCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  categoryPill: {
+    backgroundColor: AdminColors.accentGoldLight,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: AdminColors.accentGold,
+  },
+  categoryPillText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+  },
+  dynamicDate: {
+    fontSize: 10,
+    color: AdminColors.textSecondary,
+  },
+  dynamicCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+    lineHeight: 17,
+  },
+  dynamicCardDesc: {
+    marginTop: 3,
+    fontSize: 11,
+    lineHeight: 14,
+    color: AdminColors.textSecondary,
+  },
+  dynamicCardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+    marginTop: 6,
+  },
+  actionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
   },
   whyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: AdminColors.primaryLight,
   },
   whyIcon: {
-    width: 36,
-    height: 36,
-    flexShrink: 0,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: BorderRadius.full,
+    borderRadius: 22,
     backgroundColor: AdminColors.accentGoldLight,
   },
   whyText: {
     flex: 1,
     color: AdminColors.textSecondary,
-    fontSize: 10,
-    lineHeight: 14,
+    fontSize: 11,
+    lineHeight: 15,
   },
   participationList: {
     gap: Spacing.xs,
@@ -363,65 +568,62 @@ const styles = StyleSheet.create({
   participationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    minHeight: 20,
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md,
+    backgroundColor: AdminColors.primaryLight,
   },
   participationText: {
-    flex: 1,
     color: AdminColors.textSecondary,
-    fontSize: 10,
+    fontSize: 11,
     lineHeight: 14,
   },
   ctaWrap: {
     marginTop: Spacing.md,
-    marginHorizontal: Spacing.sm,
+    marginHorizontal: Spacing.base,
   },
   cta: {
-    minHeight: 112,
-    justifyContent: 'center',
+    width: '100%',
+    minHeight: 130,
     overflow: 'hidden',
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.lg,
     backgroundColor: AdminColors.primaryDark,
-    ...Shadows.card,
   },
   ctaImage: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    width: '65%',
+    ...StyleSheet.absoluteFill,
+    width: '100%',
     height: '100%',
   },
   ctaOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(6, 39, 77, 0.4)',
+    backgroundColor: 'rgba(6, 39, 77, 0.45)',
   },
   ctaContent: {
-    width: '77%',
-    padding: Spacing.md,
+    padding: Spacing.sm,
+    justifyContent: 'center',
   },
   ctaTitle: {
     color: AdminColors.textOnDark,
     fontFamily: UserFontFamilies.heading,
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 20,
     fontWeight: '700',
   },
   ctaButton: {
-    minHeight: 32,
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     gap: Spacing.xs,
     marginTop: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md,
     backgroundColor: AdminColors.accentGold,
   },
   ctaButtonText: {
     color: AdminColors.primaryDark,
-    fontSize: 10,
-    lineHeight: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
 });

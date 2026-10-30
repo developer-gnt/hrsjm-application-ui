@@ -168,7 +168,7 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
   if (loading) {
     return (
       <View style={styles.root}>
-        <AdminHeader showBack onBack={onBack} />
+        <AdminHeader showBack title="Blog Details" onBack={onBack} />
         <AppLoader fullScreen message="Loading blog..." />
       </View>
     );
@@ -177,7 +177,7 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
   if (!blog) {
     return (
       <View style={styles.root}>
-        <AdminHeader showBack onBack={onBack} />
+        <AdminHeader showBack title="Blog Details" onBack={onBack} />
         <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
           <AppEmptyState
             icon="📝"
@@ -207,7 +207,7 @@ export const BlogDetailsScreen: React.FC<BlogDetailsScreenProps> = ({
   return (
     <View style={styles.root}>
       {/* Unified HRSJM Admin Header with back button */}
-      <AdminHeader showBack onBack={onBack} />
+      <AdminHeader showBack title="Blog Details" onBack={onBack} />
 
       <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <ScrollView

@@ -969,7 +969,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 60,
   },
   mainWrapper: {
     width: '100%',

@@ -26,3 +26,5 @@ export type {
   AboutImpactStat,
 } from './types/about.types';
 
+export { aboutService } from './services/about.service';
+export type { DynamicAboutStats, DynamicAreaItem } from './services/about.service';

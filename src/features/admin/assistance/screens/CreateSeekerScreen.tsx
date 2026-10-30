@@ -354,6 +354,7 @@ export const CreateSeekerScreen: React.FC<CreateSeekerScreenProps> = ({
             isWide && styles.scrollContentWide,
           ]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           <View style={[styles.mainCardWrapper, isWide && styles.mainCardWrapperWide]}>
@@ -928,7 +929,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 14,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 60,
   },
   scrollContentWide: {
     alignItems: 'center',

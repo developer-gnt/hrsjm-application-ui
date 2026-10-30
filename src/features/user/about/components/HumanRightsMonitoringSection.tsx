@@ -4,6 +4,7 @@ import {
   type LayoutChangeEvent,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import {
@@ -40,11 +41,12 @@ const FEATURES = [
 
 interface HumanRightsMonitoringSectionProps {
   onLayout?: (event: LayoutChangeEvent) => void;
+  onOpenDetails?: () => void;
 }
 
 export const HumanRightsMonitoringSection: React.FC<
   HumanRightsMonitoringSectionProps
-> = ({ onLayout }) => {
+> = ({ onLayout, onOpenDetails }) => {
   return (
     <View style={styles.panel} onLayout={onLayout}>
       <View style={styles.topRow}>
@@ -86,6 +88,21 @@ export const HumanRightsMonitoringSection: React.FC<
           </View>
         ))}
       </View>
+
+      {onOpenDetails ? (
+        <TouchableOpacity
+          style={styles.detailButton}
+          onPress={onOpenDetails}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Open Human-rights Monitoring Details"
+        >
+          <Text style={styles.detailButtonText}>
+            Open Dedicated Human-rights Monitoring Page
+          </Text>
+          <AppIcon name="arrow-right" size={14} color={AdminColors.primaryDark} />
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 };
@@ -189,5 +206,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 14.5,
     textAlign: 'center',
+  },
+  detailButton: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: BorderRadius.md,
+    backgroundColor: AdminColors.accentGold,
+  },
+  detailButtonText: {
+    color: AdminColors.primaryDark,
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

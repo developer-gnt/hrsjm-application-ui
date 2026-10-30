@@ -1,4 +1,6 @@
 import { secureStorage, StoredSession } from './secure-storage';
+import { appStorage } from './app-storage';
+import { StorageKeys } from '../constants/storage-keys';
 
 /**
  * High-performance, secure Token Store.
@@ -6,11 +8,17 @@ import { secureStorage, StoredSession } from './secure-storage';
  * - Refresh token: stored securely in hardware-backed storage.
  * - User Profile: cached securely to allow fast app boot and smooth offline resilience.
  */
-
 let inMemoryAccessToken: string | null = null;
 let inMemoryRefreshToken: string | null = null;
 let inMemoryUser: any | null = null;
 let isInitialized = false;
+
+const getWebStorage = () => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return window.localStorage;
+  }
+  return null;
+};
 
 export const tokenStorage = {
   /**
@@ -36,7 +44,29 @@ export const tokenStorage = {
    * Synchronous access token retrieval (used by auth request interceptor).
    */
   getAccessToken(): string | null {
-    return inMemoryAccessToken;
+    if (inMemoryAccessToken) return inMemoryAccessToken;
+
+    // Fast fallback check
+    try {
+      const persisted = appStorage.getString(StorageKeys.ACCESS_TOKEN);
+      if (persisted) {
+        inMemoryAccessToken = persisted;
+        return persisted;
+      }
+    } catch {}
+
+    const web = getWebStorage();
+    if (web) {
+      try {
+        const persisted = web.getItem('__hrsjm_access_token');
+        if (persisted) {
+          inMemoryAccessToken = persisted;
+          return persisted;
+        }
+      } catch {}
+    }
+
+    return null;
   },
 
   /**
@@ -57,6 +87,26 @@ export const tokenStorage = {
    */
   setAccessToken(token: string | null): void {
     inMemoryAccessToken = token;
+
+    try {
+      if (token) {
+        appStorage.setString(StorageKeys.ACCESS_TOKEN, token);
+      } else {
+        appStorage.delete(StorageKeys.ACCESS_TOKEN);
+      }
+    } catch {}
+
+    const web = getWebStorage();
+    if (web) {
+      try {
+        if (token) {
+          web.setItem('__hrsjm_access_token', token);
+        } else {
+          web.removeItem('__hrsjm_access_token');
+        }
+      } catch {}
+    }
+
     // Async background persistence
     secureStorage.getSession().then(session => {
       secureStorage.setSession({
@@ -76,7 +126,7 @@ export const tokenStorage = {
       inMemoryRefreshToken = session.refreshToken;
       return session.refreshToken;
     }
-    return null;
+    return secureStorage.getSecret();
   },
 
   async setRefreshToken(token: string | null): Promise<void> {
@@ -115,6 +165,8 @@ export const tokenStorage = {
       inMemoryUser = user;
     }
 
+    tokenStorage.setAccessToken(accessToken);
+
     await secureStorage.setSession({
       accessToken,
       refreshToken,
@@ -143,6 +195,18 @@ export const tokenStorage = {
     inMemoryAccessToken = null;
     inMemoryRefreshToken = null;
     inMemoryUser = null;
+
+    try {
+      appStorage.delete(StorageKeys.ACCESS_TOKEN);
+    } catch {}
+
+    const web = getWebStorage();
+    if (web) {
+      try {
+        web.removeItem('__hrsjm_access_token');
+      } catch {}
+    }
+
     await secureStorage.clearSession();
   },
 };

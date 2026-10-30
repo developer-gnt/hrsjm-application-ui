@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -168,9 +168,9 @@ export function MembershipStep2Screen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Top Header */}
-      <MembershipTopBar showBack onBackPress={handleBack} />
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      {/* Top Header matching Admin Dashboard */}
+      <MembershipTopBar />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

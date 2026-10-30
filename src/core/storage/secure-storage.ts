@@ -1,7 +1,8 @@
 import { Platform } from 'react-native';
 import * as Keychain from 'react-native-keychain';
 import { createMMKV } from 'react-native-mmkv';
-import { KEYCHAIN_SERVICE } from '../constants/storage-keys';
+import { KEYCHAIN_SERVICE, StorageKeys } from '../constants/storage-keys';
+import { appStorage } from './app-storage';
 
 export interface StoredSession {
   accessToken: string | null;
@@ -196,6 +197,11 @@ export const secureStorage = {
         vault.remove(SESSION_USERNAME);
       } catch {}
     }
+
+    // 4. Legacy appStorage cleanup
+    try {
+      appStorage.delete(StorageKeys.REFRESH_TOKEN);
+    } catch {}
   },
 
   // --- Backwards Compatibility Helpers ---
@@ -207,11 +213,26 @@ export const secureStorage = {
     });
   },
 
+  /**
+   * Retrieves the refresh token: checks session first, falls back to persistent storage.
+   */
   async getSecret(): Promise<string | null> {
     const session = await this.getSession();
-    return session?.refreshToken || null;
+    if (session?.refreshToken) {
+      return session.refreshToken;
+    }
+    try {
+      const fallback = appStorage.getString(StorageKeys.REFRESH_TOKEN);
+      if (fallback) {
+        return fallback;
+      }
+    } catch {}
+    return null;
   },
 
+  /**
+   * Clears the refresh token from all storage mechanisms upon explicit signout.
+   */
   async clearSecret(): Promise<void> {
     await this.clearSession();
   },

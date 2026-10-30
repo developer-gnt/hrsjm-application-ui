@@ -392,6 +392,7 @@ export const EditUserScreen: React.FC<EditUserScreenProps> = ({
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           {/* Back link matching Image 1: "← Back to User Details" */}
           <TouchableOpacity

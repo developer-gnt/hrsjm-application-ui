@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { tokenStorage } from '../../../core/storage/token-storage';
 import { isJwtExpired } from '../../../core/utils/jwt';
+import { appStorage } from '../../../core/storage/app-storage';
+import { StorageKeys } from '../../../core/constants/storage-keys';
 import { usePermissionStore } from '../../../core/permissions/permission.store';
 import { authService, RegisterRequest } from '../services/auth.service';
 import { UserProfile } from '../types/auth.types';
@@ -16,7 +18,7 @@ interface AuthState {
   status: AuthStatus;
 
   /** Validates credentials against POST /auth/login and stores the token pair securely.
-   * `rememberMe=false` keeps the session memory-only (no relaunch restore).
+   * Session persists until the user explicitly signs out or uninstalls the app.
    * Throws the normalized ApiError so screens can render inline feedback. */
   signIn: (identifier: string, password: string, rememberMe?: boolean) => Promise<void>;
 
@@ -28,18 +30,17 @@ interface AuthState {
   /** Activates the stored session after a successful registration. */
   completeRegistration: () => void;
 
-  /** Cold-start session restoration: validates stored access token or exchanges
-   * the stored refresh token for a fresh pair via POST /auth/refresh. Returns whether
-   * a session was successfully restored. */
+  /** Cold-start session restoration: restores cached credentials and verifies
+   * or refreshes tokens in the background without dropping active sessions. */
   restoreSession: () => Promise<boolean>;
 
-  /** Sets or updates the active user profile in state. */
+  /** Sets or updates the active user profile in state and persistent storage. */
   setUser: (user: UserProfile | null) => void;
 
   /** Revokes the refresh token server-side (idempotent) and clears local secure storage. */
   signOut: () => Promise<void>;
 
-  /** Called by the refresh interceptor when the refresh token is exhausted —
+  /** Called by the refresh interceptor when the refresh token is explicitly exhausted —
    * local cleanup only, no server call (it already failed). */
   handleSessionExpired: () => void;
 }
@@ -53,11 +54,36 @@ const loadPermissions = async (): Promise<void> => {
   }
 };
 
+const getPersistedUser = (): UserProfile | null => {
+  try {
+    const raw = appStorage.getString(StorageKeys.USER_DATA);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch {
+    // ignore parsing errors
+  }
+  return null;
+};
+
+const initialPersistedUser = getPersistedUser();
+const initialAccessToken = tokenStorage.getAccessToken();
+
 export const useAuthStore = create<AuthState>()(set => ({
-  user: null,
-  status: 'idle',
+  user: initialPersistedUser,
+  // If we already have stored access token and user profile, immediately start as authenticated
+  status: initialPersistedUser && initialAccessToken ? 'authenticated' : 'idle',
 
   setUser: (user: UserProfile | null) => {
+    try {
+      if (user) {
+        appStorage.setString(StorageKeys.USER_DATA, JSON.stringify(user));
+      } else {
+        appStorage.delete(StorageKeys.USER_DATA);
+      }
+    } catch {
+      // ignore
+    }
     set({ user });
     if (user) {
       tokenStorage.updateStoredUser(user).catch(() => undefined);
@@ -78,6 +104,12 @@ export const useAuthStore = create<AuthState>()(set => ({
         await tokenStorage.setRefreshToken(null);
       }
 
+      try {
+        appStorage.setString(StorageKeys.USER_DATA, JSON.stringify(user));
+      } catch {
+        // ignore
+      }
+
       set({ user, status: 'authenticated' });
       await loadPermissions();
     } catch (error) {
@@ -91,6 +123,11 @@ export const useAuthStore = create<AuthState>()(set => ({
       payload,
     );
     await tokenStorage.setTokens(access_token, refresh_token, user);
+    try {
+      appStorage.setString(StorageKeys.USER_DATA, JSON.stringify(user));
+    } catch {
+      // ignore
+    }
     set({ user, status: 'unauthenticated' });
     await loadPermissions();
   },
@@ -101,27 +138,36 @@ export const useAuthStore = create<AuthState>()(set => ({
 
   restoreSession: async (): Promise<boolean> => {
     try {
-      // 1. Retrieve saved session from secure hardware storage
+      // 1. Check cached session & tokens
       const session = await tokenStorage.getStoredSession();
-      if (!session || (!session.accessToken && !session.refreshToken)) {
+      const accessToken = session?.accessToken || tokenStorage.getAccessToken();
+      const refreshToken = session?.refreshToken || (await tokenStorage.getRefreshToken());
+      let user = session?.user || getPersistedUser();
+
+      // If there is no token anywhere, user is genuinely not logged in
+      if (!accessToken && !refreshToken) {
         set({ user: null, status: 'unauthenticated' });
         return false;
       }
 
-      const accessToken = session.accessToken;
-      const refreshToken = session.refreshToken;
-      let user = session.user || null;
-
-      // 2. Validate the access token
+      // 2. Validate the access token expiration
       const isAccessExpired = isJwtExpired(accessToken, 30);
 
-      // 3. If access token is mathematically valid, verify with backend (GET /auth/me)
+      // 3. If access token is valid, verify with backend (GET /auth/me) or activate cached user
       if (!isAccessExpired && accessToken) {
+        tokenStorage.setAccessToken(accessToken);
+        if (user) {
+          set({ user, status: 'authenticated' });
+          loadPermissions().catch(() => undefined);
+        }
+
         try {
-          tokenStorage.setAccessToken(accessToken);
           const profile = await authService.getMe();
-          if (profile && profile.status === 'ACTIVE') {
+          if (profile && profile.status !== 'INACTIVE' && profile.status !== 'BLOCKED') {
             await tokenStorage.updateStoredUser(profile);
+            try {
+              appStorage.setString(StorageKeys.USER_DATA, JSON.stringify(profile));
+            } catch {}
             set({ user: profile, status: 'authenticated' });
             await loadPermissions();
             return true;
@@ -135,7 +181,7 @@ export const useAuthStore = create<AuthState>()(set => ({
               return true;
             }
           }
-          // Server explicitly returned 401/403: token expired/invalid, proceed to refresh
+          // Server returned 401/403: token expired, proceed to refresh
         }
       }
 
@@ -147,22 +193,52 @@ export const useAuthStore = create<AuthState>()(set => ({
 
           if (newAccessToken) {
             await tokenStorage.setTokens(newAccessToken, newRefreshToken || refreshToken, freshUser);
+            try {
+              appStorage.setString(StorageKeys.USER_DATA, JSON.stringify(freshUser));
+            } catch {}
             set({ user: freshUser, status: 'authenticated' });
             await loadPermissions();
             return true;
           }
-        } catch (refreshErr) {
-          console.warn('Session refresh failed during startup:', refreshErr);
+        } catch (refreshErr: any) {
+          const isExplicitAuthReject =
+            refreshErr?.response?.status === 401 ||
+            refreshErr?.response?.status === 403;
+
+          // ONLY clear tokens and force logout if server EXPLICITLY rejected credentials.
+          // Transient network drops or offline states MUST NEVER LOG USER OUT.
+          if (isExplicitAuthReject) {
+            await tokenStorage.clearTokens();
+            try {
+              appStorage.delete(StorageKeys.USER_DATA);
+            } catch {}
+            usePermissionStore.getState().clear();
+            set({ user: null, status: 'unauthenticated' });
+            return false;
+          }
+
+          // If offline but we have cached credentials, keep user authenticated
+          if (user) {
+            set({ user, status: 'authenticated' });
+            return true;
+          }
         }
       }
 
-      // 5. Both access token and refresh token are invalid or refresh failed: clear storage
+      // 5. Both tokens are invalid and cannot be restored: clear storage
       await tokenStorage.clearTokens();
+      try {
+        appStorage.delete(StorageKeys.USER_DATA);
+      } catch {}
       set({ user: null, status: 'unauthenticated' });
       return false;
     } catch (unexpectedError) {
       console.warn('Unexpected error during session restore:', unexpectedError);
-      await tokenStorage.clearTokens();
+      const fallbackUser = getPersistedUser();
+      if (fallbackUser) {
+        set({ user: fallbackUser, status: 'authenticated' });
+        return true;
+      }
       set({ user: null, status: 'unauthenticated' });
       return false;
     }
@@ -178,12 +254,22 @@ export const useAuthStore = create<AuthState>()(set => ({
       // Server-side revoke is best-effort; local session must always clear.
     }
     await tokenStorage.clearTokens();
+    try {
+      appStorage.delete(StorageKeys.USER_DATA);
+    } catch {
+      // ignore
+    }
     usePermissionStore.getState().clear();
     set({ user: null, status: 'unauthenticated' });
   },
 
   handleSessionExpired: () => {
     tokenStorage.clearTokens();
+    try {
+      appStorage.delete(StorageKeys.USER_DATA);
+    } catch {
+      // ignore
+    }
     usePermissionStore.getState().clear();
     set({ user: null, status: 'unauthenticated' });
   },
