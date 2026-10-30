@@ -46,7 +46,7 @@ import { AvatarPickerModal } from '../components/AvatarPickerModal';
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { EditPersonalInfoModal } from '../components/EditPersonalInfoModal';
 import { MyIdCard } from '../components/MyIdCard';
-import { Lock, KeyRound, Calendar, BadgeCheck } from '../../../../core/components/icons';
+import { Lock, KeyRound, Calendar, BadgeCheck, Receipt } from '../../../../core/components/icons';
 import {
   PersonIcon,
   MailIcon,

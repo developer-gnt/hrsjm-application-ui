@@ -82,6 +82,12 @@ export const ApiRoutes = {
     DETAILS: (id: string | number) => `/expense-entries/${id}`,
     STATUS: (id: string | number) => `/expense-entries/${id}/status`,
   },
+  // Transactions
+  TRANSACTIONS: {
+    MY: '/transactions/my',
+    DETAILS: (id: string | number) => `/transactions/${id}`,
+  },
+
   RECEIPTS: {
     MY: '/receipts/my',
     ITEM: (id: string | number) => `/receipts/${id}`,

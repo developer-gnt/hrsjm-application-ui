@@ -79,6 +79,10 @@ export const AppRoutes = {
   CREATE_RIGHT: 'CreateRight',
   EDIT_RIGHT: 'EditRight',
 
+  // Transactions
+  TRANSACTION_HISTORY: 'TransactionHistory',
+  TRANSACTION_DETAILS: 'TransactionDetails',
+
   // Membership & Renewal
   MEMBERSHIP_DETAILS: 'MembershipDetails',
   MEMBERSHIP_BENEFITS: 'MembershipBenefits',

@@ -47,6 +47,7 @@ import { useMembership } from '../../membership/context/MembershipContext';
 import { DonationHistoryScreen } from '../../donations/screens/DonationHistoryScreen';
 import { DonationDetailScreen } from '../../donations/screens/DonationDetailScreen';
 import { ReceiptDetailScreen } from '../../receipts/screens/ReceiptDetailScreen';
+import { TransactionHistoryScreen, TransactionDetailsScreen } from '../../transactions';
 
 import {
   House,
@@ -700,6 +701,39 @@ export const UserTabNavigator: React.FC = () => {
         options={{ tabBarButton: () => null }}
         component={ReceiptDetailScreen}
       />
+      <Tab.Screen
+        name="TransactionHistory"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }: any) => (
+          <TransactionHistoryScreen
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('UserHome');
+              }
+            }}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="TransactionDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }: any) => (
+          <TransactionDetailsScreen
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('TransactionHistory');
+              }
+            }}
+          />
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 };

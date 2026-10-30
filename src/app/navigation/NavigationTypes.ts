@@ -73,6 +73,8 @@ export type MoreStackParamList = {
   [AppRoutes.DONATION_RECEIPT_DETAILS]: { donationId: string };
   [AppRoutes.ROLES_PERMISSIONS]: undefined;
   [AppRoutes.SETTINGS]: undefined;
+  [AppRoutes.TRANSACTION_HISTORY]: undefined;
+  [AppRoutes.TRANSACTION_DETAILS]: { transactionId: string; transaction?: any };
   [AppRoutes.EVENTS]: undefined;
   [AppRoutes.EVENT_DETAILS]: { event: any };
   [AppRoutes.CREATE_EVENT]: undefined;

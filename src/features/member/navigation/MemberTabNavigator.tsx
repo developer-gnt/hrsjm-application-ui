@@ -16,6 +16,7 @@ import { MemberEventsContainer } from '../screens/MemberEventsContainer';
 import { ReceiptsListScreen } from '../../receipts/screens/ReceiptsListScreen';
 import { ReceiptDetailScreen } from '../../receipts/screens/ReceiptDetailScreen';
 import { ReceiptPdfPreviewScreen } from '../../receipts/screens/ReceiptPdfPreviewScreen';
+import { TransactionHistoryScreen, TransactionDetailsScreen } from '../../transactions';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import {
   MembershipDetailsScreen,
@@ -651,6 +652,39 @@ export const MemberTabNavigator: React.FC = () => {
             onOpenContact={() => navigation.navigate('MemberProfile')}
             onOpenMembershipCategories={() => navigation.navigate('MembershipCategories')}
             onOpenDonations={() => navigation.navigate('UserActionPage', { pageId: 'donate' })}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="TransactionHistory"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }: any) => (
+          <TransactionHistoryScreen
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MemberHome');
+              }
+            }}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="TransactionDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }: any) => (
+          <TransactionDetailsScreen
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('TransactionHistory');
+              }
+            }}
           />
         )}
       </Tab.Screen>
