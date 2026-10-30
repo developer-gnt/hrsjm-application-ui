@@ -1,5 +1,7 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { tokenStorage } from '../../storage/token-storage';
+import { appStorage } from '../../storage/app-storage';
+import { StorageKeys } from '../../constants/storage-keys';
 import { ApiRoutes } from '../../constants/api-routes';
 
 let isRefreshing = false;
@@ -79,14 +81,38 @@ export const setupRefreshInterceptor = (
             await tokenStorage.setRefreshToken(newRefreshToken);
           }
 
+          if (payload.user) {
+            try {
+              appStorage.setString(
+                StorageKeys.USER_DATA,
+                JSON.stringify(payload.user),
+              );
+            } catch {
+              // ignore
+            }
+          }
+
           processQueue(null, accessToken);
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return axiosInstance(originalRequest);
-        } catch (refreshError) {
+        } catch (refreshError: any) {
           processQueue(refreshError, null);
-          await tokenStorage.clearTokens();
-          if (onLogout) {
-            onLogout();
+          const isExplicitAuthReject =
+            refreshError?.response?.status === 401 ||
+            refreshError?.response?.status === 403;
+
+          // Only clear tokens and force logout if the server explicitly rejected the refresh token.
+          // Transient network errors or timeouts must NEVER kick the user out of their session.
+          if (isExplicitAuthReject) {
+            await tokenStorage.clearTokens();
+            try {
+              appStorage.delete(StorageKeys.USER_DATA);
+            } catch {
+              // ignore
+            }
+            if (onLogout) {
+              onLogout();
+            }
           }
           return Promise.reject(refreshError);
         } finally {

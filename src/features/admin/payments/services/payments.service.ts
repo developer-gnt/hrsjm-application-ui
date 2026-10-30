@@ -26,16 +26,11 @@ export const paymentsService = {
     params: ListPaymentsParams,
   ): Promise<{ items: MembershipPaymentItem[]; meta: PaginationMeta }> {
     try {
-      const response = await apiClient.get<{
-        items: MembershipPaymentItem[];
-        meta: PaginationMeta;
-      }>(ApiRoutes.PAYMENTS.MEMBERSHIP_PAYMENTS, { params });
-      return (
-        response?.data || {
-          items: [],
-          meta: { page: 1, limit: 20, total: 0, totalPages: 1 },
-        }
-      );
+      const response = await apiClient.get<any>(ApiRoutes.PAYMENTS.MEMBERSHIP_PAYMENTS, { params });
+      const data = (response as any)?.data || response;
+      const items = data?.items || (Array.isArray(data) ? data : []);
+      const meta = data?.meta || { page: 1, limit: items.length, total: items.length, totalPages: 1 };
+      return { items, meta };
     } catch {
       return {
         items: [],

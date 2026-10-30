@@ -5,6 +5,8 @@ export interface AboutWorkArea {
   title: string;
   description: string;
   icon: IconName;
+  badge?: string;
+  count?: number;
 }
 
 export interface AboutPrinciple {

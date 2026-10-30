@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  ImageBackground,
+  StatusBar,
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ChevronLeftIcon,
   UserOutlineIcon,
@@ -65,6 +65,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   onLoginPress,
   onGoogleSignUp,
 }) => {
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isTabletOrDesktop = width > 520;
   const contentMaxWidth = isTabletOrDesktop ? 440 : width;
@@ -327,7 +328,8 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+      <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -340,16 +342,25 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           bounces={false}
         >
           <View style={[styles.mainWrapper, { width: contentMaxWidth }]}>
             {/* Top Hero Image Section */}
-            <ImageBackground
-              source={HERO_BG}
-              style={styles.heroBackground}
-              imageStyle={styles.heroBackgroundImage}
-              resizeMode="cover"
+            <View
+              style={[
+                styles.heroBackground,
+                {
+                  paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 16 : 12) + 8,
+                },
+              ]}
             >
+              <Image
+                source={HERO_BG}
+                style={styles.heroBackgroundImage}
+                resizeMode="cover"
+                fadeDuration={0}
+              />
               {/* Top Bar with Back Button */}
               <View style={styles.headerRow}>
                 {onBack && (
@@ -388,7 +399,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
 
               {/* Bottom Spacer */}
               <View style={styles.peopleBottomSpacer} />
-            </ImageBackground>
+            </View>
 
             {/* Overlapping White Information Card */}
             <View style={styles.cardContainer}>
@@ -815,19 +826,29 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 40,
+    paddingBottom: 60,
   },
   mainWrapper: {
     alignSelf: 'center',
     width: '100%',
   },
   heroBackground: {
+    position: 'relative',
     width: '100%',
-    paddingTop: 12,
+    overflow: 'hidden',
+    backgroundColor: '#0F2860',
     paddingHorizontal: 20,
-    paddingBottom: 28,
+    paddingBottom: 52,
+    minHeight: 230,
   },
   heroBackgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
     opacity: 0.95,
   },
   headerRow: {
@@ -880,14 +901,14 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 24,
     paddingBottom: 32,
-    marginTop: -16,
+    marginTop: -28,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
   },
   stepperContainer: {
     marginBottom: 16,

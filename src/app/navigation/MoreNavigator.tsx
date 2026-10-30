@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppRoutes } from '../../core/constants/routes';
 import { MoreMenuScreen } from './MoreMenuScreen';
@@ -59,6 +59,7 @@ import {
   MembershipApplicationDetailsScreen,
 } from '../../features/admin/membershipApplications';
 import { AboutScreen } from '../../features/user/about';
+import { WhatWeDoDetailScreen } from '../../features/user/what-we-do';
 import {
   KnowYourRightsScreen,
   RightArticleDetailsScreen,
@@ -427,6 +428,7 @@ export const MoreNavigator: React.FC = () => (
       {({ navigation }) => (
         <AboutScreen
           onBack={navigation.goBack}
+          onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail' as any, { contentId })}
           onNavigate={(target: string) => {
             if (target === 'AdminMoreTab') {
               navigation.navigate('MoreMenu' as any);
@@ -434,6 +436,22 @@ export const MoreNavigator: React.FC = () => (
               navigation.navigate(target as any);
             }
           }}
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen
+      name="WhatWeDoDetail"
+      options={{ tabBarStyle: { display: 'none' } } as any}
+    >
+      {({ navigation, route }: any) => (
+        <WhatWeDoDetailScreen
+          contentId={route.params?.contentId || 'human-rights-monitoring'}
+          hideBottomNav={true}
+          showBottomNav={false}
+          onBack={navigation.goBack}
+          onOpenHome={navigation.goBack}
+          onOpenAbout={navigation.goBack}
         />
       )}
     </Stack.Screen>
@@ -580,7 +598,7 @@ export const MoreNavigator: React.FC = () => (
 
     <Stack.Screen
       name={AppRoutes.BLOG_DETAILS}
-      options={{ tabBarStyle: { display: 'none' } }}
+      options={{ tabBarStyle: { display: 'none' } } as any}
     >
       {({ navigation, route }: any) => (
         <BlogDetailsScreen
@@ -595,7 +613,7 @@ export const MoreNavigator: React.FC = () => (
 
     <Stack.Screen
       name={AppRoutes.CREATE_BLOG}
-      options={{ tabBarStyle: { display: 'none' } }}
+      options={{ tabBarStyle: { display: 'none' } } as any}
     >
       {({ navigation }) => (
         <CreateBlogScreen onCancel={navigation.goBack} />
@@ -604,7 +622,7 @@ export const MoreNavigator: React.FC = () => (
 
     <Stack.Screen
       name={AppRoutes.EDIT_BLOG}
-      options={{ tabBarStyle: { display: 'none' } }}
+      options={{ tabBarStyle: { display: 'none' } } as any}
     >
       {({ navigation, route }: any) => (
         <EditBlogScreen

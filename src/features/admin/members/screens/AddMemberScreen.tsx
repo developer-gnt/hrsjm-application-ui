@@ -1219,6 +1219,7 @@ export const AddMemberScreen: React.FC<AddMemberScreenProps> = ({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
           >
             <View style={styles.contentWrap}>
               {/* Page Title Block */}
@@ -1499,7 +1500,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 14,
     paddingTop: 12,
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
   contentWrap: {
     maxWidth: 600,

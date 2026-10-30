@@ -19,6 +19,7 @@ import { SupportTicketsScreen } from '../../support';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import { NotificationsScreen } from '../../admin/notifications';
 import { AboutScreen } from '../../user/about';
+import { WhatWeDoDetailScreen } from '../../user/what-we-do';
 import { NewsScreen } from '../../user/news/screens/NewsScreen';
 import { NewsDetailsScreen } from '../../user/news/screens/NewsDetailsScreen';
 import { FileComplaintScreen } from '../../user/help';
@@ -263,8 +264,38 @@ export const SeekerTabNavigator: React.FC = () => {
       <Tab.Screen
         name="About"
         options={{ tabBarButton: () => null }}
-        component={AboutScreen}
-      />
+      >
+        {({ navigation }) => (
+          <AboutScreen
+            onBack={navigation.goBack}
+            onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail' as any, { contentId })}
+            onOpenRights={() => navigation.navigate('SeekerRights')}
+            onOpenEvents={() => navigation.navigate('SeekerEvents')}
+            onOpenNews={() => navigation.navigate('News')}
+            onOpenContact={() => navigation.navigate('SeekerSupport')}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="WhatWeDoDetail"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <WhatWeDoDetailScreen
+            contentId={route.params?.contentId || 'human-rights-monitoring'}
+            hideBottomNav={true}
+            showBottomNav={false}
+            onBack={navigation.goBack}
+            onOpenHome={() => navigation.navigate('SeekerHome')}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenRights={() => navigation.navigate('SeekerRights')}
+            onOpenEvents={() => navigation.navigate('SeekerEvents')}
+            onOpenNews={() => navigation.navigate('News')}
+            onOpenContact={() => navigation.navigate('SeekerSupport')}
+          />
+        )}
+      </Tab.Screen>
 
       <Tab.Screen
         name="News"

@@ -1020,6 +1020,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
           style={styles.flex}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.titleActionRow}>
@@ -1185,7 +1186,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.base,
-    paddingBottom: Spacing.xl,
+    paddingBottom: 60,
   },
   pageTitle: {
     fontFamily: UserFontFamilies.heading,

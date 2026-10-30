@@ -768,6 +768,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: Math.max(insets.bottom, 20) + 90 },
@@ -1334,6 +1335,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
                       horizontal
                       showsHorizontalScrollIndicator={false}
                       keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
                       contentContainerStyle={styles.handleChipsScroll}
                     >
                       {['@upi', '@okhdfcbank', '@okaxis', '@paytm', '@ybl'].map(suffix => (

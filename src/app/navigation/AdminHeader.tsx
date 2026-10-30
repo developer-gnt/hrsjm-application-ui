@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   Image,
   Modal,
@@ -32,8 +32,8 @@ import { useDynamicUnreadCount } from '../../features/admin/notifications/store/
  *
  * FEATURES:
  * 1. Left button:
- *    - Default: Hamburger menu button (☰) that smoothly opens the AdminSidebar.
- *    - If `showBack` or `onBack` is provided: Back arrow (←) that calls `onBack()`.
+ *    - Default: Hamburger menu button (â˜°) that smoothly opens the AdminSidebar.
+ *    - If `showBack` or `onBack` is provided: Back arrow (â†) that calls `onBack()`.
  * 2. Center:
  *    - Default: Official HRSJM brand logo (Golden shield + HRSJM).
  *    - If `title` is provided: Displays page title text cleanly.
@@ -120,9 +120,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 
   const isAdmin = user?.roles?.some(r => r.name === 'ADMIN' || r.name === 'SUPER_ADMIN') ?? false;
   const isMember = Boolean(isMemberHeader || !isAdmin);
-  const shouldShowDonate = Boolean(
-    showDonate !== undefined ? showDonate : isMember
-  );
+  const shouldShowDonate = Boolean(showDonate === true);
 
   const handleDonatePress = () => {
     if (onPressDonate) {
@@ -350,7 +348,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             accessibilityLabel="Go back"
             activeOpacity={0.7}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <Text style={styles.backIcon}>â†</Text>
           </TouchableOpacity>
         ) : showMenu ? (
           <TouchableOpacity
@@ -361,7 +359,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             accessibilityLabel="Open side navigation menu"
             activeOpacity={0.7}
           >
-            <Text style={styles.menuIcon}>☰</Text>
+            <Text style={styles.menuIcon}>â˜°</Text>
           </TouchableOpacity>
         ) : null}
 
@@ -460,7 +458,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               source={{ uri: user?.avatar || DEFAULT_ADMIN_AVATAR }}
               style={styles.avatarImage}
             />
-            <Text style={styles.chevron}>▾</Text>
+            <Text style={styles.chevron}>â–¾</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -501,7 +499,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 {user?.full_name || 'Admin User'}
               </Text>
               <Text style={styles.dropdownEmail} numberOfLines={1}>
-                {user?.email || '—'}
+                {user?.email || 'â€”'}
               </Text>
             </View>
 
@@ -513,7 +511,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               onPress={handleViewProfile}
               activeOpacity={0.7}
             >
-              <Text style={styles.dropdownItemIcon}>👤</Text>
+              <Text style={styles.dropdownItemIcon}>ðŸ‘¤</Text>
               <Text style={styles.dropdownItemText}>View Profile</Text>
             </TouchableOpacity>
 
@@ -525,7 +523,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               onPress={handleSignOut}
               activeOpacity={0.7}
             >
-              <Text style={styles.dropdownItemIcon}>🚪</Text>
+              <Text style={styles.dropdownItemIcon}>ðŸšª</Text>
               <Text style={[styles.dropdownItemText, styles.signOutText]}>
                 Sign Out
               </Text>

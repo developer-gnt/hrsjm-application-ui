@@ -170,17 +170,34 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
   const activeIndex = selectedPointIndex !== null ? selectedPointIndex : coords.length - 1;
   const activePoint = coords[activeIndex] || coords[coords.length - 1];
 
-  // Dynamic tooltip calculation (anchored neatly above the active point)
-  const tooltipWidth = 104;
-  const tooltipHeight = 40;
+  // Dynamic tooltip calculation (anchored neatly relative to active point)
+  const metricLabel = `${activePoint.total} members${activePoint.newCount !== undefined && activePoint.newCount > 0 ? ` (+${activePoint.newCount})` : ''}`;
+  const dateLabel =
+    activePoint.dateLabel ||
+    (activeIndex === coords.length - 1 && latestLabel
+      ? latestLabel
+      : `${activePoint.label} 2026`);
+
+  const maxTextLen = Math.max(metricLabel.length, dateLabel.length);
+  // Calculate tooltip dimensions with generous horizontal and vertical padding to prevent text overflow/overlap
+  const tooltipWidth = Math.max(136, Math.round(maxTextLen * 7.5 + 28));
+  const tooltipHeight = 44;
+
   const clampedX = Math.max(
     PADDING.left + tooltipWidth / 2,
     Math.min(WIDTH - PADDING.right - tooltipWidth / 2, activePoint.x),
   );
-  const tooltipY =
-    activePoint.y - tooltipHeight - 12 < PADDING.top - 10
-      ? activePoint.y + 12
-      : activePoint.y - tooltipHeight - 12;
+
+  const tooltipMargin = 10;
+  let tooltipY = activePoint.y - tooltipHeight - tooltipMargin;
+  if (tooltipY < 6) {
+    // If placing above would overflow the top of the chart, place below the point
+    tooltipY = activePoint.y + tooltipMargin + 6;
+  }
+  // If placing below would collide with X-axis labels at bottom, clamp it
+  if (tooltipY + tooltipHeight > HEIGHT - 18) {
+    tooltipY = Math.max(6, activePoint.y - tooltipHeight - tooltipMargin);
+  }
 
   // Growth calculation for the header metric badge
   const firstPoint = coords[0];
@@ -336,27 +353,24 @@ export const MembershipGrowthCard: React.FC<MembershipGrowthCardProps> = ({
               {/* Tooltip Date Label */}
               <SvgText
                 x={clampedX}
-                y={tooltipY + 14}
+                y={tooltipY + 16}
                 fontSize={9}
                 fontWeight="600"
                 fill="#94A3B8"
                 textAnchor="middle"
               >
-                {activePoint.dateLabel ||
-                  (activeIndex === coords.length - 1 && latestLabel
-                    ? latestLabel
-                    : `${activePoint.label} 2026`)}
+                {dateLabel}
               </SvgText>
               {/* Tooltip Metric Value */}
               <SvgText
                 x={clampedX}
-                y={tooltipY + 30}
+                y={tooltipY + 33}
                 fontSize={11.5}
                 fontWeight="800"
                 fill="#FFFFFF"
                 textAnchor="middle"
               >
-                {`${activePoint.total} members${activePoint.newCount !== undefined && activePoint.newCount > 0 ? ` (+${activePoint.newCount})` : ''}`}
+                {metricLabel}
               </SvgText>
             </G>
           ) : null}

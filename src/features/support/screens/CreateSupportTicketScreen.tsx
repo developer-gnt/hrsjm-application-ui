@@ -145,6 +145,7 @@ export const CreateSupportTicketScreen: React.FC<CreateSupportTicketScreenProps>
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           <View style={styles.contentWrap}>
             {/* Back link */}

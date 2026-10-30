@@ -280,6 +280,7 @@ export const EventForm: React.FC<EventFormProps> = ({
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
           >
             {/* 2. Page Introduction */}

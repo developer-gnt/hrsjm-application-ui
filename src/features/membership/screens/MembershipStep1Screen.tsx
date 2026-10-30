@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -309,22 +309,9 @@ export function MembershipStep1Screen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Top Header */}
-      <MembershipTopBar
-        showBack
-        onBackPress={() => {
-          if (navigation.canGoBack()) {
-            navigation.goBack();
-          } else {
-            try {
-              (navigation as any).navigate('MembershipCategories');
-            } catch {
-              (navigation as any).navigate('UserHome');
-            }
-          }
-        }}
-      />
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      {/* Top Header matching Admin Dashboard */}
+      <MembershipTopBar />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -333,7 +320,8 @@ export function MembershipStep1Screen() {
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag">
           {/* Main Title */}
           <View style={styles.titleSection}>
             <Text style={styles.screenTitle}>Apply for Membership</Text>
@@ -353,7 +341,7 @@ export function MembershipStep1Screen() {
                   <Text style={styles.selectedPostLabel}>Applying For</Text>
                   <Text style={styles.selectedPostTitle}>{activePost.postName}</Text>
                   <Text style={styles.selectedPostSub}>
-                    {activePost.qualification} • {activePost.validity} Duration
+                    {activePost.qualification} â€¢ {activePost.validity} Duration
                   </Text>
                 </View>
               </View>

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -381,14 +383,19 @@ export function MembershipStep3Screen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Top Header */}
-      <MembershipTopBar showBack onBackPress={() => navigation.goBack()} />
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      {/* Top Header matching Admin Dashboard */}
+      <MembershipTopBar />
 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardAvoid}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag">
         {/* Main Title */}
         <View style={styles.titleSection}>
           <Text style={styles.screenTitle}>Apply for Membership</Text>
@@ -560,10 +567,10 @@ export function MembershipStep3Screen() {
             </View>
             <View style={styles.feeHeaderText}>
               <Text style={styles.feeTitle}>Registration Fee & Benefits</Text>
-              <Text style={styles.feeCategory}>{postTitle} • {postValidity}</Text>
+              <Text style={styles.feeCategory}>{postTitle} â€¢ {postValidity}</Text>
             </View>
             <View style={styles.feeBadge}>
-              <Text style={styles.feeBadgeText}>₹{postFeeAmount}</Text>
+              <Text style={styles.feeBadgeText}>â‚¹{postFeeAmount}</Text>
             </View>
           </View>
 
@@ -610,13 +617,13 @@ export function MembershipStep3Screen() {
             onPress={handleProceedToPayment}
             disabled={submitting}
             accessibilityRole="button"
-            accessibilityLabel={`Pay ₹${postFeeAmount} & Submit Application`}>
+            accessibilityLabel={`Pay â‚¹${postFeeAmount} & Submit Application`}>
             {submitting ? (
               <ActivityIndicator size="small" color="#011F39" />
             ) : (
               <View style={styles.btnContentRow}>
                 <Icon name="award" size={16} color="#011F39" strokeWidth={2.4} />
-                <Text style={styles.submitBtnText}>Pay ₹{postFeeAmount} & Submit</Text>
+                <Text style={styles.submitBtnText}>Pay â‚¹{postFeeAmount} & Submit</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -629,6 +636,7 @@ export function MembershipStep3Screen() {
           </Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Interactive Document Picker Bottom Sheet */}
       <AppBottomSheet
@@ -800,6 +808,9 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,

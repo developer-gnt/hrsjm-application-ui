@@ -385,6 +385,7 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
     />
   );
 
+
   const handleSidebarNavigate = (target: string) => {
     setSidebarVisible(false);
     if (navigation?.navigate) {
@@ -476,6 +477,7 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
           onTabPress={handleBottomTabPress}
         />
       )}
+
 
       <AdminSidebar
         visible={sidebarVisible}

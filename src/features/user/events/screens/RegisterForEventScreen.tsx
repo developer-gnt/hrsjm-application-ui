@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.md,
+    paddingBottom: 60,
   },
   pageTitle: {
     marginTop: Spacing.sm,

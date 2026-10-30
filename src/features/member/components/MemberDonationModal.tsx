@@ -263,6 +263,7 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
               contentContainerStyle={styles.formContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
             >
               {/* Header */}
               <View style={styles.modalHeaderRow}>

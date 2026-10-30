@@ -99,6 +99,7 @@ export type MoreStackParamList = {
   [AppRoutes.EDIT_PERSONAL_INFO]: undefined;
   [AppRoutes.MY_ID_CARD]: undefined;
   [AppRoutes.ABOUT]: undefined;
+  WhatWeDoDetail: { contentId?: string };
   [AppRoutes.KNOW_YOUR_RIGHTS]: undefined;
   [AppRoutes.RIGHT_DETAILS]: { article?: any; rightId?: string };
   [AppRoutes.CREATE_RIGHT]: undefined;

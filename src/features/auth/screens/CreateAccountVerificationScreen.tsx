@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  KeyboardAvoidingView,
   TouchableOpacity,
   useWindowDimensions,
   Platform,
@@ -448,6 +449,10 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -455,6 +460,8 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
           isTabletOrDesktop && { alignItems: 'center' },
         ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <View style={[styles.mainWrapper, { width: contentMaxWidth }]}>
           {/* 1. Header with Back Button & Centered Screen Title */}
@@ -860,6 +867,7 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
           </View>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* File Preview Modal */}
       <Modal
@@ -951,7 +959,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 60,
   },
   mainWrapper: {
     width: '100%',

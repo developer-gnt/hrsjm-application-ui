@@ -117,6 +117,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
         style={styles.flex}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         bounces={false}
         showsVerticalScrollIndicator={false}
       >
@@ -301,6 +302,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 40,
     backgroundColor: '#011F39',
   },
   headerBand: {

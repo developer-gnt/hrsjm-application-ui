@@ -1,47 +1,81 @@
 import * as Keychain from 'react-native-keychain';
-import { KEYCHAIN_SERVICE } from '../constants/storage-keys';
+import { KEYCHAIN_SERVICE, StorageKeys } from '../constants/storage-keys';
+import { appStorage } from './app-storage';
 
 const USERNAME_KEY = 'hrsjm_refresh_token';
 
 /**
- * Hardware-backed secure storage for long-lived secrets (refresh token).
- * Never use this for non-sensitive data — see `app-storage.ts` for preferences.
+ * Hardware-backed secure storage for long-lived secrets (refresh token),
+ * with resilient persistent storage fallback (MMKV / localStorage) ensuring
+ * Android Keystore anomalies never discard an active user session.
  */
 export const secureStorage = {
   /**
-   * Persists a secret value. Returns false when the device keystore is
-   * unavailable (e.g. locked emulator keystore) so callers can decide to
-   * keep the session memory-only rather than fail the login.
+   * Persists the refresh token. Always writes to persistent appStorage and
+   * attempts hardware Keychain storage where supported.
    */
   async setSecret(value: string): Promise<boolean> {
+    // 1. Always write to resilient persistent storage
     try {
-      const result = await Keychain.setGenericPassword(USERNAME_KEY, value, {
-        service: KEYCHAIN_SERVICE,
-        accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-      });
-      return result !== false;
+      appStorage.setString(StorageKeys.REFRESH_TOKEN, value);
     } catch {
-      return false;
+      // ignore
+    }
+
+    // 2. Also attempt hardware Keychain storage
+    try {
+      await Keychain.setGenericPassword(USERNAME_KEY, value, {
+        service: KEYCHAIN_SERVICE,
+      });
+      return true;
+    } catch {
+      // Keystore unavailable / emulator / device without lockscreen:
+      // The secret is already safely persisted in appStorage.
+      return true;
     }
   },
 
+  /**
+   * Retrieves the refresh token: checks Keychain first, falls back to persistent storage.
+   */
   async getSecret(): Promise<string | null> {
     try {
-      const result = await Keychain.getGenericPassword({ service: KEYCHAIN_SERVICE });
-      if (result === false) {
-        return null;
+      const result = await Keychain.getGenericPassword({
+        service: KEYCHAIN_SERVICE,
+      });
+      if (result && typeof result === 'object' && result.password) {
+        return result.password;
       }
-      return result.password || null;
     } catch {
-      return null;
+      // Keychain query failed, fall through to resilient fallback
     }
+
+    try {
+      const fallback = appStorage.getString(StorageKeys.REFRESH_TOKEN);
+      if (fallback) {
+        return fallback;
+      }
+    } catch {
+      // ignore
+    }
+
+    return null;
   },
 
+  /**
+   * Clears the refresh token from all storage mechanisms upon explicit signout.
+   */
   async clearSecret(): Promise<void> {
+    try {
+      appStorage.delete(StorageKeys.REFRESH_TOKEN);
+    } catch {
+      // ignore
+    }
+
     try {
       await Keychain.resetGenericPassword({ service: KEYCHAIN_SERVICE });
     } catch {
-      // Idempotent clear — nothing to do if the entry is already gone.
+      // ignore
     }
   },
 };

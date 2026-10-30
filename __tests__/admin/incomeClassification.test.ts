@@ -18,7 +18,7 @@ describe('Income Receipt Classification & Source Detection', () => {
       payment_method: 'UPI',
       reference_number: '1468214492702356480',
       description:
-        '[Website Donation] Donation for Cause: HRSJM Donation - Awareness and Education | Donor: Mubasshir Farooqui (9888880005 / user@hrsjm.org) | Status: Registered User: Mubasshir Farooqui (9888880005) | Source: Donation for HRSJM Donation - Awareness and Education | Payment ID: 1468214492702356480',
+        '[Application Donation] Donation for Cause: HRSJM Donation - Awareness and Education | Donor: Mubasshir Farooqui (9888880005 / user@hrsjm.org) | Status: Registered User: Mubasshir Farooqui (9888880005) | Source: Donation for HRSJM Donation - Awareness and Education | Payment ID: 1468214492702356480',
       attachment_url: null,
       status: 'POSTED',
       accounting_entry_id: 'ae-1',

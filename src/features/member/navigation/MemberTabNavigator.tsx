@@ -34,6 +34,7 @@ import { SupportTicketsScreen } from '../../support';
 import { NotificationsScreen } from '../../admin/notifications';
 import { AppRoutes } from '../../../core/constants/routes';
 import { AboutScreen } from '../../user/about';
+import { WhatWeDoDetailScreen } from '../../user/what-we-do';
 import { NewsListScreen, NewsDetailsScreen } from '../../admin/content/news';
 import { BlogsListScreen, BlogDetailsScreen } from '../../admin/content/blogs';
 import { ProfileSettingsScreen } from '../../admin/settings';
@@ -378,6 +379,7 @@ export const MemberTabNavigator: React.FC = () => {
         {({ navigation }) => (
           <AboutScreen
             onBack={navigation.goBack}
+            onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail' as any, { contentId })}
             onNavigate={(target) => {
               if (target === 'KnowYourRights' || target === 'rights') {
                 navigation.navigate('KnowYourRights');
@@ -395,6 +397,26 @@ export const MemberTabNavigator: React.FC = () => {
             onOpenContact={() => navigation.navigate('MemberProfile')}
             onOpenEvents={() => navigation.navigate('MemberEvents')}
             onOpenNews={() => navigation.navigate('News')}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="WhatWeDoDetail"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <WhatWeDoDetailScreen
+            contentId={route.params?.contentId || 'human-rights-monitoring'}
+            hideBottomNav={true}
+            showBottomNav={false}
+            onBack={navigation.goBack}
+            onOpenHome={() => navigation.navigate('MemberHome')}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenRights={() => navigation.navigate('KnowYourRights')}
+            onOpenEvents={() => navigation.navigate('MemberEvents')}
+            onOpenNews={() => navigation.navigate('News')}
+            onOpenContact={() => navigation.navigate('MemberProfile')}
           />
         )}
       </Tab.Screen>

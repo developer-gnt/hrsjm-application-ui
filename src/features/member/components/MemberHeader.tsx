@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { AdminHeader, AdminHeaderProps } from '../../../app/navigation/AdminHeader';
 
@@ -10,7 +10,7 @@ export interface MemberHeaderProps extends AdminHeaderProps {
 
 /**
  * Unified institutional header for Member Portal matching Admin design:
- * - Hamburger menu (☰)
+ * - Hamburger menu (â˜°)
  * - Official Emblem & HRSJM Brand Logo
  * - Donate Now button (matching User header experience)
  * - Notification Bell with badge counter
@@ -32,7 +32,7 @@ export const MemberHeader: React.FC<MemberHeaderProps> = props => {
   return (
     <AdminHeader
       isMemberHeader={true}
-      showDonate={props.showDonate ?? true}
+      showDonate={props.showDonate ?? false}
       onPressDonate={handleDonate}
       {...props}
       onPressNotifications={props.onNotificationsPress || props.onPressNotifications}

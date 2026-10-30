@@ -350,7 +350,7 @@ export const BlogForm: React.FC<BlogFormProps> = ({
     categoryPickerVisible ||
     statusPickerVisible;
 
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<any>(null);
 
   useEffect(() => {
     // Ensure form starts at top on open
@@ -525,6 +525,7 @@ export const BlogForm: React.FC<BlogFormProps> = ({
             ref={scrollViewRef}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
           >
             {/* Page title block */}

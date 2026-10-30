@@ -296,6 +296,7 @@ export const EditPersonalInfoScreen: React.FC<EditPersonalInfoScreenProps> = ({
           style={styles.flex}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           <Text style={styles.pageTitle}>Edit Personal Information</Text>
@@ -425,7 +426,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 60,
   },
   pageTitle: {
     fontSize: 24,
