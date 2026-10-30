@@ -11,6 +11,7 @@ import {
 import { MemberCause } from '../types/causes.types';
 import { FontFamilies } from '../../../core/theme/typography';
 import { BorderRadius } from '../../../core/theme/spacing';
+import { Check, Heart, MapPin, Users } from '../../../core/components/icons';
 
 interface CauseCardProps {
   cause: MemberCause;
@@ -133,13 +134,13 @@ export const CauseCard: React.FC<CauseCardProps> = ({
         {/* Location & Beneficiaries Meta */}
         <View style={styles.metaRow}>
           <View style={styles.metaPill}>
-            <Text style={styles.metaPillIcon}>📍</Text>
+            <MapPin size={12} color="#64748B" strokeWidth={2} />
             <Text style={styles.metaText} numberOfLines={1}>
               {cause.location}
             </Text>
           </View>
           <View style={styles.metaPill}>
-            <Text style={styles.metaPillIcon}>👥</Text>
+            <Users size={12} color="#64748B" strokeWidth={2} />
             <Text style={styles.metaText} numberOfLines={1}>
               {cause.targetBeneficiaries}
             </Text>
@@ -200,9 +201,11 @@ export const CauseCard: React.FC<CauseCardProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`Donate to ${cause.title}`}
           >
-            <Text style={styles.donateHeartIcon}>
-              {isCompleted ? '✓' : '💛'}
-            </Text>
+            {isCompleted ? (
+              <Check size={14} color="#FFFFFF" strokeWidth={2.5} />
+            ) : (
+              <Heart size={14} color="#0B2F52" strokeWidth={2} />
+            )}
             <Text style={styles.donateBtnText}>
               {isCompleted ? 'Goal Reached' : 'Donate'}
             </Text>

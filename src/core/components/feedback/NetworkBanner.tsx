@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { AdminColors } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
 import { Spacing } from '../../theme/spacing';
+import { Zap } from '../icons';
 
 interface NetworkBannerProps {
   isConnected?: boolean;
@@ -19,7 +20,7 @@ export const NetworkBanner: React.FC<NetworkBannerProps> = ({
 
   return (
     <View style={styles.banner}>
-      <Text style={styles.icon}>📡</Text>
+      <Zap size={14} color="#FFFFFF" strokeWidth={2} style={styles.icon} />
       <Text style={styles.text}>{message}</Text>
     </View>
   );

@@ -23,6 +23,7 @@ import {
   UserProfileModal,
 } from '../../../auth/components/UserProfileModal';
 import { useDynamicUnreadCount } from '../../../admin/notifications/store/notificationsStore';
+import { LogOut, User } from '../../../../core/components/icons';
 
 const LOGO_SOURCE = require('../../../../assets/logo/logo.png');
 
@@ -369,7 +370,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               onPress={handleOpenProfile}
               activeOpacity={0.7}
             >
-              <Text style={styles.dropdownItemIcon}>👤</Text>
+              <User size={16} color="#1E3A8A" strokeWidth={2} style={styles.dropdownItemIcon} />
               <Text style={styles.dropdownItemText}>View Profile</Text>
             </TouchableOpacity>
 
@@ -381,7 +382,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               onPress={handleSignOut}
               activeOpacity={0.7}
             >
-              <Text style={styles.dropdownItemIcon}>🚪</Text>
+              <LogOut size={16} color="#DC2626" strokeWidth={2} style={styles.dropdownItemIcon} />
               <Text style={[styles.dropdownItemText, styles.signOutText]}>
                 Sign Out
               </Text>
@@ -621,7 +622,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   dropdownItemIcon: {
-    fontSize: 16,
     marginRight: 10,
   },
   dropdownItemText: {

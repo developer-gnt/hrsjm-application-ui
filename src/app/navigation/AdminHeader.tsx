@@ -22,6 +22,7 @@ import {
 } from '../../features/auth/components/UserProfileModal';
 import { AdminSidebar } from './AdminSidebar';
 import { useDynamicUnreadCount } from '../../features/admin/notifications/store/notificationsStore';
+import { ChevronLeft, LogOut, Menu, User } from '../../core/components/icons';
 
 /**
  * ============================================================================
@@ -350,7 +351,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             accessibilityLabel="Go back"
             activeOpacity={0.7}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <ChevronLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
           </TouchableOpacity>
         ) : showMenu ? (
           <TouchableOpacity
@@ -361,7 +362,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             accessibilityLabel="Open side navigation menu"
             activeOpacity={0.7}
           >
-            <Text style={styles.menuIcon}>☰</Text>
+            <Menu size={22} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
         ) : null}
 
@@ -513,7 +514,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               onPress={handleViewProfile}
               activeOpacity={0.7}
             >
-              <Text style={styles.dropdownItemIcon}>👤</Text>
+              <User size={16} color="#1E3A8A" strokeWidth={2} style={styles.dropdownItemIcon} />
               <Text style={styles.dropdownItemText}>View Profile</Text>
             </TouchableOpacity>
 
@@ -525,7 +526,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               onPress={handleSignOut}
               activeOpacity={0.7}
             >
-              <Text style={styles.dropdownItemIcon}>🚪</Text>
+              <LogOut size={16} color="#DC2626" strokeWidth={2} style={styles.dropdownItemIcon} />
               <Text style={[styles.dropdownItemText, styles.signOutText]}>
                 Sign Out
               </Text>
@@ -726,7 +727,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   dropdownItemIcon: {
-    fontSize: 16,
     marginRight: 10,
   },
   dropdownItemText: {

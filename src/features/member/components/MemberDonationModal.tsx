@@ -18,6 +18,7 @@ import { causesService } from '../services/causes.service';
 import { useAuthStore } from '../../auth/store/authStore';
 import { GlobalPaymentModal, PaymentPayload, PaymentReceiptDetails } from '../../payments';
 import { FontFamilies } from '../../../core/theme/typography';
+import { CheckCircle2, Lock } from '../../../core/components/icons';
 
 interface MemberDonationModalProps {
   visible: boolean;
@@ -201,7 +202,7 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.successCheckIcon}>
-                <Text style={styles.successEmoji}>🎉</Text>
+                <CheckCircle2 size={36} color="#059669" strokeWidth={2} />
               </View>
 
               <Text style={styles.successTitle}>Thank You for Your Support!</Text>
@@ -441,9 +442,12 @@ export const MemberDonationModal: React.FC<MemberDonationModalProps> = ({
                 </Text>
               </TouchableOpacity>
 
-              <Text style={styles.securePaymentNotice}>
-                🔒 256-Bit SSL Encrypted & Verified NGO Payment Gateway
-              </Text>
+              <View style={styles.secureNoticeRow}>
+                <Lock size={12} color="#64748B" strokeWidth={2} />
+                <Text style={styles.securePaymentNotice}>
+                  256-Bit SSL Encrypted & Verified NGO Payment Gateway
+                </Text>
+              </View>
             </ScrollView>
           )}
         </View>
@@ -697,6 +701,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#011F39',
     letterSpacing: 0.3,
+  },
+  secureNoticeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
   },
   securePaymentNotice: {
     fontFamily: FontFamilies.sans,

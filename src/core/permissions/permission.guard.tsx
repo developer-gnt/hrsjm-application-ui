@@ -4,6 +4,7 @@ import { AdminColors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
 import { canAll, canAny } from './can';
+import { Lock } from '../components/icons';
 
 interface PermissionGateProps {
   permissions: string[];
@@ -41,7 +42,7 @@ export const PermissionGate: React.FC<PermissionGateProps> = ({
  */
 export const PermissionDenied: React.FC = () => (
   <View style={styles.container}>
-    <Text style={styles.icon}>🔒</Text>
+    <Lock size={44} color="#DC2626" strokeWidth={1.8} style={{ marginBottom: Spacing.md }} />
     <Text style={styles.title}>Permission required</Text>
     <Text style={styles.message}>
       You don't have permission to access this section. Contact an HRSJM

@@ -550,7 +550,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
 
                   {actualDocs.length === 0 ? (
                     <View style={styles.emptyDocsWrap}>
-                      <Text style={styles.emptyDocsIcon}>📁</Text>
+                      <FileText size={36} color="#94A3B8" strokeWidth={1.5} style={{ marginBottom: 8 }} />
                       <Text style={styles.emptyDocsTitle}>No Documents Uploaded</Text>
                       <Text style={styles.emptyDocsSubtitle}>
                         No verification documents have been uploaded for this member.

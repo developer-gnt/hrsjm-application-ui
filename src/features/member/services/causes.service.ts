@@ -52,7 +52,7 @@ class CausesService {
 
         let categoryKey: any = 'education';
         let category = 'Education';
-        let categoryIcon = '📚';
+        let categoryIcon = '';
         let defaultImg = 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&auto=format&fit=crop&q=80';
 
         if (
@@ -64,7 +64,7 @@ class CausesService {
         ) {
           categoryKey = 'healthcare';
           category = 'Healthcare';
-          categoryIcon = '🏥';
+          categoryIcon = '';
           defaultImg = 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=600&auto=format&fit=crop&q=80';
         } else if (
           text.includes('food') ||
@@ -75,7 +75,7 @@ class CausesService {
         ) {
           categoryKey = 'relief';
           category = 'Relief';
-          categoryIcon = '🍲';
+          categoryIcon = '';
           defaultImg = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=600&auto=format&fit=crop&q=80';
         } else if (
           text.includes('wom') ||
@@ -85,7 +85,7 @@ class CausesService {
         ) {
           categoryKey = 'women';
           category = 'Women';
-          categoryIcon = '👩‍🏫';
+          categoryIcon = '';
           defaultImg = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format&fit=crop&q=80';
         } else if (
           text.includes('tree') ||
@@ -95,7 +95,7 @@ class CausesService {
         ) {
           categoryKey = 'environment';
           category = 'Environment';
-          categoryIcon = '🌱';
+          categoryIcon = '';
           defaultImg = 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80';
         }
 

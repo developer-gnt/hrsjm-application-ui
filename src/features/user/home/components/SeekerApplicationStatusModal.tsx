@@ -13,6 +13,7 @@ import { useAuthStore } from '../../../auth/store/authStore';
 import { usersStore } from '../../../admin/users/services/usersStore';
 import { AdminColors } from '../../../../core/theme';
 import { UserItem } from '../../../admin/users/types/user.types';
+import { FileText } from '../../../../core/components/icons';
 
 interface SeekerApplicationStatusModalProps {
   visible: boolean;
@@ -188,7 +189,7 @@ export const SeekerApplicationStatusModal: React.FC<SeekerApplicationStatusModal
                     <Text style={styles.sectionHeading}>Submitted Documents</Text>
                     {userItem.documents.map((doc, idx) => (
                       <View key={doc.id || idx} style={styles.docItemRow}>
-                        <Text style={styles.docIcon}>📄</Text>
+                        <FileText size={18} color="#64748B" strokeWidth={2} style={styles.docIcon} />
                         <View style={{ flex: 1 }}>
                           <Text style={styles.docTitle}>{doc.title}</Text>
                           <Text style={styles.docSub}>{doc.fileName} • {doc.fileSize}</Text>
@@ -476,7 +477,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   docIcon: {
-    fontSize: 20,
+    marginRight: 2,
   },
   docTitle: {
     fontSize: 13,
