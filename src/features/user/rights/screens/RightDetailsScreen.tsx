@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import {
   Alert,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -240,6 +241,213 @@ const CompactCard: React.FC<{
   );
 };
 
+
+interface RightCardDetailData {
+  title: string;
+  description: string;
+  icon?: any;
+  iconColor?: string;
+  legalBasis: string;
+  safeguards: string[];
+}
+
+const getCardDetailInfo = (item: RightsContentCard, rightTitle: string): RightCardDetailData => {
+  const titleLower = item.title.toLowerCase();
+  let legalBasis = 'Constitution of India • Protection of Human Rights Act 1993';
+  let safeguards = [
+    'Direct standing to report violations before competent judicial and human rights forums.',
+    'Access to district legal aid authorities and state commission grievance cells.',
+    'HRSJM verified legal advocacy intervention and non-discrimination protection.',
+  ];
+
+  if (titleLower.includes('safety') || titleLower.includes('violence') || titleLower.includes('protection') || titleLower.includes('pocso') || titleLower.includes('abuse')) {
+    legalBasis = 'Protection of Women from Domestic Violence Act 2005 • POCSO Act 2012 • IPC/BNS Section 354, 509';
+    safeguards = [
+      'Immediate Right to Reside in shared household without threat of forceful dispossession.',
+      'Protection Orders enforceable through Protection Officers, CWCs & Judicial Magistrates.',
+      '24x7 HRSJM Legal Support Desk & National Helpline 1091 / 1098 / 112 emergency escalation.',
+    ];
+  } else if (titleLower.includes('education') || titleLower.includes('school') || titleLower.includes('rte') || titleLower.includes('learning')) {
+    legalBasis = 'Right of Children to Free and Compulsory Education (RTE) Act 2009 • Article 21A';
+    safeguards = [
+      'Mandatory free education for children 6 to 14 years in recognized neighbourhood schools.',
+      '25% reservation for economically weaker and disadvantaged sections in private schools.',
+      'Zero capitation fee, physical screening or documentation rejection during admission.',
+    ];
+  } else if (titleLower.includes('child') || titleLower.includes('minor') || titleLower.includes('labour')) {
+    legalBasis = 'Child Labour (Prohibition) Act 1986 • Juvenile Justice Act 2015 • POCSO Act 2012';
+    safeguards = [
+      'Absolute prohibition of hazardous and non-hazardous commercial child employment.',
+      'Mandatory child welfare committee rehabilitation and state-funded foster shelter aid.',
+      'Statutory legal representation for minors with complete privacy & identity confidentiality.',
+    ];
+  } else if (titleLower.includes('work') || titleLower.includes('employment') || titleLower.includes('pay') || titleLower.includes('wage') || titleLower.includes('pf')) {
+    legalBasis = 'Code on Wages 2019 • Equal Remuneration Act 1976 • POSH Act 2013 • Articles 16 & 39(d)';
+    safeguards = [
+      'Equal floor wage payment for equal work with zero gender or background disparity.',
+      'Mandatory Internal Complaints Committee (ICC) in every establishment with 10+ employees.',
+      'Right to safe, dignified workplace conditions, overtime pay and statutory PF/ESI benefits.',
+    ];
+  } else if (titleLower.includes('health') || titleLower.includes('nutrition') || titleLower.includes('medical') || titleLower.includes('geriatric')) {
+    legalBasis = 'Article 21 (Right to Health & Dignity) • National Food Security Act • Maintenance of Parents Act';
+    safeguards = [
+      'Universal access to public primary healthcare, senior hospital priority and maternal services.',
+      'Nutritional entitlements through Anganwadi centers and government supplementary nutrition schemes.',
+      'Confidential medical examination and emergency stabilization care in all public & private hospitals.',
+    ];
+  } else if (titleLower.includes('elder') || titleLower.includes('senior') || titleLower.includes('maintenance') || titleLower.includes('parent')) {
+    legalBasis = 'Maintenance and Welfare of Parents and Senior Citizens Act 2007 • Article 41';
+    safeguards = [
+      'Right to claim monthly maintenance from children or legal heirs through Sub-Divisional Tribunals.',
+      'Section 23 revocation of property gift deeds if children refuse basic amenities and care.',
+      'Severe criminal penalties for abandonment of senior citizens in public or healthcare facilities.',
+    ];
+  } else if (titleLower.includes('information') || titleLower.includes('rti') || titleLower.includes('transparency') || titleLower.includes('record')) {
+    legalBasis = 'Right to Information Act 2005 • Article 19(1)(a) Constitutional Transparency';
+    safeguards = [
+      'Mandatory 30-day timeline for public authorities to provide certified records and documents.',
+      'Strict daily financial penalty up to ₹25,000 on Public Information Officers refusing disclosure.',
+      'Two-tier independent appeal mechanism to First Appellate Authority and State/Central Information Commission.',
+    ];
+  } else if (titleLower.includes('speech') || titleLower.includes('expression') || titleLower.includes('press') || titleLower.includes('assembly') || titleLower.includes('protest')) {
+    legalBasis = 'Article 19(1)(a) & 19(1)(b) of the Constitution of India • Landmark Supreme Court Precedents';
+    safeguards = [
+      'Freedom of thought, expression, journalistic investigation and peaceful public assembly without weapons.',
+      'High constitutional bar on executive censorship or pre-publication restraints.',
+      'Judicial protection against frivolous police harassment or unlawful protest dispersal.',
+    ];
+  } else if (titleLower.includes('privacy') || titleLower.includes('arrest') || titleLower.includes('custody') || titleLower.includes('liberty') || titleLower.includes('bail')) {
+    legalBasis = 'Article 21 (Right to Life & Personal Liberty) • Supreme Court D.K. Basu Directives • BNSS / CrPC';
+    safeguards = [
+      'Mandatory prepared arrest memo, immediate family notification and medical checkup every 48 hours.',
+      'Compulsory production before nearest Judicial Magistrate within 24 hours of detention.',
+      'Constitutional right to privacy against unauthorized surveillance, data extraction and wiretapping.',
+    ];
+  } else if (titleLower.includes('minority') || titleLower.includes('religion') || titleLower.includes('faith') || titleLower.includes('language')) {
+    legalBasis = 'Articles 25, 26, 29 & 30 of the Constitution • National Commission for Minorities Act 1992';
+    safeguards = [
+      'Right of religious and linguistic minorities to establish and administer educational institutions.',
+      'Constitutional parity in government grants and financial aid without minority prejudice.',
+      'Complete freedom of conscience and protection against hate crimes and discriminatory slurs.',
+    ];
+  } else if (titleLower.includes('property') || titleLower.includes('inheritance')) {
+    legalBasis = 'Hindu Succession (Amendment) Act 2005 • Indian Succession Act 1925 • Article 300A';
+    safeguards = [
+      'Equal coparcenary rights by birth in ancestral property for all daughters and sons.',
+      'Unrestricted ownership and testamentary disposition rights over self-acquired assets.',
+      'Direct judicial injunctions against fraudulent property transfer or unlawful eviction.',
+    ];
+  } else if (titleLower.includes('equality') || titleLower.includes('discrimination') || titleLower.includes('human') || titleLower.includes('fundamental') || titleLower.includes('remedy') || titleLower.includes('writ')) {
+    legalBasis = 'Article 14 (Equality Before Law) • Article 15 (Prohibition of Discrimination) • Article 32 Writs';
+    safeguards = [
+      'Constitutional guarantee against discrimination on grounds of religion, race, caste, sex or birth.',
+      'Direct standing to move Supreme Court (Article 32) or High Court (Article 226) via prerogative writs.',
+      'Statutory legal aid through National Legal Services Authority (NALSA) and state grievance cells.',
+    ];
+  }
+
+  return {
+    title: item.title,
+    description: item.description || ("Statutory and constitutional legal rights guaranteed under " + rightTitle + "."),
+    icon: item.icon,
+    iconColor: item.iconColor,
+    legalBasis,
+    safeguards,
+  };
+};
+
+const RightCardDetailModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  data: RightCardDetailData | null;
+  onFileComplaint: () => void;
+  onOpenContact: () => void;
+  onSelectCard: (data: RightCardDetailData) => void;
+}> = ({ visible, onClose, data, onFileComplaint, onOpenContact }) => {
+  if (!data) return null;
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={modalStyles.backdrop}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <View style={modalStyles.card}>
+          <View style={modalStyles.header}>
+            <View style={modalStyles.iconWrap}>
+              <AppIcon name={data.icon || 'scale'} size={20} color={AdminColors.primaryDark} />
+            </View>
+            <View style={modalStyles.headerTitleWrap}>
+              <Text style={modalStyles.badge}>LEGAL SAFEGUARD & STATUTORY RIGHT</Text>
+              <Text style={modalStyles.title} numberOfLines={2}>{data.title}</Text>
+            </View>
+            <TouchableOpacity
+              onPress={onClose}
+              style={modalStyles.closeBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Close modal"
+            >
+              <AppIcon name="close" size={18} color="#64748B" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={modalStyles.body} showsVerticalScrollIndicator={false}>
+            <Text style={modalStyles.description}>{data.description}</Text>
+
+            <View style={modalStyles.sectionBox}>
+              <Text style={modalStyles.sectionBoxTitle}>Statutory & Constitutional Basis</Text>
+              <Text style={modalStyles.sectionBoxText}>{data.legalBasis}</Text>
+            </View>
+
+            <View style={modalStyles.sectionBox}>
+              <Text style={modalStyles.sectionBoxTitle}>Citizen Rights & Protections</Text>
+              {data.safeguards.map((item, idx) => (
+                <View key={idx} style={modalStyles.bulletRow}>
+                  <Text style={modalStyles.bulletDot}>•</Text>
+                  <Text style={modalStyles.bulletText}>{item}</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={modalStyles.actionRow}>
+              <TouchableOpacity
+                style={modalStyles.complaintBtn}
+                onPress={() => {
+                  onClose();
+                  onFileComplaint();
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={modalStyles.complaintBtnText}>File a Grievance / Complaint</Text>
+                <AppIcon name="arrow-right" size={13} color="#FFFFFF" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={modalStyles.contactBtn}
+                onPress={() => {
+                  onClose();
+                  onOpenContact();
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={modalStyles.contactBtnText}>Contact HRSJM Legal Cell</Text>
+                <AppIcon name="arrow-right" size={13} color="#06294D" />
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 const RightsDetailsContentView: React.FC<{
   content: RightDetailsContent;
   compactTopics: boolean;
@@ -249,6 +457,7 @@ const RightsDetailsContentView: React.FC<{
   onOpenRight: (rightId: string) => void;
   onFileComplaint: () => void;
   onOpenContact: () => void;
+  onSelectCard: (data: RightCardDetailData) => void;
 }> = ({
   content,
   compactTopics,
@@ -258,6 +467,7 @@ const RightsDetailsContentView: React.FC<{
   onOpenRight,
   onFileComplaint,
   onOpenContact,
+  onSelectCard,
 }) => {
   const titleWords = content.title.split(' ');
   const titleAccent = titleWords.pop() ?? '';
@@ -272,7 +482,7 @@ const RightsDetailsContentView: React.FC<{
       onOpenContact();
       return;
     }
-    notifyComingSoon(item.title);
+    onSelectCard(getCardDetailInfo(item, content.title));
   };
 
   return (
@@ -355,7 +565,16 @@ const RightsDetailsContentView: React.FC<{
           <View onLayout={event => setSectionLayout('keyAreas', event)}>
             <SectionTitle
               title="Key Areas"
-              onViewAll={() => scrollTo('keyAreas')}
+              onViewAll={() => {
+                onSelectCard({
+                  title: `All Key Areas & Protections - ${content.title}`,
+                  description: `Comprehensive guide to all statutory and constitutional legal rights under ${content.title}.`,
+                  icon: 'scale',
+                  iconColor: AdminColors.accentGoldLight,
+                  legalBasis: content.legalFramework?.title || 'Constitution of India • Fundamental Rights & Judicial Safeguards',
+                  safeguards: (content.keyAreas || []).map(ka => `${ka.title}: ${ka.description}`),
+                });
+              }}
             />
             <Text style={styles.sectionIntro}>
               {content.title} cover many important areas, including:
@@ -365,7 +584,7 @@ const RightsDetailsContentView: React.FC<{
                 <InfoCard
                   key={item.id}
                   item={item}
-                  onPress={() => notifyComingSoon(item.title)}
+                  onPress={() => onSelectCard(getCardDetailInfo(item, content.title))}
                 />
               ))}
             </View>
@@ -380,7 +599,7 @@ const RightsDetailsContentView: React.FC<{
                 <TopicRow
                   key={item.id}
                   item={item}
-                  onPress={() => notifyComingSoon(item.title)}
+                  onPress={() => onSelectCard(getCardDetailInfo(item, content.title))}
                 />
               ))}
             </View>
@@ -390,7 +609,18 @@ const RightsDetailsContentView: React.FC<{
         {!compactTopics && content.legalFramework ? (
           <View>
             <SectionTitle title="Legal Framework" />
-            <View style={styles.frameworkCard}>
+            <TouchableOpacity
+              style={styles.frameworkCard}
+              onPress={() => onSelectCard(getCardDetailInfo({
+                id: 'legal-framework',
+                title: content.legalFramework!.title,
+                description: content.legalFramework!.description,
+                icon: 'scale',
+              }, content.title))}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel={content.legalFramework.title}
+            >
               <View style={styles.frameworkImage}>
                 {content.legalFramework.image ? (
                   <Image
@@ -417,20 +647,20 @@ const RightsDetailsContentView: React.FC<{
                 </Text>
               </View>
               <CardArrow />
-            </View>
+            </TouchableOpacity>
           </View>
         ) : null}
 
         {!compactTopics && content.supportAreas?.length ? (
           <View onLayout={event => setSectionLayout('work', event)}>
-            <SectionTitle title="How HRSJM Supports Women" />
+            <SectionTitle title={`How HRSJM Supports ${content.title.replace(/^Right to\s+/i, '')}`} />
             <View style={styles.supportGrid}>
               {content.supportAreas.map(item => (
                 <CompactCard
                   key={item.id}
                   item={item}
                   variant="support"
-                  onPress={() => notifyComingSoon(item.title)}
+                  onPress={() => onSelectCard(getCardDetailInfo(item, content.title))}
                 />
               ))}
             </View>
@@ -441,7 +671,7 @@ const RightsDetailsContentView: React.FC<{
           <View>
             <SectionTitle
               title="Useful Resources"
-              onViewAll={() => notifyComingSoon('Useful Resources')}
+              onViewAll={() => scrollTo('support')}
             />
             <View style={styles.resourceGrid}>
               {content.resources.map(item => (
@@ -449,7 +679,7 @@ const RightsDetailsContentView: React.FC<{
                   key={item.id}
                   item={item}
                   variant="resource"
-                  onPress={() => notifyComingSoon(item.title)}
+                  onPress={() => onSelectCard(getCardDetailInfo(item, content.title))}
                 />
               ))}
             </View>
@@ -493,7 +723,7 @@ const RightsDetailsContentView: React.FC<{
                   key={item.id}
                   item={item}
                   variant="protection"
-                  onPress={() => notifyComingSoon(item.title)}
+                  onPress={() => onSelectCard(getCardDetailInfo(item, content.title))}
                 />
               ))}
             </View>
@@ -573,11 +803,26 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
     work: 0,
   });
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
-  const content = RIGHTS_DETAILS[rightId];
-  const indexItem = findRightById(rightId);
-  const compactTopics =
-    Boolean(content?.keyTopics?.length) &&
-    (rightId !== 'womens-rights' || topicsOnly);
+  const [selectedCardData, setSelectedCardData] = useState<RightCardDetailData | null>(null);
+
+  const [activeRightId, setActiveRightId] = useState<string>(rightId);
+
+  React.useEffect(() => {
+    setActiveRightId(rightId);
+    setActiveSection('overview');
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [rightId]);
+
+  const handleSelectRight = (targetRightId: string) => {
+    setActiveRightId(targetRightId);
+    setActiveSection('overview');
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    onOpenRight?.(targetRightId);
+  };
+
+  const content = RIGHTS_DETAILS[activeRightId] || RIGHTS_DETAILS[rightId] || RIGHTS_DETAILS['human-rights'];
+  const indexItem = findRightById(activeRightId) || findRightById(rightId);
+  const compactTopics = Boolean(topicsOnly);
 
   const setSectionLayout = (id: SectionId, event: LayoutChangeEvent) => {
     sectionOffsets.current[id] = event.nativeEvent.layout.y;
@@ -612,7 +857,6 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
       <HomeHeader
         onBack={onBack}
         activeNav="rights"
-        onPressNotifications={() => undefined}
         onNavigateNav={(id: string) => {
           if (id === 'home') onOpenHome?.();
           else if (id === 'about') onOpenAbout?.();
@@ -635,9 +879,10 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
             scrollTo={scrollTo}
             setSectionLayout={setSectionLayout}
             activeSection={activeSection}
-            onOpenRight={onOpenRight ?? onOpenRights}
+            onOpenRight={handleSelectRight}
             onFileComplaint={onFileComplaint ?? (() => notifyComingSoon('File a Complaint'))}
             onOpenContact={onOpenContact ?? (() => notifyComingSoon('Contact HRSJM'))}
+            onSelectCard={setSelectedCardData}
           />
         ) : (
           <View style={styles.genericDetails}>
@@ -668,6 +913,14 @@ export const RightDetailsScreen: React.FC<RightDetailsScreenProps> = ({
       {showBottomNav && (
         <UserBottomNavigation activeTab="rights" onTabPress={handleTabPress} />
       )}
+      <RightCardDetailModal
+        visible={Boolean(selectedCardData)}
+        onClose={() => setSelectedCardData(null)}
+        data={selectedCardData}
+        onFileComplaint={onFileComplaint ?? (() => notifyComingSoon('File a Complaint'))}
+        onOpenContact={onOpenContact ?? (() => notifyComingSoon('Contact HRSJM'))}
+        onSelectCard={setSelectedCardData}
+      />
     </SafeAreaView>
   );
 };
@@ -1176,5 +1429,138 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     fontSize: 13,
     lineHeight: 18,
+  },
+});
+
+
+const modalStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(2, 23, 44, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.base,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 420,
+    maxHeight: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.base,
+    elevation: 6,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+    paddingBottom: Spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  iconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFF8E6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  headerTitleWrap: {
+    flex: 1,
+  },
+  badge: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#D97706',
+    letterSpacing: 0.8,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+    marginTop: 2,
+  },
+  closeBtn: {
+    padding: 6,
+  },
+  body: {
+    marginTop: 6,
+  },
+  description: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: '#334155',
+  },
+  sectionBox: {
+    marginTop: 12,
+    padding: 10,
+    backgroundColor: '#F8FAFC',
+    borderRadius: BorderRadius.md,
+  },
+  sectionBoxTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+    marginBottom: 5,
+  },
+  sectionBoxText: {
+    fontSize: 11,
+    lineHeight: 15,
+    color: '#475569',
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
+  bulletDot: {
+    fontSize: 12,
+    color: AdminColors.accentGold,
+    marginRight: 6,
+    lineHeight: 16,
+  },
+  bulletText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 15,
+    color: '#475569',
+  },
+  actionRow: {
+    marginTop: 16,
+    gap: 8,
+  },
+  complaintBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#06294D',
+    paddingVertical: 10,
+    borderRadius: BorderRadius.md,
+  },
+  complaintBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  contactBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FAD465',
+    paddingVertical: 10,
+    borderRadius: BorderRadius.md,
+  },
+  contactBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#06294D',
   },
 });

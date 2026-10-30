@@ -110,6 +110,7 @@ export const API_ENDPOINTS = {
   },
 
   // System Settings
+  CONTACT: '/contact',
   SETTINGS: {
     GENERAL: '/settings/general',
     ROLES: '/roles',

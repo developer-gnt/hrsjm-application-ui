@@ -163,7 +163,7 @@ export const RegisterForEventScreen: React.FC<RegisterForEventScreenProps> = ({
     if (!form.mobileNumber.trim()) {
       nextErrors.mobileNumber = 'Mobile number is required.';
     } else if (!/^[6-9]\d{9}$/.test(localMobile)) {
-      nextErrors.mobileNumber = 'Please enter a valid mobile number.';
+      nextErrors.mobileNumber = 'Please enter a valid 10-digit Indian mobile number.';
     }
 
     if (!form.email.trim()) {
@@ -321,9 +321,10 @@ export const RegisterForEventScreen: React.FC<RegisterForEventScreenProps> = ({
               required
               placeholder="Enter your mobile number"
               value={form.mobileNumber}
-              onChangeText={value => updateField('mobileNumber', value)}
+              onChangeText={value => updateField('mobileNumber', value.replace(/\D/g, '').slice(0, 10))}
               error={errors.mobileNumber}
               keyboardType="phone-pad"
+              maxLength={10}
               accessibilityLabel="Mobile Number"
               leftIcon={<AppIcon name="phone" size={17} color={AdminColors.primaryDark} />}
             />
@@ -396,6 +397,7 @@ export const RegisterForEventScreen: React.FC<RegisterForEventScreenProps> = ({
               </View>
             </View>
 
+            <View style={styles.belowDropdownSection}>
             <AppInput
               label="Special Requirements / Accessibility Needs (Optional)"
               placeholder="Please let us know if you have any special requirements"
@@ -445,6 +447,7 @@ export const RegisterForEventScreen: React.FC<RegisterForEventScreenProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Confirm Registration"
             />
+            </View>
             <TouchableOpacity
               style={styles.backToDetails}
               onPress={requestBack}
@@ -563,6 +566,8 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     alignItems: 'flex-start',
     marginBottom: Spacing.md,
+    overflow: 'visible',
+    zIndex: 10,
   },
   cityColumn: {
     flex: 1,
@@ -571,10 +576,15 @@ const styles = StyleSheet.create({
   languageColumn: {
     flex: 1,
     minWidth: 0,
-    zIndex: 2,
+    zIndex: 10,
+    position: 'relative',
   },
   noBottomMargin: {
     marginBottom: 0,
+  },
+  belowDropdownSection: {
+    position: 'relative',
+    zIndex: 1,
   },
   fieldLabel: {
     color: AdminColors.textPrimary,
@@ -606,12 +616,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   languageMenu: {
-    marginTop: Spacing.xs,
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    marginTop: 2,
     borderWidth: 1,
     borderColor: AdminColors.border,
     borderRadius: BorderRadius.md,
     backgroundColor: AdminColors.cardSurface,
     ...Shadows.cardMedium,
+    zIndex: 9999,
+    elevation: 10,
   },
   languageOption: {
     minHeight: 40,

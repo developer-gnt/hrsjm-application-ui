@@ -33,6 +33,7 @@ import type { AboutWorkArea } from '../types/about.types';
 import type { WhatWeDoId } from '../../what-we-do';
 
 export interface AboutScreenProps {
+  initialSection?: string;
   onBack?: () => void;
   /** Navigate to an in-app route (used by the closing CTA). */
   onNavigate?: (target: string) => void;
@@ -61,6 +62,7 @@ const SectionHeading: React.FC<{
 );
 
 export const AboutScreen: React.FC<AboutScreenProps> = ({
+  initialSection,
   onBack,
   onNavigate,
   onOpenMyApplication,
@@ -75,6 +77,28 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
 }) => {
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const monitoringOffset = useRef(0);
+  const whatWeDoOffset = useRef(0);
+
+  const handleWhatWeDoLayout = (event: LayoutChangeEvent) => {
+    whatWeDoOffset.current = event.nativeEvent.layout.y;
+    if (initialSection === 'what-we-do') {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({
+          y: Math.max(0, event.nativeEvent.layout.y - 10),
+          animated: true,
+        });
+      }, 50);
+    }
+  };
+
+  React.useEffect(() => {
+    if (initialSection === 'what-we-do' && whatWeDoOffset.current > 0) {
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, whatWeDoOffset.current - 10),
+        animated: true,
+      });
+    }
+  }, [initialSection]);
 
   const showComingSoon = (feature: string) => {
     Alert.alert(feature, `"${feature}" is part of an upcoming phase.`);
@@ -144,7 +168,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
           notificationDotColor={AdminColors.accentGold}
           onOpenDonate={() => onNavigate?.('donations')}
           onPressSearch={() => onNavigate?.('search') || showComingSoon('Search')}
-          onPressNotifications={() => onNavigate?.('notifications') || showComingSoon('Notifications')}
+          onPressNotifications={() => onNavigate ? onNavigate('notifications') : showComingSoon('Notifications')}
         />
       )}
       <ScrollView
@@ -163,7 +187,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({
           <AboutVisionMissionSection />
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.section} onLayout={handleWhatWeDoLayout}>
           <SectionHeading
             title="What We Do"
             subtitle="Nine key areas of action"

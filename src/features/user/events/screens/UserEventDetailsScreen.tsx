@@ -1,6 +1,8 @@
 import React from 'react';
 import {
   Alert,
+  Linking,
+  Platform,
   BackHandler,
   Image,
   ScrollView,
@@ -20,6 +22,7 @@ import {
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
+import { shareContent } from '../../../../core/utils/share';
 import type { UserEvent } from '../data/user-events';
 
 interface UserEventDetailsScreenProps {
@@ -50,9 +53,31 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
     return () => subscription.remove();
   }, [onBack]);
 
+  const handleOpenMap = async () => {
+    const query = `${event.venue}, ${event.location}`;
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+
+    try {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.open(mapUrl, '_blank');
+        return;
+      }
+
+      const supported = await Linking.canOpenURL(mapUrl);
+      if (supported) {
+        await Linking.openURL(mapUrl);
+      } else {
+        await Linking.openURL(`geo:0,0?q=${encodeURIComponent(query)}`);
+      }
+    } catch {
+      Linking.openURL(mapUrl);
+    }
+  };
+
   const handleShare = async () => {
-    await Share.share({
-      message: `${event.title}\n${event.date} · ${event.time}\n${event.venue}`,
+    await shareContent({
+      title: event.title,
+      message: `${event.title}\n${event.date} · ${event.time}\n${event.venue}, ${event.location}`,
     });
   };
 
@@ -119,8 +144,10 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
                 <Text style={styles.infoValue}>{event.venue}</Text>
                 <Text style={styles.infoValue}>{event.location}</Text>
                 <TouchableOpacity
-                  onPress={() => Alert.alert(event.venue, event.location)}
+                  onPress={handleOpenMap}
                   accessibilityRole="button"
+                  accessibilityLabel={`View ${event.venue} on Google Maps`}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.mapLink}>View on Map →</Text>
                 </TouchableOpacity>

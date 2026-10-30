@@ -1,7 +1,8 @@
 import React from 'react';
 import {
-  Alert,
   Image,
+  Linking,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,70 +16,95 @@ import {
   UserFontFamilies,
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
-// TODO: Replace with a real static map / maps integration in a later phase.
-// TEMPORARY DUMMY: stylised Kurla (Mumbai) street-map graphic with an HRSJM
-// pin (src/assets/images/contact-map-placeholder.jpg) — swap the require
-// below, layout stays unchanged.
 import ContactMapPlaceholder from '../../../../assets/images/contact-map-placeholder.jpg';
+
+export const HRSJM_OFFICE_ADDRESS = '123 Justice Lane, Kurla (W), Mumbai, Maharashtra 400070, India';
+export const GOOGLE_MAPS_SEARCH_URL =
+  'https://www.google.com/maps/search/?api=1&query=' +
+  encodeURIComponent('HRSJM Office, 123 Justice Lane, Kurla West, Mumbai, Maharashtra 400070');
 
 interface ContactMapSectionProps {
   onOpenMaps?: () => void;
 }
 
 /**
- * Reference-locked "Find Us on Map" section: dummy map with the HRSJM
- * office info card and the circular navigation button overlaid, followed by
- * the compact "Open in Google Maps" pill (UI-only — no Maps API/SDK).
+ * "Find Us on Map" section: map display with the HRSJM
+ * office info card, circular navigation button, and
+ * "Open in Google Maps" pill with dynamic Google Maps navigation.
  */
 export const ContactMapSection: React.FC<ContactMapSectionProps> = ({
   onOpenMaps,
 }) => {
-  const openMaps = () => {
+  const openMaps = async () => {
     if (onOpenMaps) {
       onOpenMaps();
       return;
     }
-    // UI PHASE ONLY: no Google Maps API connection.
-    Alert.alert(
-      'Open in Google Maps',
-      'Maps integration arrives with an upcoming phase.',
-    );
+
+    try {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.open(GOOGLE_MAPS_SEARCH_URL, '_blank');
+        return;
+      }
+
+      const supported = await Linking.canOpenURL(GOOGLE_MAPS_SEARCH_URL);
+      if (supported) {
+        await Linking.openURL(GOOGLE_MAPS_SEARCH_URL);
+      } else {
+        await Linking.openURL(
+          `geo:19.0728,72.8797?q=${encodeURIComponent('123 Justice Lane, Kurla West, Mumbai')}`,
+        );
+      }
+    } catch {
+      Linking.openURL(GOOGLE_MAPS_SEARCH_URL);
+    }
   };
 
   return (
     <View style={styles.section}>
       <Text style={styles.heading}>Find Us on Map</Text>
 
-      <View style={styles.mapWrap}>
+      <TouchableOpacity
+        style={styles.mapWrap}
+        onPress={openMaps}
+        activeOpacity={0.92}
+        accessibilityRole="button"
+        accessibilityLabel="Open HRSJM location on Google Maps"
+      >
         <Image
           source={ContactMapPlaceholder}
           style={styles.map}
           resizeMode="cover"
           accessible
           accessibilityRole="image"
-          accessibilityLabel="Map placeholder showing the HRSJM office location in Kurla, Mumbai"
+          accessibilityLabel="Map showing the HRSJM office location in Kurla, Mumbai"
         />
 
         <View style={styles.locationMarker} pointerEvents="none">
           <AppIcon name="map-pin" size={26} color="#D84A45" strokeWidth={2.2} />
         </View>
 
-        <View style={styles.infoCard}>
+        <TouchableOpacity
+          style={styles.infoCard}
+          onPress={openMaps}
+          activeOpacity={0.8}
+        >
           <Text style={styles.infoTitle}>HRSJM Office</Text>
           <Text style={styles.infoLine}>123 Justice Lane, Kurla (W)</Text>
           <Text style={styles.infoLine}>Mumbai, Maharashtra 400070</Text>
-        </View>
+        </TouchableOpacity>
 
+        {/* Top-right navigation direction button */}
         <TouchableOpacity
           style={styles.navButton}
           onPress={openMaps}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel="Navigate to the HRSJM office"
+          accessibilityLabel="Navigate to the HRSJM office on Google Maps"
         >
-          <AppIcon name="map-pin" size={16} color={AdminColors.textOnDark} />
+          <AppIcon name="send" size={15} color={AdminColors.primaryDark} />
         </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.mapsButton}
@@ -113,6 +139,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: AdminColors.border,
+    position: 'relative',
   },
   map: {
     width: '100%',
@@ -150,8 +177,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: Spacing.sm,
     top: Spacing.sm,
-    width: 30,
-    height: 30,
+    width: 32,
+    height: 32,
     borderRadius: BorderRadius.sm,
     backgroundColor: AdminColors.cardSurface,
     alignItems: 'center',
@@ -165,12 +192,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
     marginTop: Spacing.md,
-    borderWidth: 0,
+    borderWidth: 1,
+    borderColor: AdminColors.border,
     borderRadius: BorderRadius.full,
-    backgroundColor: AdminColors.background,
+    backgroundColor: AdminColors.cardSurface,
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm,
     gap: Spacing.xs,
+    ...Shadows.card,
   },
   mapsButtonText: {
     fontSize: 12,
