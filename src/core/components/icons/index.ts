@@ -89,6 +89,7 @@ export {
   ArrowDownToLine,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
   ArrowUpRight,
   ArrowDownLeft,
   ArrowUp,

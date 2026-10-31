@@ -256,19 +256,6 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
           )}
         </View>
 
-        <TouchableOpacity
-          style={styles.filterBtn}
-          onPress={() => {
-            // Cycle to next tab or reset
-            if (activeTab !== 'all') setActiveTab('all');
-            else setActiveTab('active');
-          }}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Filter causes"
-        >
-          <Text style={styles.filterIcon}>⚡</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Horizontal Scrolling Category Filter Tabs */}
@@ -588,19 +575,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94A3B8',
     fontWeight: '700',
-  },
-  filterBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterIcon: {
-    fontSize: 16,
   },
   filterTabsScroll: {
     paddingHorizontal: 16,
