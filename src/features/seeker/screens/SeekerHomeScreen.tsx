@@ -516,6 +516,21 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
 
 
 
+      {/* About Video Modal */}
+      <AboutVideoModal
+        visible={videoModalVisible}
+        onClose={() => setVideoModalVisible(false)}
+        video={aboutVideo}
+        onOpenAbout={() => {
+          setVideoModalVisible(false);
+          if (navigation) navigation.navigate('About');
+        }}
+        onOpenDonate={() => {
+          setVideoModalVisible(false);
+          if (navigation) navigation.navigate('UserActionPage', { pageId: 'donate' });
+        }}
+      />
+
       {/* Feedback Toast */}
       <AppFeedbackModal
         visible={feedbackConfig.visible}
