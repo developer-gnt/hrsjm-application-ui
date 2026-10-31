@@ -28,10 +28,21 @@ export const reportsService = {
   async getTrialBalance(params: {
     as_of_date: string;
     include_zero_balance?: boolean;
+    include_zero_balances?: boolean;
+    account_type?: string;
   }): Promise<TrialBalanceReportResponse> {
+    const includeZero = Boolean(params.include_zero_balances ?? params.include_zero_balance);
+    const queryParams: Record<string, any> = {
+      as_of_date: params.as_of_date,
+      include_zero_balances: includeZero,
+      include_zero_balance: includeZero,
+    };
+    if (params.account_type) {
+      queryParams.account_type = params.account_type;
+    }
     const res = await apiClient.get<TrialBalanceReportResponse>(
       ApiRoutes.REPORTS.TRIAL_BALANCE,
-      { params },
+      { params: queryParams },
     );
     const data = (res as any)?.data?.data || (res as any)?.data || res;
     return data as TrialBalanceReportResponse;
