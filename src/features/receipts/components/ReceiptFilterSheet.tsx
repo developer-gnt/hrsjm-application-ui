@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +12,8 @@ import {
 } from 'react-native';
 import { colors, radius, spacing } from '../../../core/theme/theme';
 import { Icon } from '../../../core/components/common/Icon';
+import { formatDate } from '../../../core/utils/date';
+import { DatePickerModal } from '../../../core/components/common/DatePickerModal';
 import type {
   DonationStatus,
   ReceiptFilterState,
@@ -51,6 +54,10 @@ const STATUS_OPTIONS: Array<{
   { key: 'Failed', label: 'Failed', dotColor: colors.danger },
 ];
 
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const toIso = (d: Date) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
 export function ReceiptFilterSheet({
   visible,
   onClose,
@@ -66,7 +73,7 @@ export function ReceiptFilterSheet({
   );
   const [fromDate, setFromDate] = useState(filters.fromDate || '');
   const [toDate, setToDate] = useState(filters.toDate || '');
-  const [selectedPayment, setSelectedPayment] = useState(
+  const [selectedMethod, setSelectedMethod] = useState(
     filters.paymentMethod || 'All Payment Methods'
   );
   const [minAmount, setMinAmount] = useState(
@@ -76,6 +83,7 @@ export function ReceiptFilterSheet({
     filters.maxAmount !== undefined ? String(filters.maxAmount) : ''
   );
   const [paymentDropdownOpen, setPaymentDropdownOpen] = useState(false);
+  const [activeDatePicker, setActiveDatePicker] = useState<'from' | 'to' | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -83,7 +91,7 @@ export function ReceiptFilterSheet({
       setSelectedStatus(filters.status || 'ALL');
       setFromDate(filters.fromDate || '');
       setToDate(filters.toDate || '');
-      setSelectedPayment(filters.paymentMethod || 'All Payment Methods');
+      setSelectedMethod(filters.paymentMethod || 'All Payment Methods');
       setMinAmount(
         filters.minAmount !== undefined ? String(filters.minAmount) : ''
       );
@@ -91,8 +99,33 @@ export function ReceiptFilterSheet({
         filters.maxAmount !== undefined ? String(filters.maxAmount) : ''
       );
       setPaymentDropdownOpen(false);
+      setActiveDatePicker(null);
     }
   }, [visible, filters]);
+
+  const applyPreset = (preset: 'today' | '7d' | 'month' | '30d') => {
+    const today = new Date();
+    const todayIso = toIso(today);
+
+    if (preset === 'today') {
+      setFromDate(todayIso);
+      setToDate(todayIso);
+    } else if (preset === '7d') {
+      const past = new Date();
+      past.setDate(today.getDate() - 7);
+      setFromDate(toIso(past));
+      setToDate(todayIso);
+    } else if (preset === 'month') {
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      setFromDate(toIso(startOfMonth));
+      setToDate(todayIso);
+    } else if (preset === '30d') {
+      const past = new Date();
+      past.setDate(today.getDate() - 30);
+      setFromDate(toIso(past));
+      setToDate(todayIso);
+    }
+  };
 
   const handleApply = () => {
     onApply({
@@ -101,8 +134,8 @@ export function ReceiptFilterSheet({
       fromDate: fromDate.trim() || undefined,
       toDate: toDate.trim() || undefined,
       paymentMethod:
-        selectedPayment && selectedPayment !== 'All Payment Methods'
-          ? selectedPayment
+        selectedMethod && selectedMethod !== 'All Payment Methods'
+          ? selectedMethod
           : undefined,
       minAmount: minAmount ? Number(minAmount) : undefined,
       maxAmount: maxAmount ? Number(maxAmount) : undefined,
@@ -114,10 +147,11 @@ export function ReceiptFilterSheet({
     setSelectedStatus('ALL');
     setFromDate('');
     setToDate('');
-    setSelectedPayment('All Payment Methods');
+    setSelectedMethod('All Payment Methods');
     setMinAmount('');
     setMaxAmount('');
     setPaymentDropdownOpen(false);
+    setActiveDatePicker(null);
     onClear();
   };
 
@@ -204,7 +238,7 @@ export function ReceiptFilterSheet({
                               <View style={styles.radioInner} />
                             ) : null}
                           </View>
-                          {opt.dotColor && opt.key !== 'ALL' ? (
+                          {opt.dotColor ? (
                             <View
                               style={[
                                 styles.statusDot,
@@ -227,39 +261,146 @@ export function ReceiptFilterSheet({
 
                 {/* Section 3: Date Range */}
                 <View style={styles.section}>
-                  <Text style={styles.sectionHeading}>Date Range</Text>
-                  <View style={styles.inputRow}>
-                    <View style={styles.inputWrap}>
-                      <TextInput
-                        style={styles.input}
-                        value={fromDate}
-                        onChangeText={setFromDate}
-                        placeholder="From Date"
-                        placeholderTextColor={colors.textMuted}
-                      />
-                      <Icon
-                        name="calendar"
-                        size={18}
-                        color={colors.primary}
-                        strokeWidth={2}
-                      />
-                    </View>
+                  <View style={styles.sectionHeadingRow}>
+                    <Text style={styles.sectionHeading}>Date Range</Text>
+                    {(fromDate || toDate) ? (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setFromDate('');
+                          setToDate('');
+                        }}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                        <Text style={styles.clearSectionText}>Reset Dates</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
 
-                    <View style={styles.inputWrap}>
-                      <TextInput
-                        style={styles.input}
-                        value={toDate}
-                        onChangeText={setToDate}
-                        placeholder="To Date"
-                        placeholderTextColor={colors.textMuted}
-                      />
-                      <Icon
-                        name="calendar"
-                        size={18}
-                        color={colors.primary}
-                        strokeWidth={2}
-                      />
-                    </View>
+                  <View style={styles.inputRow}>
+                    {/* From Date Box */}
+                    <TouchableOpacity
+                      style={[
+                        styles.inputWrap,
+                        fromDate ? styles.inputWrapActive : null,
+                      ]}
+                      onPress={() => setActiveDatePicker('from')}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        fromDate ? `From Date: ${fromDate}` : 'Select From Date'
+                      }>
+                      <View style={styles.dateTextContainer}>
+                        <Text
+                          style={[
+                            styles.dateValueText,
+                            !fromDate && styles.placeholderText,
+                          ]}
+                          numberOfLines={1}>
+                          {fromDate ? formatDate(fromDate) : 'From Date'}
+                        </Text>
+                        {fromDate ? (
+                          <Text style={styles.dateIsoHint}>{fromDate}</Text>
+                        ) : null}
+                      </View>
+
+                      <View style={styles.dateIconsRight}>
+                        {fromDate ? (
+                          <TouchableOpacity
+                            onPress={(e: any) => {
+                              e?.stopPropagation?.();
+                              setFromDate('');
+                            }}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            style={styles.dateClearIconBtn}
+                            accessibilityLabel="Clear from date">
+                            <Text style={styles.dateClearIconText}>✕</Text>
+                          </TouchableOpacity>
+                        ) : null}
+
+                        <Icon
+                          name="calendar"
+                          size={18}
+                          color={fromDate ? colors.accentGold : colors.primary}
+                          strokeWidth={2}
+                        />
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* To Date Box */}
+                    <TouchableOpacity
+                      style={[
+                        styles.inputWrap,
+                        toDate ? styles.inputWrapActive : null,
+                      ]}
+                      onPress={() => setActiveDatePicker('to')}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        toDate ? `To Date: ${toDate}` : 'Select To Date'
+                      }>
+                      <View style={styles.dateTextContainer}>
+                        <Text
+                          style={[
+                            styles.dateValueText,
+                            !toDate && styles.placeholderText,
+                          ]}
+                          numberOfLines={1}>
+                          {toDate ? formatDate(toDate) : 'To Date'}
+                        </Text>
+                        {toDate ? (
+                          <Text style={styles.dateIsoHint}>{toDate}</Text>
+                        ) : null}
+                      </View>
+
+                      <View style={styles.dateIconsRight}>
+                        {toDate ? (
+                          <TouchableOpacity
+                            onPress={(e: any) => {
+                              e?.stopPropagation?.();
+                              setToDate('');
+                            }}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            style={styles.dateClearIconBtn}
+                            accessibilityLabel="Clear to date">
+                            <Text style={styles.dateClearIconText}>✕</Text>
+                          </TouchableOpacity>
+                        ) : null}
+
+                        <Icon
+                          name="calendar"
+                          size={18}
+                          color={toDate ? colors.accentGold : colors.primary}
+                          strokeWidth={2}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Quick Preset Chips */}
+                  <View style={styles.presetRow}>
+                    <TouchableOpacity
+                      style={styles.presetChip}
+                      onPress={() => applyPreset('today')}
+                      activeOpacity={0.7}>
+                      <Text style={styles.presetChipText}>Today</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.presetChip}
+                      onPress={() => applyPreset('7d')}
+                      activeOpacity={0.7}>
+                      <Text style={styles.presetChipText}>Last 7 Days</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.presetChip}
+                      onPress={() => applyPreset('month')}
+                      activeOpacity={0.7}>
+                      <Text style={styles.presetChipText}>This Month</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.presetChip}
+                      onPress={() => applyPreset('30d')}
+                      activeOpacity={0.7}>
+                      <Text style={styles.presetChipText}>Last 30 Days</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
 
@@ -272,9 +413,7 @@ export function ReceiptFilterSheet({
                     }
                     accessibilityRole="combobox"
                     style={styles.dropdownBtn}>
-                    <Text style={styles.dropdownValue}>
-                      {selectedPayment}
-                    </Text>
+                    <Text style={styles.dropdownValue}>{selectedMethod}</Text>
                     <Icon
                       name="chevron-down"
                       size={18}
@@ -285,27 +424,27 @@ export function ReceiptFilterSheet({
                   {paymentDropdownOpen && (
                     <View style={styles.dropdownMenu}>
                       {PAYMENT_METHODS.map(method => {
-                        const isSelected = selectedPayment === method;
+                        const isMethodSelected = selectedMethod === method;
                         return (
                           <TouchableOpacity
                             key={method}
                             onPress={() => {
-                              setSelectedPayment(method);
+                              setSelectedMethod(method);
                               setPaymentDropdownOpen(false);
                             }}
                             style={[
                               styles.dropdownItem,
-                              isSelected && styles.dropdownItemSelected,
+                              isMethodSelected && styles.dropdownItemSelected,
                             ]}>
                             <Text
                               style={[
                                 styles.dropdownItemText,
-                                isSelected &&
+                                isMethodSelected &&
                                   styles.dropdownItemTextSelected,
                               ]}>
                               {method}
                             </Text>
-                            {isSelected && (
+                            {isMethodSelected && (
                               <Icon
                                 name="check"
                                 size={16}
@@ -329,24 +468,25 @@ export function ReceiptFilterSheet({
                         value={minAmount}
                         onChangeText={setMinAmount}
                         placeholder="Min Amount"
-                        keyboardType="numeric"
                         placeholderTextColor={colors.textMuted}
+                        keyboardType="numeric"
                       />
                     </View>
+
                     <View style={styles.inputWrap}>
                       <TextInput
                         style={styles.input}
                         value={maxAmount}
                         onChangeText={setMaxAmount}
                         placeholder="Max Amount"
-                        keyboardType="numeric"
                         placeholderTextColor={colors.textMuted}
+                        keyboardType="numeric"
                       />
                     </View>
                   </View>
                 </View>
 
-                {/* Actions */}
+                {/* Buttons */}
                 <View style={styles.actionsWrap}>
                   <TouchableOpacity
                     onPress={handleApply}
@@ -366,6 +506,29 @@ export function ReceiptFilterSheet({
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>
+
+      {/* Interactive Calendar Date Picker Modals */}
+      <DatePickerModal
+        visible={activeDatePicker === 'from'}
+        value={fromDate}
+        title="Select From Date"
+        onSelect={selectedDate => {
+          setFromDate(selectedDate);
+          setActiveDatePicker(null);
+        }}
+        onClose={() => setActiveDatePicker(null)}
+      />
+
+      <DatePickerModal
+        visible={activeDatePicker === 'to'}
+        value={toDate}
+        title="Select To Date"
+        onSelect={selectedDate => {
+          setToDate(selectedDate);
+          setActiveDatePicker(null);
+        }}
+        onClose={() => setActiveDatePicker(null)}
+      />
     </Modal>
   );
 }
@@ -396,30 +559,45 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.primary,
+    color: colors.primaryDark,
   },
   closeBtn: {
     padding: spacing.xs,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeText: {
     fontSize: 16,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   body: {
     paddingHorizontal: spacing.lg,
   },
   bodyContent: {
-    paddingVertical: spacing.md,
+    paddingBottom: spacing.xl,
   },
   section: {
-    marginBottom: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  sectionHeadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
   },
   sectionHeading: {
     fontSize: 14,
     fontWeight: '700',
     color: colors.primary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  clearSectionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.accentGold,
   },
   radioList: {
     gap: spacing.sm + 2,
@@ -469,12 +647,73 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
-    minHeight: 46,
+    paddingVertical: spacing.xs,
+    minHeight: 48,
+  },
+  inputWrapActive: {
+    borderColor: colors.accentGold,
+    backgroundColor: '#FFFDF5',
+  },
+  dateTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    marginRight: 4,
+  },
+  dateValueText: {
+    fontSize: 13.5,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  dateIsoHint: {
+    fontSize: 10,
+    color: colors.textMuted,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    marginTop: 1,
+  },
+  placeholderText: {
+    fontSize: 13.5,
+    color: colors.textMuted,
+    fontWeight: '400',
+  },
+  dateIconsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dateClearIconBtn: {
+    padding: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateClearIconText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontWeight: '700',
+  },
+  presetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: spacing.sm,
+  },
+  presetChip: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: radius.sm,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  presetChipText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '500',
   },
   input: {
     flex: 1,

@@ -185,11 +185,12 @@ const UserEventsScreenComponent: React.FC<any> = ({ navigation }) => {
   );
 };
 
-const UserNewsScreenComponent: React.FC<any> = ({ navigation }) => {
+const UserNewsScreenComponent: React.FC<any> = ({ navigation, route }) => {
   return (
     <NewsScreen
       hideBottomNav={true}
       showBottomNav={false}
+      initialViewAll={route?.params?.viewAll ?? false}
       onOpenArticle={(article) => navigation.navigate('NewsDetails', { article })}
       onOpenHome={() => navigation.navigate('UserHome')}
       onOpenAbout={() => navigation.navigate('UserAbout')}

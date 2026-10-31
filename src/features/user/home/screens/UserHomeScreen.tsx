@@ -706,7 +706,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
             <SectionHeader
               title="Latest News"
               linkLabel="View All"
-              onLinkPress={() => onOpenNews?.()}
+              onLinkPress={() => (onOpenNews as any)?.({ viewAll: true })}
             />
             <View style={styles.updatesList}>
               {latestNews.slice(0, 2).map(item => (
