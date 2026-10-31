@@ -464,6 +464,7 @@ export const MemberTabNavigator: React.FC = () => {
       >
         {({ navigation }) => (
           <NewsListScreen
+            hideAddNews={true}
             onViewNews={(news) => navigation.navigate('NewsDetails', { news })}
           />
         )}

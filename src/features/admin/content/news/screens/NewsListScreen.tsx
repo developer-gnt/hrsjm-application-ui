@@ -74,6 +74,7 @@ interface NewsListScreenProps {
   onViewNews?: (news: NewsListItem) => void;
   onEditNews?: (news: NewsListItem) => void;
   onTabPress?: (tab: string) => void;
+  hideAddNews?: boolean;
 }
 
 export const NewsListScreen: React.FC<NewsListScreenProps> = ({
@@ -81,6 +82,7 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
   onViewNews,
   onEditNews,
   onTabPress,
+  hideAddNews = false,
 }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -280,16 +282,18 @@ export const NewsListScreen: React.FC<NewsListScreenProps> = ({
             Manage and publish news, updates and announcements.
           </Text>
         </View>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={handleAddNews}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Add News"
-        >
-          <Plus size={16} color="#011F39" strokeWidth={2.6} />
-          <Text style={styles.addButtonText}>Add News</Text>
-        </TouchableOpacity>
+        {!hideAddNews && Boolean(onAddNews) ? (
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAddNews}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Add News"
+          >
+            <Plus size={16} color="#011F39" strokeWidth={2.6} />
+            <Text style={styles.addButtonText}>Add News</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <View style={styles.statsSection}>
