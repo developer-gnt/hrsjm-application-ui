@@ -40,7 +40,7 @@ export const supportService = {
     const sourceTag = body.source
       ? `[Source: ${body.source === 'website' ? 'Website' : body.source === 'web' ? 'Web App' : 'App'}]\n`
       : '';
-    const payload: { subject: string; description: string; source?: string } = {
+    const payload: { subject: string; description: string; source?: string; attachments?: any[] } = {
       subject: body.category && body.category !== 'ALL' && !body.subject.includes(`[${body.category}]`)
         ? `[${body.category}] ${body.subject.trim()}`
         : body.subject.trim(),
@@ -48,6 +48,7 @@ export const supportService = {
         ? `[Priority: ${body.priority}]\n\n${body.description.trim()}`
         : body.description.trim()}`,
       source: body.source,
+      attachments: body.attachments,
     };
     const res = await api.post<ApiEnvelope<SupportTicket>>('/support-tickets', payload);
     return unwrap(res.data);

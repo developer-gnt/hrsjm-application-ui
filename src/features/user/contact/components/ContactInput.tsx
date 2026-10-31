@@ -4,24 +4,24 @@ import { AdminColors, BorderRadius, Spacing } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import type { IconName } from '../../components/icons';
 
-interface ContactInputProps {
+export interface ContactInputProps {
   icon: IconName;
   placeholder: string;
   value: string;
   onChangeText?: (text: string) => void;
   error?: string;
   multiline?: boolean;
-  /** Dropdown field: read-only input with a trailing chevron. */
+  /** Dropdown field: interactive selector button with a trailing chevron. */
   dropdown?: boolean;
+  dropdownOpen?: boolean;
   onDropdownPress?: () => void;
   keyboardType?: 'default' | 'email-address';
   autoCapitalize?: 'none' | 'sentences';
 }
 
 /**
- * Reference-locked form input: white surface, hairline grey border, rounded
- * corners, leading navy-muted icon and optional trailing chevron for the
- * dropdown Subject field. Inline error text renders beneath the field.
+ * Form input: white surface, hairline grey border, rounded
+ * corners, leading navy-muted icon and optional trailing chevron for dropdowns.
  */
 export const ContactInput: React.FC<ContactInputProps> = ({
   icon,
@@ -31,52 +31,62 @@ export const ContactInput: React.FC<ContactInputProps> = ({
   error,
   multiline = false,
   dropdown = false,
+  dropdownOpen = false,
   onDropdownPress,
   keyboardType = 'default',
   autoCapitalize = 'sentences',
 }) => {
-  const container = (
-    <View
-      style={[
-        styles.field,
-        multiline && styles.fieldMultiline,
-        error ? styles.fieldError : null,
-      ]}
-    >
-      <AppIcon name={icon} size={17} color={AdminColors.textMuted} />
-      <TextInput
-        style={[styles.input, multiline && styles.inputMultiline]}
-        placeholder={placeholder}
-        placeholderTextColor={AdminColors.textSecondary}
-        value={value}
-        onChangeText={onChangeText}
-        editable={!dropdown}
-        multiline={multiline}
-        numberOfLines={multiline ? 4 : undefined}
-        scrollEnabled={multiline}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        accessibilityLabel={placeholder}
-      />
-      {dropdown && (
-        <AppIcon name="chevron-down" size={15} color={AdminColors.textMuted} />
-      )}
-    </View>
-  );
-
   return (
     <View style={styles.wrapper}>
       {dropdown ? (
         <TouchableOpacity
-          activeOpacity={0.8}
+          activeOpacity={0.7}
           onPress={onDropdownPress}
+          style={[
+            styles.field,
+            error ? styles.fieldError : null,
+          ]}
           accessibilityRole="button"
           accessibilityLabel={`${placeholder}: ${value || 'not selected'}`}
         >
-          {container}
+          <AppIcon name={icon} size={17} color={AdminColors.textMuted} />
+          <Text
+            style={[
+              styles.input,
+              !value ? styles.placeholderText : null,
+              styles.dropdownText,
+            ]}
+            numberOfLines={1}
+          >
+            {value || placeholder}
+          </Text>
+          <View style={dropdownOpen ? styles.chevronRotated : undefined}>
+            <AppIcon name="chevron-down" size={15} color={AdminColors.textMuted} />
+          </View>
         </TouchableOpacity>
       ) : (
-        container
+        <View
+          style={[
+            styles.field,
+            multiline && styles.fieldMultiline,
+            error ? styles.fieldError : null,
+          ]}
+        >
+          <AppIcon name={icon} size={17} color={AdminColors.textMuted} />
+          <TextInput
+            style={[styles.input, multiline && styles.inputMultiline]}
+            placeholder={placeholder}
+            placeholderTextColor={AdminColors.textSecondary}
+            value={value}
+            onChangeText={onChangeText}
+            multiline={multiline}
+            numberOfLines={multiline ? 4 : undefined}
+            scrollEnabled={multiline}
+            keyboardType={keyboardType}
+            autoCapitalize={autoCapitalize}
+            accessibilityLabel={placeholder}
+          />
+        </View>
       )}
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
@@ -113,6 +123,15 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm + 1,
     paddingHorizontal: Spacing.sm,
     includeFontPadding: false,
+  },
+  dropdownText: {
+    paddingVertical: Spacing.sm + 4,
+  },
+  placeholderText: {
+    color: AdminColors.textSecondary,
+  },
+  chevronRotated: {
+    transform: [{ rotate: '180deg' }],
   },
   inputMultiline: {
     minHeight: 84,

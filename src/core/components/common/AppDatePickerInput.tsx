@@ -117,7 +117,7 @@ export const AppDatePickerInput: React.FC<AppDatePickerInputProps> = ({
                 value === todayIso && styles.presetChipTextActive,
               ]}
             >
-              ⚡ Today
+              Today
             </Text>
           </TouchableOpacity>
 

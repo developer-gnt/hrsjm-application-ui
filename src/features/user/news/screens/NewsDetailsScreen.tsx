@@ -4,7 +4,6 @@ import {
   Image,
   ImageBackground,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -26,6 +25,7 @@ import { UserBottomNavigation } from '../../home/components/UserBottomNavigation
 import type { HomeTab } from '../../home/types/home.types';
 import { NewsArticleCard } from '../components/NewsArticleCard';
 import { USER_NEWS_ARTICLES, type UserNewsArticle } from '../data/user-news';
+import { shareContent } from '../../../../core/utils/share';
 
 interface NewsDetailsScreenProps {
   article: UserNewsArticle;
@@ -40,19 +40,6 @@ interface NewsDetailsScreenProps {
   hideBottomNav?: boolean;
 }
 
-interface ShareOption {
-  id: string;
-  label: string;
-  disabled?: boolean;
-}
-
-const SHARE_OPTIONS: ShareOption[] = [
-  { id: 'whatsapp', label: 'WhatsApp' },
-  { id: 'facebook', label: 'Facebook' },
-  { id: 'x', label: 'X' },
-  { id: 'linkedin', label: 'LinkedIn' },
-  { id: 'copy', label: 'Copy Link', disabled: true },
-];
 
 const formatDateBadge = (publishedAt?: string) => {
   if (!publishedAt || typeof publishedAt !== 'string') {
@@ -105,7 +92,8 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
   }, [handleBack]);
 
   const handleShare = async () => {
-    await Share.share({
+    await shareContent({
+      title: article.title,
       message: `${article.title}\n${article.date}\n${article.excerpt}`,
     });
   };
@@ -229,36 +217,18 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
 
         <View style={styles.paddedSection}>
           <Text style={styles.sectionTitle}>Share This News</Text>
-          <View style={styles.shareOptions}>
-            {SHARE_OPTIONS.map(option => (
-              <TouchableOpacity
-                key={option.id}
-                style={[styles.shareOption, option.disabled && styles.shareOptionDisabled]}
-                onPress={option.disabled ? undefined : handleShare}
-                disabled={option.disabled}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={option.label === 'Copy Link' ? 'Copy Link unavailable' : `Share via ${option.label}`}
-                accessibilityState={{ disabled: Boolean(option.disabled) }}
-                accessibilityHint={
-                  option.disabled
-                    ? 'Copy link will be available when a public article link is provided.'
-                    : 'Opens the system share menu.'
-                }
-              >
-                <View style={styles.shareIconCircle}>
-                  <AppIcon
-                    name={option.id === 'copy' ? 'link' : 'share'}
-                    size={19}
-                    color={AdminColors.primaryDark}
-                  />
-                </View>
-                <Text style={[styles.shareLabel, option.disabled && styles.shareLabelDisabled]}>
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={handleShare}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Share this news article"
+          >
+            <View style={styles.shareIconCircle}>
+              <AppIcon name="share" size={19} color={AdminColors.primaryDark} />
+            </View>
+            <Text style={styles.shareButtonLabel}>Share</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.moreNewsSection}>
@@ -500,18 +470,23 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     fontWeight: '500',
   },
-  shareOptions: {
+  shareButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: Spacing.xs,
-  },
-  shareOption: {
-    minWidth: 54,
     alignItems: 'center',
-    paddingVertical: Spacing.xs,
+    alignSelf: 'flex-start',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: AdminColors.border,
+    backgroundColor: AdminColors.cardSurface,
+    ...Shadows.card,
   },
-  shareOptionDisabled: {
-    opacity: 0.5,
+  shareButtonLabel: {
+    color: AdminColors.primaryDark,
+    fontSize: 14,
+    fontWeight: '600',
   },
   shareIconCircle: {
     width: 38,
@@ -521,16 +496,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: AdminColors.primaryLight,
   },
-  shareLabel: {
-    color: AdminColors.primaryDark,
-    fontSize: 9,
-    lineHeight: 13,
-    textAlign: 'center',
-    marginTop: Spacing.xs,
-  },
-  shareLabelDisabled: {
-    color: AdminColors.textSecondary,
-  },
+  
   moreNewsSection: {
     marginTop: Spacing.lg,
   },

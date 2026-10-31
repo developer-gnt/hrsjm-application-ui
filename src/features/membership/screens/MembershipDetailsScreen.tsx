@@ -17,6 +17,7 @@ import {
   BenefitItem,
 } from '../components/MembershipBenefitsSection';
 import { MembershipValidityCard } from '../components/MembershipValidityCard';
+import { MembershipKitFulfilmentSection } from '../components/MembershipKitFulfilmentSection';
 import {
   MembershipDocumentsSection,
   DocumentItem,
@@ -282,7 +283,18 @@ export const MembershipDetailsScreen: React.FC<MembershipDetailsScreenProps> = (
                 />
               </View>
 
-              {/* Phase 4: Membership Documents */}
+              {/* Phase 4: Physical Kit Fulfilment Section */}
+              <View
+                nativeID="section-kit"
+                onLayout={handleSectionLayout('kit')}
+              >
+                <MembershipKitFulfilmentSection
+                  kitFulfillment={memberData.kitFulfillment}
+                  memberAddress={memberData.address}
+                />
+              </View>
+
+              {/* Phase 5: Membership Documents */}
               <View
                 nativeID="section-documents"
                 onLayout={handleSectionLayout('documents')}

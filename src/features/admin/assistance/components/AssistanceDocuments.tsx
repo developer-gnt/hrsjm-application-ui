@@ -17,6 +17,7 @@ import { colors, spacing, typography } from '../../../../core/theme/theme';
 import { formatDate, formatFileSize } from '../../../../core/utils/format';
 import { API_BASE_URL } from '../../../../core/config';
 import { getSession } from '../../../../core/auth/storage';
+import { FileText, ImageIcon, X } from '../../../../core/components/icons';
 import { useAssistanceDocuments } from '../hooks/useAssistanceDocuments';
 import type { AssistanceDocumentItem } from '../types/assistance.types';
 
@@ -54,8 +55,8 @@ function DocumentPreviewModal({
           <Text style={styles.previewTitle} numberOfLines={1}>
             {doc.document_name}
           </Text>
-          <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Close preview">
-            <Text style={styles.previewClose}>✕</Text>
+          <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Close preview" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <X size={20} color="#0F2C59" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
         {isImage(doc.mime_type) && token ? (
@@ -118,9 +119,13 @@ export function AssistanceDocuments({ requestId }: { requestId: string }) {
       {documents.map(doc => (
         <AppCard key={doc.id} style={styles.docCard}>
           <View style={styles.docRow}>
-            <Text style={styles.docIcon}>
-              {isImage(doc.mime_type) ? '🖼️' : '📄'}
-            </Text>
+            <View style={{ marginRight: 10, justifyContent: 'center' }}>
+              {isImage(doc.mime_type) ? (
+                <ImageIcon size={20} color={colors.primary} strokeWidth={2} />
+              ) : (
+                <FileText size={20} color={colors.primary} strokeWidth={2} />
+              )}
+            </View>
             <View style={styles.docInfo}>
               <Text style={styles.docName} numberOfLines={1}>
                 {doc.document_name}

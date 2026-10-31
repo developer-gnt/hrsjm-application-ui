@@ -14,6 +14,8 @@ import { AdminHeader } from '../../../app/navigation/AdminHeader';
 import { HeroBanner } from '../../user/home/components/HeroBanner';
 import { QuickActionsRow } from '../../user/home/components/QuickActionCard';
 import { AboutSection } from '../../user/home/components/AboutSection';
+import { AboutVideoModal } from '../../user/home/components/AboutVideoModal';
+import { useAboutVideo } from '../../user/home/services/about-video.service';
 import { CategoryIconRow } from '../../user/home/components/CategoryIconCard';
 import { SectionHeader } from '../../user/home/components/SectionHeader';
 import { ImpactSection } from '../../user/home/components/ImpactSection';
@@ -36,6 +38,7 @@ import {
   WHAT_WE_DO_ITEMS,
 } from '../../user/home/data/home-preview-data';
 import { getImpactStats } from '../../user/home/data/impact-stats-provider';
+import { Phone } from '../../../core/components/icons';
 import { getEventsList } from '../../admin/content/events/services/events.service';
 import type { EventListItem } from '../../admin/content/events/types/events.types';
 import { fetchLatestPublishedNews } from '../../user/news/services/user-news.service';
@@ -105,6 +108,12 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
   const [refreshing, setRefreshing] = useState(false);
   const [isApplyPageVisible, setIsApplyPageVisible] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  const [videoModalVisible, setVideoModalVisible] = useState(false);
+  const { video: aboutVideo, fetchAboutVideo } = useAboutVideo();
+
+  useEffect(() => {
+    fetchAboutVideo();
+  }, [fetchAboutVideo]);
 
   const [feedbackConfig, setFeedbackConfig] = useState<{
     visible: boolean;
@@ -334,7 +343,9 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
         {/* Emergency Helpline Banner */}
         <View style={styles.section}>
           <View style={styles.helplineBanner}>
-            <Text style={styles.helplineIcon}>📞</Text>
+            <View style={{ marginRight: 10 }}>
+              <Phone size={22} color="#0D47A1" strokeWidth={2} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.helplineTitle}>24x7 Emergency Social & Legal Helpline</Text>
               <Text style={styles.helplinePhone}>+91 98888 80004 / 1800-HRSJM-AID</Text>
@@ -482,9 +493,13 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
         {/* About HRSJM Section */}
         <View style={styles.section}>
           <AboutSection
+            description={aboutVideo.summaryText}
+            duration={aboutVideo.duration}
+            thumbnailUrl={aboutVideo.thumbnailUrl}
             onMorePress={() => {
               if (navigation) navigation.navigate('About');
             }}
+            onMediaPress={() => setVideoModalVisible(true)}
           />
         </View>
       </ScrollView>

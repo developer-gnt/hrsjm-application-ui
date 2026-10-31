@@ -23,6 +23,7 @@ import { SeekerTimelineStepper } from '../components/SeekerTimelineStepper';
 import { AdminColors } from '../../../core/theme/colors';
 import { Typography, FontFamilies } from '../../../core/theme/typography';
 import { Spacing, BorderRadius } from '../../../core/theme/spacing';
+import { CheckCircle2, MessageSquare } from '../../../core/components/icons';
 import type {
   AssistanceRequest,
   CreateAssistanceRequestPayload,
@@ -243,8 +244,9 @@ export const SeekerRequestsScreen: React.FC<SeekerRequestsScreenProps> = ({
             {/* Live Campaign notice if approved */}
             {item.status === 'APPROVED' ? (
               <View style={styles.approvedNotice}>
+                <CheckCircle2 size={15} color="#15803D" strokeWidth={2} style={{ marginRight: 6 }} />
                 <Text style={styles.approvedNoticeText}>
-                  ✨ This cause is verified and live on the HRSJM public donation portal!
+                  This cause is verified and live on the HRSJM public donation portal!
                 </Text>
               </View>
             ) : null}
@@ -261,7 +263,8 @@ export const SeekerRequestsScreen: React.FC<SeekerRequestsScreenProps> = ({
                   }
                 }}
               >
-                <Text style={styles.queryBtnText}>💬 Ask Helpdesk</Text>
+                <MessageSquare size={14} color="#0D47A1" strokeWidth={2} style={{ marginRight: 6 }} />
+                <Text style={styles.queryBtnText}>Ask Helpdesk</Text>
               </TouchableOpacity>
             </View>
           </AppCard>

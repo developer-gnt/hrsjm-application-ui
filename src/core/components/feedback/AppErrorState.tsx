@@ -4,6 +4,7 @@ import { AdminColors } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
 import { Spacing } from '../../theme/spacing';
 import { AppButton } from '../common/AppButton';
+import { AlertCircle } from '../icons';
 
 export interface AppErrorStateProps {
   title?: string;
@@ -25,7 +26,7 @@ export const AppErrorState: React.FC<AppErrorStateProps> = ({
   const displayMsg = message || description || 'We encountered an error loading this information. Please try again.';
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.icon}>⚠️</Text>
+      <AlertCircle size={44} color="#DC2626" strokeWidth={1.8} style={{ marginBottom: Spacing.md }} />
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
       {onRetry && (

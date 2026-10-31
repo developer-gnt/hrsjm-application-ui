@@ -75,3 +75,6 @@ current_*.png
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# APK files
+*.apk

@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import {
   PaymentPayload,
   PaymentReceiptDetails,
@@ -55,6 +56,8 @@ import {
   PaymentRadioButton,
 } from '../components/PaymentBrandLogos';
 import { FontFamilies } from '../../../core/theme/typography';
+import { amountToWords } from '../../../core/utils/format';
+import { shareContent } from '../../../core/utils/share';
 
 const HRSJM_EMBLEM = require('../../../assets/hrsjm_logo.png');
 
@@ -69,6 +72,7 @@ export interface GlobalPaymentModalProps {
   onSuccess?: (receipt: PaymentReceiptDetails) => void;
   onNavigateHome?: () => void;
   onViewHistory?: () => void;
+  onViewReceipt?: (receipt: PaymentReceiptDetails) => void;
   initialStage?: PaymentStage;
 }
 
@@ -125,10 +129,13 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
   payload,
   onClose,
   onSuccess,
+  onNavigateHome,
   onViewHistory,
+  onViewReceipt,
   initialStage,
 }) => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const user = useAuthStore(state => state.user);
 
   // Step 1 is Amount Selection
@@ -711,23 +718,121 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
     onClose();
   };
 
-  const handleShareReceipt = async () => {
+  const handleViewReceipt = () => {
     if (!receiptResult) return;
-    try {
-      await Share.share({
-        title: `HRSJM Receipt - ${receiptResult.title}`,
-        message: `I just contributed ₹${receiptResult.amount.toLocaleString('en-IN')} towards "${receiptResult.title}" on HRSJM (Human Rights & Social Justice Mission).\nPayment ID: ${receiptResult.paymentId}\nReceipt No: ${receiptResult.receiptNumber}`,
-      });
-    } catch {
-      // ignore
+    onClose();
+    if (onViewReceipt) {
+      onViewReceipt(receiptResult);
+      return;
+    }
+    if (navigation?.navigate) {
+      try {
+        const isNgo = payload?.category === 'NGO Donation';
+        const causeTitle = isNgo
+          ? 'HRSJM NGO Donation - General Fund'
+          : payload?.title || 'Donation Cause';
+        navigation.navigate('ReceiptDetail', {
+          receiptNo: receiptResult.receiptNumber,
+          record: {
+            id: receiptResult.paymentId || receiptResult.receiptNumber,
+            receiptNo: receiptResult.receiptNumber,
+            type: 'Donation',
+            title: receiptResult.title || causeTitle,
+            cause: causeTitle,
+            category: isNgo ? 'Donation' : 'Cause Donation',
+            description: `Contribution of ₹${receiptResult.amount.toLocaleString('en-IN')}`,
+            amount: receiptResult.amount,
+            amountInWords: amountToWords(receiptResult.amount),
+            date: receiptResult.date,
+            time: new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }),
+            dateTime: receiptResult.date,
+            status: 'Completed',
+            paymentMethod: receiptResult.paymentMethod || 'CASHFREE',
+            transactionId: receiptResult.paymentId || receiptResult.orderId,
+            donorName: donorName || user?.full_name || 'Donor',
+            donorEmail: donorEmail || user?.email,
+            donorPhone: donorMobile || user?.mobile_number,
+          },
+          fromScreen: 'DonationHistory',
+        });
+      } catch (e) {
+        console.warn('Navigation to ReceiptDetail failed:', e);
+      }
     }
   };
 
+  const handleShareReceipt = async () => {
+    if (!receiptResult) return;
+    const shareText = `I just contributed ₹${receiptResult.amount.toLocaleString('en-IN')} towards "${receiptResult.title || title}" on HRSJM (Human Rights & Social Justice Mission).\nPayment ID: ${receiptResult.paymentId}\nReceipt No: ${receiptResult.receiptNumber}`;
+    await shareContent({
+      title: `HRSJM Receipt - ${receiptResult.title || title}`,
+      message: shareText,
+    });
+  };
+
   const handleDownloadReceipt = () => {
-    Alert.alert(
-      'Receipt Downloaded',
-      `Official 80G tax receipt ${receiptResult?.receiptNumber || ''} has been saved to your downloads.`,
-    );
+    if (!receiptResult) return;
+    onClose();
+    if (navigation?.navigate) {
+      try {
+        const isNgo = payload?.category === 'NGO Donation';
+        const causeTitle = isNgo
+          ? 'HRSJM NGO Donation - General Fund'
+          : payload?.title || 'Donation Cause';
+        navigation.navigate('ReceiptPdfPreview', {
+          receiptNo: receiptResult.receiptNumber,
+          record: {
+            id: receiptResult.paymentId || receiptResult.receiptNumber,
+            receiptNo: receiptResult.receiptNumber,
+            type: 'Donation',
+            title: receiptResult.title || causeTitle,
+            cause: causeTitle,
+            category: isNgo ? 'Donation' : 'Cause Donation',
+            description: `Contribution of ₹${receiptResult.amount.toLocaleString('en-IN')}`,
+            amount: receiptResult.amount,
+            amountInWords: amountToWords(receiptResult.amount),
+            date: receiptResult.date,
+            time: new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }),
+            dateTime: receiptResult.date,
+            status: 'Completed',
+            paymentMethod: receiptResult.paymentMethod || 'CASHFREE',
+            transactionId: receiptResult.paymentId || receiptResult.orderId,
+            donorName: donorName || user?.full_name || 'Donor',
+            donorEmail: donorEmail || user?.email,
+            donorPhone: donorMobile || user?.mobile_number,
+          },
+          fromScreen: 'DonationHistory',
+        });
+      } catch (e) {
+        console.warn('Navigation to ReceiptPdfPreview failed:', e);
+      }
+    }
+  };
+
+  const handleDone = () => {
+    onClose();
+    if (onNavigateHome) {
+      onNavigateHome();
+    } else if (navigation?.navigate) {
+      try {
+        navigation.navigate('UserHome');
+      } catch {}
+    }
+  };
+
+  const handleViewDonationHistory = () => {
+    onClose();
+    if (onViewHistory) {
+      onViewHistory();
+    } else if (navigation?.navigate) {
+      try {
+        navigation.navigate('UserHistory');
+      } catch {
+        try {
+          navigation.navigate('DonationHistory');
+        } catch {}
+      }
+    }
   };
 
   if (!visible || !payload) return null;
@@ -1839,12 +1944,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           <View style={styles.receiptActionsRow}>
             <TouchableOpacity
               style={styles.actionPillBtn}
-              onPress={() => {
-                Alert.alert(
-                  'Official 80G Receipt',
-                  `Receipt Number: ${receiptResult.receiptNumber}\nAmount: ₹${receiptResult.amount.toLocaleString('en-IN')}\nEligible for 50% Tax Exemption under Section 80G of Income Tax Act.`,
-                );
-              }}
+              onPress={handleViewReceipt}
               activeOpacity={0.7}
             >
               <Text style={styles.actionPillIcon}>📄</Text>
@@ -1880,7 +1980,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
         >
           <TouchableOpacity
             style={styles.primaryBackHomeBtn}
-            onPress={onClose}
+            onPress={handleDone}
             activeOpacity={0.85}
           >
             <Text style={styles.primaryBackHomeBtnText}>Done</Text>
@@ -1888,10 +1988,7 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
 
           <TouchableOpacity
             style={styles.viewHistoryLinkBtn}
-            onPress={() => {
-              onClose();
-              onViewHistory?.();
-            }}
+            onPress={handleViewDonationHistory}
             activeOpacity={0.7}
           >
             <Text style={styles.viewHistoryLinkText}>View Donation History →</Text>

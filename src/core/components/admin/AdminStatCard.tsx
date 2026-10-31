@@ -4,6 +4,7 @@ import { BrandColors, StatusTones, StatusToneKey } from '../../theme/colors';
 import { Spacing, BorderRadius, Shadows } from '../../theme/spacing';
 import { Typography } from '../../theme/typography';
 import type { AppIconComponent } from '../icons';
+import { BarChart3 } from '../icons';
 
 export interface AdminStatCardProps {
   label?: string;
@@ -75,7 +76,7 @@ export const AdminStatCard: React.FC<AdminStatCardProps> = ({
           {Icon ? (
             <Icon size={ICON_SIZE} color={BrandColors.surface} strokeWidth={2} />
           ) : (
-            <Text style={styles.emojiIcon}>{icon || '📊'}</Text>
+            <BarChart3 size={ICON_SIZE} color={BrandColors.surface} strokeWidth={2} />
           )}
         </View>
 

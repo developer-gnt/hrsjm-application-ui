@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdminColors, Spacing, UserFontFamilies } from '../../../../core/theme';
 import { ContactHeader } from '../components/ContactHeader';
@@ -15,10 +17,11 @@ import { ContactHero } from '../components/ContactHero';
 import { ContactActionsRow } from '../components/ContactActionCard';
 import { ContactForm } from '../components/ContactForm';
 import { ContactDetailsSection } from '../components/ContactDetailsSection';
-import { ContactMapSection } from '../components/ContactMapSection';
+import { ContactMapSection, GOOGLE_MAPS_SEARCH_URL } from '../components/ContactMapSection';
 import { ContactFinalCta } from '../components/ContactFinalCta';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import { CONTACT_ACTIONS } from '../data/contact-content';
+import type { ContactDetailCard } from '../types/contact.types';
 
 export interface ContactUsScreenProps {
   /** Returns to the previous User screen (temporary router back navigation). */
@@ -35,12 +38,11 @@ export interface ContactUsScreenProps {
 }
 
 /**
- * Reference-locked Contact Us page — a standalone User App screen:
+ * Contact Us page — a standalone User App screen:
  * header, navy contact hero, four quick-action cards, the "Send Us a
- * Message" form with UI-only validation, "Our Contact Details" 2x2 grid,
- * "Find Us on Map" with the office info card, the "Open in Google Maps"
- * action, the closing navy CTA and the five-tab bottom navigation
- * (Home · About · Rights · Events · News).
+ * Message" form with interactive Subject selection, "Our Contact Details" 2x2 grid,
+ * "Find Us on Map" with dynamic Google Maps navigation, the closing navy CTA,
+ * and bottom navigation.
  */
 export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
   onBack,
@@ -52,9 +54,103 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
   showBottomNav = false,
   hideBottomNav = true,
 }) => {
+  const navigation = useNavigation<any>();
+  const scrollViewRef = useRef<any>(null);
+  const [formY, setFormY] = useState(0);
+
   const showComingSoon = (feature: string) => {
-    // UI PHASE ONLY placeholder for actions that ship with later phases.
     Alert.alert(feature, `"${feature}" is part of an upcoming phase.`);
+  };
+
+  const handleCall = async () => {
+    const phoneUrl = 'tel:+912212345678';
+    try {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.open(phoneUrl, '_self');
+        return;
+      }
+      const canOpen = await Linking.canOpenURL(phoneUrl);
+      if (canOpen) {
+        await Linking.openURL(phoneUrl);
+      } else {
+        Alert.alert(
+          'Call HRSJM',
+          'Primary Helpline: +91 22 1234 5678\nAlternate: +91 98765 43210\nMonday - Friday, 10:00 AM - 6:00 PM',
+        );
+      }
+    } catch {
+      Alert.alert('Call HRSJM', 'Please dial +91 22 1234 5678 to connect with our support team.');
+    }
+  };
+
+  const handleEmail = () => {
+    if (formY > 0 && scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: formY - 10, animated: true });
+    } else {
+      Linking.openURL('mailto:info@hrsjm.org?subject=Inquiry%20to%20HRSJM').catch(() => {});
+    }
+  };
+
+  const handleOpenGoogleMaps = async () => {
+    try {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.open(GOOGLE_MAPS_SEARCH_URL, '_blank');
+        return;
+      }
+      const canOpen = await Linking.canOpenURL(GOOGLE_MAPS_SEARCH_URL);
+      if (canOpen) {
+        await Linking.openURL(GOOGLE_MAPS_SEARCH_URL);
+      } else {
+        await Linking.openURL(
+          `geo:19.0728,72.8797?q=${encodeURIComponent('123 Justice Lane, Kurla West, Mumbai')}`,
+        );
+      }
+    } catch {
+      Linking.openURL(GOOGLE_MAPS_SEARCH_URL);
+    }
+  };
+
+  const handleGetHelp = () => {
+    if (onOpenGetHelp) {
+      onOpenGetHelp();
+    } else {
+      try {
+        navigation?.navigate('FileComplaint');
+      } catch {
+        // Fallback if not inside navigation container
+      }
+    }
+  };
+
+  const handleActionPress = (actionId: string) => {
+    switch (actionId) {
+      case 'call':
+        handleCall();
+        break;
+      case 'email':
+        handleEmail();
+        break;
+      case 'visit':
+        handleOpenGoogleMaps();
+        break;
+      case 'help':
+        handleGetHelp();
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleDetailCardLinkPress = (card: ContactDetailCard) => {
+    if (card.id === 'address') {
+      handleOpenGoogleMaps();
+    } else if (card.id === 'phone') {
+      handleCall();
+    } else if (card.id === 'email') {
+      Linking.openURL('mailto:info@hrsjm.org?subject=Inquiry%20to%20HRSJM').catch(() => {});
+    } else {
+      showComingSoon(card.title);
+    }
   };
 
   return (
@@ -69,6 +165,7 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
+          ref={scrollViewRef}
           style={styles.flex}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
@@ -80,17 +177,14 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
           <View style={styles.actionsSection}>
             <ContactActionsRow
               actions={CONTACT_ACTIONS}
-              onPressAction={action => {
-                if (action.id === 'help') {
-                  onOpenGetHelp?.();
-                  return;
-                }
-                showComingSoon(action.title);
-              }}
+              onPressAction={action => handleActionPress(action.id)}
             />
           </View>
 
-          <View style={styles.formSection}>
+          <View
+            style={styles.formSection}
+            onLayout={e => setFormY(e.nativeEvent.layout.y)}
+          >
             <Text style={styles.formHeading}>Send Us a Message</Text>
             <Text style={styles.formSupporting}>
               Have a question, suggestion or need support? Fill out the form
@@ -101,11 +195,11 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
 
           <View style={styles.detailsSection}>
             <ContactDetailsSection
-              onLinkPress={() => showComingSoon('View on Maps')}
+              onLinkPress={handleDetailCardLinkPress}
             />
           </View>
 
-          <ContactMapSection />
+          <ContactMapSection onOpenMaps={handleOpenGoogleMaps} />
 
           <View style={styles.ctaSection}>
             <ContactFinalCta />
@@ -138,7 +232,7 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: AdminColors.cardSurface,
+    backgroundColor: AdminColors.background,
   },
   flex: {
     flex: 1,
@@ -147,30 +241,37 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   actionsSection: {
-    marginTop: Spacing.lg,
+    marginTop: -Spacing.md,
+    marginBottom: Spacing.base,
+    zIndex: 2,
   },
   formSection: {
-    marginTop: Spacing.xl,
     paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.base,
+    position: 'relative',
+    zIndex: 100,
   },
   formHeading: {
     fontFamily: UserFontFamilies.heading,
-    fontSize: 19,
-    lineHeight: 24,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: '700',
     color: AdminColors.primaryDark,
+    marginBottom: Spacing.xs,
   },
   formSupporting: {
-    fontSize: 11.5,
-    lineHeight: 16.5,
+    fontSize: 12.5,
+    lineHeight: 18,
     color: AdminColors.textSecondary,
-    marginTop: Spacing.xs,
     marginBottom: Spacing.base,
   },
   detailsSection: {
-    marginTop: Spacing.xl,
+    paddingTop: Spacing.base,
+    position: 'relative',
+    zIndex: 1,
   },
   ctaSection: {
-    marginTop: Spacing.xl,
+    paddingTop: Spacing.base,
   },
 });

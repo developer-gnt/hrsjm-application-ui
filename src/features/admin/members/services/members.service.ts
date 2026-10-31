@@ -464,6 +464,27 @@ export const membersService = {
     });
     return res.data;
   },
+  /**
+   * Update physical kit fulfillment / dispatch tracking (Admin).
+   */
+  async updateKitFulfillment(
+    id: string,
+    payload: {
+      status?: 'PENDING' | 'PROCESSING' | 'DISPATCHED' | 'DELIVERED';
+      courier_name?: string;
+      tracking_number?: string;
+      dispatch_date?: string;
+      delivery_address?: string;
+      notes?: string;
+      items?: string[];
+    }
+  ): Promise<BackendMembership> {
+    const res = await apiClient.patch<BackendMembership>(
+      ApiRoutes.MEMBERSHIPS.KIT_FULFILLMENT(id),
+      payload
+    );
+    return res.data;
+  },
 };
 
 export interface MembershipCategoryItem {

@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import {
   AdminColors,
   BorderRadius,
@@ -166,6 +167,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
   } catch {}
 
   const content = ACTION_PAGE_CONTENT[pageId];
+  const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>('all');
   const [dynamicCauses, setDynamicCauses] = useState<MemberCause[]>(() => {
@@ -340,7 +342,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
         activeNav={pageId === 'join' ? 'join' : undefined}
         onBack={onBack}
         onPressSearch={() => showPendingAction('Search')}
-        onPressNotifications={() => showPendingAction('Notifications')}
+        onPressNotifications={() => navigation.navigate('Notifications')}
       />
       <ScrollView
         style={styles.scroll}
@@ -626,7 +628,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
                       <View style={styles.causeCardHeader}>
                         <View style={styles.causeCategoryBadge}>
                           <Text style={styles.causeCategoryBadgeText}>
-                            {cause.categoryIcon || '🎯'} {cause.category}
+                            {cause.category}
                           </Text>
                         </View>
                         <View style={styles.verifiedBadge}>

@@ -23,6 +23,7 @@ import {
   UserProfileModal,
 } from '../../../auth/components/UserProfileModal';
 import { useDynamicUnreadCount } from '../../../admin/notifications/store/notificationsStore';
+import { LogOut, User } from '../../../../core/components/icons';
 
 const LOGO_SOURCE = require('../../../../assets/logo/logo.png');
 
@@ -261,23 +262,23 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           <View style={styles.rightRow}>
             {rightAction ? (
               <View style={styles.customRightAction}>{rightAction}</View>
-            ) : (
-              <>
-                {/* Main Call to Action: Gold Donate button per docs/design.md §5 (Shown for User and Member, hidden for Seeker) */}
-                {!shouldHideDonate && (
-                  <TouchableOpacity
-                    style={styles.ctaButton}
-                    onPress={handleDonatePress}
-                    activeOpacity={0.82}
-                    accessibilityRole="button"
-                    accessibilityLabel="Donate to HRSJM"
-                  >
-                    <Text style={styles.ctaButtonText}>Donate</Text>
-                  </TouchableOpacity>
-                )}
+            ) : null}
 
-                {/* Notification Bell */}
-                <TouchableOpacity
+            {/* Main Call to Action: Gold Donate button per docs/design.md §5 (Shown for User and Member, hidden for Seeker) */}
+            {!shouldHideDonate && (
+              <TouchableOpacity
+                style={styles.ctaButton}
+                onPress={handleDonatePress}
+                activeOpacity={0.82}
+                accessibilityRole="button"
+                accessibilityLabel="Donate to HRSJM"
+              >
+                <Text style={styles.ctaButtonText}>Donate</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Notification Bell */}
+            <TouchableOpacity
                   style={styles.bellButton}
                   onPress={handleOpenNotifications}
                   activeOpacity={0.7}
@@ -320,8 +321,6 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
                     )}
                   </View>
                 </TouchableOpacity>
-              </>
-            )}
           </View>
         </View>
 
@@ -369,7 +368,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               onPress={handleOpenProfile}
               activeOpacity={0.7}
             >
-              <Text style={styles.dropdownItemIcon}>👤</Text>
+              <User size={16} color="#1E3A8A" strokeWidth={2} style={styles.dropdownItemIcon} />
               <Text style={styles.dropdownItemText}>View Profile</Text>
             </TouchableOpacity>
 
@@ -381,7 +380,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               onPress={handleSignOut}
               activeOpacity={0.7}
             >
-              <Text style={styles.dropdownItemIcon}>🚪</Text>
+              <LogOut size={16} color="#DC2626" strokeWidth={2} style={styles.dropdownItemIcon} />
               <Text style={[styles.dropdownItemText, styles.signOutText]}>
                 Sign Out
               </Text>
@@ -621,7 +620,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   dropdownItemIcon: {
-    fontSize: 16,
     marginRight: 10,
   },
   dropdownItemText: {

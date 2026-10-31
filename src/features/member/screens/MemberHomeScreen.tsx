@@ -17,7 +17,14 @@ import { useAuthStore } from '../../auth/store/authStore';
 import { DEFAULT_ADMIN_AVATAR } from '../../auth/components/UserProfileModal';
 import { FontFamilies, BorderRadius } from '../../../core/theme';
 import { useMembershipDetailsData } from '../../membership/hooks/useMembershipDetailsData';
-import { Calendar } from '../../../core/components/icons';
+import {
+  ArrowDownToLine,
+  BarChart3,
+  Calendar,
+  Heart,
+  IdCard,
+  ShieldCheck,
+} from '../../../core/components/icons';
 
 const HRSJM_EMBLEM = require('../../../assets/hrsjm_logo.png');
 
@@ -91,7 +98,10 @@ export const MemberHomeScreen: React.FC = () => {
             <View style={styles.cardFooterDivider} />
             <View style={styles.cardFooterMeta}>
               <Text style={styles.cardMetaLabel}>STATUS</Text>
-              <Text style={styles.cardMetaValue}>VERIFIED 🛡️</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <ShieldCheck size={14} color="#059669" strokeWidth={2.2} />
+                <Text style={styles.cardMetaValue}>VERIFIED</Text>
+              </View>
             </View>
           </View>
 
@@ -109,8 +119,8 @@ export const MemberHomeScreen: React.FC = () => {
               onPress={() => navigation.navigate('MemberCauses')}
               activeOpacity={0.75}
             >
-              <View style={[styles.shortcutIconBox, { backgroundColor: '#FFFBEB' }]}>
-                <Text style={styles.shortcutIcon}>💛</Text>
+              <View style={[styles.shortcutIconBox, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }]}>
+                <Heart size={20} color="#D97706" strokeWidth={2} />
               </View>
               <Text style={styles.shortcutTitle}>Causes & Aid</Text>
               <Text style={styles.shortcutSub}>Support verified missions</Text>
@@ -121,8 +131,8 @@ export const MemberHomeScreen: React.FC = () => {
               onPress={() => navigation.navigate('MemberEvents')}
               activeOpacity={0.75}
             >
-              <View style={[styles.shortcutIconBox, { backgroundColor: '#EEF3FC' }]}>
-                <Calendar size={20} color="#1E40AF" />
+              <View style={[styles.shortcutIconBox, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }]}>
+                <Calendar size={20} color="#1E40AF" strokeWidth={2} />
               </View>
               <Text style={styles.shortcutTitle}>Events</Text>
               <Text style={styles.shortcutSub}>Volunteer & drives</Text>
@@ -133,8 +143,8 @@ export const MemberHomeScreen: React.FC = () => {
               onPress={() => navigation.navigate('MemberReceipts')}
               activeOpacity={0.75}
             >
-              <View style={[styles.shortcutIconBox, { backgroundColor: '#ECFDF5' }]}>
-                <Text style={styles.shortcutIcon}>📥</Text>
+              <View style={[styles.shortcutIconBox, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }]}>
+                <ArrowDownToLine size={20} color="#059669" strokeWidth={2} />
               </View>
               <Text style={styles.shortcutTitle}>80G Receipts</Text>
               <Text style={styles.shortcutSub}>Tax exemptions & history</Text>
@@ -145,8 +155,8 @@ export const MemberHomeScreen: React.FC = () => {
               onPress={() => navigation.navigate('MemberProfile')}
               activeOpacity={0.75}
             >
-              <View style={[styles.shortcutIconBox, { backgroundColor: '#FEF2F2' }]}>
-                <Text style={styles.shortcutIcon}>🪪</Text>
+              <View style={[styles.shortcutIconBox, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }]}>
+                <IdCard size={20} color="#DC2626" strokeWidth={2} />
               </View>
               <Text style={styles.shortcutTitle}>My ID Card</Text>
               <Text style={styles.shortcutSub}>Digital credentials & cert</Text>
@@ -157,8 +167,8 @@ export const MemberHomeScreen: React.FC = () => {
               onPress={() => navigation.navigate('MemberDashboard')}
               activeOpacity={0.75}
             >
-              <View style={[styles.shortcutIconBox, { backgroundColor: '#F0FDF4' }]}>
-                <Text style={styles.shortcutIcon}>📊</Text>
+              <View style={[styles.shortcutIconBox, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }]}>
+                <BarChart3 size={20} color="#16A34A" strokeWidth={2} />
               </View>
               <Text style={styles.shortcutTitle}>Community Dashboard</Text>
               <Text style={styles.shortcutSub}>Stats, learning & feed</Text>

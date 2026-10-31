@@ -15,6 +15,18 @@ import { causesService } from '../services/causes.service';
 import { GlobalPaymentModal } from '../../payments';
 import { FontFamilies } from '../../../core/theme';
 import { useAuthStore } from '../../auth/store/authStore';
+import {
+  Banknote,
+  Check,
+  ChevronLeft,
+  Clock,
+  Heart,
+  Landmark,
+  MapPin,
+  ShieldCheck,
+  Target,
+  Users,
+} from '../../../core/components/icons';
 
 interface MemberCauseDetailsScreenProps {
   cause: MemberCause;
@@ -76,7 +88,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Text style={styles.backArrow}>←</Text>
+              <ChevronLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
 
             <View style={styles.heroActionsRow}>
@@ -98,16 +110,19 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
         <View style={styles.headerCard}>
           <View style={styles.categoryRow}>
             <Text style={styles.categoryTag}>
-              {currentCause.categoryIcon} {currentCause.category}
+              {currentCause.category}
             </Text>
-            <Text style={styles.locationTag}>📍 {currentCause.location}</Text>
+            <View style={styles.locationRow}>
+              <MapPin size={13} color="#64748B" strokeWidth={2} />
+              <Text style={styles.locationTag}>{currentCause.location}</Text>
+            </View>
           </View>
 
           <Text style={styles.causeMainTitle}>{currentCause.title}</Text>
 
           {/* Verified NGO Shield */}
           <View style={styles.verifiedRow}>
-            <Text style={styles.verifiedShield}>🛡️</Text>
+            <ShieldCheck size={16} color="#1E3A8A" strokeWidth={2} />
             <Text style={styles.verifiedText}>
               HRSJM Verified Social Impact Initiative
             </Text>
@@ -145,12 +160,18 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
           </View>
 
           <View style={styles.donorInfoRow}>
-            <Text style={styles.donorMetaText}>
-              👥 <Text style={styles.donorBold}>{currentCause.donorCount}</Text> generous donors
-            </Text>
-            <Text style={styles.donorMetaText}>
-              ⏳ <Text style={styles.donorBold}>{currentCause.daysLeft ?? 30}</Text> days remaining
-            </Text>
+            <View style={styles.donorMetaItem}>
+              <Users size={14} color="#64748B" strokeWidth={2} />
+              <Text style={styles.donorMetaText}>
+                <Text style={styles.donorBold}>{currentCause.donorCount}</Text> generous donors
+              </Text>
+            </View>
+            <View style={styles.donorMetaItem}>
+              <Clock size={14} color="#64748B" strokeWidth={2} />
+              <Text style={styles.donorMetaText}>
+                <Text style={styles.donorBold}>{currentCause.daysLeft ?? 30}</Text> days remaining
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -161,7 +182,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
           <View style={styles.impactGrid}>
             <View style={styles.impactGridItem}>
               <View style={styles.impactIconBubble}>
-                <Text style={styles.impactEmoji}>👥</Text>
+                <Users size={16} color="#1E3A8A" strokeWidth={2} />
               </View>
               <Text style={styles.impactValue}>
                 {currentCause.beneficiariesCount.toLocaleString('en-IN')}
@@ -171,7 +192,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
 
             <View style={styles.impactGridItem}>
               <View style={styles.impactIconBubble}>
-                <Text style={styles.impactEmoji}>🎯</Text>
+                <Target size={16} color="#1E3A8A" strokeWidth={2} />
               </View>
               <Text style={styles.impactValue}>{currentCause.targetBeneficiaries}</Text>
               <Text style={styles.impactLabel}>Target Group</Text>
@@ -179,7 +200,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
 
             <View style={styles.impactGridItem}>
               <View style={styles.impactIconBubble}>
-                <Text style={styles.impactEmoji}>💰</Text>
+                <Banknote size={16} color="#1E3A8A" strokeWidth={2} />
               </View>
               <Text style={styles.impactValue}>
                 {formatRupee(currentCause.raisedAmount)}
@@ -189,7 +210,7 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
 
             <View style={styles.impactGridItem}>
               <View style={styles.impactIconBubble}>
-                <Text style={styles.impactEmoji}>⏳</Text>
+                <Clock size={16} color="#1E3A8A" strokeWidth={2} />
               </View>
               <Text style={styles.impactValue}>
                 {formatRupee(remainingAmount)}
@@ -207,7 +228,9 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
 
         {/* Trust & Transparency Badge */}
         <View style={styles.trustBanner}>
-          <Text style={styles.trustIcon}>🏛️</Text>
+          <View style={styles.trustIconWrap}>
+            <Landmark size={20} color="#92400E" strokeWidth={2} />
+          </View>
           <View style={styles.trustTextCol}>
             <Text style={styles.trustTitle}>100% Direct Impact Transparency</Text>
             <Text style={styles.trustSubtitle}>
@@ -249,7 +272,11 @@ export const MemberCauseDetailsScreen: React.FC<MemberCauseDetailsScreenProps> =
           accessibilityRole="button"
           accessibilityLabel={`Donate to ${currentCause.title}`}
         >
-          <Text style={styles.donateCtaIcon}>💛</Text>
+          {isCompleted ? (
+            <Check size={18} color="#FFFFFF" strokeWidth={2.5} />
+          ) : (
+            <Heart size={18} color="#011F39" strokeWidth={2.2} />
+          )}
           <Text style={styles.donateCtaText}>
             {isCompleted ? 'Goal Reached' : 'Donate Now'}
           </Text>
@@ -400,6 +427,11 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
   },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   locationTag: {
     fontFamily: 'Inter',
     fontSize: 12,
@@ -505,6 +537,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 4,
   },
+  donorMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   donorMetaText: {
     fontFamily: 'Inter-Regular',
     fontSize: 12,
@@ -529,16 +566,15 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   impactIconBubble: {
-    width: 30,
-    height: 30,
+    width: 32,
+    height: 32,
     borderRadius: 8,
-    backgroundColor: '#EEF3FC',
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
-  },
-  impactEmoji: {
-    fontSize: 14,
   },
   impactValue: {
     fontFamily: FontFamilies.display,
@@ -566,14 +602,21 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 16,
-    backgroundColor: '#FFF8E6',
+    backgroundColor: '#FFFBEB',
     borderWidth: 1,
     borderColor: '#FDE68A',
     borderRadius: 14,
     padding: 14,
   },
-  trustIcon: {
-    fontSize: 24,
+  trustIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   trustTextCol: {
     flex: 1,

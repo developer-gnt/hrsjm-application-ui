@@ -1,19 +1,27 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AdminColors, BorderRadius, Spacing } from '../../../core';
+import {
+  House,
+  Users,
+  FileText,
+  Briefcase,
+  HelpCircle,
+  type AppIconComponent,
+} from '../../../core/components/icons';
 
 export interface NavItem {
   key: string;
   label: string;
-  icon: string;
+  Icon: AppIconComponent;
 }
 
 export const SUPPORT_NAV_ITEMS: NavItem[] = [
-  { key: 'dashboard', label: 'Dashboard', icon: '🏠' },
-  { key: 'members', label: 'Members', icon: '👥' },
-  { key: 'applications', label: 'Applications', icon: '📄' },
-  { key: 'donations', label: 'Donations', icon: '💼' },
-  { key: 'support', label: 'Support', icon: '🎧' },
+  { key: 'dashboard', label: 'Dashboard', Icon: House },
+  { key: 'members', label: 'Members', Icon: Users },
+  { key: 'applications', label: 'Applications', Icon: FileText },
+  { key: 'donations', label: 'Donations', Icon: Briefcase },
+  { key: 'support', label: 'Support', Icon: HelpCircle },
 ];
 
 interface SupportBottomNavProps {
@@ -52,9 +60,11 @@ export const SupportBottomNav: React.FC<SupportBottomNavProps> = ({
                 active && styles.iconContainerActive,
               ]}
             >
-              <Text style={[styles.icon, active && styles.iconActive]}>
-                {item.icon}
-              </Text>
+              <item.Icon
+                size={20}
+                color={active ? AdminColors.primary : AdminColors.textSecondary}
+                strokeWidth={2}
+              />
             </View>
             <Text
               style={[styles.label, active && styles.labelActive]}

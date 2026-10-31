@@ -35,6 +35,8 @@ export interface WhatWeDoDetailScreenProps {
   onOpenEvents?: () => void;
   onOpenNews?: () => void;
   onOpenContact?: () => void;
+  onOpenJoin?: () => void;
+  onOpenWhatWeDo?: (contentId: WhatWeDoId) => void;
   showBottomNav?: boolean;
   hideBottomNav?: boolean;
 }

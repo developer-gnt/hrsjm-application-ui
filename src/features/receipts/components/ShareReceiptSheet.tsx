@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { colors, radius, spacing } from '../../../core/theme/theme';
+import { shareContent } from '../../../core/utils/share';
 import { Icon } from '../../../core/components/common/Icon';
 
 interface ShareReceiptSheetProps {
@@ -27,12 +28,12 @@ export function ShareReceiptSheet({
 }: ShareReceiptSheetProps) {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
-  const handleShareOption = (channel: string) => {
-    setFeedbackMessage(`Simulated: Sharing ${pdfFileName} via ${channel}...`);
-    setTimeout(() => {
-      setFeedbackMessage(null);
-      onClose();
-    }, 1200);
+  const handleShareReceipt = async () => {
+    await shareContent({
+      title: 'HRSJM Donation Receipt',
+      message: `HRSJM Donation Receipt\nReceipt No: ${receiptNo}\nFile: ${pdfFileName}`,
+    });
+    onClose();
   };
 
   return (
@@ -79,50 +80,19 @@ export function ShareReceiptSheet({
                   </View>
                 ) : null}
 
-                {/* Share Channels */}
-                <View style={styles.optionsList}>
-                  <TouchableOpacity
-                    onPress={() => handleShareOption('WhatsApp')}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel="Share via WhatsApp"
-                    style={styles.optionRow}>
-                    <View style={[styles.channelIcon, { backgroundColor: '#E7F9EE' }]}>
-                      <Icon name="whatsapp" size={22} color="#25D366" />
-                    </View>
-                    <Text style={styles.optionLabel}>Share via WhatsApp</Text>
-                    <Icon name="chevron-right" size={18} color={colors.textMuted} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => handleShareOption('Email')}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel="Share via Email"
-                    style={styles.optionRow}>
-                    <View style={[styles.channelIcon, { backgroundColor: '#FEECEC' }]}>
-                      <Icon name="mail" size={20} color="#EA4335" />
-                    </View>
-                    <Text style={styles.optionLabel}>Share via Email</Text>
-                    <Icon name="chevron-right" size={18} color={colors.textMuted} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => handleShareOption('System Apps')}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel="More share options"
-                    style={[styles.optionRow, styles.optionRowLast]}>
-                    <View style={[styles.channelIcon, { backgroundColor: '#EBF3FE' }]}>
-                      <Icon name="share" size={20} color={colors.primary} />
-                    </View>
-                    <View style={styles.moreLabelWrap}>
-                      <Text style={styles.optionLabel}>More Options</Text>
-                      <Text style={styles.optionSubLabel}>Share using other apps</Text>
-                    </View>
-                    <Icon name="chevron-right" size={18} color={colors.textMuted} />
-                  </TouchableOpacity>
-                </View>
+                {/* Share Action */}
+                <TouchableOpacity
+                  onPress={handleShareReceipt}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share receipt"
+                  style={[styles.optionRow, styles.optionRowLast]}>
+                  <View style={[styles.channelIcon, { backgroundColor: '#EBF3FE' }]}>
+                    <Icon name="share" size={20} color={colors.primary} />
+                  </View>
+                  <Text style={styles.optionLabel}>Share Receipt</Text>
+                  <Icon name="chevron-right" size={18} color={colors.textMuted} />
+                </TouchableOpacity>
 
                 {/* Cancel Action */}
                 <TouchableOpacity

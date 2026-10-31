@@ -11,7 +11,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdminColors, BorderRadius, Spacing } from '../../../core';
-import { SupportTicket, TicketAttachment } from '../types/ticket.types';
+import {
+  SupportTicket,
+  TicketAttachment,
+  formatAttachmentSize,
+  isImageFile,
+  getAttachmentIconConfig,
+} from '../types/ticket.types';
 import { APPROVED_TICKET_CATEGORIES } from '../data/categories';
 import { supportTicketsStore } from '../services/supportTicketsStore';
 import { SupportTicketsHeader } from '../components/SupportTicketsHeader';
@@ -222,9 +228,7 @@ export const ReviewSupportTicketScreen: React.FC<ReviewSupportTicketScreenProps>
                           <Text style={styles.fileName} numberOfLines={1}>
                             {file.name}
                           </Text>
-                          <Text style={styles.fileSize}>
-                            {file.formattedSize}
-                          </Text>
+                          <Text style={styles.fileSize}>{formatAttachmentSize(file.size, file.formattedSize)}</Text>
                         </View>
                         <TouchableOpacity
                           style={styles.viewFileButton}
@@ -318,9 +322,7 @@ export const ReviewSupportTicketScreen: React.FC<ReviewSupportTicketScreenProps>
 
             {/* Modal Body */}
             <View style={styles.previewBody}>
-              {previewFile &&
-              ['jpg', 'jpeg', 'png', 'webp'].includes(previewFile.type.toLowerCase()) &&
-              previewFile.uri ? (
+              {previewFile && isImageFile(previewFile.type, previewFile.name) && previewFile.uri ? (
                 <Image
                   source={{ uri: previewFile.uri }}
                   style={styles.previewImage}
@@ -343,7 +345,7 @@ export const ReviewSupportTicketScreen: React.FC<ReviewSupportTicketScreenProps>
                   </Text>
                   <Text style={styles.largeDocMeta}>
                     {previewFile
-                      ? `${previewFile.type.toUpperCase()} • ${previewFile.formattedSize}`
+                      ? `${(previewFile.type || 'DOCUMENT').toUpperCase()} • ${formatAttachmentSize(previewFile.size, previewFile.formattedSize)}`
                       : ''}
                   </Text>
                   <View style={styles.docVerifiedBadge}>

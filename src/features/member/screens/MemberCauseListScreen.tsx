@@ -18,6 +18,18 @@ import { GlobalPaymentModal, PaymentPayload } from '../../payments';
 import { MemberCause, CauseCategoryKey } from '../types/causes.types';
 import { causesService, VERIFIED_FALLBACK_CAUSES } from '../services/causes.service';
 import { FontFamilies } from '../../../core/theme';
+import {
+  Banknote,
+  Filter,
+  Heart,
+  HeartHandshake,
+  Search,
+  SearchX,
+  Target,
+  TriangleAlert,
+  Users,
+  X,
+} from '../../../core/components/icons';
 
 interface FilterTabItem {
   key: CauseCategoryKey;
@@ -173,8 +185,8 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
       <View style={styles.kpiGridContainer}>
         {/* Card 1: Active Causes */}
         <View style={styles.kpiGridCard}>
-          <View style={[styles.kpiIconWrapper, { backgroundColor: '#EEF3FC' }]}>
-            <Text style={styles.kpiGridIcon}>🎯</Text>
+          <View style={[styles.kpiIconWrapper, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }]}>
+            <Target size={18} color="#1E3A8A" strokeWidth={2} />
           </View>
           <View style={styles.kpiContentCol}>
             <Text style={styles.kpiGridValue}>{kpiStats.activeCauses}</Text>
@@ -184,8 +196,8 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
 
         {/* Card 2: Funds Raised */}
         <View style={styles.kpiGridCard}>
-          <View style={[styles.kpiIconWrapper, { backgroundColor: '#ECFDF5' }]}>
-            <Text style={styles.kpiGridIcon}>💰</Text>
+          <View style={[styles.kpiIconWrapper, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }]}>
+            <Banknote size={18} color="#059669" strokeWidth={2} />
           </View>
           <View style={styles.kpiContentCol}>
             <Text style={[styles.kpiGridValue, { color: '#059669' }]}>
@@ -197,8 +209,8 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
 
         {/* Card 3: Lives Impacted */}
         <View style={styles.kpiGridCard}>
-          <View style={[styles.kpiIconWrapper, { backgroundColor: '#FFFBEB' }]}>
-            <Text style={styles.kpiGridIcon}>🤝</Text>
+          <View style={[styles.kpiIconWrapper, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }]}>
+            <Users size={18} color="#D97706" strokeWidth={2} />
           </View>
           <View style={styles.kpiContentCol}>
             <Text style={[styles.kpiGridValue, { color: '#D97706' }]}>
@@ -210,8 +222,8 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
 
         {/* Card 4: Supporters */}
         <View style={styles.kpiGridCard}>
-          <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEF2F2' }]}>
-            <Text style={styles.kpiGridIcon}>💖</Text>
+          <View style={[styles.kpiIconWrapper, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }]}>
+            <Heart size={18} color="#DC2626" strokeWidth={2} />
           </View>
           <View style={styles.kpiContentCol}>
             <Text style={[styles.kpiGridValue, { color: '#DC2626' }]}>
@@ -225,7 +237,7 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
       {/* Search & Filter Bar */}
       <View style={styles.searchBarRow}>
         <View style={styles.searchInputWrapper}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Search size={16} color="#64748B" strokeWidth={2} style={styles.searchIconSvg} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search by name, category or location..."
@@ -239,7 +251,7 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
               style={styles.clearSearchBtn}
               activeOpacity={0.7}
             >
-              <Text style={styles.clearSearchText}>✕</Text>
+              <X size={14} color="#64748B" strokeWidth={2} />
             </TouchableOpacity>
           )}
         </View>
@@ -321,7 +333,7 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>🔍</Text>
+      <SearchX size={40} color="#94A3B8" strokeWidth={1.5} style={{ marginBottom: 12 }} />
       <Text style={styles.emptyTitle}>No causes found</Text>
       <Text style={styles.emptyDesc}>
         {searchQuery.trim()
@@ -343,7 +355,7 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
 
   const renderErrorState = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>⚠️</Text>
+      <TriangleAlert size={40} color="#DC2626" strokeWidth={1.5} style={{ marginBottom: 12 }} />
       <Text style={styles.emptyTitle}>Couldn't load causes</Text>
       <Text style={styles.emptyDesc}>
         Something went wrong while loading causes. Please check your internet connection.
@@ -559,8 +571,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
   },
-  searchIcon: {
-    fontSize: 14,
+  searchIconSvg: {
     marginRight: 8,
   },
   searchInput: {

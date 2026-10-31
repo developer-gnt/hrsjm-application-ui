@@ -21,6 +21,8 @@ import { UserBottomNavigation } from '../../../user/home/components/UserBottomNa
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { useNotifications } from '../../../admin/notifications';
 import { useAuthStore } from '../../../auth/store/authStore';
+import { useProfileStore } from '../../../admin/profile/profileStore';
+import { apiClient } from '../../../../core/api/client';
 import type { HomeTab } from '../../../user/home/types/home.types';
 import { MOCK_ACTIVE_MEMBERSHIP } from '../data/member-dashboard';
 import type { MemberMembershipRecord } from '../types/member-dashboard.types';
@@ -30,6 +32,23 @@ import { supportService } from '../../../admin/support/services/support.service'
 import { api, unwrap } from '../../../../core/api/client';
 import { supportTicketsStore } from '../../../support/services/supportTicketsStore';
 import { receiptsService } from '../../../receipts/services/receipts.service';
+
+const formatStartDate = (dateVal?: string | Date | null): string | undefined => {
+  if (!dateVal) return undefined;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) {
+      return typeof dateVal === 'string' ? dateVal : undefined;
+    }
+    return d.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return undefined;
+  }
+};
 
 const MEMBER_HERO_IMAGE = require('../../../../assets/images/member-hero-rally.jpg');
 const DEFAULT_EVENT_IMAGE = require('../../../../assets/images/event-legal-awareness.jpg');
@@ -179,15 +198,87 @@ export const MemberHomeDashboardScreen: React.FC<
   useAdminHeader = true,
 }) => {
   const user = useAuthStore(state => state.user);
+  const profileMemberSince = useProfileStore(state => state.profile?.memberSince);
   const { unreadCount } = useNotifications();
+
+  const [apiMembership, setApiMembership] = useState<any>(null);
+  const [apiStartDate, setApiStartDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchMembershipData = async () => {
+      try {
+        const res: any = await apiClient.get<any>('/memberships/my');
+        const data = res?.data !== undefined ? res.data : res;
+        if (isMounted && data) {
+          setApiMembership(data);
+          const rawStart = data.start_date || data.startDate || data.applied_at || data.created_at;
+          if (rawStart) {
+            const formatted = formatStartDate(rawStart);
+            if (formatted) {
+              setApiStartDate(formatted);
+            }
+          }
+        }
+      } catch {
+        try {
+          const res: any = await apiClient.get<any>('/users/me/membership');
+          const data = res?.data !== undefined ? res.data : res;
+          if (isMounted && data) {
+            setApiMembership(data);
+            const rawStart = data.start_date || data.startDate || data.applied_at || data.created_at;
+            if (rawStart) {
+              const formatted = formatStartDate(rawStart);
+              if (formatted) {
+                setApiStartDate(formatted);
+              }
+            }
+          }
+        } catch {
+          // Keep offline/default state
+        }
+      }
+    };
+
+    fetchMembershipData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const resolvedJoinedDate =
+    apiStartDate ||
+    (membership?.joinedDate && membership.joinedDate !== MOCK_ACTIVE_MEMBERSHIP.joinedDate ? membership.joinedDate : undefined) ||
+    (profileMemberSince ? profileMemberSince : undefined) ||
+    (membership?.joinedDate ? membership.joinedDate : undefined);
+
   const currentMembership: MemberMembershipRecord = {
     ...MOCK_ACTIVE_MEMBERSHIP,
-    memberName: user?.full_name || (membership?.memberName ?? MOCK_ACTIVE_MEMBERSHIP.memberName),
-    memberId: (user as any)?.member_id || (user as any)?.custom_id || (membership?.memberId ?? MOCK_ACTIVE_MEMBERSHIP.memberId),
-    status: membership?.status ?? MOCK_ACTIVE_MEMBERSHIP.status,
-    category: membership?.category ?? MOCK_ACTIVE_MEMBERSHIP.category,
-    joinedDate: membership?.joinedDate ?? MOCK_ACTIVE_MEMBERSHIP.joinedDate,
-    validUntil: membership?.validUntil ?? MOCK_ACTIVE_MEMBERSHIP.validUntil,
+    memberName:
+      user?.full_name ||
+      apiMembership?.user?.full_name ||
+      (membership?.memberName ?? MOCK_ACTIVE_MEMBERSHIP.memberName),
+    memberId:
+      apiMembership?.membership_number ||
+      (user as any)?.member_id ||
+      (user as any)?.custom_id ||
+      (membership?.memberId ?? MOCK_ACTIVE_MEMBERSHIP.memberId),
+    status:
+      membership?.status ??
+      (apiMembership?.status
+        ? String(apiMembership.status).toLowerCase() === 'active' || String(apiMembership.status).toLowerCase() === 'approved'
+          ? 'active'
+          : 'pending'
+        : MOCK_ACTIVE_MEMBERSHIP.status),
+    category:
+      membership?.category ??
+      apiMembership?.category?.name ??
+      MOCK_ACTIVE_MEMBERSHIP.category,
+    joinedDate: resolvedJoinedDate,
+    validUntil:
+      formatStartDate(apiMembership?.expiry_date || apiMembership?.expiryDate) ||
+      membership?.validUntil ||
+      MOCK_ACTIVE_MEMBERSHIP.validUntil,
   };
 
   const [dbEvents, setDbEvents] = useState<EventListItem[]>([]);
@@ -347,6 +438,14 @@ export const MemberHomeDashboardScreen: React.FC<
     else if (tab.id === 'contact') onOpenContact?.();
   };
 
+  const kitData = (apiMembership as any)?.kit_fulfillment || (apiMembership as any)?.application_data?.kit_fulfillment;
+  const kitStatus = kitData?.status || 'PROCESSING';
+  const kitStatusLabel =
+    kitStatus === 'DELIVERED'
+      ? 'Delivered'
+      : kitStatus === 'DISPATCHED'
+      ? `Dispatched (${kitData?.tracking_number ? kitData.tracking_number : 'Speed Post'})`
+      : 'In Preparation / Dispatch Pending';
   return (
     <View style={styles.safeArea}>
       {useAdminHeader ? (
@@ -386,7 +485,7 @@ export const MemberHomeDashboardScreen: React.FC<
           <View style={styles.heroCopy}>
             <Text style={styles.heroGreeting}>Welcome,</Text>
             <Text style={styles.heroName} numberOfLines={1}>
-              {currentMembership.memberName || 'Amaan Shaikh'}
+              {currentMembership.memberName || user?.full_name || 'Member'}
             </Text>
             <Text style={styles.heroDescription}>
               Thank you for being a valued member of HRSJM. Together, we work for a fairer, more just and equal society.
@@ -398,7 +497,7 @@ export const MemberHomeDashboardScreen: React.FC<
                 color="#FFFFFF"
               />
               <Text style={styles.memberSinceText}>
-                Member Since  |  {currentMembership.joinedDate || 'Sep 2026'}
+                Member Since  |  {currentMembership.joinedDate || '—'}
               </Text>
             </View>
           </View>
@@ -447,6 +546,32 @@ export const MemberHomeDashboardScreen: React.FC<
                 color={AdminColors.primaryDark}
               />
             </Pressable>
+          </Pressable>
+
+          {/* Welcome Kit Dispatch Status Banner */}
+          <Pressable
+            style={styles.kitFulfillmentCard}
+            onPress={onOpenMembershipDetails || onOpenMembershipInfo || (() => undefined)}
+            accessibilityRole="button"
+            accessibilityLabel="Membership Welcome Kit Status"
+          >
+            <View style={styles.kitFulfillmentLeft}>
+              <View style={styles.kitIconCircle}>
+                <AppIcon name="star" size={15} color={AdminColors.primaryDark} />
+              </View>
+              <View style={styles.kitTextGroup}>
+                <Text style={styles.kitFulfillmentTitle} numberOfLines={1}>
+                  Physical Welcome Kit
+                </Text>
+                <Text style={styles.kitFulfillmentStatus} numberOfLines={1}>
+                  {kitStatusLabel}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.kitActionRight}>
+              <Text style={styles.kitActionText}>View Kit</Text>
+              <AppIcon name="arrow-right" size={12} color={AdminColors.primaryDark} />
+            </View>
           </Pressable>
 
           {/* Quick Actions – 3 equal cards side by side */}
@@ -1051,5 +1176,62 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 16,
+  },
+  kitFulfillmentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 4,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  kitFulfillmentLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  kitIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#FFF2DC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#FDE4B8',
+  },
+  kitTextGroup: {
+    flex: 1,
+  },
+  kitFulfillmentTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F2860',
+  },
+  kitFulfillmentStatus: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  kitActionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  kitActionText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
   },
 });

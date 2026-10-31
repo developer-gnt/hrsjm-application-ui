@@ -13,7 +13,7 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import { Eye, EllipsisVertical } from '../../../../../core/components/icons';
+import { Eye, EllipsisVertical, FileText } from '../../../../../core/components/icons';
 import type { BlogListItem, BlogStatus } from '../types/blog.types';
 
 /**
@@ -164,7 +164,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({
       />
     ) : (
       <View style={[styles.thumbnail, styles.thumbnailFallback, sizeStyle]}>
-        <Text style={styles.thumbnailFallbackIcon}>📝</Text>
+        <FileText size={18} color="#94A3B8" strokeWidth={1.75} />
       </View>
     )
   );

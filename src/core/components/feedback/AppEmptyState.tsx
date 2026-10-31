@@ -4,6 +4,7 @@ import { AdminColors } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
 import { Spacing } from '../../theme/spacing';
 import { AppButton } from '../common/AppButton';
+import { FileText } from '../icons';
 
 export interface AppEmptyStateProps {
   title: string;
@@ -20,7 +21,7 @@ export const AppEmptyState: React.FC<AppEmptyStateProps> = ({
   title,
   description,
   message,
-  icon = '📋',
+  icon,
   actionTitle,
   actionLabel,
   onAction,
@@ -32,8 +33,12 @@ export const AppEmptyState: React.FC<AppEmptyStateProps> = ({
     <View style={[styles.container, style]}>
       {React.isValidElement(icon) ? (
         <View style={styles.iconWrapper}>{icon}</View>
-      ) : (
+      ) : typeof icon === 'string' && icon.trim() ? (
         <Text style={styles.icon}>{icon}</Text>
+      ) : (
+        <View style={styles.iconWrapper}>
+          <FileText size={44} color="#94A3B8" strokeWidth={1.5} />
+        </View>
       )}
       <Text style={styles.title}>{title}</Text>
       {displayMsg && <Text style={styles.description}>{displayMsg}</Text>}

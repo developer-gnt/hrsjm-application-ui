@@ -10,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -35,6 +36,8 @@ import {
   Pencil,
   Phone,
   Share2,
+  Truck,
+  Package,
   Shield,
   ShieldCheck,
   User,
@@ -46,7 +49,7 @@ import { Avatar } from './Avatar';
 import { MyIdCard } from '../../profile/components/MyIdCard';
 import type { AdminProfile } from '../../profile/types/profile.types';
 import { useMemberDetails, useMemberDocuments } from '../hooks/useMembers';
-import type { BackendMembership } from '../services/members.service';
+import { membersService, type BackendMembership } from '../services/members.service';
 import type { Member } from '../types';
 
 interface MemberProfileModalProps {
@@ -57,7 +60,7 @@ interface MemberProfileModalProps {
   onToggleStatus: (member: Member) => void;
 }
 
-type ProfileTab = 'overview' | 'idcard' | 'documents';
+type ProfileTab = 'overview' | 'idcard' | 'documents' | 'fulfilment';
 
 export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
   visible,
@@ -80,6 +83,14 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
 
   const { data: detailsData } = useMemberDetails(member?.id);
   const { data: documentsData } = useMemberDocuments(member?.id);
+  const [kitStatus, setKitStatus] = useState<'PENDING' | 'PROCESSING' | 'DISPATCHED' | 'DELIVERED'>('PROCESSING');
+  const [courierName, setCourierName] = useState('India Post (Speed Post)');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [dispatchDate, setDispatchDate] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [kitNotes, setKitNotes] = useState('');
+  const [savingKit, setSavingKit] = useState(false);
+
 
   const screenWidth = Dimensions.get('window').width;
   const cardWidth = Math.min(screenWidth - 48, 360);
@@ -144,6 +155,51 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
       Linking.openURL(`mailto:${email}`);
     }
   };
+  React.useEffect(() => {
+    if (member) {
+      const kit = (rawBackend as any)?.kit_fulfillment || appData.kit_fulfillment;
+      if (kit) {
+        setKitStatus(kit.status || 'PROCESSING');
+        setCourierName(kit.courier_name || 'India Post (Speed Post)');
+        setTrackingNumber(kit.tracking_number || '');
+        setDispatchDate(kit.dispatch_date || '');
+        setDeliveryAddress(kit.delivery_address || fullAddress || '');
+        setKitNotes(kit.notes || '');
+      } else {
+        setKitStatus(member.status === 'ACTIVE' ? 'PROCESSING' : 'PENDING');
+        setCourierName('India Post (Speed Post)');
+        setTrackingNumber(membershipId && membershipId !== '—' ? `SP-${membershipId.replace(/[^a-zA-Z0-9]/g, '')}` : '');
+        setDispatchDate(joinedDate || '');
+        setDeliveryAddress(fullAddress || '');
+        setKitNotes('');
+      }
+    }
+  }, [member, rawBackend, fullAddress, membershipId, joinedDate]);
+
+  const handleSaveFulfilment = async () => {
+    if (!member?.id) return;
+    setSavingKit(true);
+    try {
+      await membersService.updateKitFulfillment(member.id, {
+        status: kitStatus,
+        courier_name: courierName,
+        tracking_number: trackingNumber,
+        dispatch_date: dispatchDate,
+        delivery_address: deliveryAddress,
+        notes: kitNotes,
+      });
+      setCardFeedback({
+        visible: true,
+        title: 'Kit Fulfilment Updated',
+        message: `Physical kit status updated to ${kitStatus}. Member records synchronized.`,
+      });
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to update kit fulfilment');
+    } finally {
+      setSavingKit(false);
+    }
+  };
+
 
   // Convert to AdminProfile for ID card render
   const idCardProfile: AdminProfile = useMemo(
@@ -330,6 +386,25 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 ]}
               >
                 Documents & KYC
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setActiveTab('fulfilment')}
+              style={[styles.tabItem, activeTab === 'fulfilment' && styles.tabItemActive]}
+            >
+              <Truck
+                size={16}
+                color={activeTab === 'fulfilment' ? BrandColors.navy : BrandColors.textMuted}
+                strokeWidth={activeTab === 'fulfilment' ? 2.5 : 2}
+              />
+              <Text
+                style={[
+                  styles.tabItemText,
+                  activeTab === 'fulfilment' && styles.tabItemTextActive,
+                ]}
+              >
+                Kit Fulfilment
               </Text>
             </TouchableOpacity>
           </View>
@@ -550,7 +625,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
 
                   {actualDocs.length === 0 ? (
                     <View style={styles.emptyDocsWrap}>
-                      <Text style={styles.emptyDocsIcon}>📁</Text>
+                      <FileText size={36} color="#94A3B8" strokeWidth={1.5} style={{ marginBottom: 8 }} />
                       <Text style={styles.emptyDocsTitle}>No Documents Uploaded</Text>
                       <Text style={styles.emptyDocsSubtitle}>
                         No verification documents have been uploaded for this member.
@@ -578,6 +653,136 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                       ))}
                     </View>
                   )}
+                </View>
+              </View>
+            )}
+
+            {/* KIT FULFILMENT TAB */}
+            {activeTab === 'fulfilment' && (
+              <View style={styles.tabPane}>
+                <View style={styles.infoCard}>
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.cardTitle}>Physical Welcome Kit Tracking</Text>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        kitStatus === 'DELIVERED'
+                          ? { backgroundColor: '#DCFCE7' }
+                          : kitStatus === 'DISPATCHED'
+                          ? { backgroundColor: '#DBEAFE' }
+                          : { backgroundColor: '#FEF3C7' },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusPillText,
+                          kitStatus === 'DELIVERED'
+                            ? { color: '#166534' }
+                            : kitStatus === 'DISPATCHED'
+                            ? { color: '#1E40AF' }
+                            : { color: '#B45309' },
+                        ]}
+                      >
+                        {kitStatus}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Status Options */}
+                  <Text style={styles.formLabel}>Dispatch Status</Text>
+                  <View style={styles.statusButtonGroup}>
+                    {(['PENDING', 'PROCESSING', 'DISPATCHED', 'DELIVERED'] as const).map(st => (
+                      <TouchableOpacity
+                        key={st}
+                        onPress={() => setKitStatus(st)}
+                        style={[
+                          styles.statusOptionBtn,
+                          kitStatus === st && styles.statusOptionBtnActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.statusOptionText,
+                            kitStatus === st && styles.statusOptionTextActive,
+                          ]}
+                        >
+                          {st === 'PROCESSING' ? 'Processing' : st === 'DISPATCHED' ? 'Dispatched' : st === 'DELIVERED' ? 'Delivered' : 'Pending'}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Courier Partner */}
+                  <Text style={styles.formLabel}>Courier Partner / Carrier</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={courierName}
+                    onChangeText={setCourierName}
+                    placeholder="e.g. India Post (Speed Post)"
+                  />
+
+                  {/* Tracking Number */}
+                  <Text style={styles.formLabel}>Consignment / Tracking Number</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={trackingNumber}
+                    onChangeText={setTrackingNumber}
+                    placeholder="e.g. ED123456789IN"
+                    autoCapitalize="characters"
+                  />
+
+                  {/* Dispatch Date */}
+                  <Text style={styles.formLabel}>Dispatch Date</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={dispatchDate}
+                    onChangeText={setDispatchDate}
+                    placeholder="e.g. 2026-10-30"
+                  />
+
+                  {/* Delivery Address */}
+                  <Text style={styles.formLabel}>Delivery Address</Text>
+                  <TextInput
+                    style={[styles.formInput, { height: 60, textAlignVertical: 'top' }]}
+                    value={deliveryAddress}
+                    onChangeText={setDeliveryAddress}
+                    placeholder="Registered address"
+                    multiline
+                  />
+
+                  {/* Save Button */}
+                  <TouchableOpacity
+                    onPress={handleSaveFulfilment}
+                    disabled={savingKit}
+                    style={styles.saveKitBtn}
+                    activeOpacity={0.8}
+                  >
+                    <Truck size={16} color="#FFFFFF" strokeWidth={2} />
+                    <Text style={styles.saveKitBtnText}>
+                      {savingKit ? 'Saving Changes...' : 'Save Fulfilment Details'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Kit Checklist Preview */}
+                <View style={styles.infoCard}>
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.cardTitle}>Kit Inclusions</Text>
+                  </View>
+                  <View style={{ gap: 8 }}>
+                    {[
+                      'Official Appointment Letter',
+                      'Laminated Membership Certificate',
+                      'Physical ID Card & Lanyard',
+                      'Car & Bike Emblem Sticker',
+                      'HRSJM Branded Cotton T-Shirt',
+                    ].map((item, idx) => (
+                      <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <CheckCircle2 size={16} color="#16A34A" />
+                        <Text style={{ fontSize: 13, color: '#334155' }}>{item}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               </View>
             )}
@@ -1133,6 +1338,64 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: BrandColors.success,
+  },
+  formLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  formInput: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: '#1E293B',
+  },
+  statusButtonGroup: {
+    flexDirection: 'row',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  statusOptionBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#F8FAFC',
+  },
+  statusOptionBtnActive: {
+    backgroundColor: '#0F2860',
+    borderColor: '#0F2860',
+  },
+  statusOptionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  statusOptionTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  saveKitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#0F2860',
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginTop: 18,
+  },
+  saveKitBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
 

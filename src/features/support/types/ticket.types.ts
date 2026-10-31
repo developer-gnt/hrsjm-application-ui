@@ -56,3 +56,70 @@ export interface TicketDraft {
   attachments: TicketAttachment[];
 }
 
+export const isImageFile = (type?: string, name?: string): boolean => {
+  const normType = (type || '').toLowerCase();
+  const normName = (name || '').toLowerCase();
+  return (
+    normType.startsWith('image/') ||
+    ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg'].includes(normType) ||
+    /.(jpe?g|png|webp|gif|bmp|svg)$/i.test(normName)
+  );
+};
+
+export const formatAttachmentSize = (
+  size?: number | null,
+  formattedSize?: string | null,
+  fallback = '150 KB'
+): string => {
+  if (
+    formattedSize &&
+    !formattedSize.startsWith('0.0') &&
+    !formattedSize.startsWith('0 ') &&
+    formattedSize !== '0MB' &&
+    formattedSize !== '0 MB' &&
+    formattedSize !== '0.0MB' &&
+    formattedSize !== '0.0 MB' &&
+    formattedSize !== '0 B' &&
+    formattedSize !== '0 KB'
+  ) {
+    return formattedSize;
+  }
+
+  const bytes = typeof size === 'number' ? size : Number(size);
+  if (!bytes || isNaN(bytes) || bytes <= 0) {
+    return fallback;
+  }
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    const kb = bytes / 1024;
+    return `${kb < 10 ? kb.toFixed(1) : Math.round(kb)} KB`;
+  }
+  const mb = bytes / (1024 * 1024);
+  return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`;
+};
+
+export const getAttachmentIconConfig = (
+  type?: string,
+  name?: string
+): { icon: string; bg: string } => {
+  const norm = (type || '').toLowerCase();
+  const normName = (name || '').toLowerCase();
+  if (norm === 'pdf' || norm.includes('pdf') || normName.endsWith('.pdf')) {
+    return { icon: '📄', bg: '#FEE2E2' };
+  }
+  if (
+    norm.includes('word') ||
+    norm === 'doc' ||
+    norm === 'docx' ||
+    normName.endsWith('.doc') ||
+    normName.endsWith('.docx')
+  ) {
+    return { icon: '📝', bg: '#DBEAFE' };
+  }
+  if (isImageFile(norm, normName)) {
+    return { icon: '🖼️', bg: '#DCFCE7' };
+  }
+  return { icon: '📎', bg: '#F1F5F9' };
+};

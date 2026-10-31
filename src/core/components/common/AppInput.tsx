@@ -11,6 +11,7 @@ import {
 import { AdminColors } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
 import { Spacing, BorderRadius } from '../../theme/spacing';
+import { Eye, EyeOff } from '../icons';
 
 interface AppInputProps extends TextInputProps {
   label?: string;
@@ -79,8 +80,13 @@ export const AppInput: React.FC<AppInputProps> = ({
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             style={styles.rightIconContainer}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel={isPasswordVisible ? 'Hide password' : 'Show password'}
           >
-            <Text style={styles.eyeText}>{isPasswordVisible ? '🙈' : '👁️'}</Text>
+            {isPasswordVisible ? (
+              <EyeOff size={18} color="#64748B" strokeWidth={2} />
+            ) : (
+              <Eye size={18} color="#64748B" strokeWidth={2} />
+            )}
           </TouchableOpacity>
         ) : rightIcon ? (
           <View style={styles.rightIconContainer}>{rightIcon}</View>

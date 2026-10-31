@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AdminHeader } from './AdminHeader';
 import { AppEmptyState } from '../../core/components/feedback/AppEmptyState';
+import { Wrench } from '../../core/components/icons';
 import { AdminColors } from '../../core/theme/colors';
 import { Spacing } from '../../core/theme/spacing';
 
@@ -10,7 +11,7 @@ interface ModulePlaceholderScreenProps {
   description?: string;
   phase?: string;
   owner?: string;
-  icon?: string;
+  icon?: any;
   onBack?: () => void;
 }
 
@@ -40,7 +41,7 @@ export const ModulePlaceholderScreen: React.FC<ModulePlaceholderScreenProps> = (
       <AdminHeader title={title} showBack={Boolean(onBack)} onBack={onBack} />
       <View style={styles.body}>
         <AppEmptyState
-          icon={icon ?? '🚧'}
+          icon={icon ?? <Wrench size={42} color="#94A3B8" strokeWidth={1.5} />}
           title={`${title} — coming soon`}
           description={detail || 'This module is under development.'}
         />

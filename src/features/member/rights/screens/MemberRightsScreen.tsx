@@ -18,6 +18,13 @@ import {
   Spacing,
 } from '../../../../core/theme';
 import { AppIcon } from '../../../user/components';
+import {
+  FileText,
+  HeartHandshake,
+  Info,
+  Scale,
+  ShieldCheck,
+} from '../../../../core/components/icons';
 import { apiClient } from '../../../../core/api/client';
 import { ApiRoutes } from '../../../../core/constants/api-routes';
 import { HomeHeader } from '../../../user/home/components/HomeHeader';
@@ -308,17 +315,17 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
           {/* Key pillars row */}
           <View style={styles.heroPillarsRow}>
             <View style={styles.heroPillarItem}>
-              <Text style={styles.heroPillarIcon}>⚖️</Text>
+              <Scale size={18} color="#D97706" strokeWidth={2} style={{ marginBottom: 4 }} />
               <Text style={styles.heroPillarLabel}>Constitutional Rights</Text>
             </View>
             <View style={styles.heroPillarDivider} />
             <View style={styles.heroPillarItem}>
-              <Text style={styles.heroPillarIcon}>🛡️</Text>
+              <ShieldCheck size={18} color="#D97706" strokeWidth={2} style={{ marginBottom: 4 }} />
               <Text style={styles.heroPillarLabel}>Legal Protection</Text>
             </View>
             <View style={styles.heroPillarDivider} />
             <View style={styles.heroPillarItem}>
-              <Text style={styles.heroPillarIcon}>📜</Text>
+              <FileText size={18} color="#D97706" strokeWidth={2} style={{ marginBottom: 4 }} />
               <Text style={styles.heroPillarLabel}>Free Legal Aid</Text>
             </View>
           </View>
@@ -543,7 +550,7 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
 
           <View style={styles.insightCard}>
             <View style={styles.insightIconBox}>
-              <Text style={styles.insightIconText}>💡</Text>
+              <Info size={18} color="#D97706" strokeWidth={2} />
             </View>
             <View style={styles.insightCopy}>
               <Text style={styles.insightTitle}>
@@ -559,7 +566,7 @@ export const MemberRightsScreen: React.FC<MemberRightsScreenProps> = ({
 
           <View style={styles.insightCard}>
             <View style={styles.insightIconBox}>
-              <Text style={styles.insightIconText}>🤝</Text>
+              <HeartHandshake size={18} color="#D97706" strokeWidth={2} />
             </View>
             <View style={styles.insightCopy}>
               <Text style={styles.insightTitle}>

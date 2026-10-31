@@ -6,6 +6,13 @@ import {
   View,
 } from 'react-native';
 import { AdminColors, BorderRadius, Spacing } from '../../../core';
+import {
+  UploadCloud,
+  FileText,
+  ImageIcon,
+  X,
+  type AppIconComponent,
+} from '../../../core/components/icons';
 import { TicketAttachment } from '../types/ticket.types';
 
 interface SupportAttachmentUploaderProps {
@@ -23,18 +30,18 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const getFileIcon = (ext: string): { icon: string; bg: string; color: string } => {
+const getFileIcon = (ext: string): { Icon: AppIconComponent; bg: string; color: string } => {
   const norm = ext.toLowerCase();
   if (norm === 'pdf') {
-    return { icon: '📄', bg: '#FEE2E2', color: '#DC2626' };
+    return { Icon: FileText, bg: '#FEE2E2', color: '#DC2626' };
   }
   if (norm === 'doc' || norm === 'docx') {
-    return { icon: '📝', bg: '#DBEAFE', color: '#1D4ED8' };
+    return { Icon: FileText, bg: '#DBEAFE', color: '#1D4ED8' };
   }
   if (['jpg', 'jpeg', 'png', 'webp'].includes(norm)) {
-    return { icon: '🖼️', bg: '#DCFCE7', color: '#16A34A' };
+    return { Icon: ImageIcon, bg: '#DCFCE7', color: '#16A34A' };
   }
-  return { icon: '📎', bg: '#F1F5F9', color: '#475569' };
+  return { Icon: FileText, bg: '#F1F5F9', color: '#475569' };
 };
 
 export const SupportAttachmentUploader: React.FC<SupportAttachmentUploaderProps> = ({
@@ -107,7 +114,7 @@ export const SupportAttachmentUploader: React.FC<SupportAttachmentUploaderProps>
         accessibilityLabel="Tap to upload files. Max 5 MB each."
       >
         <View style={styles.cloudIconContainer}>
-          <Text style={styles.cloudIcon}>☁️</Text>
+          <UploadCloud size={24} color="#0D47A1" strokeWidth={2} />
         </View>
         <Text style={styles.dropzoneTitle}>Tap to upload files</Text>
         <Text style={styles.dropzoneSubtitle}>
@@ -142,7 +149,7 @@ export const SupportAttachmentUploader: React.FC<SupportAttachmentUploaderProps>
 
                 {/* File Icon Tile */}
                 <View style={[styles.fileIconTile, { backgroundColor: iconCfg.bg }]}>
-                  <Text style={styles.fileEmoji}>{iconCfg.icon}</Text>
+                  <iconCfg.Icon size={18} color={iconCfg.color} strokeWidth={2} />
                 </View>
 
                 {/* File Name & Formatted Size */}

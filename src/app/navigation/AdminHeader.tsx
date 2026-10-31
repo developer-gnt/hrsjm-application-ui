@@ -357,7 +357,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 strokeLinejoin="round"
               />
             </Svg>
-          </TouchableOpacity>
+                      </TouchableOpacity>
         ) : showMenu ? (
           <TouchableOpacity
             style={styles.menuButton}
@@ -376,7 +376,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 strokeLinejoin="round"
               />
             </Svg>
-          </TouchableOpacity>
+                      </TouchableOpacity>
         ) : null}
 
         {/* Center/Left: Title OR Official HRSJM Logo */}
@@ -544,7 +544,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   strokeLinejoin="round"
                 />
               </Svg>
-              <Text style={styles.dropdownItemText}>View Profile</Text>
+                            <Text style={styles.dropdownItemText}>View Profile</Text>
             </TouchableOpacity>
 
             <View style={styles.dropdownDivider} />
@@ -564,7 +564,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   strokeLinejoin="round"
                 />
               </Svg>
-              <Text style={[styles.dropdownItemText, styles.signOutText]}>
+                            <Text style={[styles.dropdownItemText, styles.signOutText]}>
                 Sign Out
               </Text>
             </TouchableOpacity>
@@ -764,7 +764,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   dropdownItemIcon: {
-    fontSize: 16,
     marginRight: 10,
   },
   dropdownItemText: {
