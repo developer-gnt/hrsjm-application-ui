@@ -576,10 +576,10 @@ export function MembershipStep3Screen() {
             </View>
             <View style={styles.feeHeaderText}>
               <Text style={styles.feeTitle}>Registration Fee & Benefits</Text>
-              <Text style={styles.feeCategory}>{postTitle} â€¢ {postValidity}</Text>
+              <Text style={styles.feeCategory}>{postTitle} • {postValidity}</Text>
             </View>
             <View style={styles.feeBadge}>
-              <Text style={styles.feeBadgeText}>â‚¹{postFeeAmount}</Text>
+              <Text style={styles.feeBadgeText}>₹{postFeeAmount}</Text>
             </View>
           </View>
 
@@ -626,13 +626,13 @@ export function MembershipStep3Screen() {
             onPress={handleProceedToPayment}
             disabled={submitting}
             accessibilityRole="button"
-            accessibilityLabel={`Pay â‚¹${postFeeAmount} & Submit Application`}>
+            accessibilityLabel={`Pay ₹${postFeeAmount} & Submit Application`}>
             {submitting ? (
               <ActivityIndicator size="small" color="#011F39" />
             ) : (
               <View style={styles.btnContentRow}>
                 <Icon name="award" size={16} color="#011F39" strokeWidth={2.4} />
-                <Text style={styles.submitBtnText}>Pay â‚¹{postFeeAmount} & Submit</Text>
+                <Text style={styles.submitBtnText}>Pay ₹{postFeeAmount} & Submit</Text>
               </View>
             )}
           </TouchableOpacity>

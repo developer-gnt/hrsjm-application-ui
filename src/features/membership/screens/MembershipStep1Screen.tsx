@@ -369,7 +369,7 @@ export function MembershipStep1Screen() {
                   <Text style={styles.selectedPostLabel}>Applying For</Text>
                   <Text style={styles.selectedPostTitle}>{activePost.postName}</Text>
                   <Text style={styles.selectedPostSub}>
-                    {activePost.qualification} â€¢ {activePost.validity} Duration
+                    {activePost.qualification} • {activePost.validity} Duration
                   </Text>
                 </View>
               </View>

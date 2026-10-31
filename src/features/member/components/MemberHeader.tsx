@@ -10,7 +10,7 @@ export interface MemberHeaderProps extends AdminHeaderProps {
 
 /**
  * Unified institutional header for Member Portal matching Admin design:
- * - Hamburger menu (â˜°)
+ * - Hamburger menu
  * - Official Emblem & HRSJM Brand Logo
  * - Donate Now button (matching User header experience)
  * - Notification Bell with badge counter
