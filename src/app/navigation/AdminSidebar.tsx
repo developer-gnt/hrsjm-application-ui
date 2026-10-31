@@ -108,6 +108,7 @@ export const ADMIN_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }[
     items: [
       { id: 'expenses', icon: Receipt, title: 'Expenses', target: AppRoutes.EXPENSE_VOUCHERS },
       { id: 'receipts', icon: ArrowDownToLine, title: 'Income', target: AppRoutes.RECEIPT_VOUCHERS },
+      { id: 'transactions', icon: Receipt, title: 'Transaction History', target: AppRoutes.TRANSACTION_HISTORY },
       { id: 'accounting', icon: Briefcase, title: 'Accounting & Ledger', target: AppRoutes.ACCOUNTING },
       { id: 'reports', icon: BarChart3, title: 'Financial Reports', target: AppRoutes.REPORTS },
       { id: 'donations', icon: Gift, title: 'Donations Management', target: AppRoutes.DONATIONS },
@@ -131,6 +132,7 @@ export const MEMBER_MENU_GROUPS: { groupTitle: string; items: DrawerMenuItem[] }
       { id: 'member_causes', icon: Heart, title: 'Social Causes & Aid', target: 'MemberCauses' },
       { id: 'member_events', icon: Calendar, title: 'Upcoming Events & Drives', target: 'MemberEvents' },
       { id: 'member_receipts', icon: ArrowDownToLine, title: 'My Donations & 80G Receipts', target: 'MemberReceipts' },
+      { id: 'member_transactions', icon: Receipt, title: 'Transaction History', target: 'TransactionHistory' },
       { id: 'complaints', icon: MessageSquare, title: 'Help & Support Desk', target: AppRoutes.ADMIN_COMPLAINTS_TAB },
     ],
   },

@@ -24,8 +24,12 @@ export const usePermissionStore = create<PermissionState>()(set => ({
 
   loadPermissions: async () => {
     try {
-      const res = await permissionService.getMyPermissions();
-      const perms = Array.isArray(res?.permissions) ? res.permissions : [];
+      const res: any = await permissionService.getMyPermissions();
+      const rawPerms =
+        res?.permissions ||
+        res?.data?.permissions ||
+        (Array.isArray(res) ? res : []);
+      const perms = Array.isArray(rawPerms) ? rawPerms : [];
       set({ permissions: perms, isLoaded: true });
     } catch {
       // If endpoint is unreachable, fallback to full admin permissions if user is Admin

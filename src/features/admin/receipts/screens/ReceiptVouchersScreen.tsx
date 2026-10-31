@@ -25,7 +25,8 @@ import {
   UserCheck,
 } from '../../../../core/components/icons';
 import { PermissionDenied } from '../../../../core/permissions/permission.guard';
-import { can, useCan } from '../../../../core/permissions/can';
+import { can, isUserAdmin, useCan } from '../../../../core/permissions/can';
+import { usePermissionStore } from '../../../../core/permissions/permission.store';
 import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import { useDebouncedValue } from '../../../../core/hooks/useDebouncedValue';
 import {
@@ -302,8 +303,10 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
 
   const canReadReceipts = useCan(PermissionKeys.RECEIPT_ENTRY_READ);
   const canCreateReceipts = useCan(PermissionKeys.RECEIPT_ENTRY_CREATE);
+  const isLoaded = usePermissionStore(state => state.isLoaded);
+  const isPermitted = isUserAdmin() || canReadReceipts || !isLoaded;
 
-  if (!canReadReceipts) {
+  if (!isPermitted) {
     return (
       <View style={styles.flex}>
         <AdminHeader

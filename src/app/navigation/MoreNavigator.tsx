@@ -79,6 +79,7 @@ import {
   EditUserScreen,
   UserVerificationScreen,
 } from '../../features/admin/users';
+import { TransactionHistoryScreen, TransactionDetailsScreen } from '../../features/transactions';
 import { MoreStackParamList } from './NavigationTypes';
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();
@@ -780,6 +781,22 @@ export const MoreNavigator: React.FC = () => (
           onProfilePress={() =>
             navigation.navigate(AppRoutes.MY_PROFILE as any)
           }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.TRANSACTION_HISTORY}>
+      {({ navigation }) => (
+        <TransactionHistoryScreen
+          onBack={navigation.goBack}
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.TRANSACTION_DETAILS}>
+      {({ navigation }) => (
+        <TransactionDetailsScreen
+          onBack={navigation.goBack}
         />
       )}
     </Stack.Screen>

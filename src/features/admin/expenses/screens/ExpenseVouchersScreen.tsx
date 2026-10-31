@@ -25,7 +25,8 @@ import {
   Plus,
 } from '../../../../core/components/icons';
 import { PermissionDenied } from '../../../../core/permissions/permission.guard';
-import { can } from '../../../../core/permissions/can';
+import { can, isUserAdmin } from '../../../../core/permissions/can';
+import { usePermissionStore } from '../../../../core/permissions/permission.store';
 import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import { useDebouncedValue } from '../../../../core/hooks/useDebouncedValue';
 import { AdminColors, BrandColors, Spacing, Typography, BorderRadius } from '../../../../core/theme';
@@ -88,7 +89,10 @@ export const ExpenseVouchersScreen: React.FC<ExpenseVouchersScreenProps> = ({
     await Promise.all([expensesQuery.refetch(), stats.refetch()]);
   }, [expensesQuery, stats]);
 
-  if (!can(PermissionKeys.EXPENSE_READ)) {
+  const isLoaded = usePermissionStore.getState().isLoaded;
+  const isPermitted = isUserAdmin() || can(PermissionKeys.EXPENSE_READ) || !isLoaded;
+
+  if (!isPermitted) {
     return (
       <View style={styles.flex}>
         <AdminHeader

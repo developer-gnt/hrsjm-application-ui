@@ -461,6 +461,34 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </TouchableOpacity>
         </ProfileSectionCard>
 
+        {/* Payments & Transactions */}
+        <ProfileSectionCard
+          icon={<Receipt size={18} color={AdminColors.primary} />}
+          title="Payment & Transactions"
+          backgroundColor={AdminColors.primaryLight}
+          onEdit={() => navigation.navigate('TransactionHistory')}
+          editLabel="View All"
+          style={styles.sectionGap}
+        >
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('TransactionHistory')}
+            accessibilityRole="button"
+            accessibilityLabel="Open Transaction History"
+          >
+            <ProfileInfoRow
+              icon={<Receipt size={16} color={AdminColors.textSecondary} />}
+              label="Transaction History"
+              value="View full payment logs & receipts"
+              divider={false}
+              showValueWithTrailing={true}
+              trailing={
+                <ChevronRightIcon size={16} color={AdminColors.textSecondary} />
+              }
+            />
+          </TouchableOpacity>
+        </ProfileSectionCard>
+
         {/* Member details or Admin details based on logged-in role */}
         {isMember ? (
           <ProfileSectionCard

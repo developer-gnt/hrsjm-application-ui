@@ -234,6 +234,28 @@ export function ReceiptsListScreen() {
                 </Text>
               </View>
 
+              {/* Transaction History Banner */}
+              <TouchableOpacity
+                style={styles.txnHistoryBanner}
+                onPress={() => (navigation as any).navigate('TransactionHistory')}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="View Transaction History"
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={styles.txnHistoryIconWrap}>
+                    <Icon name="clock" size={18} color="#0B2F52" />
+                  </View>
+                  <View>
+                    <Text style={styles.txnHistoryTitle}>Transaction History</Text>
+                    <Text style={styles.txnHistorySubtitle}>
+                      View complete payment logs & audit trail
+                    </Text>
+                  </View>
+                </View>
+                <Icon name="chevron-right" size={18} color="#0B2F52" />
+              </TouchableOpacity>
+
               {/* Search and Filter Row */}
               <View style={styles.searchRow}>
                 <View style={styles.searchBar}>
