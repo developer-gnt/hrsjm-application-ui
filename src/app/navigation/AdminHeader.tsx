@@ -22,6 +22,7 @@ import {
 } from '../../features/auth/components/UserProfileModal';
 import { AdminSidebar } from './AdminSidebar';
 import { useDynamicUnreadCount } from '../../features/admin/notifications/store/notificationsStore';
+import { Menu, ArrowLeft } from '../../core/components/icons';
 
 /**
  * ============================================================================
@@ -348,16 +349,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             accessibilityLabel="Go back"
             activeOpacity={0.7}
           >
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M19 12H5M12 19l-7-7 7-7"
-                stroke="#0B2F52"
-                strokeWidth={2.4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-                      </TouchableOpacity>
+            <ArrowLeft size={22} color="#0B2F52" strokeWidth={2.4} />
+          </TouchableOpacity>
         ) : showMenu ? (
           <TouchableOpacity
             style={styles.menuButton}
@@ -367,16 +360,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             accessibilityLabel="Open side navigation menu"
             activeOpacity={0.7}
           >
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M4 6h16M4 12h16M4 18h16"
-                stroke="#0B2F52"
-                strokeWidth={2.4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-                      </TouchableOpacity>
+            <Menu size={22} color="#0B2F52" strokeWidth={2.4} />
+          </TouchableOpacity>
         ) : null}
 
         {/* Center/Left: Title OR Official HRSJM Logo */}
