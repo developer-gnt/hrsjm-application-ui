@@ -18,6 +18,12 @@ import { MOCK_DONATION_RECORDS } from '../../donations/data/donations.mock';
 import { recentDonationsStore } from '../../donations/services/recent-donations.store';
 import { ShareReceiptSheet } from '../components/ShareReceiptSheet';
 import { PrintReceiptSheet } from '../components/PrintReceiptSheet';
+import {
+  downloadReceiptPDF,
+  downloadReceiptPdfNative,
+  isWebEnvironment,
+} from '../../admin/donations/utils/receiptDocument';
+import type { DonationReceiptModel } from '../../admin/donations/types/donations.types';
 
 type RouteProps = NativeStackScreenProps<AppStackParamList, 'ReceiptPdfPreview'>['route'];
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
@@ -56,11 +62,41 @@ export function ReceiptPdfPreviewScreen() {
 
   const fileName = `HRSJM_${record.type}_Receipt.pdf`;
 
-  const handleDownload = () => {
-    setToastMessage(`Simulated: Downloaded ${fileName} to device`);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 2000);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    if (downloading) return;
+    try {
+      setDownloading(true);
+      const receiptModel: DonationReceiptModel = {
+        id: record.id || record.receiptNo,
+        receiptNumber: record.receiptNo,
+        receiptDate: record.isoDate || new Date().toISOString(),
+        donorName: record.donorName,
+        donorMobile: (record as any).donorPhone || (record as any).phone || null,
+        donorEmail: (record as any).donorEmail || (record as any).email || null,
+        cause: record.cause || record.title || 'General Fund',
+        amount: Number(record.amount || 0),
+        paymentMethod: record.paymentMethod || 'Online',
+        transactionId: record.transactionId || null,
+        status: record.status || 'COMPLETED',
+      };
+
+      if (isWebEnvironment()) {
+        await downloadReceiptPDF(receiptModel);
+      } else {
+        await downloadReceiptPdfNative(receiptModel);
+      }
+
+      setToastMessage(`Receipt PDF downloaded successfully`);
+    } catch (err: any) {
+      setToastMessage(err?.message || 'Failed to download receipt PDF');
+    } finally {
+      setDownloading(false);
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 3000);
+    }
   };
 
   return (

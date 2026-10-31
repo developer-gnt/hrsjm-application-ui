@@ -470,11 +470,16 @@ export const downloadReportPdf = async (
     if (!dirs) {
       throw new Error('Native file system storage is not available.');
     }
-    const path = dirs.DownloadDir
+    let path = dirs.DownloadDir
       ? `${dirs.DownloadDir}/${fileName}`
       : `${dirs.DocumentDir}/${fileName}`;
 
-    await RNFS.fs.writeFile(path, base64, 'base64');
+    try {
+      await RNFS.fs.writeFile(path, base64, 'base64');
+    } catch (_writeErr) {
+      path = `${dirs.DocumentDir || dirs.CacheDir}/${fileName}`;
+      await RNFS.fs.writeFile(path, base64, 'base64');
+    }
     if (dirs.DownloadDir) {
       await (RNFS.fs.scanFile as any)(path).catch(() => undefined);
       return 'downloaded';

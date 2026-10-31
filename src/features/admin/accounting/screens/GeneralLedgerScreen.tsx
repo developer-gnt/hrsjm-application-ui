@@ -51,6 +51,11 @@ import { useLedger } from '../hooks/useLedger';
 import type { LedgerTransaction } from '../types/accounting.types';
 import { AppRoutes } from '../../../../core/constants/routes';
 import { getCategoryBadge } from './ChartOfAccountsScreen';
+import {
+  PassbookExportModal,
+  type PassbookExportOptions,
+} from '../components/PassbookExportModal';
+import { exportPassbookStatement } from '../services/passbook-export.api';
 
 interface GeneralLedgerScreenProps {
   accountId?: string;
@@ -77,6 +82,8 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDatePreset, setSelectedDatePreset] = useState<DatePresetKey>('ALL_TIME');
   const [selectedTx, setSelectedTx] = useState<LedgerTransaction | null>(null);
+  const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const { fromDate, toDate, dateLabel } = useMemo(() => {
     const now = new Date();
@@ -185,7 +192,32 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
   }, [transactions, closingBal]);
 
   const handleExport = () => {
-    Alert.alert('Export Statement', 'Passbook statement exported successfully as PDF/Excel.');
+    setExportModalVisible(true);
+  };
+
+  const handleExecuteExport = async (options: PassbookExportOptions) => {
+    if (isExporting) return;
+    try {
+      setIsExporting(true);
+      const res = await exportPassbookStatement({
+        transactionType: options.transactionType,
+        format: options.format,
+        fromDate: options.fromDate || fromDate,
+        toDate: options.toDate || toDate,
+      });
+      setExportModalVisible(false);
+      Alert.alert(
+        'Export Successful',
+        `Passbook statement (${options.format}) exported successfully.\nFile: ${res.filename}`,
+      );
+    } catch (err: any) {
+      Alert.alert(
+        'Export Failed',
+        err?.message || 'Could not download passbook statement. Please verify network.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleOpenVoucher = (tx: LedgerTransaction) => {
@@ -995,6 +1027,16 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
             </View>
           </View>
         </Modal>
+
+        {/* Passbook Export Modal */}
+        <PassbookExportModal
+          visible={exportModalVisible}
+          onClose={() => setExportModalVisible(false)}
+          onConfirmExport={handleExecuteExport}
+          isExporting={isExporting}
+          initialFromDate={fromDate}
+          initialToDate={toDate}
+        />
       </SafeAreaView>
     </View>
   );

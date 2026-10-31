@@ -172,11 +172,16 @@ export const exportPassbookStatement = async (
   const dirs = RNFS.fs.dirs;
 
   // On Android, download directory is dirs.DownloadDir; on iOS dirs.DocumentDir
-  const savePath = dirs.DownloadDir
+  let savePath = dirs.DownloadDir
     ? `${dirs.DownloadDir}/${filename}`
     : `${dirs.DocumentDir}/${filename}`;
 
-  await RNFS.fs.writeFile(savePath, base64Data, 'base64');
+  try {
+    await RNFS.fs.writeFile(savePath, base64Data, 'base64');
+  } catch (_writeErr) {
+    savePath = `${dirs.DocumentDir || dirs.CacheDir}/${filename}`;
+    await RNFS.fs.writeFile(savePath, base64Data, 'base64');
+  }
 
   if (dirs.DownloadDir) {
     await (RNFS.fs.scanFile as any)(savePath).catch(() => undefined);
