@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Linking,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -110,6 +112,31 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [videoModalVisible, setVideoModalVisible] = useState(false);
   const { video: aboutVideo, fetchAboutVideo } = useAboutVideo();
+
+  const handleEmergencyHelplinePress = async () => {
+    const phoneDigits = '919888880004';
+    const message = encodeURIComponent('Hello HRSJM, I need emergency social & legal assistance.');
+    const webWaUrl = `https://wa.me/${phoneDigits}?text=${message}`;
+    const appWaUrl = `whatsapp://send?phone=${phoneDigits}&text=${message}`;
+
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') {
+        window.open(webWaUrl, '_blank');
+        return;
+      }
+    }
+
+    try {
+      const canOpen = await Linking.canOpenURL(appWaUrl);
+      if (canOpen) {
+        await Linking.openURL(appWaUrl);
+      } else {
+        await Linking.openURL(webWaUrl);
+      }
+    } catch {
+      Linking.openURL(webWaUrl).catch(() => {});
+    }
+  };
 
   useEffect(() => {
     fetchAboutVideo();
@@ -342,7 +369,13 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
 
         {/* Emergency Helpline Banner */}
         <View style={styles.section}>
-          <View style={styles.helplineBanner}>
+          <TouchableOpacity
+            style={styles.helplineBanner}
+            activeOpacity={0.8}
+            onPress={handleEmergencyHelplinePress}
+            accessibilityRole="button"
+            accessibilityLabel="24x7 Emergency Social & Legal Helpline: +91 98888 80004 on WhatsApp"
+          >
             <View style={{ marginRight: 10 }}>
               <Phone size={22} color="#0D47A1" strokeWidth={2} />
             </View>
@@ -350,7 +383,7 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
               <Text style={styles.helplineTitle}>24x7 Emergency Social & Legal Helpline</Text>
               <Text style={styles.helplinePhone}>+91 98888 80004 / 1800-HRSJM-AID</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Know Your Rights Categories */}
