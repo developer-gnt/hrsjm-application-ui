@@ -8,7 +8,9 @@ import {
   View,
 } from 'react-native';
 import { colors, radius, spacing } from '../../../core/theme/theme';
-import { shareContent } from '../../../core/utils/share';
+import { recentDonationsStore } from '../../donations/services/recent-donations.store';
+import { MOCK_DONATION_RECORDS } from '../../donations/data/donations.mock';
+import { executeShareReceipt } from '../services/receiptActions.service';
 import { Icon } from '../../../core/components/common/Icon';
 
 interface ShareReceiptSheetProps {
@@ -29,11 +31,22 @@ export function ShareReceiptSheet({
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   const handleShareReceipt = async () => {
-    await shareContent({
-      title: 'HRSJM Donation Receipt',
-      message: `HRSJM Donation Receipt\nReceipt No: ${receiptNo}\nFile: ${pdfFileName}`,
-    });
-    onClose();
+    try {
+      const record =
+        recentDonationsStore.getRecentDonations().find(r => r.receiptNo === receiptNo || r.id === receiptNo) ||
+        MOCK_DONATION_RECORDS.find(r => r.receiptNo === receiptNo) || {
+          id: receiptNo,
+          receiptNo,
+          amount: 500,
+          donorName: 'Donor',
+          cause: 'Donation',
+        };
+      await executeShareReceipt(record as any);
+    } catch (err: any) {
+      console.warn('Share receipt error:', err);
+    } finally {
+      onClose();
+    }
   };
 
   return (

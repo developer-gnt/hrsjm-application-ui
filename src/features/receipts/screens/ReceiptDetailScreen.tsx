@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Platform,
   ScrollView,
   StyleSheet,
@@ -20,6 +22,11 @@ import { recentDonationsStore } from '../../donations/services/recent-donations.
 import type { DonationRecord, DonationStatus } from '../../donations/types/donation.types';
 import { ShareReceiptSheet } from '../components/ShareReceiptSheet';
 import { PrintReceiptSheet } from '../components/PrintReceiptSheet';
+import {
+  executeDownloadReceipt,
+  executePrintReceipt,
+  executeShareReceipt,
+} from '../services/receiptActions.service';
 
 type RouteProps = NativeStackScreenProps<AppStackParamList, 'ReceiptDetail'>['route'];
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
@@ -57,6 +64,7 @@ export function ReceiptDetailScreen() {
   const [shareSheetVisible, setShareSheetVisible] = useState(false);
   const [printSheetVisible, setPrintSheetVisible] = useState(false);
   const [downloadSuccessToast, setDownloadSuccessToast] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<'download' | 'print' | 'share' | null>(null);
 
   const backLabel =
     fromScreen === 'DonationHistory' || fromScreen === 'DonationDetail'
@@ -117,17 +125,47 @@ export function ReceiptDetailScreen() {
   const statusMeta = STATUS_META[record.status] || STATUS_META.Completed;
   const isMembership = record.type === 'Membership';
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    if (actionLoading) return;
+    setActionLoading('download');
     try {
-      navigation.navigate('ReceiptPdfPreview' as any, {
-        receiptNo: record.receiptNo,
-        record,
-        fromScreen,
-      });
-    } catch {
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        window.print();
-      }
+      await executeDownloadReceipt(record);
+      setDownloadSuccessToast('Receipt downloaded successfully');
+      setTimeout(() => setDownloadSuccessToast(null), 3000);
+    } catch (err: any) {
+      console.error('Download receipt error:', err);
+      Alert.alert(
+        'Download Failed',
+        err?.message || 'Unable to download receipt. Please check your storage permissions and try again.'
+      );
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handlePrint = async () => {
+    if (actionLoading) return;
+    setActionLoading('print');
+    try {
+      await executePrintReceipt(record);
+    } catch (err: any) {
+      console.error('Print receipt error:', err);
+      Alert.alert('Print Failed', err?.message || 'Unable to print receipt.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleShare = async () => {
+    if (actionLoading) return;
+    setActionLoading('share');
+    try {
+      await executeShareReceipt(record);
+    } catch (err: any) {
+      console.error('Share receipt error:', err);
+      Alert.alert('Share Failed', err?.message || 'Unable to share receipt.');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -260,31 +298,52 @@ export function ReceiptDetailScreen() {
           <TouchableOpacity
             onPress={handleDownload}
             activeOpacity={0.85}
+            disabled={Boolean(actionLoading)}
             accessibilityRole="button"
             accessibilityLabel="Download PDF"
-            style={styles.downloadBtn}>
-            <Icon name="download" size={18} color={colors.white} strokeWidth={2.2} />
-            <Text style={styles.downloadBtnText}>Download PDF</Text>
+            style={[styles.downloadBtn, actionLoading === 'download' && { opacity: 0.8 }]}>
+            {actionLoading === 'download' ? (
+              <ActivityIndicator size="small" color={colors.white} style={{ marginRight: 6 }} />
+            ) : (
+              <Icon name="download" size={18} color={colors.white} strokeWidth={2.2} />
+            )}
+            <Text style={styles.downloadBtnText}>
+              {actionLoading === 'download' ? 'Downloading...' : 'Download PDF'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setPrintSheetVisible(true)}
+            onPress={handlePrint}
             activeOpacity={0.75}
+            disabled={Boolean(actionLoading)}
             accessibilityRole="button"
             accessibilityLabel="Print receipt"
-            style={styles.actionBtnSecondary}>
-            <Icon name="printer" size={18} color={colors.primary} strokeWidth={2} />
-            <Text style={styles.actionBtnSecondaryText}>Print</Text>
+            style={[styles.actionBtnSecondary, actionLoading === 'print' && { opacity: 0.8 }]}>
+            {actionLoading === 'print' ? (
+              <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 6 }} />
+            ) : (
+              <Icon name="printer" size={18} color={colors.primary} strokeWidth={2} />
+            )}
+            <Text style={styles.actionBtnSecondaryText}>
+              {actionLoading === 'print' ? 'Printing...' : 'Print'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setShareSheetVisible(true)}
+            onPress={handleShare}
             activeOpacity={0.75}
+            disabled={Boolean(actionLoading)}
             accessibilityRole="button"
             accessibilityLabel="Share receipt"
-            style={styles.actionBtnSecondary}>
-            <Icon name="share" size={18} color={colors.primary} strokeWidth={2} />
-            <Text style={styles.actionBtnSecondaryText}>Share</Text>
+            style={[styles.actionBtnSecondary, actionLoading === 'share' && { opacity: 0.8 }]}>
+            {actionLoading === 'share' ? (
+              <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 6 }} />
+            ) : (
+              <Icon name="share" size={18} color={colors.primary} strokeWidth={2} />
+            )}
+            <Text style={styles.actionBtnSecondaryText}>
+              {actionLoading === 'share' ? 'Sharing...' : 'Share'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
