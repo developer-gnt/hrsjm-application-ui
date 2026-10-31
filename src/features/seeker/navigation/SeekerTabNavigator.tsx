@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#DBE5EE',
+    borderTopColor: '#DCE4EC',
     paddingTop: 8,
     paddingHorizontal: 4,
     elevation: 8,
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: 11,
     textAlign: 'center',
   },
   tabLabelActive: {

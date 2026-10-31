@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#DBE5EE',
+    borderTopColor: '#DCE4EC',
     paddingTop: 8,
     paddingHorizontal: 8,
     elevation: 8,

@@ -320,7 +320,7 @@ const UserCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation, desc
           }
         };
 
-        const iconColor = isFocused ? '#E9B82E' : '#06294D';
+        const iconColor = isFocused ? '#E9B82E' : '#718096';
 
         return (
           <TouchableOpacity
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#DBE5EE',
+    borderTopColor: '#DCE4EC',
     paddingTop: 8,
     paddingHorizontal: 8,
     elevation: 8,
@@ -812,7 +812,7 @@ const styles = StyleSheet.create({
   tabLabelInactive: {
     fontFamily: 'Inter',
     fontWeight: '600',
-    color: '#06294D',
+    color: '#718096',
   },
 });
 
