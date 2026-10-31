@@ -105,8 +105,15 @@ export const fetchLatestPublishedNews = async (
     const res = await apiClient.get<RawNewsResponse>(ApiRoutes.NEWS.BASE, {
       params: { status: 'PUBLISHED', limit },
     });
-    const items = res.data?.items;
-    if (Array.isArray(items) && items.length > 0) {
+    const rawData: any = (res as any)?.data?.items !== undefined
+      ? (res as any).data
+      : ((res as any)?.data ?? res);
+    const items = Array.isArray(rawData?.items)
+      ? rawData.items
+      : Array.isArray(rawData)
+        ? rawData
+        : [];
+    if (items.length > 0) {
       return items.map(mapRawToHomeNewsItem);
     }
     return [];
@@ -117,14 +124,21 @@ export const fetchLatestPublishedNews = async (
 };
 
 export const fetchAllPublishedArticles = async (
-  limit: number = 20,
+  limit: number = 50,
 ): Promise<UserNewsArticle[]> => {
   try {
     const res = await apiClient.get<RawNewsResponse>(ApiRoutes.NEWS.BASE, {
       params: { status: 'PUBLISHED', limit },
     });
-    const items = res.data?.items;
-    if (Array.isArray(items) && items.length > 0) {
+    const rawData: any = (res as any)?.data?.items !== undefined
+      ? (res as any).data
+      : ((res as any)?.data ?? res);
+    const items = Array.isArray(rawData?.items)
+      ? rawData.items
+      : Array.isArray(rawData)
+        ? rawData
+        : [];
+    if (items.length > 0) {
       return items.map(mapRawToUserNewsArticle);
     }
     return [];

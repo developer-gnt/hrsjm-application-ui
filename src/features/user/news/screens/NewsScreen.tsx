@@ -205,6 +205,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
 }) => {
   const { width } = useWindowDimensions();
   const slideWidth = width;
+  const flatListRef = useRef<FlatList<UserNewsArticle> | null>(null);
   const searchRef = useRef<SearchInputHandle | null>(null);
   const heroRef = useRef<ScrollViewInstance | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
@@ -243,10 +244,18 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
     return [...dynamicArticles, ...USER_NEWS_ARTICLES.filter(a => !dynamicIds.has(a.id))];
   }, [dynamicArticles]);
 
-  const categories = useMemo(
-    () => [...new Set(allArticles.map(article => article.category))],
-    [allArticles],
-  );
+  const categories = useMemo(() => {
+    const list = [...new Set(allArticles.map(article => article.category))];
+    const order: UserNewsCategory[] = [
+      'Legal Awareness',
+      'Community',
+      'Human Rights',
+      'Women and Child',
+    ];
+    const ordered = order.filter(c => list.includes(c));
+    const others = list.filter(c => !order.includes(c as any));
+    return [...ordered, ...others];
+  }, [allArticles]);
   const contentTypes = useMemo(
     () => [...new Set(allArticles.map(article => article.contentType))],
     [allArticles],
@@ -337,7 +346,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
     setFilterOpen(true);
   };
 
-  const clearFilters = (clearSearch = false) => {
+  const clearFilters = useCallback((clearSearch = false) => {
     setCategory('All');
     setContentType('All');
     setDateFilter('All Dates');
@@ -347,7 +356,15 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
       setSearch('');
       debouncedSearch('');
     }
-  };
+  }, [debouncedSearch]);
+
+  const handleViewAll = useCallback(() => {
+    setCategory('All');
+    clearFilters(true);
+    setTimeout(() => {
+      flatListRef.current?.scrollToOffset({ offset: 320, animated: true });
+    }, 50);
+  }, [clearFilters]);
 
   const applyFilters = () => {
     setCategory(draftCategory);
@@ -433,7 +450,12 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
             <TouchableOpacity
               key={item}
               style={[styles.categoryChip, selected && styles.categoryChipSelected]}
-              onPress={() => setCategory(item)}
+              onPress={() => {
+              setCategory(item);
+              if (item === 'All') {
+                clearFilters(false);
+              }
+            }}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel={`Filter news by ${item}`}
@@ -491,9 +513,9 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
 
       <View style={styles.sectionHeader}>
         <SectionHeader
-          title="Latest News"
+          title={category === 'All' ? 'Latest News' : `${category} News`}
           linkLabel="View All"
-          onLinkPress={() => clearFilters(true)}
+          onLinkPress={handleViewAll}
         />
       </View>
     </>
@@ -507,6 +529,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
         onPressSearch={() => searchRef.current?.focus()}
       />
       <FlatList
+        ref={flatListRef}
         style={styles.list}
         contentContainerStyle={styles.listContent}
         data={visibleArticles}
@@ -515,6 +538,15 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
           <NewsArticleCard article={item} onPress={onOpenArticle} />
         )}
         ListHeaderComponent={listHeader}
+        ListFooterComponent={
+          visibleArticles.length > 0 ? (
+            <View style={styles.footerContainer}>
+              <Text style={styles.footerSummaryText}>
+                Showing all {visibleArticles.length} {category === 'All' ? 'news articles' : `${category} articles`}
+              </Text>
+            </View>
+          ) : undefined
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <AppIcon name="news" size={34} color={AdminColors.textSecondary} />
@@ -911,5 +943,17 @@ const styles = StyleSheet.create({
     color: AdminColors.primaryDark,
     fontSize: 14.5,
     fontWeight: '700',
+  },
+  footerContainer: {
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xl,
+    alignItems: 'center',
+  },
+  footerSummaryText: {
+    fontFamily: UserFontFamilies.sans,
+    fontSize: 13,
+    color: AdminColors.textSecondary,
+    textAlign: 'center',
   },
 });
