@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,11 +21,10 @@ import { recentDonationsStore } from '../../donations/services/recent-donations.
 import { ShareReceiptSheet } from '../components/ShareReceiptSheet';
 import { PrintReceiptSheet } from '../components/PrintReceiptSheet';
 import {
-  downloadReceiptPDF,
-  downloadReceiptPdfNative,
-  isWebEnvironment,
-} from '../../admin/donations/utils/receiptDocument';
-import type { DonationReceiptModel } from '../../admin/donations/types/donations.types';
+  executeDownloadReceipt,
+  executePrintReceipt,
+  executeShareReceipt,
+} from '../services/receiptActions.service';
 
 type RouteProps = NativeStackScreenProps<AppStackParamList, 'ReceiptPdfPreview'>['route'];
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
@@ -36,6 +37,7 @@ export function ReceiptPdfPreviewScreen() {
   const [shareSheetVisible, setShareSheetVisible] = useState(false);
   const [printSheetVisible, setPrintSheetVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<'download' | 'print' | 'share' | null>(null);
 
   const record =
     (route.params as any)?.record ||
@@ -62,40 +64,47 @@ export function ReceiptPdfPreviewScreen() {
 
   const fileName = `HRSJM_${record.type}_Receipt.pdf`;
 
-  const [downloading, setDownloading] = useState(false);
-
   const handleDownload = async () => {
-    if (downloading) return;
+    if (actionLoading) return;
+    setActionLoading('download');
     try {
-      setDownloading(true);
-      const receiptModel: DonationReceiptModel = {
-        id: record.id || record.receiptNo,
-        receiptNumber: record.receiptNo,
-        receiptDate: record.isoDate || new Date().toISOString(),
-        donorName: record.donorName,
-        donorMobile: (record as any).donorPhone || (record as any).phone || null,
-        donorEmail: (record as any).donorEmail || (record as any).email || null,
-        cause: record.cause || record.title || 'General Fund',
-        amount: Number(record.amount || 0),
-        paymentMethod: record.paymentMethod || 'Online',
-        transactionId: record.transactionId || null,
-        status: record.status || 'COMPLETED',
-      };
-
-      if (isWebEnvironment()) {
-        await downloadReceiptPDF(receiptModel);
-      } else {
-        await downloadReceiptPdfNative(receiptModel);
-      }
-
-      setToastMessage(`Receipt PDF downloaded successfully`);
+      await executeDownloadReceipt(record);
+      setToastMessage('Receipt downloaded successfully');
+      setTimeout(() => setToastMessage(null), 3000);
     } catch (err: any) {
-      setToastMessage(err?.message || 'Failed to download receipt PDF');
+      console.error('Download receipt error:', err);
+      Alert.alert(
+        'Download Failed',
+        err?.message || 'Unable to download receipt. Please check your storage permissions and try again.'
+      );
     } finally {
-      setDownloading(false);
-      setTimeout(() => {
-        setToastMessage(null);
-      }, 3000);
+      setActionLoading(null);
+    }
+  };
+
+  const handlePrint = async () => {
+    if (actionLoading) return;
+    setActionLoading('print');
+    try {
+      await executePrintReceipt(record);
+    } catch (err: any) {
+      console.error('Print receipt error:', err);
+      Alert.alert('Print Failed', err?.message || 'Unable to print receipt.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleShare = async () => {
+    if (actionLoading) return;
+    setActionLoading('share');
+    try {
+      await executeShareReceipt(record);
+    } catch (err: any) {
+      console.error('Share receipt error:', err);
+      Alert.alert('Share Failed', err?.message || 'Unable to share receipt.');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -119,26 +128,41 @@ export function ReceiptPdfPreviewScreen() {
         <View style={styles.topActions}>
           <TouchableOpacity
             onPress={handleDownload}
+            disabled={Boolean(actionLoading)}
             accessibilityRole="button"
             accessibilityLabel="Download PDF"
             style={styles.iconBtn}>
-            <Icon name="download" size={20} color={colors.primary} />
+            {actionLoading === 'download' ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Icon name="download" size={20} color={colors.primary} />
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setPrintSheetVisible(true)}
+            onPress={handlePrint}
+            disabled={Boolean(actionLoading)}
             accessibilityRole="button"
             accessibilityLabel="Print PDF"
             style={styles.iconBtn}>
-            <Icon name="printer" size={20} color={colors.primary} />
+            {actionLoading === 'print' ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Icon name="printer" size={20} color={colors.primary} />
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setShareSheetVisible(true)}
+            onPress={handleShare}
+            disabled={Boolean(actionLoading)}
             accessibilityRole="button"
             accessibilityLabel="Share PDF"
             style={styles.iconBtn}>
-            <Icon name="share" size={20} color={colors.primary} />
+            {actionLoading === 'share' ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Icon name="share" size={20} color={colors.primary} />
+            )}
           </TouchableOpacity>
         </View>
       </View>

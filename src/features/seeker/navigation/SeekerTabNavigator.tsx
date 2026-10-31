@@ -19,6 +19,7 @@ import { SupportTicketsScreen } from '../../support';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import { NotificationsScreen } from '../../admin/notifications';
 import { AboutScreen } from '../../user/about';
+import { UserActionPageScreen } from '../../user/action-pages';
 import { WhatWeDoDetailScreen } from '../../user/what-we-do';
 import { NewsScreen } from '../../user/news/screens/NewsScreen';
 import { NewsDetailsScreen } from '../../user/news/screens/NewsDetailsScreen';
@@ -236,6 +237,62 @@ export const SeekerTabNavigator: React.FC = () => {
       <Tab.Screen name="SeekerProfile" component={SeekerProfileWrapper} />
 
       {/* Hidden Stack Routes accessible within Seeker flow */}
+      <Tab.Screen
+        name="UserActionPage"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => {
+          const pageId = route?.params?.pageId || 'donate';
+          return (
+            <UserActionPageScreen
+              pageId={pageId}
+              hideBottomNav={true}
+              showBottomNav={false}
+              onBack={() => {
+                if (navigation?.canGoBack && navigation.canGoBack()) {
+                  navigation.goBack();
+                } else {
+                  navigation.navigate('SeekerHome');
+                }
+              }}
+              onOpenHome={() => navigation.navigate('SeekerHome')}
+              onOpenAbout={() => navigation.navigate('About')}
+              onOpenRights={() => navigation.navigate('SeekerRights')}
+              onOpenEvents={() => navigation.navigate('SeekerEvents')}
+              onOpenNews={() => navigation.navigate('News')}
+              onOpenContact={() => navigation.navigate('SeekerProfile')}
+              onOpenDonations={() => navigation.navigate('UserActionPage', { pageId: 'donate' })}
+            />
+          );
+        }}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="Donate"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }: any) => (
+          <UserActionPageScreen
+            pageId="donate"
+            hideBottomNav={true}
+            showBottomNav={false}
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('SeekerHome');
+              }
+            }}
+            onOpenHome={() => navigation.navigate('SeekerHome')}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenRights={() => navigation.navigate('SeekerRights')}
+            onOpenEvents={() => navigation.navigate('SeekerEvents')}
+            onOpenNews={() => navigation.navigate('News')}
+            onOpenContact={() => navigation.navigate('SeekerProfile')}
+            onOpenDonations={() => navigation.navigate('UserActionPage', { pageId: 'donate' })}
+          />
+        )}
+      </Tab.Screen>
       <Tab.Screen
         name="Events"
         options={{ tabBarButton: () => null }}
