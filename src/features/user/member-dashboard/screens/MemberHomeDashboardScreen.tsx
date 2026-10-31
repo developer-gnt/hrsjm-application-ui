@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -15,39 +15,36 @@ import {
   Shadows,
   Spacing,
 } from '../../../../core/theme';
-import { AppIcon } from '../../components';
-import { USER_EVENTS } from '../../events/data/user-events';
-import type { UserEvent } from '../../events/data/user-events';
-import { HomeHeader } from '../../home/components/HomeHeader';
-import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
-import type { HomeTab } from '../../home/types/home.types';
-import {
-  getUpcomingMemberEvents,
-  MOCK_ACTIVE_MEMBERSHIP,
-} from '../data/member-dashboard';
-import type { MemberMembershipRecord } from '../types/member-dashboard.types';
-import { apiClient } from '../../../../core/api/client';
+import { AppIcon } from '../../../user/components';
+import { HomeHeader } from '../../../user/home/components/HomeHeader';
+import { UserBottomNavigation } from '../../../user/home/components/UserBottomNavigation';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
+import { useNotifications } from '../../../admin/notifications';
 import { useAuthStore } from '../../../auth/store/authStore';
+import type { HomeTab } from '../../../user/home/types/home.types';
+import { MOCK_ACTIVE_MEMBERSHIP } from '../data/member-dashboard';
+import type { MemberMembershipRecord } from '../types/member-dashboard.types';
+import { getEventsList } from '../../../admin/content/events/services/events.service';
+import type { EventListItem } from '../../../admin/content/events/types/events.types';
+import { supportService } from '../../../admin/support/services/support.service';
+import { api, unwrap } from '../../../../core/api/client';
+import { supportTicketsStore } from '../../../support/services/supportTicketsStore';
+import { receiptsService } from '../../../receipts/services/receipts.service';
 import { useProfileStore } from '../../../admin/profile/profileStore';
 
 const formatStartDate = (dateVal?: string | Date | null): string | undefined => {
   if (!dateVal) return undefined;
   try {
     const d = new Date(dateVal);
-    if (isNaN(d.getTime())) {
-      return typeof dateVal === 'string' ? dateVal : undefined;
-    }
-    return d.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
+    if (isNaN(d.getTime())) return undefined;
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   } catch {
     return undefined;
   }
 };
 
 const MEMBER_HERO_IMAGE = require('../../../../assets/images/member-hero-rally.jpg');
+const DEFAULT_EVENT_IMAGE = require('../../../../assets/images/event-legal-awareness.jpg');
 
 interface QuickAction {
   title: string;
@@ -57,20 +54,24 @@ interface QuickAction {
 
 export interface MemberHomeDashboardScreenProps {
   membership?: MemberMembershipRecord | null;
-  onBack: () => void;
-  onOpenMembershipInfo: () => void;
-  onOpenMembershipDetails: () => void;
-  onOpenRight: (rightId: string) => void;
-  onOpenRights: () => void;
-  onOpenComplaint: () => void;
+  onBack?: () => void;
+  onOpenMembershipInfo?: () => void;
+  onOpenMembershipDetails?: () => void;
+  onOpenRight?: (rightId: string) => void;
+  onOpenRights?: () => void;
+  onOpenComplaint?: () => void;
   onOpenTickets?: () => void;
-  onOpenEvents: () => void;
-  onOpenEvent: (event: UserEvent) => void;
-  onOpenDonation: () => void;
-  onOpenHome: () => void;
-  onOpenAbout: () => void;
-  onOpenNews: () => void;
-  onOpenContact: () => void;
+  onOpenEvents?: () => void;
+  onOpenEvent?: (event: EventListItem) => void;
+  onOpenDonation?: () => void;
+  onOpenHome?: () => void;
+  onOpenAbout?: () => void;
+  onOpenNews?: () => void;
+  onOpenContact?: () => void;
+  onOpenResources?: () => void;
+  onOpenNotifications?: () => void;
+  showBottomNav?: boolean;
+  useAdminHeader?: boolean;
 }
 
 const SectionHeading: React.FC<{
@@ -100,51 +101,71 @@ const DashboardCard: React.FC<React.PropsWithChildren> = ({ children }) => (
 );
 
 const EventCard: React.FC<{
-  event: UserEvent;
+  event: EventListItem;
   onPress: () => void;
-}> = ({ event, onPress }) => (
-  <View style={styles.eventCard}>
-    <View style={styles.eventMedia}>
-      <Image
-        source={event.image}
-        style={styles.eventImage}
-        resizeMode="cover"
-      />
-      <View style={styles.eventDateBadge}>
-        <Text style={styles.eventDayText}>{event.day || '18'}</Text>
-        <Text style={styles.eventMonthText}>{event.month || 'Oct'}</Text>
-      </View>
-    </View>
-    <View style={styles.eventBody}>
-      <View style={styles.eventTagsRow}>
-        <View style={styles.tagWorkshop}>
-          <Text style={styles.tagWorkshopText}>{event.category || 'Workshop'}</Text>
+}> = ({ event, onPress }) => {
+  const eventDate = new Date(event.startAt);
+  const isValidDate = !isNaN(eventDate.getTime());
+  const day = isValidDate ? eventDate.getDate().toString() : '—';
+  const month = isValidDate
+    ? eventDate.toLocaleDateString('en-US', { month: 'short' })
+    : '—';
+
+  const imageSource = event.coverImageUrl
+    ? { uri: event.coverImageUrl }
+    : DEFAULT_EVENT_IMAGE;
+
+  return (
+    <Pressable
+      style={styles.eventCard}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Event: ${event.title}`}
+    >
+      <View style={styles.eventMedia}>
+        <Image
+          source={imageSource}
+          style={styles.eventImage}
+          resizeMode="cover"
+        />
+        <View style={styles.eventDateBadge}>
+          <Text style={styles.eventDayText}>{day}</Text>
+          <Text style={styles.eventMonthText}>{month}</Text>
         </View>
-        <View style={styles.tagInPerson}>
-          <Text style={styles.tagInPersonText}>In Person</Text>
-        </View>
       </View>
-      <Text style={styles.eventTitle} numberOfLines={2}>
-        {event.title}
-      </Text>
-      <View style={styles.eventLocation}>
-        <AppIcon name="map-pin" size={13} color="#64748B" />
-        <Text style={styles.eventLocationText} numberOfLines={1}>
-          {event.location}
+      <View style={styles.eventBody}>
+        <View style={styles.eventTagsRow}>
+          <View style={styles.tagWorkshop}>
+            <Text style={styles.tagWorkshopText}>
+              {event.category || 'Workshop'}
+            </Text>
+          </View>
+          <View style={styles.tagInPerson}>
+            <Text style={styles.tagInPersonText}>In Person</Text>
+          </View>
+        </View>
+        <Text style={styles.eventTitle} numberOfLines={2}>
+          {event.title}
         </Text>
+        <View style={styles.eventLocation}>
+          <AppIcon name="map-pin" size={13} color="#64748B" />
+          <Text style={styles.eventLocationText} numberOfLines={1}>
+            {event.location || 'Mumbai, Maharashtra'}
+          </Text>
+        </View>
+        <Pressable
+          style={styles.registerButton}
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Register for ${event.title}`}
+        >
+          <Text style={styles.registerButtonText}>Register Now</Text>
+          <AppIcon name="arrow-right" size={12} color={AdminColors.primaryDark} />
+        </Pressable>
       </View>
-      <Pressable
-        style={styles.registerButton}
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={`Register for ${event.title}`}
-      >
-        <Text style={styles.registerButtonText}>Register Now</Text>
-        <AppIcon name="arrow-right" size={12} color={AdminColors.primaryDark} />
-      </Pressable>
-    </View>
-  </View>
-);
+    </Pressable>
+  );
+};
 
 export const MemberHomeDashboardScreen: React.FC<
   MemberHomeDashboardScreenProps
@@ -164,113 +185,200 @@ export const MemberHomeDashboardScreen: React.FC<
   onOpenAbout,
   onOpenNews,
   onOpenContact,
+  onOpenResources,
+  onOpenNotifications,
+  showBottomNav = false,
+  useAdminHeader = true,
 }) => {
   const user = useAuthStore(state => state.user);
+  const { unreadCount } = useNotifications();
   const profileMemberSince = useProfileStore(state => state.profile?.memberSince);
 
   const [apiMembership, setApiMembership] = useState<any>(null);
   const [apiStartDate, setApiStartDate] = useState<string | null>(null);
 
+  const currentMembership: MemberMembershipRecord = {
+    ...MOCK_ACTIVE_MEMBERSHIP,
+    memberName: user?.full_name || (membership?.memberName ?? MOCK_ACTIVE_MEMBERSHIP.memberName),
+    memberId: (user as any)?.member_id || (user as any)?.custom_id || (membership?.memberId ?? MOCK_ACTIVE_MEMBERSHIP.memberId),
+    status: apiMembership?.status ?? membership?.status ?? MOCK_ACTIVE_MEMBERSHIP.status,
+    category: apiMembership?.category ?? membership?.category ?? MOCK_ACTIVE_MEMBERSHIP.category,
+    joinedDate: apiStartDate || profileMemberSince || (membership?.joinedDate ?? MOCK_ACTIVE_MEMBERSHIP.joinedDate),
+    validUntil: apiMembership?.end_date ? formatStartDate(apiMembership.end_date) : (membership?.validUntil ?? MOCK_ACTIVE_MEMBERSHIP.validUntil),
+  };
+
+  const [dbEvents, setDbEvents] = useState<EventListItem[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState<boolean>(true);
+  const [impactStats, setImpactStats] = useState({
+    eventsAttended: 0,
+    complaintsSubmitted: 0,
+    causesSupported: 0,
+    hoursVolunteered: 0,
+    isLoading: true,
+  });
+
   useEffect(() => {
     let isMounted = true;
     const fetchMembershipData = async () => {
       try {
-        const res: any = await apiClient.get<any>('/memberships/my');
-        const data = res?.data !== undefined ? res.data : res;
+        const res: any = await api.get<any>('/memberships/my');
+        const data = unwrap(res) || (res as any)?.data || res;
         if (isMounted && data) {
           setApiMembership(data);
-          const rawStart = data.start_date || data.startDate || data.applied_at || data.created_at;
-          if (rawStart) {
-            const formatted = formatStartDate(rawStart);
-            if (formatted) {
-              setApiStartDate(formatted);
-            }
-          }
+          const rawStart = data.start_date || data.startDate || data.created_at || data.createdAt;
+          const formatted = formatStartDate(rawStart);
+          if (formatted) setApiStartDate(formatted);
         }
       } catch {
-        try {
-          const res: any = await apiClient.get<any>('/users/me/membership');
-          const data = res?.data !== undefined ? res.data : res;
-          if (isMounted && data) {
-            setApiMembership(data);
-            const rawStart = data.start_date || data.startDate || data.applied_at || data.created_at;
-            if (rawStart) {
-              const formatted = formatStartDate(rawStart);
-              if (formatted) {
-                setApiStartDate(formatted);
-              }
-            }
-          }
-        } catch {
-          // Keep offline/default state
+        // Keep offline/default state
+      }
+    };
+
+    const fetchUpcomingEvents = async () => {
+      try {
+        setIsLoadingEvents(true);
+        const res = await getEventsList({ limit: 50 });
+        if (isMounted) {
+          setDbEvents(res.events || []);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setDbEvents([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingEvents(false);
         }
       }
     };
 
     fetchMembershipData();
+    fetchUpcomingEvents();
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const resolvedJoinedDate =
-    apiStartDate ||
-    (membership?.joinedDate && membership.joinedDate !== MOCK_ACTIVE_MEMBERSHIP.joinedDate ? membership.joinedDate : undefined) ||
-    (profileMemberSince ? profileMemberSince : undefined) ||
-    (membership?.joinedDate ? membership.joinedDate : undefined);
 
-  const currentMembership: MemberMembershipRecord = {
-    ...MOCK_ACTIVE_MEMBERSHIP,
-    memberName:
-      user?.full_name ||
-      apiMembership?.user?.full_name ||
-      (membership?.memberName ?? MOCK_ACTIVE_MEMBERSHIP.memberName),
-    memberId:
-      apiMembership?.membership_number ||
-      (user as any)?.member_id ||
-      (user as any)?.custom_id ||
-      (membership?.memberId ?? MOCK_ACTIVE_MEMBERSHIP.memberId),
-    status:
-      membership?.status ??
-      (apiMembership?.status
-        ? String(apiMembership.status).toLowerCase() === 'active' || String(apiMembership.status).toLowerCase() === 'approved'
-          ? 'active'
-          : 'pending'
-        : MOCK_ACTIVE_MEMBERSHIP.status),
-    category:
-      membership?.category ??
-      apiMembership?.category?.name ??
-      MOCK_ACTIVE_MEMBERSHIP.category,
-    joinedDate: resolvedJoinedDate,
-    validUntil:
-      formatStartDate(apiMembership?.expiry_date || apiMembership?.expiryDate) ||
-      membership?.validUntil ||
-      MOCK_ACTIVE_MEMBERSHIP.validUntil,
-  };
-  const upcomingEvents = useMemo(
-    () => getUpcomingMemberEvents(USER_EVENTS, new Date()).slice(0, 4),
-    [],
-  );
+  // Fetch dynamic impact stats from backend
+  const fetchImpactStats = useCallback(async () => {
+    try {
+      // 1. Primary: Dedicated user impact endpoint from backend
+      const res = await api.get<any>('/auth/me/impact');
+      const data = unwrap(res) || (res as any)?.data || res;
+      if (data && typeof data === 'object') {
+        setImpactStats({
+          eventsAttended: data.eventsAttended ?? 0,
+          causesSupported: data.causesSupported ?? 0,
+          complaintsSubmitted: data.complaintsSubmitted ?? 0,
+          hoursVolunteered: data.hoursVolunteered ?? 0,
+          isLoading: false,
+        });
+        return;
+      }
+    } catch {
+      // Fallback to service-level computation below
+    }
+
+    try {
+      const [tickets, receipts, eventsData] = await Promise.allSettled([
+        supportTicketsStore.fetchTickets(),
+        receiptsService.getMyReceipts(),
+        getEventsList({ limit: 50 }),
+      ]);
+
+      const complaints =
+        tickets.status === 'fulfilled' && Array.isArray(tickets.value)
+          ? tickets.value.length
+          : 0;
+
+      const causes =
+        receipts.status === 'fulfilled' && Array.isArray(receipts.value)
+          ? new Set(
+              receipts.value
+                .filter(r => r.type === 'Donation')
+                .map(r => r.cause || r.id)
+            ).size || receipts.value.filter(r => r.type === 'Donation').length
+          : 0;
+
+      const eventsCount =
+        eventsData.status === 'fulfilled'
+          ? (eventsData.value.events?.length ?? 0)
+          : 0;
+
+      setImpactStats({
+        eventsAttended: eventsCount,
+        complaintsSubmitted: complaints,
+        causesSupported: causes,
+        hoursVolunteered: 0,
+        isLoading: false,
+      });
+    } catch {
+      setImpactStats(prev => ({ ...prev, isLoading: false }));
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchImpactStats();
+    const unsubscribe = supportTicketsStore.subscribe(() => {
+      fetchImpactStats();
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [fetchImpactStats]);
+
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    return dbEvents
+      .filter(event => {
+        if (!event.startAt) return false;
+        const startTime = new Date(event.startAt).getTime();
+        if (isNaN(startTime)) return false;
+        const endTime = event.endAt ? new Date(event.endAt).getTime() : startTime + 4 * 60 * 60 * 1000;
+
+        // An event is upcoming if it has not ended yet and starts today or in the future
+        const isUpcoming = endTime >= now.getTime() || startTime >= startOfToday;
+        return isUpcoming && event.status !== 'CANCELLED' && event.status !== 'COMPLETED';
+      })
+      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+  }, [dbEvents]);
+
   const quickActions: QuickAction[] = [
-    { title: 'Know Your Rights', icon: 'book-open', onPress: onOpenRights },
-    { title: 'File a Complaint', icon: 'file-text', onPress: onOpenComplaint },
-    { title: 'Events', icon: 'calendar', onPress: onOpenEvents },
-    { title: 'Resources', icon: 'download', onPress: onOpenRights },
+    { title: 'Know Your Rights', icon: 'book-open', onPress: onOpenRights || (() => undefined) },
+    { title: 'File a Complaint', icon: 'file-text', onPress: onOpenComplaint || (() => undefined) },
+    { title: 'Events', icon: 'calendar', onPress: onOpenEvents || (() => undefined) },
   ];
   const impactMetrics = [
-    { value: '3', label: 'Events\nAttended', icon: 'users' as const, onPress: onOpenEvents },
-    { value: '2', label: 'Causes\nSupported', icon: 'heart' as const, onPress: onOpenDonation },
-    { value: '1', label: 'Complaint\nSubmitted', icon: 'file-text' as const, onPress: onOpenTickets || onOpenComplaint },
-    { value: '12', label: 'Hours\nVolunteered', icon: 'clock' as const, onPress: onOpenEvents },
+    {
+      value: impactStats.isLoading ? '—' : String(impactStats.eventsAttended),
+      label: 'Events\nAttended',
+      icon: 'users' as const,
+      onPress: onOpenEvents,
+    },
+    {
+      value: impactStats.isLoading ? '—' : String(impactStats.causesSupported),
+      label: 'Causes\nSupported',
+      icon: 'heart' as const,
+      onPress: onOpenDonation,
+    },
+    {
+      value: impactStats.isLoading ? '—' : String(impactStats.complaintsSubmitted),
+      label: 'Complaint\nSubmitted',
+      icon: 'file-text' as const,
+      onPress: onOpenTickets || onOpenComplaint,
+    },
   ];
 
   const handleTabPress = (tab: HomeTab) => {
-    if (tab.id === 'home') onOpenHome();
-    else if (tab.id === 'about') onOpenAbout();
-    else if (tab.id === 'rights') onOpenRights();
-    else if (tab.id === 'events') onOpenEvents();
-    else if (tab.id === 'news') onOpenNews();
-    else if (tab.id === 'contact') onOpenContact();
+    if (tab.id === 'home') onOpenHome?.();
+    else if (tab.id === 'about') onOpenAbout?.();
+    else if (tab.id === 'rights') onOpenRights?.();
+    else if (tab.id === 'events') onOpenEvents?.();
+    else if (tab.id === 'news') onOpenNews?.();
+    else if (tab.id === 'contact') onOpenContact?.();
   };
 
   const kitData = (apiMembership as any)?.kit_fulfillment || (apiMembership as any)?.application_data?.kit_fulfillment;
@@ -283,8 +391,28 @@ export const MemberHomeDashboardScreen: React.FC<
       : 'In Preparation / Dispatch Pending';
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <HomeHeader onBack={onBack} />
+    <View style={styles.safeArea}>
+      {useAdminHeader ? (
+        <AdminHeader
+          isMemberHeader={true}
+          unreadCount={unreadCount}
+          onPressNotifications={onOpenNotifications}
+          showDonate={true}
+          onPressDonate={onOpenDonation}
+        />
+      ) : (
+        <HomeHeader
+          onBack={onBack}
+          onNavigateNav={(id: string) => {
+            if (id === 'home') onOpenHome?.();
+            else if (id === 'about') onOpenAbout?.();
+            else if (id === 'rights') onOpenRights?.();
+            else if (id === 'events') onOpenEvents?.();
+            else if (id === 'news') onOpenNews?.();
+            else if (id === 'contact') onOpenContact?.();
+          }}
+        />
+      )}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -351,13 +479,11 @@ export const MemberHomeDashboardScreen: React.FC<
 
             <Pressable
               style={styles.viewMembershipButton}
-              onPress={onOpenMembershipDetails || onOpenMembershipInfo}
+              onPress={onOpenMembershipDetails || onOpenMembershipInfo || (() => undefined)}
               accessibilityRole="button"
               accessibilityLabel="View Membership"
             >
-              <Text style={styles.viewMembershipText} numberOfLines={1}>
-                View Membership
-              </Text>
+              <Text style={styles.viewMembershipText} numberOfLines={1}>View Membership</Text>
               <AppIcon
                 name="arrow-right"
                 size={12}
@@ -392,7 +518,7 @@ export const MemberHomeDashboardScreen: React.FC<
             </View>
           </Pressable>
 
-          {/* Quick Actions (4 in a row) */}
+          {/* Quick Actions */}
           <View style={styles.quickActionsRow}>
             {quickActions.map(action => (
               <Pressable
@@ -421,7 +547,13 @@ export const MemberHomeDashboardScreen: React.FC<
             <Text style={styles.impactTitle}>Your Impact</Text>
             <View style={styles.impactMetricsRow}>
               {impactMetrics.map(item => (
-                <View key={item.label} style={styles.impactMetricCol}>
+                <Pressable
+                  key={item.label}
+                  style={styles.impactMetricCol}
+                  onPress={item.onPress || (() => undefined)}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.label}
+                >
                   <View style={styles.impactIconCircle}>
                     <AppIcon
                       name={item.icon}
@@ -433,7 +565,7 @@ export const MemberHomeDashboardScreen: React.FC<
                   <Text style={styles.impactLabel} numberOfLines={2}>
                     {item.label}
                   </Text>
-                </View>
+                </Pressable>
               ))}
             </View>
           </View>
@@ -444,44 +576,66 @@ export const MemberHomeDashboardScreen: React.FC<
               linkLabel="View All"
               onLinkPress={onOpenEvents}
             />
-            {upcomingEvents.length > 0 ? (
+            {isLoadingEvents ? (
+              <View style={styles.noEventsCard}>
+                <Text style={styles.noEventsSubtitle}>Loading upcoming events...</Text>
+              </View>
+            ) : upcomingEvents.length > 0 ? (
               <View style={styles.eventList}>
                 {upcomingEvents.slice(0, 1).map(event => (
                   <EventCard
                     key={event.id}
                     event={event}
-                    onPress={() => onOpenEvent(event)}
+                    onPress={() => onOpenEvent?.(event)}
                   />
                 ))}
               </View>
             ) : (
-              <DashboardCard>
-                <Text style={styles.bodyText}>No upcoming events are available.</Text>
-              </DashboardCard>
+              <View style={styles.noEventsCard}>
+                <AppIcon name="calendar" size={28} color="#94A3B8" />
+                <Text style={styles.noEventsTitle}>No events yet</Text>
+                <Text style={styles.noEventsSubtitle}>
+                  There are no upcoming events scheduled at the moment.
+                </Text>
+              </View>
             )}
           </View>
 
-          {/* Recommendations Row */}
+          {/* Recommendations Row – dynamic data */}
           <View style={styles.recommendationsRow}>
             <RecommendationCard
-              icon="book-open"
-              title="Continue Learning"
-              description="Explore articles, guides and legal resources."
-              action="Browse Resources"
-              onPress={onOpenRights}
+              icon="calendar"
+              title="Upcoming Events"
+              description={
+                impactStats.isLoading
+                  ? 'Loading…'
+                  : impactStats.eventsAttended > 0
+                  ? `${impactStats.eventsAttended} event${impactStats.eventsAttended === 1 ? '' : 's'} available to join.`
+                  : 'No upcoming events. Check back soon!'
+              }
+              action="Browse Events"
+              onPress={onOpenEvents || (() => undefined)}
             />
             <RecommendationCard
               icon="heart"
               title="Make a Difference"
-              description="Support our programs through donation."
+              description={
+                impactStats.isLoading
+                  ? 'Loading…'
+                  : impactStats.complaintsSubmitted > 0
+                  ? `${impactStats.complaintsSubmitted} ticket${impactStats.complaintsSubmitted === 1 ? '' : 's'} tracked. Keep supporting.`
+                  : 'Support our programs through donation.'
+              }
               action="Donate Now"
-              onPress={onOpenDonation}
+              onPress={onOpenDonation || (() => undefined)}
             />
           </View>
         </View>
       </ScrollView>
-      <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
-    </SafeAreaView>
+      {showBottomNav && (
+        <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
+      )}
+    </View>
   );
 };
 
@@ -492,7 +646,12 @@ const RecommendationCard: React.FC<{
   action: string;
   onPress: () => void;
 }> = ({ icon, title, description, action, onPress }) => (
-  <View style={styles.recommendationCard}>
+  <Pressable
+    style={styles.recommendationCard}
+    onPress={onPress}
+    accessibilityRole="button"
+    accessibilityLabel={title}
+  >
     <View style={styles.recommendationHeader}>
       <View style={styles.recommendationIcon}>
         <AppIcon name={icon} size={18} color={AdminColors.primaryDark} />
@@ -500,17 +659,11 @@ const RecommendationCard: React.FC<{
       <Text style={styles.recommendationTitle}>{title}</Text>
     </View>
     <Text style={styles.recommendationDescription}>{description}</Text>
-    <Pressable
-      style={styles.recommendationAction}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={action}
-      hitSlop={6}
-    >
+    <View style={styles.recommendationAction}>
       <Text style={styles.recommendationActionText}>{action}</Text>
       <AppIcon name="arrow-right" size={12} color="#0284C7" />
-    </Pressable>
-  </View>
+    </View>
+  </Pressable>
 );
 
 const styles = StyleSheet.create({
@@ -520,7 +673,7 @@ const styles = StyleSheet.create({
   hero: {
     height: 224,
     overflow: 'hidden',
-    backgroundColor: '#041A35',
+    backgroundColor: '#011F39',
   },
   heroImage: {
     ...StyleSheet.absoluteFill,
@@ -529,7 +682,7 @@ const styles = StyleSheet.create({
   },
   heroOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(4, 26, 53, 0.4)',
+    backgroundColor: 'rgba(3, 27, 49, 0.52)',
   },
   heroCopy: {
     flex: 1,
@@ -545,7 +698,7 @@ const styles = StyleSheet.create({
     lineHeight: 23,
   },
   heroName: {
-    color: '#E5A93C',
+    color: '#FAD465',
     fontFamily: FontFamilies.serif,
     fontSize: 27,
     fontWeight: '700',
@@ -573,7 +726,7 @@ const styles = StyleSheet.create({
     opacity: 0.95,
   },
   sheetContainer: {
-    backgroundColor: AdminColors.background,
+    backgroundColor: '#FAF7F0',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     marginTop: -20,
@@ -584,7 +737,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: '#E8EDF5',
+    borderColor: '#DCE4EC',
     paddingVertical: 12,
     paddingHorizontal: 14,
     flexDirection: 'row',
@@ -604,7 +757,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#EAA532',
+    backgroundColor: '#FAD465',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -622,7 +775,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   statusCategory: {
-    color: '#64748B',
+    color: '#718096',
     fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
@@ -668,6 +821,8 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     backgroundColor: '#FFF9E6',
+    borderWidth: 1.5,
+    borderColor: '#C9971A',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -712,19 +867,20 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     backgroundColor: '#FFF9E6',
+    borderWidth: 1.5,
+    borderColor: '#C9971A',
     alignItems: 'center',
     justifyContent: 'center',
   },
   impactValue: {
     color: AdminColors.primaryDark,
-    fontFamily: FontFamilies.serif,
     fontSize: 18,
     fontWeight: '700',
     marginTop: 8,
     textAlign: 'center',
   },
   impactLabel: {
-    color: '#64748B',
+    color: '#718096',
     fontSize: 11,
     lineHeight: 14,
     textAlign: 'center',
@@ -774,7 +930,7 @@ const styles = StyleSheet.create({
   },
   eventCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#DCE4EC',
     padding: 12,
@@ -805,20 +961,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 42,
-    shadowColor: '#011F39',
+    shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 3,
     elevation: 2,
   },
   eventDayText: {
-    color: '#011F39',
-    fontFamily: FontFamilies.serif,
+    color: '#06294D',
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 18,
   },
   eventMonthText: {
-    color: '#34516D',
+    color: '#718096',
     fontSize: 10.5,
     fontWeight: '600',
     lineHeight: 13,
@@ -835,29 +990,29 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   tagWorkshop: {
-    backgroundColor: '#FEF6E7',
+    backgroundColor: '#FEF3C7',
     paddingHorizontal: 9,
     paddingVertical: 2.5,
     borderRadius: 12,
   },
   tagWorkshopText: {
-    color: '#D97706',
+    color: '#92400E',
     fontSize: 10.5,
     fontWeight: '600',
   },
   tagInPerson: {
-    backgroundColor: '#EDF2F7',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: 9,
     paddingVertical: 2.5,
     borderRadius: 12,
   },
   tagInPersonText: {
-    color: '#06294D',
+    color: '#0284C7',
     fontSize: 10.5,
     fontWeight: '600',
   },
   eventTitle: {
-    color: AdminColors.textPrimary,
+    color: '#0A2540',
     fontSize: 13.5,
     fontWeight: '700',
     lineHeight: 18,
@@ -869,7 +1024,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   eventLocationText: {
-    color: '#718096',
+    color: '#64748B',
     fontSize: 11,
     fontWeight: '500',
   },
@@ -877,15 +1032,15 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAD465',
+    backgroundColor: '#EAA532',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 8,
     marginTop: 4,
     gap: 5,
   },
   registerButtonText: {
-    color: '#011F39',
+    color: AdminColors.primaryDark,
     fontSize: 11.5,
     fontWeight: '700',
   },
@@ -897,9 +1052,9 @@ const styles = StyleSheet.create({
   recommendationCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#DCE4EC',
+    borderColor: '#EDF2F7',
     padding: 12,
     justifyContent: 'space-between',
     minHeight: 128,
@@ -914,19 +1069,19 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFF9E6',
+    backgroundColor: '#FEF3C7',
     alignItems: 'center',
     justifyContent: 'center',
   },
   recommendationTitle: {
     flex: 1,
-    color: AdminColors.textPrimary,
+    color: AdminColors.primaryDark,
     fontSize: 12.5,
     fontWeight: '700',
     lineHeight: 16,
   },
   recommendationDescription: {
-    color: '#718096',
+    color: '#64748B',
     fontSize: 10.5,
     lineHeight: 14,
     marginTop: 6,
@@ -938,9 +1093,33 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   recommendationActionText: {
-    color: '#123F68',
+    color: '#0284C7',
     fontSize: 11.5,
     fontWeight: '700',
+  },
+  noEventsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    ...Shadows.subtle,
+  },
+  noEventsTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginTop: 4,
+  },
+  noEventsSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 16,
   },
   kitFulfillmentCard: {
     flexDirection: 'row',
@@ -998,5 +1177,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: AdminColors.primaryDark,
+
   },
 });

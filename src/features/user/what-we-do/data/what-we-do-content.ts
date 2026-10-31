@@ -395,6 +395,31 @@ export const WHAT_WE_DO_CONTENT: Record<WhatWeDoId, WhatWeDoContent> = {
   },
 };
 
+const WHAT_WE_DO_ALIAS_MAP: Record<string, WhatWeDoId> = {
+  monitoring: 'human-rights-monitoring',
+  'human-rights': 'human-rights-monitoring',
+  'human-rights-monitoring': 'human-rights-monitoring',
+  awareness: 'awareness-campaigns',
+  'awareness-campaigns': 'awareness-campaigns',
+  workshops: 'workshops-training',
+  'workshops-training': 'workshops-training',
+  community: 'community-activities',
+  'community-activities': 'community-activities',
+  leadership: 'leadership-development',
+  'leadership-development': 'leadership-development',
+  advocacy: 'advocacy-awareness',
+  'advocacy-awareness': 'advocacy-awareness',
+  research: 'research-rights-education',
+  'research-rights-education': 'research-rights-education',
+  legal: 'legal-rights-awareness',
+  'legal-rights-awareness': 'legal-rights-awareness',
+  other: 'other-work-areas',
+  'other-work-areas': 'other-work-areas',
+};
+
 export const getWhatWeDoContent = (
-  contentId: WhatWeDoId,
-): WhatWeDoContent => WHAT_WE_DO_CONTENT[contentId];
+  contentId: string,
+): WhatWeDoContent => {
+  const normalizedId = WHAT_WE_DO_ALIAS_MAP[contentId] || (contentId as WhatWeDoId);
+  return WHAT_WE_DO_CONTENT[normalizedId] || WHAT_WE_DO_CONTENT['human-rights-monitoring'];
+};

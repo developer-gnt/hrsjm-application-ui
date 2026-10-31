@@ -283,6 +283,7 @@ export const AddSeekerModal: React.FC<AddSeekerModalProps> = ({
               style={styles.formScroll}
               contentContainerStyle={styles.formScrollContent}
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               showsVerticalScrollIndicator={false}
             >
               {/* SECTION 1: APPLICANT INFO */}

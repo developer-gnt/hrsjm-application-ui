@@ -14,6 +14,8 @@ export interface RegisterRequest {
   password: string;
   confirm_password: string;
   role_name?: string;
+  dob?: string;
+  date_of_birth?: string;
 }
 
 /**

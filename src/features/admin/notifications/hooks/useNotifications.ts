@@ -6,7 +6,7 @@ import { notificationsService } from '../services/notifications.service';
 import type { NotificationItem } from '../types/notifications.types';
 import { useNotificationsStore } from '../store/notificationsStore';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 50;
 
 type ViewKey = 'ALL' | 'UNREAD';
 type LoadMode = 'initial' | 'silent' | 'refresh' | 'more';
@@ -50,11 +50,13 @@ export function useNotifications() {
         return; // a newer request superseded this one
       }
       pageRef.current = page;
-      setMeta(data.meta);
-      setUnreadCount(data.unread_count);
-      useNotificationsStore.getState().setUnreadCount(data.unread_count);
+      const rawItems = Array.isArray(data?.items) ? data.items : [];
+      const unreadTotal = typeof data?.unread_count === 'number' ? data.unread_count : 0;
+      setMeta(data?.meta || null);
+      setUnreadCount(unreadTotal);
+      useNotificationsStore.getState().setUnreadCount(unreadTotal);
       setItems(prev =>
-        mode === 'more' && page > 1 ? [...prev, ...data.items] : data.items,
+        mode === 'more' && page > 1 ? [...prev, ...rawItems] : rawItems,
       );
       setError(null);
     } catch (err) {
@@ -123,13 +125,16 @@ export function useNotifications() {
       }
       try {
         await notificationsService.markRead(item.recipient_id);
-        setItems(prev =>
-          prev.map(entry =>
+        setItems(prev => {
+          if (activeViewRef.current === 'UNREAD') {
+            return prev.filter(entry => entry.recipient_id !== item.recipient_id);
+          }
+          return prev.map(entry =>
             entry.recipient_id === item.recipient_id
               ? { ...entry, is_read: true, read_at: new Date().toISOString() }
               : entry,
-          ),
-        );
+          );
+        });
         setUnreadCount(prev => Math.max(0, prev - 1));
         useNotificationsStore.getState().decrementUnreadCount();
         return true;
@@ -144,7 +149,12 @@ export function useNotifications() {
   const markAllRead = useCallback(async (): Promise<boolean> => {
     try {
       await notificationsService.markAllRead();
-      setItems(prev => prev.map(entry => ({ ...entry, is_read: true })));
+      setItems(prev => {
+        if (activeViewRef.current === 'UNREAD') {
+          return [];
+        }
+        return prev.map(entry => ({ ...entry, is_read: true, read_at: new Date().toISOString() }));
+      });
       setUnreadCount(0);
       useNotificationsStore.getState().resetUnreadCount();
       return true;

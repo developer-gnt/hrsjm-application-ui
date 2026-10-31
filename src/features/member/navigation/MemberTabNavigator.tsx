@@ -16,9 +16,11 @@ import { MemberEventsContainer } from '../screens/MemberEventsContainer';
 import { ReceiptsListScreen } from '../../receipts/screens/ReceiptsListScreen';
 import { ReceiptDetailScreen } from '../../receipts/screens/ReceiptDetailScreen';
 import { ReceiptPdfPreviewScreen } from '../../receipts/screens/ReceiptPdfPreviewScreen';
+import { TransactionHistoryScreen, TransactionDetailsScreen } from '../../transactions';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import {
   MembershipDetailsScreen,
+  MemberBenefitsScreen,
   RenewMembershipScreen,
   MyApplicationScreen,
   MembershipCategoriesScreen,
@@ -34,6 +36,7 @@ import { SupportTicketsScreen } from '../../support';
 import { NotificationsScreen } from '../../admin/notifications';
 import { AppRoutes } from '../../../core/constants/routes';
 import { AboutScreen } from '../../user/about';
+import { WhatWeDoDetailScreen } from '../../user/what-we-do';
 import { NewsListScreen, NewsDetailsScreen } from '../../admin/content/news';
 import { BlogsListScreen, BlogDetailsScreen } from '../../admin/content/blogs';
 import { ProfileSettingsScreen } from '../../admin/settings';
@@ -230,7 +233,26 @@ export const MemberTabNavigator: React.FC = () => {
               }
             }}
             onRenewPress={() => navigation.navigate('RenewMembership')}
+            onBenefitsPress={() => navigation.navigate('MembershipBenefits')}
             onMemberCardPress={() => navigation.navigate('MyIdCard')}
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="MembershipBenefits"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }) => (
+          <MemberBenefitsScreen
+            showBottomNav={false}
+            onBack={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MembershipDetails');
+              }
+            }}
+            onRenewPress={() => navigation.navigate('RenewMembership')}
           />
         )}
       </Tab.Screen>
@@ -378,6 +400,7 @@ export const MemberTabNavigator: React.FC = () => {
         {({ navigation }) => (
           <AboutScreen
             onBack={navigation.goBack}
+            onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail' as any, { contentId })}
             onNavigate={(target) => {
               if (target === 'KnowYourRights' || target === 'rights') {
                 navigation.navigate('KnowYourRights');
@@ -395,6 +418,26 @@ export const MemberTabNavigator: React.FC = () => {
             onOpenContact={() => navigation.navigate('MemberProfile')}
             onOpenEvents={() => navigation.navigate('MemberEvents')}
             onOpenNews={() => navigation.navigate('News')}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="WhatWeDoDetail"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <WhatWeDoDetailScreen
+            contentId={route.params?.contentId || 'human-rights-monitoring'}
+            hideBottomNav={true}
+            showBottomNav={false}
+            onBack={navigation.goBack}
+            onOpenHome={() => navigation.navigate('MemberHome')}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenRights={() => navigation.navigate('KnowYourRights')}
+            onOpenEvents={() => navigation.navigate('MemberEvents')}
+            onOpenNews={() => navigation.navigate('News')}
+            onOpenContact={() => navigation.navigate('MemberProfile')}
           />
         )}
       </Tab.Screen>
@@ -634,6 +677,39 @@ export const MemberTabNavigator: React.FC = () => {
           />
         )}
       </Tab.Screen>
+      <Tab.Screen
+        name="TransactionHistory"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }: any) => (
+          <TransactionHistoryScreen
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('MemberHome');
+              }
+            }}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="TransactionDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }: any) => (
+          <TransactionDetailsScreen
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('TransactionHistory');
+              }
+            }}
+          />
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 };
@@ -643,7 +719,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#DBE5EE',
+    borderTopColor: '#DCE4EC',
     paddingTop: 8,
     paddingHorizontal: 8,
     elevation: 8,

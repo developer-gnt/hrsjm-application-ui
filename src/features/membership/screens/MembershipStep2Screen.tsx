@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -19,6 +19,7 @@ import { useMembership } from '../context/MembershipContext';
 import { MembershipTopBar } from '../components/MembershipTopBar';
 import { MembershipProgressBar } from '../components/MembershipProgressBar';
 import { AppBottomSheet } from '../../../core/components/common/AppBottomSheet';
+import { useKeyboardSpacing } from '../../../core/hooks';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -98,6 +99,12 @@ export function MembershipStep2Screen() {
   const [citySearch, setCitySearch] = useState('');
   const [countryModalVisible, setCountryModalVisible] = useState(false);
 
+  const { keyboardPadding, handleInputFocus, dismissKeyboard } = useKeyboardSpacing({
+    basePadding: 96,
+    extraPadding: 60,
+    minKeyboardHeight: 340,
+  });
+
   // Derived cities based on selected state
   const availableCities = addressInfo.state
     ? STATE_CITIES[addressInfo.state] || ['Central Area', 'North District', 'South District', 'Main City']
@@ -161,18 +168,21 @@ export function MembershipStep2Screen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Top Header */}
-      <MembershipTopBar showBack onBackPress={handleBack} />
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      {/* Top Header matching Admin Dashboard */}
+      <MembershipTopBar />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         style={styles.keyboardAvoid}>
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardPadding }]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          bounces={true}>
           {/* Main Title */}
           <View style={styles.titleSection}>
             <Text style={styles.screenTitle}>Apply for Membership</Text>

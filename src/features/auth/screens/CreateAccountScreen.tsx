@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  ImageBackground,
+  StatusBar,
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ChevronLeftIcon,
   UserOutlineIcon,
@@ -30,9 +30,12 @@ import {
   CheckCircleFilledIcon,
 } from '../components/AuthIcons';
 import { DobDatePickerModal } from '../components/DobDatePickerModal';
+import { IneligibleAgeScreen } from './IneligibleAgeScreen';
+import { validateAgeEligibility } from '../../../core/utils/age';
 import { GenderPickerModal } from '../components/GenderPickerModal';
 import { getRegistrationState, updateRegistrationState } from '../state/registrationState';
 import { authService } from '../services/auth.service';
+import { useKeyboardSpacing } from '../../../core/hooks';
 
 const HRSJM_LOGO = require('../../../assets/hrsjm_logo.png');
 const HERO_BG = require('../../../assets/create_account_hero.jpg');
@@ -65,6 +68,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   onLoginPress,
   onGoogleSignUp,
 }) => {
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isTabletOrDesktop = width > 520;
   const contentMaxWidth = isTabletOrDesktop ? 440 : width;
@@ -108,10 +112,13 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   const [isGenderPickerVisible, setIsGenderPickerVisible] = useState(false);
 
   // Field validation and database check states
+  const [showIneligible, setShowIneligible] = useState(false);
+  const [ineligibleAge, setIneligibleAge] = useState<number | null>(null);
   const [errors, setErrors] = useState<{
     fullName?: string;
     email?: string;
     phone?: string;
+    dob?: string;
     password?: string;
     confirmPassword?: string;
     terms?: string;
@@ -121,6 +128,12 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+
+  const { keyboardPadding, handleInputFocus, dismissKeyboard } = useKeyboardSpacing({
+    basePadding: 80,
+    extraPadding: 60,
+    minKeyboardHeight: 340,
+  });
 
   const checkPhoneDuplicate = useCallback(async (phoneToCheck: string) => {
     const cleanPhone = phoneToCheck.replace(/\D/g, '').slice(-10);
@@ -256,6 +269,17 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
     const phoneErr = validatePhone(phone);
     const passwordErr = validatePassword(password);
     const confirmPasswordErr = validateConfirmPassword(password, confirmPassword);
+
+    // Date of Birth & 18+ Age eligibility validation
+    const ageResult = validateAgeEligibility(dob);
+    let dobErr: string | undefined;
+    if (!ageResult.isValid) {
+      dobErr = ageResult.error || 'Date of birth is required';
+    } else if (!ageResult.isEligible) {
+      setIneligibleAge(ageResult.age);
+      setShowIneligible(true);
+      return;
+    }
     let termsErr: string | undefined;
     if (!termsAccepted) {
       termsErr = 'Please accept Terms & Conditions to proceed';
@@ -263,11 +287,12 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
       termsErr = 'Please accept Privacy Policy to proceed';
     }
 
-    if (nameErr || emailErr || phoneErr || passwordErr || confirmPasswordErr || termsErr) {
+    if (nameErr || emailErr || phoneErr || dobErr || passwordErr || confirmPasswordErr || termsErr) {
       setErrors({
         fullName: nameErr || undefined,
         email: emailErr || undefined,
         phone: phoneErr || undefined,
+        dob: dobErr || undefined,
         password: passwordErr || undefined,
         confirmPassword: confirmPasswordErr || undefined,
         terms: termsErr,
@@ -326,33 +351,55 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
     }
   };
 
+  if (showIneligible) {
+    return (
+      <IneligibleAgeScreen
+        onBackToRegistration={() => setShowIneligible(false)}
+        calculatedAge={ineligibleAge}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+      <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollContent,
+            { paddingBottom: keyboardPadding },
             isTabletOrDesktop && { alignItems: 'center' },
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           bounces={false}
         >
           <View style={[styles.mainWrapper, { width: contentMaxWidth }]}>
             {/* Top Hero Image Section */}
-            <ImageBackground
-              source={HERO_BG}
-              style={styles.heroBackground}
-              imageStyle={styles.heroBackgroundImage}
-              resizeMode="cover"
+            <View
+              style={[
+                styles.heroBackground,
+                {
+                  paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 16 : 12) + 8,
+                },
+              ]}
             >
-              {/* Top Bar with Back Button */}
+              <Image
+                source={HERO_BG}
+                style={styles.heroBackgroundImage}
+                resizeMode="cover"
+                fadeDuration={0}
+              />
+              <View style={styles.heroOverlay} pointerEvents="none" />
+              {/* Top Bar with Back Button & Centered Screen Title */}
               <View style={styles.headerRow}>
-                {onBack && (
+                {onBack ? (
                   <TouchableOpacity
                     onPress={onBack}
                     style={styles.backButton}
@@ -362,7 +409,11 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   >
                     <ChevronLeftIcon size={16} color="#0F2860" />
                   </TouchableOpacity>
+                ) : (
+                  <View style={styles.headerSpacer} />
                 )}
+                <Text style={styles.headerTitle}>Create Your Account</Text>
+                <View style={styles.headerSpacer} />
               </View>
 
               {/* Branding Section */}
@@ -388,7 +439,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
 
               {/* Bottom Spacer */}
               <View style={styles.peopleBottomSpacer} />
-            </ImageBackground>
+            </View>
 
             {/* Overlapping White Information Card */}
             <View style={styles.cardContainer}>
@@ -462,6 +513,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   <TextInput
                     style={styles.textInput}
                     placeholder="Full Name *"
+                    onFocus={handleInputFocus}
                     placeholderTextColor="#94A3B8"
                     value={fullName}
                     onChangeText={(t) => {
@@ -497,6 +549,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   <TextInput
                     style={styles.textInput}
                     placeholder="Mobile Number *"
+                    onFocus={handleInputFocus}
                     placeholderTextColor="#94A3B8"
                     value={phone}
                     onChangeText={(t) => {
@@ -537,6 +590,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   <TextInput
                     style={styles.textInput}
                     placeholder="Email Address *"
+                    onFocus={handleInputFocus}
                     placeholderTextColor="#94A3B8"
                     value={email}
                     onChangeText={(t) => {
@@ -564,14 +618,17 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
               {/* Field 4: Date of Birth */}
               <View style={styles.fieldWrapper}>
                 <TouchableOpacity
-                  style={styles.inputField}
-                  onPress={() => setIsDatePickerVisible(true)}
+                  style={[
+                    styles.inputField,
+                    errors.dob ? styles.inputFieldError : null,
+                  ]}
+                  onPress={() => { dismissKeyboard(); setIsDatePickerVisible(true); }}
                   activeOpacity={0.8}
                   accessibilityRole="button"
                   accessibilityLabel="Select Date of Birth"
                 >
                   <View style={styles.inputLeftIcon}>
-                    <CalendarOutlineIcon size={18} color="#475569" />
+                    <CalendarOutlineIcon size={18} color={errors.dob ? '#DC2626' : '#475569'} />
                   </View>
                   <Text
                     style={[
@@ -580,12 +637,15 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                       !dob && styles.placeholderText,
                     ]}
                   >
-                    {dob || 'Date of Birth (Optional)'}
+                    {dob || 'Date of Birth * (DD-MM-YYYY)'}
                   </Text>
                   <View style={styles.inputRightIcon}>
                     <ChevronDownIcon size={12} color="#94A3B8" />
                   </View>
                 </TouchableOpacity>
+                {errors.dob && (
+                  <Text style={styles.fieldErrorText}>{errors.dob}</Text>
+                )}
               </View>
 
               <DobDatePickerModal
@@ -594,6 +654,19 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                 onSelectDate={(selected) => {
                   setDob(selected);
                   updateRegistrationState({ dob: selected });
+                  const ageCheck = validateAgeEligibility(selected);
+                  if (!ageCheck.isValid) {
+                    setErrors(prev => ({ ...prev, dob: ageCheck.error || undefined }));
+                  } else if (!ageCheck.isEligible) {
+                    setIneligibleAge(ageCheck.age);
+                    setShowIneligible(true);
+                  } else {
+                    setErrors(prev => {
+                      const next = { ...prev };
+                      delete next.dob;
+                      return next;
+                    });
+                  }
                 }}
                 onClose={() => setIsDatePickerVisible(false)}
               />
@@ -602,7 +675,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
               <View style={styles.fieldWrapper}>
                 <TouchableOpacity
                   style={styles.inputField}
-                  onPress={() => setIsGenderPickerVisible(true)}
+                  onPress={() => { dismissKeyboard(); setIsGenderPickerVisible(true); }}
                   activeOpacity={0.8}
                   accessibilityRole="button"
                   accessibilityLabel="Select Gender"
@@ -652,6 +725,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   <TextInput
                     style={styles.textInput}
                     placeholder="Create Password (min. 6 chars) *"
+                    onFocus={handleInputFocus}
                     placeholderTextColor="#94A3B8"
                     value={password}
                     onChangeText={(t) => {
@@ -695,6 +769,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   <TextInput
                     style={styles.textInput}
                     placeholder="Confirm Password *"
+                    onFocus={handleInputFocus}
                     placeholderTextColor="#94A3B8"
                     value={confirmPassword}
                     onChangeText={(t) => {
@@ -805,7 +880,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAF7F0',
   },
   keyboardView: {
     flex: 1,
@@ -815,41 +890,76 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 40,
+    paddingBottom: 60,
   },
   mainWrapper: {
     alignSelf: 'center',
     width: '100%',
   },
   heroBackground: {
+    position: 'relative',
     width: '100%',
-    paddingTop: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 28,
+    minHeight: 195,
+    paddingTop: Platform.OS === 'android' ? 12 : 8,
+    paddingHorizontal: 16,
+    paddingBottom: 36,
+    overflow: 'hidden',
   },
   heroBackgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
     opacity: 0.95,
+  },
+  heroOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(250, 247, 240, 0.76)',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(15, 40, 96, 0.12)',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F2860',
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 38,
   },
   brandingSection: {
     alignItems: 'center',
     marginVertical: 4,
   },
   logoImage: {
-    width: 60,
-    height: 60,
+    width: 52,
+    height: 52,
   },
   headingSection: {
     alignItems: 'center',
@@ -859,18 +969,20 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
+    letterSpacing: -0.3,
   },
   headingNavy: {
     color: '#0F2860',
   },
   headingGold: {
-    color: '#EAA224',
+    color: '#C9971A',
   },
   heroSubheading: {
     fontSize: 13,
-    color: '#334155',
+    color: '#34516D',
     textAlign: 'center',
     marginTop: 4,
+    fontWeight: '500',
   },
   peopleBottomSpacer: {
     height: 12,
@@ -880,14 +992,14 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 20,
     paddingBottom: 32,
-    marginTop: -16,
+    marginTop: -24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
   },
   stepperContainer: {
     marginBottom: 16,

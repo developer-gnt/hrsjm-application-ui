@@ -62,7 +62,7 @@ export const SupportBottomNav: React.FC<SupportBottomNavProps> = ({
             >
               <item.Icon
                 size={20}
-                color={active ? AdminColors.primary : AdminColors.textSecondary}
+                color={active ? '#E9B82E' : '#718096'}
                 strokeWidth={2}
               />
             </View>
@@ -85,10 +85,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#DCE4EC',
     paddingTop: Spacing.sm,
     paddingHorizontal: 2,
-    shadowColor: '#000',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -107,24 +107,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconContainerActive: {
-    backgroundColor: '#FFF8E6',
+    backgroundColor: '#FFF9E6',
   },
   icon: {
     fontSize: 18,
-    color: '#64748B',
+    color: '#718096',
   },
   iconActive: {
     fontSize: 19,
-    color: '#D97706',
+    color: '#E9B82E',
   },
   label: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#718096',
     marginTop: 2,
   },
   labelActive: {
-    color: '#D97706',
+    color: '#E9B82E',
     fontWeight: '700',
   },
 });

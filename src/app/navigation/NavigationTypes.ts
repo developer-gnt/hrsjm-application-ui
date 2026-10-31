@@ -73,6 +73,8 @@ export type MoreStackParamList = {
   [AppRoutes.DONATION_RECEIPT_DETAILS]: { donationId: string };
   [AppRoutes.ROLES_PERMISSIONS]: undefined;
   [AppRoutes.SETTINGS]: undefined;
+  [AppRoutes.TRANSACTION_HISTORY]: undefined;
+  [AppRoutes.TRANSACTION_DETAILS]: { transactionId: string; transaction?: any };
   [AppRoutes.EVENTS]: undefined;
   [AppRoutes.EVENT_DETAILS]: { event: any };
   [AppRoutes.CREATE_EVENT]: undefined;
@@ -99,11 +101,13 @@ export type MoreStackParamList = {
   [AppRoutes.EDIT_PERSONAL_INFO]: undefined;
   [AppRoutes.MY_ID_CARD]: undefined;
   [AppRoutes.ABOUT]: undefined;
+  WhatWeDoDetail: { contentId?: string };
   [AppRoutes.KNOW_YOUR_RIGHTS]: undefined;
   [AppRoutes.RIGHT_DETAILS]: { article?: any; rightId?: string };
   [AppRoutes.CREATE_RIGHT]: undefined;
   [AppRoutes.EDIT_RIGHT]: { article: any };
   [AppRoutes.MEMBERSHIP_DETAILS]: undefined;
+  [AppRoutes.MEMBERSHIP_BENEFITS]: undefined;
   [AppRoutes.RENEW_MEMBERSHIP]: undefined;
   [AppRoutes.USERS]: undefined;
   [AppRoutes.USER_DETAILS]: { userId: string };

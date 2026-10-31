@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -29,6 +29,9 @@ import type { MemberMembershipRecord } from '../types/member-dashboard.types';
 import { getEventsList } from '../../../admin/content/events/services/events.service';
 import type { EventListItem } from '../../../admin/content/events/types/events.types';
 import { supportService } from '../../../admin/support/services/support.service';
+import { api, unwrap } from '../../../../core/api/client';
+import { supportTicketsStore } from '../../../support/services/supportTicketsStore';
+import { receiptsService } from '../../../receipts/services/receipts.service';
 
 const formatStartDate = (dateVal?: string | Date | null): string | undefined => {
   if (!dateVal) return undefined;
@@ -314,45 +317,73 @@ export const MemberHomeDashboardScreen: React.FC<
     };
   }, []);
 
-  // Fetch dynamic impact stats
-  useEffect(() => {
-    let isMounted = true;
-    const fetchImpactStats = async () => {
-      try {
-        const [ticketsData, eventsData] = await Promise.allSettled([
-          supportService.getStatsSummary({}),
-          getEventsList({ limit: 50 }),
-        ]);
-
-        if (!isMounted) return;
-
-        const complaints =
-          ticketsData.status === 'fulfilled'
-            ? (ticketsData.value.total ?? 0)
-            : 0;
-        const eventsCount =
-          eventsData.status === 'fulfilled'
-            ? (eventsData.value.events?.length ?? 0)
-            : 0;
-
+  // Fetch dynamic impact stats from backend
+  const fetchImpactStats = useCallback(async () => {
+    try {
+      // 1. Primary: Dedicated user impact endpoint from backend
+      const res = await api.get<any>('/auth/me/impact');
+      const data = unwrap(res) || (res as any)?.data || res;
+      if (data && typeof data === 'object') {
         setImpactStats({
-          eventsAttended: eventsCount,
-          complaintsSubmitted: complaints,
-          causesSupported: 0,
-          hoursVolunteered: 0,
+          eventsAttended: data.eventsAttended ?? 0,
+          causesSupported: data.causesSupported ?? 0,
+          complaintsSubmitted: data.complaintsSubmitted ?? 0,
+          hoursVolunteered: data.hoursVolunteered ?? 0,
           isLoading: false,
         });
-      } catch {
-        if (isMounted) {
-          setImpactStats(prev => ({ ...prev, isLoading: false }));
-        }
+        return;
       }
-    };
-    fetchImpactStats();
-    return () => {
-      isMounted = false;
-    };
+    } catch {
+      // Fallback to service-level computation below
+    }
+
+    try {
+      const [tickets, receipts, eventsData] = await Promise.allSettled([
+        supportTicketsStore.fetchTickets(),
+        receiptsService.getMyReceipts(),
+        getEventsList({ limit: 50 }),
+      ]);
+
+      const complaints =
+        tickets.status === 'fulfilled' && Array.isArray(tickets.value)
+          ? tickets.value.length
+          : 0;
+
+      const causes =
+        receipts.status === 'fulfilled' && Array.isArray(receipts.value)
+          ? new Set(
+              receipts.value
+                .filter(r => r.type === 'Donation')
+                .map(r => r.cause || r.id)
+            ).size || receipts.value.filter(r => r.type === 'Donation').length
+          : 0;
+
+      const eventsCount =
+        eventsData.status === 'fulfilled'
+          ? (eventsData.value.events?.length ?? 0)
+          : 0;
+
+      setImpactStats({
+        eventsAttended: eventsCount,
+        complaintsSubmitted: complaints,
+        causesSupported: causes,
+        hoursVolunteered: 0,
+        isLoading: false,
+      });
+    } catch {
+      setImpactStats(prev => ({ ...prev, isLoading: false }));
+    }
   }, []);
+
+  useEffect(() => {
+    fetchImpactStats();
+    const unsubscribe = supportTicketsStore.subscribe(() => {
+      fetchImpactStats();
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [fetchImpactStats]);
 
   const upcomingEvents = useMemo(() => {
     const now = new Date();

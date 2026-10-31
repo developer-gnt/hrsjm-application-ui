@@ -146,7 +146,7 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
   const refundDonationMutation = useRefundDonation();
 
   // Fallback to preview data when API is unreachable or returned empty
-  const previewMode = (Boolean(error) || rawDonations.length === 0) && !isLoading;
+  const previewMode = Boolean(error) && !isLoading;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

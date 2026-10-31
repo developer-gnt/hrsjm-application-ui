@@ -1,12 +1,17 @@
-import { secureStorage } from './secure-storage';
+import { secureStorage, StoredSession } from './secure-storage';
+import { appStorage } from './app-storage';
+import { StorageKeys } from '../constants/storage-keys';
 
 /**
- * Token store implementing the project token strategy (spec §14):
- * - Access token: short-lived in memory; on web preview, backed by localStorage
- *   so browser reloads and tab navigations do not drop authentication.
- * - Refresh token: long-lived, hardware-backed secure storage (Keychain / web storage).
+ * High-performance, secure Token Store.
+ * - Access token: stored securely in hardware-backed storage & cached in memory for zero-latency synchronous reads (axios interceptors).
+ * - Refresh token: stored securely in hardware-backed storage.
+ * - User Profile: cached securely to allow fast app boot and smooth offline resilience.
  */
 let inMemoryAccessToken: string | null = null;
+let inMemoryRefreshToken: string | null = null;
+let inMemoryUser: any | null = null;
+let isInitialized = false;
 
 const getWebStorage = () => {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -16,84 +21,186 @@ const getWebStorage = () => {
 };
 
 export const tokenStorage = {
-  getAccessToken: (): string | null => {
+  /**
+   * Initializes token cache on application startup.
+   */
+  async init(): Promise<StoredSession | null> {
+    try {
+      const session = await secureStorage.getSession();
+      if (session) {
+        inMemoryAccessToken = session.accessToken || null;
+        inMemoryRefreshToken = session.refreshToken || null;
+        inMemoryUser = session.user || null;
+      }
+      isInitialized = true;
+      return session;
+    } catch {
+      isInitialized = true;
+      return null;
+    }
+  },
+
+  /**
+   * Synchronous access token retrieval (used by auth request interceptor).
+   */
+  getAccessToken(): string | null {
     if (inMemoryAccessToken) return inMemoryAccessToken;
-    const storage = getWebStorage();
-    if (storage) {
+
+    // Fast fallback check
+    try {
+      const persisted = appStorage.getString(StorageKeys.ACCESS_TOKEN);
+      if (persisted) {
+        inMemoryAccessToken = persisted;
+        return persisted;
+      }
+    } catch {}
+
+    const web = getWebStorage();
+    if (web) {
       try {
-        const persisted = storage.getItem('__hrsjm_access_token');
+        const persisted = web.getItem('__hrsjm_access_token');
         if (persisted) {
           inMemoryAccessToken = persisted;
           return persisted;
         }
-      } catch {
-        // ignore storage errors
-      }
+      } catch {}
+    }
+
+    return null;
+  },
+
+  /**
+   * Asynchronous access token retrieval with auto-initialization fallback.
+   */
+  async getAccessTokenAsync(): Promise<string | null> {
+    if (inMemoryAccessToken) return inMemoryAccessToken;
+    const session = await secureStorage.getSession();
+    if (session?.accessToken) {
+      inMemoryAccessToken = session.accessToken;
+      return session.accessToken;
     }
     return null;
   },
 
-  setAccessToken: (token: string | null): void => {
+  /**
+   * Updates the in-memory access token and synchronizes with secure storage.
+   */
+  setAccessToken(token: string | null): void {
     inMemoryAccessToken = token;
-    const storage = getWebStorage();
-    if (storage) {
+
+    try {
+      if (token) {
+        appStorage.setString(StorageKeys.ACCESS_TOKEN, token);
+      } else {
+        appStorage.delete(StorageKeys.ACCESS_TOKEN);
+      }
+    } catch {}
+
+    const web = getWebStorage();
+    if (web) {
       try {
         if (token) {
-          storage.setItem('__hrsjm_access_token', token);
+          web.setItem('__hrsjm_access_token', token);
         } else {
-          storage.removeItem('__hrsjm_access_token');
+          web.removeItem('__hrsjm_access_token');
         }
-      } catch {
-        // ignore storage errors
-      }
+      } catch {}
     }
+
+    // Note: Full session is persisted atomically in setTokens()
   },
 
-  getRefreshToken: async (): Promise<string | null> => {
+  /**
+   * Asynchronous refresh token retrieval.
+   */
+  async getRefreshToken(): Promise<string | null> {
+    if (inMemoryRefreshToken) return inMemoryRefreshToken;
+    const session = await secureStorage.getSession();
+    if (session?.refreshToken) {
+      inMemoryRefreshToken = session.refreshToken;
+      return session.refreshToken;
+    }
     return secureStorage.getSecret();
   },
 
-  setRefreshToken: async (token: string | null): Promise<void> => {
-    if (token) {
-      await secureStorage.setSecret(token);
-    } else {
-      await secureStorage.clearSecret();
-    }
+  async setRefreshToken(token: string | null): Promise<void> {
+    inMemoryRefreshToken = token;
+    const session = (await secureStorage.getSession()) || { accessToken: inMemoryAccessToken, user: inMemoryUser };
+    await secureStorage.setSession({
+      ...session,
+      refreshToken: token,
+    });
   },
 
-  /** Stores a fresh token pair in one call (login / refresh rotation). */
-  setTokens: async (
+  /**
+   * Retrieves the full persistent session (access token, refresh token, user profile).
+   */
+  async getStoredSession(): Promise<StoredSession | null> {
+    const session = await secureStorage.getSession();
+    if (session) {
+      inMemoryAccessToken = session.accessToken || null;
+      inMemoryRefreshToken = session.refreshToken || null;
+      inMemoryUser = session.user || null;
+    }
+    return session;
+  },
+
+  /**
+   * Atomically stores a fresh token pair and profile in secure storage.
+   */
+  async setTokens(
     accessToken: string | null,
     refreshToken: string | null,
-  ): Promise<void> => {
+    user?: any | null,
+  ): Promise<void> {
     inMemoryAccessToken = accessToken;
-    const storage = getWebStorage();
-    if (storage) {
-      try {
-        if (accessToken) {
-          storage.setItem('__hrsjm_access_token', accessToken);
-        } else {
-          storage.removeItem('__hrsjm_access_token');
-        }
-      } catch {
-        // ignore storage errors
-      }
+    inMemoryRefreshToken = refreshToken;
+    if (user !== undefined) {
+      inMemoryUser = user;
     }
-    if (refreshToken) {
-      await secureStorage.setSecret(refreshToken);
+
+    tokenStorage.setAccessToken(accessToken);
+
+    await secureStorage.setSession({
+      accessToken,
+      refreshToken,
+      user: inMemoryUser,
+    });
+  },
+
+  /**
+   * Updates only the cached user profile without changing active tokens.
+   */
+  async updateStoredUser(user: any | null): Promise<void> {
+    inMemoryUser = user;
+    const session = await secureStorage.getSession();
+    if (session) {
+      await secureStorage.setSession({
+        ...session,
+        user,
+      });
     }
   },
 
-  clearTokens: async (): Promise<void> => {
+  /**
+   * Securely purges all tokens and cached session data on explicit logout.
+   */
+  async clearTokens(): Promise<void> {
     inMemoryAccessToken = null;
-    const storage = getWebStorage();
-    if (storage) {
+    inMemoryRefreshToken = null;
+    inMemoryUser = null;
+
+    try {
+      appStorage.delete(StorageKeys.ACCESS_TOKEN);
+    } catch {}
+
+    const web = getWebStorage();
+    if (web) {
       try {
-        storage.removeItem('__hrsjm_access_token');
-      } catch {
-        // ignore storage errors
-      }
+        web.removeItem('__hrsjm_access_token');
+      } catch {}
     }
-    await secureStorage.clearSecret();
+
+    await secureStorage.clearSession();
   },
 };

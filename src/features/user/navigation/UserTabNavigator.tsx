@@ -47,7 +47,10 @@ import { useMembership } from '../../membership/context/MembershipContext';
 import { DonationHistoryScreen } from '../../donations/screens/DonationHistoryScreen';
 import { DonationDetailScreen } from '../../donations/screens/DonationDetailScreen';
 import { ReceiptDetailScreen } from '../../receipts/screens/ReceiptDetailScreen';
+import { TransactionHistoryScreen, TransactionDetailsScreen } from '../../transactions';
+
 import { ReceiptPdfPreviewScreen } from '../../receipts/screens/ReceiptPdfPreviewScreen';
+
 
 import {
   House,
@@ -317,7 +320,7 @@ const UserCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation, desc
           }
         };
 
-        const iconColor = isFocused ? '#E9B82E' : '#06294D';
+        const iconColor = isFocused ? '#E9B82E' : '#718096';
 
         return (
           <TouchableOpacity
@@ -728,6 +731,39 @@ export const UserTabNavigator: React.FC = () => {
         options={{ tabBarButton: () => null }}
         component={ReceiptDetailScreen}
       />
+      <Tab.Screen
+        name="TransactionHistory"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }: any) => (
+          <TransactionHistoryScreen
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('UserHome');
+              }
+            }}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="TransactionDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation }: any) => (
+          <TransactionDetailsScreen
+            onBack={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('TransactionHistory');
+              }
+            }}
+          />
+        )}
+      </Tab.Screen>
 
       <Tab.Screen
         name="ReceiptPdfPreview"
@@ -743,7 +779,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#DBE5EE',
+    borderTopColor: '#DCE4EC',
     paddingTop: 8,
     paddingHorizontal: 8,
     elevation: 8,
@@ -776,7 +812,7 @@ const styles = StyleSheet.create({
   tabLabelInactive: {
     fontFamily: 'Inter',
     fontWeight: '600',
-    color: '#06294D',
+    color: '#718096',
   },
 });
 

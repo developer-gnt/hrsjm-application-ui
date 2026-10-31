@@ -50,7 +50,10 @@ export const RootNavigator: React.FC = () => {
   const status = useAuthStore(state => state.status);
   const user = useAuthStore(state => state.user);
 
-  const roleNames = (user?.roles ?? []).map(r => r.name.toUpperCase());
+  const roleNames = (user?.roles ?? []).map((r: any) => {
+    if (typeof r === 'string') return r.toUpperCase();
+    return (r?.name || '').toUpperCase();
+  });
   const isAdmin = roleNames.includes('ADMIN') || roleNames.includes('SUPER_ADMIN');
   const isMemberRole =
     roleNames.includes('MEMBER') ||

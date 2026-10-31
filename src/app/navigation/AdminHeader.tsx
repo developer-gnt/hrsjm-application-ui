@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   Image,
   Modal,
@@ -22,7 +22,6 @@ import {
 } from '../../features/auth/components/UserProfileModal';
 import { AdminSidebar } from './AdminSidebar';
 import { useDynamicUnreadCount } from '../../features/admin/notifications/store/notificationsStore';
-import { ChevronLeft, LogOut, Menu, User } from '../../core/components/icons';
 
 /**
  * ============================================================================
@@ -33,8 +32,8 @@ import { ChevronLeft, LogOut, Menu, User } from '../../core/components/icons';
  *
  * FEATURES:
  * 1. Left button:
- *    - Default: Hamburger menu button (☰) that smoothly opens the AdminSidebar.
- *    - If `showBack` or `onBack` is provided: Back arrow (←) that calls `onBack()`.
+ *    - Default: Hamburger menu button that smoothly opens the AdminSidebar.
+ *    - If `showBack` or `onBack` is provided: Back arrow (â†) that calls `onBack()`.
  * 2. Center:
  *    - Default: Official HRSJM brand logo (Golden shield + HRSJM).
  *    - If `title` is provided: Displays page title text cleanly.
@@ -121,9 +120,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 
   const isAdmin = user?.roles?.some(r => r.name === 'ADMIN' || r.name === 'SUPER_ADMIN') ?? false;
   const isMember = Boolean(isMemberHeader || !isAdmin);
-  const shouldShowDonate = Boolean(
-    showDonate !== undefined ? showDonate : isMember
-  );
+  const shouldShowDonate = Boolean(showDonate === true);
 
   const handleDonatePress = () => {
     if (onPressDonate) {
@@ -351,8 +348,16 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             accessibilityLabel="Go back"
             activeOpacity={0.7}
           >
-            <ChevronLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
-          </TouchableOpacity>
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M19 12H5M12 19l-7-7 7-7"
+                stroke="#0B2F52"
+                strokeWidth={2.4}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+                      </TouchableOpacity>
         ) : showMenu ? (
           <TouchableOpacity
             style={styles.menuButton}
@@ -362,8 +367,16 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             accessibilityLabel="Open side navigation menu"
             activeOpacity={0.7}
           >
-            <Menu size={22} color="#FFFFFF" strokeWidth={2} />
-          </TouchableOpacity>
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M4 6h16M4 12h16M4 18h16"
+                stroke="#0B2F52"
+                strokeWidth={2.4}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+                      </TouchableOpacity>
         ) : null}
 
         {/* Center/Left: Title OR Official HRSJM Logo */}
@@ -429,7 +442,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path
                   d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22ZM18 16V11C18 7.93 16.37 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.64 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z"
-                  stroke="#1E293B"
+                  stroke="#0B2F52"
                   strokeWidth={1.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -461,7 +474,15 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               source={{ uri: user?.avatar || DEFAULT_ADMIN_AVATAR }}
               style={styles.avatarImage}
             />
-            <Text style={styles.chevron}>▾</Text>
+            <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M6 9l6 6 6-6"
+                stroke="#718096"
+                strokeWidth={2.6}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
           </TouchableOpacity>
         </View>
       </View>
@@ -514,8 +535,16 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               onPress={handleViewProfile}
               activeOpacity={0.7}
             >
-              <User size={16} color="#1E3A8A" strokeWidth={2} style={styles.dropdownItemIcon} />
-              <Text style={styles.dropdownItemText}>View Profile</Text>
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" style={{ marginRight: 10 }}>
+                <Path
+                  d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                  stroke="#34516D"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+                            <Text style={styles.dropdownItemText}>View Profile</Text>
             </TouchableOpacity>
 
             <View style={styles.dropdownDivider} />
@@ -526,8 +555,16 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               onPress={handleSignOut}
               activeOpacity={0.7}
             >
-              <LogOut size={16} color="#DC2626" strokeWidth={2} style={styles.dropdownItemIcon} />
-              <Text style={[styles.dropdownItemText, styles.signOutText]}>
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" style={{ marginRight: 10 }}>
+                <Path
+                  d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+                  stroke="#DC2626"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+                            <Text style={[styles.dropdownItemText, styles.signOutText]}>
                 Sign Out
               </Text>
             </TouchableOpacity>
@@ -553,7 +590,8 @@ const styles = StyleSheet.create({
   band: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#DBE5EE',
+    borderBottomColor: '#DCE4EC',
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

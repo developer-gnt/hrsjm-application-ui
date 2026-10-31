@@ -1,47 +1,61 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getApiErrorMessage } from '../../../../core/api/client';
+import { useAuthStore } from '../../../auth/store/authStore';
 import { settingsService } from '../services/settings.service';
 import { validateProfileEdit } from '../settings.utils';
 
 interface UseProfileEditOptions {
   currentFullName: string;
   currentEmail: string;
-  onSaved: (fullName: string, email: string) => void;
+  currentMobileNumber?: string;
+  onSaved?: (fullName: string, email: string, mobileNumber?: string) => void;
 }
 
-// Edit profile flow per the phase plan: only Name and Email are editable -
-// the backend PATCH /auth/me supports exactly those fields (confirmed
-// contract). Phone / profile image editing has no backend support (reported).
 export function useProfileEdit({
   currentFullName,
   currentEmail,
+  currentMobileNumber = '',
   onSaved,
 }: UseProfileEditOptions) {
   const [fullName, setFullName] = useState(currentFullName);
   const [email, setEmail] = useState(currentEmail);
+  const [mobileNumber, setMobileNumber] = useState(currentMobileNumber);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
+    setFullName(currentFullName);
+  }, [currentFullName]);
+
+  useEffect(() => {
+    setEmail(currentEmail);
+  }, [currentEmail]);
+
+  useEffect(() => {
+    setMobileNumber(currentMobileNumber);
+  }, [currentMobileNumber]);
+
   const dirty = useMemo(
     () =>
-      fullName.trim() !== currentFullName.trim() ||
-      email.trim() !== currentEmail.trim(),
-    [fullName, email, currentFullName, currentEmail],
+      fullName.trim() !== (currentFullName || '').trim() ||
+      email.trim() !== (currentEmail || '').trim() ||
+      mobileNumber.trim() !== (currentMobileNumber || '').trim(),
+    [fullName, email, mobileNumber, currentFullName, currentEmail, currentMobileNumber],
   );
 
   const validation = useMemo(
-    () => validateProfileEdit({ fullName, email }),
-    [fullName, email],
+    () => validateProfileEdit({ fullName, email, mobileNumber }),
+    [fullName, email, mobileNumber],
   );
 
   const save = useCallback(async (): Promise<boolean> => {
     if (saving) {
       return false;
     }
-    const check = validateProfileEdit({ fullName, email });
+    const check = validateProfileEdit({ fullName, email, mobileNumber });
     if (!check.valid) {
-      setError(check.fullNameError ?? check.emailError);
+      setError(check.fullNameError ?? check.emailError ?? check.mobileNumberError);
       return false;
     }
     setSaving(true);
@@ -51,8 +65,27 @@ export function useProfileEdit({
       const updated = await settingsService.updateProfile({
         full_name: fullName.trim(),
         email: email.trim(),
+        mobile_number: mobileNumber.trim(),
       });
-      onSaved(updated.full_name, updated.email ?? email.trim());
+
+      // Update auth store immediately so UI updates everywhere
+      const existingUser = useAuthStore.getState().user;
+      if (existingUser) {
+        useAuthStore.getState().setUser({
+          ...existingUser,
+          full_name: updated.full_name || fullName.trim(),
+          email: updated.email || email.trim(),
+          mobile_number: updated.mobile_number || mobileNumber.trim(),
+        });
+      }
+
+      if (onSaved) {
+        onSaved(
+          updated.full_name,
+          updated.email ?? email.trim(),
+          updated.mobile_number ?? mobileNumber.trim(),
+        );
+      }
       setSaved(true);
       return true;
     } catch (err) {
@@ -61,7 +94,7 @@ export function useProfileEdit({
     } finally {
       setSaving(false);
     }
-  }, [email, fullName, onSaved, saving]);
+  }, [email, fullName, mobileNumber, onSaved, saving]);
 
   const clearFeedback = useCallback(() => {
     setError(null);
@@ -71,8 +104,10 @@ export function useProfileEdit({
   return {
     fullName,
     email,
+    mobileNumber,
     setFullName,
     setEmail,
+    setMobileNumber,
     dirty,
     saving,
     saved,

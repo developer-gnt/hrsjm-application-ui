@@ -200,6 +200,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({
             contentContainerStyle={styles.formContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
           >
             {/* Membership Category Selection */}
             <View style={styles.fieldGroup}>

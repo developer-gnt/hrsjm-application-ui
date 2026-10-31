@@ -21,12 +21,12 @@ import {
   TERMS_CONDITIONS_URL,
 } from '../../../../core/config';
 import { useAuth } from '../../../../core/auth/AuthContext';
+import { getApiErrorMessage } from '../../../../core/api/client';
 import { getBiometricLockEnabled, setBiometricLockEnabled } from '../settings.storage';
 import { useProfileEdit } from '../hooks/useProfileEdit';
+import { settingsService } from '../services/settings.service';
+import { validatePassword, validatePasswordConfirmation } from '../settings.utils';
 import LogoutModal from '../components/LogoutModal';
-
-const BACKEND_PENDING_NOTE =
-  'Pending backend support — the API does not expose this capability yet.';
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -59,15 +59,23 @@ export function ProfileSettingsScreen() {
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [biometricLock, setBiometricLock] = useState(false);
 
+  // Profile Edit State
   const profile = useProfileEdit({
     currentFullName: user?.full_name ?? '',
     currentEmail: user?.email ?? '',
+    currentMobileNumber: user?.mobile_number ?? '',
     onSaved: () => {
-      // Re-sync the shared session user after a successful save; the shared
-      // session/auth behavior stays owned by the shared implementation.
       refreshUser().then(() => undefined);
     },
   });
+
+  // Password Change State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     getBiometricLockEnabled().then(setBiometricLock);
@@ -76,6 +84,44 @@ export function ProfileSettingsScreen() {
   const toggleBiometricLock = (enabled: boolean) => {
     setBiometricLock(enabled);
     setBiometricLockEnabled(enabled).then(() => undefined);
+  };
+
+  const handlePasswordChange = async () => {
+    if (!currentPassword) {
+      setPasswordError('Please enter your current password.');
+      return;
+    }
+    const val = validatePassword(newPassword);
+    if (!val.valid) {
+      setPasswordError(val.error);
+      return;
+    }
+    const matchVal = validatePasswordConfirmation(newPassword, confirmPassword);
+    if (!matchVal.valid) {
+      setPasswordError(matchVal.error);
+      return;
+    }
+
+    setPasswordSaving(true);
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    try {
+      const res = await settingsService.changePassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      });
+      setPasswordSuccess(res.message || 'Password updated successfully.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setPasswordError(
+        getApiErrorMessage(err, 'Failed to update password. Please check your current password.'),
+      );
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   return (
@@ -97,6 +143,7 @@ export function ProfileSettingsScreen() {
           </View>
         </AppCard>
 
+        {/* Personal Information */}
         <AppCard style={styles.section}>
           <Text style={styles.sectionTitle}>Personal Information</Text>
           <AppInput
@@ -121,17 +168,21 @@ export function ProfileSettingsScreen() {
           />
           <AppInput
             label="Phone"
-            value={user?.mobile_number ?? ''}
-            editable={false}
+            value={profile.mobileNumber}
+            onChangeText={text => {
+              profile.setMobileNumber(text);
+              profile.clearFeedback();
+            }}
+            keyboardType="phone-pad"
+            error={profile.validation.mobileNumberError ?? undefined}
           />
-          <Text style={styles.pendingNote}>{BACKEND_PENDING_NOTE}</Text>
           {profile.error ? (
             <View style={styles.errorBox} accessibilityRole="alert">
               <Text style={styles.errorText}>{profile.error}</Text>
             </View>
           ) : null}
           {profile.saved ? (
-            <Text style={styles.savedText}>Profile updated.</Text>
+            <Text style={styles.savedText}>Profile updated successfully.</Text>
           ) : null}
           <AppButton
             title="Save Changes"
@@ -142,19 +193,57 @@ export function ProfileSettingsScreen() {
           />
         </AppCard>
 
+        {/* Change Password */}
         <AppCard style={styles.section}>
           <Text style={styles.sectionTitle}>Change Password</Text>
           <AppInput
             label="Current Password"
-            value=""
-            editable={false}
+            value={currentPassword}
+            onChangeText={text => {
+              setCurrentPassword(text);
+              setPasswordError(null);
+              setPasswordSuccess(null);
+            }}
             secureTextEntry
           />
-          <AppInput label="New Password" value="" editable={false} secureTextEntry />
-          <AppInput label="Confirm Password" value="" editable={false} secureTextEntry />
-          <Text style={styles.pendingNote}>{BACKEND_PENDING_NOTE}</Text>
+          <AppInput
+            label="New Password"
+            value={newPassword}
+            onChangeText={text => {
+              setNewPassword(text);
+              setPasswordError(null);
+              setPasswordSuccess(null);
+            }}
+            secureTextEntry
+          />
+          <AppInput
+            label="Confirm Password"
+            value={confirmPassword}
+            onChangeText={text => {
+              setConfirmPassword(text);
+              setPasswordError(null);
+              setPasswordSuccess(null);
+            }}
+            secureTextEntry
+          />
+          {passwordError ? (
+            <View style={styles.errorBox} accessibilityRole="alert">
+              <Text style={styles.errorText}>{passwordError}</Text>
+            </View>
+          ) : null}
+          {passwordSuccess ? (
+            <Text style={styles.savedText}>{passwordSuccess}</Text>
+          ) : null}
+          <AppButton
+            title="Update Password"
+            onPress={handlePasswordChange}
+            loading={passwordSaving}
+            disabled={passwordSaving || !currentPassword || !newPassword || !confirmPassword}
+            fullWidth
+          />
         </AppCard>
 
+        {/* Security */}
         <AppCard style={styles.section}>
           <Text style={styles.sectionTitle}>Security</Text>
           <View style={styles.settingRow}>
@@ -173,12 +262,14 @@ export function ProfileSettingsScreen() {
           </View>
         </AppCard>
 
+        {/* Legal */}
         <AppCard style={styles.section}>
           <Text style={styles.sectionTitle}>Legal</Text>
           <LegalRow title="Privacy Policy" url={PRIVACY_POLICY_URL} />
           <LegalRow title="Terms & Conditions" url={TERMS_CONDITIONS_URL} />
         </AppCard>
 
+        {/* App Info */}
         <AppCard style={styles.section}>
           <Text style={styles.sectionTitle}>App</Text>
           <InfoRow label="App Version" value={APP_VERSION} />
@@ -258,12 +349,6 @@ const styles = StyleSheet.create({
     ...typography.sectionHeader,
     color: colors.textPrimary,
     marginBottom: spacing.md,
-  },
-  pendingNote: {
-    ...typography.secondary,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-    marginBottom: spacing.sm,
   },
   errorBox: {
     backgroundColor: '#FEE2E2',

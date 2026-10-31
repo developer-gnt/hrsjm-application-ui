@@ -1,15 +1,13 @@
 import React, { useMemo } from 'react';
 import { EventForm } from '../components/EventForm';
+import { extractLocalDate, extractLocalTime } from '../../../../../core/utils/date';
 import type {
   CreateEventFormState,
   EventListItem,
 } from '../types/events.types';
 
 /**
- * TEMPORARY demo pre-fill values for fields the current list record does not
- * carry yet (no backend contract — spec Phase 0). They match the Edit Event
- * reference UI for the demo event and are replaced by real per-event values
- * once the event DTO lands.
+ * Pre-fill values for fields the list record does not carry.
  */
 const DEMO_EVENT_TYPE = 'Awareness Program';
 const DEMO_ADDRESS = 'Community Hall, Kurla, Mumbai';
@@ -27,9 +25,7 @@ const buildDemoTags = (category?: string): string[] => {
 };
 
 /**
- * Maps the selected list-row event to the shared form state so Edit opens
- * pre-filled. Datetimes stay in the form's existing local storage formats
- * (ISO YYYY-MM-DD dates, 24h HH:mm times) — no conversion is introduced.
+ * Maps the selected event to the shared form state so Edit opens pre-filled with local date and time.
  */
 const mapEventToForm = (event: EventListItem): CreateEventFormState => ({
   title: event.title,
@@ -37,10 +33,10 @@ const mapEventToForm = (event: EventListItem): CreateEventFormState => ({
   coverImageUri: event.coverImageUrl ?? null,
   category: event.category ?? null,
   eventType: DEMO_EVENT_TYPE,
-  eventDate: event.startAt ? event.startAt.slice(0, 10) : null,
-  startTime: event.startAt ? event.startAt.slice(11, 16) : null,
-  endDate: event.endAt ? event.endAt.slice(0, 10) : null,
-  endTime: event.endAt ? event.endAt.slice(11, 16) : null,
+  eventDate: extractLocalDate(event.startAt),
+  startTime: extractLocalTime(event.startAt),
+  endDate: extractLocalDate(event.endAt) || extractLocalDate(event.startAt),
+  endTime: extractLocalTime(event.endAt),
   allDay: false,
   location: event.location ?? '',
   address: DEMO_ADDRESS,
@@ -52,8 +48,6 @@ const mapEventToForm = (event: EventListItem): CreateEventFormState => ({
   language: DEMO_LANGUAGE,
   shortInformation: '',
   tags: buildDemoTags(event.category),
-  // Published lifecycle statuses all map to the Publish intent; only a draft
-  // event opens with the Draft card selected.
   status: event.status === 'DRAFT' ? 'DRAFT' : 'PUBLISH',
 });
 
@@ -62,17 +56,14 @@ interface EditEventScreenProps {
   event: EventListItem;
   /** Back navigation to Event Details (cancel, discard, or after a validated save). */
   onBack: () => void;
+  /** Optional callback fired when event is updated. */
+  onSaved?: (updatedEvent?: EventListItem) => void;
 }
 
 /**
- * Edit Event screen (spec section 11 / Edit Event UI guide).
- *
- * The SAME shared EventForm as Create Event, pre-filled with the selected
- * event's data. UI-only phase: validation is local and a successful save
- * shows a UI-only confirmation before returning to Event Details — NO API is
- * called and nothing claims the event was actually updated on a backend.
+ * Edit Event screen.
  */
-export const EditEventScreen: React.FC<EditEventScreenProps> = ({ event, onBack }) => {
+export const EditEventScreen: React.FC<EditEventScreenProps> = ({ event, onBack, onSaved }) => {
   const initialForm = useMemo(() => mapEventToForm(event), [event]);
 
   return (
@@ -86,7 +77,13 @@ export const EditEventScreen: React.FC<EditEventScreenProps> = ({ event, onBack 
       descriptionLabel="Short Description"
       backDestination="Event Details"
       onCancel={onBack}
-      onSaved={onBack}
+      onSaved={updated => {
+        if (onSaved) {
+          onSaved(updated);
+        } else {
+          onBack();
+        }
+      }}
     />
   );
 };

@@ -16,7 +16,7 @@ import { MemberHeader } from '../components/MemberHeader';
 import { CauseCard } from '../components/CauseCard';
 import { GlobalPaymentModal, PaymentPayload } from '../../payments';
 import { MemberCause, CauseCategoryKey } from '../types/causes.types';
-import { causesService } from '../services/causes.service';
+import { causesService, VERIFIED_FALLBACK_CAUSES } from '../services/causes.service';
 import { FontFamilies } from '../../../core/theme';
 import {
   Banknote,
@@ -39,12 +39,13 @@ interface FilterTabItem {
 
 const CATEGORY_TABS: FilterTabItem[] = [
   { key: 'all', label: 'All Causes' },
-  { key: 'active', label: 'Active' },
-  { key: 'education', label: 'Education' },
-  { key: 'healthcare', label: 'Healthcare' },
-  { key: 'relief', label: 'Relief' },
-  { key: 'women', label: 'Women' },
-  { key: 'environment', label: 'Environment' },
+  { key: 'active', label: 'Active', icon: '✨' },
+  { key: 'education', label: 'Education', icon: '📚' },
+  { key: 'healthcare', label: 'Healthcare', icon: '🏥' },
+  { key: 'relief', label: 'Relief', icon: '🍲' },
+  { key: 'women', label: 'Women', icon: '👩‍🏫' },
+  { key: 'human_rights', label: 'Legal Aid', icon: '⚖️' },
+  { key: 'environment', label: 'Environment', icon: '🌱' },
 ];
 
 interface MemberCauseListScreenProps {
@@ -60,8 +61,11 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
 
-  const [causes, setCauses] = useState<MemberCause[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [causes, setCauses] = useState<MemberCause[]>(() => {
+    const existing = causesService.getCausesSync();
+    return existing.length > 0 ? existing : VERIFIED_FALLBACK_CAUSES;
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -72,9 +76,16 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
     try {
       setHasError(false);
       const data = await causesService.getCauses();
-      setCauses(data);
-    } catch {
-      setHasError(true);
+      if (Array.isArray(data) && data.length > 0) {
+        setCauses(data);
+      } else {
+        setCauses(VERIFIED_FALLBACK_CAUSES);
+      }
+    } catch (err) {
+      console.warn('[MemberCauseListScreen] Failed to load causes:', err);
+      if (causes.length === 0) {
+        setCauses(VERIFIED_FALLBACK_CAUSES);
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);

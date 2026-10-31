@@ -215,6 +215,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
           >
             {/* Applicant Details Section */}
             <View style={styles.sectionCard}>

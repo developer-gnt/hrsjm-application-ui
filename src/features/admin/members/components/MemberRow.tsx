@@ -114,9 +114,8 @@ const MemberRowComponent: React.FC<MemberRowProps> = ({
   const handlePress = () => {
     if (isSelecting) {
       onToggleSelect(member.id);
-    } else {
-      onOpenActions(member);
     }
+    // Non-selection taps on card body are no-op; use the action button instead.
   };
 
   const handleLongPress = () => {

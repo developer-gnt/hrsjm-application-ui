@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { setSessionExpiredHandler } from '../../core/api/client';
+import { tokenStorage } from '../../core/storage/token-storage';
 import { useAuthStore } from '../../features/auth/store/authStore';
 import { FeedbackProvider } from '../../core/feedback/FeedbackContext';
 import { MembershipProvider } from '../../features/membership/context/MembershipContext';
@@ -32,6 +33,9 @@ export const AppProviders: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   useEffect(() => {
+    // Warm up token storage from secure storage on startup
+    tokenStorage.init().catch(() => undefined);
+
     setSessionExpiredHandler(() => {
       useAuthStore.getState().handleSessionExpired();
     });
@@ -48,5 +52,3 @@ export const AppProviders: React.FC<{ children: React.ReactNode }> = ({
     </SafeAreaProvider>
   );
 };
-
-export default AppProviders;

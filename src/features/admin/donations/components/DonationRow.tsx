@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
 import {
   AdminColors,
   Typography,
@@ -7,10 +7,13 @@ import {
   AppAvatar,
   AppBadge,
   formatDateTime,
+  Receipt,
+  Eye,
+  RotateCcw,
 } from '../../../../core';
 import { Donation, DonationRowModel } from '../types/donations.types';
 import { DonationAmount } from './DonationAmount';
-import { DonationActions } from './DonationActions';
+import { DonationActions, DonationActionItem } from './DonationActions';
 import {
   DonationStatusBadge,
   donationStatusPresentation,
@@ -50,8 +53,7 @@ export const TABLE_COL = {
   amount: 46,
   date: 50,
   status: 54,
-  receipt: 34,
-  dots: 8,
+  actions: 36,
   gutter: 2,
 };
 
@@ -75,46 +77,41 @@ export const DonationRow: React.FC<DonationRowProps> = ({
   onViewReceipt,
   onRefund,
 }) => {
-  const receiptButton = (
-    <TouchableOpacity
-      style={variant === 'table' ? styles.receiptButtonSm : styles.receiptButton}
-      onPress={() => onViewReceipt?.(row)}
-      accessibilityRole="button"
-      accessibilityLabel="View receipt"
-    >
-      <Text style={variant === 'table' ? styles.receiptIconSm : styles.receiptIcon}>
-        📄
-      </Text>
-      <Text
-        style={variant === 'table' ? styles.receiptLabelSm : styles.receiptLabel}
-      >
-        View
-      </Text>
-    </TouchableOpacity>
-  );
-
   const isCompleted =
     row.rawStatus === 'SUCCESS' || row.statusLabel === 'Completed';
 
-  const menuActions = [
-    {
-      label: 'View Details',
-      onPress: () => onViewDetails?.(row),
-    },
+  const menuActions: DonationActionItem[] = [
     {
       label: 'View Receipt',
+      subtitle: 'View, download or print 80G tax receipt',
+      icon: <Receipt size={18} color={AdminColors.primary} />,
       onPress: () => onViewReceipt?.(row),
+    },
+    {
+      label: 'View Details',
+      subtitle: 'Donor details and transaction ID',
+      icon: <Eye size={18} color={AdminColors.textPrimary} />,
+      onPress: () => onViewDetails?.(row),
     },
   ];
 
   if (isCompleted && onRefund) {
     menuActions.push({
       label: 'Refund Donation',
+      subtitle: 'Initiate a refund to donor',
+      icon: <RotateCcw size={18} color={AdminColors.error} />,
+      destructive: true,
       onPress: () => onRefund(row),
     });
   }
 
-  const actionMenu = <DonationActions actions={menuActions} />;
+  const actionMenu = (
+    <DonationActions
+      title="Donation Actions"
+      subtitle={`${row.donorName} • ₹${row.amount.toLocaleString('en-IN')}`}
+      actions={menuActions}
+    />
+  );
 
   if (variant === 'table') {
     return (
@@ -177,11 +174,7 @@ export const DonationRow: React.FC<DonationRowProps> = ({
           </View>
         </View>
 
-        <View style={styles.tReceiptCol}>
-          {receiptButton}
-        </View>
-
-        <View style={styles.tDotsCol}>
+        <View style={styles.tActionsCol}>
           {actionMenu}
         </View>
       </View>
@@ -246,7 +239,6 @@ export const DonationRow: React.FC<DonationRowProps> = ({
           </Text>
         </View>
         <View style={styles.actionsSpacer} />
-        {receiptButton}
         {actionMenu}
       </View>
     </View>
@@ -264,8 +256,7 @@ export const DonationTableHeader: React.FC = () => {
         Date &amp; Time
       </Text>
       <Text style={[styles.thCell, styles.thStatus]}>Status</Text>
-      <Text style={[styles.thCell, styles.thReceipt]}>Receipt</Text>
-      <View style={styles.thDots} />
+      <Text style={[styles.thCell, styles.thRight, styles.thActions]}>Actions</Text>
     </View>
   );
 };
@@ -333,23 +324,6 @@ const styles = StyleSheet.create({
   },
   actionsSpacer: {
     flex: 1,
-  },
-  receiptButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: AdminColors.primaryLight,
-    borderRadius: Spacing.sm,
-    paddingHorizontal: Spacing.md - 2,
-    paddingVertical: 6,
-    marginRight: Spacing.sm,
-  },
-  receiptIcon: {
-    fontSize: 12,
-    marginRight: 5,
-  },
-  receiptLabel: {
-    ...Typography.secondaryMedium,
-    color: AdminColors.primary,
   },
   tableRow: {
     flexDirection: 'row',
@@ -419,14 +393,8 @@ const styles = StyleSheet.create({
     marginRight: TABLE_COL.gutter,
     justifyContent: 'center',
   },
-  tReceiptCol: {
-    width: TABLE_COL.receipt,
-    marginRight: TABLE_COL.gutter,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  tDotsCol: {
-    width: TABLE_COL.dots,
+  tActionsCol: {
+    width: TABLE_COL.actions,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
@@ -462,28 +430,8 @@ const styles = StyleSheet.create({
   thStatus: {
     width: TABLE_COL.status,
   },
-  thReceipt: {
-    width: TABLE_COL.receipt,
-  },
-  thDots: {
-    width: TABLE_COL.dots,
-  },
-  receiptButtonSm: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: AdminColors.primaryLight,
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    paddingVertical: 3,
-  },
-  receiptIconSm: {
-    fontSize: 7.5,
-    marginRight: 2,
-  },
-  receiptLabelSm: {
-    fontSize: 8,
-    fontWeight: '600',
-    color: AdminColors.primary,
+  thActions: {
+    width: TABLE_COL.actions,
   },
   sourcePill: {
     backgroundColor: '#EDF2F7',
