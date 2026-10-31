@@ -10,6 +10,7 @@ export * from './screens/SplashScreen';
 export * from './screens/OnboardingScreen';
 export * from './screens/ForgotPasswordScreen';
 export * from './screens/ResetPasswordScreen';
+export * from './screens/IneligibleAgeScreen';
 
 export * from './components/AuthIcons';
 export * from './components/DobDatePickerModal';

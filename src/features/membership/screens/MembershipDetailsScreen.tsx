@@ -39,6 +39,7 @@ import {
   navigateToProfile,
   navigateToProfileIdCard,
   navigateToRenewMembership,
+  navigateToMembershipBenefits,
 } from '../../../core/navigation/appRouter';
 
 interface MembershipDetailsScreenProps {
@@ -148,7 +149,7 @@ export const MembershipDetailsScreen: React.FC<MembershipDetailsScreenProps> = (
     if (onBenefitsPress) {
       onBenefitsPress();
     } else {
-      scrollToSection('benefits', 'section-benefits');
+      navigateToMembershipBenefits();
     }
   };
 

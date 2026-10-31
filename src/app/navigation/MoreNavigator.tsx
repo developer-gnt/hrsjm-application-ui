@@ -60,6 +60,7 @@ import {
   MembershipApplicationDetailsScreen,
 } from '../../features/admin/membershipApplications';
 import { AboutScreen } from '../../features/user/about';
+import { WhatWeDoDetailScreen } from '../../features/user/what-we-do';
 import {
   KnowYourRightsScreen,
   RightArticleDetailsScreen,
@@ -68,6 +69,7 @@ import {
 } from '../../features/admin/content/rights';
 import {
   MembershipDetailsScreen,
+  MemberBenefitsScreen,
   RenewMembershipScreen,
 } from '../../features/membership';
 import {
@@ -428,6 +430,7 @@ export const MoreNavigator: React.FC = () => (
       {({ navigation }) => (
         <AboutScreen
           onBack={navigation.goBack}
+          onOpenWhatWeDo={(contentId) => navigation.navigate('WhatWeDoDetail' as any, { contentId })}
           onNavigate={(target: string) => {
             if (target === 'AdminMoreTab') {
               navigation.navigate('MoreMenu' as any);
@@ -435,6 +438,22 @@ export const MoreNavigator: React.FC = () => (
               navigation.navigate(target as any);
             }
           }}
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen
+      name="WhatWeDoDetail"
+      options={{ tabBarStyle: { display: 'none' } } as any}
+    >
+      {({ navigation, route }: any) => (
+        <WhatWeDoDetailScreen
+          contentId={route.params?.contentId || 'human-rights-monitoring'}
+          hideBottomNav={true}
+          showBottomNav={false}
+          onBack={navigation.goBack}
+          onOpenHome={navigation.goBack}
+          onOpenAbout={navigation.goBack}
         />
       )}
     </Stack.Screen>
@@ -651,10 +670,24 @@ export const MoreNavigator: React.FC = () => (
       component={TicketChatScreen as any}
     />
 
-    {/* Membership Details & Renewal */}
+    {/* Membership Details, Benefits & Renewal */}
     <Stack.Screen name={AppRoutes.MEMBERSHIP_DETAILS}>
       {({ navigation }) => (
         <MembershipDetailsScreen
+          onBack={navigation.goBack}
+          onRenewPress={() =>
+            navigation.navigate(AppRoutes.RENEW_MEMBERSHIP as any)
+          }
+          onBenefitsPress={() =>
+            navigation.navigate(AppRoutes.MEMBERSHIP_BENEFITS as any)
+          }
+        />
+      )}
+    </Stack.Screen>
+
+    <Stack.Screen name={AppRoutes.MEMBERSHIP_BENEFITS}>
+      {({ navigation }) => (
+        <MemberBenefitsScreen
           onBack={navigation.goBack}
           onRenewPress={() =>
             navigation.navigate(AppRoutes.RENEW_MEMBERSHIP as any)

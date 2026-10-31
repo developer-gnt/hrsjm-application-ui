@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   listContent: {
-    paddingBottom: Spacing.xl,
+    paddingBottom: 120,
     gap: Spacing.sm,
   },
   card: {

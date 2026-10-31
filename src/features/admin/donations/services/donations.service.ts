@@ -35,42 +35,55 @@ export const donationsService = {
       params.search = query.search.trim();
     }
 
+    if (query.source && query.source !== 'ALL') {
+      params.source = query.source;
+    }
+
     try {
-      const response = await apiClient.get<PaginatedResponse<Donation>>(
+      const response = await apiClient.get<any>(
         ApiRoutes.DONATIONS.BASE,
         { params },
       );
 
       const resData = (response as any)?.data || response;
-      if (resData && Array.isArray(resData.items) && resData.items.length > 0) {
-        return resData;
-      }
-      if (resData && Array.isArray(resData.items)) {
-        return resData;
-      }
-    } catch (err) {
-      console.warn('[donationsService] API request failed, will fallback to local preview data if empty:', err);
-    }
 
-    return {
-      items: [],
-      meta: {
+      const items = Array.isArray(resData?.items)
+        ? resData.items
+        : Array.isArray((response as any)?.items)
+        ? (response as any).items
+        : Array.isArray(resData)
+        ? resData
+        : [];
+      const meta = resData?.meta || (response as any)?.meta || {
+
         page: typeof query.page === 'number' ? query.page : 1,
         limit: typeof query.limit === 'number' ? query.limit : 20,
-        total: 0,
-        totalPages: 1,
-      },
-    };
+        total: items.length,
+        totalPages: Math.max(1, Math.ceil(items.length / (query.limit || 20))),
+      };
+      return { items, meta };
+    } catch (err) {
+      console.warn('[donationsService] API request failed:', err);
+      return {
+        items: [],
+        meta: {
+          page: typeof query.page === 'number' ? query.page : 1,
+          limit: typeof query.limit === 'number' ? query.limit : 20,
+          total: 0,
+          totalPages: 1,
+        },
+      };
+    }
   },
 
   /**
    * GET /api/v1/donations/:id — single donation record
    */
   async getDonationById(id: string): Promise<Donation> {
-    const response = await apiClient.get<Donation>(
+    const response = await apiClient.get<any>(
       `${ApiRoutes.DONATIONS.BASE}/${id}`,
     );
-    return response.data;
+    return (response as any)?.data || response;
   },
 
   /**

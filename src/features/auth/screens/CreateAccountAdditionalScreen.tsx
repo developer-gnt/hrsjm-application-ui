@@ -165,6 +165,7 @@ export const CreateAccountAdditionalScreen: React.FC<CreateAccountAdditionalScre
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <View style={[styles.mainWrapper, { width: contentMaxWidth }]}>
           {/* 1. Header with Back Button & Centered Screen Title */}
@@ -510,7 +511,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 60,
   },
   mainWrapper: {
     width: '100%',

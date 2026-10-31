@@ -227,6 +227,7 @@ export const AddUserScreen: React.FC<AddUserScreenProps> = ({
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           <View style={styles.contentWrap}>
             {/* Back to Users Link */}

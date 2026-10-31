@@ -1,6 +1,15 @@
-
-import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  type ScrollViewInstance,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppButton } from '../../../../core/components/common/AppButton';
@@ -15,6 +24,7 @@ import { AccountPickerModal } from '../../accounting/components/AccountPickerMod
 import { PaymentMethodSelector } from '../../accounting/components/PaymentMethodSelector';
 import type { AccountItem, PaymentMethod } from '../../accounting/types/accounting.types';
 import { useCreateExpense } from '../hooks/useExpenses';
+import { useAccounts } from '../../accounting/hooks/useAccounts';
 import { createExpenseSchema, zodFieldErrors } from '../types/expenses.schemas';
 import type { MoreStackParamList } from '../../../../app/navigation/NavigationTypes';
 
@@ -36,11 +46,14 @@ export const CreateExpenseVoucherScreen: React.FC<
   CreateExpenseVoucherScreenProps
 > = ({ navigation }) => {
   const createMutation = useCreateExpense();
+  const scrollViewRef = useRef<ScrollViewInstance | null>(null);
+
+  const { accounts: assetAccounts } = useAccounts('ASSET');
 
   const [expenseDate, setExpenseDate] = useState(todayIso());
   const [paidTo, setPaidTo] = useState('');
   const [amount, setAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>('CASH');
   const [description, setDescription] = useState('');
 
   const [expenseAccount, setExpenseAccount] = useState<AccountItem | null>(null);
@@ -54,6 +67,64 @@ export const CreateExpenseVoucherScreen: React.FC<
     expenseAccount?.description ||
     getExpenseTypeDescription(expenseAccount?.account_name);
 
+  // Auto-select / sync Paid From (Asset) Account based on payment method
+  useEffect(() => {
+    if (!paidFromAccount && assetAccounts.length > 0) {
+      if (paymentMethod === 'CASH') {
+        const cashAcc =
+          assetAccounts.find(
+            a => /cash/i.test(a.account_name) || a.account_code === '1002',
+          ) || assetAccounts[0];
+        if (cashAcc) setPaidFromAccount(cashAcc);
+      } else {
+        const bankAcc =
+          assetAccounts.find(
+            a => /bank/i.test(a.account_name) || a.account_code === '1001',
+          ) || assetAccounts[0];
+        if (bankAcc) setPaidFromAccount(bankAcc);
+      }
+    }
+  }, [assetAccounts, paidFromAccount, paymentMethod]);
+
+  const handlePaymentMethodChange = (method: PaymentMethod) => {
+    setPaymentMethod(method);
+    if (fieldErrors.payment_method) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next.payment_method;
+        return next;
+      });
+    }
+    // Switch asset account to match payment method
+    if (assetAccounts.length > 0) {
+      if (method === 'CASH') {
+        const cashAcc = assetAccounts.find(
+          a => /cash/i.test(a.account_name) || a.account_code === '1002',
+        );
+        if (cashAcc) {
+          setPaidFromAccount(cashAcc);
+          setFieldErrors(prev => {
+            const next = { ...prev };
+            delete next.paid_from_account_id;
+            return next;
+          });
+        }
+      } else {
+        const bankAcc = assetAccounts.find(
+          a => /bank/i.test(a.account_name) || a.account_code === '1001',
+        );
+        if (bankAcc) {
+          setPaidFromAccount(bankAcc);
+          setFieldErrors(prev => {
+            const next = { ...prev };
+            delete next.paid_from_account_id;
+            return next;
+          });
+        }
+      }
+    }
+  };
+
   const handleCreate = () => {
     const parsed = createExpenseSchema.safeParse({
       expense_date: expenseDate,
@@ -65,7 +136,25 @@ export const CreateExpenseVoucherScreen: React.FC<
       description,
     });
     if (!parsed.success) {
-      setFieldErrors(zodFieldErrors(parsed.error));
+      const errors = zodFieldErrors(parsed.error);
+      setFieldErrors(errors);
+
+      const missing: string[] = [];
+      if (errors.expense_account_id) missing.push('Type of Expense');
+      if (errors.paid_from_account_id) missing.push('Paid From Account');
+      if (errors.amount) missing.push('Valid Amount');
+      if (errors.paid_to) missing.push('Paid To');
+      if (errors.expense_date) missing.push('Expense Date');
+      if (errors.payment_method) missing.push('Payment Method');
+      if (errors.description) missing.push('Description');
+      const summary =
+        missing.length > 0
+          ? `Please complete required fields: ${missing.join(', ')}`
+          : (Object.values(errors)[0] || 'Please complete all required fields.');
+
+      setFormError(summary);
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      Alert.alert('Required Information Missing', summary);
       return;
     }
     setFieldErrors({});
@@ -85,11 +174,13 @@ export const CreateExpenseVoucherScreen: React.FC<
         onSuccess: voucher =>
           navigation.replace(AppRoutes.EXPENSE_DETAILS, { voucherId: voucher.id }),
         onError: (error: unknown) => {
-          setFormError(
+          const msg =
             error instanceof ApiError && error.message
               ? error.message
-              : 'Unable to record the expense. Please try again.',
-          );
+              : 'Unable to record the expense. Please try again.';
+          setFormError(msg);
+          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+          Alert.alert('Error Recording Expense', msg);
         },
       },
     );
@@ -107,9 +198,11 @@ export const CreateExpenseVoucherScreen: React.FC<
         onNavigate={target => navigation.navigate(target as any)}
       />
       <ScrollView
+        ref={scrollViewRef}
         style={styles.flex}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         bounces={false}
       >
         <Text style={styles.journalHint}>Dr Expense Account · Cr Bank/Cash Account</Text>
@@ -155,7 +248,16 @@ export const CreateExpenseVoucherScreen: React.FC<
                   label={`Description for ${expenseAccount.account_name} *`}
                   placeholder="Enter specific purpose, invoice no., items purchased, etc."
                   value={description}
-                  onChangeText={setDescription}
+                  onChangeText={val => {
+                    setDescription(val);
+                    if (fieldErrors.description) {
+                      setFieldErrors(prev => {
+                        const next = { ...prev };
+                        delete next.description;
+                        return next;
+                      });
+                    }
+                  }}
                   multiline
                   editable={!createMutation.isPending}
                   error={fieldErrors.description}
@@ -200,7 +302,16 @@ export const CreateExpenseVoucherScreen: React.FC<
           required
           placeholder="0.00"
           value={amount}
-          onChangeText={setAmount}
+          onChangeText={val => {
+            setAmount(val);
+            if (fieldErrors.amount) {
+              setFieldErrors(prev => {
+                const next = { ...prev };
+                delete next.amount;
+                return next;
+              });
+            }
+          }}
           keyboardType="decimal-pad"
           editable={!createMutation.isPending}
           error={fieldErrors.amount}
@@ -211,7 +322,16 @@ export const CreateExpenseVoucherScreen: React.FC<
           required
           title="Select Expense Date"
           value={expenseDate}
-          onChange={setExpenseDate}
+          onChange={val => {
+            setExpenseDate(val);
+            if (fieldErrors.expense_date) {
+              setFieldErrors(prev => {
+                const next = { ...prev };
+                delete next.expense_date;
+                return next;
+              });
+            }
+          }}
           disabled={createMutation.isPending}
           error={fieldErrors.expense_date}
         />
@@ -221,14 +341,23 @@ export const CreateExpenseVoucherScreen: React.FC<
           required
           placeholder="Payee or vendor name"
           value={paidTo}
-          onChangeText={setPaidTo}
+          onChangeText={val => {
+            setPaidTo(val);
+            if (fieldErrors.paid_to) {
+              setFieldErrors(prev => {
+                const next = { ...prev };
+                delete next.paid_to;
+                return next;
+              });
+            }
+          }}
           editable={!createMutation.isPending}
           error={fieldErrors.paid_to}
         />
 
         <PaymentMethodSelector
           value={paymentMethod}
-          onChange={setPaymentMethod}
+          onChange={handlePaymentMethodChange}
         />
 
         {/* Fallback description input if no type selected yet */}
@@ -237,11 +366,27 @@ export const CreateExpenseVoucherScreen: React.FC<
             label="Description / Expense Details"
             placeholder="Describe purpose, invoice number, items purchased, etc."
             value={description}
-            onChangeText={setDescription}
+            onChangeText={val => {
+              setDescription(val);
+              if (fieldErrors.description) {
+                setFieldErrors(prev => {
+                  const next = { ...prev };
+                  delete next.description;
+                  return next;
+                });
+              }
+            }}
             multiline
             editable={!createMutation.isPending}
             error={fieldErrors.description}
           />
+        ) : null}
+
+        {formError ? (
+          <View style={styles.submitErrorCard}>
+            <AlertCircle size={16} color={AdminColors.error} />
+            <Text style={styles.submitErrorText}>{formError}</Text>
+          </View>
         ) : null}
 
         <AppButton
@@ -260,7 +405,15 @@ export const CreateExpenseVoucherScreen: React.FC<
         title="Select Type of Expense"
         accountType="EXPENSE"
         selectedId={expenseAccount?.id}
-        onSelect={setExpenseAccount}
+        onSelect={acc => {
+          setExpenseAccount(acc);
+          setPickerTarget(null);
+          setFieldErrors(prev => {
+            const next = { ...prev };
+            delete next.expense_account_id;
+            return next;
+          });
+        }}
         onClose={() => setPickerTarget(null)}
       />
       <AccountPickerModal
@@ -268,7 +421,15 @@ export const CreateExpenseVoucherScreen: React.FC<
         title="Select Bank/Cash Account"
         accountType="ASSET"
         selectedId={paidFromAccount?.id}
-        onSelect={setPaidFromAccount}
+        onSelect={acc => {
+          setPaidFromAccount(acc);
+          setPickerTarget(null);
+          setFieldErrors(prev => {
+            const next = { ...prev };
+            delete next.paid_from_account_id;
+            return next;
+          });
+        }}
         onClose={() => setPickerTarget(null)}
       />
     </KeyboardAvoidingView>
@@ -282,7 +443,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.base,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 60,
   },
   journalHint: {
     ...Typography.caption,
@@ -358,6 +519,22 @@ const styles = StyleSheet.create({
   },
   typeDescInputWrap: {
     marginTop: 10,
+  },
+  submitErrorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AdminColors.errorLight,
+    borderWidth: 1,
+    borderColor: AdminColors.error,
+    borderRadius: BorderRadius.base,
+    padding: Spacing.md,
+    marginTop: Spacing.md,
+    gap: Spacing.sm,
+  },
+  submitErrorText: {
+    ...Typography.secondaryMedium,
+    color: AdminColors.error,
+    flex: 1,
   },
   submit: {
     marginTop: Spacing.lg,

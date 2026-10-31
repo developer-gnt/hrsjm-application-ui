@@ -57,7 +57,9 @@ import {
 import {
   PassbookExportModal,
   PassbookExportPeriod,
+  PassbookExportOptions,
 } from '../components/PassbookExportModal';
+import { exportPassbookStatement } from '../services/passbook-export.api';
 import { exportPassbookPdf } from '../services/passbookPdfExport';
 import { fetchAggregatedPassbookLedger } from '../services/ledger.service';
 
@@ -157,32 +159,38 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
           t.category_tag === 'DONATION' ||
           t.category_tag === 'CAUSE_FUND' ||
           t.entry_type === 'DONATION' ||
-          t.entry_type === 'CAUSE_FUND',
+          t.entry_type === 'CAUSE_FUND' ||
+          t.account_name?.toLowerCase().includes('donation') ||
+          t.narration?.toLowerCase().includes('donation'),
       );
     } else if (subFilter === 'MEMBERSHIP') {
       list = list.filter(
         (t) =>
           t.category_tag === 'MEMBERSHIP_FEE' ||
-          t.entry_type === 'MEMBERSHIP_FEE',
+          t.entry_type === 'MEMBERSHIP_FEE' ||
+          t.account_name?.toLowerCase().includes('membership'),
       );
     } else if (subFilter === 'RENEWAL') {
       list = list.filter(
         (t) =>
           t.category_tag === 'RENEWAL_FEE' ||
-          t.entry_type === 'RENEWAL_FEE',
+          t.entry_type === 'RENEWAL_FEE' ||
+          t.account_name?.toLowerCase().includes('renewal'),
       );
     } else if (subFilter === 'EXPENSE') {
       list = list.filter(
         (t) =>
           t.category_tag === 'EXPENSE' ||
           t.entry_type === 'EXPENSE' ||
+          t.reference_type === 'EXPENSE_VOUCHER' ||
           (t.debit || 0) > 0,
       );
     } else if (subFilter === 'RECEIPT') {
       list = list.filter(
         (t) =>
           t.category_tag === 'RECEIPT' ||
-          t.entry_type === 'RECEIPT',
+          t.entry_type === 'RECEIPT' ||
+          t.reference_type === 'RECEIPT_VOUCHER',
       );
     }
 
@@ -222,7 +230,9 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
           t.category_tag === 'DONATION' ||
           t.category_tag === 'CAUSE_FUND' ||
           t.entry_type === 'DONATION' ||
-          t.entry_type === 'CAUSE_FUND',
+          t.entry_type === 'CAUSE_FUND' ||
+          t.account_name?.toLowerCase().includes('donation') ||
+          t.narration?.toLowerCase().includes('donation'),
       ).length,
     [transactions],
   );
@@ -232,7 +242,8 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
       transactions.filter(
         (t) =>
           t.category_tag === 'MEMBERSHIP_FEE' ||
-          t.entry_type === 'MEMBERSHIP_FEE',
+          t.entry_type === 'MEMBERSHIP_FEE' ||
+          t.account_name?.toLowerCase().includes('membership'),
       ).length,
     [transactions],
   );
@@ -242,7 +253,8 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
       transactions.filter(
         (t) =>
           t.category_tag === 'RENEWAL_FEE' ||
-          t.entry_type === 'RENEWAL_FEE',
+          t.entry_type === 'RENEWAL_FEE' ||
+          t.account_name?.toLowerCase().includes('renewal'),
       ).length,
     [transactions],
   );
@@ -252,7 +264,8 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
       transactions.filter(
         (t) =>
           t.category_tag === 'RECEIPT' ||
-          t.entry_type === 'RECEIPT',
+          t.entry_type === 'RECEIPT' ||
+          t.reference_type === 'RECEIPT_VOUCHER',
       ).length,
     [transactions],
   );
@@ -295,27 +308,19 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
     setExportModalVisible(true);
   };
 
-  const handleExecuteExport = async (period: PassbookExportPeriod) => {
+  const handleExecuteExport = async (options: PassbookExportOptions) => {
     if (isExporting) return;
     try {
       setIsExporting(true);
-      // Fetch data specifically for the selected export period (month, year, or custom range)
-      const dataset = await fetchAggregatedPassbookLedger({
-        fromDate: period.fromDate,
-        toDate: period.toDate,
+      await exportPassbookStatement({
+        transactionType: options.transactionType,
+        format: options.format,
+        fromDate: options.fromDate,
+        toDate: options.toDate,
       });
-
-      await exportPassbookPdf({
-        periodLabel: period.label || 'Passbook Statement',
-        fromDate: period.fromDate,
-        toDate: period.toDate,
-        summary: dataset.summary,
-        transactions: dataset.transactions,
-      });
-
       setExportModalVisible(false);
     } catch (err: any) {
-      Alert.alert('Export Failed', err?.message || 'Could not generate PDF statement');
+      Alert.alert('Export Failed', err?.message || 'Could not download passbook statement');
     } finally {
       setIsExporting(false);
     }
@@ -359,8 +364,12 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
             {formatINR(totalCreditAmt, { noDecimals: true })}
           </Text>
           <View style={styles.kpiTrendRow}>
-            <View style={[styles.trendDot, { backgroundColor: '#16A34A' }]} />
-            <Text style={styles.trendGreenText}>+ {creditCount > 0 ? `${creditCount * 9}%` : '0%'} vs last month</Text>
+            <View style={[styles.trendDot, { backgroundColor: (summary.credit_growth_pct ?? 0) >= 0 ? '#16A34A' : '#DC2626' }]} />
+            <Text style={styles.trendGreenText}>
+              {summary.credit_growth_pct !== undefined
+                ? `${summary.credit_growth_pct >= 0 ? '+' : ''}${summary.credit_growth_pct}% vs last month`
+                : (creditCount > 0 ? `${creditCount} entries` : '0% vs last month')}
+            </Text>
           </View>
         </View>
 
@@ -375,7 +384,11 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
           </Text>
           <View style={styles.kpiTrendRow}>
             <View style={[styles.trendDot, { backgroundColor: '#DC2626' }]} />
-            <Text style={styles.trendRedText}>+ {expenseCount > 0 ? `${expenseCount * 6}%` : '0%'} vs last month</Text>
+            <Text style={styles.trendRedText}>
+              {summary.debit_growth_pct !== undefined
+                ? `${summary.debit_growth_pct >= 0 ? '+' : ''}${summary.debit_growth_pct}% vs last month`
+                : (expenseCount > 0 ? `${expenseCount} entries` : '0% vs last month')}
+            </Text>
           </View>
         </View>
 

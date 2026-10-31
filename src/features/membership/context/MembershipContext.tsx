@@ -94,6 +94,15 @@ const getSessionStorage = () => {
   return win?.localStorage || win?.sessionStorage;
 };
 
+const safeRemoveStorageItem = (key: string) => {
+  try {
+    const storage = getSessionStorage();
+    if (storage) {
+      storage.removeItem(key);
+    }
+  } catch {}
+};
+
 const safeSetStorageItem = (key: string, value: string) => {
   try {
     const storage = getSessionStorage();
@@ -203,53 +212,8 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
   const authRoles = (authUser?.roles ?? []).map(r => (r.name || '').toUpperCase());
   const isPlainUser = authRoles.includes('USER') || (!authRoles.includes('MEMBER') && !authRoles.includes('ADMIN'));
 
-  const [applications, setApplications] = useState<MembershipApplicationRecord[]>(() => {
-    const storage = getSessionStorage();
-    if (storage) {
-      const saved = storage.getItem('hrsjm_user_membership_record');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed && (parsed.applicationId || parsed.id)) {
-            parsed.status = 'Rejected';
-            parsed.rejectionReason =
-              parsed.rejectionReason ||
-              'Application returned for re-submission. Please re-apply to complete registration and payment verification.';
-            parsed.timeline = buildDefaultTimeline('Rejected', parsed.submittedAt || 'Recently');
-            safeSetStorageItem('hrsjm_user_membership_record', JSON.stringify(sanitizeForStorage(parsed)));
-            return [parsed];
-          }
-        } catch {}
-      }
-    }
-    if (isPlainUser && !hasAppliedLocally) {
-      return [];
-    }
-    return [INITIAL_APPLICATION_RECORD];
-  });
-  const [activeApplication, setActiveApplication] = useState<MembershipApplicationRecord | null>(() => {
-    const storage = getSessionStorage();
-    if (storage) {
-      const saved = storage.getItem('hrsjm_user_membership_record');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed && (parsed.applicationId || parsed.id)) {
-            parsed.status = 'Rejected';
-            parsed.rejectionReason =
-              parsed.rejectionReason ||
-              'Application returned for re-submission. Please re-apply to complete registration and payment verification.';
-            parsed.timeline = buildDefaultTimeline('Rejected', parsed.submittedAt || 'Recently');
-            return parsed;
-          }
-        } catch {}
-      }
-    }
-    if (isPlainUser && !hasAppliedLocally) {
-      return null;
-    }
-    return INITIAL_APPLICATION_RECORD;
-  });
+  const [applications, setApplications] = useState<MembershipApplicationRecord[]>([]);
+  const [activeApplication, setActiveApplication] = useState<MembershipApplicationRecord | null>(null);
 
   const refreshApplications = async () => {
     try {
@@ -335,12 +299,13 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       const userEmail = (authUser?.email || '').toLowerCase().trim();
       const userPhone = (authUser?.mobile_number || '').replace(/\D/g, '').slice(-10);
 
-      const matchedStoreApp = localApps.find(
-        a =>
-          (activeApplication && (a.id === activeApplication.id || a.applicationId === activeApplication.applicationId)) ||
-          (userEmail && a.email && a.email.toLowerCase().trim() === userEmail) ||
-          (userPhone && a.phone && a.phone.replace(/\D/g, '').includes(userPhone))
-      );
+      const matchedStoreApp = (userEmail || userPhone)
+        ? localApps.find(
+            a =>
+              (userEmail && a.email && a.email.toLowerCase().trim() === userEmail) ||
+              (userPhone && a.phone && a.phone.replace(/\\D/g, '').includes(userPhone))
+          )
+        : null;
 
       if (matchedStoreApp) {
         let appStatus: MembershipStatus = 'Applied';
@@ -385,6 +350,14 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
             });
             useProfileStore.getState().fetchProfile();
           }
+        }
+      } else {
+        if (isPlainUser) {
+          setApplications([]);
+          setActiveApplication(null);
+          setHasAppliedLocally(false);
+          safeRemoveStorageItem('hrsjm_has_applied');
+          safeRemoveStorageItem('hrsjm_user_membership_record');
         }
       }
     } catch {

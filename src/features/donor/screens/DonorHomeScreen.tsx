@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../core/components/common/AppHeader';
 import { AppCard } from '../../../core/components/common/AppCard';
@@ -14,6 +15,7 @@ import { causesService } from '../../member/services/causes.service';
 const PRESET_AMOUNTS = [500, 1000, 2500, 5000];
 
 export const DonorHomeScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   const user = useAuthStore(state => state.user);
   const signOut = useAuthStore(state => state.signOut);
   const [selectedAmount, setSelectedAmount] = useState<number>(1000);

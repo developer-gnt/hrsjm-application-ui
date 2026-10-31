@@ -169,6 +169,7 @@ export const ContactUsScreen: React.FC<ContactUsScreenProps> = ({
           style={styles.flex}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           <ContactHero />
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: Spacing.xl,
+    paddingBottom: 80,
   },
   actionsSection: {
     marginTop: -Spacing.md,

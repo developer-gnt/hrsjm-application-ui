@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,6 +30,7 @@ import {
 } from '../utils/filePicker';
 import { GlobalPaymentModal, PaymentPayload, PaymentReceiptDetails } from '../../payments';
 import { useAuthStore } from '../../auth/store/authStore';
+import { useKeyboardSpacing } from '../../../core/hooks';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -67,6 +70,12 @@ export function MembershipStep3Screen() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [agreePledge, setAgreePledge] = useState(false);
+
+  const { keyboardPadding, handleInputFocus, dismissKeyboard } = useKeyboardSpacing({
+    basePadding: 96,
+    extraPadding: 60,
+    minKeyboardHeight: 340,
+  });
 
   const postFeeAmount = selectedPost?.feeAmount || 800;
   const postTitle = selectedPost?.postName || selectedMembershipType || 'District Active Member';
@@ -381,14 +390,21 @@ export function MembershipStep3Screen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Top Header */}
-      <MembershipTopBar showBack onBackPress={() => navigation.goBack()} />
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      {/* Top Header matching Admin Dashboard */}
+      <MembershipTopBar />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardPadding }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          bounces={true}>
         {/* Main Title */}
         <View style={styles.titleSection}>
           <Text style={styles.screenTitle}>Apply for Membership</Text>
@@ -629,6 +645,7 @@ export function MembershipStep3Screen() {
           </Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Interactive Document Picker Bottom Sheet */}
       <AppBottomSheet
@@ -800,6 +817,9 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,

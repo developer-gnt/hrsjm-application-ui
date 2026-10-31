@@ -1,5 +1,15 @@
-import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  type ScrollViewInstance,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import { AppButton } from '../../../../core/components/common/AppButton';
@@ -14,6 +24,8 @@ import { AccountPickerModal } from '../../accounting/components/AccountPickerMod
 import { PaymentMethodSelector } from '../../accounting/components/PaymentMethodSelector';
 import type { AccountItem, PaymentMethod } from '../../accounting/types/accounting.types';
 import { useCreateReceipt } from '../hooks/useReceipts';
+import { useAccounts } from '../../accounting/hooks/useAccounts';
+import { AlertCircle } from '../../../../core/components/icons';
 import { createReceiptSchema, zodFieldErrors } from '../types/receipts.schemas';
 import type { MoreStackParamList } from '../../../../app/navigation/NavigationTypes';
 
@@ -32,11 +44,16 @@ export const CreateReceiptVoucherScreen: React.FC<
   CreateReceiptVoucherScreenProps
 > = ({ navigation }) => {
   const createMutation = useCreateReceipt();
+  const scrollViewRef = useRef<ScrollViewInstance | null>(null);
+
+  // Fetch available accounts to supply sensible defaults
+  const { accounts: incomeAccounts } = useAccounts('INCOME');
+  const { accounts: assetAccounts } = useAccounts('ASSET');
 
   const [receiptDate, setReceiptDate] = useState(todayIso());
   const [receivedFrom, setReceivedFrom] = useState('');
   const [amount, setAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>('CASH');
   const [description, setDescription] = useState('');
 
   const [incomeAccount, setIncomeAccount] = useState<AccountItem | null>(null);
@@ -45,6 +62,77 @@ export const CreateReceiptVoucherScreen: React.FC<
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Auto-select default Income Account (e.g. Donation Income or first active)
+  useEffect(() => {
+    if (!incomeAccount && incomeAccounts.length > 0) {
+      const defaultIncome =
+        incomeAccounts.find(a => /donation/i.test(a.account_name) && a.is_active) ||
+        incomeAccounts.find(a => a.is_active) ||
+        incomeAccounts[0];
+      if (defaultIncome) {
+        setIncomeAccount(defaultIncome);
+      }
+    }
+  }, [incomeAccounts, incomeAccount]);
+
+  // Auto-select / sync Received In (Asset) Account based on payment method
+  useEffect(() => {
+    if (!receivedInAccount && assetAccounts.length > 0) {
+      if (paymentMethod === 'CASH') {
+        const cashAcc =
+          assetAccounts.find(
+            a => /cash/i.test(a.account_name) || a.account_code === '1002',
+          ) || assetAccounts[0];
+        if (cashAcc) setReceivedInAccount(cashAcc);
+      } else {
+        const bankAcc =
+          assetAccounts.find(
+            a => /bank/i.test(a.account_name) || a.account_code === '1001',
+          ) || assetAccounts[0];
+        if (bankAcc) setReceivedInAccount(bankAcc);
+      }
+    }
+  }, [assetAccounts, receivedInAccount, paymentMethod]);
+
+  const handlePaymentMethodChange = (method: PaymentMethod) => {
+    setPaymentMethod(method);
+    if (fieldErrors.payment_method) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next.payment_method;
+        return next;
+      });
+    }
+    // Switch asset account to match payment method
+    if (assetAccounts.length > 0) {
+      if (method === 'CASH') {
+        const cashAcc = assetAccounts.find(
+          a => /cash/i.test(a.account_name) || a.account_code === '1002',
+        );
+        if (cashAcc) {
+          setReceivedInAccount(cashAcc);
+          setFieldErrors(prev => {
+            const next = { ...prev };
+            delete next.received_in_account_id;
+            return next;
+          });
+        }
+      } else {
+        const bankAcc = assetAccounts.find(
+          a => /bank/i.test(a.account_name) || a.account_code === '1001',
+        );
+        if (bankAcc) {
+          setReceivedInAccount(bankAcc);
+          setFieldErrors(prev => {
+            const next = { ...prev };
+            delete next.received_in_account_id;
+            return next;
+          });
+        }
+      }
+    }
+  };
 
   const handleCreate = () => {
     const parsed = createReceiptSchema.safeParse({
@@ -57,7 +145,24 @@ export const CreateReceiptVoucherScreen: React.FC<
       description,
     });
     if (!parsed.success) {
-      setFieldErrors(zodFieldErrors(parsed.error));
+      const errors = zodFieldErrors(parsed.error);
+      setFieldErrors(errors);
+
+      const missing: string[] = [];
+      if (errors.income_account_id) missing.push('Income Account');
+      if (errors.received_in_account_id) missing.push('Received In Account');
+      if (errors.amount) missing.push('Valid Amount');
+      if (errors.received_from) missing.push('Received From');
+      if (errors.receipt_date) missing.push('Receipt Date');
+      if (errors.payment_method) missing.push('Payment Method');
+      const summary =
+        missing.length > 0
+          ? `Please complete required fields: ${missing.join(', ')}`
+          : (Object.values(errors)[0] || 'Please complete all required fields.');
+
+      setFormError(summary);
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      Alert.alert('Required Information Missing', summary);
       return;
     }
     setFieldErrors({});
@@ -77,11 +182,13 @@ export const CreateReceiptVoucherScreen: React.FC<
         onSuccess: voucher =>
           navigation.replace(AppRoutes.RECEIPT_DETAILS, { voucherId: voucher.id }),
         onError: (error: unknown) => {
-          setFormError(
+          const msg =
             error instanceof ApiError && error.message
               ? error.message
-              : 'Unable to record receipt. Please try again.',
-          );
+              : 'Unable to record receipt. Please try again.';
+          setFormError(msg);
+          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+          Alert.alert('Error Recording Receipt', msg);
         },
       },
     );
@@ -99,9 +206,11 @@ export const CreateReceiptVoucherScreen: React.FC<
         onNavigate={target => navigation.navigate(target as any)}
       />
       <ScrollView
+        ref={scrollViewRef}
         style={styles.flex}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         bounces={false}
       >
         <Text style={styles.journalHint}>Dr Bank/Cash Account · Cr Income Account</Text>
@@ -159,7 +268,16 @@ export const CreateReceiptVoucherScreen: React.FC<
           required
           placeholder="0.00"
           value={amount}
-          onChangeText={setAmount}
+          onChangeText={val => {
+            setAmount(val);
+            if (fieldErrors.amount) {
+              setFieldErrors(prev => {
+                const next = { ...prev };
+                delete next.amount;
+                return next;
+              });
+            }
+          }}
           keyboardType="decimal-pad"
           editable={!createMutation.isPending}
           error={fieldErrors.amount}
@@ -170,7 +288,16 @@ export const CreateReceiptVoucherScreen: React.FC<
           required
           title="Select Receipt Date"
           value={receiptDate}
-          onChange={setReceiptDate}
+          onChange={val => {
+            setReceiptDate(val);
+            if (fieldErrors.receipt_date) {
+              setFieldErrors(prev => {
+                const next = { ...prev };
+                delete next.receipt_date;
+                return next;
+              });
+            }
+          }}
           disabled={createMutation.isPending}
           error={fieldErrors.receipt_date}
         />
@@ -180,14 +307,23 @@ export const CreateReceiptVoucherScreen: React.FC<
           required
           placeholder="Payer name"
           value={receivedFrom}
-          onChangeText={setReceivedFrom}
+          onChangeText={val => {
+            setReceivedFrom(val);
+            if (fieldErrors.received_from) {
+              setFieldErrors(prev => {
+                const next = { ...prev };
+                delete next.received_from;
+                return next;
+              });
+            }
+          }}
           editable={!createMutation.isPending}
           error={fieldErrors.received_from}
         />
 
         <PaymentMethodSelector
           value={paymentMethod}
-          onChange={setPaymentMethod}
+          onChange={handlePaymentMethodChange}
         />
 
         <AppInput
@@ -199,6 +335,13 @@ export const CreateReceiptVoucherScreen: React.FC<
           editable={!createMutation.isPending}
           error={fieldErrors.description}
         />
+
+        {formError ? (
+          <View style={styles.submitErrorCard}>
+            <AlertCircle size={16} color={AdminColors.error} />
+            <Text style={styles.submitErrorText}>{formError}</Text>
+          </View>
+        ) : null}
 
         <AppButton
           title="Record Receipt"
@@ -216,7 +359,15 @@ export const CreateReceiptVoucherScreen: React.FC<
         title="Select Income Account"
         accountType="INCOME"
         selectedId={incomeAccount?.id}
-        onSelect={setIncomeAccount}
+        onSelect={acc => {
+          setIncomeAccount(acc);
+          setPickerTarget(null);
+          setFieldErrors(prev => {
+            const next = { ...prev };
+            delete next.income_account_id;
+            return next;
+          });
+        }}
         onClose={() => setPickerTarget(null)}
       />
       <AccountPickerModal
@@ -224,7 +375,15 @@ export const CreateReceiptVoucherScreen: React.FC<
         title="Select Bank/Cash Account"
         accountType="ASSET"
         selectedId={receivedInAccount?.id}
-        onSelect={setReceivedInAccount}
+        onSelect={acc => {
+          setReceivedInAccount(acc);
+          setPickerTarget(null);
+          setFieldErrors(prev => {
+            const next = { ...prev };
+            delete next.received_in_account_id;
+            return next;
+          });
+        }}
         onClose={() => setPickerTarget(null)}
       />
     </KeyboardAvoidingView>
@@ -238,7 +397,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.base,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 60,
   },
   journalHint: {
     ...Typography.caption,
@@ -284,6 +443,22 @@ const styles = StyleSheet.create({
     ...Typography.secondary,
     color: AdminColors.error,
     marginTop: 4,
+  },
+  submitErrorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: AdminColors.errorLight,
+    borderWidth: 1,
+    borderColor: AdminColors.error,
+    borderRadius: BorderRadius.base,
+    padding: Spacing.md,
+    marginTop: Spacing.md,
+    gap: Spacing.sm,
+  },
+  submitErrorText: {
+    ...Typography.secondaryMedium,
+    color: AdminColors.error,
+    flex: 1,
   },
   submit: {
     marginTop: Spacing.lg,

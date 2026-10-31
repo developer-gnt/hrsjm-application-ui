@@ -116,6 +116,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
           password: effectivePassword,
           confirm_password: effectivePassword,
           role_name: 'USER',
+          dob: formData.dob ? formData.dob.trim() : undefined,
         });
 
         usersStore.registerUserFromRegistration({
@@ -195,6 +196,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         password: effectivePassword,
         confirm_password: effectivePassword,
         role_name: 'DONATION_SEEKER',
+        dob: state.dob ? state.dob.trim() : undefined,
       });
     } catch (apiError: any) {
       console.warn('Backend registration error or server unreachable; continuing application:', apiError?.message || apiError);

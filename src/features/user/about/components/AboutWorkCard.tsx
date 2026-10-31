@@ -1,5 +1,11 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {
   AdminColors,
   BorderRadius,
@@ -41,15 +47,26 @@ export const AboutWorkCard: React.FC<AboutWorkCardProps> = ({
           <Text style={styles.title} numberOfLines={1}>
             {cleanTitle}
           </Text>
+          {area.badge ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{area.badge}</Text>
+            </View>
+          ) : null}
           {area.description ? (
             <Text style={styles.description} numberOfLines={2}>
               {area.description}
             </Text>
           ) : null}
         </View>
-        <View style={styles.arrowButton}>
+        <TouchableOpacity
+          style={styles.arrowButton}
+          onPress={onPress}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={`Open details for ${cleanTitle}`}
+        >
           <AppIcon name="arrow-right" size={13} color={AdminColors.textOnDark} />
-        </View>
+        </TouchableOpacity>
       </Pressable>
     );
   }
@@ -69,14 +86,25 @@ export const AboutWorkCard: React.FC<AboutWorkCardProps> = ({
         <View style={styles.iconCircle}>
           <AppIcon name={area.icon} size={22} color={AdminColors.primaryDark} />
         </View>
-        <View style={styles.arrowButton}>
+        <TouchableOpacity
+          style={styles.arrowButton}
+          onPress={onPress}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={`Open details for ${cleanTitle}`}
+        >
           <AppIcon name="arrow-right" size={13} color={AdminColors.textOnDark} />
-        </View>
+        </TouchableOpacity>
       </View>
       <View style={styles.copy}>
         <Text style={styles.title} numberOfLines={2}>
           {cleanTitle}
         </Text>
+        {area.badge ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{area.badge}</Text>
+          </View>
+        ) : null}
         {area.description ? (
           <Text style={styles.description} numberOfLines={2}>
             {area.description}
@@ -146,6 +174,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: AdminColors.primaryDark,
   },
+  badge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+    marginTop: 4,
+    marginBottom: 2,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+  },
+  badgeText: {
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: '700',
+    color: '#92400E',
+  },
   description: {
     marginTop: 4,
     fontSize: 12,
@@ -153,9 +198,9 @@ const styles = StyleSheet.create({
     color: AdminColors.textSecondary,
   },
   arrowButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: AdminColors.primaryDark,
     alignItems: 'center',
     justifyContent: 'center',

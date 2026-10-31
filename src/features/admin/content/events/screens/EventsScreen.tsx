@@ -334,6 +334,13 @@ if (creatingEvent) {
           setEditingEvent(null);
           refetch();
         }}
+        onSaved={updated => {
+          setEditingEvent(null);
+          if (updated) {
+            setInternalSelectedEvent(updated);
+          }
+          refetch();
+        }}
       />
     );
   }
@@ -352,6 +359,10 @@ onBack={() => {
         }}
         onDelete={() => {
           setInternalSelectedEvent(null);
+          refetch();
+        }}
+        onEventUpdated={updated => {
+          setInternalSelectedEvent(updated);
           refetch();
         }}
         canManage={allowCreate}

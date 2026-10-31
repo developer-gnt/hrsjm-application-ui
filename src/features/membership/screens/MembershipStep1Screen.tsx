@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -27,6 +27,9 @@ import { useAuthStore } from '../../auth/store/authStore';
 import { authService } from '../../auth/services/auth.service';
 import { useProfileStore } from '../../admin/profile/profileStore';
 import type { MembershipPostData } from '../data/membershipCategoriesData';
+import { useKeyboardSpacing } from '../../../core/hooks';
+import { IneligibleAgeScreen } from '../../auth/screens/IneligibleAgeScreen';
+import { validateAgeEligibility } from '../../../core/utils/age';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -98,6 +101,12 @@ export function MembershipStep1Screen() {
   const [checkingMobile, setCheckingMobile] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+
+  const { keyboardPadding, handleInputFocus, dismissKeyboard } = useKeyboardSpacing({
+    basePadding: 96,
+    extraPadding: 60,
+    minKeyboardHeight: 340,
+  });
   const [verifiedMobile, setVerifiedMobile] = useState<string | null>(null);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
 
@@ -189,6 +198,8 @@ export function MembershipStep1Screen() {
     return () => clearTimeout(timer);
   }, [personalInfo.email, checkEmailDuplicate]);
 
+  const [showIneligible, setShowIneligible] = useState(false);
+  const [ineligibleAge, setIneligibleAge] = useState<number | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -216,9 +227,14 @@ export function MembershipStep1Screen() {
       newErrors.fullName = 'Full name must be at least 3 characters';
     }
 
-    // 2. Date of Birth validation
-    if (!personalInfo.dateOfBirth || personalInfo.dateOfBirth.trim().length === 0) {
-      newErrors.dateOfBirth = 'Date of birth is required';
+    // 2. Date of Birth validation & 18+ eligibility
+    const ageResult = validateAgeEligibility(personalInfo.dateOfBirth);
+    if (!ageResult.isValid) {
+      newErrors.dateOfBirth = ageResult.error || 'Date of birth is required';
+    } else if (!ageResult.isEligible) {
+      setIneligibleAge(ageResult.age);
+      setShowIneligible(true);
+      return false;
     }
 
     // 3. Gender validation
@@ -308,32 +324,32 @@ export function MembershipStep1Screen() {
     navigation.navigate('MembershipStep2Address');
   };
 
-  return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Top Header */}
-      <MembershipTopBar
-        showBack
-        onBackPress={() => {
-          if (navigation.canGoBack()) {
-            navigation.goBack();
-          } else {
-            try {
-              (navigation as any).navigate('MembershipCategories');
-            } catch {
-              (navigation as any).navigate('UserHome');
-            }
-          }
-        }}
+  if (showIneligible) {
+    return (
+      <IneligibleAgeScreen
+        onBackToRegistration={() => setShowIneligible(false)}
+        calculatedAge={ineligibleAge}
       />
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      {/* Top Header matching Admin Dashboard */}
+      <MembershipTopBar />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         style={styles.keyboardAvoid}>
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardPadding }]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          bounces={true}>
+
           {/* Main Title */}
           <View style={styles.titleSection}>
             <Text style={styles.screenTitle}>Apply for Membership</Text>
@@ -731,7 +747,15 @@ export function MembershipStep1Screen() {
         selectedDate={personalInfo.dateOfBirth}
         onSelectDate={d => {
           updatePersonalInfo({ dateOfBirth: d });
-          if (errors.dateOfBirth) setErrors(prev => ({ ...prev, dateOfBirth: undefined }));
+          const check = validateAgeEligibility(d);
+          if (!check.isValid) {
+            setErrors(prev => ({ ...prev, dateOfBirth: check.error || undefined }));
+          } else if (!check.isEligible) {
+            setIneligibleAge(check.age);
+            setShowIneligible(true);
+          } else {
+            if (errors.dateOfBirth) setErrors(prev => ({ ...prev, dateOfBirth: undefined }));
+          }
         }}
       />
 

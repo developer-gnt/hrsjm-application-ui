@@ -95,6 +95,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
         style={styles.flex}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         bounces={false}
         showsVerticalScrollIndicator={false}
       >
@@ -139,60 +140,44 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
                 </View>
               </View>
 
-              <Text style={styles.resultTitle}>Reset Request Generated</Text>
+              <Text style={styles.resultTitle}>Check Your Email</Text>
               <Text style={styles.resultSub}>
-                Your request has been verified in the database. If this account exists,
-                instructions and a 30-minute secure token have been issued.
+                If an account is associated with this email address, we have sent a secure
+                password reset link to your inbox.
               </Text>
 
-              {result.reset_token ? (
-                <View style={styles.devTokenCard}>
-                  <View style={styles.devTokenHeader}>
-                    <Icon name="shield-check" size={16} color="#D97706" />
-                    <Text style={styles.devTokenLabel}>SECURE RESET TOKEN</Text>
-                  </View>
-                  <Text style={styles.devTokenValue} selectable numberOfLines={2}>
-                    {result.reset_token}
-                  </Text>
-                  <Text style={styles.devTokenNote}>
-                    Token generated and verified against PostgreSQL database. Valid for 30 minutes.
-                  </Text>
+              <View style={styles.infoAlertCard}>
+                <View style={styles.infoAlertHeader}>
+                  <Icon name="clock" size={16} color="#D97706" />
+                  <Text style={styles.infoAlertLabel}>LINK EXPIRES IN 15 MINUTES</Text>
                 </View>
-              ) : null}
-
-              {result.reset_token ? (
-                <TouchableOpacity
-                  style={styles.primaryGoldButton}
-                  onPress={continueToReset}
-                  activeOpacity={0.88}
-                  accessibilityRole="button"
-                  accessibilityLabel="Continue to Reset Password"
-                >
-                  <View style={styles.buttonContent}>
-                    <Text style={styles.primaryButtonText}>Continue to Reset Password</Text>
-                    <View style={styles.arrowIconWrap}>
-                      <ArrowRightIcon size={18} color="#011F39" />
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ) : null}
+                <Text style={styles.infoAlertText}>
+                  Please click the link in your email to open the dedicated Reset Password webpage.
+                  Check your spam/junk folder if you don't see it within a couple of minutes.
+                </Text>
+              </View>
 
               <TouchableOpacity
-                style={styles.secondaryButton}
+                style={styles.primaryGoldButton}
                 onPress={goBackToLogin}
-                activeOpacity={0.8}
+                activeOpacity={0.88}
                 accessibilityRole="button"
-                accessibilityLabel="Back to Login"
+                accessibilityLabel="Back to Sign In"
               >
-                <Text style={styles.secondaryButtonText}>Back to Sign In</Text>
+                <View style={styles.buttonContent}>
+                  <Text style={styles.primaryButtonText}>Back to Sign In</Text>
+                  <View style={styles.arrowIconWrap}>
+                    <ArrowRightIcon size={18} color="#011F39" />
+                  </View>
+                </View>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.formContainer}>
               <Text style={styles.title}>Forgot Password?</Text>
               <Text style={styles.subtitle}>
-                Enter your registered mobile number or email address below. We'll send you
-                a link to reset your password.
+                Enter your registered email address below. We'll send you
+                a secure link to reset your password.
               </Text>
 
               {formError && (
@@ -203,7 +188,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
 
               {/* Input Field */}
               <View style={styles.fieldWrapper}>
-                <Text style={styles.fieldLabel}>Mobile number or email</Text>
+                <Text style={styles.fieldLabel}>Registered Email Address</Text>
                 <View
                   style={[
                     styles.inputContainer,
@@ -219,7 +204,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
                       setIdentifier(text);
                       if (fieldError) setFieldError(null);
                     }}
-                    placeholder="e.g. member@hrsjm.org or 9876543210"
+                    placeholder="e.g. member@hrsjm.org"
                     placeholderTextColor="#94A3B8"
                     editable={!submitting}
                     autoCapitalize="none"
@@ -282,6 +267,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 40,
     backgroundColor: '#011F39',
   },
   headerBand: {
@@ -462,6 +448,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: AdminColors.error,
     fontFamily: FontFamilies.sans,
+  },
+  infoAlertCard: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: BorderRadius.lg,
+    padding: 14,
+    marginVertical: 16,
+    width: '100%',
+  },
+  infoAlertHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  infoAlertLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#92400E',
+    letterSpacing: 0.5,
+  },
+  infoAlertText: {
+    fontSize: 12.5,
+    color: '#78350F',
+    lineHeight: 18,
   },
   resultContainer: {
     alignItems: 'center',

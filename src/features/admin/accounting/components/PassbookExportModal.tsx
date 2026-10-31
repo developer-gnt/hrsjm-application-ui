@@ -12,14 +12,26 @@ import {
   View,
 } from 'react-native';
 import {
+  ArrowDownLeft,
+  ArrowUpDown,
+  ArrowUpRight,
   Calendar,
   Check,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Download,
+  FileSpreadsheet,
   FileText,
+  SlidersHorizontal,
+  TriangleAlert,
   X,
 } from '../../../../core/components/icons';
+import {
+  exportPassbookStatement,
+  PassbookExportFormat,
+  PassbookTransactionType,
+} from '../services/passbook-export.api';
 
 export type ExportPeriodTab = 'MONTH' | 'YEAR' | 'CUSTOM';
 
@@ -30,10 +42,18 @@ export interface PassbookExportPeriod {
   toDate?: string;
 }
 
+export interface PassbookExportOptions {
+  transactionType: PassbookTransactionType;
+  format: PassbookExportFormat;
+  fromDate?: string;
+  toDate?: string;
+  periodLabel: string;
+}
+
 interface PassbookExportModalProps {
   visible: boolean;
   onClose: () => void;
-  onConfirmExport: (period: PassbookExportPeriod) => Promise<void>;
+  onConfirmExport?: (options: PassbookExportOptions) => Promise<void>;
   isExporting?: boolean;
   initialFromDate?: string;
   initialToDate?: string;
@@ -53,7 +73,7 @@ export const PassbookExportModal: React.FC<PassbookExportModalProps> = ({
   visible,
   onClose,
   onConfirmExport,
-  isExporting = false,
+  isExporting: externalIsExporting = false,
   initialFromDate,
   initialToDate,
 }) => {
@@ -61,6 +81,15 @@ export const PassbookExportModal: React.FC<PassbookExportModalProps> = ({
   const currentYear = now.getFullYear();
   const currentMonthIdx = now.getMonth();
 
+  // Transaction Type State
+  const [transactionType, setTransactionType] =
+    useState<PassbookTransactionType>('ALL');
+
+  // Export Format State
+  const [exportFormat, setExportFormat] =
+    useState<PassbookExportFormat>('PDF');
+
+  // Date Range Tabs State
   const [activeTab, setActiveTab] = useState<ExportPeriodTab>('MONTH');
 
   // Month Tab State
@@ -83,7 +112,16 @@ export const PassbookExportModal: React.FC<PassbookExportModalProps> = ({
   const [customTo, setCustomTo] = useState<string>(defaultTo);
   const [customPreset, setCustomPreset] = useState<string>('THIS_MONTH');
 
-  // Compute selected range based on active tab
+  // Local Loading & Feedback States
+  const [localExporting, setLocalExporting] = useState<boolean>(false);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+
+  const isExporting = externalIsExporting || localExporting;
+
+  // Compute selected date range based on active tab
   const resolvedPeriod: PassbookExportPeriod = useMemo(() => {
     if (activeTab === 'MONTH') {
       const from = new Date(selectedYear, selectedMonth, 1).toISOString().split('T')[0];
@@ -160,6 +198,7 @@ export const PassbookExportModal: React.FC<PassbookExportModalProps> = ({
 
   const handleApplyPreset = (key: string) => {
     setCustomPreset(key);
+    setStatusMessage(null);
     const today = new Date();
 
     if (key === 'ALL_TIME') {
@@ -196,7 +235,66 @@ export const PassbookExportModal: React.FC<PassbookExportModalProps> = ({
 
   const handleExportClick = async () => {
     if (isExporting) return;
-    await onConfirmExport(resolvedPeriod);
+
+    // Validate dates if custom
+    if (resolvedPeriod.fromDate && resolvedPeriod.toDate) {
+      if (resolvedPeriod.fromDate > resolvedPeriod.toDate) {
+        setStatusMessage({
+          type: 'error',
+          text: 'From Date cannot be after To Date. Please select a valid range.',
+        });
+        return;
+      }
+    }
+
+    setStatusMessage(null);
+
+    const exportOptions: PassbookExportOptions = {
+      transactionType,
+      format: exportFormat,
+      fromDate: resolvedPeriod.fromDate,
+      toDate: resolvedPeriod.toDate,
+      periodLabel: resolvedPeriod.label,
+    };
+
+    if (onConfirmExport) {
+      try {
+        await onConfirmExport(exportOptions);
+      } catch (err: any) {
+        setStatusMessage({
+          type: 'error',
+          text: err?.message || 'Export failed. Please try again.',
+        });
+      }
+      return;
+    }
+
+    // Default internal handler
+    try {
+      setLocalExporting(true);
+      const res = await exportPassbookStatement({
+        transactionType,
+        format: exportFormat,
+        fromDate: resolvedPeriod.fromDate,
+        toDate: resolvedPeriod.toDate,
+      });
+
+      setStatusMessage({
+        type: 'success',
+        text: `Successfully exported ${res.filename}`,
+      });
+
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (err: any) {
+      setStatusMessage({
+        type: 'error',
+        text: err?.message || 'Failed to download export from server. Please verify network.',
+      });
+    } finally {
+      setLocalExporting(false);
+    }
   };
 
   const availableYears = [
@@ -206,6 +304,17 @@ export const PassbookExportModal: React.FC<PassbookExportModalProps> = ({
     currentYear - 3,
     currentYear - 4,
   ];
+
+  const getTransactionTypeLabel = (type: PassbookTransactionType) => {
+    switch (type) {
+      case 'ALL':
+        return 'All Transactions (Inflows & Outflows)';
+      case 'PAYMENT_IN':
+        return 'Payment In (Incoming Credits Only)';
+      case 'PAYMENT_OUT':
+        return 'Payment Out (Expenses Only)';
+    }
+  };
 
   return (
     <Modal
@@ -227,7 +336,7 @@ export const PassbookExportModal: React.FC<PassbookExportModalProps> = ({
                   <View>
                     <Text style={styles.modalTitle}>Export Passbook Statement</Text>
                     <Text style={styles.modalSubtitle}>
-                      Choose month, year, or custom dates for statement
+                      Filter by type, dates, and export to PDF, Excel, or CSV
                     </Text>
                   </View>
                 </View>
@@ -241,288 +350,600 @@ export const PassbookExportModal: React.FC<PassbookExportModalProps> = ({
                 </TouchableOpacity>
               </View>
 
-              {/* Segmented Control / Tabs */}
-              <View style={styles.tabBar}>
-                <TouchableOpacity
-                  style={[styles.tabBtn, activeTab === 'MONTH' && styles.tabBtnActive]}
-                  onPress={() => setActiveTab('MONTH')}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.tabBtnText, activeTab === 'MONTH' && styles.tabBtnTextActive]}>
-                    Month
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.tabBtn, activeTab === 'YEAR' && styles.tabBtnActive]}
-                  onPress={() => setActiveTab('YEAR')}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.tabBtnText, activeTab === 'YEAR' && styles.tabBtnTextActive]}>
-                    Year
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.tabBtn, activeTab === 'CUSTOM' && styles.tabBtnActive]}
-                  onPress={() => setActiveTab('CUSTOM')}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.tabBtnText, activeTab === 'CUSTOM' && styles.tabBtnTextActive]}>
-                    Custom Range
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Body Content by Tab */}
               <ScrollView
                 style={styles.modalBody}
                 showsVerticalScrollIndicator={false}
               >
-                {/* 1. MONTH TAB */}
-                {activeTab === 'MONTH' && (
-                  <View style={styles.tabContent}>
-                    {/* Year Navigator */}
-                    <View style={styles.yearNavigator}>
-                      <TouchableOpacity
-                        onPress={() => setSelectedYear(y => y - 1)}
-                        style={styles.navArrowBtn}
-                        activeOpacity={0.7}
-                      >
-                        <ChevronLeft size={18} color="#0F2860" />
-                      </TouchableOpacity>
-                      <View style={styles.yearDisplayBadge}>
-                        <Calendar size={14} color="#0F2860" />
-                        <Text style={styles.yearDisplayText}>{selectedYear}</Text>
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => setSelectedYear(y => y + 1)}
-                        style={styles.navArrowBtn}
-                        activeOpacity={0.7}
-                      >
-                        <ChevronRight size={18} color="#0F2860" />
-                      </TouchableOpacity>
-                    </View>
-
-                    {/* 12 Months Grid */}
-                    <Text style={styles.sectionLabel}>Select Month to Export</Text>
-                    <View style={styles.monthsGrid}>
-                      {MONTH_SHORT.map((mName, idx) => {
-                        const isSelected =
-                          selectedMonth === idx && selectedYear === selectedYear;
-                        const isCurrentMonth =
-                          idx === currentMonthIdx && selectedYear === currentYear;
-
-                        return (
-                          <TouchableOpacity
-                            key={mName}
-                            style={[
-                              styles.monthChip,
-                              isCurrentMonth && styles.monthChipCurrent,
-                              isSelected && styles.monthChipSelected,
-                            ]}
-                            onPress={() => setSelectedMonth(idx)}
-                            activeOpacity={0.75}
-                          >
-                            <Text
-                              style={[
-                                styles.monthChipText,
-                                isCurrentMonth && styles.monthChipTextCurrent,
-                                isSelected && styles.monthChipTextSelected,
-                              ]}
-                            >
-                              {mName}
-                            </Text>
-                            {isSelected && (
-                              <View style={styles.selectedDot} />
-                            )}
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
+                {/* 1. TRANSACTION TYPE SELECTOR */}
+                <View style={styles.sectionBlock}>
+                  <View style={styles.sectionHeaderRow}>
+                    <SlidersHorizontal size={14} color="#0F2860" />
+                    <Text style={styles.sectionLabel}>Transaction Type</Text>
                   </View>
-                )}
 
-                {/* 2. YEAR TAB */}
-                {activeTab === 'YEAR' && (
-                  <View style={styles.tabContent}>
-                    <Text style={styles.sectionLabel}>Year Format</Text>
-                    <View style={styles.yearTypeRow}>
-                      <TouchableOpacity
-                        style={[
-                          styles.yearTypeBtn,
-                          yearType === 'CALENDAR' && styles.yearTypeBtnActive,
-                        ]}
-                        onPress={() => setYearType('CALENDAR')}
-                        activeOpacity={0.7}
-                      >
-                        <Text
+                  <View style={styles.txTypeRow}>
+                    {/* ALL */}
+                    <TouchableOpacity
+                      style={[
+                        styles.txTypeCard,
+                        transactionType === 'ALL' && styles.txTypeCardActive,
+                      ]}
+                      onPress={() => {
+                        setTransactionType('ALL');
+                        setStatusMessage(null);
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <View style={styles.txTypeIconRow}>
+                        <View
                           style={[
-                            styles.yearTypeBtnText,
-                            yearType === 'CALENDAR' && styles.yearTypeBtnTextActive,
+                            styles.typeBadge,
+                            { backgroundColor: transactionType === 'ALL' ? '#EEF4FF' : '#F1F5F9' },
                           ]}
                         >
-                          Calendar Year (Jan – Dec)
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
+                          <ArrowUpDown
+                            size={13}
+                            color={transactionType === 'ALL' ? '#0F2860' : '#64748B'}
+                          />
+                        </View>
+                        {transactionType === 'ALL' && (
+                          <View style={styles.miniCheckWrap}>
+                            <Check size={11} color="#FFFFFF" />
+                          </View>
+                        )}
+                      </View>
+                      <Text
                         style={[
-                          styles.yearTypeBtn,
-                          yearType === 'FINANCIAL' && styles.yearTypeBtnActive,
+                          styles.txTypeTitle,
+                          transactionType === 'ALL' && styles.txTypeTitleActive,
                         ]}
-                        onPress={() => setYearType('FINANCIAL')}
-                        activeOpacity={0.7}
                       >
-                        <Text
+                        All Transactions
+                      </Text>
+                      <Text style={styles.txTypeDesc}>Inflows & Outflows</Text>
+                    </TouchableOpacity>
+
+                    {/* PAYMENT IN */}
+                    <TouchableOpacity
+                      style={[
+                        styles.txTypeCard,
+                        transactionType === 'PAYMENT_IN' && styles.txTypeCardActiveGreen,
+                      ]}
+                      onPress={() => {
+                        setTransactionType('PAYMENT_IN');
+                        setStatusMessage(null);
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <View style={styles.txTypeIconRow}>
+                        <View
                           style={[
-                            styles.yearTypeBtnText,
-                            yearType === 'FINANCIAL' && styles.yearTypeBtnTextActive,
+                            styles.typeBadge,
+                            {
+                              backgroundColor:
+                                transactionType === 'PAYMENT_IN' ? '#DCFCE7' : '#F1F5F9',
+                            },
                           ]}
                         >
-                          Financial Year (Apr – Mar)
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+                          <ArrowDownLeft
+                            size={13}
+                            color={transactionType === 'PAYMENT_IN' ? '#15803D' : '#64748B'}
+                          />
+                        </View>
+                        {transactionType === 'PAYMENT_IN' && (
+                          <View style={[styles.miniCheckWrap, { backgroundColor: '#15803D' }]}>
+                            <Check size={11} color="#FFFFFF" />
+                          </View>
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          styles.txTypeTitle,
+                          transactionType === 'PAYMENT_IN' && styles.txTypeTitleActiveGreen,
+                        ]}
+                      >
+                        Payment In
+                      </Text>
+                      <Text style={styles.txTypeDesc}>Credits Only</Text>
+                    </TouchableOpacity>
 
-                    <Text style={[styles.sectionLabel, { marginTop: 16 }]}>
-                      Select Year
-                    </Text>
-                    <View style={styles.yearsGrid}>
-                      {availableYears.map(yr => {
-                        const isSelected = selectedFullYear === yr;
-                        const labelText =
-                          yearType === 'CALENDAR'
-                            ? `${yr}`
-                            : `FY ${yr}-${(yr + 1).toString().slice(-2)}`;
-
-                        return (
-                          <TouchableOpacity
-                            key={yr}
-                            style={[
-                              styles.yearCard,
-                              isSelected && styles.yearCardSelected,
-                            ]}
-                            onPress={() => setSelectedFullYear(yr)}
-                            activeOpacity={0.75}
-                          >
-                            <Text
-                              style={[
-                                styles.yearCardText,
-                                isSelected && styles.yearCardTextSelected,
-                              ]}
-                            >
-                              {labelText}
-                            </Text>
-                            {isSelected && (
-                              <View style={styles.checkIconWrap}>
-                                <Check size={14} color="#FFFFFF" />
-                              </View>
-                            )}
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
+                    {/* PAYMENT OUT */}
+                    <TouchableOpacity
+                      style={[
+                        styles.txTypeCard,
+                        transactionType === 'PAYMENT_OUT' && styles.txTypeCardActiveRed,
+                      ]}
+                      onPress={() => {
+                        setTransactionType('PAYMENT_OUT');
+                        setStatusMessage(null);
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <View style={styles.txTypeIconRow}>
+                        <View
+                          style={[
+                            styles.typeBadge,
+                            {
+                              backgroundColor:
+                                transactionType === 'PAYMENT_OUT' ? '#FEE2E2' : '#F1F5F9',
+                            },
+                          ]}
+                        >
+                          <ArrowUpRight
+                            size={13}
+                            color={transactionType === 'PAYMENT_OUT' ? '#B91C1C' : '#64748B'}
+                          />
+                        </View>
+                        {transactionType === 'PAYMENT_OUT' && (
+                          <View style={[styles.miniCheckWrap, { backgroundColor: '#B91C1C' }]}>
+                            <Check size={11} color="#FFFFFF" />
+                          </View>
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          styles.txTypeTitle,
+                          transactionType === 'PAYMENT_OUT' && styles.txTypeTitleActiveRed,
+                        ]}
+                      >
+                        Payment Out
+                      </Text>
+                      <Text style={styles.txTypeDesc}>Expenses Only</Text>
+                    </TouchableOpacity>
                   </View>
-                )}
+                </View>
 
-                {/* 3. CUSTOM RANGE TAB */}
-                {activeTab === 'CUSTOM' && (
-                  <View style={styles.tabContent}>
-                    <Text style={styles.sectionLabel}>Quick Date Shortcuts</Text>
-                    <View style={styles.presetsWrap}>
-                      {[
-                        { key: 'THIS_MONTH', label: 'This Month' },
-                        { key: 'LAST_MONTH', label: 'Last Month' },
-                        { key: 'LAST_30', label: 'Last 30 Days' },
-                        { key: 'LAST_90', label: 'Last 90 Days' },
-                        { key: 'THIS_QUARTER', label: 'Current Quarter' },
-                        { key: 'ALL_TIME', label: 'All Records' },
-                      ].map(item => {
-                        const isSelected = customPreset === item.key;
-                        return (
-                          <TouchableOpacity
-                            key={item.key}
-                            style={[
-                              styles.presetChip,
-                              isSelected && styles.presetChipActive,
-                            ]}
-                            onPress={() => handleApplyPreset(item.key)}
-                            activeOpacity={0.7}
-                          >
-                            <Text
-                              style={[
-                                styles.presetChipText,
-                                isSelected && styles.presetChipTextActive,
-                              ]}
-                            >
-                              {item.label}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
+                {/* 2. EXPORT FORMAT SELECTOR */}
+                <View style={styles.sectionBlock}>
+                  <View style={styles.sectionHeaderRow}>
+                    <FileSpreadsheet size={14} color="#0F2860" />
+                    <Text style={styles.sectionLabel}>Export Format</Text>
+                  </View>
 
-                    <Text style={[styles.sectionLabel, { marginTop: 14 }]}>
-                      Or Specific Date Range (YYYY-MM-DD)
-                    </Text>
-                    <View style={styles.dateInputsRow}>
-                      <View style={styles.dateInputCol}>
-                        <Text style={styles.dateInputLabel}>From Date</Text>
-                        <TextInput
-                          style={styles.textInput}
-                          placeholder="2026-10-01"
-                          placeholderTextColor="#94A3B8"
-                          value={customFrom}
-                          onChangeText={val => {
-                            setCustomFrom(val);
-                            setCustomPreset('');
+                  <View style={styles.formatRow}>
+                    {/* PDF */}
+                    <TouchableOpacity
+                      style={[
+                        styles.formatCard,
+                        exportFormat === 'PDF' && styles.formatCardActive,
+                      ]}
+                      onPress={() => {
+                        setExportFormat('PDF');
+                        setStatusMessage(null);
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <FileText
+                        size={16}
+                        color={exportFormat === 'PDF' ? '#0F2860' : '#64748B'}
+                      />
+                      <Text
+                        style={[
+                          styles.formatCardText,
+                          exportFormat === 'PDF' && styles.formatCardTextActive,
+                        ]}
+                      >
+                        PDF Document
+                      </Text>
+                      <Text style={styles.formatCardSub}>Official A4</Text>
+                    </TouchableOpacity>
+
+                    {/* EXCEL */}
+                    <TouchableOpacity
+                      style={[
+                        styles.formatCard,
+                        exportFormat === 'XLSX' && styles.formatCardActive,
+                      ]}
+                      onPress={() => {
+                        setExportFormat('XLSX');
+                        setStatusMessage(null);
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <FileSpreadsheet
+                        size={16}
+                        color={exportFormat === 'XLSX' ? '#15803D' : '#64748B'}
+                      />
+                      <Text
+                        style={[
+                          styles.formatCardText,
+                          exportFormat === 'XLSX' && styles.formatCardTextActive,
+                        ]}
+                      >
+                        Excel (XLSX)
+                      </Text>
+                      <Text style={styles.formatCardSub}>Full Sheet</Text>
+                    </TouchableOpacity>
+
+                    {/* CSV */}
+                    <TouchableOpacity
+                      style={[
+                        styles.formatCard,
+                        exportFormat === 'CSV' && styles.formatCardActive,
+                      ]}
+                      onPress={() => {
+                        setExportFormat('CSV');
+                        setStatusMessage(null);
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <FileText
+                        size={16}
+                        color={exportFormat === 'CSV' ? '#C9A227' : '#64748B'}
+                      />
+                      <Text
+                        style={[
+                          styles.formatCardText,
+                          exportFormat === 'CSV' && styles.formatCardTextActive,
+                        ]}
+                      >
+                        CSV File
+                      </Text>
+                      <Text style={styles.formatCardSub}>UTF-8 BOM</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* 3. DATE RANGE SELECTOR */}
+                <View style={styles.sectionBlock}>
+                  <View style={styles.sectionHeaderRow}>
+                    <Calendar size={14} color="#0F2860" />
+                    <Text style={styles.sectionLabel}>Date Range</Text>
+                  </View>
+
+                  {/* Segmented Control / Tabs */}
+                  <View style={styles.tabBar}>
+                    <TouchableOpacity
+                      style={[styles.tabBtn, activeTab === 'MONTH' && styles.tabBtnActive]}
+                      onPress={() => {
+                        setActiveTab('MONTH');
+                        setStatusMessage(null);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[styles.tabBtnText, activeTab === 'MONTH' && styles.tabBtnTextActive]}
+                      >
+                        Month
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.tabBtn, activeTab === 'YEAR' && styles.tabBtnActive]}
+                      onPress={() => {
+                        setActiveTab('YEAR');
+                        setStatusMessage(null);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[styles.tabBtnText, activeTab === 'YEAR' && styles.tabBtnTextActive]}
+                      >
+                        Year
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.tabBtn, activeTab === 'CUSTOM' && styles.tabBtnActive]}
+                      onPress={() => {
+                        setActiveTab('CUSTOM');
+                        setStatusMessage(null);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.tabBtnText,
+                          activeTab === 'CUSTOM' && styles.tabBtnTextActive,
+                        ]}
+                      >
+                        Custom Range
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Body Content by Tab */}
+                  {/* MONTH TAB */}
+                  {activeTab === 'MONTH' && (
+                    <View style={styles.tabContent}>
+                      <View style={styles.yearNavigator}>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedYear(y => y - 1);
+                            setStatusMessage(null);
                           }}
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                        />
+                          style={styles.navArrowBtn}
+                          activeOpacity={0.7}
+                        >
+                          <ChevronLeft size={18} color="#0F2860" />
+                        </TouchableOpacity>
+                        <View style={styles.yearDisplayBadge}>
+                          <Calendar size={14} color="#0F2860" />
+                          <Text style={styles.yearDisplayText}>{selectedYear}</Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedYear(y => y + 1);
+                            setStatusMessage(null);
+                          }}
+                          style={styles.navArrowBtn}
+                          activeOpacity={0.7}
+                        >
+                          <ChevronRight size={18} color="#0F2860" />
+                        </TouchableOpacity>
                       </View>
 
-                      <View style={styles.dateInputCol}>
-                        <Text style={styles.dateInputLabel}>To Date</Text>
-                        <TextInput
-                          style={styles.textInput}
-                          placeholder="2026-10-31"
-                          placeholderTextColor="#94A3B8"
-                          value={customTo}
-                          onChangeText={val => {
-                            setCustomTo(val);
-                            setCustomPreset('');
-                          }}
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                        />
+                      <View style={styles.monthsGrid}>
+                        {MONTH_SHORT.map((mName, idx) => {
+                          const isSelected = selectedMonth === idx;
+                          const isCurrentMonth =
+                            idx === currentMonthIdx && selectedYear === currentYear;
+
+                          return (
+                            <TouchableOpacity
+                              key={mName}
+                              style={[
+                                styles.monthChip,
+                                isCurrentMonth && styles.monthChipCurrent,
+                                isSelected && styles.monthChipSelected,
+                              ]}
+                              onPress={() => {
+                                setSelectedMonth(idx);
+                                setStatusMessage(null);
+                              }}
+                              activeOpacity={0.75}
+                            >
+                              <Text
+                                style={[
+                                  styles.monthChipText,
+                                  isCurrentMonth && styles.monthChipTextCurrent,
+                                  isSelected && styles.monthChipTextSelected,
+                                ]}
+                              >
+                                {mName}
+                              </Text>
+                              {isSelected && <View style={styles.selectedDot} />}
+                            </TouchableOpacity>
+                          );
+                        })}
                       </View>
                     </View>
-                    <Text style={styles.dateHint}>
-                      Leave blank to include all historical transactions.
-                    </Text>
-                  </View>
-                )}
+                  )}
+
+                  {/* YEAR TAB */}
+                  {activeTab === 'YEAR' && (
+                    <View style={styles.tabContent}>
+                      <View style={styles.yearTypeRow}>
+                        <TouchableOpacity
+                          style={[
+                            styles.yearTypeBtn,
+                            yearType === 'CALENDAR' && styles.yearTypeBtnActive,
+                          ]}
+                          onPress={() => {
+                            setYearType('CALENDAR');
+                            setStatusMessage(null);
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text
+                            style={[
+                              styles.yearTypeBtnText,
+                              yearType === 'CALENDAR' && styles.yearTypeBtnTextActive,
+                            ]}
+                          >
+                            Calendar Year (Jan – Dec)
+                          </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={[
+                            styles.yearTypeBtn,
+                            yearType === 'FINANCIAL' && styles.yearTypeBtnActive,
+                          ]}
+                          onPress={() => {
+                            setYearType('FINANCIAL');
+                            setStatusMessage(null);
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text
+                            style={[
+                              styles.yearTypeBtnText,
+                              yearType === 'FINANCIAL' && styles.yearTypeBtnTextActive,
+                            ]}
+                          >
+                            Financial Year (Apr – Mar)
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={styles.yearsGrid}>
+                        {availableYears.map(yr => {
+                          const isSelected = selectedFullYear === yr;
+                          const labelText =
+                            yearType === 'CALENDAR'
+                              ? `${yr}`
+                              : `FY ${yr}-${(yr + 1).toString().slice(-2)}`;
+
+                          return (
+                            <TouchableOpacity
+                              key={yr}
+                              style={[
+                                styles.yearCard,
+                                isSelected && styles.yearCardSelected,
+                              ]}
+                              onPress={() => {
+                                setSelectedFullYear(yr);
+                                setStatusMessage(null);
+                              }}
+                              activeOpacity={0.75}
+                            >
+                              <Text
+                                style={[
+                                  styles.yearCardText,
+                                  isSelected && styles.yearCardTextSelected,
+                                ]}
+                              >
+                                {labelText}
+                              </Text>
+                              {isSelected && (
+                                <View style={styles.checkIconWrap}>
+                                  <Check size={13} color="#FFFFFF" />
+                                </View>
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* CUSTOM TAB */}
+                  {activeTab === 'CUSTOM' && (
+                    <View style={styles.tabContent}>
+                      <View style={styles.presetsWrap}>
+                        {[
+                          { key: 'THIS_MONTH', label: 'This Month' },
+                          { key: 'LAST_MONTH', label: 'Last Month' },
+                          { key: 'LAST_30', label: 'Last 30 Days' },
+                          { key: 'LAST_90', label: 'Last 90 Days' },
+                          { key: 'THIS_QUARTER', label: 'Current Quarter' },
+                          { key: 'ALL_TIME', label: 'All Records' },
+                        ].map(item => {
+                          const isSelected = customPreset === item.key;
+                          return (
+                            <TouchableOpacity
+                              key={item.key}
+                              style={[
+                                styles.presetChip,
+                                isSelected && styles.presetChipActive,
+                              ]}
+                              onPress={() => handleApplyPreset(item.key)}
+                              activeOpacity={0.7}
+                            >
+                              <Text
+                                style={[
+                                  styles.presetChipText,
+                                  isSelected && styles.presetChipTextActive,
+                                ]}
+                              >
+                                {item.label}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+
+                      <View style={styles.dateInputsRow}>
+                        <View style={styles.dateInputCol}>
+                          <Text style={styles.dateInputLabel}>From Date</Text>
+                          <TextInput
+                            style={styles.textInput}
+                            placeholder="YYYY-MM-DD"
+                            placeholderTextColor="#94A3B8"
+                            value={customFrom}
+                            onChangeText={val => {
+                              setCustomFrom(val);
+                              setCustomPreset('');
+                              setStatusMessage(null);
+                            }}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                          />
+                        </View>
+
+                        <View style={styles.dateInputCol}>
+                          <Text style={styles.dateInputLabel}>To Date</Text>
+                          <TextInput
+                            style={styles.textInput}
+                            placeholder="YYYY-MM-DD"
+                            placeholderTextColor="#94A3B8"
+                            value={customTo}
+                            onChangeText={val => {
+                              setCustomTo(val);
+                              setCustomPreset('');
+                              setStatusMessage(null);
+                            }}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                          />
+                        </View>
+                      </View>
+                      <Text style={styles.dateHint}>
+                        Leave blank to include complete organizational transaction history.
+                      </Text>
+                    </View>
+                  )}
+                </View>
 
                 {/* Period Preview Banner */}
                 <View style={styles.previewBox}>
                   <View style={styles.previewHeader}>
-                    <FileText size={15} color="#0F2860" />
-                    <Text style={styles.previewTitle}>Selected Export Scope</Text>
+                    <FileText size={14} color="#0F2860" />
+                    <Text style={styles.previewTitle}>Export Summary & Verification</Text>
                   </View>
-                  <Text style={styles.previewPeriodText}>
-                    {resolvedPeriod.label}
-                  </Text>
+
+                  <View style={styles.previewMetaGrid}>
+                    <View style={styles.previewMetaItem}>
+                      <Text style={styles.metaLabel}>FILTER</Text>
+                      <Text style={styles.metaVal} numberOfLines={1}>
+                        {transactionType === 'ALL'
+                          ? 'All Transactions'
+                          : transactionType === 'PAYMENT_IN'
+                          ? 'Payment In Only'
+                          : 'Payment Out Only'}
+                      </Text>
+                    </View>
+
+                    <View style={styles.previewMetaItem}>
+                      <Text style={styles.metaLabel}>FORMAT</Text>
+                      <Text style={styles.metaVal}>{exportFormat}</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.previewPeriodText}>{resolvedPeriod.label}</Text>
                   <Text style={styles.previewSubtext}>
                     {resolvedPeriod.fromDate
-                      ? `Range: ${resolvedPeriod.fromDate} → ${resolvedPeriod.toDate || 'Present'}`
-                      : 'Range: Complete lifetime organizational records'}
+                      ? `Window: ${resolvedPeriod.fromDate} → ${resolvedPeriod.toDate || 'Present'}`
+                      : 'Window: Lifetime historical records'}
                   </Text>
                   <Text style={styles.previewScopeNote}>
-                    Only transactions within this date window will be itemized and calculated in the PDF.
+                    {transactionType === 'PAYMENT_IN' &&
+                      '• Incoming only: receipts, verified donations, and membership payments.'}
+                    {transactionType === 'PAYMENT_OUT' &&
+                      '• Outgoing only: verified expense vouchers and disbursement items.'}
+                    {transactionType === 'ALL' &&
+                      '• Both incoming receipts and outgoing expense vouchers with running balance.'}
                   </Text>
                 </View>
+
+                {/* Feedback status message */}
+                {statusMessage && (
+                  <View
+                    style={[
+                      styles.feedbackBox,
+                      statusMessage.type === 'error'
+                        ? styles.feedbackBoxError
+                        : styles.feedbackBoxSuccess,
+                    ]}
+                  >
+                    {statusMessage.type === 'error' ? (
+                      <TriangleAlert size={16} color="#DC2626" />
+                    ) : (
+                      <CheckCircle2 size={16} color="#15803D" />
+                    )}
+                    <Text
+                      style={[
+                        styles.feedbackText,
+                        statusMessage.type === 'error'
+                          ? styles.feedbackTextError
+                          : styles.feedbackTextSuccess,
+                      ]}
+                    >
+                      {statusMessage.text}
+                    </Text>
+                  </View>
+                )}
               </ScrollView>
 
               {/* Action Buttons Footer */}
@@ -547,7 +968,9 @@ export const PassbookExportModal: React.FC<PassbookExportModalProps> = ({
                   ) : (
                     <>
                       <Download size={16} color="#FFFFFF" />
-                      <Text style={styles.exportBtnText}>Download PDF Statement</Text>
+                      <Text style={styles.exportBtnText}>
+                        Download {exportFormat} Statement
+                      </Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -567,15 +990,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingVertical: 20,
   },
   modalCard: {
     width: '100%',
-    maxWidth: 480,
+    maxWidth: 520,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 20,
-    maxHeight: '90%',
+    maxHeight: '92%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.18,
@@ -586,7 +1009,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: 16,
+    paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
@@ -623,67 +1046,176 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 8,
   },
+  modalBody: {
+    maxHeight: 460,
+  },
+  sectionBlock: {
+    marginTop: 14,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  sectionLabel: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    color: '#0F2860',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  txTypeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  txTypeCard: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+  },
+  txTypeCardActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#0F2860',
+  },
+  txTypeCardActiveGreen: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#15803D',
+  },
+  txTypeCardActiveRed: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#B91C1C',
+  },
+  txTypeIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  typeBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  miniCheckWrap: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#0F2860',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  txTypeTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  txTypeTitleActive: {
+    color: '#0F2860',
+  },
+  txTypeTitleActiveGreen: {
+    color: '#15803D',
+  },
+  txTypeTitleActiveRed: {
+    color: '#B91C1C',
+  },
+  txTypeDesc: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  formatRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  formatCard: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+  },
+  formatCardActive: {
+    backgroundColor: '#EEF4FF',
+    borderColor: '#0F2860',
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  formatCardText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+    marginTop: 4,
+  },
+  formatCardTextActive: {
+    color: '#0F2860',
+  },
+  formatCardSub: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 1,
+  },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#F1F5F9',
-    borderRadius: 12,
-    padding: 4,
-    marginTop: 14,
-    marginBottom: 14,
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 10,
   },
   tabBtn: {
     flex: 1,
-    paddingVertical: 9,
+    paddingVertical: 7,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 9,
+    borderRadius: 8,
   },
   tabBtnActive: {
     backgroundColor: '#0F2860',
     shadowColor: '#0F2860',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   tabBtnText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#64748B',
   },
   tabBtnTextActive: {
     color: '#FFFFFF',
   },
-  modalBody: {
-    maxHeight: 340,
-  },
   tabContent: {
-    paddingVertical: 4,
-  },
-  sectionLabel: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    color: '#64748B',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 10,
+    paddingVertical: 2,
   },
   yearNavigator: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    borderRadius: 10,
     paddingHorizontal: 8,
-    paddingVertical: 6,
-    marginBottom: 14,
+    paddingVertical: 5,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   navArrowBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 6,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -696,24 +1228,23 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   yearDisplayText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     color: '#0F2860',
-    marginLeft: 4,
   },
   monthsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   monthChip: {
-    width: '31%',
+    width: '23%',
     flexGrow: 1,
-    paddingVertical: 12,
+    paddingVertical: 9,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F8FAFC',
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     position: 'relative',
@@ -727,7 +1258,7 @@ const styles = StyleSheet.create({
     borderColor: '#0F2860',
   },
   monthChipText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#334155',
   },
@@ -739,23 +1270,24 @@ const styles = StyleSheet.create({
   },
   selectedDot: {
     position: 'absolute',
-    top: 5,
-    right: 5,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    top: 4,
+    right: 4,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: '#EAA224',
   },
   yearTypeRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
+    marginBottom: 8,
   },
   yearTypeBtn: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     backgroundColor: '#F8FAFC',
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     alignItems: 'center',
@@ -765,7 +1297,7 @@ const styles = StyleSheet.create({
     borderColor: '#0F2860',
   },
   yearTypeBtnText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#64748B',
     textAlign: 'center',
@@ -776,15 +1308,15 @@ const styles = StyleSheet.create({
   yearsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   yearCard: {
     width: '48%',
     flexGrow: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     flexDirection: 'row',
@@ -796,7 +1328,7 @@ const styles = StyleSheet.create({
     borderColor: '#0F2860',
   },
   yearCardText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#1E293B',
   },
@@ -804,9 +1336,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   checkIconWrap: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: '#16A34A',
     alignItems: 'center',
     justifyContent: 'center',
@@ -815,19 +1347,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   presetChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     backgroundColor: '#F1F5F9',
-    borderRadius: 8,
+    borderRadius: 6,
   },
   presetChipActive: {
     backgroundColor: '#0F2860',
   },
   presetChipText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#475569',
   },
@@ -837,102 +1369,151 @@ const styles = StyleSheet.create({
   },
   dateInputsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   dateInputCol: {
     flex: 1,
   },
   dateInputLabel: {
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '600',
     color: '#64748B',
     marginBottom: 4,
   },
   textInput: {
-    height: 42,
+    height: 38,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#CBD5E1',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    fontSize: 13,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    fontSize: 12,
     color: '#0F172A',
   },
   dateHint: {
-    fontSize: 11,
+    fontSize: 10.5,
     color: '#94A3B8',
-    marginTop: 6,
+    marginTop: 4,
   },
   previewBox: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: '#E2E8F0',
     borderRadius: 12,
     padding: 12,
-    marginTop: 14,
+    marginTop: 12,
   },
   previewHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   previewTitle: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    color: '#166534',
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0F2860',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginLeft: 4,
+  },
+  previewMetaGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 6,
+  },
+  previewMetaItem: {
+    flex: 1,
+  },
+  metaLabel: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#94A3B8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  metaVal: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F2860',
+    marginTop: 1,
   },
   previewPeriodText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
     color: '#0F2860',
     marginTop: 2,
   },
   previewSubtext: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '600',
     color: '#15803D',
     marginTop: 2,
   },
   previewScopeNote: {
-    fontSize: 11,
-    color: '#475569',
+    fontSize: 10.5,
+    color: '#64748B',
     marginTop: 4,
-    fontStyle: 'italic',
+  },
+  feedbackBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  feedbackBoxError: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  feedbackBoxSuccess: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  feedbackText: {
+    fontSize: 12,
+    flex: 1,
+    fontWeight: '600',
+  },
+  feedbackTextError: {
+    color: '#B91C1C',
+  },
+  feedbackTextSuccess: {
+    color: '#15803D',
   },
   actionsRow: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 16,
-    paddingTop: 14,
+    marginTop: 14,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
   },
   cancelBtn: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderRadius: 10,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelBtnText: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '700',
     color: '#475569',
   },
   exportBtn: {
     flex: 2,
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderRadius: 10,
     backgroundColor: '#0F2860',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
     shadowColor: '#0F2860',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -943,10 +1524,9 @@ const styles = StyleSheet.create({
     opacity: 0.65,
   },
   exportBtnText: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '800',
     color: '#FFFFFF',
-    marginLeft: 4,
   },
 });
 

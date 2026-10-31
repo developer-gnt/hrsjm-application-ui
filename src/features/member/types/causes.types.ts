@@ -7,6 +7,7 @@ export type CauseCategoryKey =
   | 'healthcare'
   | 'relief'
   | 'women'
+  | 'human_rights'
   | 'environment';
 
 export interface MemberCause {

@@ -83,6 +83,12 @@ export const ApiRoutes = {
     DETAILS: (id: string | number) => `/expense-entries/${id}`,
     STATUS: (id: string | number) => `/expense-entries/${id}/status`,
   },
+  // Transactions
+  TRANSACTIONS: {
+    MY: '/transactions/my',
+    DETAILS: (id: string | number) => `/transactions/${id}`,
+  },
+
   RECEIPTS: {
     MY: '/receipts/my',
     ITEM: (id: string | number) => `/receipts/${id}`,
@@ -99,6 +105,12 @@ export const ApiRoutes = {
     ACCOUNT_LEDGER: (id: string | number) => `/accounts/${id}/ledger`,
     ENTRIES: '/accounting/entries',
     REVERSE_ENTRY: (id: string | number) => `/accounting/entries/${id}/reverse`,
+    PASSBOOK_EXPORT: '/passbook/export',
+  },
+
+  // Passbook
+  PASSBOOK: {
+    EXPORT: '/passbook/export',
   },
 
   // Financial Reports
