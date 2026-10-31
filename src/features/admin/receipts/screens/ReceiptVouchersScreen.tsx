@@ -25,7 +25,7 @@ import {
   UserCheck,
 } from '../../../../core/components/icons';
 import { PermissionDenied } from '../../../../core/permissions/permission.guard';
-import { can } from '../../../../core/permissions/can';
+import { can, useCan } from '../../../../core/permissions/can';
 import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import { useDebouncedValue } from '../../../../core/hooks/useDebouncedValue';
 import {
@@ -300,7 +300,10 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
     setPage(1);
   };
 
-  if (!can(PermissionKeys.RECEIPT_ENTRY_READ)) {
+  const canReadReceipts = useCan(PermissionKeys.RECEIPT_ENTRY_READ);
+  const canCreateReceipts = useCan(PermissionKeys.RECEIPT_ENTRY_CREATE);
+
+  if (!canReadReceipts) {
     return (
       <View style={styles.flex}>
         <AdminHeader
@@ -331,7 +334,7 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
           </Text>
         </View>
 
-        {can(PermissionKeys.RECEIPT_ENTRY_CREATE) && (
+        {canCreateReceipts && (
           <TouchableOpacity
             style={styles.addCtaBtn}
             onPress={() => navigation.navigate(AppRoutes.CREATE_RECEIPT_VOUCHER)}

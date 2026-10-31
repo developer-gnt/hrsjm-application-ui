@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { PermissionKey } from './permission.constants';
+import { ALL_PERMISSION_KEYS, PermissionKey } from './permission.constants';
 import { permissionService } from './permission.service';
 
 interface PermissionState {
@@ -24,9 +24,36 @@ export const usePermissionStore = create<PermissionState>()(set => ({
 
   loadPermissions: async () => {
     try {
-      const { permissions } = await permissionService.getMyPermissions();
-      set({ permissions, isLoaded: true });
+      const res = await permissionService.getMyPermissions();
+      const perms = Array.isArray(res?.permissions) ? res.permissions : [];
+      set({ permissions: perms, isLoaded: true });
     } catch {
+      // If endpoint is unreachable, fallback to full admin permissions if user is Admin
+      try {
+        const { useAuthStore } = require('../../features/auth/store/authStore');
+        const user = useAuthStore.getState().user;
+        const roleNames = [
+          ...(user?.roles || []).map((r: any) =>
+            typeof r === 'string' ? r : r?.name || '',
+          ),
+          user?.role?.name,
+          user?.roleName,
+          user?.account_type,
+          user?.role,
+        ]
+          .filter(Boolean)
+          .map((r: string) => String(r).toUpperCase());
+
+        if (
+          roleNames.includes('ADMIN') ||
+          roleNames.includes('SUPER_ADMIN') ||
+          roleNames.includes('SUPERADMIN')
+        ) {
+          set({ permissions: ALL_PERMISSION_KEYS, isLoaded: true });
+          return;
+        }
+      } catch {}
+
       // Leave the previous state; guards hide gated UI until a successful load.
       set({ permissions: [], isLoaded: false });
     }
