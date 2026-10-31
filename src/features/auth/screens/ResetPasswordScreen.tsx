@@ -54,6 +54,8 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [tokenValidating, setTokenValidating] = useState(Boolean(prefillToken));
 
   useEffect(() => {
     navigation.setOptions({ headerShown: false });
@@ -296,6 +298,47 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
+  resultContainer: {
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+  },
+  successHalo: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.base,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  successEmblem: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#D1FAE5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resultTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0B2F52',
+    marginBottom: 8,
+    textAlign: 'center',
+    fontFamily: FontFamilies.serif,
+  },
+  resultSub: {
+    fontSize: 14,
+    color: '#34516D',
+    lineHeight: 21,
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+    paddingHorizontal: Spacing.xs,
+    fontFamily: FontFamilies.sans,
+  },
+
   flex: {
     flex: 1,
     backgroundColor: '#011F39',

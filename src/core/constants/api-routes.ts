@@ -5,6 +5,7 @@ export const ApiRoutes = {
     LOGIN: '/auth/login',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
+    VERIFY_RESET_TOKEN: '/auth/verify-reset-token',
     ME: '/auth/me',
     LOGOUT: '/auth/logout',
     REFRESH: '/auth/refresh',

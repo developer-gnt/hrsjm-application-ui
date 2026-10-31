@@ -11,6 +11,18 @@ import { MemberTabNavigator } from '../../features/member';
 import { SeekerTabNavigator } from '../../features/seeker';
 import { HomeStackParamList } from './NavigationTypes';
 
+
+const linking = {
+  prefixes: ['hrsjm://', 'https://hrsjm.org', 'http://194.164.151.17:3000'],
+  config: {
+    screens: {
+      ResetPassword: 'reset-password',
+      Login: 'login',
+      ForgotPassword: 'forgot-password',
+    },
+  },
+};
+
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 
 const RoleBasedHomeNavigator: React.FC<{ roleType: 'member' | 'user' | 'seeker' | 'default' }> = ({
@@ -91,7 +103,7 @@ export const RootNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <StatusBar barStyle="dark-content" />
       {status === 'authenticated' ? (
         isAdmin ? (
