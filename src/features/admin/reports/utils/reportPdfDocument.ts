@@ -464,8 +464,12 @@ export const downloadReportPdf = async (
 ): Promise<'downloaded' | 'opened'> => {
   if (Platform.OS !== 'web' || !isWebEnvironment()) {
     const base64 = uint8ToBase64(getPdfBytes(pdf));
-    const RNFS = (await import('react-native-blob-util')).default;
-    const dirs = RNFS.fs.dirs;
+    const blobMod = await import('react-native-blob-util');
+    const RNFS = blobMod.default || blobMod;
+    const dirs = RNFS?.fs?.dirs;
+    if (!dirs) {
+      throw new Error('Native file system storage is not available.');
+    }
     const path = dirs.DownloadDir
       ? `${dirs.DownloadDir}/${fileName}`
       : `${dirs.DocumentDir}/${fileName}`;
@@ -498,11 +502,17 @@ export const shareReportPdf = async (
 ): Promise<'shared' | 'cancelled' | 'opened' | 'downloaded'> => {
   if (Platform.OS !== 'web' || !isWebEnvironment()) {
     const base64 = uint8ToBase64(getPdfBytes(pdf));
-    const RNFS = (await import('react-native-blob-util')).default;
-    const filePath = `${RNFS.fs.dirs.CacheDir}/${fileName}`;
+    const blobMod = await import('react-native-blob-util');
+    const RNFS = blobMod.default || blobMod;
+    const dirs = RNFS?.fs?.dirs;
+    if (!dirs?.CacheDir) {
+      return downloadReportPdf(fileName, pdf);
+    }
+    const filePath = `${dirs.CacheDir}/${fileName}`;
     await RNFS.fs.writeFile(filePath, base64, 'base64');
 
-    const NativeShare = (await import('react-native-share')).default;
+    const shareMod = await import('react-native-share');
+    const NativeShare = shareMod.default || shareMod;
     const shareResult = await NativeShare.open({
       url: `file://${filePath}`,
       type: 'application/pdf',

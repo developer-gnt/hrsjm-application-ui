@@ -50,24 +50,49 @@ export const reportsService = {
 
   // 2. Profit & Loss
   async getProfitLoss(params: {
-    start_date: string;
-    end_date: string;
+    start_date?: string;
+    end_date?: string;
+    from_date?: string;
+    to_date?: string;
+    include_zero_balances?: boolean;
   }): Promise<ProfitLossReportResponse> {
+    const from_date = params.from_date || params.start_date;
+    const to_date = params.to_date || params.end_date;
+    const queryParams: Record<string, any> = {
+      from_date,
+      to_date,
+      start_date: from_date,
+      end_date: to_date,
+    };
+    if (typeof params.include_zero_balances === 'boolean') {
+      queryParams.include_zero_balances = params.include_zero_balances;
+    }
     const res = await apiClient.get<ProfitLossReportResponse>(
       ApiRoutes.REPORTS.PROFIT_LOSS,
-      { params },
+      { params: queryParams },
     );
     const data = (res as any)?.data?.data || (res as any)?.data || res;
     return data as ProfitLossReportResponse;
   },
 
   async getProfitLossSummary(params: {
-    start_date: string;
-    end_date: string;
+    start_date?: string;
+    end_date?: string;
+    from_date?: string;
+    to_date?: string;
   }): Promise<ProfitLossSummaryResponse> {
+    const from_date = params.from_date || params.start_date;
+    const to_date = params.to_date || params.end_date;
     const res = await apiClient.get<ProfitLossSummaryResponse>(
       `${ApiRoutes.REPORTS.PROFIT_LOSS}/summary`,
-      { params },
+      {
+        params: {
+          from_date,
+          to_date,
+          start_date: from_date,
+          end_date: to_date,
+        },
+      },
     );
     const data = (res as any)?.data?.data || (res as any)?.data || res;
     return data as ProfitLossSummaryResponse;
