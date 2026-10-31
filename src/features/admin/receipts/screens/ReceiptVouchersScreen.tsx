@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -27,6 +27,7 @@ import {
 import { PermissionDenied } from '../../../../core/permissions/permission.guard';
 import { can, isUserAdmin, useCan } from '../../../../core/permissions/can';
 import { usePermissionStore } from '../../../../core/permissions/permission.store';
+import { useAuthStore } from '../../../auth/store/authStore';
 import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import { useDebouncedValue } from '../../../../core/hooks/useDebouncedValue';
 import {
@@ -301,10 +302,17 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
     setPage(1);
   };
 
-  const isAdmin = isUserAdmin();
+  const user = useAuthStore(state => state.user);
+  const isAdmin = isUserAdmin(user);
   const canReadReceipts = useCan(PermissionKeys.RECEIPT_ENTRY_READ);
   const canCreateReceipts = useCan(PermissionKeys.RECEIPT_ENTRY_CREATE);
   const isLoaded = usePermissionStore(state => state.isLoaded);
+
+  useEffect(() => {
+    if (!isAdmin && !isLoaded) {
+      usePermissionStore.getState().loadPermissions().catch(() => undefined);
+    }
+  }, [isAdmin, isLoaded]);
 
   if (!isAdmin && !isLoaded) {
     return (

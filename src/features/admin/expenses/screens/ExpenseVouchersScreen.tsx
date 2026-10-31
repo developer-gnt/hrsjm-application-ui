@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -25,8 +25,9 @@ import {
   Plus,
 } from '../../../../core/components/icons';
 import { PermissionDenied } from '../../../../core/permissions/permission.guard';
-import { can, isUserAdmin } from '../../../../core/permissions/can';
+import { can, isUserAdmin, useCan } from '../../../../core/permissions/can';
 import { usePermissionStore } from '../../../../core/permissions/permission.store';
+import { useAuthStore } from '../../../auth/store/authStore';
 import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import { useDebouncedValue } from '../../../../core/hooks/useDebouncedValue';
 import { AdminColors, BrandColors, Spacing, Typography, BorderRadius } from '../../../../core/theme';
@@ -89,8 +90,16 @@ export const ExpenseVouchersScreen: React.FC<ExpenseVouchersScreenProps> = ({
     await Promise.all([expensesQuery.refetch(), stats.refetch()]);
   }, [expensesQuery, stats]);
 
-  const isAdmin = isUserAdmin();
+  const user = useAuthStore(state => state.user);
+  const isAdmin = isUserAdmin(user);
+  const canReadExpenses = useCan(PermissionKeys.EXPENSE_READ);
   const isLoaded = usePermissionStore(state => state.isLoaded);
+
+  useEffect(() => {
+    if (!isAdmin && !isLoaded) {
+      usePermissionStore.getState().loadPermissions().catch(() => undefined);
+    }
+  }, [isAdmin, isLoaded]);
 
   if (!isAdmin && !isLoaded) {
     return (
@@ -105,7 +114,7 @@ export const ExpenseVouchersScreen: React.FC<ExpenseVouchersScreenProps> = ({
     );
   }
 
-  if (!isAdmin && !can(PermissionKeys.EXPENSE_READ)) {
+  if (!isAdmin && !canReadExpenses) {
     return (
       <View style={styles.flex}>
         <AdminHeader

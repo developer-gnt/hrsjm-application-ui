@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -16,8 +16,9 @@ import { AdminStatCard } from '../../../../core/components/admin/AdminStatCard';
 import { Users, Clock3, UserCheck, UserX } from '../../../../core/components/icons';
 import { AdminFilterTabs } from '../../../../core/components/admin/AdminFilterTabs';
 import { PermissionDenied } from '../../../../core/permissions/permission.guard';
-import { can, isUserAdmin } from '../../../../core/permissions/can';
+import { can, isUserAdmin, useCan } from '../../../../core/permissions/can';
 import { usePermissionStore } from '../../../../core/permissions/permission.store';
+import { useAuthStore } from '../../../auth/store/authStore';
 import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import { useDebouncedValue } from '../../../../core/hooks/useDebouncedValue';
 import { AdminColors, BrandColors } from '../../../../core/theme/colors';
@@ -60,8 +61,16 @@ export const PaymentVerificationScreen: React.FC<
 
   const refresh = useCallback(async () => { await paymentsQuery.refetch(); }, [paymentsQuery]);
 
-  const isAdmin = isUserAdmin();
+  const user = useAuthStore(state => state.user);
+  const isAdmin = isUserAdmin(user);
+  const canReadPayments = useCan(PermissionKeys.PAYMENT_READ);
   const isLoaded = usePermissionStore(state => state.isLoaded);
+
+  useEffect(() => {
+    if (!isAdmin && !isLoaded) {
+      usePermissionStore.getState().loadPermissions().catch(() => undefined);
+    }
+  }, [isAdmin, isLoaded]);
 
   if (!isAdmin && !isLoaded) {
     return (
@@ -76,7 +85,7 @@ export const PaymentVerificationScreen: React.FC<
     );
   }
 
-  if (!isAdmin && !can(PermissionKeys.PAYMENT_READ)) {
+  if (!isAdmin && !canReadPayments) {
     return (
       <View style={styles.flex}>
         <AdminHeader

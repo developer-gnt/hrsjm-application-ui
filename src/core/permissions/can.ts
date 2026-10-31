@@ -8,21 +8,40 @@ import { useAuthStore } from '../../features/auth/store/authStore';
 export const isUserAdmin = (user?: any): boolean => {
   let currentUser = user || useAuthStore.getState().user;
 
+  if (currentUser?.user) {
+    currentUser = currentUser.user;
+  }
+
   if (!currentUser) {
     try {
       const { appStorage } = require('../storage/app-storage');
       const { StorageKeys } = require('../constants/storage-keys');
       const raw = appStorage.getString(StorageKeys.USER_DATA);
-      if (raw) currentUser = JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        currentUser = parsed?.user || parsed;
+      }
     } catch {}
   }
 
   if (!currentUser && typeof window !== 'undefined' && window.localStorage) {
     try {
-      const raw = window.localStorage.getItem('__hrsjm_secure_session');
-      if (raw) {
-        const session = JSON.parse(raw);
-        if (session?.user) currentUser = session.user;
+      const keys = [
+        '__hrsjm_secure_session',
+        'hrsjm_app_storage:hrsjm_user_data',
+        'hrsjm_user_data',
+        'hrsjm_registered_users',
+      ];
+      for (const k of keys) {
+        const raw = window.localStorage.getItem(k);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const u = parsed?.user || parsed;
+          if (u && (u.email || u.id || u.roles || u.account_type || u.role)) {
+            currentUser = u;
+            break;
+          }
+        }
       }
     } catch {}
   }
@@ -31,8 +50,14 @@ export const isUserAdmin = (user?: any): boolean => {
     return false;
   }
 
+  const rawRoles = Array.isArray(currentUser.roles)
+    ? currentUser.roles
+    : typeof currentUser.roles === 'string'
+    ? currentUser.roles.split(',')
+    : [];
+
   const roleNames = [
-    ...(currentUser.roles || []).map((r: any) =>
+    ...rawRoles.map((r: any) =>
       typeof r === 'string' ? r : r?.name || r?.role || r?.role_name || '',
     ),
     currentUser.role?.name,
