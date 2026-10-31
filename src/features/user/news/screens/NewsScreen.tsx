@@ -64,6 +64,7 @@ export interface NewsScreenProps {
   hideBottomNav?: boolean;
   showBack?: boolean;
   onBack?: () => void;
+  initialViewAll?: boolean;
 }
 
 const DATE_FILTERS: NewsDateFilter[] = [
@@ -202,6 +203,7 @@ export const NewsScreen: React.FC<NewsScreenProps> = ({
   hideBottomNav = true,
   showBack = false,
   onBack,
+  initialViewAll = false,
 }) => {
   const { width } = useWindowDimensions();
   const slideWidth = width;
