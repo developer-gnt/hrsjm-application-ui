@@ -744,6 +744,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
             </View>
             <AppIcon name="chevron-down" size={16} color={AdminColors.primaryDark} />
           </TouchableOpacity>
+          {errors.state ? <Text style={styles.columnErrorText}>{errors.state}</Text> : null}
         </View>
 
         <View style={styles.columnField}>
@@ -778,10 +779,9 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
             </View>
             <AppIcon name="chevron-down" size={16} color={AdminColors.primaryDark} />
           </TouchableOpacity>
+          {errors.city ? <Text style={styles.columnErrorText}>{errors.city}</Text> : null}
         </View>
       </View>
-      {errors.state ? <Text style={styles.errorText}>{errors.state}</Text> : null}
-      {errors.city ? <Text style={styles.errorText}>{errors.city}</Text> : null}
 
       <View style={styles.doubleButtonRow}>
         <AppButton
@@ -1455,6 +1455,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.sm,
     marginBottom: Spacing.sm,
+    alignItems: 'flex-start',
+  },
+  columnErrorText: {
+    color: AdminColors.error,
+    fontSize: 11,
+    marginTop: 4,
   },
   columnField: {
     flex: 1,
