@@ -89,10 +89,23 @@ export const ExpenseVouchersScreen: React.FC<ExpenseVouchersScreenProps> = ({
     await Promise.all([expensesQuery.refetch(), stats.refetch()]);
   }, [expensesQuery, stats]);
 
-  const isLoaded = usePermissionStore.getState().isLoaded;
-  const isPermitted = isUserAdmin() || can(PermissionKeys.EXPENSE_READ) || !isLoaded;
+  const isAdmin = isUserAdmin();
+  const isLoaded = usePermissionStore(state => state.isLoaded);
 
-  if (!isPermitted) {
+  if (!isAdmin && !isLoaded) {
+    return (
+      <View style={styles.flex}>
+        <AdminHeader
+          onNavigate={target => navigation.navigate(target as any)}
+        />
+        <View style={styles.stateWrap}>
+          <AppLoader message="Verifying permissions…" />
+        </View>
+      </View>
+    );
+  }
+
+  if (!isAdmin && !can(PermissionKeys.EXPENSE_READ)) {
     return (
       <View style={styles.flex}>
         <AdminHeader

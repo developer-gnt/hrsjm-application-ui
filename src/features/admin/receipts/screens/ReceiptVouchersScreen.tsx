@@ -301,12 +301,25 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
     setPage(1);
   };
 
+  const isAdmin = isUserAdmin();
   const canReadReceipts = useCan(PermissionKeys.RECEIPT_ENTRY_READ);
   const canCreateReceipts = useCan(PermissionKeys.RECEIPT_ENTRY_CREATE);
   const isLoaded = usePermissionStore(state => state.isLoaded);
-  const isPermitted = isUserAdmin() || canReadReceipts || !isLoaded;
 
-  if (!isPermitted) {
+  if (!isAdmin && !isLoaded) {
+    return (
+      <View style={styles.flex}>
+        <AdminHeader
+          onNavigate={target => navigation.navigate(target as any)}
+        />
+        <View style={styles.stateWrap}>
+          <AppLoader message="Verifying permissions…" />
+        </View>
+      </View>
+    );
+  }
+
+  if (!isAdmin && !canReadReceipts) {
     return (
       <View style={styles.flex}>
         <AdminHeader

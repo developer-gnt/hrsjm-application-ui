@@ -58,8 +58,8 @@ export const usePermissionStore = create<PermissionState>()(set => ({
         }
       } catch {}
 
-      // Leave the previous state; guards hide gated UI until a successful load.
-      set({ permissions: [], isLoaded: false });
+      // Non-admins strictly receive no permissions and isLoaded=true so guarded sections deny access
+      set({ permissions: [], isLoaded: true });
     }
   },
 

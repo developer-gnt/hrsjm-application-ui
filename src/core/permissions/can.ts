@@ -28,11 +28,6 @@ export const isUserAdmin = (user?: any): boolean => {
   }
 
   if (!currentUser) {
-    // If inside admin context and token exists, permit access
-    try {
-      const { tokenStorage } = require('../storage/token-storage');
-      if (tokenStorage.getAccessToken()) return true;
-    } catch {}
     return false;
   }
 

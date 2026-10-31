@@ -60,7 +60,23 @@ export const PaymentVerificationScreen: React.FC<
 
   const refresh = useCallback(async () => { await paymentsQuery.refetch(); }, [paymentsQuery]);
 
-  if (!can(PermissionKeys.PAYMENT_READ)) {
+  const isAdmin = isUserAdmin();
+  const isLoaded = usePermissionStore(state => state.isLoaded);
+
+  if (!isAdmin && !isLoaded) {
+    return (
+      <View style={styles.flex}>
+        <AdminHeader
+          onNavigate={target => navigation.navigate(target as any)}
+        />
+        <View style={styles.stateContainer}>
+          <AppLoader message="Verifying permissions…" />
+        </View>
+      </View>
+    );
+  }
+
+  if (!isAdmin && !can(PermissionKeys.PAYMENT_READ)) {
     return (
       <View style={styles.flex}>
         <AdminHeader
