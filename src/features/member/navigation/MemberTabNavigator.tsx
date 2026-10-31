@@ -478,6 +478,7 @@ export const MemberTabNavigator: React.FC = () => {
           <NewsDetailsScreen
             news={route.params?.news}
             onBack={navigation.goBack}
+            hideEdit={true}
           />
         )}
       </Tab.Screen>

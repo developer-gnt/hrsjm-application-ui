@@ -61,6 +61,8 @@ interface NewsDetailsScreenProps {
    * phase never sets it (no fake network delays).
    */
   loading?: boolean;
+  /** When true, hides the bottom Edit News action bar (e.g. for members). */
+  hideEdit?: boolean;
 }
 
 const PLACEHOLDER_MESSAGE =
@@ -81,6 +83,7 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
   onTabPress,
   onEdit,
   loading = false,
+  hideEdit = false,
 }) => {
   const [news, setNews] = useState<NewsListItem | null>(initialNews);
   const [isEditing, setIsEditing] = useState(false);
@@ -247,9 +250,9 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
     <View style={styles.root}>
       <AdminHeader showBack title="News Details" onBack={onBack} />
 
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+      <SafeAreaView style={styles.safeArea} edges={hideEdit || !onEdit ? ['left', 'right', 'bottom'] : ['left', 'right']}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, (hideEdit || !onEdit) && { paddingBottom: Spacing.xxl }]}
           showsVerticalScrollIndicator={false}
         >
           {/* Featured image */}
@@ -456,32 +459,34 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
         </ScrollView>
 
         {/* Fixed bottom action bar (reference: Edit News in Gold + three-dot) */}
-        <View style={styles.bottomActionBar}>
-          <AppButton
-            title="Edit News"
-            variant="gold"
-            size="md"
-            onPress={() => {
-              if (onEdit && news) {
-                onEdit(news);
-                return;
-              }
-              feedback.info('Edit News', 'Edit navigation is not configured.');
-            }}
-            icon={<Pencil size={18} color="#011F39" strokeWidth={2.4} style={styles.editPencilIcon} />}
-            style={styles.editButton}
-            textStyle={styles.editButtonText}
-          />
-          <TouchableOpacity
-            style={styles.moreButton}
-            onPress={() => setActionSheetVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="More actions"
-            activeOpacity={0.8}
-          >
-            <Text style={styles.moreIcon}>⋯</Text>
-          </TouchableOpacity>
-        </View>
+        {!hideEdit && Boolean(onEdit) ? (
+          <View style={styles.bottomActionBar}>
+            <AppButton
+              title="Edit News"
+              variant="gold"
+              size="md"
+              onPress={() => {
+                if (onEdit && news) {
+                  onEdit(news);
+                  return;
+                }
+                feedback.info('Edit News', 'Edit navigation is not configured.');
+              }}
+              icon={<Pencil size={18} color="#011F39" strokeWidth={2.4} style={styles.editPencilIcon} />}
+              style={styles.editButton}
+              textStyle={styles.editButtonText}
+            />
+            <TouchableOpacity
+              style={styles.moreButton}
+              onPress={() => setActionSheetVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="More actions"
+              activeOpacity={0.8}
+            >
+              <Text style={styles.moreIcon}>⋯</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </SafeAreaView>
 
       <NewsDetailsActionMenu
