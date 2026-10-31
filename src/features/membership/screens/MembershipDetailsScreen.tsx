@@ -25,6 +25,14 @@ import {
 import { MembershipRenewCtaButton } from '../components/MembershipRenewCtaButton';
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal';
 import {
+  generateMembershipCertificatePdf,
+  generateMembershipCardPdf,
+  generateMembershipGuidelinesPdf,
+  downloadOrOpenPdf,
+  getMembershipDocumentFileName,
+  showDownloadSuccessFeedback,
+} from '../utils/membershipDocumentGenerator';
+import {
   DonationsBottomNav,
   MEMBER_NAV_ITEMS,
 } from '../../admin/donations/components/DonationsBottomNav';
@@ -81,6 +89,38 @@ export const MembershipDetailsScreen: React.FC<MembershipDetailsScreenProps> = (
 
   const [modalVisible, setModalVisible] = React.useState(false);
   const [selectedDoc, setSelectedDoc] = React.useState<DocumentItem | null>(null);
+  const [downloadingDocId, setDownloadingDocId] = React.useState<string | null>(null);
+
+  const handleDirectDownload = async (doc: DocumentItem) => {
+    if (downloadingDocId) return;
+    setDownloadingDocId(doc.id);
+    try {
+      let pdfDoc: any;
+      if (doc.type === 'certificate') {
+        pdfDoc = await generateMembershipCertificatePdf(memberData);
+      } else if (doc.type === 'idcard') {
+        pdfDoc = await generateMembershipCardPdf(memberData);
+      } else {
+        pdfDoc = await generateMembershipGuidelinesPdf(memberData);
+      }
+
+      const fileName = getMembershipDocumentFileName(doc.type, memberData);
+      const result = await downloadOrOpenPdf(pdfDoc, fileName, {
+        title: doc.title,
+        memberData,
+      });
+
+      await showDownloadSuccessFeedback(result, doc.title);
+    } catch (err: any) {
+      console.error('Direct document download failed:', err);
+      Alert.alert(
+        'Download Failed',
+        err?.message || 'Unable to download document. Please check your connection and storage permissions and try again.'
+      );
+    } finally {
+      setDownloadingDocId(null);
+    }
+  };
 
   const handleSectionLayout = (key: string) => (event: any) => {
     sectionPositions.current[key] = event.nativeEvent.layout.y;
@@ -301,7 +341,9 @@ export const MembershipDetailsScreen: React.FC<MembershipDetailsScreenProps> = (
               >
                 <MembershipDocumentsSection
                   status={memberData.status}
+                  downloadingDocId={downloadingDocId}
                   onDocumentPress={handleDocumentItemPress}
+                  onDownloadPress={handleDirectDownload}
                 />
               </View>
 
