@@ -358,7 +358,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               />
             </Svg>
                       </TouchableOpacity>
-        ) : showMenu ? (
+        ) : (showMenu && Boolean(user)) ? (
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => setDrawerVisible(true)}
@@ -430,7 +430,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           ) : null}
 
           {/* Notification Bell */}
-          {!(hideNotifications || title === 'Notifications') ? (
+          {Boolean(user) && !(hideNotifications || title === 'Notifications') ? (
             <TouchableOpacity
               style={styles.bellWrap}
               onPress={handleOpenNotifications}
@@ -459,31 +459,35 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           ) : null}
 
           {/* Profile Avatar + Dropdown Chevron */}
-          <TouchableOpacity
-            style={styles.avatarWrap}
-            onPress={() => {
-              if (onPressProfile) {
-                onPressProfile();
-              } else {
-                setDropdownVisible(true);
-              }
-            }}
-            activeOpacity={0.8}
-          >
-            <Image
-              source={{ uri: user?.avatar || DEFAULT_ADMIN_AVATAR }}
-              style={styles.avatarImage}
-            />
-            <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M6 9l6 6 6-6"
-                stroke="#718096"
-                strokeWidth={2.6}
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          {user ? (
+            <TouchableOpacity
+              style={styles.avatarWrap}
+              onPress={() => {
+                if (onPressProfile) {
+                  onPressProfile();
+                } else {
+                  setDropdownVisible(true);
+                }
+              }}
+              activeOpacity={0.8}
+            >
+              <Image
+                source={{ uri: user?.avatar || DEFAULT_ADMIN_AVATAR }}
+                style={styles.avatarImage}
               />
-            </Svg>
-          </TouchableOpacity>
+              <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M6 9l6 6 6-6"
+                  stroke="#718096"
+                  strokeWidth={2.6}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 8 }} />
+          )}
         </View>
       </View>
 

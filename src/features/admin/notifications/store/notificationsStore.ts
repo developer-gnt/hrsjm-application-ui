@@ -65,6 +65,13 @@ export function useDynamicUnreadCount(): number {
   const fetchUnreadCount = useNotificationsStore(state => state.fetchUnreadCount);
 
   useEffect(() => {
+    // Only fetch notifications if authenticated
+    try {
+      const { useAuthStore } = require('../../../auth/store/authStore');
+      const currentUser = useAuthStore.getState().user;
+      if (!currentUser) return;
+    } catch {}
+
     // Initial fetch on mount
     fetchUnreadCount().catch(() => {});
 
