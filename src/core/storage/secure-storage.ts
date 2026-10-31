@@ -80,7 +80,22 @@ export const secureStorage = {
       }
     }
 
-    // 2. React Native Keychain (Android Keystore / iOS Keychain)
+    // 2. Android: Use hardware-backed AES-256 encrypted MMKV vault
+    // Eliminates react-native-keychain 10.0.0 Jetpack DataStore IllegalStateException native coroutine crash
+    if (Platform.OS === 'android') {
+      try {
+        const vault = getFallbackVault();
+        if (vault) {
+          vault.set(SESSION_USERNAME, payloadStr);
+          return true;
+        }
+      } catch (err) {
+        console.warn('Encrypted MMKV vault set failed on Android:', err);
+      }
+      return false;
+    }
+
+    // 3. iOS: Native Apple Keychain
     try {
       const options = getKeychainOptions();
       const result = await Keychain.setGenericPassword(
@@ -89,19 +104,13 @@ export const secureStorage = {
         options,
       );
       if (result !== false) {
-        // Also sync to encrypted vault for instant cold-start resilience
-        const vault = getFallbackVault();
-        if (vault) {
-          vault.set(SESSION_USERNAME, payloadStr);
-        }
         return true;
       }
     } catch (keychainError) {
-      // Keystore transient failure on some Android ROMs - use encrypted MMKV vault
-      console.warn('Keychain set failed, using secure vault fallback:', keychainError);
+      console.warn('Keychain set failed on iOS:', keychainError);
     }
 
-    // 3. Fallback: AES-encrypted vault
+    // 4. Fallback: AES-encrypted vault
     const vault = getFallbackVault();
     if (vault) {
       try {
@@ -133,7 +142,23 @@ export const secureStorage = {
       return null;
     }
 
-    // 2. React Native Keychain
+    // 2. Android: Retrieve from hardware-backed AES-256 encrypted MMKV vault
+    if (Platform.OS === 'android') {
+      const vault = getFallbackVault();
+      if (vault) {
+        try {
+          const item = vault.getString(SESSION_USERNAME);
+          if (item) {
+            return JSON.parse(item) as StoredSession;
+          }
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    }
+
+    // 3. iOS: Native Apple Keychain
     try {
       const options = getKeychainOptions();
       const result = await Keychain.getGenericPassword(options);
@@ -153,10 +178,10 @@ export const secureStorage = {
         }
       }
     } catch (keychainError) {
-      console.warn('Keychain get failed, checking secure vault fallback:', keychainError);
+      console.warn('Keychain get failed on iOS, checking secure vault fallback:', keychainError);
     }
 
-    // 3. Fallback: AES-encrypted vault
+    // 4. Fallback: AES-encrypted vault
     const vault = getFallbackVault();
     if (vault) {
       try {
@@ -184,17 +209,19 @@ export const secureStorage = {
       } catch {}
     }
 
-    // 2. Keychain
-    try {
-      const options = getKeychainOptions();
-      await Keychain.resetGenericPassword(options);
-    } catch {}
-
-    // 3. Encrypted Vault
+    // 2. Encrypted Vault (Android & fallback)
     const vault = getFallbackVault();
     if (vault) {
       try {
         vault.remove(SESSION_USERNAME);
+      } catch {}
+    }
+
+    // 3. iOS Keychain
+    if (Platform.OS === 'ios') {
+      try {
+        const options = getKeychainOptions();
+        await Keychain.resetGenericPassword(options);
       } catch {}
     }
 

@@ -163,11 +163,11 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
 
   const authUser = useAuthStore(state => state.user);
   const isMemberRole =
-    (authUser?.roles ?? []).some(r => r.name.toUpperCase() === 'MEMBER') ||
+    (authUser?.roles ?? []).some((r: any) => (typeof r === 'string' ? r : r?.name || '').toUpperCase() === 'MEMBER') ||
     (authUser as any)?.account_type === 'member';
   const isGeneralUserWithoutApp =
     ((authUser as any)?.account_type === 'general' ||
-      (authUser?.roles ?? []).every(r => r.name.toUpperCase() === 'USER')) &&
+      (authUser?.roles ?? []).every((r: any) => (typeof r === 'string' ? r : r?.name || '').toUpperCase() === 'USER')) &&
     !authUser?.membership_status;
   const hasPendingMemberApp =
     !isMemberRole &&
@@ -218,9 +218,7 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
   // "and if he approved that user role with update to the with the applied account type and he will be redriect to that dashboard and no longer he will be user"
   useEffect(() => {
     if (isSeekerApproved && authUser) {
-      const hasSeekerRole = (authUser.roles ?? []).some(r =>
-        ['SEEKER', 'DONATION_SEEKER'].includes(r.name.toUpperCase())
-      );
+      const hasSeekerRole = (authUser.roles ?? []).some((r: any) => ['SEEKER', 'DONATION_SEEKER'].includes((typeof r === 'string' ? r : r?.name || '').toUpperCase()));
       if (!hasSeekerRole || authUser.assistance_status !== 'APPROVED') {
         useAuthStore.getState().setUser({
           ...authUser,

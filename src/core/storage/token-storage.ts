@@ -107,13 +107,7 @@ export const tokenStorage = {
       } catch {}
     }
 
-    // Async background persistence
-    secureStorage.getSession().then(session => {
-      secureStorage.setSession({
-        ...(session || { refreshToken: null, user: null }),
-        accessToken: token,
-      }).catch(() => undefined);
-    }).catch(() => undefined);
+    // Note: Full session is persisted atomically in setTokens()
   },
 
   /**
