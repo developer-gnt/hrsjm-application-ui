@@ -24,7 +24,6 @@ import { AccountPickerModal } from '../../accounting/components/AccountPickerMod
 import { PaymentMethodSelector } from '../../accounting/components/PaymentMethodSelector';
 import type { AccountItem, PaymentMethod } from '../../accounting/types/accounting.types';
 import { useCreateExpense } from '../hooks/useExpenses';
-import { useAccounts } from '../../accounting/hooks/useAccounts';
 import { createExpenseSchema, zodFieldErrors } from '../types/expenses.schemas';
 import type { MoreStackParamList } from '../../../../app/navigation/NavigationTypes';
 
@@ -48,8 +47,6 @@ export const CreateExpenseVoucherScreen: React.FC<
   const createMutation = useCreateExpense();
   const scrollViewRef = useRef<ScrollViewInstance | null>(null);
 
-  const { accounts: assetAccounts } = useAccounts('ASSET');
-
   const [expenseDate, setExpenseDate] = useState(todayIso());
   const [paidTo, setPaidTo] = useState('');
   const [amount, setAmount] = useState('');
@@ -57,8 +54,7 @@ export const CreateExpenseVoucherScreen: React.FC<
   const [description, setDescription] = useState('');
 
   const [expenseAccount, setExpenseAccount] = useState<AccountItem | null>(null);
-  const [paidFromAccount, setPaidFromAccount] = useState<AccountItem | null>(null);
-  const [pickerTarget, setPickerTarget] = useState<'expense' | 'paid_from' | null>(null);
+  const [pickerTarget, setPickerTarget] = useState<'expense' | null>(null);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -66,25 +62,6 @@ export const CreateExpenseVoucherScreen: React.FC<
   const typeDescription =
     expenseAccount?.description ||
     getExpenseTypeDescription(expenseAccount?.account_name);
-
-  // Auto-select / sync Paid From (Asset) Account based on payment method
-  useEffect(() => {
-    if (!paidFromAccount && assetAccounts.length > 0) {
-      if (paymentMethod === 'CASH') {
-        const cashAcc =
-          assetAccounts.find(
-            a => /cash/i.test(a.account_name) || a.account_code === '1002',
-          ) || assetAccounts[0];
-        if (cashAcc) setPaidFromAccount(cashAcc);
-      } else {
-        const bankAcc =
-          assetAccounts.find(
-            a => /bank/i.test(a.account_name) || a.account_code === '1001',
-          ) || assetAccounts[0];
-        if (bankAcc) setPaidFromAccount(bankAcc);
-      }
-    }
-  }, [assetAccounts, paidFromAccount, paymentMethod]);
 
   const handlePaymentMethodChange = (method: PaymentMethod) => {
     setPaymentMethod(method);
@@ -95,34 +72,6 @@ export const CreateExpenseVoucherScreen: React.FC<
         return next;
       });
     }
-    // Switch asset account to match payment method
-    if (assetAccounts.length > 0) {
-      if (method === 'CASH') {
-        const cashAcc = assetAccounts.find(
-          a => /cash/i.test(a.account_name) || a.account_code === '1002',
-        );
-        if (cashAcc) {
-          setPaidFromAccount(cashAcc);
-          setFieldErrors(prev => {
-            const next = { ...prev };
-            delete next.paid_from_account_id;
-            return next;
-          });
-        }
-      } else {
-        const bankAcc = assetAccounts.find(
-          a => /bank/i.test(a.account_name) || a.account_code === '1001',
-        );
-        if (bankAcc) {
-          setPaidFromAccount(bankAcc);
-          setFieldErrors(prev => {
-            const next = { ...prev };
-            delete next.paid_from_account_id;
-            return next;
-          });
-        }
-      }
-    }
   };
 
   const handleCreate = () => {
@@ -130,7 +79,6 @@ export const CreateExpenseVoucherScreen: React.FC<
       expense_date: expenseDate,
       paid_to: paidTo,
       expense_account_id: expenseAccount?.id ?? '',
-      paid_from_account_id: paidFromAccount?.id ?? '',
       amount,
       payment_method: paymentMethod ?? undefined,
       description,
@@ -141,7 +89,6 @@ export const CreateExpenseVoucherScreen: React.FC<
 
       const missing: string[] = [];
       if (errors.expense_account_id) missing.push('Type of Expense');
-      if (errors.paid_from_account_id) missing.push('Paid From Account');
       if (errors.amount) missing.push('Valid Amount');
       if (errors.paid_to) missing.push('Paid To');
       if (errors.expense_date) missing.push('Expense Date');
@@ -164,7 +111,6 @@ export const CreateExpenseVoucherScreen: React.FC<
         expense_date: parsed.data.expense_date,
         paid_to: parsed.data.paid_to,
         expense_account_id: parsed.data.expense_account_id,
-        paid_from_account_id: parsed.data.paid_from_account_id,
         amount: Number(parsed.data.amount),
         payment_method: parsed.data.payment_method,
         reference_number: parsed.data.reference_number || undefined,
@@ -205,7 +151,7 @@ export const CreateExpenseVoucherScreen: React.FC<
         keyboardDismissMode="on-drag"
         bounces={false}
       >
-        <Text style={styles.journalHint}>Dr Expense Account · Cr Bank/Cash Account</Text>
+        <Text style={styles.journalHint}>Record official expense and generate voucher</Text>
 
         {formError ? <Text style={styles.errorBanner}>{formError}</Text> : null}
 
@@ -271,31 +217,7 @@ export const CreateExpenseVoucherScreen: React.FC<
           </View>
         </View>
 
-        {/* Paid From Field */}
-        <View style={styles.pickerRow}>
-          <View style={styles.pickerColumn}>
-            <Text style={styles.pickerLabel}>Paid From (Bank/Cash) *</Text>
-            <TouchableOpacity
-              style={[
-                styles.pickerButton,
-                fieldErrors.paid_from_account_id ? styles.pickerError : null,
-              ]}
-              onPress={() => setPickerTarget('paid_from')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Select bank/cash account"
-            >
-              <Text numberOfLines={1} style={styles.pickerValue}>
-                {paidFromAccount
-                  ? `${paidFromAccount.account_name}${paidFromAccount.account_code ? ` (${paidFromAccount.account_code})` : ''}`
-                  : 'Select bank/cash account'}
-              </Text>
-            </TouchableOpacity>
-            {fieldErrors.paid_from_account_id ? (
-              <Text style={styles.fieldError}>{fieldErrors.paid_from_account_id}</Text>
-            ) : null}
-          </View>
-        </View>
+
 
         <AppInput
           label="Amount (₹)"
@@ -416,22 +338,7 @@ export const CreateExpenseVoucherScreen: React.FC<
         }}
         onClose={() => setPickerTarget(null)}
       />
-      <AccountPickerModal
-        visible={pickerTarget === 'paid_from'}
-        title="Select Bank/Cash Account"
-        accountType="ASSET"
-        selectedId={paidFromAccount?.id}
-        onSelect={acc => {
-          setPaidFromAccount(acc);
-          setPickerTarget(null);
-          setFieldErrors(prev => {
-            const next = { ...prev };
-            delete next.paid_from_account_id;
-            return next;
-          });
-        }}
-        onClose={() => setPickerTarget(null)}
-      />
+
     </KeyboardAvoidingView>
   );
 };

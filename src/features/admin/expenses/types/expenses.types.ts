@@ -11,7 +11,7 @@ export interface ExpenseEntryItem {
   expense_date: string;
   paid_to: string;
   expense_account_id: string;
-  paid_from_account_id: string;
+  paid_from_account_id?: string;
   amount: number;
   payment_method: PaymentMethod;
   reference_number: string | null;
@@ -54,7 +54,7 @@ export interface CreateExpensePayload {
   expense_date: string;
   paid_to: string;
   expense_account_id: string;
-  paid_from_account_id: string;
+  paid_from_account_id?: string;
   amount: number;
   payment_method: PaymentMethod;
   reference_number?: string;
