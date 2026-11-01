@@ -3,19 +3,18 @@
  * Features:
  *   1. 📸 Open Camera (Live Photo Capture with System Camera)
  *   2. 🖼️ Upload from Device (Gallery / File Picker)
- *   3. 👤 High-Definition Professional Presets
+ *   3. 👤 High-Definition Professional Presets (Theme-aligned)
  *   4. 🔗 Custom Photo URL Input
  *   5. 🗑️ Remove Photo (Reset to initials)
  *
- * Uses Lucide vector icons, curated typography tokens, and responsive layout.
+ * Uses Lucide vector outline icons, curated typography tokens, and responsive layout.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Image,
   Modal,
-  NativeModules,
-  PermissionsAndroid,
   Platform,
+  PermissionsAndroid,
   ScrollView,
   StyleSheet,
   Text,
@@ -39,37 +38,48 @@ import {
   ExternalLink,
   CheckCircle2,
 } from '../../../../core/components/icons';
+import { DEFAULT_ADMIN_AVATAR } from '../../../auth/components/UserProfileModal';
 
 export const AVATAR_PRESETS = [
   {
     id: 'avatar-1',
     label: 'Executive',
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    url: DEFAULT_ADMIN_AVATAR,
   },
   {
     id: 'avatar-2',
-    label: 'Professional Male',
-    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+    label: 'Legal Counsel',
+    url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
   },
   {
     id: 'avatar-3',
-    label: 'Leader',
-    url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80',
+    label: 'Delegate',
+    url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=300&auto=format&fit=crop&q=80',
   },
   {
     id: 'avatar-4',
-    label: 'Member Male',
-    url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+    label: 'Advocate',
+    url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&auto=format&fit=crop&q=80',
   },
   {
     id: 'avatar-5',
-    label: 'Member Female',
-    url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80',
+    label: 'Advisor',
+    url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300&auto=format&fit=crop&q=80',
   },
   {
     id: 'avatar-6',
-    label: 'Officer',
-    url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80',
+    label: 'Director',
+    url: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=300&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'avatar-7',
+    label: 'Representative',
+    url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'avatar-8',
+    label: 'Coordinator',
+    url: 'https://images.unsplash.com/photo-1598550874175-4d0ef436c909?w=300&auto=format&fit=crop&q=80',
   },
 ];
 
@@ -87,11 +97,20 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
   onSelectAvatar,
 }) => {
   const [selectedUrl, setSelectedUrl] = useState<string | null>(
-    currentAvatarUrl || AVATAR_PRESETS[0].url,
+    currentAvatarUrl || DEFAULT_ADMIN_AVATAR,
   );
   const [customUrl, setCustomUrl] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [pickerError, setPickerError] = useState<string | null>(null);
+
+  // Synchronize selectedUrl with currentAvatarUrl whenever modal opens
+  useEffect(() => {
+    if (visible) {
+      setSelectedUrl(currentAvatarUrl || DEFAULT_ADMIN_AVATAR);
+      setShowCustomInput(false);
+      setPickerError(null);
+    }
+  }, [visible, currentAvatarUrl]);
 
   const isWeb = Platform.OS === 'web' || typeof (globalThis as any).document !== 'undefined';
 
@@ -270,7 +289,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Close photo picker"
             >
-              <X size={18} color={AdminColors.textSecondary} />
+              <X size={18} color={AdminColors.textSecondary} strokeWidth={1.8} />
             </TouchableOpacity>
           </View>
 
@@ -287,7 +306,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                 accessibilityLabel="Take Photo with Camera"
               >
                 <View style={styles.cameraIconBadge}>
-                  <Camera size={20} color="#1D4ED8" strokeWidth={2.2} />
+                  <Camera size={22} color="#082046" strokeWidth={1.8} />
                 </View>
                 <Text style={styles.deviceActionTitle}>Take Photo</Text>
                 <Text style={styles.deviceActionSub}>Open Camera</Text>
@@ -302,7 +321,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                 accessibilityLabel="Upload File from Device"
               >
                 <View style={styles.galleryIconBadge}>
-                  <ImageIcon size={20} color="#B45309" strokeWidth={2.2} />
+                  <ImageIcon size={22} color="#C4881C" strokeWidth={1.8} />
                 </View>
                 <Text style={styles.deviceActionTitle}>Upload File</Text>
                 <Text style={styles.deviceActionSub}>Device / Gallery</Text>
@@ -314,7 +333,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
               <View style={styles.errorBanner}>
                 <Text style={styles.errorText}>{pickerError}</Text>
                 <TouchableOpacity onPress={() => setPickerError(null)}>
-                  <X size={14} color="#DC2626" />
+                  <X size={14} color="#DC2626" strokeWidth={1.8} />
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -327,7 +346,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                 </View>
                 <View style={styles.previewDetails}>
                   <View style={styles.previewTitleRow}>
-                    <CheckCircle2 size={14} color="#0284C7" />
+                    <CheckCircle2 size={15} color="#C4881C" strokeWidth={1.8} />
                     <Text style={styles.previewLabel}>Selected Photo Preview</Text>
                   </View>
                   <Text style={styles.previewHint}>
@@ -364,7 +383,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                     />
                     {selected ? (
                       <View style={styles.checkmarkBadge}>
-                        <Check size={11} color="#FFFFFF" strokeWidth={3} />
+                        <Check size={11} color="#FFFFFF" strokeWidth={2.6} />
                       </View>
                     ) : null}
                   </TouchableOpacity>
@@ -378,7 +397,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
               onPress={() => setShowCustomInput(!showCustomInput)}
               activeOpacity={0.7}
             >
-              <ExternalLink size={13} color={AdminColors.primary} />
+              <ExternalLink size={13} color="#082046" strokeWidth={1.8} />
               <Text style={styles.customToggleText}>
                 {showCustomInput ? 'Hide URL input' : 'Enter custom photo URL'}
               </Text>
@@ -410,7 +429,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                 onPress={handleRemovePhoto}
                 activeOpacity={0.7}
               >
-                <Trash2 size={14} color={AdminColors.error} />
+                <Trash2 size={14} color={AdminColors.error} strokeWidth={1.8} />
                 <Text style={styles.removeButtonText}>
                   Remove Photo (Reset to Initials)
                 </Text>
@@ -426,7 +445,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
               />
               <AppButton
                 title="Save Photo"
-                variant="primary"
+                variant="gold"
                 size="sm"
                 onPress={handleApply}
                 style={styles.btn}
@@ -451,8 +470,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.xl,
     width: '100%',
-    maxWidth: 400,
-    maxHeight: '85%',
+    maxWidth: 420,
+    maxHeight: '88%',
     ...Shadows.card,
     overflow: 'hidden',
   },
@@ -473,7 +492,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: AdminColors.primaryDark,
+    color: '#082046',
     letterSpacing: -0.2,
   },
   subtitle: {
@@ -501,15 +520,15 @@ const styles = StyleSheet.create({
   },
   deviceActionsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
     marginBottom: Spacing.md,
   },
   deviceActionCard: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF7F2',
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderWidth: 1.5,
+    borderColor: '#E8E1D5',
     paddingVertical: 14,
     paddingHorizontal: Spacing.sm,
     alignItems: 'center',
@@ -521,23 +540,23 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cameraIconBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#D5DFEB',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
   },
   galleryIconBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#FFFBEB',
-    borderWidth: 1,
-    borderColor: '#FEF3C7',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#F3E5C8',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -545,7 +564,7 @@ const styles = StyleSheet.create({
   deviceActionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: AdminColors.primaryDark,
+    color: '#082046',
   },
   deviceActionSub: {
     fontSize: 10.5,
@@ -574,21 +593,21 @@ const styles = StyleSheet.create({
   previewContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F9FF',
+    backgroundColor: '#FDFBF7',
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: '#BAE6FD',
-    padding: 10,
+    borderWidth: 1.5,
+    borderColor: '#E8D5B5',
+    padding: 12,
     marginBottom: Spacing.sm,
   },
   previewImageWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 2,
-    borderColor: AdminColors.primary,
+    borderColor: '#C4881C',
     overflow: 'hidden',
-    marginRight: Spacing.sm,
+    marginRight: Spacing.sm + 2,
   },
   previewImage: {
     width: '100%',
@@ -600,16 +619,16 @@ const styles = StyleSheet.create({
   previewTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
   previewLabel: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#0369A1',
+    color: '#082046',
   },
   previewHint: {
     fontSize: 11,
-    color: '#0284C7',
+    color: '#8A5D0B',
     marginTop: 2,
   },
   grid: {
@@ -620,18 +639,23 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   avatarOption: {
-    width: '30%',
+    width: '22%',
     aspectRatio: 1,
     borderRadius: BorderRadius.full,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: '#E2E8F0',
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
   },
   avatarOptionSelected: {
-    borderColor: AdminColors.primary,
+    borderColor: '#C4881C',
     borderWidth: 3,
+    shadowColor: '#C4881C',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 4,
   },
   presetImage: {
     width: '100%',
@@ -642,10 +666,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 2,
     right: 2,
-    backgroundColor: AdminColors.primary,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    backgroundColor: '#C4881C',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
@@ -659,7 +683,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   customToggleText: {
-    color: AdminColors.primary,
+    color: '#082046',
     fontSize: 12.5,
     fontWeight: '600',
   },
@@ -674,14 +698,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     fontSize: 13,
-    color: AdminColors.primaryDark,
+    color: '#082046',
     backgroundColor: '#F8FAFC',
   },
   actions: {
     padding: Spacing.base,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#FAF7F2',
   },
   removeButton: {
     flexDirection: 'row',

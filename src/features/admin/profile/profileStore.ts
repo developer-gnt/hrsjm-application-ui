@@ -14,6 +14,7 @@ import {
   PersonalInfoInput,
 } from './types/profile.types';
 import { useAuthStore } from '../../auth/store/authStore';
+import { DEFAULT_ADMIN_AVATAR } from '../../auth/components/UserProfileModal';
 import { apiClient } from '../../../core/api/client';
 import { ApiRoutes } from '../../../core/constants/api-routes';
 import { membershipApplicationsStore } from '../../admin/membershipApplications/services/membershipApplicationsStore';
@@ -83,7 +84,7 @@ const getInitialProfile = (): AdminProfile => {
       accountName: user.full_name || '',
       email: user.email || '',
       phone: user.mobile_number || '',
-      avatar: user.avatar || null,
+      avatar: user.avatar || DEFAULT_ADMIN_AVATAR,
       role: mapBackendRole(user.roles),
       accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
       membershipType: isUserAdmin ? 'Executive Member' : isMember ? 'Individual Member' : 'User',
@@ -100,7 +101,7 @@ const getInitialProfile = (): AdminProfile => {
     fullName: '',
     email: '',
     phone: '',
-    avatar: null,
+    avatar: DEFAULT_ADMIN_AVATAR,
     role: 'Admin',
     accountStatus: 'Active',
     membershipType: 'Executive Member',
@@ -244,7 +245,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         accountName: user.full_name || '',
         email: user.email || '—',
         phone: user.mobile_number || user.phone || '—',
-        avatar: user.avatar || get().profile.avatar || null,
+        avatar: user.avatar || get().profile.avatar || DEFAULT_ADMIN_AVATAR,
         role: effectiveRole,
         accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
         membershipType:
@@ -344,14 +345,12 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   },
 
   updateAvatar: async (avatarUri: string | null) => {
-    // 1. Sync useAuthStore so global header avatar updates immediately
+    // 1. Sync useAuthStore so global header avatar updates immediately and persists to storage
     const currentUser = useAuthStore.getState().user;
     if (currentUser) {
-      useAuthStore.setState({
-        user: {
-          ...currentUser,
-          avatar: avatarUri,
-        },
+      useAuthStore.getState().setUser({
+        ...currentUser,
+        avatar: avatarUri,
       });
     }
 

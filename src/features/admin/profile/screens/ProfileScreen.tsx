@@ -43,10 +43,11 @@ import { ProfileSectionCard } from '../components/ProfileSectionCard';
 import { ProfileInfoRow } from '../components/ProfileInfoRow';
 import { ProfileToast, ToastState } from '../components/ProfileToast';
 import { AvatarPickerModal } from '../components/AvatarPickerModal';
+import { DEFAULT_ADMIN_AVATAR } from '../../../auth/components/UserProfileModal';
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { EditPersonalInfoModal } from '../components/EditPersonalInfoModal';
 import { MyIdCard } from '../components/MyIdCard';
-import { Lock, KeyRound, Calendar, BadgeCheck, Receipt } from '../../../../core/components/icons';
+import { Lock, KeyRound, Calendar, BadgeCheck, Receipt, Camera, Pencil } from '../../../../core/components/icons';
 import {
   PersonIcon,
   MailIcon,
@@ -94,6 +95,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const profile = useProfileStore(state => state.profile);
+  const user = useAuthStore(state => state.user);
+  const effectiveAvatar = profile.avatar || user?.avatar || DEFAULT_ADMIN_AVATAR;
   const updateAvatar = useProfileStore(state => state.updateAvatar);
   const stagedMessage = useProfileStore(state => state.stagedMessage);
   const consumeStagedMessage = useProfileStore(
@@ -340,11 +343,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           >
             <AppAvatar
               name={profile.accountName}
-              imageUrl={profile.avatar}
-              size={50}
+              imageUrl={effectiveAvatar}
+              size={56}
             />
             <View style={styles.pencilBadge}>
-              <Text style={styles.pencilIcon}>✏️</Text>
+              <Camera size={11} color="#FFFFFF" strokeWidth={2} />
             </View>
           </TouchableOpacity>
 
@@ -788,7 +791,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       {/* Avatar Picker Modal */}
       <AvatarPickerModal
         visible={avatarPickerVisible}
-        currentAvatarUrl={profile.avatar}
+        currentAvatarUrl={effectiveAvatar}
         onClose={() => setAvatarPickerVisible(false)}
         onSelectAvatar={handleSelectAvatar}
       />
@@ -874,17 +877,17 @@ const styles = StyleSheet.create({
   },
   pencilBadge: {
     position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#011F39',
-    borderWidth: 1.5,
+    bottom: -1,
+    right: -1,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#082046',
+    borderWidth: 2,
     borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#011F39',
+    shadowColor: '#082046',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3,
