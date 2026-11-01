@@ -57,10 +57,19 @@ export const mapBackendEventToUserEvent = (item: BackendEventItem): UserEvent =>
     ? `${formatClock(start)} – ${formatClock(end)}`
     : `${formatClock(start)}`;
 
-  const image =
-    item.cover_image_url && item.cover_image_url.startsWith('http')
-      ? { uri: item.cover_image_url }
-      : DEFAULT_EVENT_IMAGE;
+  const hasValidUri =
+    typeof item.cover_image_url === 'string' &&
+    item.cover_image_url.trim().length > 0 &&
+    (item.cover_image_url.startsWith('http://') ||
+      item.cover_image_url.startsWith('https://') ||
+      item.cover_image_url.startsWith('data:') ||
+      item.cover_image_url.startsWith('file:') ||
+      item.cover_image_url.startsWith('blob:') ||
+      item.cover_image_url.startsWith('/'));
+
+  const image = hasValidUri
+    ? { uri: item.cover_image_url!.trim() }
+    : DEFAULT_EVENT_IMAGE;
 
   const topics =
     Array.isArray(item.tags) && item.tags.length > 0

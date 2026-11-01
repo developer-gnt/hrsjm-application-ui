@@ -6,7 +6,6 @@ import {
   BackHandler,
   Image,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -22,8 +21,9 @@ import {
 } from '../../../../core/theme';
 import { AppIcon } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
-import { shareContent } from '../../../../core/utils/share';
 import type { UserEvent } from '../data/user-events';
+
+const DEFAULT_EVENT_IMAGE = require('../../../../assets/images/event-legal-awareness.jpg');
 
 interface UserEventDetailsScreenProps {
   event: UserEvent;
@@ -44,6 +44,11 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
   onRegister,
 }) => {
   const insets = useSafeAreaInsets();
+  const [coverSource, setCoverSource] = React.useState<any>(event.image || DEFAULT_EVENT_IMAGE);
+
+  React.useEffect(() => {
+    setCoverSource(event.image || DEFAULT_EVENT_IMAGE);
+  }, [event.image]);
 
   React.useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -54,8 +59,10 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
   }, [onBack]);
 
   const handleOpenMap = async () => {
-    const query = `${event.venue}, ${event.location}`;
-    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    const targetPlace = event.venue && event.location && event.venue !== event.location
+      ? `${event.venue}, ${event.location}`
+      : event.venue || event.location || 'Mumbai';
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetPlace)}`;
 
     try {
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -67,35 +74,47 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
       if (supported) {
         await Linking.openURL(mapUrl);
       } else {
-        await Linking.openURL(`geo:0,0?q=${encodeURIComponent(query)}`);
+        await Linking.openURL(`geo:0,0?q=${encodeURIComponent(targetPlace)}`);
       }
     } catch {
       Linking.openURL(mapUrl);
     }
   };
 
-  const handleShare = async () => {
-    await shareContent({
-      title: event.title,
-      message: `${event.title}\n${event.date} · ${event.time}\n${event.venue}, ${event.location}`,
-    });
-  };
+  const eventYear = React.useMemo(() => {
+    if (event.rawEvent?.start_at) {
+      const d = new Date(event.rawEvent.start_at);
+      if (!isNaN(d.getFullYear())) return String(d.getFullYear());
+    }
+    const parts = event.date?.split(' ');
+    if (parts && parts.length >= 3 && !isNaN(Number(parts[2]))) {
+      return parts[2];
+    }
+    return String(new Date().getFullYear());
+  }, [event]);
+
+  const status = event.status?.toUpperCase() || 'UPCOMING';
+  const isCompleted = status === 'COMPLETED';
+  const isCancelled = status === 'CANCELLED';
+  const statusLabel = isCompleted ? 'Completed' : isCancelled ? 'Cancelled' : 'Upcoming';
+  const statusIcon = isCompleted ? 'check-circle' : isCancelled ? 'x-circle' : 'calendar';
+
+  const venueText = (event.venue || event.location || 'HRSJM Centre').trim();
+  const locationText = (event.location || '').trim();
+  const hasDistinctLocation =
+    Boolean(locationText && venueText) &&
+    locationText.toLowerCase() !== venueText.toLowerCase() &&
+    !venueText.toLowerCase().includes(locationText.toLowerCase());
+
+  const subtitle =
+    event.rawEvent?.short_information?.trim() ||
+    (event.rawEvent?.organized_by ? `Organized by ${event.rawEvent.organized_by}` : null);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <HomeHeader
         onBack={onBack}
         activeNav="events"
-        rightAction={
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={handleShare}
-            accessibilityRole="button"
-            accessibilityLabel="Share event"
-          >
-            <AppIcon name="share" size={19} color={AdminColors.primaryDark} />
-          </TouchableOpacity>
-        }
       />
 
       <ScrollView
@@ -104,15 +123,48 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.coverWrap}>
-          <Image source={event.image} style={styles.coverImage} resizeMode="cover" />
+          <Image
+            source={coverSource}
+            style={styles.coverImage}
+            resizeMode="cover"
+            onError={() => {
+              setCoverSource(DEFAULT_EVENT_IMAGE);
+            }}
+          />
           <View style={styles.coverShade} />
           <View style={styles.dateCard}>
             <Text style={styles.coverDateDay}>{event.day}</Text>
-            <Text style={styles.coverDateMonth}>{event.month} 2026</Text>
+            <Text style={styles.coverDateMonth}>
+              {event.month} {eventYear}
+            </Text>
           </View>
-          <View style={styles.statusBadge}>
-            <AppIcon name="calendar" size={14} color={AdminColors.primaryDark} />
-            <Text style={styles.statusText}>Upcoming</Text>
+          <View
+            style={[
+              styles.statusBadge,
+              isCompleted && styles.statusBadgeCompleted,
+              isCancelled && styles.statusBadgeCancelled,
+            ]}
+          >
+            <AppIcon
+              name={statusIcon as any}
+              size={14}
+              color={
+                isCompleted
+                  ? '#166534'
+                  : isCancelled
+                  ? '#991B1B'
+                  : AdminColors.primaryDark
+              }
+            />
+            <Text
+              style={[
+                styles.statusText,
+                isCompleted && styles.statusTextCompleted,
+                isCancelled && styles.statusTextCancelled,
+              ]}
+            >
+              {statusLabel}
+            </Text>
           </View>
         </View>
 
@@ -121,7 +173,9 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
             <Text style={styles.categoryPill}>{event.category}</Text>
           </View>
           <Text style={styles.eventTitle}>{event.title}</Text>
-          <Text style={styles.description}>{event.description}</Text>
+          {subtitle && subtitle !== event.title ? (
+            <Text style={styles.description}>{subtitle}</Text>
+          ) : null}
 
           <View style={styles.infoRow}>
             <View style={styles.infoCell}>
@@ -131,7 +185,7 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
               <View style={styles.infoCopy}>
                 <Text style={styles.infoLabel}>Date &amp; Time</Text>
                 <Text style={styles.infoValue}>{event.date}</Text>
-                <Text style={styles.infoValue}>{event.time}</Text>
+                <Text style={styles.infoSubValue}>{event.time}</Text>
               </View>
             </View>
             <View style={styles.infoDivider} />
@@ -141,12 +195,14 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
               </View>
               <View style={styles.infoCopy}>
                 <Text style={styles.infoLabel}>Venue</Text>
-                <Text style={styles.infoValue}>{event.venue}</Text>
-                <Text style={styles.infoValue}>{event.location}</Text>
+                <Text style={styles.infoValue}>{venueText}</Text>
+                {hasDistinctLocation ? (
+                  <Text style={styles.infoSubValue}>{locationText}</Text>
+                ) : null}
                 <TouchableOpacity
                   onPress={handleOpenMap}
                   accessibilityRole="button"
-                  accessibilityLabel={`View ${event.venue} on Google Maps`}
+                  accessibilityLabel={`View ${venueText} on Google Maps`}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.mapLink}>View on Map →</Text>
@@ -167,21 +223,24 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About This Event</Text>
             <Text style={styles.bodyText}>
-              {event.description} HRSJM supports individuals and communities in accessing justice.
+              {event.description?.trim() ||
+                'HRSJM supports individuals and communities in accessing justice through comprehensive legal awareness, human rights education, and civic empowerment initiatives.'}
             </Text>
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Key Topics</Text>
-            {event.topics.map(topic => (
-              <View key={topic} style={styles.topicRow}>
-                <View style={styles.topicCheck}>
-                  <AppIcon name="check" size={10} color="#FFFFFF" strokeWidth={2.4} />
+          {Array.isArray(event.topics) && event.topics.length > 0 ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Key Topics</Text>
+              {event.topics.map(topic => (
+                <View key={topic} style={styles.topicRow}>
+                  <View style={styles.topicCheck}>
+                    <AppIcon name="check" size={10} color="#FFFFFF" strokeWidth={2.4} />
+                  </View>
+                  <Text style={styles.topicText}>{topic}</Text>
                 </View>
-                <Text style={styles.topicText}>{topic}</Text>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -209,36 +268,11 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  header: {
-    minHeight: 58,
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.xs,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: AdminColors.cardSurface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AdminColors.border,
-  },
-  headerButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: AdminColors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    color: AdminColors.primaryDark,
-    fontFamily: UserFontFamilies.heading,
-    fontSize: 17,
-    fontWeight: '700',
-  },
   scrollContent: {
     paddingBottom: Spacing.md,
   },
   coverWrap: {
-    height: 200,
+    height: 210,
     backgroundColor: AdminColors.primaryDark,
     position: 'relative',
   },
@@ -254,7 +288,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: Spacing.md,
     top: Spacing.md,
-    minWidth: 52,
+    minWidth: 54,
     alignItems: 'center',
     paddingVertical: 6,
     paddingHorizontal: 8,
@@ -284,14 +318,30 @@ const styles = StyleSheet.create({
     gap: 5,
     backgroundColor: AdminColors.cardSurface,
     borderRadius: BorderRadius.full,
-    paddingHorizontal: 10,
+    paddingHorizontal: 11,
     paddingVertical: 5,
     ...Shadows.card,
+  },
+  statusBadgeCompleted: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  statusBadgeCancelled: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
   },
   statusText: {
     color: AdminColors.primaryDark,
     fontSize: 12,
     fontWeight: '700',
+  },
+  statusTextCompleted: {
+    color: '#166534',
+  },
+  statusTextCancelled: {
+    color: '#991B1B',
   },
   detailCard: {
     marginTop: -14,
@@ -310,8 +360,8 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     backgroundColor: AdminColors.accentGoldLight,
     color: AdminColors.primaryDark,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 4.5,
     fontSize: 11.5,
     fontWeight: '700',
   },
@@ -319,8 +369,8 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     color: AdminColors.primaryDark,
     fontFamily: UserFontFamilies.heading,
-    fontSize: 23,
-    lineHeight: 29,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: '700',
   },
   description: {
@@ -345,13 +395,14 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   infoIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: AdminColors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
+    flexShrink: 0,
   },
   infoCopy: {
     flex: 1,
@@ -359,15 +410,24 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     color: AdminColors.textMuted,
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 11.5,
+    fontWeight: '600',
     marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   infoValue: {
     color: AdminColors.primaryDark,
-    fontSize: 13,
+    fontSize: 13.5,
     lineHeight: 18,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  infoSubValue: {
+    color: AdminColors.textSecondary,
+    fontSize: 12.5,
+    lineHeight: 17,
+    fontWeight: '500',
+    marginTop: 1,
   },
   infoDivider: {
     width: 1,
@@ -378,8 +438,8 @@ const styles = StyleSheet.create({
     color: '#174A78',
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: '600',
-    marginTop: 3,
+    fontWeight: '700',
+    marginTop: 4,
   },
   featureRow: {
     flexDirection: 'row',
@@ -389,7 +449,7 @@ const styles = StyleSheet.create({
   },
   featureItem: {
     flex: 1,
-    minHeight: 68,
+    minHeight: 70,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -421,7 +481,7 @@ const styles = StyleSheet.create({
   bodyText: {
     color: AdminColors.textSecondary,
     fontSize: 13.5,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   topicRow: {
     flexDirection: 'row',

@@ -247,7 +247,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
                 resizeMode="contain"
               />
               <View style={styles.wordmarkCol}>
-                <Text style={styles.brandTitle}>HRSJM</Text>
+                <Text style={styles.brandTitle} numberOfLines={1}>HRSJM</Text>
                 <Text style={styles.wordmarkEnglish} numberOfLines={1}>
                   HUMAN RIGHTS AND SOCIAL JUSTICE MISSION
                 </Text>
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    flexShrink: 1,
+    flexShrink: 0,
     minWidth: 0,
   },
   shieldLogo: {
@@ -458,8 +458,8 @@ const styles = StyleSheet.create({
   },
   wordmarkCol: {
     justifyContent: 'center',
-    flexShrink: 1,
-    minWidth: 0,
+    flexShrink: 0,
+    minWidth: 56,
   },
   brandTitle: {
     fontFamily: UserFontFamilies.heading,
@@ -468,6 +468,7 @@ const styles = StyleSheet.create({
     color: '#06294D',
     letterSpacing: 0.2,
     lineHeight: 20,
+    flexShrink: 0,
   },
   wordmarkEnglish: {
     fontFamily: UserFontFamilies.sans,
