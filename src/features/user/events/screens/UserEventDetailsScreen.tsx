@@ -19,7 +19,7 @@ import {
   Spacing,
   UserFontFamilies,
 } from '../../../../core/theme';
-import { AppIcon } from '../../components';
+import { AppIcon, type IconName } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
 import type { UserEvent } from '../data/user-events';
 
@@ -28,20 +28,12 @@ const DEFAULT_EVENT_IMAGE = require('../../../../assets/images/event-legal-aware
 interface UserEventDetailsScreenProps {
   event: UserEvent;
   onBack: () => void;
-  onRegister: () => void;
+  onRegister?: () => void;
 }
-
-const EVENT_FEATURES = [
-  { icon: 'users' as const, label: 'Open to\nAll' },
-  { icon: 'map-pin' as const, label: 'Offline\nEvent' },
-  { icon: 'heart' as const, label: 'Free\nEntry' },
-  { icon: 'graduation-cap' as const, label: 'Certificate\nProvided' },
-];
 
 export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
   event,
   onBack,
-  onRegister,
 }) => {
   const insets = useSafeAreaInsets();
   const [coverSource, setCoverSource] = React.useState<any>(event.image || DEFAULT_EVENT_IMAGE);
@@ -59,9 +51,10 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
   }, [onBack]);
 
   const handleOpenMap = async () => {
-    const targetPlace = event.venue && event.location && event.venue !== event.location
-      ? `${event.venue}, ${event.location}`
-      : event.venue || event.location || 'Mumbai';
+    const targetPlace =
+      event.venue && event.location && event.venue !== event.location
+        ? `${event.venue}, ${event.location}`
+        : event.venue || event.location || 'Mumbai';
     const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetPlace)}`;
 
     try {
@@ -110,16 +103,37 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
     event.rawEvent?.short_information?.trim() ||
     (event.rawEvent?.organized_by ? `Organized by ${event.rawEvent.organized_by}` : null);
 
+  // Dynamic feature pills matching event specifications
+  const targetAudience = event.rawEvent?.target_audience || 'Open to All';
+  const isOnline =
+    event.rawEvent?.event_type === 'ONLINE' || event.rawEvent?.event_type === 'VIRTUAL';
+  const formatLabel = isOnline ? 'Online\nEvent' : 'Offline\nEvent';
+  const entryLabel = event.rawEvent?.registration_required ? 'Registration\nRequired' : 'Free\nEntry';
+
+  const eventFeatures = [
+    {
+      icon: 'users' as const,
+      label: targetAudience.includes('\n')
+        ? targetAudience
+        : targetAudience.length > 12
+        ? `${targetAudience.slice(0, 11)}…`
+        : targetAudience,
+    },
+    { icon: (isOnline ? 'globe' : 'map-pin') as IconName, label: formatLabel },
+    { icon: 'heart' as const, label: entryLabel },
+    { icon: 'graduation-cap' as const, label: 'Certificate\nProvided' },
+  ];
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      <HomeHeader
-        onBack={onBack}
-        activeNav="events"
-      />
+      <HomeHeader onBack={onBack} activeNav="events" />
 
       <ScrollView
         style={styles.flex}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 24) + Spacing.lg },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.coverWrap}>
@@ -212,7 +226,7 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
           </View>
 
           <View style={styles.featureRow}>
-            {EVENT_FEATURES.map(feature => (
+            {eventFeatures.map(feature => (
               <View key={feature.label} style={styles.featureItem}>
                 <AppIcon name={feature.icon} size={20} color={AdminColors.primaryDark} />
                 <Text style={styles.featureLabel}>{feature.label}</Text>
@@ -243,19 +257,6 @@ export const UserEventDetailsScreen: React.FC<UserEventDetailsScreenProps> = ({
           ) : null}
         </View>
       </ScrollView>
-
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacing.sm) }]}>
-        <TouchableOpacity
-          style={styles.registerButton}
-          onPress={onRegister}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Register for Event"
-        >
-          <Text style={styles.registerText}>Register for Event</Text>
-          <AppIcon name="arrow-right" size={18} color={AdminColors.primaryDark} />
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
@@ -269,7 +270,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.xl,
   },
   coverWrap: {
     height: 210,
@@ -503,26 +504,5 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontWeight: '500',
     flex: 1,
-  },
-  footer: {
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.sm,
-    backgroundColor: AdminColors.cardSurface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: AdminColors.border,
-  },
-  registerButton: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    borderRadius: 12,
-    backgroundColor: AdminColors.accentGold,
-  },
-  registerText: {
-    color: AdminColors.primaryDark,
-    fontSize: 15,
-    fontWeight: '700',
   },
 });
