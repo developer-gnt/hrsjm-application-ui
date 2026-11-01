@@ -56,6 +56,7 @@ import {
   type PassbookExportOptions,
 } from '../components/PassbookExportModal';
 import { exportPassbookStatement } from '../services/passbook-export.api';
+import { exportPassbookPdf } from '../services/passbookPdfExport';
 
 interface GeneralLedgerScreenProps {
   accountId?: string;
@@ -199,17 +200,35 @@ export const GeneralLedgerScreen: React.FC<GeneralLedgerScreenProps> = ({
     if (isExporting) return;
     try {
       setIsExporting(true);
-      const res = await exportPassbookStatement({
-        transactionType: options.transactionType,
-        format: options.format,
-        fromDate: options.fromDate || fromDate,
-        toDate: options.toDate || toDate,
-      });
-      setExportModalVisible(false);
-      Alert.alert(
-        'Export Successful',
-        `Passbook statement (${options.format}) exported successfully.\nFile: ${res.filename}`,
-      );
+      try {
+        const res = await exportPassbookStatement({
+          transactionType: options.transactionType,
+          format: options.format,
+          fromDate: options.fromDate || fromDate,
+          toDate: options.toDate || toDate,
+          action: options.action,
+        });
+        setExportModalVisible(false);
+        if (options.action !== 'print') {
+          Alert.alert(
+            'Export Successful',
+            `Passbook statement exported successfully.\nFile: ${res.filename}`,
+          );
+        }
+      } catch (apiErr: any) {
+        if (transactions && transactions.length > 0) {
+          await exportPassbookPdf({
+            periodLabel: options.periodLabel,
+            fromDate: options.fromDate || fromDate,
+            toDate: options.toDate || toDate,
+            summary,
+            transactions,
+          });
+          setExportModalVisible(false);
+        } else {
+          throw apiErr;
+        }
+      }
     } catch (err: any) {
       Alert.alert(
         'Export Failed',

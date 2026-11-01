@@ -63,6 +63,14 @@ export const tokenStorage = {
           inMemoryAccessToken = persisted;
           return persisted;
         }
+        const sessionRaw = web.getItem('__hrsjm_secure_session');
+        if (sessionRaw) {
+          const parsed = JSON.parse(sessionRaw);
+          if (parsed?.accessToken) {
+            inMemoryAccessToken = parsed.accessToken;
+            return parsed.accessToken;
+          }
+        }
       } catch {}
     }
 
