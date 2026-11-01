@@ -6,7 +6,7 @@
  * navigation (matching the reference) and generates the real PDF via
  * `useIdCardFiles`.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -38,7 +38,7 @@ import {
   navigateToMembershipApplications,
   navigateToDonations,
 } from '../../../../core/navigation/appRouter';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ProfileSectionCard } from '../components/ProfileSectionCard';
 import { ProfileInfoRow } from '../components/ProfileInfoRow';
 import { ProfileToast, ToastState } from '../components/ProfileToast';
@@ -115,9 +115,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   const fetchProfile = useProfileStore(state => state.fetchProfile);
 
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+    }, [fetchProfile])
+  );
 
   const handleSelectAvatar = async (url: string | null) => {
     await updateAvatar(url);

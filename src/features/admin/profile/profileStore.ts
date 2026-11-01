@@ -126,7 +126,8 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         const res: any = await apiClient.get<any>(ApiRoutes.AUTH.ME);
         user = res?.data || res;
         if (user && user.id) {
-          useAuthStore.setState({ user: { ...useAuthStore.getState().user, ...user } });
+          const merged = { ...useAuthStore.getState().user, ...user };
+          useAuthStore.getState().setUser(merged);
         }
       } catch {
         user = useAuthStore.getState().user;
@@ -297,17 +298,16 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         : currentUser?.roles || [];
 
     if (currentUser || userData) {
-      useAuthStore.setState({
-        user: {
-          ...currentUser,
-          ...(typeof userData === 'object' && userData ? userData : {}),
-          full_name: input.fullName.trim(),
-          email: cleanEmail,
-          mobile_number: cleanPhone,
-          dob: dob || (currentUser as any)?.dob,
-          roles,
-        },
-      });
+      const mergedUser = {
+        ...currentUser,
+        ...(typeof userData === 'object' && userData ? userData : {}),
+        full_name: input.fullName.trim(),
+        email: cleanEmail,
+        mobile_number: cleanPhone,
+        dob: dob || (currentUser as any)?.dob,
+        roles,
+      };
+      useAuthStore.getState().setUser(mergedUser);
     }
 
     set(state => ({
