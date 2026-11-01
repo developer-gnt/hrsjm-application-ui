@@ -33,6 +33,10 @@ interface AccountPickerModalProps {
   accountType: AccountType;
   /** Currently selected account id (shown with a check). */
   selectedId?: string | null;
+  /** Optional filter function to filter displayed accounts (e.g. only donation income) */
+  filter?: (account: AccountItem) => boolean;
+  /** Optional flag to hide the "Add New" button */
+  hideAdd?: boolean;
   onSelect: (account: AccountItem) => void;
   onClose: () => void;
 }
@@ -42,12 +46,17 @@ export const AccountPickerModal: React.FC<AccountPickerModalProps> = ({
   title,
   accountType,
   selectedId,
+  filter,
+  hideAdd,
   onSelect,
   onClose,
 }) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search);
   const accountsQuery = useAccounts(accountType, debouncedSearch || undefined);
+  const displayedAccounts = filter
+    ? accountsQuery.accounts.filter(filter)
+    : accountsQuery.accounts;
 
   // CRUD Sub-modal states
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -223,16 +232,18 @@ export const AccountPickerModal: React.FC<AccountPickerModalProps> = ({
             <View style={styles.searchBarWrap}>
               <AppSearchBar placeholder="Search accounts..." onSearch={setSearch} />
             </View>
-            <TouchableOpacity
-              style={styles.addNewBtn}
-              onPress={openCreateModal}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Add New Account"
-            >
-              <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-              <Text style={styles.addNewBtnText}>Add</Text>
-            </TouchableOpacity>
+            {!hideAdd ? (
+              <TouchableOpacity
+                style={styles.addNewBtn}
+                onPress={openCreateModal}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Add New Account"
+              >
+                <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+                <Text style={styles.addNewBtnText}>Add</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
 
           {/* Accounts List / States */}
@@ -244,7 +255,7 @@ export const AccountPickerModal: React.FC<AccountPickerModalProps> = ({
             <Text style={styles.errorText}>
               {accountsQuery.error || 'Unable to load accounts. Try again.'}
             </Text>
-          ) : accountsQuery.accounts.length === 0 ? (
+          ) : displayedAccounts.length === 0 ? (
             <View style={styles.emptyWrap}>
               <AppEmptyState
                 icon="📚"
@@ -254,13 +265,13 @@ export const AccountPickerModal: React.FC<AccountPickerModalProps> = ({
                     ? 'Try a different search term or add a new account.'
                     : `No ${accountType.toLowerCase()} accounts created yet.`
                 }
-                actionTitle="+ Create Account"
-                onAction={openCreateModal}
+                actionTitle={hideAdd ? undefined : "+ Create Account"}
+                onAction={hideAdd ? undefined : openCreateModal}
               />
             </View>
           ) : (
             <FlatList
-              data={accountsQuery.accounts}
+              data={displayedAccounts}
               keyExtractor={item => item.id}
               renderItem={renderRow}
               style={styles.list}
