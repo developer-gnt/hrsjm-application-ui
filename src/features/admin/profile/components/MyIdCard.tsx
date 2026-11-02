@@ -10,6 +10,11 @@ import {
 import { AdminColors } from '../../../../core';
 import { AdminProfile } from '../types/profile.types';
 import { QrCode } from './QrCode';
+import {
+  resolveIdCardRole,
+  generateRoleSpecificId,
+  initialsOf,
+} from '../utils/format';
 
 // Official HRSJM assets
 const ID_CARD_BG = require('../../../../assets/id_card_bg.png');
@@ -51,6 +56,14 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
 
   const qrSize = width * 0.18;
   const tapToViewSize = Math.max(6.5, width * 0.02);
+
+  const roleInfo = resolveIdCardRole(profile.role, profile.membershipType);
+  const effectiveId =
+    profile.memberId ||
+    profile.adminId ||
+    generateRoleSpecificId(roleInfo.roleType);
+  const displayMembershipType =
+    profile.membershipType || roleInfo.defaultMembershipType;
 
   return (
     <View
@@ -160,27 +173,38 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
             },
           ]}
         >
-          {/* Optional Member Photo / Avatar */}
-          {profile.avatar ? (
-            <View
-              style={[
-                styles.avatarBox,
-                {
-                  width: width * 0.165,
-                  height: width * 0.195,
-                  borderRadius: width * 0.02,
-                  marginRight: width * 0.025,
-                  borderWidth: Math.max(1, width * 0.004),
-                },
-              ]}
-            >
+          {/* Member Photo / Avatar Frame with Initials Fallback */}
+          <View
+            style={[
+              styles.avatarBox,
+              {
+                width: width * 0.165,
+                height: width * 0.195,
+                borderRadius: width * 0.02,
+                marginRight: width * 0.025,
+                borderWidth: Math.max(1, width * 0.004),
+              },
+            ]}
+          >
+            {profile.avatar ? (
               <Image
                 source={{ uri: profile.avatar }}
                 style={styles.avatarPhoto}
                 resizeMode="cover"
               />
-            </View>
-          ) : null}
+            ) : (
+              <View style={styles.avatarInitialsBox}>
+                <Text
+                  style={[
+                    styles.avatarInitialsText,
+                    { fontSize: Math.max(11, width * 0.048) },
+                  ]}
+                >
+                  {initialsOf(profile.fullName || profile.accountName || 'User')}
+                </Text>
+              </View>
+            )}
+          </View>
 
           {/* Left Column: Name, Type, Info Rows */}
           <View style={styles.bodyLeft}>
@@ -190,36 +214,36 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
               numberOfLines={1}
               adjustsFontSizeToFit
             >
-              {profile.fullName}
+              {profile.fullName || profile.accountName || 'Member'}
             </Text>
 
-            {/* Membership Type */}
+            {/* Membership Type / Role Subtitle */}
             <Text
               style={[styles.memberType, { fontSize: memberTypeSize }]}
               numberOfLines={1}
             >
-              {profile.membershipType}
+              {displayMembershipType}
             </Text>
 
             {/* Info Rows */}
             <View style={[styles.infoRows, { marginTop: height * 0.035 }]}>
               <InfoRow
-                label="Member ID"
-                value={profile.memberId}
+                label={roleInfo.idLabel}
+                value={effectiveId}
                 labelSize={infoLabelSize}
                 valueSize={infoValueSize}
                 rowMarginBottom={height * 0.022}
               />
               <InfoRow
                 label="Valid Till"
-                value={profile.validTill}
+                value={profile.validTill || '31 Dec 2027'}
                 labelSize={infoLabelSize}
                 valueSize={infoValueSize}
                 rowMarginBottom={height * 0.022}
               />
               <InfoRow
                 label="Joined On"
-                value={profile.memberSince}
+                value={profile.memberSince || '12 Oct 2024'}
                 labelSize={infoLabelSize}
                 valueSize={infoValueSize}
                 rowMarginBottom={0}
@@ -238,7 +262,7 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
                 },
               ]}
             >
-              <QrCode size={qrSize} data={profile.memberId || 'HRSJM-00001'} />
+              <QrCode size={qrSize} data={effectiveId} />
             </View>
             <Text style={[styles.tapToView, { fontSize: tapToViewSize }]}>
               Tap to View
@@ -368,6 +392,18 @@ const styles = StyleSheet.create({
   avatarPhoto: {
     width: '100%',
     height: '100%',
+  },
+  avatarInitialsBox: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#0F2D5F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitialsText: {
+    color: '#CAA048',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   bodyLeft: {
     flex: 1,

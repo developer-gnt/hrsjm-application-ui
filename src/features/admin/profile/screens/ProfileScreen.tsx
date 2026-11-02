@@ -47,6 +47,10 @@ import { DEFAULT_ADMIN_AVATAR } from '../../../auth/components/UserProfileModal'
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { EditPersonalInfoModal } from '../components/EditPersonalInfoModal';
 import { MyIdCard } from '../components/MyIdCard';
+import {
+  resolveIdCardRole,
+  generateRoleSpecificId,
+} from '../utils/format';
 import { Lock, KeyRound, Calendar, BadgeCheck, Receipt, Camera, Pencil } from '../../../../core/components/icons';
 import {
   PersonIcon,
@@ -197,10 +201,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       roleLower === 'user' ||
       (!isAdmin && !isSeeker && !isApproved));
 
-  // ID Card is available for Approved Members, Admins, Donation Seekers, or Member Profile context.
-  // Standard/general users and applicants whose membership is not approved NEVER have an ID card.
-  const isAllowedRoleForIdCard = (isMember || isAdmin || isSeeker || isMemberContext) && !isPlainUser;
-  const canShowIdCard = showIdCard !== undefined ? (showIdCard && !isPlainUser) : isAllowedRoleForIdCard;
+  const roleInfo = resolveIdCardRole(profile.role, profile.membershipType, authUser?.roles);
+
+  // ID Card is available for all registered roles: User, Seeker, Member, and Admin.
+  const isAllowedRoleForIdCard = true;
+  const canShowIdCard = showIdCard !== undefined ? showIdCard : isAllowedRoleForIdCard;
 
   const handleMemberDetailsAction = () => {
     if (onViewMembershipDetails) {
@@ -262,15 +267,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   const effectiveMemberId =
     profile.memberId ||
-    (isMember || isMemberContext ? (profile.adminId || 'HRSJM-00001') : undefined) ||
+    profile.adminId ||
     membershipCtx.activeApplication?.applicationId ||
     (membershipCtx.applications && membershipCtx.applications[0]?.applicationId) ||
-    'HRSJM-47611';
+    generateRoleSpecificId(roleInfo.roleType, authUser?.id);
 
   const effectiveMembershipType =
     profile.membershipType ||
     membershipCtx.activeApplication?.membershipType ||
-    'Individual Member';
+    roleInfo.defaultMembershipType;
 
   const cardProfile: AdminProfile = {
     ...profile,
@@ -517,8 +522,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               />
               <ProfileInfoRow
                 icon={<IdCardIcon size={16} color={AdminColors.textSecondary} />}
-                label="Member ID"
-                value={profile.memberId || profile.adminId}
+                label={roleInfo.idLabel}
+                value={effectiveMemberId}
               />
               {profile.memberSince ? (
                 <ProfileInfoRow
@@ -569,6 +574,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               icon={<BuildingIcon size={16} color={AdminColors.textSecondary} />}
               label="Role"
               value={profile.role}
+            />
+            <ProfileInfoRow
+              icon={<IdCardIcon size={16} color={AdminColors.textSecondary} />}
+              label={roleInfo.idLabel}
+              value={effectiveMemberId}
             />
             <ProfileInfoRow
               icon={<BadgeCheckIcon size={16} />}
@@ -766,7 +776,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               accessibilityLabel="Open the full My ID Card page"
               style={styles.idCardWrap}
             >
-              <MyIdCard profile={profile} width={cardWidth} />
+              <MyIdCard profile={cardProfile} width={cardWidth} />
             </TouchableOpacity>
           </View>
         ) : null}
@@ -784,7 +794,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             loading={busyAction === 'download'}
             disabled={busyAction !== null}
             icon={<DownloadIcon color={AdminColors.primaryDark} />}
-            onPress={() => download(profile)}
+            onPress={() => download(cardProfile)}
             style={styles.downloadButton}
           />
         </View>

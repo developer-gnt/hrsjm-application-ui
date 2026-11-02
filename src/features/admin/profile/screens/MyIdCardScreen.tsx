@@ -36,6 +36,10 @@ import {
 } from '../components/ProfileIcons';
 import { useIdCardFiles } from '../hooks/useIdCardFiles';
 import { useMembership } from '../../../membership/context/MembershipContext';
+import {
+  resolveIdCardRole,
+  generateRoleSpecificId,
+} from '../utils/format';
 
 export interface MyIdCardScreenProps {
   onBack?: () => void;
@@ -84,19 +88,21 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
     roleLower.includes('donar seeker') ||
     roleLower.includes('donation seeker');
 
-  const isAllowed = isMember || isAdmin || isSeeker;
+  const roleInfo = resolveIdCardRole(profile.role, profile.membershipType, authUser?.roles);
+  const isAllowed = true;
 
   const membershipCtx = useMembership();
   const effectiveMemberId =
     profile.memberId ||
     membershipCtx.activeApplication?.applicationId ||
     (membershipCtx.applications && membershipCtx.applications[0]?.applicationId) ||
-    'HRSJM-47611';
+    profile.adminId ||
+    generateRoleSpecificId(roleInfo.roleType, authUser?.id);
 
   const effectiveMembershipType =
     profile.membershipType ||
     membershipCtx.activeApplication?.membershipType ||
-    'Individual Member';
+    roleInfo.defaultMembershipType;
 
   const cardProfile = {
     ...profile,
@@ -219,8 +225,8 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
               <Text style={styles.aboutTitle}>About this card</Text>
               <Text style={styles.aboutBody}>
                 This digitally issued HRSJM membership card identifies you as a
-                registered member of the Human Rights &amp; Social Justice
-                Mission. Each card carries a unique member ID and verification
+                verified {roleInfo.defaultMembershipType} of the Human Rights &amp; Social Justice
+                Mission. Each card carries a unique {roleInfo.idLabel.toLowerCase()} and verification
                 QR code, and is valid through the validity period shown.
               </Text>
               <View style={styles.aboutRow}>

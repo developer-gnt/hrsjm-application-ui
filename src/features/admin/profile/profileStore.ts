@@ -18,6 +18,10 @@ import { DEFAULT_ADMIN_AVATAR } from '../../auth/components/UserProfileModal';
 import { apiClient } from '../../../core/api/client';
 import { ApiRoutes } from '../../../core/constants/api-routes';
 import { membershipApplicationsStore } from '../../admin/membershipApplications/services/membershipApplicationsStore';
+import {
+  resolveIdCardRole,
+  generateRoleSpecificId,
+} from './utils/format';
 
 interface ProfileStore {
   profile: AdminProfile;
@@ -70,26 +74,20 @@ const generateAutoMemberId = (userId?: string, seq = 1): string => {
 const getInitialProfile = (): AdminProfile => {
   const user = useAuthStore.getState().user;
   if (user) {
-    const isUserAdmin = user.roles?.some((r: any) =>
-      r.name?.toUpperCase() === 'ADMIN' || r.name?.toUpperCase() === 'SUPER_ADMIN'
-    );
-    const isMember = user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
-    const adminId = isUserAdmin
-      ? `ADMIN${user.id ? user.id.replace(/\D/g, '').slice(-3).padStart(3, '0') || '001' : '001'}`
-      : isMember
-      ? generateAutoMemberId(user.id, 1)
-      : '';
+    const roleInfo = resolveIdCardRole(undefined, undefined, user.roles);
+    const roleId = generateRoleSpecificId(roleInfo.roleType, user.id);
+    const roleName = mapBackendRole(user.roles);
     return {
       fullName: user.full_name || '',
       accountName: user.full_name || '',
       email: user.email || '',
       phone: user.mobile_number || '',
       avatar: user.avatar || null,
-      role: mapBackendRole(user.roles),
+      role: roleName,
       accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
-      membershipType: isUserAdmin ? 'Executive Member' : isMember ? 'Individual Member' : 'User',
-      memberId: adminId,
-      adminId,
+      membershipType: roleInfo.defaultMembershipType,
+      memberId: roleId,
+      adminId: roleId,
       dateOfBirth: '',
       memberSince: formatDateStr(user.created_at, ''),
       validTill: '',
@@ -97,7 +95,7 @@ const getInitialProfile = (): AdminProfile => {
   }
   return {
     accountName: '',
-    adminId: '',
+    adminId: 'ADMIN001',
     fullName: '',
     email: '',
     phone: '',
@@ -105,7 +103,7 @@ const getInitialProfile = (): AdminProfile => {
     role: 'Admin',
     accountStatus: 'Active',
     membershipType: 'Executive Member',
-    memberId: '',
+    memberId: 'ADMIN001',
     dateOfBirth: '',
     memberSince: '',
     validTill: '',
@@ -190,9 +188,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       }
 
       const role = mapBackendRole(user.roles);
-      const isUserAdmin = user.roles?.some((r: any) =>
-        r.name?.toUpperCase() === 'ADMIN' || r.name?.toUpperCase() === 'SUPER_ADMIN'
-      );
       const isApprovedMember =
         membershipStatus === 'Approved' ||
         user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
@@ -200,24 +195,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       if (isApprovedMember && !membershipStatus) {
         membershipStatus = 'Approved';
       }
-
-      const memberId =
-        membershipData?.membership_number ||
-        (isApprovedMember ? generateAutoMemberId(user.id, 1) : '');
-      const adminId = isUserAdmin
-        ? `ADMIN${user.id ? user.id.replace(/\D/g, '').slice(-3).padStart(3, '0') || '001' : '001'}`
-        : (isApprovedMember ? memberId : '');
-
-      const memberSince = formatDateStr(
-        membershipData?.start_date || user.created_at,
-        '',
-      );
-      const defaultValidDate = new Date();
-      defaultValidDate.setFullYear(defaultValidDate.getFullYear() + 1);
-      const validTill = formatDateStr(
-        membershipData?.expiry_date || defaultValidDate,
-        formatDateStr(defaultValidDate),
-      );
 
       // Convert user's role to Member if approved and currently a standard User
       let effectiveRole = role;
@@ -241,6 +218,33 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         }
       }
 
+      const roleInfo = resolveIdCardRole(
+        effectiveRole,
+        membershipData?.category?.name || (membershipData?.application_data as any)?.membership_type,
+        user.roles,
+      );
+
+      const effectiveId =
+        roleInfo.roleType === 'member'
+          ? (membershipData?.membership_number || generateRoleSpecificId('member', user.id))
+          : generateRoleSpecificId(roleInfo.roleType, user.id);
+
+      const memberSince = formatDateStr(
+        membershipData?.start_date || user.created_at,
+        '',
+      );
+      const defaultValidDate = new Date();
+      defaultValidDate.setFullYear(defaultValidDate.getFullYear() + 1);
+      const validTill = formatDateStr(
+        membershipData?.expiry_date || defaultValidDate,
+        formatDateStr(defaultValidDate),
+      );
+
+      const resolvedMembershipType =
+        membershipData?.category?.name ||
+        (membershipData?.application_data as any)?.membership_type ||
+        roleInfo.defaultMembershipType;
+
       const dynamicProfile: AdminProfile = {
         fullName: user.full_name || '',
         accountName: user.full_name || '',
@@ -249,12 +253,9 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         avatar: user.avatar || get().profile.avatar || null,
         role: effectiveRole,
         accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
-        membershipType:
-          membershipData?.category?.name ||
-          (membershipData?.application_data as any)?.membership_type ||
-          (isUserAdmin ? 'Executive Member' : isApprovedMember ? 'Individual Member' : 'User'),
-        memberId,
-        adminId,
+        membershipType: resolvedMembershipType,
+        memberId: effectiveId,
+        adminId: effectiveId,
         dateOfBirth: (user as any)?.dob || (membershipData?.application_data as any)?.personal_details?.dob || '',
         memberSince,
         validTill,
