@@ -163,18 +163,19 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
 
   const authUser = useAuthStore(state => state.user);
   const isMemberRole =
-    (authUser?.roles ?? []).some((r: any) => (typeof r === 'string' ? r : r?.name || '').toUpperCase() === 'MEMBER') ||
-    (authUser as any)?.account_type === 'member';
+    (authUser?.membership_status === 'ACTIVE' || authUser?.membership_status === 'APPROVED') &&
+    ((authUser?.roles ?? []).some((r: any) => (typeof r === 'string' ? r : r?.name || '').toUpperCase() === 'MEMBER') ||
+      (authUser as any)?.account_type === 'member');
   const isGeneralUserWithoutApp =
     ((authUser as any)?.account_type === 'general' ||
       (authUser?.roles ?? []).every((r: any) => (typeof r === 'string' ? r : r?.name || '').toUpperCase() === 'USER')) &&
     !authUser?.membership_status;
   const hasPendingMemberApp =
     !isMemberRole &&
-    !isGeneralUserWithoutApp &&
     ((hasApplied && !isReapplying) ||
       authUser?.membership_status === 'PENDING' ||
-      authUser?.membership_status === 'UNDER_REVIEW');
+      authUser?.membership_status === 'UNDER_REVIEW' ||
+      ((authUser as any)?.account_type === 'member' && authUser?.membership_status !== 'ACTIVE' && authUser?.membership_status !== 'APPROVED'));
 
   // Live lookup of seeker application in usersStore
   const matchedSeeker = React.useMemo(() => {
