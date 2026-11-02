@@ -178,6 +178,42 @@ const buildDefaultTimeline = (status: MembershipStatus, submittedAt: string): Ti
   ];
 };
 
+const resolveNextAppIdNumber = (): string => {
+  let maxNum = 3;
+  try {
+    const stored =
+      (typeof localStorage !== 'undefined' && localStorage.getItem('hrsjm_last_app_num')) ||
+      (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('hrsjm_last_app_num'));
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      if (!isNaN(parsed) && parsed > maxNum) {
+        maxNum = parsed;
+      }
+    }
+  } catch {}
+
+  try {
+    const existingApps = membershipApplicationsStore.getApplications();
+    existingApps.forEach((a: any) => {
+      const match = (a.applicationId || '').match(/HRSJM-(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    });
+  } catch {}
+
+  const nextNum = maxNum + 1;
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem('hrsjm_last_app_num', String(nextNum));
+    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('hrsjm_last_app_num', String(nextNum));
+  } catch {}
+
+  return `HRSJM-${String(nextNum).padStart(5, '0')}`;
+};
+
 export const MembershipContext = createContext<MembershipContextType | undefined>(undefined);
 
 export function MembershipProvider({ children }: { children: ReactNode }) {
@@ -473,17 +509,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     const categoryTitle =
       effectivePost?.postName || selectedMembershipType || 'District Active Member';
 
-    // Consecutive application ID matching HRSJM-0000X format
-    const existingApps = membershipApplicationsStore.getApplications();
-    const maxNum = existingApps.reduce((max, a) => {
-      const match = (a.applicationId || '').match(/HRSJM-(\d+)/i);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        return num > max ? num : max;
-      }
-      return max;
-    }, 2);
-    const appIdNumber = `HRSJM-${String(maxNum + 1).padStart(5, '0')}`;
+    const appIdNumber = resolveNextAppIdNumber();
 
     const sanitizeUri = (uri?: string) => {
       if (!uri) return undefined;
@@ -732,9 +758,21 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     if (resData && resData.id) {
       const backendId = resData.id;
       adminAppItem.id = backendId;
-      if (resData.membership_number) {
-        adminAppItem.applicationId = resData.membership_number;
-        newRecord.applicationId = resData.membership_number;
+      const backendAppNumber =
+        resData.membership_number ||
+        resData.application_data?.application_id ||
+        resData.application_data?.membership_number;
+      if (backendAppNumber) {
+        adminAppItem.applicationId = backendAppNumber;
+        newRecord.applicationId = backendAppNumber;
+        try {
+          const match = String(backendAppNumber).match(/HRSJM-(\d+)/i);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (typeof localStorage !== 'undefined') localStorage.setItem('hrsjm_last_app_num', String(num));
+            if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('hrsjm_last_app_num', String(num));
+          }
+        } catch {}
       }
       newRecord.id = backendId;
       newRecord.status = 'Applied';
@@ -850,16 +888,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     const categoryTitle =
       effectivePost?.postName || selectedMembershipType || 'District Active Member';
 
-    const existingApps = membershipApplicationsStore.getApplications();
-    const maxNum = existingApps.reduce((max, a) => {
-      const match = (a.applicationId || '').match(/HRSJM-(\d+)/i);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        return num > max ? num : max;
-      }
-      return max;
-    }, 2);
-    const appIdNumber = `HRSJM-${String(maxNum + 1).padStart(5, '0')}`;
+    const appIdNumber = resolveNextAppIdNumber();
 
     const adminAppItem: MembershipApplicationItem = {
       id: `app-user-${Date.now()}`,
