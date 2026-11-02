@@ -198,12 +198,23 @@ export const tokenStorage = {
 
     try {
       appStorage.delete(StorageKeys.ACCESS_TOKEN);
+      appStorage.delete(StorageKeys.REFRESH_TOKEN);
+      appStorage.delete(StorageKeys.USER_DATA);
     } catch {}
 
     const web = getWebStorage();
     if (web) {
       try {
         web.removeItem('__hrsjm_access_token');
+        web.removeItem('__hrsjm_secure_session');
+        web.removeItem('hrsjm-app-prefs:hrsjm_access_token');
+        web.removeItem('hrsjm-app-prefs:hrsjm_refresh_token');
+        web.removeItem('hrsjm-app-prefs:hrsjm_user_data');
+        web.removeItem('hrsjm-secure-vault:hrsjm_auth_session');
+        web.removeItem('__kc_com.hrsjm.admin_hrsjm_auth_session');
+        web.removeItem('__kc_com.hrsjm.admin_hrsjm_refresh_token');
+        web.removeItem('__kc_default_hrsjm_auth_session');
+        web.removeItem('__kc_default_hrsjm_refresh_token');
       } catch {}
     }
 

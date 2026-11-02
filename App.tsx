@@ -3,6 +3,7 @@ import { StatusBar, useColorScheme, View, StyleSheet, Platform } from 'react-nat
 import { NavigationContainer } from '@react-navigation/native';
 import { AppProviders } from './src/app/providers/AppProviders';
 import { RootNavigator } from './src/app/navigation/RootNavigator';
+import { useAuthStore } from './src/features/auth/store/authStore';
 import {
   DonationsScreen,
   ReceiptDetailsPage,
@@ -522,8 +523,10 @@ function App() {
 
   const browserWindow =
     typeof globalThis !== 'undefined' ? (globalThis as any).window : undefined;
+  const authStatus = useAuthStore(state => state.status);
   const isIsolatedDevPreview =
     Platform.OS === 'web' &&
+    authStatus === 'authenticated' &&
     (Boolean(browserWindow?.location?.hash?.startsWith('#/dev/')) ||
       Boolean(browserWindow?.location?.hash?.startsWith('#/create-account')) ||
       Boolean(browserWindow?.location?.hash?.startsWith('#/users')) ||

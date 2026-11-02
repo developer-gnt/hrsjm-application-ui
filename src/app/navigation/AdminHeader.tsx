@@ -3,6 +3,7 @@ import {
   Image,
   Modal,
   Platform,
+  Pressable,
   StatusBar,
   StyleSheet,
   Text,
@@ -501,14 +502,15 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         animationType="fade"
         onRequestClose={() => setDropdownVisible(false)}
       >
-        <TouchableOpacity
-          style={styles.dropdownBackdrop}
-          activeOpacity={1}
+        <Pressable
+          style={StyleSheet.absoluteFill}
           onPress={() => setDropdownVisible(false)}
         >
-          <View
-            style={[
-              styles.dropdownMenu,
+          <View style={styles.dropdownBackdrop} />
+        </Pressable>
+        <View
+          style={[
+            styles.dropdownMenu,
               {
                 top:
                   Platform.OS === 'ios'
@@ -568,8 +570,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 Sign Out
               </Text>
             </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
 
       {/* Full User Profile Modal */}

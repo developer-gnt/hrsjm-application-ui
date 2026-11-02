@@ -245,22 +245,40 @@ export const useAuthStore = create<AuthState>()(set => ({
   },
 
   signOut: async () => {
+    let refreshToken: string | null = null;
     try {
-      const refreshToken = await tokenStorage.getRefreshToken();
-      if (refreshToken) {
-        await authService.logout(refreshToken);
-      }
-    } catch {
-      // Server-side revoke is best-effort; local session must always clear.
-    }
-    await tokenStorage.clearTokens();
+      refreshToken = await tokenStorage.getRefreshToken();
+    } catch {}
+
+    // Immediately clear all stored tokens and sessions
+    try {
+      await tokenStorage.clearTokens();
+    } catch {}
+
     try {
       appStorage.delete(StorageKeys.USER_DATA);
-    } catch {
-      // ignore
+      appStorage.delete(StorageKeys.ACCESS_TOKEN);
+      appStorage.delete(StorageKeys.REFRESH_TOKEN);
+    } catch {}
+
+    try {
+      usePermissionStore.getState().clear();
+    } catch {}
+
+    // If on web, clear any dev preview route hash
+    if (typeof window !== 'undefined' && window.location) {
+      if (window.location.hash) {
+        window.location.hash = '';
+      }
     }
-    usePermissionStore.getState().clear();
+
+    // Immediately transition state to unauthenticated so the UI changes to login instantly
     set({ user: null, status: 'unauthenticated' });
+
+    // Revoke refresh token on backend in background (best-effort, non-blocking)
+    if (refreshToken) {
+      authService.logout(refreshToken).catch(() => undefined);
+    }
   },
 
   handleSessionExpired: () => {

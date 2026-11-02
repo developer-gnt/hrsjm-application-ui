@@ -37,7 +37,8 @@ export const setupRefreshInterceptor = (
         originalRequest &&
         !originalRequest._retry &&
         !originalRequest.url?.includes(ApiRoutes.AUTH.LOGIN) &&
-        !originalRequest.url?.includes(ApiRoutes.AUTH.REFRESH)
+        !originalRequest.url?.includes(ApiRoutes.AUTH.REFRESH) &&
+        !originalRequest.url?.includes(ApiRoutes.AUTH.LOGOUT)
       ) {
         if (isRefreshing) {
           return new Promise((resolve, reject) => {
