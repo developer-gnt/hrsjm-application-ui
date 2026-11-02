@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StatusBar,
   TextInput,
   TouchableOpacity,
+  Pressable,
   useWindowDimensions,
   Platform,
   KeyboardAvoidingView,
@@ -105,6 +106,8 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   const [confirmPassword, setConfirmPassword] = useState(() => regState.password || '');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const passwordInputRef = useRef<TextInput>(null);
+  const confirmPasswordInputRef = useRef<TextInput>(null);
   const [termsAccepted, setTermsAccepted] = useState(true);
   const [privacyAccepted, setPrivacyAccepted] = useState(true);
 
@@ -376,7 +379,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
             isTabletOrDesktop && { alignItems: 'center' },
           ]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           bounces={false}
         >
@@ -710,11 +713,12 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
 
               {/* Field 6: Password */}
               <View style={styles.fieldWrapper}>
-                <View
+                <Pressable
                   style={[
                     styles.inputField,
                     errors.password ? styles.inputFieldError : null,
                   ]}
+                  onPress={() => passwordInputRef.current?.focus()}
                 >
                   <View style={styles.inputLeftIcon}>
                     <LockOutlineIcon
@@ -723,6 +727,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                     />
                   </View>
                   <TextInput
+                    ref={passwordInputRef}
                     style={styles.textInput}
                     placeholder="Create Password (min. 6 chars) *"
                     onFocus={handleInputFocus}
@@ -732,6 +737,9 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                       setPassword(t);
                       if (errors.password) setErrors(p => ({ ...p, password: undefined }));
                     }}
+                    returnKeyType="next"
+                    onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
+                    blurOnSubmit={false}
                     secureTextEntry={!showPassword}
                     accessibilityLabel="Password"
                   />
@@ -746,7 +754,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                       <EyeOutlineIcon size={18} color="#64748B" />
                     )}
                   </TouchableOpacity>
-                </View>
+                </Pressable>
                 {errors.password && (
                   <Text style={styles.fieldErrorText}>{errors.password}</Text>
                 )}
@@ -754,11 +762,12 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
 
               {/* Field 7: Confirm Password */}
               <View style={styles.fieldWrapper}>
-                <View
+                <Pressable
                   style={[
                     styles.inputField,
                     errors.confirmPassword ? styles.inputFieldError : null,
                   ]}
+                  onPress={() => confirmPasswordInputRef.current?.focus()}
                 >
                   <View style={styles.inputLeftIcon}>
                     <LockOutlineIcon
@@ -767,6 +776,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                     />
                   </View>
                   <TextInput
+                    ref={confirmPasswordInputRef}
                     style={styles.textInput}
                     placeholder="Confirm Password *"
                     onFocus={handleInputFocus}
@@ -776,6 +786,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                       setConfirmPassword(t);
                       if (errors.confirmPassword) setErrors(p => ({ ...p, confirmPassword: undefined }));
                     }}
+                    returnKeyType="done"
                     secureTextEntry={!showConfirmPassword}
                     accessibilityLabel="Confirm Password"
                   />
@@ -790,7 +801,7 @@ export const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                       <EyeOutlineIcon size={18} color="#64748B" />
                     )}
                   </TouchableOpacity>
-                </View>
+                </Pressable>
                 {errors.confirmPassword && (
                   <Text style={styles.fieldErrorText}>{errors.confirmPassword}</Text>
                 )}
@@ -1105,6 +1116,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
+    height: '100%',
     fontSize: 14,
     color: '#0F2860',
   },

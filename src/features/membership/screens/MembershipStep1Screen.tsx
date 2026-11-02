@@ -1,9 +1,10 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -200,9 +201,15 @@ export function MembershipStep1Screen() {
 
   const [showIneligible, setShowIneligible] = useState(false);
   const [ineligibleAge, setIneligibleAge] = useState<number | null>(null);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const fullNameInputRef = useRef<TextInput>(null);
+  const mobileInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<TextInput>(null);
+  const policeStationInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
+  const confirmPasswordInputRef = useRef<TextInput>(null);
   const [genderModalVisible, setGenderModalVisible] = useState(false);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
@@ -346,7 +353,7 @@ export function MembershipStep1Screen() {
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: keyboardPadding }]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           bounces={true}>
 
@@ -449,13 +456,15 @@ export function MembershipStep1Screen() {
               <Text style={styles.fieldLabel}>
                 Full Name <Text style={styles.requiredStar}>*</Text>
               </Text>
-              <View
+              <Pressable
                 style={[
                   styles.inputWrap,
                   errors.fullName ? styles.inputError : undefined,
-                ]}>
+                ]}
+                onPress={() => fullNameInputRef.current?.focus()}>
                 <Icon name="person" size={18} color="#64748B" strokeWidth={2} />
                 <TextInput
+                  ref={fullNameInputRef}
                   style={styles.textInput}
                   placeholder={isAdmin ? 'Enter full name' : (authUser?.full_name || 'Enter full name')}
                   placeholderTextColor="#94A3B8"
@@ -464,10 +473,11 @@ export function MembershipStep1Screen() {
                     updatePersonalInfo({ fullName: text });
                     if (errors.fullName) setErrors(prev => ({ ...prev, fullName: undefined }));
                   }}
+                  onFocus={handleInputFocus}
                   autoCapitalize="words"
                   accessibilityLabel="Full Name"
                 />
-              </View>
+              </Pressable>
               {errors.fullName ? (
                 <Text style={styles.errorText}>{errors.fullName}</Text>
               ) : null}
@@ -535,16 +545,18 @@ export function MembershipStep1Screen() {
               <Text style={styles.fieldLabel}>
                 Mobile Number <Text style={styles.requiredStar}>*</Text>
               </Text>
-              <View
+              <Pressable
                 style={[
                   styles.inputWrap,
                   errors.mobileNumber ? styles.inputError : undefined,
-                ]}>
+                ]}
+                onPress={() => mobileInputRef.current?.focus()}>
                 <Icon name="phone" size={17} color="#64748B" strokeWidth={2} />
                 <View style={styles.countryCodePill}>
                   <Text style={styles.countryCodeText}>+91</Text>
                 </View>
                 <TextInput
+                  ref={mobileInputRef}
                   style={styles.textInput}
                   placeholder="Enter mobile number"
                   placeholderTextColor="#94A3B8"
@@ -553,6 +565,7 @@ export function MembershipStep1Screen() {
                     updatePersonalInfo({ mobileNumber: text });
                     if (errors.mobileNumber) setErrors(prev => ({ ...prev, mobileNumber: undefined }));
                   }}
+                  onFocus={handleInputFocus}
                   keyboardType="phone-pad"
                   maxLength={10}
                   accessibilityLabel="Mobile Number"
@@ -562,7 +575,7 @@ export function MembershipStep1Screen() {
                 ) : verifiedMobile && (personalInfo.mobileNumber || '').replace(/\D/g, '').slice(-10) === verifiedMobile && !errors.mobileNumber ? (
                   <Icon name="check" size={16} color="#059669" strokeWidth={2.5} style={styles.fieldStatusIcon} />
                 ) : null}
-              </View>
+              </Pressable>
               {errors.mobileNumber ? (
                 <Text style={styles.errorText}>{errors.mobileNumber}</Text>
               ) : null}
@@ -573,13 +586,15 @@ export function MembershipStep1Screen() {
               <Text style={styles.fieldLabel}>
                 Email Address <Text style={styles.requiredStar}>*</Text>
               </Text>
-              <View
+              <Pressable
                 style={[
                   styles.inputWrap,
                   errors.email ? styles.inputError : undefined,
-                ]}>
+                ]}
+                onPress={() => emailInputRef.current?.focus()}>
                 <Icon name="mail" size={18} color="#64748B" strokeWidth={2} />
                 <TextInput
+                  ref={emailInputRef}
                   style={styles.textInput}
                   placeholder="Enter your email address"
                   placeholderTextColor="#94A3B8"
@@ -588,6 +603,7 @@ export function MembershipStep1Screen() {
                     updatePersonalInfo({ email: text });
                     if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
                   }}
+                  onFocus={handleInputFocus}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -598,7 +614,7 @@ export function MembershipStep1Screen() {
                 ) : verifiedEmail && (personalInfo.email || '').trim().toLowerCase() === verifiedEmail && !errors.email ? (
                   <Icon name="check" size={16} color="#059669" strokeWidth={2.5} style={styles.fieldStatusIcon} />
                 ) : null}
-              </View>
+              </Pressable>
               {errors.email ? (
                 <Text style={styles.errorText}>{errors.email}</Text>
               ) : null}
@@ -609,13 +625,15 @@ export function MembershipStep1Screen() {
               <Text style={styles.fieldLabel}>
                 Nearby Police Station <Text style={styles.requiredStar}>*</Text>
               </Text>
-              <View
+              <Pressable
                 style={[
                   styles.inputWrap,
                   errors.policeStation ? styles.inputError : undefined,
-                ]}>
+                ]}
+                onPress={() => policeStationInputRef.current?.focus()}>
                 <Icon name="shield-check" size={18} color="#64748B" strokeWidth={2} />
                 <TextInput
+                  ref={policeStationInputRef}
                   style={styles.textInput}
                   placeholder="Enter nearby police station"
                   placeholderTextColor="#94A3B8"
@@ -624,10 +642,11 @@ export function MembershipStep1Screen() {
                     updatePersonalInfo({ policeStation: text });
                     if (errors.policeStation) setErrors(prev => ({ ...prev, policeStation: undefined }));
                   }}
+                  onFocus={handleInputFocus}
                   autoCapitalize="words"
                   accessibilityLabel="Nearby Police Station"
                 />
-              </View>
+              </Pressable>
               {errors.policeStation ? (
                 <Text style={styles.errorText}>{errors.policeStation}</Text>
               ) : null}
@@ -638,13 +657,15 @@ export function MembershipStep1Screen() {
               <Text style={styles.fieldLabel}>
                 Password <Text style={styles.requiredStar}>*</Text>
               </Text>
-              <View
+              <Pressable
                 style={[
                   styles.inputWrap,
                   errors.password ? styles.inputError : undefined,
-                ]}>
+                ]}
+                onPress={() => passwordInputRef.current?.focus()}>
                 <Icon name="lock" size={18} color="#64748B" strokeWidth={2} />
                 <TextInput
+                  ref={passwordInputRef}
                   style={styles.textInput}
                   placeholder="Enter password (min. 6 characters)"
                   placeholderTextColor="#94A3B8"
@@ -653,6 +674,10 @@ export function MembershipStep1Screen() {
                     updatePersonalInfo({ password: text });
                     if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
                   }}
+                  onFocus={handleInputFocus}
+                  returnKeyType="next"
+                  onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
+                  blurOnSubmit={false}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -670,7 +695,7 @@ export function MembershipStep1Screen() {
                     strokeWidth={2}
                   />
                 </TouchableOpacity>
-              </View>
+              </Pressable>
               {errors.password ? (
                 <Text style={styles.errorText}>{errors.password}</Text>
               ) : null}
@@ -681,13 +706,15 @@ export function MembershipStep1Screen() {
               <Text style={styles.fieldLabel}>
                 Confirm Password <Text style={styles.requiredStar}>*</Text>
               </Text>
-              <View
+              <Pressable
                 style={[
                   styles.inputWrap,
                   errors.confirmPassword ? styles.inputError : undefined,
-                ]}>
+                ]}
+                onPress={() => confirmPasswordInputRef.current?.focus()}>
                 <Icon name="lock" size={18} color="#64748B" strokeWidth={2} />
                 <TextInput
+                  ref={confirmPasswordInputRef}
                   style={styles.textInput}
                   placeholder="Re-enter your password"
                   placeholderTextColor="#94A3B8"
@@ -696,6 +723,8 @@ export function MembershipStep1Screen() {
                     updatePersonalInfo({ confirmPassword: text });
                     if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: undefined }));
                   }}
+                  onFocus={handleInputFocus}
+                  returnKeyType="done"
                   secureTextEntry={!showConfirmPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -713,7 +742,7 @@ export function MembershipStep1Screen() {
                     strokeWidth={2}
                   />
                 </TouchableOpacity>
-              </View>
+              </Pressable>
               {errors.confirmPassword ? (
                 <Text style={styles.errorText}>{errors.confirmPassword}</Text>
               ) : null}
@@ -963,9 +992,10 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
+    height: '100%',
     fontSize: 14,
     color: '#16274B',
-    paddingVertical: Platform.OS === 'ios' ? 10 : 6,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 0,
   },
   selectText: {
     flex: 1,
