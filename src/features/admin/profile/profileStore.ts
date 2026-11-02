@@ -245,12 +245,27 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         (membershipData?.application_data as any)?.membership_type ||
         roleInfo.defaultMembershipType;
 
+      const resolvedAvatar =
+        user?.avatar ||
+        (membershipData?.user as any)?.avatar ||
+        (membershipData?.application_data as any)?.avatar ||
+        (membershipData?.application_data as any)?.avatar_url ||
+        (membershipData?.application_data as any)?.personal_details?.avatar ||
+        (membershipData?.application_data as any)?.personal_details?.profilePhotoUri ||
+        get().profile.avatar ||
+        null;
+
+      if (resolvedAvatar && user && !user.avatar) {
+        user.avatar = resolvedAvatar;
+        useAuthStore.getState().setUser({ ...user, avatar: resolvedAvatar });
+      }
+
       const dynamicProfile: AdminProfile = {
         fullName: user.full_name || '',
         accountName: user.full_name || '',
         email: user.email || '—',
         phone: user.mobile_number || user.phone || '—',
-        avatar: user.avatar || get().profile.avatar || null,
+        avatar: resolvedAvatar,
         role: effectiveRole,
         accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
         membershipType: resolvedMembershipType,

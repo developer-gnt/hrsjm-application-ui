@@ -5,6 +5,8 @@ import { appStorage } from '../../../core/storage/app-storage';
 import { StorageKeys } from '../../../core/constants/storage-keys';
 import { usePermissionStore } from '../../../core/permissions/permission.store';
 import { authService, RegisterRequest } from '../services/auth.service';
+import { apiClient } from '../../../core/api/client';
+import { ApiRoutes } from '../../../core/constants/api-routes';
 import { UserProfile } from '../types/auth.types';
 
 export type AuthStatus =
@@ -98,6 +100,26 @@ export const useAuthStore = create<AuthState>()(set => ({
         password,
       );
 
+      // Restore avatar from durable cache if user record does not have one yet
+      if (!user.avatar) {
+        const cleanDigits = (user.mobile_number || identifier || '').replace(/\D/g, '').slice(-10);
+        const cachedByPhone = cleanDigits ? appStorage.getString(`hrsjm_user_avatar_${cleanDigits}`) : null;
+        const cachedByEmail = user.email ? appStorage.getString(`hrsjm_user_avatar_${user.email.toLowerCase().trim()}`) : null;
+        const fallbackAvatar = cachedByPhone || cachedByEmail;
+        if (fallbackAvatar) {
+          user.avatar = fallbackAvatar;
+          apiClient.patch(ApiRoutes.AUTH.ME, { avatar: fallbackAvatar }).catch(() => undefined);
+        }
+      } else {
+        const cleanDigits = (user.mobile_number || '').replace(/\D/g, '').slice(-10);
+        if (cleanDigits) {
+          appStorage.setString(`hrsjm_user_avatar_${cleanDigits}`, user.avatar);
+        }
+        if (user.email) {
+          appStorage.setString(`hrsjm_user_avatar_${user.email.toLowerCase().trim()}`, user.avatar);
+        }
+      }
+
       await tokenStorage.setTokens(access_token, refresh_token, user);
       if (!rememberMe) {
         // Session lives for this run only — no restore on relaunch.
@@ -143,6 +165,16 @@ export const useAuthStore = create<AuthState>()(set => ({
       const accessToken = session?.accessToken || tokenStorage.getAccessToken();
       const refreshToken = session?.refreshToken || (await tokenStorage.getRefreshToken());
       let user = session?.user || getPersistedUser();
+
+      if (user && !user.avatar) {
+        const cleanDigits = (user.mobile_number || '').replace(/\D/g, '').slice(-10);
+        const cachedByPhone = cleanDigits ? appStorage.getString(`hrsjm_user_avatar_${cleanDigits}`) : null;
+        const cachedByEmail = user.email ? appStorage.getString(`hrsjm_user_avatar_${user.email.toLowerCase().trim()}`) : null;
+        const fallbackAvatar = cachedByPhone || cachedByEmail;
+        if (fallbackAvatar) {
+          user.avatar = fallbackAvatar;
+        }
+      }
 
       // If there is no token anywhere, user is genuinely not logged in
       if (!accessToken && !refreshToken) {

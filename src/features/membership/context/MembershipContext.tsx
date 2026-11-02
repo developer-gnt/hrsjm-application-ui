@@ -122,9 +122,6 @@ const safeSetStorageItem = (key: string, value: string) => {
 const sanitizeForStorage = (record: MembershipApplicationRecord): MembershipApplicationRecord => {
   const sanitizeUri = (uri?: string) => {
     if (!uri) return undefined;
-    if (uri.startsWith('data:') && uri.length > 500) {
-      return uri.slice(0, 100);
-    }
     return uri;
   };
 
@@ -667,6 +664,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       return uri;
     };
 
+    const resolvedAvatar =
+      sanitizeUri(effectivePersonalInfo.profilePhotoUri) ||
+      sanitizeUri(adminAppItem.avatarUrl);
+
     const docsForBackend = uploadedDocs.map(d => ({
       id: d.id,
       title: d.title,
@@ -676,16 +677,31 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       uri: sanitizeUri(d.uri),
     }));
 
+    if (resolvedAvatar && !docsForBackend.some(d => d.title === 'Photograph' || d.id === 'doc-photo')) {
+      docsForBackend.push({
+        id: 'doc-photo',
+        title: 'Photograph',
+        fileName: 'photograph.png',
+        fileSize: '2.0 MB',
+        uploadDate: new Date().toLocaleDateString('en-GB'),
+        uri: resolvedAvatar,
+      });
+    }
+
     const res = await apiClient.post<any>(ApiRoutes.MEMBERSHIPS.BASE, {
       category_id: catId,
       full_name: effectivePersonalInfo.fullName.trim() || authUser?.full_name || 'Applicant',
       mobile_number: cleanMobile,
       email: validEmail,
       password: effectivePersonalInfo.password?.trim() || undefined,
+      avatar: resolvedAvatar,
       police_station: effectivePersonalInfo.policeStation?.trim() || effectiveAddressInfo.policeStation?.trim() || undefined,
       personal_details: {
         dob: effectivePersonalInfo.dateOfBirth,
         gender: effectivePersonalInfo.gender,
+        avatar: resolvedAvatar,
+        avatar_url: resolvedAvatar,
+        profilePhotoUri: resolvedAvatar,
         address: fullAddress,
         address_line1: effectiveAddressInfo.addressLine1,
         address_line2: effectiveAddressInfo.addressLine2,
@@ -699,6 +715,8 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         application_id: adminAppItem.applicationId,
         membership_type: categoryTitle,
         post_name: categoryTitle,
+        avatar: resolvedAvatar,
+        avatar_url: resolvedAvatar,
         validity: resolvedValidity,
         validity_days: resolvedValidityDays,
         documents: docsForBackend,
@@ -725,6 +743,25 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       setApplications([newRecord]);
       safeSetStorageItem('hrsjm_has_applied', 'true');
       safeSetStorageItem('hrsjm_user_membership_record', JSON.stringify(sanitizeForStorage(newRecord)));
+
+      if (resolvedAvatar) {
+        const currentAuthUser = useAuthStore.getState().user;
+        if (currentAuthUser) {
+          useAuthStore.getState().setUser({
+            ...currentAuthUser,
+            avatar: resolvedAvatar,
+          });
+          apiClient.patch(ApiRoutes.AUTH.ME, { avatar: resolvedAvatar }).catch(() => undefined);
+        }
+        safeSetStorageItem(`hrsjm_user_avatar_${cleanMobile}`, resolvedAvatar);
+        if (validEmail) {
+          safeSetStorageItem(`hrsjm_user_avatar_${validEmail.toLowerCase()}`, resolvedAvatar);
+        }
+        try {
+          useProfileStore.getState().updateAvatar(resolvedAvatar).catch(() => undefined);
+        } catch {}
+      }
+
       useProfileStore.getState().fetchProfile();
     }
     return newRecord;

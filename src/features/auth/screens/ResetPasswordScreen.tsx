@@ -34,7 +34,39 @@ type ResetPasswordScreenProps = NativeStackScreenProps<
 >;
 
 /**
- * Completes the reset flow with a valid reset token (30-minute TTL backend side).
+ * Extracts reset token reliably from route params or browser URL (on Web).
+ */
+const extractTokenFromEnvironment = (routeParamToken?: string): string => {
+  if (routeParamToken && typeof routeParamToken === 'string' && routeParamToken.trim().length > 0) {
+    return routeParamToken.trim();
+  }
+  if (typeof window !== 'undefined' && window.location) {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlToken = searchParams.get('token');
+      if (urlToken && urlToken.trim().length > 0) {
+        return urlToken.trim();
+      }
+
+      if (window.location.hash) {
+        const hashQuery = window.location.hash.split('?')[1];
+        if (hashQuery) {
+          const hashParams = new URLSearchParams(hashQuery);
+          const hashToken = hashParams.get('token');
+          if (hashToken && hashToken.trim().length > 0) {
+            return hashToken.trim();
+          }
+        }
+      }
+    } catch {
+      // Ignore web location parse error
+    }
+  }
+  return '';
+};
+
+/**
+ * Completes the reset flow with a valid reset token (15-minute TTL backend side).
  * Connected directly to PostgreSQL:
  * 1. Verifies token in `password_reset_tokens` table.
  * 2. Updates `users.password_hash` with bcrypt.
@@ -46,40 +78,59 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
   route,
 }) => {
   const insets = useSafeAreaInsets();
-  const prefillToken = route.params?.token ?? '';
+  const routeToken = route.params?.token;
 
-  const [token, setToken] = useState(prefillToken);
+  const [token, setToken] = useState<string>(() => extractTokenFromEnvironment(routeToken));
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [tokenValidating, setTokenValidating] = useState(Boolean(prefillToken));
 
   useEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
+  useEffect(() => {
+    const detected = extractTokenFromEnvironment(routeToken);
+    if (detected && !token) {
+      setToken(detected);
+    }
+  }, [routeToken, token]);
+
   const handleSubmit = async () => {
+    if (submitting) return;
+
+    if (!token) {
+      setFormError('Missing reset token. Please request a new password reset link.');
+      return;
+    }
+
     const parsed = resetPasswordSchema.safeParse({
       token,
       password,
       confirm_password: confirmPassword,
     });
+
     if (!parsed.success) {
       setFieldErrors(zodErrorsToFieldErrors(parsed.error));
       return;
     }
+
     setFieldErrors({});
     setSubmitting(true);
     setFormError(null);
+
     try {
       await authService.resetPassword(
         parsed.data.token,
         parsed.data.password,
         parsed.data.confirm_password,
       );
+      setIsSuccess(true);
       feedback.success(
         'Password Updated Successfully',
         'Your account password has been updated in the database. Please sign in with your new password.',
@@ -91,16 +142,25 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
         },
       );
     } catch (error) {
-      if (error instanceof ApiError && error.statusCode === 400) {
-        setFormError(
-          'Invalid or expired reset token. Please request a new reset link and try again.',
-        );
+      if (error instanceof ApiError) {
+        const errorMsg = (error.message || '').toLowerCase();
+        const errorCode = (error as any).code;
+
+        if (errorCode === 'RESET_TOKEN_INVALID' || (error.statusCode === 400 && errorMsg.includes('token'))) {
+          setFormError(
+            'Invalid or expired reset token. Please request a new reset link and try again.',
+          );
+        } else if (error.statusCode === 400 && error.message) {
+          setFormError(error.message);
+        } else if (error.statusCode === 429) {
+          setFormError('Too many attempts. Please wait a few moments before trying again.');
+        } else if (error.statusCode >= 500) {
+          setFormError('Unable to update password due to a server error. Please try again later.');
+        } else {
+          setFormError(error.message || 'Unable to reset the password. Please try again.');
+        }
       } else {
-        setFormError(
-          error instanceof ApiError && error.message
-            ? error.message
-            : 'Unable to reset the password. Please try again.',
-        );
+        setFormError('Network error. Please check your internet connection and try again.');
       }
     } finally {
       setSubmitting(false);
@@ -154,143 +214,186 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
 
         {/* Floating White Card */}
         <View style={styles.sheet}>
-          <Text style={styles.title}>Reset Password</Text>
-          <Text style={styles.subtitle}>
-            Enter the token received and specify your new account password (8–72 characters).
-          </Text>
-
-          {formError && (
-            <View style={styles.errorBannerContainer}>
-              <Text style={styles.errorBannerText}>{formError}</Text>
-            </View>
-          )}
-
-          {/* Reset Token Input */}
-          <View style={styles.fieldWrapper}>
-            <Text style={styles.fieldLabel}>Reset Token</Text>
-            <View
-              style={[
-                styles.inputContainer,
-                fieldErrors.token ? styles.inputContainerError : null,
-              ]}
-            >
-              <View style={styles.inputIconWrap}>
-                <Icon name="shield-check" size={18} color="#64748B" />
-              </View>
-              <TextInput
-                value={token}
-                onChangeText={(text) => {
-                  setToken(text);
-                  if (fieldErrors.token) {
-                    setFieldErrors((prev) => ({ ...prev, token: '' }));
-                  }
-                }}
-                placeholder="Paste the reset token"
-                placeholderTextColor="#94A3B8"
-                editable={!submitting && !prefillToken}
-                autoCapitalize="none"
-                autoCorrect={false}
-                style={styles.textInput}
-              />
-            </View>
-            {fieldErrors.token && (
-              <Text style={styles.fieldErrorText}>{fieldErrors.token}</Text>
-            )}
-          </View>
-
-          {/* New Password Input */}
-          <View style={styles.fieldWrapper}>
-            <Text style={styles.fieldLabel}>New Password</Text>
-            <View
-              style={[
-                styles.inputContainer,
-                fieldErrors.password ? styles.inputContainerError : null,
-              ]}
-            >
-              <View style={styles.inputIconWrap}>
-                <LockOutlineIcon size={18} color="#64748B" />
-              </View>
-              <TextInput
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  if (fieldErrors.password) {
-                    setFieldErrors((prev) => ({ ...prev, password: '' }));
-                  }
-                }}
-                placeholder="At least 8 characters"
-                placeholderTextColor="#94A3B8"
-                secureTextEntry
-                editable={!submitting}
-                autoCapitalize="none"
-                autoCorrect={false}
-                style={styles.textInput}
-              />
-            </View>
-            {fieldErrors.password && (
-              <Text style={styles.fieldErrorText}>{fieldErrors.password}</Text>
-            )}
-          </View>
-
-          {/* Confirm Password Input */}
-          <View style={styles.fieldWrapper}>
-            <Text style={styles.fieldLabel}>Confirm New Password</Text>
-            <View
-              style={[
-                styles.inputContainer,
-                fieldErrors.confirm_password ? styles.inputContainerError : null,
-              ]}
-            >
-              <View style={styles.inputIconWrap}>
-                <LockOutlineIcon size={18} color="#64748B" />
-              </View>
-              <TextInput
-                value={confirmPassword}
-                onChangeText={(text) => {
-                  setConfirmPassword(text);
-                  if (fieldErrors.confirm_password) {
-                    setFieldErrors((prev) => ({ ...prev, confirm_password: '' }));
-                  }
-                }}
-                placeholder="Re-type new password"
-                placeholderTextColor="#94A3B8"
-                secureTextEntry
-                editable={!submitting}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={handleSubmit}
-                style={styles.textInput}
-              />
-            </View>
-            {fieldErrors.confirm_password && (
-              <Text style={styles.fieldErrorText}>{fieldErrors.confirm_password}</Text>
-            )}
-          </View>
-
-          {/* Submit Button */}
-          <TouchableOpacity
-            style={[
-              styles.primaryGoldButton,
-              submitting && styles.buttonDisabled,
-            ]}
-            onPress={handleSubmit}
-            disabled={submitting}
-            activeOpacity={0.88}
-            accessibilityRole="button"
-            accessibilityLabel="Update Password"
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color="#011F39" />
-            ) : (
-              <View style={styles.buttonContent}>
-                <Text style={styles.primaryButtonText}>Update Password</Text>
-                <View style={styles.arrowIconWrap}>
-                  <ArrowRightIcon size={18} color="#011F39" />
+          {isSuccess ? (
+            <View style={styles.resultContainer}>
+              <View style={styles.successHalo}>
+                <View style={styles.successEmblem}>
+                  <Icon name="check" size={28} color="#059669" />
                 </View>
               </View>
-            )}
-          </TouchableOpacity>
+              <Text style={styles.resultTitle}>Password Updated Successfully</Text>
+              <Text style={styles.resultSub}>
+                Your account password has been updated in the database. You can now sign in using your new credentials.
+              </Text>
+              <TouchableOpacity
+                style={styles.primaryGoldButton}
+                onPress={() => navigation.navigate('Login')}
+                activeOpacity={0.88}
+                accessibilityRole="button"
+                accessibilityLabel="Sign In Now"
+              >
+                <View style={styles.buttonContent}>
+                  <Text style={styles.primaryButtonText}>Sign In Now</Text>
+                  <View style={styles.arrowIconWrap}>
+                    <ArrowRightIcon size={18} color="#011F39" />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.title}>Reset Password</Text>
+              <Text style={styles.subtitle}>
+                Specify your new account password (8–72 characters).
+              </Text>
+
+              {formError && (
+                <View style={styles.errorBannerContainer}>
+                  <Text style={styles.errorBannerText}>{formError}</Text>
+                </View>
+              )}
+
+              {/* Token State Indicator (Internalized, not an editable text input) */}
+              {token ? (
+                <View style={styles.tokenStatusBadge}>
+                  <Icon name="shield-check" size={16} color="#059669" />
+                  <Text style={styles.tokenStatusText}>Reset Token Applied &amp; Verified</Text>
+                </View>
+              ) : (
+                <View style={styles.missingTokenContainer}>
+                  <Text style={styles.missingTokenTitle}>No Reset Token Found</Text>
+                  <Text style={styles.missingTokenText}>
+                    Please open the link directly from your password reset email, or request a new reset link below.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.requestLinkButton}
+                    onPress={() => navigation.navigate('ForgotPassword')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.requestLinkButtonText}>Request New Reset Link</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* New Password Input */}
+              <View style={styles.fieldWrapper}>
+                <Text style={styles.fieldLabel}>New Password</Text>
+                <View
+                  style={[
+                    styles.inputContainer,
+                    fieldErrors.password ? styles.inputContainerError : null,
+                  ]}
+                >
+                  <View style={styles.inputIconWrap}>
+                    <LockOutlineIcon size={18} color="#64748B" />
+                  </View>
+                  <TextInput
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      if (fieldErrors.password) {
+                        setFieldErrors((prev) => ({ ...prev, password: '' }));
+                      }
+                      if (formError) setFormError(null);
+                    }}
+                    placeholder="At least 8 characters"
+                    placeholderTextColor="#94A3B8"
+                    secureTextEntry={!showPassword}
+                    editable={!submitting}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    style={styles.textInput}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    style={styles.eyeIconWrap}
+                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    <Icon
+                      name={showPassword ? 'eye-off' : 'eye'}
+                      size={18}
+                      color="#64748B"
+                    />
+                  </TouchableOpacity>
+                </View>
+                {fieldErrors.password && (
+                  <Text style={styles.fieldErrorText}>{fieldErrors.password}</Text>
+                )}
+              </View>
+
+              {/* Confirm Password Input */}
+              <View style={styles.fieldWrapper}>
+                <Text style={styles.fieldLabel}>Confirm New Password</Text>
+                <View
+                  style={[
+                    styles.inputContainer,
+                    fieldErrors.confirm_password ? styles.inputContainerError : null,
+                  ]}
+                >
+                  <View style={styles.inputIconWrap}>
+                    <LockOutlineIcon size={18} color="#64748B" />
+                  </View>
+                  <TextInput
+                    value={confirmPassword}
+                    onChangeText={(text) => {
+                      setConfirmPassword(text);
+                      if (fieldErrors.confirm_password) {
+                        setFieldErrors((prev) => ({ ...prev, confirm_password: '' }));
+                      }
+                      if (formError) setFormError(null);
+                    }}
+                    placeholder="Re-type new password"
+                    placeholderTextColor="#94A3B8"
+                    secureTextEntry={!showConfirmPassword}
+                    editable={!submitting}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={handleSubmit}
+                    style={styles.textInput}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowConfirmPassword((prev) => !prev)}
+                    style={styles.eyeIconWrap}
+                    accessibilityLabel={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    <Icon
+                      name={showConfirmPassword ? 'eye-off' : 'eye'}
+                      size={18}
+                      color="#64748B"
+                    />
+                  </TouchableOpacity>
+                </View>
+                {fieldErrors.confirm_password && (
+                  <Text style={styles.fieldErrorText}>{fieldErrors.confirm_password}</Text>
+                )}
+              </View>
+
+              {/* Submit Button */}
+              <TouchableOpacity
+                style={[
+                  styles.primaryGoldButton,
+                  (submitting || !token) && styles.buttonDisabled,
+                ]}
+                onPress={handleSubmit}
+                disabled={submitting || !token}
+                activeOpacity={0.88}
+                accessibilityRole="button"
+                accessibilityLabel="Update Password"
+              >
+                {submitting ? (
+                  <ActivityIndicator size="small" color="#011F39" />
+                ) : (
+                  <View style={styles.buttonContent}>
+                    <Text style={styles.primaryButtonText}>Update Password</Text>
+                    <View style={styles.arrowIconWrap}>
+                      <ArrowRightIcon size={18} color="#011F39" />
+                    </View>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -426,6 +529,59 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.sans,
     marginBottom: 24,
   },
+  tokenStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    marginBottom: 20,
+  },
+  tokenStatusText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#065F46',
+    marginLeft: 8,
+    fontFamily: FontFamilies.sans,
+  },
+  missingTokenContainer: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  missingTokenTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#92400E',
+    marginBottom: 4,
+    fontFamily: FontFamilies.sans,
+  },
+  missingTokenText: {
+    fontSize: 13,
+    color: '#B45309',
+    lineHeight: 18,
+    marginBottom: 12,
+    fontFamily: FontFamilies.sans,
+  },
+  requestLinkButton: {
+    backgroundColor: '#011F39',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  requestLinkButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    fontWeight: '600',
+    fontFamily: FontFamilies.sans,
+  },
   fieldWrapper: {
     marginBottom: 18,
   },
@@ -452,6 +608,9 @@ const styles = StyleSheet.create({
   },
   inputIconWrap: {
     marginRight: 10,
+  },
+  eyeIconWrap: {
+    padding: 8,
   },
   textInput: {
     flex: 1,
