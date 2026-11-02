@@ -41,7 +41,7 @@ import { navigateToMembershipCategories } from '../../../../core/navigation/appR
 import { GlobalPaymentModal, PaymentPayload } from '../../../payments';
 import { useAuthStore } from '../../../auth/store/authStore';
 import { useMembership } from '../../../membership/context/MembershipContext';
-import { causesService, VERIFIED_FALLBACK_CAUSES } from '../../../member/services/causes.service';
+import { causesService } from '../../../member/services/causes.service';
 import { MemberCausesContainer } from '../../../member/screens/MemberCausesContainer';
 import type { MemberCause } from '../../../member/types/causes.types';
 import { recentDonationsStore } from '../../../donations/services/recent-donations.store';
@@ -170,10 +170,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
   const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>('all');
-  const [dynamicCauses, setDynamicCauses] = useState<MemberCause[]>(() => {
-    const existing = causesService.getCausesSync();
-    return existing.length > 0 ? existing : VERIFIED_FALLBACK_CAUSES;
-  });
+  const [dynamicCauses, setDynamicCauses] = useState<MemberCause[]>(() => causesService.getCausesSync());
   const [causesLoading, setCausesLoading] = useState<boolean>(false);
   const [showCauseDirectory, setShowCauseDirectory] = useState<boolean>(false);
   const [activePaymentPayload, setActivePaymentPayload] = useState<PaymentPayload | null>(null);
@@ -191,9 +188,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
         })
         .catch(err => {
           console.warn('[UserActionPageScreen] Failed to load causes:', err);
-          if (mounted && dynamicCauses.length === 0) {
-            setDynamicCauses(VERIFIED_FALLBACK_CAUSES);
-          }
+          if (mounted) { setDynamicCauses([]); }
         })
         .finally(() => {
           if (mounted) {
@@ -692,17 +687,19 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
                   There are currently no urgent donation requests listed under this category. Every cause undergoes strict background verification by HRSJM before approval.
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-                  <TouchableOpacity
-                    style={[styles.categoryEmptyCtaBtn, { flex: 1, backgroundColor: '#E2E8F0' }]}
-                    onPress={() => setSelectedCategoryKey('all')}
-                    activeOpacity={0.8}
-                    accessibilityRole="button"
-                    accessibilityLabel="View all causes"
-                  >
-                    <Text style={[styles.categoryEmptyCtaText, { color: AdminColors.primaryDark }]}>
-                      View All Causes
-                    </Text>
-                  </TouchableOpacity>
+                  {selectedCategoryKey !== 'all' ? (
+                    <TouchableOpacity
+                      style={[styles.categoryEmptyCtaBtn, { flex: 1, backgroundColor: '#E2E8F0' }]}
+                      onPress={() => setSelectedCategoryKey('all')}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel="View all causes"
+                    >
+                      <Text style={[styles.categoryEmptyCtaText, { color: AdminColors.primaryDark }]}>
+                        View All Causes
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
                   <TouchableOpacity
                     style={[styles.categoryEmptyCtaBtn, { flex: 1 }]}
                     onPress={handleNgoDonatePress}
@@ -712,7 +709,7 @@ export const UserActionPageScreen: React.FC<UserActionPageScreenProps> = ({
                   >
                     <AppIcon name="heart" size={14} color="#011F39" />
                     <Text style={styles.categoryEmptyCtaText}>
-                      General Fund
+                      Donate to General Fund
                     </Text>
                   </TouchableOpacity>
                 </View>
