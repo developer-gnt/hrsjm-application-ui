@@ -392,12 +392,15 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.sans,
   },
   primaryGoldButton: {
+    width: '100%',
+    alignSelf: 'stretch',
     backgroundColor: '#EAA224',
     borderRadius: 14,
     height: 52,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
+    paddingHorizontal: 24,
     shadowColor: '#EAA224',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
@@ -478,6 +481,7 @@ const styles = StyleSheet.create({
   resultContainer: {
     alignItems: 'center',
     paddingVertical: 12,
+    width: '100%',
   },
   successHalo: {
     width: 72,
