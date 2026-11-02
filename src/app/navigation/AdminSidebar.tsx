@@ -184,7 +184,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const insets = useSafeAreaInsets();
   const user = useAuthStore(state => state.user);
   const signOut = useAuthStore(state => state.signOut);
-  const avatarUrl = user?.avatar || DEFAULT_ADMIN_AVATAR;
+  const avatarUrl = user?.avatar || null;
+  const initials = (user?.full_name ?? user?.email ?? 'Admin')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part: string) => part[0]?.toUpperCase())
+    .join('') || 'A';
 
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -310,7 +317,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               activeOpacity={0.7}
               onPress={() => handleSelect(AppRoutes.MY_PROFILE)}
             >
-              <Image source={{ uri: avatarUrl }} style={styles.userAvatar} />
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={styles.userAvatar} />
+              ) : (
+                <View style={styles.userAvatarInitials}>
+                  <Text style={styles.userAvatarInitialsText}>{initials}</Text>
+                </View>
+              )}
               <View style={styles.userInfo}>
                 <Text style={styles.userName} numberOfLines={1}>
                   {user?.full_name || `${appRoleLabel} User`}
@@ -446,6 +459,23 @@ const styles = StyleSheet.create({
     borderColor: '#FAD465',
     backgroundColor: '#DBE5EE',
     marginRight: Spacing.sm,
+  },
+  userAvatarInitials: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#08294D',
+    borderWidth: 2,
+    borderColor: '#FAD465',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    marginRight: Spacing.sm,
+  },
+  userAvatarInitialsText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   userInfo: {
     flex: 1,

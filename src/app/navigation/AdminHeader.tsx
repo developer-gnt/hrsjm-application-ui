@@ -120,6 +120,13 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   };
 
   const isAdmin = user?.roles?.some(r => r.name === 'ADMIN' || r.name === 'SUPER_ADMIN') ?? false;
+  const initials = (user?.full_name ?? user?.email ?? 'Admin')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part: string) => part[0]?.toUpperCase())
+    .join('') || 'A';
   const isMember = Boolean(isMemberHeader || !isAdmin);
   const shouldShowDonate = Boolean(showDonate === true);
 
@@ -456,10 +463,16 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               }}
               activeOpacity={0.8}
             >
-              <Image
-                source={{ uri: user?.avatar || DEFAULT_ADMIN_AVATAR }}
-                style={styles.avatarImage}
-              />
+              {user?.avatar ? (
+                <Image
+                  source={{ uri: user.avatar }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <View style={styles.avatarCircle}>
+                  <Text style={styles.avatarText}>{initials}</Text>
+                </View>
+              )}
               <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
                 <Path
                   d="M6 9l6 6 6-6"
@@ -703,6 +716,23 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     borderWidth: 1.5,
     borderColor: '#FAD465', // Gold accent border per docs/design.md
+  },
+  avatarCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#08294D',
+    borderWidth: 1.5,
+    borderColor: '#FAD465',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   chevron: {
     fontSize: 12,

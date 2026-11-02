@@ -96,7 +96,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const { width: windowWidth } = useWindowDimensions();
   const profile = useProfileStore(state => state.profile);
   const user = useAuthStore(state => state.user);
-  const effectiveAvatar = profile.avatar || user?.avatar || DEFAULT_ADMIN_AVATAR;
+  const effectiveAvatar = profile.avatar || user?.avatar || null;
   const updateAvatar = useProfileStore(state => state.updateAvatar);
   const stagedMessage = useProfileStore(state => state.stagedMessage);
   const consumeStagedMessage = useProfileStore(
@@ -344,7 +344,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             accessibilityLabel="Change profile photo"
           >
             <AppAvatar
-              name={profile.accountName}
+              name={profile.accountName || user?.full_name || 'Member'}
               imageUrl={effectiveAvatar}
               size={56}
             />

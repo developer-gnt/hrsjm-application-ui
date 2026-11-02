@@ -97,7 +97,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
   onSelectAvatar,
 }) => {
   const [selectedUrl, setSelectedUrl] = useState<string | null>(
-    currentAvatarUrl || DEFAULT_ADMIN_AVATAR,
+    currentAvatarUrl || null,
   );
   const [customUrl, setCustomUrl] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -106,7 +106,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
   // Synchronize selectedUrl with currentAvatarUrl whenever modal opens
   useEffect(() => {
     if (visible) {
-      setSelectedUrl(currentAvatarUrl || DEFAULT_ADMIN_AVATAR);
+      setSelectedUrl(currentAvatarUrl || null);
       setShowCustomInput(false);
       setPickerError(null);
     }
