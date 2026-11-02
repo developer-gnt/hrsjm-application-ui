@@ -257,6 +257,20 @@ const play: React.FC<GlyphProps> = ({ color }) => (
   <Polygon points="9,6.6 18.4,12 9,17.4" fill={color} stroke={color} />
 );
 
+const plus: React.FC<GlyphProps> = () => (
+  <G>
+    <Line x1={12} y1={5} x2={12} y2={19} />
+    <Line x1={5} y1={12} x2={19} y2={12} />
+  </G>
+);
+
+const edit: React.FC<GlyphProps> = () => (
+  <G>
+    <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </G>
+);
+
 const user: React.FC<GlyphProps> = () => (
   <G>
     <Path d="M19.6 20.6v-1.8a4 4 0 0 0-4-4H8.4a4 4 0 0 0-4 4v1.8" />
@@ -437,6 +451,7 @@ export const GLYPHS = {
   download,
   'doc-search': docSearch,
   ear,
+  edit,
   email,
   eye,
   'file-text': fileText,
@@ -460,6 +475,7 @@ export const GLYPHS = {
   'open-hand': openHand,
   phone,
   play,
+  plus,
   qr: qrCode,
   quote,
   refresh,

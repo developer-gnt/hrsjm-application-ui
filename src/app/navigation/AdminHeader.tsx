@@ -197,9 +197,27 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 
   const handleViewProfile = () => {
     setDropdownVisible(false);
+    if (onPressProfile) {
+      onPressProfile();
+      return;
+    }
     if (onNavigate) {
       onNavigate(AppRoutes.MY_PROFILE);
     } else if (navigation?.navigate) {
+      const roleNames = (user?.roles ?? []).map(r => (r.name || '').toUpperCase());
+      const isSeekerRole =
+        roleNames.includes('SEEKER') ||
+        roleNames.includes('DONATION_SEEKER') ||
+        (user as any)?.role === 'SEEKER' ||
+        (user as any)?.role === 'DONATION_SEEKER';
+
+      if (isSeekerRole) {
+        try {
+          navigation.navigate('SeekerProfile');
+          return;
+        } catch {}
+      }
+
       if (isAdmin) {
         try {
           navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
@@ -207,7 +225,11 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           navigation.navigate(AppRoutes.MY_PROFILE);
         }
       } else {
-        navigation.navigate('MemberProfile');
+        try {
+          navigation.navigate('MemberProfile');
+        } catch {
+          navigation.navigate('UserProfile');
+        }
       }
     } else {
       setProfileModalVisible(true);
@@ -454,14 +476,10 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           {user ? (
             <TouchableOpacity
               style={styles.avatarWrap}
-              onPress={() => {
-                if (onPressProfile) {
-                  onPressProfile();
-                } else {
-                  setDropdownVisible(true);
-                }
-              }}
+              onPress={() => setDropdownVisible(true)}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Open profile menu"
             >
               {user?.avatar ? (
                 <Image
@@ -522,7 +540,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             {/* Header info */}
             <View style={styles.dropdownHeader}>
               <Text style={styles.dropdownName} numberOfLines={1}>
-                {user?.full_name || 'Admin User'}
+                {user?.full_name || 'My Profile'}
               </Text>
               <Text style={styles.dropdownEmail} numberOfLines={1}>
                 {user?.email || '—'}
@@ -546,7 +564,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   strokeLinejoin="round"
                 />
               </Svg>
-                            <Text style={styles.dropdownItemText}>View Profile</Text>
+                            <Text style={styles.dropdownItemText}>Profile</Text>
             </TouchableOpacity>
 
             <View style={styles.dropdownDivider} />

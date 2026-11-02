@@ -21,26 +21,41 @@ import {
 import { AppIcon } from '../../components';
 import { getMatchedHelpTopics, type HelpTopic } from '../data/help-topics';
 
-interface HelpTopicSelectorProps {
+export interface HelpTopicSelectorProps {
   visible: boolean;
   selectedTopic?: HelpTopic | null;
+  selectedTopics?: HelpTopic[];
+  multi?: boolean;
   onClose: () => void;
-  onSelect: (topic: HelpTopic) => void;
+  onSelect?: (topic: HelpTopic) => void;
+  onSelectMultiple?: (topics: HelpTopic[]) => void;
 }
 
 export const HelpTopicSelector: React.FC<HelpTopicSelectorProps> = ({
   visible,
   selectedTopic,
+  selectedTopics,
+  multi,
   onClose,
   onSelect,
+  onSelectMultiple,
 }) => {
+  const isMulti = multi ?? Boolean(onSelectMultiple);
   const [query, setQuery] = useState('');
+  const [internalSelected, setInternalSelected] = useState<HelpTopic[]>([]);
 
   useEffect(() => {
-    if (!visible) {
+    if (visible) {
+      if (selectedTopics && selectedTopics.length > 0) {
+        setInternalSelected(selectedTopics);
+      } else if (selectedTopic) {
+        setInternalSelected([selectedTopic]);
+      } else {
+        setInternalSelected([]);
+      }
       setQuery('');
     }
-  }, [visible]);
+  }, [visible, selectedTopics, selectedTopic]);
 
   const normalizedQuery = query.trim();
 
@@ -61,10 +76,33 @@ export const HelpTopicSelector: React.FC<HelpTopicSelectorProps> = ({
     onClose();
   };
 
-  const handleSelect = (topic: HelpTopic) => {
+  const handleToggleTopic = (topic: HelpTopic) => {
+    if (!isMulti) {
+      Keyboard.dismiss();
+      setQuery('');
+      onSelect?.(topic);
+      onSelectMultiple?.([topic]);
+      onClose();
+      return;
+    }
+
+    setInternalSelected(prev => {
+      const exists = prev.some(t => t.id === topic.id);
+      if (exists) {
+        return prev.filter(t => t.id !== topic.id);
+      }
+      return [...prev, topic];
+    });
+  };
+
+  const handleConfirmMultiple = () => {
     Keyboard.dismiss();
     setQuery('');
-    onSelect(topic);
+    onSelectMultiple?.(internalSelected);
+    if (internalSelected.length > 0 && onSelect) {
+      onSelect(internalSelected[0]);
+    }
+    onClose();
   };
 
   return (
@@ -83,7 +121,16 @@ export const HelpTopicSelector: React.FC<HelpTopicSelectorProps> = ({
       >
         <View style={styles.sheet}>
           <View style={styles.headerRow}>
-            <Text style={styles.sheetTitle}>Select the type of help</Text>
+            <View>
+              <Text style={styles.sheetTitle}>
+                {isMulti ? 'Select Help Categories' : 'Select the type of help'}
+              </Text>
+              {isMulti && (
+                <Text style={styles.sheetSubtitle}>
+                  You can select multiple topics that describe your issue
+                </Text>
+              )}
+            </View>
             <TouchableOpacity
               onPress={handleClose}
               accessibilityRole="button"
@@ -149,9 +196,12 @@ export const HelpTopicSelector: React.FC<HelpTopicSelectorProps> = ({
               style={styles.list}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
             >
               {results.map(topic => {
-                const isSelected = topic.id === selectedTopic?.id;
+                const isSelected = isMulti
+                  ? internalSelected.some(t => t.id === topic.id)
+                  : topic.id === selectedTopic?.id;
 
                 return (
                   <TouchableOpacity
@@ -160,9 +210,10 @@ export const HelpTopicSelector: React.FC<HelpTopicSelectorProps> = ({
                       styles.resultCard,
                       isSelected && styles.resultCardSelected,
                     ]}
-                    onPress={() => handleSelect(topic)}
+                    onPress={() => handleToggleTopic(topic)}
                     accessibilityRole="button"
                     accessibilityLabel={topic.title}
+                    activeOpacity={0.7}
                   >
                     <View
                       style={[
@@ -178,19 +229,69 @@ export const HelpTopicSelector: React.FC<HelpTopicSelectorProps> = ({
                     </View>
 
                     <View style={styles.resultTextWrap}>
-                      <Text style={styles.resultTitle}>{topic.title}</Text>
+                      <Text style={[styles.resultTitle, isSelected && styles.resultTitleSelected]}>
+                        {topic.title}
+                      </Text>
                       <Text style={styles.resultDescription}>{topic.description}</Text>
                     </View>
 
-                    <AppIcon
-                      name="chevron-right"
-                      size={18}
-                      color={AdminColors.primaryDark}
-                    />
+                    {isMulti ? (
+                      <View
+                        style={[
+                          styles.checkboxCircle,
+                          isSelected && styles.checkboxCircleSelected,
+                        ]}
+                      >
+                        {isSelected && (
+                          <AppIcon name="check" size={13} color="#FFFFFF" />
+                        )}
+                      </View>
+                    ) : (
+                      <AppIcon
+                        name="chevron-right"
+                        size={18}
+                        color={AdminColors.primaryDark}
+                      />
+                    )}
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
+          )}
+
+          {isMulti && (
+            <View style={styles.sheetFooter}>
+              <View style={styles.sheetFooterInfo}>
+                <Text style={styles.selectedCountText}>
+                  {internalSelected.length} {internalSelected.length === 1 ? 'topic' : 'topics'} selected
+                </Text>
+                {internalSelected.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setInternalSelected([])}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear selection"
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.clearAllText}>Clear All</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.confirmButton,
+                  internalSelected.length === 0 && styles.confirmButtonDisabled,
+                ]}
+                disabled={internalSelected.length === 0}
+                onPress={handleConfirmMultiple}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Done selecting topics"
+              >
+                <Text style={styles.confirmButtonText}>
+                  Done {internalSelected.length > 0 ? `(${internalSelected.length} Selected)` : ''}
+                </Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </KeyboardAvoidingView>
@@ -216,10 +317,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     minHeight: '82%',
-    maxHeight: '86%',
+    maxHeight: '88%',
     paddingHorizontal: Spacing.base,
     paddingTop: Spacing.md,
-    paddingBottom: Spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? Spacing.xl : Spacing.md,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
@@ -228,16 +329,21 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   sheetTitle: {
     fontFamily: UserFontFamilies.heading,
     fontSize: 20,
-    lineHeight: 26,
+    lineHeight: 25,
     color: AdminColors.primaryDark,
     fontWeight: '700',
+  },
+  sheetSubtitle: {
+    fontSize: 12,
+    color: AdminColors.textSecondary,
+    marginTop: 2,
   },
   searchField: {
     flexDirection: 'row',
@@ -258,7 +364,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 16,
     color: AdminColors.primaryDark,
     fontWeight: '700',
     marginBottom: Spacing.sm,
@@ -287,7 +393,7 @@ const styles = StyleSheet.create({
   },
   resultCardSelected: {
     borderColor: AdminColors.primary,
-    backgroundColor: AdminColors.primaryLight,
+    backgroundColor: '#F0F6FF',
   },
   topicIconWrap: {
     width: 38,
@@ -307,10 +413,67 @@ const styles = StyleSheet.create({
     color: AdminColors.primaryDark,
     marginBottom: 2,
   },
+  resultTitleSelected: {
+    color: AdminColors.primary,
+  },
   resultDescription: {
     fontSize: 12,
     lineHeight: 17,
     color: AdminColors.textSecondary,
+  },
+  checkboxCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: '#94A3B8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    marginLeft: Spacing.xs,
+  },
+  checkboxCircleSelected: {
+    backgroundColor: AdminColors.primaryDark,
+    borderColor: AdminColors.primaryDark,
+  },
+  sheetFooter: {
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xs,
+    backgroundColor: AdminColors.cardSurface,
+  },
+  sheetFooterInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
+  },
+  selectedCountText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+  },
+  clearAllText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: AdminColors.error,
+  },
+  confirmButton: {
+    backgroundColor: AdminColors.accentGold,
+    borderRadius: BorderRadius.base,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmButtonDisabled: {
+    opacity: 0.5,
+  },
+  confirmButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
   },
   emptyState: {
     flex: 1,
