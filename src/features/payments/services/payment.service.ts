@@ -114,96 +114,150 @@ export class GlobalPaymentService {
       } catch (err: any) {
         sdkError = err;
       }
-    } else if (Platform.OS !== 'web' && session.payment_session_id) {
-      try {
-        const sdk = require('react-native-cashfree-pg-sdk');
-        if (sdk?.CFPaymentGatewayService) {
-          const {
-            CFSession,
-            CFEnvironment,
-            CFDropCheckoutPayment,
-            CFPaymentComponentBuilder,
-            CFPaymentModes,
-            CFThemeBuilder,
-          } = require('cashfree-pg-api-contract');
-
-          const cfEnv = isProduction ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
-          const cfSession = new CFSession(
-            session.payment_session_id,
-            session.order_id,
-            cfEnv,
-          );
-
-          await new Promise<void>(resolve => {
-            let settled = false;
-            let timeoutId: any = null;
-            const finish = () => {
-              if (!settled) {
-                settled = true;
-                if (timeoutId) {
-                  clearTimeout(timeoutId);
-                  timeoutId = null;
-                }
-                try {
-                  sdk.CFPaymentGatewayService.removeCallback();
-                } catch {
-                  // ignore
-                }
-                resolve();
-              }
-            };
-
-            try {
-              sdk.CFPaymentGatewayService.removeCallback();
-            } catch {
-              // ignore
-            }
-
-            sdk.CFPaymentGatewayService.setCallback({
-              onVerify: (_orderID: string) => {
-                finish();
-              },
-              onError: (error: any, _orderID: string) => {
-                sdkError = error;
-                finish();
-              },
-            });
-
-            // Launch official Cashfree Drop Checkout (opens complete payment gateway)
-            try {
-              const theme = new CFThemeBuilder()
-                .setNavigationBarBackgroundColor('#0F2A4A')
-                .setNavigationBarTextColor('#FFFFFF')
-                .setButtonBackgroundColor('#E2A03F')
-                .setButtonTextColor('#0B1527')
-                .setPrimaryTextColor('#0B1527')
-                .setSecondaryTextColor('#5C6B73')
-                .build();
-
-              const paymentModes = new CFPaymentComponentBuilder()
-                .add(CFPaymentModes.UPI)
-                .add(CFPaymentModes.CARD)
-                .add(CFPaymentModes.NB)
-                .add(CFPaymentModes.WALLET)
-                .add(CFPaymentModes.PAY_LATER)
-                .build();
-
-              const dropPayment = new CFDropCheckoutPayment(cfSession, paymentModes, theme);
-              sdk.CFPaymentGatewayService.doPayment(dropPayment);
-            } catch (err: any) {
-              sdkError = err;
-              finish();
-            }
-
-            // Failsafe timeout in case SDK lifecycle does not trigger callback
-            timeoutId = setTimeout(finish, 60000);
-          });
-        }
-      } catch {
-        // Fallback to backend verification
-      }
-    }
-
+    } else if (Platform.OS !== 'web' && session.payment_session_id) {
+      try {
+        const sdk = require('react-native-cashfree-pg-sdk');
+        if (sdk?.CFPaymentGatewayService) {
+          let contract: any = null;
+          try {
+            contract = require('cashfree-pg-api-contract');
+          } catch {
+            // ignore
+          }
+
+          const CFEnvironment = contract?.CFEnvironment || { PRODUCTION: 'PRODUCTION', SANDBOX: 'SANDBOX' };
+          const cfEnv = isProduction
+            ? (CFEnvironment.PRODUCTION || 'PRODUCTION')
+            : (CFEnvironment.SANDBOX || 'SANDBOX');
+
+          let cfSession: any;
+          if (typeof contract?.CFSession === 'function') {
+            try {
+              cfSession = new contract.CFSession(session.payment_session_id, session.order_id, cfEnv);
+            } catch {
+              cfSession = {
+                payment_session_id: session.payment_session_id,
+                orderID: session.order_id,
+                environment: cfEnv,
+              };
+            }
+          } else {
+            cfSession = {
+              payment_session_id: session.payment_session_id,
+              orderID: session.order_id,
+              environment: cfEnv,
+            };
+          }
+
+          await new Promise<void>(resolve => {
+            let settled = false;
+            let timeoutId: any = null;
+            const finish = () => {
+              if (!settled) {
+                settled = true;
+                if (timeoutId) {
+                  clearTimeout(timeoutId);
+                  timeoutId = null;
+                }
+                try {
+                  sdk.CFPaymentGatewayService.removeCallback();
+                } catch {
+                  // ignore
+                }
+                resolve();
+              }
+            };
+
+            try {
+              sdk.CFPaymentGatewayService.removeCallback();
+            } catch {
+              // ignore
+            }
+
+            sdk.CFPaymentGatewayService.setCallback({
+              onVerify: (_orderID: string) => {
+                finish();
+              },
+              onError: (error: any, _orderID: string) => {
+                sdkError = error;
+                finish();
+              },
+            });
+
+            // Launch official Cashfree Drop Checkout (opens complete payment gateway)
+            try {
+              let theme: any = null;
+              if (typeof contract?.CFThemeBuilder === 'function') {
+                try {
+                  theme = new contract.CFThemeBuilder()
+                    .setNavigationBarBackgroundColor('#0F2A4A')
+                    .setNavigationBarTextColor('#FFFFFF')
+                    .setButtonBackgroundColor('#E2A03F')
+                    .setButtonTextColor('#0B1527')
+                    .setPrimaryTextColor('#0B1527')
+                    .setSecondaryTextColor('#5C6B73')
+                    .build();
+                } catch {
+                  theme = null;
+                }
+              }
+              if (!theme) {
+                theme = {
+                  navigationBarBackgroundColor: '#0F2A4A',
+                  navigationBarTextColor: '#FFFFFF',
+                  buttonBackgroundColor: '#E2A03F',
+                  buttonTextColor: '#0B1527',
+                  primaryTextColor: '#0B1527',
+                  secondaryTextColor: '#5C6B73',
+                };
+              }
+
+              let paymentModes: any = null;
+              if (typeof contract?.CFPaymentComponentBuilder === 'function' && contract?.CFPaymentModes) {
+                try {
+                  paymentModes = new contract.CFPaymentComponentBuilder()
+                    .add(contract.CFPaymentModes.UPI)
+                    .add(contract.CFPaymentModes.CARD)
+                    .add(contract.CFPaymentModes.NB)
+                    .add(contract.CFPaymentModes.WALLET)
+                    .add(contract.CFPaymentModes.PAY_LATER)
+                    .build();
+                } catch {
+                  paymentModes = null;
+                }
+              }
+              if (!paymentModes) {
+                paymentModes = {
+                  paymentModes: ['UPI', 'CARD', 'NB', 'WALLET', 'PAY_LATER'],
+                };
+              }
+
+              let dropPayment: any;
+              if (typeof contract?.CFDropCheckoutPayment === 'function') {
+                try {
+                  dropPayment = new contract.CFDropCheckoutPayment(cfSession, paymentModes, theme);
+                } catch {
+                  dropPayment = { session: cfSession, paymentModes, theme };
+                }
+              } else {
+                dropPayment = { session: cfSession, paymentModes, theme };
+              }
+
+              sdk.CFPaymentGatewayService.doPayment(dropPayment);
+            } catch (err: any) {
+              sdkError = err;
+              finish();
+            }
+
+            // Failsafe timeout in case SDK lifecycle does not trigger callback
+            timeoutId = setTimeout(finish, 60000);
+          });
+        }
+      } catch (err: any) {
+        sdkError = err;
+      }
+    }
+
     // 3. Reconcile and Verify with Backend Server
     let verifyResponse: CashfreeVerifyResponse | null = null;
     let lastNetworkError: any = null;
