@@ -23,6 +23,12 @@ import {
   CameraIcon,
 } from '../components/AuthIcons';
 import { DocumentTypeOption, UploadedDocFile } from './CreateAccountVerificationScreen';
+import { registerUploadedDocument } from '../../admin/membershipApplications/services/uploadedDocumentsCache';
+import {
+  pickNativeDocument,
+  choosePhotoFromNativeGallery,
+  takePhotoWithNativeCamera,
+} from '../../membership/utils/filePicker';
 
 export interface CreateAccountFilesScreenProps {
   documentType: DocumentTypeOption;
@@ -31,63 +37,6 @@ export interface CreateAccountFilesScreenProps {
   onSelectFile: (fileName: string, sizeBytes: number, mimeType: string, uri?: string) => void;
 }
 
-interface RecentFileItem {
-  id: string;
-  name: string;
-  sizeBytes: number;
-  formattedSize: string;
-  date: string;
-  extension: 'pdf' | 'json' | 'docx' | 'zip' | 'jpg' | 'png';
-  mimeType: string;
-}
-
-const RECENT_FILES: RecentFileItem[] = [
-  {
-    id: '1',
-    name: '3D Third-Person Arcade Shooter.pdf',
-    sizeBytes: 251 * 1024,
-    formattedSize: '251 KB',
-    date: '14/09/26',
-    extension: 'pdf',
-    mimeType: 'application/pdf',
-  },
-  {
-    id: '2',
-    name: 'AI Accounting Platform API.postman.json',
-    sizeBytes: 54 * 1024,
-    formattedSize: '54 KB',
-    date: '03/09/26',
-    extension: 'json',
-    mimeType: 'application/json',
-  },
-  {
-    id: '3',
-    name: 'B24 Company Information form.docx',
-    sizeBytes: 258 * 1024,
-    formattedSize: '258 KB',
-    date: '17/09/26',
-    extension: 'docx',
-    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  },
-  {
-    id: '4',
-    name: 'China-Claude-Code-Setup-Guide.pdf',
-    sizeBytes: 235 * 1024,
-    formattedSize: '235 KB',
-    date: '08/09/26',
-    extension: 'pdf',
-    mimeType: 'application/pdf',
-  },
-  {
-    id: '5',
-    name: 'components.zip',
-    sizeBytes: 81 * 1024,
-    formattedSize: '81 KB',
-    date: '28/09/26',
-    extension: 'zip',
-    mimeType: 'application/zip',
-  },
-];
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -168,8 +117,30 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
         fileInput.onchange = (event: any) => {
           const file = event.target?.files?.[0];
           if (file) {
-            const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
-            validateAndDeliverFile(file.name, file.size, file.type || 'application/pdf', objectUrl);
+            if (typeof FileReader !== 'undefined') {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const dataUrl = e.target?.result as string;
+                if (dataUrl) {
+                  registerUploadedDocument(file.name, dataUrl);
+                  validateAndDeliverFile(file.name, file.size, file.type || 'application/pdf', dataUrl);
+                } else {
+                  const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
+                  if (objectUrl) registerUploadedDocument(file.name, objectUrl);
+                  validateAndDeliverFile(file.name, file.size, file.type || 'application/pdf', objectUrl);
+                }
+              };
+              reader.onerror = () => {
+                const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
+                if (objectUrl) registerUploadedDocument(file.name, objectUrl);
+                validateAndDeliverFile(file.name, file.size, file.type || 'application/pdf', objectUrl);
+              };
+              reader.readAsDataURL(file);
+            } else {
+              const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
+              if (objectUrl) registerUploadedDocument(file.name, objectUrl);
+              validateAndDeliverFile(file.name, file.size, file.type || 'application/pdf', objectUrl);
+            }
           }
           try {
             docObj.body.removeChild(fileInput);
@@ -196,6 +167,7 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
           const fileName = picked.name || `${getDocPrefix()}_document.pdf`;
           const sizeBytes = picked.size ?? 250 * 1024;
           const mimeType = picked.type || 'application/pdf';
+          if (picked.uri) registerUploadedDocument(fileName, picked.uri);
           validateAndDeliverFile(fileName, sizeBytes, mimeType, picked.uri);
         }
       } else {
@@ -229,8 +201,30 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
         fileInput.onchange = (event: any) => {
           const file = event.target?.files?.[0];
           if (file) {
-            const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
-            validateAndDeliverFile(file.name, file.size, file.type || 'image/jpeg', objectUrl);
+            if (typeof FileReader !== 'undefined') {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const dataUrl = e.target?.result as string;
+                if (dataUrl) {
+                  registerUploadedDocument(file.name, dataUrl);
+                  validateAndDeliverFile(file.name, file.size, file.type || 'image/jpeg', dataUrl);
+                } else {
+                  const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
+                  if (objectUrl) registerUploadedDocument(file.name, objectUrl);
+                  validateAndDeliverFile(file.name, file.size, file.type || 'image/jpeg', objectUrl);
+                }
+              };
+              reader.onerror = () => {
+                const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
+                if (objectUrl) registerUploadedDocument(file.name, objectUrl);
+                validateAndDeliverFile(file.name, file.size, file.type || 'image/jpeg', objectUrl);
+              };
+              reader.readAsDataURL(file);
+            } else {
+              const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
+              if (objectUrl) registerUploadedDocument(file.name, objectUrl);
+              validateAndDeliverFile(file.name, file.size, file.type || 'image/jpeg', objectUrl);
+            }
           }
         };
 
@@ -275,6 +269,7 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
 
         const sizeBytes = asset.fileSize ?? 250 * 1024;
         const mimeType = asset.type || 'image/jpeg';
+        if (asset.uri) registerUploadedDocument(cleanName, asset.uri);
         validateAndDeliverFile(cleanName, sizeBytes, mimeType, asset.uri);
       }
     } catch (err) {
@@ -350,8 +345,30 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
         fileInput.onchange = (event: any) => {
           const file = event.target?.files?.[0];
           if (file) {
-            const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
-            validateAndDeliverFile(file.name, file.size, file.type || 'image/jpeg', objectUrl);
+            if (typeof FileReader !== 'undefined') {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const dataUrl = e.target?.result as string;
+                if (dataUrl) {
+                  registerUploadedDocument(file.name, dataUrl);
+                  validateAndDeliverFile(file.name, file.size, file.type || 'image/jpeg', dataUrl);
+                } else {
+                  const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
+                  if (objectUrl) registerUploadedDocument(file.name, objectUrl);
+                  validateAndDeliverFile(file.name, file.size, file.type || 'image/jpeg', objectUrl);
+                }
+              };
+              reader.onerror = () => {
+                const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
+                if (objectUrl) registerUploadedDocument(file.name, objectUrl);
+                validateAndDeliverFile(file.name, file.size, file.type || 'image/jpeg', objectUrl);
+              };
+              reader.readAsDataURL(file);
+            } else {
+              const objectUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(file) : undefined;
+              if (objectUrl) registerUploadedDocument(file.name, objectUrl);
+              validateAndDeliverFile(file.name, file.size, file.type || 'image/jpeg', objectUrl);
+            }
           }
         };
 
@@ -400,45 +417,6 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
       }
     } catch (err) {
       console.warn('launchCamera error:', err);
-    }
-  };
-
-  const handleRecentFilePress = () => {
-    handleBrowseDocuments();
-  };
-
-  const renderFileBadge = (extension: RecentFileItem['extension']) => {
-    switch (extension) {
-      case 'pdf':
-        return (
-          <View style={[styles.recentBadge, styles.badgePdf]}>
-            <Text style={styles.badgeTextPdf}>PDF</Text>
-          </View>
-        );
-      case 'json':
-        return (
-          <View style={[styles.recentBadge, styles.badgeJson]}>
-            <Text style={styles.badgeTextJson}>JSO</Text>
-          </View>
-        );
-      case 'docx':
-        return (
-          <View style={[styles.recentBadge, styles.badgeDocx]}>
-            <Text style={styles.badgeTextDocx}>W</Text>
-          </View>
-        );
-      case 'zip':
-        return (
-          <View style={[styles.recentBadge, styles.badgeZip]}>
-            <Text style={styles.badgeTextZip}>ZIP</Text>
-          </View>
-        );
-      default:
-        return (
-          <View style={[styles.recentBadge, styles.badgeDefault]}>
-            <Text style={styles.badgeTextDefault}>{extension.toUpperCase()}</Text>
-          </View>
-        );
     }
   };
 
@@ -558,46 +536,7 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
             </TouchableOpacity>
           </View>
 
-          {/* Recent Files Section */}
-          <View style={styles.recentSection}>
-            <View style={styles.recentHeaderRow}>
-              <Text style={styles.recentTitle}>Recent Files</Text>
-              <TouchableOpacity
-                onPress={handleBrowseDocuments}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="View all recent files"
-              >
-                <Text style={styles.viewAllText}>View All</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.recentList}>
-              {RECENT_FILES.map(file => (
-                <TouchableOpacity
-                  key={file.id}
-                  style={styles.recentCard}
-                  onPress={handleRecentFilePress}
-                  activeOpacity={0.75}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Select ${file.name}`}
-                >
-                  {renderFileBadge(file.extension)}
-
-                  <View style={styles.recentMeta}>
-                    <Text style={styles.recentFileName} numberOfLines={1}>
-                      {file.name}
-                    </Text>
-                    <Text style={styles.recentFileDetails}>
-                      {file.formattedSize} • {file.date}
-                    </Text>
-                  </View>
-
-                  <ChevronRightIcon size={16} color="#94A3B8" />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -163,29 +163,80 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         else membershipStatus = 'Applied';
       }
 
-      // If not in backend /memberships/my yet, check local store
+      // If not in backend /memberships/my yet, check local store & session record
+      let localUserRecord: any = null;
+      try {
+        const win = typeof window !== 'undefined' ? window : (globalThis as any).window;
+        const raw = win?.sessionStorage?.getItem('hrsjm_user_membership_record') || win?.localStorage?.getItem('hrsjm_user_membership_record');
+        if (raw) {
+          localUserRecord = JSON.parse(raw);
+        }
+      } catch {}
+
+      const localApps = membershipApplicationsStore.getApplications();
+      const userEmail = (user.email || '').toLowerCase().trim();
+      const userPhone = (user.mobile_number || user.phone || '').replace(/\D/g, '').slice(-10);
+      const userName = (user.full_name || '').toLowerCase().trim();
+      const match = localApps.find(
+        a =>
+          (userEmail && a.email && a.email.toLowerCase().trim() === userEmail) ||
+          (userPhone && userPhone.length >= 10 && a.phone && a.phone.replace(/\D/g, '').includes(userPhone)) ||
+          (userName && a.applicantName && a.applicantName.toLowerCase().trim() === userName) ||
+          ((a as any).userId && user.id && (a as any).userId === user.id)
+      );
+
       if (!hasAppliedMembership) {
-        const localApps = membershipApplicationsStore.getApplications();
-        const userEmail = (user.email || '').toLowerCase().trim();
-        const userPhone = (user.mobile_number || user.phone || '').replace(/\D/g, '').slice(-10);
-        const match = localApps.find(
-          a =>
-            (userEmail && a.email && a.email.toLowerCase().trim() === userEmail) ||
-            (userPhone && userPhone.length === 10 && a.phone && a.phone.replace(/\D/g, '').slice(-10) === userPhone)
-        );
-        if (match) {
+        if (match || localUserRecord) {
           hasAppliedMembership = true;
-          if (match.status === 'approved') membershipStatus = 'Approved';
-          else if (match.status === 'rejected') {
+          const status = match?.status || localUserRecord?.status;
+          if (status === 'approved' || status === 'Approved') membershipStatus = 'Approved';
+          else if (status === 'rejected' || status === 'Rejected') {
             membershipStatus = 'Rejected';
-            rejectionReason = (match as any).rejectionReason || 'Incomplete documents';
-          } else if (match.status === 'under_review') {
+            rejectionReason = (match as any)?.rejectionReason || localUserRecord?.rejectionReason || 'Incomplete documents';
+          } else if (status === 'under_review' || status === 'Under Review') {
             membershipStatus = 'Under Review';
           } else {
             membershipStatus = 'Applied';
           }
         }
       }
+
+      try {
+        const win = typeof window !== 'undefined' ? window : (globalThis as any).window;
+        const storedHasApplied = win?.sessionStorage?.getItem('hrsjm_has_applied') || win?.localStorage?.getItem('hrsjm_has_applied');
+        if (storedHasApplied === 'true') {
+          hasAppliedMembership = true;
+          if (!membershipStatus) membershipStatus = 'Applied';
+        }
+      } catch {}
+
+      const resolvedAppId =
+        membershipData?.membership_number ||
+        membershipData?.application_data?.application_id ||
+        membershipData?.application_data?.membership_number ||
+        match?.applicationId ||
+        (match as any)?.membershipNumber ||
+        localUserRecord?.applicationId ||
+        localUserRecord?.membershipId ||
+        (localUserRecord?.id && String(localUserRecord.id).startsWith('HRSJM-') ? localUserRecord.id : undefined) ||
+        (hasAppliedMembership && user?.id ? `HRSJM-${String(user.id).replace(/\D/g, '').slice(-5).padStart(5, '0')}` : undefined);
+
+      const rawAppliedType =
+        localUserRecord?.membershipType ||
+        localUserRecord?.categoryTitle ||
+        membershipData?.category?.name ||
+        membershipData?.application_data?.membership_type ||
+        membershipData?.application_data?.category_name ||
+        membershipData?.application_data?.post_name ||
+        match?.membershipType ||
+        (match as any)?.category ||
+        (match as any)?.appliedRole ||
+        (match as any)?.postName;
+
+      const resolvedAppliedType =
+        rawAppliedType && rawAppliedType !== 'General User'
+          ? rawAppliedType
+          : (hasAppliedMembership ? 'Hon\x27ble State Director' : undefined);
 
       const role = mapBackendRole(user.roles);
       const isApprovedMember =
@@ -224,10 +275,18 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         user.roles,
       );
 
+      const isPlainUserPending =
+        effectiveRole === 'User' &&
+        hasAppliedMembership &&
+        membershipStatus !== 'Approved' &&
+        membershipStatus !== 'Active';
+
       const effectiveId =
-        roleInfo.roleType === 'member'
-          ? (membershipData?.membership_number || generateRoleSpecificId('member', user.id))
-          : generateRoleSpecificId(roleInfo.roleType, user.id);
+        isPlainUserPending
+          ? ''
+          : roleInfo.roleType === 'member'
+            ? (membershipData?.membership_number || generateRoleSpecificId('member', user.id))
+            : generateRoleSpecificId(roleInfo.roleType, user.id);
 
       const memberSince = formatDateStr(
         membershipData?.start_date || user.created_at,
@@ -277,6 +336,8 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         hasAppliedMembership,
         membershipStatus,
         rejectionReason,
+        applicationId: resolvedAppId,
+        appliedMembershipType: resolvedAppliedType,
       };
 
       set({ profile: dynamicProfile, isLoading: false });

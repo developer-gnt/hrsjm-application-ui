@@ -208,15 +208,7 @@ export function MembershipStep3Screen() {
   };
 
   const handleCustomUpload = (type: DocCategory) => {
-    const baseName = customFileName.trim() || `${type}_document`;
-    const cleanExt = customFileType.toLowerCase();
-    const finalFileName = baseName.endsWith(`.${cleanExt}`) ? baseName : `${baseName}.${cleanExt}`;
-
-    applyUploadedDocument(type, {
-      name: `${type.toUpperCase()} Proof (${customFileType})`,
-      fileName: finalFileName,
-      fileSize: `${(Math.random() * 1.5 + 1.0).toFixed(1)} MB`,
-    });
+    handleLaunchNativeFilePicker(type);
   };
 
   const handleRemove = (type: DocCategory) => {

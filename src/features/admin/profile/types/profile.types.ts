@@ -42,6 +42,10 @@ export interface AdminProfile extends PersonalInfoInput, AdminDetailsInput {
   membershipStatus?: 'Applied Successfully' | 'Under Review' | 'Approved' | 'Rejected' | string;
   /** Rejection reason if application was rejected */
   rejectionReason?: string;
+  /** Specific application ID for submitted membership application (e.g. HRSJM-00032) */
+  applicationId?: string;
+  /** Specific membership type or post applied for (e.g. Hon'ble State Director) */
+  appliedMembershipType?: string;
 }
 
 export interface ValidationResult {

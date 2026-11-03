@@ -1,3 +1,4 @@
+import { registerUploadedDocument } from '../../admin/membershipApplications/services/uploadedDocumentsCache';
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type {
   AddressInfo,
@@ -92,6 +93,16 @@ const INITIAL_DOCUMENTS: DocumentUploads = {};
 const getSessionStorage = () => {
   const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
   return win?.localStorage || win?.sessionStorage;
+};
+
+const safeGetStorageItem = (key: string): string | null => {
+  try {
+    const storage = getSessionStorage();
+    if (storage) {
+      return storage.getItem(key);
+    }
+  } catch {}
+  return null;
 };
 
 const safeRemoveStorageItem = (key: string) => {
@@ -245,8 +256,23 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
   const authRoles = (authUser?.roles ?? []).map(r => (r.name || '').toUpperCase());
   const isPlainUser = authRoles.includes('USER') || (!authRoles.includes('MEMBER') && !authRoles.includes('ADMIN'));
 
-  const [applications, setApplications] = useState<MembershipApplicationRecord[]>([]);
-  const [activeApplication, setActiveApplication] = useState<MembershipApplicationRecord | null>(null);
+  const [activeApplication, setActiveApplication] = useState<MembershipApplicationRecord | null>(() => {
+    try {
+      const storage = getSessionStorage();
+      const raw = storage?.getItem('hrsjm_user_membership_record');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  });
+
+  const [applications, setApplications] = useState<MembershipApplicationRecord[]>(() => {
+    try {
+      const storage = getSessionStorage();
+      const raw = storage?.getItem('hrsjm_user_membership_record');
+      if (raw) return [JSON.parse(raw)];
+    } catch {}
+    return [];
+  });
 
   const refreshApplications = async () => {
     try {
@@ -330,13 +356,16 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       // Check membershipApplicationsStore for local or test applications
       const localApps = membershipApplicationsStore.getApplications();
       const userEmail = (authUser?.email || '').toLowerCase().trim();
-      const userPhone = (authUser?.mobile_number || '').replace(/\D/g, '').slice(-10);
+      const userPhone = (authUser?.mobile_number || (authUser as any)?.phone || '').replace(/\D/g, '').slice(-10);
+      const userName = (authUser?.full_name || '').toLowerCase().trim();
 
-      const matchedStoreApp = (userEmail || userPhone)
+      const matchedStoreApp = (userEmail || userPhone || userName)
         ? localApps.find(
             a =>
               (userEmail && a.email && a.email.toLowerCase().trim() === userEmail) ||
-              (userPhone && a.phone && a.phone.replace(/\\D/g, '').includes(userPhone))
+              (userPhone && userPhone.length >= 10 && a.phone && a.phone.replace(/\D/g, '').includes(userPhone)) ||
+              (userName && a.applicantName && a.applicantName.toLowerCase().trim() === userName) ||
+              ((a as any).userId && authUser?.id && (a as any).userId === authUser.id)
           )
         : null;
 
@@ -385,7 +414,19 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
           }
         }
       } else {
-        if (isPlainUser) {
+        const storedRaw = safeGetStorageItem('hrsjm_user_membership_record');
+        let existingStoredRecord: MembershipApplicationRecord | null = null;
+        if (storedRaw) {
+          try {
+            existingStoredRecord = JSON.parse(storedRaw);
+          } catch {}
+        }
+
+        if (existingStoredRecord && (existingStoredRecord.applicationId || (existingStoredRecord as any).id)) {
+          setApplications([existingStoredRecord]);
+          setActiveApplication(existingStoredRecord);
+          setHasAppliedLocally(true);
+        } else if (isPlainUser) {
           setApplications([]);
           setActiveApplication(null);
           setHasAppliedLocally(false);
@@ -548,6 +589,16 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         },
       ],
     };
+
+    if (adminAppItem.avatarUrl) {
+      registerUploadedDocument('applicant_photograph.jpg', adminAppItem.avatarUrl);
+      registerUploadedDocument('photograph.jpg', adminAppItem.avatarUrl);
+    }
+    uploadedDocs.forEach(d => {
+      if (d.fileName && d.uri) {
+        registerUploadedDocument(d.fileName, d.uri);
+      }
+    });
 
     // Add to admin store so it appears dynamically in the 1st position in admin screen
     membershipApplicationsStore.addApplication(adminAppItem);

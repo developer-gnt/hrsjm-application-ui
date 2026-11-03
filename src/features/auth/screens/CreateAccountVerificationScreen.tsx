@@ -34,6 +34,7 @@ import {
   TrashIcon,
 } from '../components/AuthIcons';
 import { CreateAccountFilesScreen } from './CreateAccountFilesScreen';
+import { registerUploadedDocument } from '../../admin/membershipApplications/services/uploadedDocumentsCache';
 import {
   getRegistrationState,
   updateRegistrationState,
@@ -332,6 +333,11 @@ export const CreateAccountVerificationScreen: React.FC<CreateAccountVerification
       status: 'ready',
     };
 
+    if (uri) {
+      registerUploadedDocument(fileName, uri);
+      registerUploadedDocument(docTitle, uri);
+      registerUploadedDocument(docId, uri);
+    }
     // Update shared registration state array
     addOrUpdateDocument(newDocItem);
 

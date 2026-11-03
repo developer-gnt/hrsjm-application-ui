@@ -26,38 +26,7 @@ interface ImagePickerSheetProps {
   currentImageUri?: string;
 }
 
-const GALLERY_PRESETS = [
-  {
-    id: 'g1',
-    label: 'Professional 1',
-    uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
-  },
-  {
-    id: 'g2',
-    label: 'Professional 2',
-    uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop',
-  },
-  {
-    id: 'g3',
-    label: 'Formal 1',
-    uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop',
-  },
-  {
-    id: 'g4',
-    label: 'Formal 2',
-    uri: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop',
-  },
-  {
-    id: 'g5',
-    label: 'Passport Photo',
-    uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=400&auto=format&fit=crop',
-  },
-  {
-    id: 'g6',
-    label: 'Studio Photo',
-    uri: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=400&auto=format&fit=crop',
-  },
-];
+const GALLERY_PRESETS: { id: string; label: string; uri: string }[] = [];
 
 export function ImagePickerSheet({
   visible,
@@ -152,9 +121,11 @@ export function ImagePickerSheet({
             </View>
 
             {/* Presets Header */}
+            {GALLERY_PRESETS.length > 0 ? (
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Or Choose Fast Sample Photo:</Text>
             </View>
+            ) : null}
 
             <ScrollView style={styles.galleryScroll} showsVerticalScrollIndicator={false}>
               <View style={styles.photosGrid}>

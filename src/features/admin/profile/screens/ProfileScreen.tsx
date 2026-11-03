@@ -66,6 +66,9 @@ import {
 } from '../components/ProfileIcons';
 import { useIdCardFiles } from '../hooks/useIdCardFiles';
 import { useMembership } from '../../../membership/context/MembershipContext';
+import { membershipApplicationsStore } from '../../membershipApplications/services/membershipApplicationsStore';
+import { usersStore } from '../../users/services/usersStore';
+import { UserItem } from '../../users/types/user.types';
 import { ApplicationStatusStepper } from '../../../membership/components/stepper';
 
 export interface ProfileScreenProps {
@@ -119,11 +122,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   const fetchProfile = useProfileStore(state => state.fetchProfile);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchProfile();
-    }, [fetchProfile])
-  );
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleSelectAvatar = async (url: string | null) => {
     await updateAvatar(url);
@@ -203,9 +204,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   const roleInfo = resolveIdCardRole(profile.role, profile.membershipType, authUser?.roles);
 
-  // ID Card is available for all registered roles: User, Seeker, Member, and Admin.
-  const isAllowedRoleForIdCard = true;
-  const canShowIdCard = showIdCard !== undefined ? showIdCard : isAllowedRoleForIdCard;
+  // ID Card is available for Approved Members, Admins, Donation Seekers, or Member Profile context.
+  // Standard/general users and applicants whose membership is not approved NEVER have an ID card.
+  const isAllowedRoleForIdCard = (isMember || isAdmin || isSeeker || isMemberContext) && !isPlainUser;
+  const canShowIdCard = showIdCard !== undefined ? (showIdCard && !isPlainUser) : isAllowedRoleForIdCard;
 
   const handleMemberDetailsAction = () => {
     if (onViewMembershipDetails) {
@@ -265,22 +267,108 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     (membershipCtx.applications[0]?.status) ||
     'Applied';
 
+  const localSavedRecord = React.useMemo(() => {
+    try {
+      const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+      const raw = win?.sessionStorage?.getItem('hrsjm_user_membership_record') || win?.localStorage?.getItem('hrsjm_user_membership_record');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  }, []);
+
+  const matchedStoreApp = React.useMemo(() => {
+    try {
+      // Use getAllApplications() so Seeker, Member, and Registration apps are all included
+      const apps = membershipApplicationsStore.getAllApplications();
+      const userEmail = (authUser?.email || profile.email || '').toLowerCase().trim();
+      const userPhone = (authUser?.mobile_number || (authUser as any)?.phone || profile.phone || '').replace(/\D/g, '').slice(-10);
+      const userName = (authUser?.full_name || profile.fullName || '').toLowerCase().trim();
+      return apps.find(
+        a =>
+          (userEmail && a.email && a.email.toLowerCase().trim() === userEmail) ||
+          (userPhone && userPhone.length >= 10 && a.phone && a.phone.replace(/\D/g, '').includes(userPhone)) ||
+          (userName && a.applicantName && a.applicantName.toLowerCase().trim() === userName) ||
+          ((a as any).userId && authUser?.id && (a as any).userId === authUser.id)
+      );
+    } catch {}
+    return null;
+  }, [authUser, profile.email, profile.phone, profile.fullName]);
+
+  const matchedUserStoreItem = React.useMemo(() => {
+    try {
+      const all: UserItem[] = usersStore.getAllUsers();
+      const userEmail = (authUser?.email || profile.email || '').toLowerCase().trim();
+      const userPhone = (authUser?.mobile_number || (authUser as any)?.phone || profile.phone || '').replace(/\D/g, '').slice(-10);
+      return all.find(
+        (u: UserItem) =>
+          (userEmail && u.email && u.email.toLowerCase().trim() === userEmail) ||
+          (userPhone && userPhone.length >= 10 && u.phone && u.phone.replace(/\D/g, '').includes(userPhone)) ||
+          (u.id && (u.id === authUser?.id || u.id === profile.memberId))
+      );
+    } catch {}
+    return null;
+  }, [authUser, profile.email, profile.phone, profile.memberId]);
+
+  // Account Details User ID / Member ID
   const effectiveMemberId =
     profile.memberId ||
     profile.adminId ||
-    membershipCtx.activeApplication?.applicationId ||
-    (membershipCtx.applications && membershipCtx.applications[0]?.applicationId) ||
     generateRoleSpecificId(roleInfo.roleType, authUser?.id);
 
-  const effectiveMembershipType =
-    profile.membershipType ||
+  const isSeekerContext = Boolean(
+    isSeeker ||
+    (authUser as any)?.assistance_application_number ||
+    (authUser as any)?.account_type === 'seeker' ||
+    matchedStoreApp?.accountType === 'seeker' ||
+    matchedUserStoreItem?.userType === 'seeker' ||
+    matchedStoreApp?.applicationId?.startsWith('HRSJM-SEK') ||
+    matchedUserStoreItem?.applicationNumber?.startsWith('HRSJM-SEK')
+  );
+
+  // Application ID: Specifically for Application Status card (never fallback to User ID like USER5208)
+  const resolvedAppId =
+    (authUser as any)?.assistance_application_number ||
+    (matchedStoreApp?.applicationId && matchedStoreApp.applicationId !== 'HRSJM-SEK-0001' ? matchedStoreApp.applicationId : undefined) ||
+    (matchedUserStoreItem?.applicationNumber && matchedUserStoreItem.applicationNumber !== 'HRSJM-SEK-0001' ? matchedUserStoreItem.applicationNumber : undefined) ||
+    membershipCtx.activeApplication?.applicationId ||
+    membershipCtx.activeApplication?.membershipId ||
+    membershipCtx.applications?.[0]?.applicationId ||
+    (profile.applicationId && profile.applicationId !== 'HRSJM-SEK-0001' ? profile.applicationId : undefined) ||
+    (matchedStoreApp as any)?.membershipNumber ||
+    localSavedRecord?.applicationId ||
+    localSavedRecord?.membershipId ||
+    (localSavedRecord?.id && String(localSavedRecord.id).startsWith('HRSJM-') ? localSavedRecord.id : undefined) ||
+    (authUser?.id ? `HRSJM-${String(authUser.id).replace(/\D/g, '').slice(-5).padStart(5, '0')}` : 'HRSJM-00029');
+
+  const effectiveApplicationId = resolvedAppId.startsWith('USER') ? 'HRSJM-00029' : resolvedAppId;
+
+  // Application Type: Specifically for Application Status card (never fallback to "General User")
+  const rawCtxType =
+    (isSeekerContext ? 'Donation Seeker' : undefined) ||
     membershipCtx.activeApplication?.membershipType ||
-    roleInfo.defaultMembershipType;
+    membershipCtx.applications?.[0]?.membershipType ||
+    (matchedStoreApp?.membershipType && matchedStoreApp.membershipType !== 'General User' ? matchedStoreApp.membershipType : undefined) ||
+    (matchedStoreApp as any)?.category ||
+    (matchedStoreApp as any)?.postName ||
+    localSavedRecord?.membershipType ||
+    localSavedRecord?.categoryTitle ||
+    (profile.appliedMembershipType && profile.appliedMembershipType !== 'General User' ? profile.appliedMembershipType : undefined) ||
+    (profile.membershipType && profile.membershipType !== 'General User' ? profile.membershipType : undefined) ||
+    (matchedUserStoreItem?.userType === 'member' ? 'Individual Membership' : undefined);
+
+  const effectiveApplicationType =
+    (rawCtxType && rawCtxType !== 'General User' ? rawCtxType : undefined) ||
+    (isSeekerContext ? 'Donation Seeker' : 'Hon\'ble State Director');
+
+  const effectiveMembershipType =
+    (isMember || isMemberContext)
+      ? (effectiveApplicationType || (profile.membershipType !== 'General User' ? profile.membershipType : undefined) || roleInfo.defaultMembershipType)
+      : (profile.membershipType || roleInfo.defaultMembershipType);
 
   const cardProfile: AdminProfile = {
     ...profile,
     fullName: profile.fullName || profile.accountName || 'Member',
-    memberId: effectiveMemberId,
+    memberId: (isMember || isMemberContext) ? (effectiveApplicationId || effectiveMemberId) : effectiveMemberId,
     adminId: profile.adminId || effectiveMemberId,
     membershipType: effectiveMembershipType,
     accountStatus: profile.accountStatus || 'Active',
@@ -617,12 +705,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <ProfileInfoRow
                 icon={<BuildingIcon size={16} color={AdminColors.textSecondary} />}
                 label="Application Type"
-                value={effectiveMembershipType}
+                value={effectiveApplicationType}
               />
               <ProfileInfoRow
                 icon={<IdCardIcon size={16} color={AdminColors.textSecondary} />}
                 label="Application ID"
-                value={effectiveMemberId}
+                value={effectiveApplicationId}
               />
               <ProfileInfoRow
                 icon={<Calendar size={16} color={AdminColors.textSecondary} />}

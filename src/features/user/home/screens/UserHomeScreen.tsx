@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../auth/store/authStore';
 import { usersStore } from '../../../admin/users/services/usersStore';
+import type { UserItem } from '../../../admin/users/types/user.types';
+import { membershipApplicationsStore } from '../../../admin/membershipApplications/services/membershipApplicationsStore';
 import { AdminColors, Spacing } from '../../../../core/theme';
 import { HomeHeader } from '../components/HomeHeader';
 import { HeroBanner } from '../components/HeroBanner';
@@ -177,21 +179,50 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
       authUser?.membership_status === 'UNDER_REVIEW' ||
       ((authUser as any)?.account_type === 'member' && authUser?.membership_status !== 'ACTIVE' && authUser?.membership_status !== 'APPROVED'));
 
-  // Live lookup of seeker application in usersStore
+  // Live lookup of seeker application in usersStore & membershipApplicationsStore
   const matchedSeeker = React.useMemo(() => {
     if (!authUser) return undefined;
-    const phone = authUser?.mobile_number?.replace(/\D/g, '');
+    const phone = authUser?.mobile_number?.replace(/\D/g, '').slice(-10);
     const email = authUser?.email?.toLowerCase().trim();
     const appNo = (authUser as any)?.assistance_application_number;
     const allUsers = usersStore.getAllUsers();
 
-    return allUsers.find(u => {
+    const fromUsers = allUsers.find(u => {
       if (u.userType !== 'seeker') return false;
-      if (appNo && u.applicationNumber === appNo) return true;
+      if (appNo && u.applicationNumber === appNo && u.applicationNumber !== 'HRSJM-SEK-0001') return true;
       if (phone && u.phone && u.phone.replace(/\D/g, '').includes(phone)) return true;
       if (email && u.email && u.email.toLowerCase().trim() === email) return true;
       return false;
     });
+
+    if (fromUsers && fromUsers.applicationNumber !== 'HRSJM-SEK-0001') return fromUsers;
+
+    try {
+      const storeApps = membershipApplicationsStore.getApplications();
+      const matchedStore = storeApps.find(
+        a =>
+          a.accountType === 'seeker' &&
+          ((appNo && a.applicationId === appNo && a.applicationId !== 'HRSJM-SEK-0001') ||
+           (email && a.email && a.email.toLowerCase().trim() === email) ||
+           (phone && a.phone && a.phone.replace(/\D/g, '').includes(phone)))
+      );
+      if (matchedStore) {
+        return {
+          id: matchedStore.id,
+          name: matchedStore.applicantName,
+          email: matchedStore.email || '',
+          phone: matchedStore.phone || '',
+          userType: 'seeker' as const,
+          status: matchedStore.status === 'approved' ? ('active' as const) : matchedStore.status === 'rejected' ? ('blocked' as const) : ('pending' as const),
+          applicationNumber: matchedStore.applicationId,
+          joinedDate: matchedStore.submittedAt || new Date().toISOString(),
+          remarks: (matchedStore as any).rejectionReason || '',
+          documents: [],
+        } as UserItem;
+      }
+    } catch {}
+
+    return fromUsers;
   }, [authUser, usersVersion]);
 
   const hasSeekerApp = Boolean(
