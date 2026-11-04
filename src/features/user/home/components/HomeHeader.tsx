@@ -255,7 +255,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               <View style={styles.wordmarkCol}>
                 <Text style={styles.brandTitle} numberOfLines={1}>HRSJM</Text>
                 <Text style={styles.wordmarkEnglish} numberOfLines={1}>
-                  HUMAN RIGHTS AND SOCIAL JUSTICE MISSION
+                  HUMAN RIGHTS & SOCIAL JUSTICE
                 </Text>
                 <Text style={styles.wordmarkHindi} numberOfLines={1}>
                   मानव अधिकार • सामाजिक न्याय
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    flexShrink: 0,
+    flexShrink: 1,
     minWidth: 0,
   },
   shieldLogo: {
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
   },
   wordmarkCol: {
     justifyContent: 'center',
-    flexShrink: 0,
+    flexShrink: 1,
     minWidth: 56,
   },
   brandTitle: {

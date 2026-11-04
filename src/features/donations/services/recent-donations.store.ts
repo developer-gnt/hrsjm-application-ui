@@ -11,7 +11,7 @@ class RecentDonationsStore {
     this.recentDonations = [
       donation,
       ...this.recentDonations.filter(
-        d => d.id !== donation.id && d.transactionId !== donation.transactionId,
+        d => d.id !== donation.id && d.transactionId !== donation.transactionId && !(d.amount === donation.amount && d.date === donation.date && d.time === donation.time),
       ),
     ];
     this.notify();
