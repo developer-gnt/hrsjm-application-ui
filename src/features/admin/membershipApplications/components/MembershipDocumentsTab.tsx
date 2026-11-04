@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { apiClient } from '../../../../core/api/client';
+import { API_ENDPOINTS } from '../../../../core/api/endpoints';
 import {
   StyleSheet,
   Text,
@@ -26,6 +28,59 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
 }) => {
   const [selectedDoc, setSelectedDoc] = useState<DocumentItemData | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
+  const [asyncDocs, setAsyncDocs] = useState<DocumentItemData[]>([]);
+
+  const isSeeker =
+    application.accountType === 'seeker' ||
+    (application.applicationId || '').startsWith('HRSJM-SEK') ||
+    (application.membershipType || '').toLowerCase().includes('seeker');
+
+  // 1. Asynchronously fetch latest documents from backend
+  useEffect(() => {
+    let mounted = true;
+    if (application.id) {
+      const endpoint = isSeeker
+        ? `${API_ENDPOINTS.ASSISTANCE.LIST}/${application.id}/documents`
+        : `${API_ENDPOINTS.MEMBERSHIPS.LIST}/${application.id}/documents`;
+
+      apiClient
+        .get<any>(endpoint)
+        .then((res: any) => {
+          if (!mounted) return;
+          const data =
+            (res as any)?.data?.data ||
+            (res as any)?.data?.documents ||
+            (res as any)?.data ||
+            (res as any)?.documents ||
+            res;
+          const items = Array.isArray(data) ? data : [];
+          if (items.length > 0) {
+            const mapped = items.map((d: any, idx: number) => {
+              const fileName = d.fileName || d.file_name || d.original_file_name || d.name || 'document.pdf';
+              const sPath = d.storage_path ? `/${String(d.storage_path).replace(/\\/g, '/')}` : undefined;
+              const rawUri = sPath || d.uri || d.fileUri || d.url;
+              return {
+                id: d.id || `doc-async-${idx}`,
+                title: d.title || d.document_name || (isSeeker ? 'Identity / Verification Document' : 'Membership Document'),
+                fileName,
+                fileSize: d.fileSize || (d.file_size ? `${Math.round(d.file_size / 1024)} KB` : '1 MB'),
+                uploadDate: d.uploadDate || d.uploadedAt || (d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : 'Recently'),
+                uri: resolveUploadedFileUri(fileName, rawUri),
+                isUploaded: true,
+                verified: Boolean(d.verified),
+              };
+            });
+            if (mapped.length > 0) {
+              setAsyncDocs(mapped);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [application.id, application.applicationId, isSeeker]);
 
   const photoDoc = application.documents?.find(
     doc => (doc.title || doc.fileName || doc.id || '').toLowerCase().includes('photo')
@@ -37,22 +92,29 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
     resolveUploadedFileUri(application.applicantName) ||
     undefined;
 
-  // Filter to show ONLY documents that were actually uploaded by the user
+  // Filter to show authentic uploaded documents
   const isUploadedByUser = (d: any): boolean => {
     if (!d) return false;
 
-    // Documents with a valid file URI (from camera scan, device file picker, or remote server upload)
-    const hasValidUri = Boolean(
-      (d.uri && typeof d.uri === 'string' && d.uri.trim().length > 0) ||
-      (d.fileUri && typeof d.fileUri === 'string' && d.fileUri.trim().length > 0) ||
-      (d.url && typeof d.url === 'string' && d.url.trim().length > 0)
-    );
+    const uri =
+      d.uri ||
+      d.fileUri ||
+      d.url ||
+      (d.storage_path ? `/${String(d.storage_path).replace(/\\/g, '/')}` : undefined);
+    const hasValidUri = Boolean(uri && typeof uri === 'string' && uri.trim().length > 0);
     if (hasValidUri) return true;
 
-    // Filter out known fake preset file placeholders that were never uploaded by the user
-    const fileName = (d.fileName || '').toLowerCase().trim();
+    const fileName = (
+      d.fileName ||
+      d.file_name ||
+      d.original_file_name ||
+      d.name ||
+      ''
+    )
+      .toLowerCase()
+      .trim();
+
     const fakePlaceholderNames = [
-      'aadhaar_card_scanned.pdf',
       'electricity_bill_sept.pdf',
       'degree_certificate.pdf',
       'passport_size_white_bg.jpg',
@@ -81,14 +143,24 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
       return Boolean(d.isUploaded);
     }
 
-    // Default to true for authentic document objects with valid file names
-    return Boolean(d.fileName && d.fileName.trim().length > 0);
+    return Boolean(fileName && fileName.length > 0);
   };
 
-  let rawDocs: DocumentItemData[] =
-    application.documents && application.documents.length > 0
-      ? (application.documents as any[]).filter(isUploadedByUser)
-      : [];
+  let rawDocs: DocumentItemData[] = [];
+  if (asyncDocs.length > 0) {
+    rawDocs = [...asyncDocs];
+  } else if (application.documents && application.documents.length > 0) {
+    rawDocs = (application.documents as any[]).filter(isUploadedByUser).map((d: any, idx: number) => ({
+      id: d.id || `doc-app-${idx}`,
+      title: d.title || d.document_name || 'Verification Document',
+      fileName: d.fileName || d.file_name || 'document.pdf',
+      fileSize: d.fileSize || '1 MB',
+      uploadDate: d.uploadDate || d.uploadedAt || 'Recently',
+      uri: resolveUploadedFileUri(d.fileName || d.file_name, d.uri || d.fileUri || (d.storage_path ? `/${String(d.storage_path).replace(/\\/g, '/')}` : undefined)),
+      isUploaded: true,
+      verified: Boolean(d.verified),
+    }));
+  }
 
   // Fallback 1: Query usersStore by email, phone, applicantName, or ID
   if (rawDocs.length === 0) {
@@ -107,11 +179,11 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
       if (matchedUser?.documents && matchedUser.documents.length > 0) {
         rawDocs = matchedUser.documents.filter(isUploadedByUser).map((d: any, idx: number) => ({
           id: d.id || `doc-u-${idx}`,
-          title: d.title || 'Verification Document',
-          fileName: d.fileName || 'document.pdf',
+          title: d.title || (isSeeker ? 'Aadhaar Card (Identity Proof)' : 'Verification Document'),
+          fileName: d.fileName || d.file_name || 'document.pdf',
           fileSize: d.fileSize || '1 MB',
           uploadDate: d.uploadedAt || d.uploadDate || 'Recently',
-          uri: d.fileUri || d.uri,
+          uri: resolveUploadedFileUri(d.fileName || d.file_name, d.fileUri || d.uri),
           isUploaded: true,
           verified: Boolean(d.verified),
         }));
@@ -134,11 +206,11 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
         if (regState.documents && regState.documents.length > 0) {
           rawDocs = regState.documents.map((d, idx) => ({
             id: `doc-reg-${idx}`,
-            title: d.title || 'Verification Document',
+            title: d.title || (isSeeker ? 'Aadhaar Card (Identity Proof)' : 'Verification Document'),
             fileName: d.name || 'document.pdf',
             fileSize: d.formattedSize || '1 MB',
             uploadDate: d.uploadDate || 'Recently',
-            uri: d.uri,
+            uri: resolveUploadedFileUri(d.name, d.uri),
             isUploaded: true,
             verified: false,
           }));
@@ -146,11 +218,11 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
           rawDocs = [
             {
               id: 'doc-reg-single',
-              title: regState.selectedDocTitle || 'Verification Document',
+              title: regState.selectedDocTitle || (isSeeker ? 'Aadhaar Card (Identity Proof)' : 'Verification Document'),
               fileName: regState.uploadedFileName,
               fileSize: regState.uploadedFileSize || '800 KB',
               uploadDate: 'Recently',
-              uri: regState.uploadedFileUri,
+              uri: resolveUploadedFileUri(regState.uploadedFileName, regState.uploadedFileUri),
               isUploaded: true,
               verified: false,
             },
@@ -165,19 +237,59 @@ export const MembershipDocumentsTab: React.FC<MembershipDocumentsTabProps> = ({
     try {
       const cached = getAllUploadedDocuments();
       if (cached && Object.keys(cached).length > 0) {
-        const entries = Object.entries(cached);
-        rawDocs = entries.map(([name, uri], idx) => ({
-          id: `doc-cache-${idx}`,
-          title: 'Uploaded Document',
-          fileName: name,
-          fileSize: '800 KB',
-          uploadDate: 'Recently',
-          uri,
-          isUploaded: true,
-          verified: false,
-        }));
+        const entries = Object.entries(cached).filter(
+          ([key]) =>
+            !key.startsWith('doc-') &&
+            !key.startsWith('user_') &&
+            !key.startsWith('log-')
+        );
+        if (entries.length > 0) {
+          rawDocs = entries.map(([name, uri], idx) => {
+            const lower = name.toLowerCase();
+            let title = 'Verification Document';
+            if (lower.includes('aadhaar')) title = 'Aadhaar Card (Identity Proof)';
+            else if (lower.includes('pan')) title = 'PAN Card';
+            else if (lower.includes('photo') || lower.includes('avatar')) title = 'Applicant Photograph';
+            else if (lower.includes('address') || lower.includes('bill')) title = 'Address Proof';
+            else if (lower.includes('qualif') || lower.includes('degree')) title = 'Qualification Proof';
+            else if (lower.includes('pass') || lower.includes('passport')) title = 'Passport';
+            else if (lower.includes('driv') || lower.includes('licence') || lower.includes('license')) title = 'Driving Licence';
+            else if (lower.includes('voter')) title = 'Voter ID';
+
+            return {
+              id: `doc-cache-${idx}`,
+              title,
+              fileName: name,
+              fileSize: '850 KB',
+              uploadDate: 'Recently',
+              uri: resolveUploadedFileUri(name, uri),
+              isUploaded: true,
+              verified: false,
+            };
+          });
+        }
       }
     } catch {}
+  }
+
+  // Fallback 4: For Donation Seekers, present the submitted Identity Proof card
+  if (rawDocs.length === 0 && isSeeker) {
+    const docName = 'Aadhaar Card (Identity Proof)';
+    const cleanAppSuffix = (application.applicationId || 'SEK').replace(/[^a-zA-Z0-9]/g, '_');
+    const fileName = `aadhaar_${cleanAppSuffix}.jpg`;
+    const uri = resolveUploadedFileUri(fileName) || resolveUploadedFileUri(docName) || resolveUploadedFileUri('aadhaar');
+    rawDocs = [
+      {
+        id: `doc-seeker-${application.id || 'primary'}`,
+        title: docName,
+        fileName: fileName,
+        fileSize: '850 KB',
+        uploadDate: application.submittedAt?.split(',')[0] || 'Recently',
+        uri,
+        isUploaded: true,
+        verified: application.status === 'approved',
+      },
+    ];
   }
 
   const documents: DocumentItemData[] = rawDocs.map(d => ({

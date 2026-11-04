@@ -378,19 +378,24 @@ export function mapAssistanceRequestToApplicationItem(item: any): MembershipAppl
   let docs: any[] = [];
   // 1. Check if backend already returns documents attached
   if (Array.isArray(item.documents) && item.documents.length > 0) {
-    docs = item.documents.map((d: any, idx: number) => ({
-      id: d.id || `doc-${idx + 1}`,
-      title: d.document_name || d.title || 'Verification Document',
-      fileName: d.file_name || d.original_file_name || d.fileName || 'document.pdf',
-      fileSize: d.fileSize || (d.file_size ? `${Math.round(d.file_size / 1024)} KB` : '1 MB'),
-      fileType: d.mime_type || d.fileType || 'image/jpeg',
-      fileUri: d.storage_path ? `/uploads/${d.file_name}` : (d.fileUri || d.uri),
-      uri: resolveUploadedFileUri(d.file_name || d.fileName, d.storage_path ? `/uploads/${d.file_name}` : (d.fileUri || d.uri)),
-      uploadDate: d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : 'Recently',
-      uploadedAt: d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : 'Recently',
-      isUploaded: true,
-      verified: Boolean(d.verified),
-    }));
+    docs = item.documents.map((d: any, idx: number) => {
+      const fileName = d.file_name || d.original_file_name || d.fileName || 'document.pdf';
+      const sPath = d.storage_path ? `/${String(d.storage_path).replace(/\\/g, '/')}` : undefined;
+      const fileUri = sPath || d.fileUri || d.uri;
+      return {
+        id: d.id || `doc-${idx + 1}`,
+        title: d.document_name || d.title || 'Identity Verification Document',
+        fileName,
+        fileSize: d.fileSize || (d.file_size ? `${Math.round(d.file_size / 1024)} KB` : '1 MB'),
+        fileType: d.mime_type || d.fileType || 'image/jpeg',
+        fileUri,
+        uri: resolveUploadedFileUri(fileName, fileUri),
+        uploadDate: d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : 'Recently',
+        uploadedAt: d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : 'Recently',
+        isUploaded: true,
+        verified: Boolean(d.verified),
+      };
+    });
   }
 
   // 2. Query usersStore
@@ -1072,6 +1077,13 @@ class MembershipApplicationsStore {
           const assistRes = await apiClient.get<any>(`${ApiRoutes.ASSISTANCE_REQUESTS}/${queryId}`);
           const aData = (assistRes as any)?.data?.data || (assistRes as any)?.data || assistRes;
           if (aData && aData.id) {
+            try {
+              const sDocsRes = await apiClient.get<any>(`${ApiRoutes.ASSISTANCE_REQUESTS}/${queryId}/documents`);
+              const sDocs = (sDocsRes as any)?.data?.data || (sDocsRes as any)?.data || (sDocsRes as any)?.documents || sDocsRes;
+              if (Array.isArray(sDocs) && sDocs.length > 0) {
+                aData.documents = sDocs;
+              }
+            } catch {}
             const mapped = mapAssistanceRequestToApplicationItem(aData);
             if ((!mapped.documents || mapped.documents.length === 0) && localApp?.documents && localApp.documents.length > 0) {
               mapped.documents = localApp.documents;
@@ -1104,11 +1116,14 @@ class MembershipApplicationsStore {
           const docsRes = await apiClient.get<any>(
             ApiRoutes.MEMBERSHIPS.DOCUMENTS(queryId),
           );
-          const docs =
+          const docsRaw =
             (docsRes as any)?.data !== undefined
               ? (docsRes as any).data
               : docsRes;
-          if (Array.isArray(docs)) {
+          const docs = (docsRaw && Array.isArray(docsRaw.documents))
+            ? docsRaw.documents
+            : (Array.isArray(docsRaw) ? docsRaw : []);
+          if (Array.isArray(docs) && docs.length > 0) {
             backend.documents = docs;
           }
         } catch {
