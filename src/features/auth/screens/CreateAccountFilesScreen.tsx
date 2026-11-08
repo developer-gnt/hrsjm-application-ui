@@ -238,7 +238,8 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
       const response = await launchImageLibrary({
         mediaType: 'photo',
         selectionLimit: 1,
-        includeBase64: false,
+        includeBase64: true,
+        quality: 0.8,
       });
 
       if (response.didCancel) {
@@ -269,8 +270,9 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
 
         const sizeBytes = asset.fileSize ?? 250 * 1024;
         const mimeType = asset.type || 'image/jpeg';
-        if (asset.uri) registerUploadedDocument(cleanName, asset.uri);
-        validateAndDeliverFile(cleanName, sizeBytes, mimeType, asset.uri);
+        const effectiveUri = asset.base64 ? `data:${mimeType};base64,${asset.base64}` : asset.uri;
+        if (effectiveUri) registerUploadedDocument(cleanName, effectiveUri);
+        validateAndDeliverFile(cleanName, sizeBytes, mimeType, effectiveUri);
       }
     } catch (err) {
       console.warn('launchImageLibrary error:', err);
@@ -383,6 +385,8 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
         mediaType: 'photo',
         cameraType: 'back',
         saveToPhotos: false,
+        includeBase64: true,
+        quality: 0.8,
       });
 
       if (response.didCancel) {
@@ -413,7 +417,8 @@ export const CreateAccountFilesScreen: React.FC<CreateAccountFilesScreenProps> =
 
         const sizeBytes = asset.fileSize ?? 300 * 1024;
         const mimeType = asset.type || 'image/jpeg';
-        validateAndDeliverFile(cleanName, sizeBytes, mimeType, asset.uri);
+        const effectiveUri = asset.base64 ? `data:${mimeType};base64,${asset.base64}` : asset.uri;
+        validateAndDeliverFile(cleanName, sizeBytes, mimeType, effectiveUri);
       }
     } catch (err) {
       console.warn('launchCamera error:', err);
