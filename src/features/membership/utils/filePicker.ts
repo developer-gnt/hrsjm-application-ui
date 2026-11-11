@@ -16,6 +16,7 @@ export interface PickedMediaResult {
   fileName: string;
   fileSize: string;
   type?: string;
+  file?: any;
 }
 
 /**
@@ -91,6 +92,7 @@ export function pickWebFile(
             fileName,
             fileSize,
             type: file.type,
+            file,
           });
         };
         reader.onerror = () => {
@@ -100,6 +102,7 @@ export function pickWebFile(
             fileName,
             fileSize,
             type: file.type,
+            file,
           });
         };
         reader.readAsDataURL(file);
@@ -110,6 +113,7 @@ export function pickWebFile(
           fileName,
           fileSize,
           type: file.type,
+          file,
         });
       }
     };

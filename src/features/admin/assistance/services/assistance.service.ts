@@ -1,6 +1,29 @@
 import { Platform } from 'react-native';
-import { api, unwrap } from '../../../../core/api/client';
+import { API_BASE_URL, api, unwrap } from '../../../../core/api/client';
+import { tokenStorage } from '../../../../core/storage/token-storage';
 import type { ApiEnvelope } from '../../../../core/api/types';
+
+function dataUriToBlob(dataUri: string, fallbackMime = 'application/octet-stream'): any {
+  const WebBlob = (globalThis as any).Blob;
+  const commaIdx = dataUri.indexOf(',');
+  if (commaIdx === -1) {
+    return new WebBlob([], { type: fallbackMime });
+  }
+  const meta = dataUri.slice(0, commaIdx);
+  const body = dataUri.slice(commaIdx + 1);
+  const mimeMatch = meta.match(/^data:([^;]+)/i);
+  const mime = mimeMatch ? mimeMatch[1] : fallbackMime;
+  const isBase64 = /;base64$/i.test(meta);
+  if (!isBase64) {
+    return new WebBlob([decodeURIComponent(body)], { type: mime });
+  }
+  const binary = atob(body);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new WebBlob([bytes], { type: mime });
+}
 import type {
   AssistanceDocumentItem,
   AssistanceDocumentsListData,
@@ -100,52 +123,74 @@ export const assistanceService = {
     fileData: { uri?: string; fileName?: string; name?: string; type?: string; file?: any; blob?: any },
     meta?: { document_name?: string; description?: string },
   ): Promise<AssistanceDocumentItem | null> {
-    try {
-      const form = new FormData() as any;
-      if (fileData.file instanceof Blob) {
-        form.append('file', fileData.file, fileData.fileName || fileData.name || 'document.pdf');
-      } else if (fileData.blob instanceof Blob) {
-        form.append('file', fileData.blob, fileData.fileName || fileData.name || 'document.pdf');
-      } else if (fileData.uri) {
-        if (Platform.OS === 'web' && typeof fetch !== 'undefined' && fileData.uri.startsWith('blob:')) {
-          try {
-            const blob = await fetch(fileData.uri).then(r => r.blob());
-            form.append('file', blob, fileData.fileName || fileData.name || 'document.pdf');
-          } catch {
-            form.append('file', {
-              uri: fileData.uri,
-              name: fileData.fileName || fileData.name || 'document.pdf',
-              type: fileData.type || 'application/pdf',
-            });
-          }
+    const fileName = fileData.fileName || fileData.name || 'document.pdf';
+    const fallbackMime = fileData.type || (fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+    const form = new FormData() as any;
+
+    if (fileData.file instanceof Blob) {
+      form.append('file', fileData.file, fileName);
+    } else if (fileData.blob instanceof Blob) {
+      form.append('file', fileData.blob, fileName);
+    } else if (fileData.uri) {
+      if (Platform.OS === 'web') {
+        if (fileData.uri.startsWith('data:')) {
+          const blob = dataUriToBlob(fileData.uri, fallbackMime);
+          form.append('file', blob, fileName);
+        } else if (fileData.uri.startsWith('blob:') && typeof fetch !== 'undefined') {
+          const blob = await fetch(fileData.uri).then(r => r.blob());
+          form.append('file', blob, fileName);
         } else {
           form.append('file', {
             uri: fileData.uri,
-            name: fileData.fileName || fileData.name || 'document.pdf',
-            type: fileData.type || 'application/pdf',
+            name: fileName,
+            type: fallbackMime,
           });
         }
+      } else {
+        form.append('file', {
+          uri: fileData.uri,
+          name: fileName,
+          type: fallbackMime,
+        });
       }
-      if (meta?.document_name || fileData.name || fileData.fileName) {
-        form.append('document_name', meta?.document_name || fileData.name || fileData.fileName || 'Supporting Document');
-      }
-      if (meta?.description) {
-        form.append('description', meta.description);
-      }
-      const res = await api.post<ApiEnvelope<AssistanceDocumentItem>>(
-        `/assistance-requests/${requestId}/documents`,
-        form,
+    }
+
+    if (meta?.document_name || fileData.name || fileData.fileName) {
+      form.append('document_name', meta?.document_name || fileData.name || fileData.fileName || 'Supporting Document');
+    }
+    if (meta?.description) {
+      form.append('description', meta.description);
+    }
+
+    if (Platform.OS === 'web' && typeof fetch !== 'undefined') {
+      const token = tokenStorage.getAccessToken();
+      const response = await fetch(
+        `${API_BASE_URL}/assistance-requests/${requestId}/documents`,
         {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          body: form,
         },
       );
-      return unwrap(res.data);
-    } catch (err) {
-      console.warn('Failed to attach document to assistance request:', err);
-      return null;
+      const json = await response.json().catch(() => null);
+      if (!response.ok) {
+        const message =
+          json?.message || `Document upload failed with status ${response.status}`;
+        throw new Error(message);
+      }
+      return unwrap(json);
     }
+
+    const res = await api.post<ApiEnvelope<AssistanceDocumentItem>>(
+      `/assistance-requests/${requestId}/documents`,
+      form,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    );
+    return unwrap(res.data);
   },
 };
 
