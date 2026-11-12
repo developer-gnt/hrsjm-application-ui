@@ -1,4 +1,4 @@
-﻿import { apiClient } from '../../../../core/api/client';
+import { apiClient } from '../../../../core/api/client';
 import { ApiRoutes } from '../../../../core/constants/api-routes';
 import { Member, MemberStats, MemberStatus } from '../types';
 
@@ -131,7 +131,7 @@ export function mapBackendMembershipToMember(backend: BackendMembership): Member
       const expiry = new Date(backend.expiry_date).getTime();
       const now = Date.now();
       const daysLeft = (expiry - now) / (1000 * 60 * 60 * 24);
-      if (daysLeft >= 0 && daysLeft <= 30) {
+      if (daysLeft >= 0 && daysLeft <= 15) {
         status = 'EXPIRING_SOON';
       } else if (daysLeft < 0) {
         status = 'INACTIVE';

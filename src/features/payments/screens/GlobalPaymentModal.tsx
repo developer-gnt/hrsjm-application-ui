@@ -29,6 +29,7 @@ import {
 } from '../types/payment.types';
 import { globalPaymentService, PaymentOutcomeError } from '../services/payment.service';
 import { cashfreeApi } from '../api/cashfree.api';
+import { TEST_GATEWAY_CARDS, TEST_GATEWAY_UPIS } from '../services/mock-gateway.service';
 import {
   formatCardNumber,
   validateUpiFormat,
@@ -425,8 +426,8 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       return;
     }
 
-    // Validation per selected method - bypassed as Cashfree Gateway collects and validates payment details directly
-    if (false as boolean) {
+    // Validation per selected method
+    if (true) {
       if (paymentMethod === 'upi') {
         const trimmedUpi = upiId.trim();
         if (trimmedUpi.length > 0) {
@@ -1190,8 +1191,8 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           </View>
         </View>
 
-        {/* Commented out: internal payment method selector (Cashfree PG handles all payment methods directly) */}
-        {false && (
+        {/* Payment Method Selector */}
+        {true && (
         <View style={styles.methodsSection}>
           <Text style={styles.chooseMethodHeading}>Select Payment Method</Text>
 
@@ -1478,6 +1479,35 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
                   </View>
                 )}
 
+                {/* Test / Fake UPI IDs for quick sandbox testing */}
+                <View style={styles.handleChipsContainer}>
+                  <Text style={styles.handleChipsLabel}>Test UPI IDs:</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                    contentContainerStyle={styles.handleChipsScroll}
+                  >
+                    {TEST_GATEWAY_UPIS.map(item => (
+                      <TouchableOpacity
+                        key={item.handle}
+                        style={styles.handleChip}
+                        onPress={() => {
+                          setUpiId(item.handle);
+                          setUpiError(null);
+                          setUpiTouched(false);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.handleChipText}>
+                          {item.handle} ({item.label})
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
                 {/* Inline Error Message */}
                 {(upiTouched || !!upiError) && upiId.trim().length > 0 && !validateUpiFormat(upiId.trim()).isValid && (
                   <View style={styles.inlineErrorBox}>
@@ -1497,6 +1527,37 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           {paymentMethod === 'card' && (
             <View style={styles.subFormContainer}>
               <Text style={styles.subFormHeading}>Card Details</Text>
+
+              {/* Test / Fake Cards for quick sandbox testing */}
+              <View style={[styles.handleChipsContainer, { marginTop: 0, marginBottom: 10 }]}>
+                <Text style={styles.handleChipsLabel}>Test Cards:</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode="on-drag"
+                  contentContainerStyle={styles.handleChipsScroll}
+                >
+                  {TEST_GATEWAY_CARDS.map(card => (
+                    <TouchableOpacity
+                      key={card.number}
+                      style={styles.handleChip}
+                      onPress={() => {
+                        setCardNumber(card.number);
+                        setCardExpiry(card.expiry);
+                        setCardCvv(card.cvv);
+                        if (!cardHolder.trim()) {
+                          setCardHolder(donorName || user?.full_name || 'Test Member');
+                        }
+                        setCardErrors({});
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.handleChipText}>{card.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
 
               <TouchableOpacity
                 activeOpacity={0.7}

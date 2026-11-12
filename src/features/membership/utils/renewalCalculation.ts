@@ -174,10 +174,10 @@ export function calculateRenewalQuoteClientSide(
   }
 
   const projectedExpiry = addYearsSafe(expiryDate, unpaidPeriodsCount);
-  const isEligibleForRenewal = isOverdue || daysRemaining <= 30;
+  const isEligibleForRenewal = isOverdue || daysRemaining <= 15;
   const renewalValidationMessage = isEligibleForRenewal
     ? undefined
-    : 'Membership renewal is allowed only within 30 days before the expiry date.';
+    : 'Membership renewal is allowed only within 15 days before the expiry date.';
 
   return {
     membership_id: membershipId,

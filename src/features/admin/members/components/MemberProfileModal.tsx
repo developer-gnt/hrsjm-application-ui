@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Clipboard,
   Dimensions,
+  KeyboardAvoidingView,
   Linking,
   Modal,
   Platform,
@@ -14,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandColors, StatusTones } from '../../../../core/theme/colors';
 import { Spacing, BorderRadius, Shadows } from '../../../../core/theme/spacing';
 import { Typography } from '../../../../core/theme/typography';
@@ -81,6 +83,8 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
     message: '',
   });
 
+  const insets = useSafeAreaInsets();
+  const kitDirtyRef = useRef(false);
   const { data: detailsData } = useMemberDetails(member?.id);
   const { data: documentsData } = useMemberDocuments(member?.id);
   const [kitStatus, setKitStatus] = useState<'PENDING' | 'PROCESSING' | 'DISPATCHED' | 'DELIVERED'>('PROCESSING');
@@ -156,7 +160,11 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
     }
   };
   React.useEffect(() => {
-    if (member) {
+    kitDirtyRef.current = false;
+  }, [member?.id, visible]);
+
+  React.useEffect(() => {
+    if (member && !kitDirtyRef.current) {
       const kit = (rawBackend as any)?.kit_fulfillment || appData.kit_fulfillment;
       if (kit) {
         setKitStatus(kit.status || 'PROCESSING');
@@ -174,7 +182,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
         setKitNotes('');
       }
     }
-  }, [member, rawBackend, fullAddress, membershipId, joinedDate]);
+  }, [member?.id, visible, detailsData]);
 
   const handleSaveFulfilment = async () => {
     if (!member?.id) return;
@@ -245,13 +253,17 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
     <Modal
       visible={visible}
       animationType="slide"
-      transparent
+      transparent={false}
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
+      <KeyboardAvoidingView
+        style={styles.modalOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        enabled={Platform.OS === 'ios'}
+      >
         <View style={styles.modalContainer}>
           {/* Hero Header */}
-          <View style={styles.heroHeader}>
+          <View style={[styles.heroHeader, { paddingTop: Math.max(insets.top, Spacing.base) }]}>
             <View style={styles.heroTopBar}>
               <View style={styles.badgeRow}>
                 <View style={styles.crestCircle}>
@@ -331,7 +343,12 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
           </View>
 
           {/* Tab Navigation */}
-          <View style={styles.tabNav}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tabNav}
+            contentContainerStyle={styles.tabNavContent}
+          >
             <TouchableOpacity
               onPress={() => setActiveTab('overview')}
               style={[styles.tabItem, activeTab === 'overview' && styles.tabItemActive]}
@@ -342,6 +359,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 strokeWidth={activeTab === 'overview' ? 2.5 : 2}
               />
               <Text
+                numberOfLines={1}
                 style={[
                   styles.tabItemText,
                   activeTab === 'overview' && styles.tabItemTextActive,
@@ -361,6 +379,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 strokeWidth={activeTab === 'idcard' ? 2.5 : 2}
               />
               <Text
+                numberOfLines={1}
                 style={[
                   styles.tabItemText,
                   activeTab === 'idcard' && styles.tabItemTextActive,
@@ -380,6 +399,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 strokeWidth={activeTab === 'documents' ? 2.5 : 2}
               />
               <Text
+                numberOfLines={1}
                 style={[
                   styles.tabItemText,
                   activeTab === 'documents' && styles.tabItemTextActive,
@@ -399,6 +419,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 strokeWidth={activeTab === 'fulfilment' ? 2.5 : 2}
               />
               <Text
+                numberOfLines={1}
                 style={[
                   styles.tabItemText,
                   activeTab === 'fulfilment' && styles.tabItemTextActive,
@@ -407,13 +428,14 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 Kit Fulfilment
               </Text>
             </TouchableOpacity>
-          </View>
+          </ScrollView>
 
           {/* Tab Content */}
           <ScrollView
             style={styles.scrollArea}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (
@@ -694,7 +716,10 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                     {(['PENDING', 'PROCESSING', 'DISPATCHED', 'DELIVERED'] as const).map(st => (
                       <TouchableOpacity
                         key={st}
-                        onPress={() => setKitStatus(st)}
+                        onPress={() => {
+                          kitDirtyRef.current = true;
+                          setKitStatus(st);
+                        }}
                         style={[
                           styles.statusOptionBtn,
                           kitStatus === st && styles.statusOptionBtnActive,
@@ -717,8 +742,13 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                   <TextInput
                     style={styles.formInput}
                     value={courierName}
-                    onChangeText={setCourierName}
+                    onChangeText={val => {
+                      kitDirtyRef.current = true;
+                      setCourierName(val);
+                    }}
                     placeholder="e.g. India Post (Speed Post)"
+                    placeholderTextColor="#94A3B8"
+                    editable
                   />
 
                   {/* Tracking Number */}
@@ -726,9 +756,14 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                   <TextInput
                     style={styles.formInput}
                     value={trackingNumber}
-                    onChangeText={setTrackingNumber}
+                    onChangeText={val => {
+                      kitDirtyRef.current = true;
+                      setTrackingNumber(val);
+                    }}
                     placeholder="e.g. ED123456789IN"
+                    placeholderTextColor="#94A3B8"
                     autoCapitalize="characters"
+                    editable
                   />
 
                   {/* Dispatch Date */}
@@ -736,18 +771,43 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                   <TextInput
                     style={styles.formInput}
                     value={dispatchDate}
-                    onChangeText={setDispatchDate}
+                    onChangeText={val => {
+                      kitDirtyRef.current = true;
+                      setDispatchDate(val);
+                    }}
                     placeholder="e.g. 2026-10-30"
+                    placeholderTextColor="#94A3B8"
+                    editable
                   />
 
                   {/* Delivery Address */}
                   <Text style={styles.formLabel}>Delivery Address</Text>
                   <TextInput
-                    style={[styles.formInput, { height: 60, textAlignVertical: 'top' }]}
+                    style={[styles.formInput, { height: 68, textAlignVertical: 'top' }]}
                     value={deliveryAddress}
-                    onChangeText={setDeliveryAddress}
+                    onChangeText={val => {
+                      kitDirtyRef.current = true;
+                      setDeliveryAddress(val);
+                    }}
                     placeholder="Registered address"
+                    placeholderTextColor="#94A3B8"
                     multiline
+                    editable
+                  />
+
+                  {/* Remarks / Notes */}
+                  <Text style={styles.formLabel}>Remarks / Notes</Text>
+                  <TextInput
+                    style={[styles.formInput, { height: 60, textAlignVertical: 'top' }]}
+                    value={kitNotes}
+                    onChangeText={val => {
+                      kitDirtyRef.current = true;
+                      setKitNotes(val);
+                    }}
+                    placeholder="Optional dispatch notes for member / admin"
+                    placeholderTextColor="#94A3B8"
+                    multiline
+                    editable
                   />
 
                   {/* Save Button */}
@@ -789,7 +849,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
           </ScrollView>
 
           {/* Footer Actions */}
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
             <TouchableOpacity
               onPress={() => {
                 onClose();
@@ -835,7 +895,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
           badgeText="ID CARD"
           onClose={() => setCardFeedback({ visible: false, title: '', message: '' })}
         />
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -843,21 +903,15 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(7, 29, 58, 0.75)',
-    justifyContent: 'flex-end',
+    backgroundColor: BrandColors.background,
   },
   modalContainer: {
+    flex: 1,
+    width: '100%',
     backgroundColor: BrandColors.background,
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
-    maxHeight: '94%',
-    minHeight: '75%',
-    ...Shadows.elevated,
   },
   heroHeader: {
     backgroundColor: BrandColors.navyDeep,
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
     paddingHorizontal: Spacing.base,
     paddingTop: Spacing.base,
     paddingBottom: Spacing.base,
@@ -987,17 +1041,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   tabNav: {
-    flexDirection: 'row',
+    flexGrow: 0,
     backgroundColor: BrandColors.surface,
     borderBottomWidth: 1,
     borderBottomColor: BrandColors.border,
   },
+  tabNavContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xs,
+  },
   tabItem: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',

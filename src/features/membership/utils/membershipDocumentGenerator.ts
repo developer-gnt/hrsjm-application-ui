@@ -350,7 +350,7 @@ export const generateMembershipGuidelinesPdf = async (
 
   addSection('4. Validity, Renewal & Governance', [
     'Membership remains valid for 1 year from the official date of approval.',
-    'Renewals can be submitted online within 30 days prior to expiry via the official mobile app.',
+    'Renewals can be submitted online within 15 days prior to expiry via the official mobile app.',
     'For queries, contact support@hrsjm.org or call the National Helpdesk at 1800-HRSJM-HELP.',
   ]);
 

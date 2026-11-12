@@ -15,7 +15,7 @@ export const MembershipExpiryAlert: React.FC<MembershipExpiryAlertProps> = ({
   message,
   isOverdue = false,
 }) => {
-  const isEarly = !isOverdue && daysRemaining > 30;
+  const isEarly = !isOverdue && daysRemaining > 15;
 
   const title = message || (
     isOverdue
@@ -28,7 +28,7 @@ export const MembershipExpiryAlert: React.FC<MembershipExpiryAlertProps> = ({
   const subtitle = isOverdue
     ? `${daysRemaining} days overdue`
     : isEarly
-    ? 'Membership renewal is allowed only within 30 days before the expiry date.'
+    ? 'Membership renewal is allowed only within 15 days before the expiry date.'
     : `Only ${daysRemaining} days remaining`;
 
   return (
