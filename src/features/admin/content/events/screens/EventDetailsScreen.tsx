@@ -20,7 +20,7 @@ import {
   Spacing,
   Typography,
 } from '../../../../../core/theme';
-import { Calendar, Clock, MapPin } from '../../../../../core/components/icons';
+import { Calendar, Clock, Heart, MapPin } from '../../../../../core/components/icons';
 import {
   AppBadge,
   AppButton,
@@ -36,6 +36,7 @@ import { EventFormToast } from '../components/EventFormToast';
 import type { ButtonVariant } from '../../../../../core/components/common/AppButton';
 import { EditEventScreen } from './EditEventScreen';
 import { useDeleteEvent, useUpdateEventStatus, useEventDetails } from '../hooks/useEvents';
+import { GlobalPaymentModal } from '../../../../payments/screens/GlobalPaymentModal';
 
 /**
  * TEMPORARY local time formatting helpers.
@@ -175,6 +176,7 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
   const [coverFailed, setCoverFailed] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(null);
   const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null);
+  const [donationModalVisible, setDonationModalVisible] = useState(false);
 
   const deleteEventMutation = useDeleteEvent();
   const updateEventStatusMutation = useUpdateEventStatus();
@@ -506,6 +508,43 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
             </View>
           </View>
 
+          {/* Voluntary Event Donation Section */}
+          {currentEvent.isDonationEnabled ? (
+            <>
+              <Text style={styles.sectionHeader}>Support This Event</Text>
+              <View style={styles.donationSupportCard}>
+                <View style={styles.donationSupportHeader}>
+                  <View style={styles.donationSupportIconBox}>
+                    <Heart size={22} color="#D97706" fill="#FDE68A" strokeWidth={2} />
+                  </View>
+                  <View style={styles.donationSupportTextWrap}>
+                    <Text style={styles.donationSupportTitle}>Voluntary Donations Accepted</Text>
+                    <Text style={styles.donationSupportMessage}>
+                      {currentEvent.donationMessage || 'Allow users to support this event with a voluntary donation.'}
+                    </Text>
+                  </View>
+                </View>
+
+                {!canManage ? (
+                  <TouchableOpacity
+                    style={styles.eventDonateButton}
+                    onPress={() => setDonationModalVisible(true)}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Donate Now"
+                  >
+                    <Heart size={18} color="#011F39" fill="#011F39" style={{ marginRight: 6 }} />
+                    <Text style={styles.eventDonateButtonText}>Donate Now</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.adminDonationBadge}>
+                    <Text style={styles.adminDonationBadgeText}>✓ Voluntary Donations Enabled for this event</Text>
+                  </View>
+                )}
+              </View>
+            </>
+          ) : null}
+
           {/* Actions */}
           {canManage ? (
             <>
@@ -556,14 +595,26 @@ loading={isDeleting}
               </View>
             </>
           ) : (
-            <View style={[styles.actionsRow, { marginTop: Spacing.md }]}>
+            <View style={[styles.actionsRow, { marginTop: Spacing.md, gap: 10 }]}>
+              {currentEvent.isDonationEnabled ? (
+                <TouchableOpacity
+                  style={[styles.eventDonateButton, { flex: 1, marginTop: 0 }]}
+                  onPress={() => setDonationModalVisible(true)}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Donate Now"
+                >
+                  <Heart size={18} color="#011F39" fill="#011F39" style={{ marginRight: 6 }} />
+                  <Text style={styles.eventDonateButtonText}>Donate Now</Text>
+                </TouchableOpacity>
+              ) : null}
               <AppButton
                 title="Share Event"
                 variant="outline"
                 size="sm"
                 onPress={handleShareEvent}
                 icon={<Text style={styles.actionIcon}>🔗</Text>}
-                style={styles.actionButton}
+                style={currentEvent.isDonationEnabled ? { flex: 1 } : styles.actionButton}
               />
             </View>
           )}
@@ -587,6 +638,27 @@ loading={isDeleting}
         variant={toast?.variant ?? 'success'}
         onDismiss={() => setToast(null)}
       />
+
+      {currentEvent.isDonationEnabled ? (
+        <GlobalPaymentModal
+          visible={donationModalVisible}
+          payload={{
+            purpose: 'donation',
+            title: currentEvent.title,
+            subtitle: currentEvent.donationMessage || 'Voluntary donation for event support',
+            category: 'Event Donation',
+            amount: 500,
+            entityId: currentEvent.id,
+            imageUrl: currentEvent.coverImageUrl || undefined,
+            location: currentEvent.location || undefined,
+          }}
+          onClose={() => setDonationModalVisible(false)}
+          onSuccess={_receipt => {
+            setDonationModalVisible(false);
+            setToast({ message: 'Thank you for your generous donation!', variant: 'success' });
+          }}
+        />
+      ) : null}
     </View>
   );
 };
@@ -900,5 +972,73 @@ const styles = StyleSheet.create({
   errorState: {
     flexGrow: 1,
     justifyContent: 'center',
+  },
+  donationSupportCard: {
+    backgroundColor: '#FFFBEB',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    padding: Spacing.md,
+    marginHorizontal: Spacing.base,
+    marginTop: Spacing.xs,
+    gap: 12,
+  },
+  donationSupportHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  donationSupportIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  donationSupportTextWrap: {
+    flex: 1,
+  },
+  donationSupportTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#011F39',
+  },
+  donationSupportMessage: {
+    fontSize: 13,
+    color: '#64748B',
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  eventDonateButton: {
+    backgroundColor: '#FAD465',
+    height: 44,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    shadowColor: '#011F39',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  eventDonateButtonText: {
+    color: '#011F39',
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+  adminDonationBadge: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    alignSelf: 'flex-start',
+  },
+  adminDonationBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#B45309',
   },
 });

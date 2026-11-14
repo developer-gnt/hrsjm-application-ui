@@ -28,6 +28,7 @@ import {
   Copy,
   CreditCard,
   Download,
+  Eye,
   FileCheck,
   FileText,
   GraduationCap,
@@ -51,6 +52,11 @@ import type { AdminProfile } from '../../profile/types/profile.types';
 import { useMemberDetails, useMemberDocuments } from '../hooks/useMembers';
 import { membersService, type BackendMembership } from '../services/members.service';
 import type { Member } from '../types';
+import {
+  MembershipDocumentViewerModal,
+  type DocumentItemData,
+} from '../../membershipApplications/components/MembershipDocumentViewerModal';
+import { resolveUploadedFileUri } from '../../membershipApplications/services/uploadedDocumentsCache';
 
 interface MemberProfileModalProps {
   visible: boolean;
@@ -80,6 +86,8 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
     title: '',
     message: '',
   });
+  const [selectedDoc, setSelectedDoc] = useState<DocumentItemData | null>(null);
+  const [viewerVisible, setViewerVisible] = useState(false);
 
   const { data: detailsData } = useMemberDetails(member?.id);
   const { data: documentsData } = useMemberDocuments(member?.id);
@@ -227,18 +235,132 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
   const memberDocsRaw =
     (documentsData?.documents && documentsData.documents.length > 0
       ? documentsData.documents
+      : ((appData as any)?.documents && Array.isArray((appData as any)?.documents) && (appData as any)?.documents.length > 0)
+      ? (appData as any)?.documents
       : (member as any)?.documents || []
     );
 
-  const actualDocs = (memberDocsRaw || [])
-    .filter((d: any) => Boolean(d && (d.url || d.fileUrl || d.uri || d.fileUri || d.isUploaded || d.fileName)))
+  const STANDARD_CATEGORIES = [
+    {
+      key: 'IDENTITY_PROOF',
+      title: 'Identity Proof',
+      subtitle: 'Aadhaar / Voter ID / Passport',
+      match: ['identity', 'aadhaar', 'pan', 'voter', 'passport', 'id_proof'],
+    },
+    {
+      key: 'ADDRESS_PROOF',
+      title: 'Address Proof',
+      subtitle: 'Electricity Bill / Rent Agreement / Gas Bill',
+      match: ['address', 'electricity', 'bill', 'rent', 'lpg', 'gas', 'residence'],
+    },
+    {
+      key: 'QUALIFICATION_PROOF',
+      title: 'Qualification Proof',
+      subtitle: 'Educational Certificate / Marksheet',
+      match: ['qualification', 'degree', 'diploma', 'marksheet', 'certificate', 'board', 'education'],
+    },
+    {
+      key: 'PHOTOGRAPH',
+      title: 'Photograph',
+      subtitle: 'Passport Size Photo',
+      match: ['photo', 'photograph', 'avatar', 'passport_size', 'headshot', 'picture'],
+    },
+  ];
+
+  const handleViewDoc = (doc: any) => {
+    const rawUri =
+      doc.file_url ||
+      doc.url ||
+      doc.uri ||
+      doc.download_url ||
+      (member?.id && (doc.fileName || doc.name)
+        ? `/uploads/applications/${member.id}/${doc.fileName || doc.name}`
+        : undefined);
+    const resolvedUri = resolveUploadedFileUri(doc.fileName || doc.name, rawUri);
+    setSelectedDoc({
+      id: doc.id || 'doc-item',
+      title: doc.title || doc.name || doc.category_name || 'Verification Document',
+      fileName: doc.fileName || doc.name || 'document.pdf',
+      fileSize: doc.fileSize || doc.size || '1.2 MB',
+      uploadDate: doc.uploadDate || joinedDate,
+      uri: resolvedUri,
+      verified: doc.verified ?? (member?.status === 'ACTIVE'),
+    });
+    setViewerVisible(true);
+  };
+
+  const handleDownloadDoc = (doc: any) => {
+    const rawUri =
+      doc.download_url ||
+      doc.file_url ||
+      doc.url ||
+      doc.uri ||
+      (member?.id && (doc.fileName || doc.name)
+        ? `/uploads/applications/${member.id}/${doc.fileName || doc.name}`
+        : undefined);
+    const resolvedUri = resolveUploadedFileUri(doc.fileName || doc.name, rawUri);
+    const globalWin = typeof globalThis !== 'undefined' ? (globalThis as any).window : undefined;
+
+    if (Platform.OS === 'web' && globalWin && globalWin.document) {
+      if (resolvedUri) {
+        const link = globalWin.document.createElement('a');
+        link.href = resolvedUri;
+        link.download = doc.fileName || doc.name || `${doc.title || 'document'}.pdf`;
+        globalWin.document.body.appendChild(link);
+        link.click();
+        globalWin.document.body.removeChild(link);
+        return;
+      }
+    } else if (resolvedUri) {
+      Linking.openURL(resolvedUri).catch(() => {});
+    }
+  };
+
+  const isDocInCategory = (d: any, cat: typeof STANDARD_CATEGORIES[0]) => {
+    const rawCat = ((d.category || d.category_name || '') + '').toLowerCase();
+    const title = ((d.title || d.fileName || d.name || '') + '').toLowerCase();
+    if (rawCat && (rawCat.includes(cat.key.toLowerCase()) || rawCat.includes(cat.title.toLowerCase()))) {
+      return true;
+    }
+    return cat.match.some(m => title.includes(m) || rawCat.includes(m));
+  };
+
+  const matchedMemberDocIds = new Set<string>();
+  const memberCategoryCards = STANDARD_CATEGORIES.map(category => {
+    const matched = (memberDocsRaw || []).find((d: any) => {
+      const docId = d.id || d.fileName || d.name;
+      if (matchedMemberDocIds.has(docId)) return false;
+      return isDocInCategory(d, category);
+    });
+    if (matched) {
+      matchedMemberDocIds.add(matched.id || matched.fileName || matched.name);
+    }
+    return {
+      category,
+      document: matched ? {
+        id: matched.id || `doc-${category.key}`,
+        name: matched.title || matched.name || matched.fileName || category.title,
+        fileName: matched.fileName || matched.name || `${category.key.toLowerCase()}.pdf`,
+        type: category.title,
+        status: matched.verified ? 'VERIFIED' : 'UPLOADED',
+        uploadDate: matched.uploadDate || joinedDate,
+        size: matched.size || matched.fileSize || '1.2 MB',
+        raw: matched,
+      } : null,
+    };
+  });
+
+  const additionalMemberDocs = (memberDocsRaw || [])
+    .filter((d: any) => !matchedMemberDocIds.has(d.id || d.fileName || d.name))
     .map((d: any, idx: number) => ({
-      id: d.id || `doc-${idx + 1}`,
+      id: d.id || `doc-add-${idx + 1}`,
       name: d.title || d.name || d.fileName || 'Uploaded Document',
-      type: d.type || (d.title ? 'Verification Document' : 'Document Proof'),
-      status: d.verified ? 'VERIFIED' : 'SUBMITTED',
+      fileName: d.fileName || d.name || 'document.pdf',
+      type: d.type || 'Additional Document',
+      status: d.verified ? 'VERIFIED' : 'UPLOADED',
       uploadDate: d.uploadDate || joinedDate,
-      size: d.size || d.fileSize || '1.5 MB',
+      size: d.size || d.fileSize || '1.2 MB',
+      raw: d,
     }));
 
   return (
@@ -623,36 +745,120 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 <View style={styles.infoCard}>
                   <Text style={styles.cardTitle}>Uploaded Verification Records</Text>
 
-                  {actualDocs.length === 0 ? (
-                    <View style={styles.emptyDocsWrap}>
-                      <FileText size={36} color="#94A3B8" strokeWidth={1.5} style={{ marginBottom: 8 }} />
-                      <Text style={styles.emptyDocsTitle}>No Documents Uploaded</Text>
-                      <Text style={styles.emptyDocsSubtitle}>
-                        No verification documents have been uploaded for this member.
-                      </Text>
-                    </View>
-                  ) : (
-                    <View style={styles.docList}>
-                      {actualDocs.map((doc: any) => (
-                        <View key={doc.id} style={styles.docRow}>
-                          <View style={styles.docIconBg}>
-                            <FileText size={20} color={BrandColors.navy} />
+                  <View style={styles.docList}>
+                    {memberCategoryCards.map(({ category, document: doc }) => {
+                      const isUploaded = Boolean(doc);
+                      return (
+                        <View key={category.key} style={[styles.docRow, !isUploaded && styles.docRowPending]}>
+                          <View style={[styles.docIconBg, !isUploaded && styles.docIconBgPending]}>
+                            <FileText size={18} color={isUploaded ? BrandColors.navy : '#94A3B8'} />
                           </View>
                           <View style={styles.docTextCol}>
+                            <View style={styles.docTitleHeader}>
+                              <Text style={styles.docName} numberOfLines={1}>
+                                {category.title}
+                              </Text>
+                              <View
+                                style={[
+                                  styles.docStatusBadge,
+                                  isUploaded ? styles.docStatusBadgeUploaded : styles.docStatusBadgePending,
+                                ]}
+                              >
+                                <Text
+                                  style={[
+                                    styles.docStatusText,
+                                    isUploaded ? styles.docStatusTextUploaded : styles.docStatusTextPending,
+                                  ]}
+                                >
+                                  {isUploaded ? (doc?.status === 'VERIFIED' ? 'VERIFIED' : 'UPLOADED') : 'PENDING'}
+                                </Text>
+                              </View>
+                            </View>
+                            {isUploaded && doc ? (
+                              <Text style={styles.docMeta}>
+                                {doc.fileName} · {doc.size} · {doc.uploadDate}
+                              </Text>
+                            ) : (
+                              <Text style={styles.docMetaPending}>
+                                {category.subtitle} · Not yet uploaded
+                              </Text>
+                            )}
+                          </View>
+
+                          {/* Actions: View & Download Buttons */}
+                          {isUploaded && doc ? (
+                            <View style={styles.docActionsWrap}>
+                              <TouchableOpacity
+                                style={styles.docActionBtn}
+                                onPress={() => handleViewDoc(doc.raw)}
+                                activeOpacity={0.7}
+                                accessibilityRole="button"
+                                accessibilityLabel={`View ${category.title}`}
+                              >
+                                <Eye size={13} color="#1D4ED8" />
+                                <Text style={styles.docActionBtnText}>View</Text>
+                              </TouchableOpacity>
+
+                              <TouchableOpacity
+                                style={styles.docActionDownloadBtn}
+                                onPress={() => handleDownloadDoc(doc.raw)}
+                                activeOpacity={0.7}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Download ${category.title}`}
+                              >
+                                <Download size={13} color="#16A34A" />
+                                <Text style={styles.docActionDownloadBtnText}>Download</Text>
+                              </TouchableOpacity>
+                            </View>
+                          ) : null}
+                        </View>
+                      );
+                    })}
+
+                    {/* Additional uploaded documents */}
+                    {additionalMemberDocs.map((doc: any) => (
+                      <View key={doc.id} style={styles.docRow}>
+                        <View style={styles.docIconBg}>
+                          <FileText size={18} color={BrandColors.navy} />
+                        </View>
+                        <View style={styles.docTextCol}>
+                          <View style={styles.docTitleHeader}>
                             <Text style={styles.docName} numberOfLines={1}>
                               {doc.name}
                             </Text>
-                            <Text style={styles.docMeta}>
-                              {doc.type} · {doc.size}
-                            </Text>
+                            <View style={[styles.docStatusBadge, styles.docStatusBadgeUploaded]}>
+                              <Text style={[styles.docStatusText, styles.docStatusTextUploaded]}>
+                                {doc.status}
+                              </Text>
+                            </View>
                           </View>
-                          <View style={styles.docStatusBadge}>
-                            <Text style={styles.docStatusText}>{doc.status}</Text>
-                          </View>
+                          <Text style={styles.docMeta}>
+                            {doc.fileName} · {doc.size} · {doc.uploadDate}
+                          </Text>
                         </View>
-                      ))}
-                    </View>
-                  )}
+
+                        <View style={styles.docActionsWrap}>
+                          <TouchableOpacity
+                            style={styles.docActionBtn}
+                            onPress={() => handleViewDoc(doc.raw)}
+                            activeOpacity={0.7}
+                          >
+                            <Eye size={13} color="#1D4ED8" />
+                            <Text style={styles.docActionBtnText}>View</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={styles.docActionDownloadBtn}
+                            onPress={() => handleDownloadDoc(doc.raw)}
+                            activeOpacity={0.7}
+                          >
+                            <Download size={13} color="#16A34A" />
+                            <Text style={styles.docActionDownloadBtnText}>Download</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               </View>
             )}
@@ -788,43 +994,45 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
             )}
           </ScrollView>
 
-          {/* Footer Actions */}
-          <View style={styles.footer}>
-            <TouchableOpacity
-              onPress={() => {
-                onClose();
-                onEdit(member);
-              }}
-              style={styles.footerEditBtn}
-              activeOpacity={0.8}
-            >
-              <Pencil size={16} color="#FFFFFF" strokeWidth={2.5} />
-              <Text style={styles.footerEditBtnText}>Edit Member</Text>
-            </TouchableOpacity>
+          {/* Footer Actions - conditionally hidden when Document Viewer is active */}
+          {!viewerVisible && (
+            <View style={styles.footer}>
+              <TouchableOpacity
+                onPress={() => {
+                  onClose();
+                  onEdit(member);
+                }}
+                style={styles.footerEditBtn}
+                activeOpacity={0.8}
+              >
+                <Pencil size={16} color="#FFFFFF" strokeWidth={2.5} />
+                <Text style={styles.footerEditBtnText}>Edit Member</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => onToggleStatus(member)}
-              style={[
-                styles.footerStatusBtn,
-                member.status === 'ACTIVE'
-                  ? styles.footerStatusBtnDeactivate
-                  : styles.footerStatusBtnActivate,
-              ]}
-              activeOpacity={0.8}
-            >
-              {member.status === 'ACTIVE' ? (
-                <>
-                  <UserX size={16} color={BrandColors.danger} />
-                  <Text style={styles.footerStatusTextDeactivate}>Block User</Text>
-                </>
-              ) : (
-                <>
-                  <UserCheck size={16} color={BrandColors.success} />
-                  <Text style={styles.footerStatusTextActivate}>Unblock User</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                onPress={() => onToggleStatus(member)}
+                style={[
+                  styles.footerStatusBtn,
+                  member.status === 'ACTIVE'
+                    ? styles.footerStatusBtnDeactivate
+                    : styles.footerStatusBtnActivate,
+                ]}
+                activeOpacity={0.8}
+              >
+                {member.status === 'ACTIVE' ? (
+                  <>
+                    <UserX size={16} color={BrandColors.danger} />
+                    <Text style={styles.footerStatusTextDeactivate}>Block User</Text>
+                  </>
+                ) : (
+                  <>
+                    <UserCheck size={16} color={BrandColors.success} />
+                    <Text style={styles.footerStatusTextActivate}>Unblock User</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         <AppFeedbackModal
@@ -834,6 +1042,23 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
           message={cardFeedback.message}
           badgeText="ID CARD"
           onClose={() => setCardFeedback({ visible: false, title: '', message: '' })}
+        />
+
+        <MembershipDocumentViewerModal
+          visible={viewerVisible}
+          document={selectedDoc}
+          applicant={{
+            applicantName: fullName,
+            applicationId: membershipId,
+            membershipType: categoryName,
+            dob,
+            gender,
+            phone,
+            email,
+            address: fullAddress,
+            avatarUrl: (member as any)?.avatarUrl || rawBackend?.user?.avatar,
+          }}
+          onClose={() => setViewerVisible(false)}
         />
       </View>
     </Modal>
@@ -1225,9 +1450,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
+  },
+  docRowPending: {
+    backgroundColor: '#FAFAFA',
   },
   docIconBg: {
     width: 36,
@@ -1237,31 +1465,93 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  docIconBgPending: {
+    backgroundColor: '#F1F5F9',
+  },
   docTextCol: {
     flex: 1,
     gap: 2,
   },
+  docTitleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   docName: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: BrandColors.textPrimary,
   },
   docMeta: {
     fontSize: 11,
     color: BrandColors.textMuted,
   },
+  docMetaPending: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontStyle: 'italic',
+  },
   docStatusBadge: {
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  docStatusBadgeUploaded: {
+    backgroundColor: '#DCFCE7',
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#BBF7D0',
+  },
+  docStatusBadgePending: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
   },
   docStatusText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
-    color: '#1E40AF',
+  },
+  docStatusTextUploaded: {
+    color: '#166534',
+  },
+  docStatusTextPending: {
+    color: '#B45309',
+  },
+  docActionsWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  docActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    backgroundColor: '#EEF3FC',
+    borderWidth: 1,
+    borderColor: '#D8E5F8',
+  },
+  docActionBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1D4ED8',
+  },
+  docActionDownloadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  docActionDownloadBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#16A34A',
   },
   emptyDocsWrap: {
     paddingVertical: 28,

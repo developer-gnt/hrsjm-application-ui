@@ -53,7 +53,7 @@ module.exports = {
     },
     proxy: [
       {
-        context: '/api',
+        context: ['/api', '/uploads'],
         target: BACKEND_TARGET,
         changeOrigin: true,
         on: {

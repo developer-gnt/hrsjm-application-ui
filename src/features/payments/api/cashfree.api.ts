@@ -15,6 +15,7 @@ export interface CreateDonationOrderParams {
   panNumber?: string;
   need80G?: boolean;
   idempotencyKey?: string;
+  eventId?: string;
 }
 
 export interface CreateMembershipOrderParams {
@@ -60,6 +61,8 @@ export const cashfreeApi = {
       cause: params.cause,
       amount: params.amount,
       user_id: params.userId,
+      event_id: params.eventId,
+      source: params.eventId ? 'EVENT' : undefined,
       remark,
     });
 
@@ -94,6 +97,7 @@ export const cashfreeApi = {
         customer_name: params.donorName,
         customer_email: params.donorEmail,
         user_id: params.userId,
+        event_id: params.eventId,
         return_url: getReturnUrl(),
       },
       { headers },

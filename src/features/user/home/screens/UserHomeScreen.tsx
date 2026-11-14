@@ -289,7 +289,12 @@ export const UserHomeScreen: React.FC<UserHomeScreenProps> = ({
       if (eventsRes && Array.isArray(eventsRes.events) && eventsRes.events.length > 0) {
         const upcomingList = eventsRes.events.filter(e => e.status === 'UPCOMING');
         const listToDisplay = upcomingList.length > 0 ? upcomingList : eventsRes.events;
-        setUpcomingEvents(listToDisplay.map(mapEventToHomeEvent));
+        const sorted = [...listToDisplay].sort((a, b) => {
+          const aTime = new Date(a.createdAt || a.created_at || a.startAt || 0).getTime() || 0;
+          const bTime = new Date(b.createdAt || b.created_at || b.startAt || 0).getTime() || 0;
+          return bTime - aTime;
+        });
+        setUpcomingEvents(sorted.map(mapEventToHomeEvent));
       }
     } catch (err) {
       console.warn('Error loading dynamic home content:', err);

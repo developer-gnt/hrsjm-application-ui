@@ -45,6 +45,7 @@ import { getEventsList } from '../../admin/content/events/services/events.servic
 import type { EventListItem } from '../../admin/content/events/types/events.types';
 import { fetchLatestPublishedNews } from '../../user/news/services/user-news.service';
 import type { HomeEvent, HomeNewsItem } from '../../user/home/types/home.types';
+import { USER_EVENTS, type UserEvent } from '../../user/events/data/user-events';
 import type {
   AssistanceRequest,
   CreateAssistanceRequestPayload,
@@ -82,6 +83,7 @@ export interface SeekerHomeScreenProps {
   onNavigateToSupport?: () => void;
   onNavigateToRights?: () => void;
   onNavigateToEvents?: () => void;
+  onOpenEvent?: (event: UserEvent) => void;
   onNavigateToNews?: () => void;
   onNavigateToComplaint?: () => void;
   onNavigateToApply?: () => void;
@@ -96,6 +98,7 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
   onNavigateToSupport,
   onNavigateToRights,
   onNavigateToEvents,
+  onOpenEvent,
   onNavigateToNews,
   onNavigateToComplaint,
   onOpenNotifications,
@@ -176,7 +179,12 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
       if (eventsRes && Array.isArray(eventsRes.events) && eventsRes.events.length > 0) {
         const upcomingList = eventsRes.events.filter(e => e.status === 'UPCOMING');
         const listToDisplay = upcomingList.length > 0 ? upcomingList : eventsRes.events;
-        setUpcomingEvents(listToDisplay.map(mapEventToHomeEvent));
+        const sorted = [...listToDisplay].sort((a, b) => {
+          const aTime = new Date(a.createdAt || a.created_at || a.startAt || 0).getTime() || 0;
+          const bTime = new Date(b.createdAt || b.created_at || b.startAt || 0).getTime() || 0;
+          return bTime - aTime;
+        });
+        setUpcomingEvents(sorted.map(mapEventToHomeEvent));
       }
 
       if (Array.isArray(newsItems) && newsItems.length > 0) {
@@ -456,38 +464,47 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
                 }
               }}
             />
-            {upcomingEvents.length <= 1 ? (
-              <HomeEventCard
-                event={upcomingEvents[0] || UPCOMING_EVENTS[0]}
-                onPress={() => {
-                  if (onNavigateToEvents) {
-                    onNavigateToEvents();
-                  } else if (navigation) {
-                    navigation.navigate('SeekerEvents');
-                  }
-                }}
-              />
-            ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.carousel}
-              >
-                {upcomingEvents.map(event => (
-                  <HomeEventCard
-                    key={event.id}
-                    event={event}
-                    onPress={() => {
-                      if (onNavigateToEvents) {
-                        onNavigateToEvents();
-                      } else if (navigation) {
-                        navigation.navigate('SeekerEvents');
-                      }
-                    }}
-                  />
-                ))}
-              </ScrollView>
-            )}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.carousel}
+            >
+              {(upcomingEvents.length > 0 ? upcomingEvents : UPCOMING_EVENTS).map(event => (
+                <HomeEventCard
+                  key={event.id}
+                  event={event}
+                  onPress={() => {
+                    const matched =
+                      USER_EVENTS.find(e => e.id === event.id) ||
+                      USER_EVENTS.find(e => e.title === event.title) ||
+                      ({
+                        id: event.id,
+                        title: event.title,
+                        category: 'Workshop',
+                        tag: 'Event',
+                        day: event.day,
+                        month: event.month,
+                        date: `${event.day} ${event.month} 2026`,
+                        time: '10:00 AM – 1:00 PM',
+                        location: event.location,
+                        venue: event.location,
+                        description: `${event.title} organized by HRSJM.`,
+                        topics: ['Community Engagement', 'Human Rights', 'Legal Protections'],
+                        image: (event.imageUrl ? { uri: event.imageUrl } : USER_EVENTS[0].image),
+                        isDonationEnabled: true,
+                      } as any);
+
+                    if (onOpenEvent) {
+                      onOpenEvent(matched);
+                    } else if (navigation) {
+                      navigation.navigate('SeekerEventDetails', { event: matched });
+                    } else if (onNavigateToEvents) {
+                      onNavigateToEvents();
+                    }
+                  }}
+                />
+              ))}
+            </ScrollView>
           </View>
         </View>
 

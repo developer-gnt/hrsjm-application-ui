@@ -400,7 +400,11 @@ export const MemberHomeDashboardScreen: React.FC<
         const isUpcoming = endTime >= now.getTime() || startTime >= startOfToday;
         return isUpcoming && event.status !== 'CANCELLED' && event.status !== 'COMPLETED';
       })
-      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+      .sort((a, b) => {
+        const aTime = new Date(a.createdAt || a.created_at || a.startAt || 0).getTime() || 0;
+        const bTime = new Date(b.createdAt || b.created_at || b.startAt || 0).getTime() || 0;
+        return bTime - aTime;
+      });
   }, [dbEvents]);
   // Quick actions – 3 items (Resources removed)
   const quickActions: QuickAction[] = [

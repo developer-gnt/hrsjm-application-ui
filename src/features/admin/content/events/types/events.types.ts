@@ -40,6 +40,10 @@ export interface EventListItem {
   registrations: number;
   capacity?: number;
   status: EventUiStatus;
+  createdAt?: string;
+  created_at?: string;
+  isDonationEnabled?: boolean;
+  donationMessage?: string | null;
 }
 
 /** Aggregated counts shown in the summary/stat cards (UI demonstration values for now). */
@@ -100,6 +104,8 @@ export interface CreateEventFormState {
   shortInformation: string;
   tags: string[];
   status: 'DRAFT' | 'PUBLISH';
+  isDonationEnabled: boolean;
+  donationMessage: string;
 }
 
 /** Validation errors keyed by CreateEventFormState field name. */

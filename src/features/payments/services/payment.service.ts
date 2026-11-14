@@ -62,6 +62,7 @@ export class GlobalPaymentService {
           panNumber: payload.panNumber,
           need80G: payload.need80GReceipt,
           idempotencyKey,
+          eventId: payload.entityId,
         });
       } else {
         session = await cashfreeApi.createMembershipOrder({

@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -15,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdminHeader } from '../../../../../app/navigation/AdminHeader';
 import { DatePickerModal } from '../../../../../core/components/common/DatePickerModal';
-import { Calendar, Clock, MapPin } from '../../../../../core/components/icons';
+import { Calendar, Clock, Heart, Info, MapPin } from '../../../../../core/components/icons';
 import { formatDate } from '../../../../../core/utils';
 import { EventFormField } from './EventFormField';
 import { EventImagePicker } from './EventImagePicker';
@@ -74,6 +75,8 @@ export const EMPTY_EVENT_FORM: CreateEventFormState = {
   shortInformation: '',
   tags: [],
   status: 'PUBLISH',
+  isDonationEnabled: false,
+  donationMessage: '',
 };
 
 /**
@@ -319,20 +322,7 @@ export const EventForm: React.FC<EventFormProps> = ({
               </EventFormField>
             </View>
 
-            {/* 4. Section 2: Event Image */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Event Image</Text>
-
-              <EventFormField label="Cover Image" required error={errors.coverImageUri}>
-                <EventImagePicker
-                  value={form.coverImageUri}
-                  error={errors.coverImageUri}
-                  onChange={value => updateField('coverImageUri', value)}
-                />
-              </EventFormField>
-            </View>
-
-            {/* 5. Section 3: Event Details */}
+            {/* 4. Section 2: Event Details */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Event Details</Text>
 
@@ -411,7 +401,77 @@ export const EventForm: React.FC<EventFormProps> = ({
               </EventFormField>
             </View>
 
-            {/* 6. Form Submission Action */}
+            {/* 5. Section 3: Event Image */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Event Image</Text>
+
+              <EventFormField label="Cover Image" required error={errors.coverImageUri}>
+                <EventImagePicker
+                  value={form.coverImageUri}
+                  error={errors.coverImageUri}
+                  onChange={value => updateField('coverImageUri', value)}
+                />
+              </EventFormField>
+            </View>
+
+            {/* 6. Section 4: Ask for Donation */}
+            <View style={styles.card}>
+              <View style={styles.donationHeaderBox}>
+                <View style={styles.donationIconBox}>
+                  <Heart size={22} color="#D97706" fill="#FDE68A" strokeWidth={2} />
+                </View>
+                <View style={styles.donationHeaderTextWrap}>
+                  <Text style={styles.donationTitle}>Ask for Donation</Text>
+                  <Text style={styles.donationSubtitle}>
+                    Allow users to support this event with a voluntary donation.
+                  </Text>
+                </View>
+                <Switch
+                  value={form.isDonationEnabled}
+                  onValueChange={val => {
+                    updateField('isDonationEnabled', val);
+                    if (!val) {
+                      updateField('donationMessage', '');
+                    }
+                  }}
+                  trackColor={{ false: '#DCE4EC', true: '#011F39' }}
+                  thumbColor="#FFFFFF"
+                  ios_backgroundColor="#DCE4EC"
+                  accessibilityLabel="Ask for Donation Toggle"
+                />
+              </View>
+
+              {form.isDonationEnabled ? (
+                <View style={styles.donationMessageContainer}>
+                  <Text style={styles.donationFieldLabel}>Donation Message (Optional)</Text>
+                  <TextInput
+                    value={form.donationMessage}
+                    onChangeText={text => updateField('donationMessage', text.slice(0, 200))}
+                    placeholder="Add a short message about why donations are needed for this event..."
+                    placeholderTextColor="#94A3B8"
+                    multiline
+                    maxLength={200}
+                    textAlignVertical="top"
+                    style={styles.donationTextArea}
+                    accessibilityLabel="Donation Message (Optional)"
+                  />
+                  <View style={styles.charCountRow}>
+                    <Text style={styles.charCountText}>
+                      {form.donationMessage ? form.donationMessage.length : 0}/200
+                    </Text>
+                  </View>
+
+                  <View style={styles.donationInfoBox}>
+                    <Info size={16} color="#0B2F52" strokeWidth={2} />
+                    <Text style={styles.donationInfoText}>
+                      Users can choose any amount they wish to donate.
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+            </View>
+
+            {/* 7. Form Submission Action */}
             <View style={styles.submitSection}>
               <TouchableOpacity
                 style={[styles.submitButton, isSaving ? styles.submitButtonDisabled : null]}
@@ -422,7 +482,7 @@ export const EventForm: React.FC<EventFormProps> = ({
                 accessibilityLabel={mode === 'edit' ? saveLabel || 'Save Changes' : 'Create Event'}
               >
                 {isSaving ? (
-                  <ActivityIndicator size="small" color="#06294D" />
+                  <ActivityIndicator size="small" color="#011F39" />
                 ) : (
                   <Text style={styles.submitButtonText}>
                     {mode === 'edit' ? saveLabel || 'Save Changes' : 'Create Event'}
@@ -610,9 +670,86 @@ const styles = StyleSheet.create({
     opacity: 0.65,
   },
   submitButtonText: {
-    color: '#06294D',
+    color: '#011F39',
     fontSize: 15,
     fontWeight: '700',
+  },
+  donationHeaderBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    padding: 12,
+  },
+  donationIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  donationHeaderTextWrap: {
+    flex: 1,
+    marginRight: 10,
+  },
+  donationTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#011F39',
+  },
+  donationSubtitle: {
+    fontSize: 12.5,
+    color: '#64748B',
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  donationMessageContainer: {
+    marginTop: 14,
+  },
+  donationFieldLabel: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#0B2F52',
+    marginBottom: 6,
+  },
+  donationTextArea: {
+    height: 96,
+    borderWidth: 1,
+    borderColor: '#DCE4EC',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    color: '#0B2F52',
+    backgroundColor: '#FFFFFF',
+  },
+  charCountRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 4,
+  },
+  charCountText: {
+    fontSize: 12,
+    color: '#94A3B8',
+  },
+  donationInfoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    gap: 8,
+    marginTop: 10,
+  },
+  donationInfoText: {
+    fontSize: 12.5,
+    color: '#0B2F52',
+    fontWeight: '500',
+    flex: 1,
   },
 });
 

@@ -278,7 +278,12 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
           .toLowerCase()
           .includes(query);
       return matchesQuery && matchesCategory && matchesDate && matchesLocation;
-    }).sort((a, b) => compareEventsByDate(a, b, now));
+    }).sort((a, b) => {
+      // Required sorting: descending order based on event creation date (createdAt DESC)
+      const aCreated = new Date((a as any).createdAt || (a.rawEvent?.created_at) || (a.rawEvent?.createdAt) || a.date || 0).getTime() || 0;
+      const bCreated = new Date((b as any).createdAt || (b.rawEvent?.created_at) || (b.rawEvent?.createdAt) || b.date || 0).getTime() || 0;
+      return bCreated - aCreated;
+    });
   }, [category, dateFilter, dbEvents, location, now, search]);
 
   const filtersActive =

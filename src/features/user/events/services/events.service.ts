@@ -30,6 +30,10 @@ export interface BackendEventItem {
   language?: string | null;
   tags?: string[] | null;
   status: 'UPCOMING' | 'COMPLETED' | 'CANCELLED' | 'DRAFT';
+  is_donation_enabled?: boolean;
+  isDonationEnabled?: boolean;
+  donation_message?: string | null;
+  donationMessage?: string | null;
 }
 
 export const mapBackendEventToUserEvent = (item: BackendEventItem): UserEvent => {
@@ -69,6 +73,9 @@ export const mapBackendEventToUserEvent = (item: BackendEventItem): UserEvent =>
       ? [item.short_information]
       : ['Community Engagement', 'Legal Awareness & Protection', 'HRSJM Mission'];
 
+  const isDonationEnabled = Boolean(item.isDonationEnabled ?? item.is_donation_enabled);
+  const donationMessage = item.donationMessage ?? item.donation_message ?? null;
+
   return {
     id: item.id,
     title: item.title,
@@ -84,6 +91,9 @@ export const mapBackendEventToUserEvent = (item: BackendEventItem): UserEvent =>
     topics,
     image,
     status: item.status,
+    createdAt: (item as any).created_at || (item as any).createdAt || item.start_at,
+    isDonationEnabled,
+    donationMessage,
     rawEvent: item,
   };
 };

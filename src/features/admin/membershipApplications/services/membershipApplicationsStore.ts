@@ -93,18 +93,34 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
 
   // Map documents with resolved URIs
   let documents: any[] = [];
-  const rawDocs = appData.documents || backend.documents || backend.application_data?.documents;
+  const rawDocs =
+    (backend.documents && Array.isArray(backend.documents) && backend.documents.length > 0)
+      ? backend.documents
+      : (appData.documents || backend.application_data?.documents);
   if (Array.isArray(rawDocs) && rawDocs.length > 0) {
     documents = rawDocs.map((d: any, idx: number) => {
-      const fileName = d.fileName || d.file_name || d.name || 'document.pdf';
-      const rawUri = d.url || d.file_url || d.uri || d.fileUri || d.dataUrl;
+      const fileName = d.original_file_name || d.fileName || d.file_name || d.name || 'document.pdf';
+      const rawUri =
+        d.file_url ||
+        d.uri ||
+        (d.storage_path ? `/${d.storage_path}` : undefined) ||
+        d.view_url ||
+        d.url ||
+        d.fileUri ||
+        d.dataUrl;
+      const downloadUrl =
+        d.download_url ||
+        d.file_url ||
+        d.uri ||
+        (d.storage_path ? `/${d.storage_path}` : undefined) ||
+        rawUri;
       return {
         id: d.id || `doc-${idx + 1}`,
-        title: d.title || d.name || d.type || 'Document Attachment',
+        title: d.title || d.document_name || d.name || d.type || 'Document Attachment',
         fileName,
         fileSize:
           d.fileSize ||
-          d.file_size ||
+          (d.file_size ? `${Math.max(1, Math.round(d.file_size / 1024))} KB` : undefined) ||
           (d.size_bytes ? `${Math.round(d.size_bytes / 1024)} KB` : '1.5 MB'),
         uploadDate:
           d.uploadDate ||
@@ -112,6 +128,8 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
             ? new Date(d.created_at).toLocaleDateString('en-GB')
             : (submittedAt.split(',')[0] || 'Recently')),
         uri: resolveUploadedFileUri(fileName, rawUri),
+        downloadUrl: resolveUploadedFileUri(fileName, downloadUrl),
+        verified: d.status === 'VERIFIED',
       };
     });
   } else if (rawDocs && typeof rawDocs === 'object' && !Array.isArray(rawDocs)) {
@@ -905,8 +923,9 @@ class MembershipApplicationsStore {
             (docsRes as any)?.data !== undefined
               ? (docsRes as any).data
               : docsRes;
-          if (Array.isArray(docs)) {
-            backend.documents = docs;
+          const docsList = Array.isArray(docs) ? docs : (docs?.documents || []);
+          if (Array.isArray(docsList) && docsList.length > 0) {
+            backend.documents = docsList;
           }
         } catch {
           // keep inline docs

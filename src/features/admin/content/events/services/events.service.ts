@@ -30,6 +30,12 @@ export interface BackendEventItem {
   language?: string | null;
   tags?: string[] | null;
   status: 'UPCOMING' | 'COMPLETED' | 'CANCELLED' | 'DRAFT';
+  created_at?: string;
+  createdAt?: string;
+  is_donation_enabled?: boolean;
+  isDonationEnabled?: boolean;
+  donation_message?: string | null;
+  donationMessage?: string | null;
 }
 
 export interface BackendEventsListResponse {
@@ -61,6 +67,10 @@ export const mapBackendEventToUi = (item: BackendEventItem): EventListItem => ({
   registrations: item.registrations ?? 0,
   capacity: item.capacity,
   status: item.status,
+  createdAt: (item as any).created_at || (item as any).createdAt || item.start_at,
+  created_at: (item as any).created_at || (item as any).createdAt || item.start_at,
+  isDonationEnabled: Boolean(item.is_donation_enabled ?? (item as any).isDonationEnabled ?? false),
+  donationMessage: item.donation_message ?? (item as any).donationMessage ?? null,
 });
 
 export const getEventsList = async (
@@ -148,6 +158,10 @@ export const createEventApi = async (
     language: form.language || undefined,
     tags: form.tags,
     status: form.status === 'PUBLISH' ? 'UPCOMING' : 'DRAFT',
+    is_donation_enabled: form.isDonationEnabled,
+    isDonationEnabled: form.isDonationEnabled,
+    donation_message: form.isDonationEnabled ? (form.donationMessage.trim() || null) : null,
+    donationMessage: form.isDonationEnabled ? (form.donationMessage.trim() || null) : null,
   };
 
   const res = await apiClient.post<BackendEventItem>(
@@ -190,6 +204,10 @@ export const updateEventApi = async (
     language: form.language || undefined,
     tags: form.tags,
     status: form.status === 'PUBLISH' ? 'UPCOMING' : 'DRAFT',
+    is_donation_enabled: form.isDonationEnabled,
+    isDonationEnabled: form.isDonationEnabled,
+    donation_message: form.isDonationEnabled ? (form.donationMessage.trim() || null) : null,
+    donationMessage: form.isDonationEnabled ? (form.donationMessage.trim() || null) : null,
   };
 
   const res = await apiClient.patch<BackendEventItem>(

@@ -15,6 +15,9 @@ import { SeekerRequestsScreen } from '../screens/SeekerRequestsScreen';
 import { CreateSeekerScreen } from '../../admin/assistance/screens/CreateSeekerScreen';
 import { MemberRightsScreen, RightDetailsScreen } from '../../member/rights';
 import { UserEventsScreen } from '../../user/events/screens/UserEventsScreen';
+import { UserEventDetailsScreen } from '../../user/events/screens/UserEventDetailsScreen';
+import { RegisterForEventScreen } from '../../user/events/screens/RegisterForEventScreen';
+import { USER_EVENTS, type UserEvent } from '../../user/events/data/user-events';
 import { SupportTicketsScreen } from '../../support';
 import { ProfileScreen } from '../../admin/profile/screens/ProfileScreen';
 import { NotificationsScreen } from '../../admin/notifications';
@@ -58,6 +61,7 @@ const SeekerHomeWrapper: React.FC<any> = ({ navigation }) => {
       onNavigateToSupport={() => navigation.navigate('SeekerSupport')}
       onNavigateToRights={() => navigation.navigate('SeekerRights')}
       onNavigateToEvents={() => navigation.navigate('SeekerEvents')}
+      onOpenEvent={(event) => navigation.navigate('SeekerEventDetails', { event })}
       onNavigateToNews={() => navigation.navigate('News')}
       onNavigateToComplaint={() => navigation.navigate('FileComplaint')}
       onOpenNotifications={() => navigation.navigate('Notifications')}
@@ -89,7 +93,7 @@ const SeekerRightsWrapper: React.FC<any> = ({ navigation }) => {
 const SeekerEventsWrapper: React.FC<any> = ({ navigation }) => {
   return (
     <UserEventsScreen
-      onOpenEvent={(event) => navigation.navigate('SeekerHome')}
+      onOpenEvent={(event) => navigation.navigate('SeekerEventDetails', { event })}
       onOpenAbout={() => navigation.navigate('About')}
       onOpenRights={() => navigation.navigate('SeekerRights')}
       onOpenContact={() => navigation.navigate('SeekerSupport')}
@@ -233,6 +237,57 @@ export const SeekerTabNavigator: React.FC = () => {
       <Tab.Screen name="SeekerRequests" component={SeekerRequestsWrapper} />
       <Tab.Screen name="SeekerRights" component={SeekerRightsWrapper} />
       <Tab.Screen name="SeekerEvents" component={SeekerEventsWrapper} />
+      <Tab.Screen
+        name="SeekerEventDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <UserEventDetailsScreen
+            event={route.params?.event || USER_EVENTS[0]}
+            onBack={navigation.goBack}
+            onRegister={() =>
+              navigation.navigate('RegisterForEvent', {
+                event: route.params?.event || USER_EVENTS[0],
+              })
+            }
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="UserEventDetails"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <UserEventDetailsScreen
+            event={route.params?.event || USER_EVENTS[0]}
+            onBack={navigation.goBack}
+            onRegister={() =>
+              navigation.navigate('RegisterForEvent', {
+                event: route.params?.event || USER_EVENTS[0],
+              })
+            }
+          />
+        )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="RegisterForEvent"
+        options={{ tabBarButton: () => null }}
+      >
+        {({ navigation, route }: any) => (
+          <RegisterForEventScreen
+            event={route.params?.event || USER_EVENTS[0]}
+            hideBottomNav={true}
+            showBottomNav={false}
+            onBack={navigation.goBack}
+            onBackToEvents={() => navigation.navigate('SeekerEvents')}
+            onOpenHome={() => navigation.navigate('SeekerHome')}
+            onOpenAbout={() => navigation.navigate('About')}
+            onOpenRights={() => navigation.navigate('SeekerRights')}
+            onOpenContact={() => navigation.navigate('SeekerSupport')}
+            onOpenNews={() => navigation.navigate('News')}
+          />
+        )}
+      </Tab.Screen>
       <Tab.Screen name="SeekerSupport" component={SeekerSupportWrapper} />
       <Tab.Screen name="SeekerProfile" component={SeekerProfileWrapper} />
 

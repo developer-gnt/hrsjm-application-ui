@@ -29,6 +29,9 @@ export interface UserEvent {
   topics: string[];
   image: ImageSourcePropType;
   status?: string;
+  createdAt?: string;
+  isDonationEnabled?: boolean;
+  donationMessage?: string | null;
   rawEvent?: any;
 }
 
