@@ -11,6 +11,24 @@ import { MemberTabNavigator } from '../../features/member';
 import { SeekerTabNavigator } from '../../features/seeker';
 import { HomeStackParamList } from './NavigationTypes';
 
+
+const linking = {
+  prefixes: [
+    'hrsjm://',
+    'https://hrsjm.org',
+    'http://194.164.151.17:3000',
+    'http://localhost:8089',
+    'http://localhost:3000',
+  ],
+  config: {
+    screens: {
+      ResetPassword: 'reset-password',
+      Login: 'login',
+      ForgotPassword: 'forgot-password',
+    },
+  },
+};
+
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 
 const RoleBasedHomeNavigator: React.FC<{ roleType: 'member' | 'user' | 'seeker' | 'default' }> = ({
@@ -50,32 +68,34 @@ export const RootNavigator: React.FC = () => {
   const status = useAuthStore(state => state.status);
   const user = useAuthStore(state => state.user);
 
-  const roleNames = (user?.roles ?? []).map(r => r.name.toUpperCase());
+  const roleNames = (user?.roles ?? []).map((r: any) => {
+    if (typeof r === 'string') return r.toUpperCase();
+    return (r?.name || '').toUpperCase();
+  });
   const isAdmin = roleNames.includes('ADMIN') || roleNames.includes('SUPER_ADMIN');
-  const isMemberRole =
-    roleNames.includes('MEMBER') ||
-    (user as any)?.account_type === 'member' ||
-    user?.membership_status === 'ACTIVE' ||
-    user?.membership_status === 'APPROVED';
+  const isMemberApproved =
+    (user?.membership_status === 'ACTIVE' ||
+      user?.membership_status === 'APPROVED' ||
+      (roleNames.includes('MEMBER') &&
+        user?.membership_status !== 'PENDING' &&
+        user?.membership_status !== 'UNDER_REVIEW')) &&
+    user?.membership_status !== 'REJECTED' &&
+    user?.membership_status !== 'SUSPENDED' &&
+    user?.status?.toUpperCase() !== 'INACTIVE' &&
+    user?.status?.toUpperCase() !== 'BLOCKED';
+
   const isSeekerRole =
     roleNames.includes('SEEKER') ||
     roleNames.includes('DONATION_SEEKER') ||
     (user as any)?.account_type === 'seeker';
 
-  // Approved/Active members get the full MemberTabNavigator.
-  // Anyone with the MEMBER role, account_type === 'member', or approved membership status
-  // routes to the Member Portal (MemberTabNavigator) unless explicitly inactive/rejected/suspended.
-  const isMemberApproved =
-    isMemberRole &&
-    user?.status?.toUpperCase() !== 'INACTIVE' &&
-    user?.status?.toUpperCase() !== 'BLOCKED' &&
-    user?.membership_status !== 'REJECTED' &&
-    user?.membership_status !== 'SUSPENDED';
-
   // Approved seekers get SeekerTabNavigator; pending seekers route to UserTabNavigator.
   const isSeekerApproved =
     isSeekerRole &&
-    (user?.assistance_status === 'APPROVED' || user?.status?.toUpperCase() === 'ACTIVE');
+    (user?.assistance_status === 'APPROVED' ||
+      ((roleNames.includes('SEEKER') || roleNames.includes('DONATION_SEEKER')) &&
+        user?.assistance_status !== 'PENDING' &&
+        user?.assistance_status !== 'UNDER_REVIEW'));
 
   let activeRoleType: 'member' | 'user' | 'seeker' | 'default' = 'user';
   if (isMemberApproved) {
@@ -88,7 +108,7 @@ export const RootNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <StatusBar barStyle="dark-content" />
       {status === 'authenticated' ? (
         isAdmin ? (

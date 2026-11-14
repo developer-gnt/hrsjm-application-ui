@@ -178,6 +178,29 @@ const compareEventsByDate = (a: UserEvent, b: UserEvent, now: Date): number => {
 const getEventCity = (location: string): string =>
   location.split(',')[0].trim() || location.trim();
 
+const EventThumbnailImage: React.FC<{
+  source: any;
+  fallback: any;
+  style: any;
+}> = ({ source, fallback, style }) => {
+  const [currentSrc, setCurrentSrc] = useState(source || fallback);
+
+  useEffect(() => {
+    setCurrentSrc(source || fallback);
+  }, [source, fallback]);
+
+  return (
+    <Image
+      source={currentSrc}
+      style={style}
+      resizeMode="cover"
+      onError={() => {
+        setCurrentSrc(fallback);
+      }}
+    />
+  );
+};
+
 export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
   onBack,
   showBackButton = false,
@@ -475,7 +498,7 @@ export const UserEventsScreen: React.FC<UserEventsScreenProps> = ({
                 accessibilityLabel={`View event: ${event.title}`}
               >
                 <View style={styles.eventImageWrap}>
-                  <Image source={event.image} style={styles.eventImage} resizeMode="cover" />
+                  <EventThumbnailImage source={event.image} fallback={USER_EVENTS[0].image} style={styles.eventImage} />
                   <View style={styles.dateBadge}>
                     <Text style={styles.dateDay}>{event.day}</Text>
                     <Text style={styles.dateMonth}>{event.month}</Text>

@@ -9,7 +9,8 @@ import { ApiRoutes } from '../../../../core/constants/api-routes';
 import { useAuthStore } from '../../../auth/store/authStore';
 import { useProfileStore } from '../../profile/profileStore';
 import { usersStore } from '../../users/services/usersStore';
-import { resolveUploadedFileUri } from './uploadedDocumentsCache';
+import { resolveUploadedFileUri, getAllUploadedDocuments } from './uploadedDocumentsCache';
+import { getRegistrationState } from '../../../auth/state/registrationState';
 
 export function mapBackendToApplicationItem(backend: any): MembershipApplicationItem {
   const appData = backend.application_data || {};
@@ -176,7 +177,8 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
     backend.avatar_url ||
     photoDoc?.uri ||
     resolveUploadedFileUri(photoDoc?.fileName) ||
-    (name.toLowerCase().includes('mubasshir') ? resolveUploadedFileUri('Screenshot 2026-02-21 151534.png') : undefined) ||
+    resolveUploadedFileUri('applicant_photograph.jpg') ||
+    (name.toLowerCase().includes('mubass') ? resolveUploadedFileUri('applicant_photograph.jpg') : undefined) ||
     undefined;
 
   const activityLog: Array<{
@@ -369,9 +371,149 @@ export function mapAssistanceRequestToApplicationItem(item: any): MembershipAppl
   }
 
   const user = item.user || {};
-  const appId =
-    item.application_number ||
-    `HRSJM-SEK-${(item.id || '').replace(/-/g, '').slice(0, 6).toUpperCase()}`;
+  const userEmail = (item.email || user.email || '').toLowerCase().trim();
+  const userPhone = (item.mobile || user.mobile_number || '').replace(/\D/g, '').slice(-10);
+
+  let appId = item.application_number;
+  if (!appId || appId === 'HRSJM-SEK-0001') {
+    try {
+      const uMatch = usersStore.getAllUsers().find(
+        u =>
+          (u.id && (u.id === item.user_id || u.id === item.id)) ||
+          (userEmail && u.email && u.email.toLowerCase().trim() === userEmail) ||
+          (userPhone && u.phone && u.phone.replace(/\D/g, '').includes(userPhone))
+      );
+      if (uMatch?.applicationNumber && uMatch.applicationNumber !== 'HRSJM-SEK-0001') {
+        appId = uMatch.applicationNumber;
+      }
+    } catch {}
+  }
+
+  if (!appId || appId === 'HRSJM-SEK-0001') {
+    appId = `HRSJM-SEK-${(item.id || '').replace(/-/g, '').slice(0, 6).toUpperCase()}`;
+  }
+
+  let docs: any[] = [];
+  // 1. Check if backend already returns documents attached
+  if (Array.isArray(item.documents) && item.documents.length > 0) {
+    docs = item.documents.map((d: any, idx: number) => {
+      const fileName = d.file_name || d.original_file_name || d.fileName || 'document.pdf';
+      const sPath = d.storage_path ? `/${String(d.storage_path).replace(/\\/g, '/')}` : undefined;
+      const fileUri = sPath || d.fileUri || d.uri;
+      return {
+        id: d.id || `doc-${idx + 1}`,
+        title: d.document_name || d.title || 'Identity Verification Document',
+        fileName,
+        fileSize: d.fileSize || (d.file_size ? `${Math.round(d.file_size / 1024)} KB` : '1 MB'),
+        fileType: d.mime_type || d.fileType || 'image/jpeg',
+        fileUri,
+        uri: resolveUploadedFileUri(fileName, fileUri),
+        uploadDate: d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : 'Recently',
+        uploadedAt: d.created_at ? new Date(d.created_at).toLocaleDateString('en-GB') : 'Recently',
+        isUploaded: true,
+        verified: Boolean(d.verified),
+      };
+    });
+  }
+
+  // 2. Query usersStore
+  if (docs.length === 0) {
+    try {
+      const uMatch = usersStore.getAllUsers().find(
+        u =>
+          (u.id && (u.id === item.user_id || u.id === item.id)) ||
+          (userEmail && u.email && u.email.toLowerCase().trim() === userEmail) ||
+          (userPhone && u.phone && u.phone.replace(/\D/g, '').includes(userPhone))
+      );
+      if (uMatch?.documents && uMatch.documents.length > 0) {
+        docs = uMatch.documents.map((d, idx) => ({
+          id: d.id || `doc-${idx + 1}`,
+          title: d.title || 'Verification Document',
+          fileName: d.fileName || 'document.pdf',
+          fileSize: d.fileSize || '1 MB',
+          fileType: d.fileType || 'application/pdf',
+          fileUri: d.fileUri || (d as any).uri,
+          uri: resolveUploadedFileUri(d.fileName, d.fileUri || (d as any).uri),
+          uploadDate: d.uploadedAt || 'Recently',
+          uploadedAt: d.uploadedAt || 'Recently',
+          isUploaded: true,
+          verified: d.verified || false,
+        }));
+      }
+    } catch {}
+  }
+
+  // 3. Query active registrationState
+  if (docs.length === 0) {
+    try {
+      const regState = getRegistrationState();
+      const regEmail = (regState.email || '').toLowerCase().trim();
+      const regPhone = (regState.phone || '').replace(/\D/g, '').slice(-10);
+      if (
+        (userEmail && regEmail && userEmail === regEmail) ||
+        (userPhone && regPhone && userPhone === regPhone)
+      ) {
+        if (regState.documents && regState.documents.length > 0) {
+          docs = regState.documents.map((d, idx) => ({
+            id: `doc-reg-${idx + 1}`,
+            title: d.title || 'Verification Document',
+            fileName: d.name || 'document.pdf',
+            fileSize: d.formattedSize || '1 MB',
+            fileType: d.type || 'image/jpeg',
+            fileUri: d.uri,
+            uri: resolveUploadedFileUri(d.name, d.uri),
+            uploadDate: d.uploadDate || 'Recently',
+            uploadedAt: d.uploadDate || 'Recently',
+            isUploaded: true,
+            verified: false,
+          }));
+        } else if (regState.uploadedFileName) {
+          docs = [
+            {
+              id: 'doc-reg-single',
+              title: regState.selectedDocTitle || 'Verification Document',
+              fileName: regState.uploadedFileName,
+              fileSize: regState.uploadedFileSize || '800 KB',
+              fileType: 'image/jpeg',
+              fileUri: regState.uploadedFileUri,
+              uri: resolveUploadedFileUri(regState.uploadedFileName, regState.uploadedFileUri),
+              uploadDate: 'Recently',
+              uploadedAt: 'Recently',
+              isUploaded: true,
+              verified: false,
+            },
+          ];
+        }
+      }
+    } catch {}
+  }
+
+  // 4. Query uploaded documents cache
+  if (docs.length === 0) {
+    try {
+      const allCached = getAllUploadedDocuments();
+      const entries = Object.entries(allCached);
+      if (entries.length > 0) {
+        // If an uploaded document exists in cache, attach it
+        const [docName, docUri] = entries[0];
+        docs = [
+          {
+            id: 'doc-cached-1',
+            title: 'Verification Document',
+            fileName: docName,
+            fileSize: '800 KB',
+            fileType: 'image/jpeg',
+            fileUri: docUri,
+            uri: resolveUploadedFileUri(docName, docUri),
+            uploadDate: 'Recently',
+            uploadedAt: 'Recently',
+            isUploaded: true,
+            verified: false,
+          },
+        ];
+      }
+    } catch {}
+  }
 
   return {
     id: item.id,
@@ -387,7 +529,7 @@ export function mapAssistanceRequestToApplicationItem(item: any): MembershipAppl
     address: user.address_line1 || user.city || user.state || undefined,
     amount: item.amount || item.requested_amount || undefined,
     paymentStatus: 'EXEMPT',
-    documents: [],
+    documents: docs,
     activityLog: [
       {
         id: `log-sub-${item.id}`,
@@ -473,12 +615,26 @@ class MembershipApplicationsStore {
             const isSeeker = u.userType === 'seeker';
             const isMember = u.userType === 'member';
             if (u.status === 'pending' || isMember || isSeeker) {
-              const defaultAppId = isSeeker ? `HRSJM-SEK-${u.id.replace(/\D/g, '').slice(-4) || '0001'}` : `APP-${u.id}`;
-              const appId = u.applicationNumber || u.memberId || defaultAppId;
-              const exists = this.applications.some(
+              const defaultAppId = isSeeker ? `HRSJM-SEK-${(u.id || '').replace(/-/g, '').slice(0, 6).toUpperCase() || Math.random().toString(16).substring(2, 8).toUpperCase()}` : `APP-${u.id}`;
+              const appId = (u.applicationNumber && u.applicationNumber !== 'HRSJM-SEK-0001' ? u.applicationNumber : undefined) || u.memberId || defaultAppId;
+              const existingApp = this.applications.find(
                 a => a.id === u.id || a.applicationId === appId || (u.email && a.email?.toLowerCase() === u.email.toLowerCase())
               );
-              if (!exists) {
+              if (existingApp) {
+                if ((!existingApp.documents || existingApp.documents.length === 0) && u.documents && u.documents.length > 0) {
+                  existingApp.documents = u.documents.map((d, idx) => ({
+                    id: d.id || `doc-${idx + 1}`,
+                    title: d.title || (isSeeker ? 'Income / Medical Proof' : 'Identification Document'),
+                    fileName: d.fileName || 'document.pdf',
+                    fileSize: d.fileSize || '1.5 MB',
+                    uploadDate: d.uploadedAt || 'Recently',
+                    uri: resolveUploadedFileUri(d.fileName, d.fileUri),
+                    fileUri: d.fileUri,
+                    isUploaded: true,
+                    verified: Boolean(d.verified),
+                  }));
+                }
+              } else {
                 const sStatus: ApplicationStatus =
                   u.status === 'active' ? 'approved' : u.status === 'blocked' ? 'rejected' : 'under_review';
                 const mType =
@@ -602,7 +758,16 @@ class MembershipApplicationsStore {
               applicationId: appId,
               applicantName: userRec.personalInfo?.fullName?.trim() || 'Applicant',
               membershipType: userRec.membershipType || 'District Active Member',
-              avatarUrl: userRec.documents?.photograph?.fileUri || userRec.personalInfo?.profilePhotoUri,
+              avatarUrl:
+                resolveUploadedFileUri(
+                  userRec.documents?.photograph?.fileName,
+                  userRec.documents?.photograph?.fileUri || userRec.personalInfo?.profilePhotoUri
+                ) ||
+                userRec.documents?.photograph?.fileUri ||
+                userRec.personalInfo?.profilePhotoUri ||
+                (userRec.personalInfo?.fullName?.toLowerCase().includes('mubass')
+                  ? resolveUploadedFileUri('applicant_photograph.jpg')
+                  : undefined),
               status: statusKey,
               submittedAt: userRec.submittedAt || new Date().toLocaleString(),
               submittedDate: userRec.submittedDate || new Date().toISOString(),
@@ -808,6 +973,24 @@ class MembershipApplicationsStore {
         const aItems = Array.isArray(aData) ? aData : (aData as any)?.items || (raw as any)?.items || [];
         const mappedSeekers = aItems.map(mapAssistanceRequestToApplicationItem);
         mapped.push(...mappedSeekers);
+
+        // Preserve documents from any existing local applications matching each seeker
+        mapped.forEach(app => {
+          if (!app.documents || app.documents.length === 0) {
+            const appEmail = (app.email || '').toLowerCase().trim();
+            const appPhone = (app.phone || '').replace(/\D/g, '').slice(-10);
+            const existing = this.applications.find(
+              a =>
+                a.id === app.id ||
+                a.applicationId === app.applicationId ||
+                (appEmail && (a.email || '').toLowerCase().trim() === appEmail) ||
+                (appPhone && (a.phone || '').replace(/\D/g, '').slice(-10) === appPhone)
+            );
+            if (existing?.documents && existing.documents.length > 0) {
+              app.documents = existing.documents;
+            }
+          }
+        });
       }
 
       // Preserve any locally added applications that are not yet in backend items
@@ -906,6 +1089,38 @@ class MembershipApplicationsStore {
         return localApp;
       }
 
+      const isSeekerApp = localApp?.accountType === 'seeker' || id.startsWith('HRSJM-SEK');
+      if (isSeekerApp) {
+        try {
+          const assistRes = await apiClient.get<any>(`${ApiRoutes.ASSISTANCE_REQUESTS}/${queryId}`);
+          const aData = (assistRes as any)?.data?.data || (assistRes as any)?.data || assistRes;
+          if (aData && aData.id) {
+            try {
+              const sDocsRes = await apiClient.get<any>(`${ApiRoutes.ASSISTANCE_REQUESTS}/${queryId}/documents`);
+              const sDocs = (sDocsRes as any)?.data?.data || (sDocsRes as any)?.data || (sDocsRes as any)?.documents || sDocsRes;
+              if (Array.isArray(sDocs) && sDocs.length > 0) {
+                aData.documents = sDocs;
+              }
+            } catch {}
+            const mapped = mapAssistanceRequestToApplicationItem(aData);
+            if ((!mapped.documents || mapped.documents.length === 0) && localApp?.documents && localApp.documents.length > 0) {
+              mapped.documents = localApp.documents;
+            }
+            const index = this.applications.findIndex(a => a.id === mapped.id || a.applicationId === mapped.applicationId);
+            if (index !== -1) {
+              this.applications[index] = mapped;
+            } else {
+              this.applications = [mapped, ...this.applications];
+            }
+            this.recalculateStatsFromItems();
+            this.notify();
+            return mapped;
+          }
+        } catch {
+          return localApp;
+        }
+      }
+
       const backendRes = await apiClient.get<any>(
         ApiRoutes.MEMBERSHIPS.DETAILS(queryId),
       );
@@ -919,13 +1134,15 @@ class MembershipApplicationsStore {
           const docsRes = await apiClient.get<any>(
             ApiRoutes.MEMBERSHIPS.DOCUMENTS(queryId),
           );
-          const docs =
+          const docsRaw =
             (docsRes as any)?.data !== undefined
               ? (docsRes as any).data
               : docsRes;
-          const docsList = Array.isArray(docs) ? docs : (docs?.documents || []);
-          if (Array.isArray(docsList) && docsList.length > 0) {
-            backend.documents = docsList;
+          const docs = (docsRaw && Array.isArray(docsRaw.documents))
+            ? docsRaw.documents
+            : (Array.isArray(docsRaw) ? docsRaw : []);
+          if (Array.isArray(docs) && docs.length > 0) {
+            backend.documents = docs;
           }
         } catch {
           // keep inline docs

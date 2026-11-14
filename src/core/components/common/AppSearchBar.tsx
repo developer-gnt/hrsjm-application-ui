@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text, ViewStyle, TextStyle } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, ViewStyle, TextStyle, Platform } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { debounce } from '../../utils/debounce';
 
@@ -59,7 +59,7 @@ export const AppSearchBar: React.FC<AppSearchBarProps> = ({
   return (
     <View style={[styles.container, containerStyle]}>
       <View style={styles.searchIcon}>
-        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+        <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
           <Circle
             cx={11}
             cy={11}
@@ -81,6 +81,7 @@ export const AppSearchBar: React.FC<AppSearchBarProps> = ({
         placeholder={placeholder}
         placeholderTextColor="#718096"
         style={[styles.input, inputStyle]}
+        multiline={false}
         numberOfLines={1}
         returnKeyType="search"
         clearButtonMode="never"
@@ -110,8 +111,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: '#DCE4EC',
     borderRadius: 12,
-    paddingHorizontal: 14,
-    height: 48,
+    paddingHorizontal: 12,
+    height: 46,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
@@ -119,30 +120,38 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   input: {
     flex: 1,
     minWidth: 0,
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '500',
     color: '#0B2F52',
     paddingVertical: 0,
     height: '100%',
+    ...(Platform.OS === 'web'
+      ? {
+          outlineStyle: 'none' as any,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }
+      : {}),
   },
   clearButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 6,
   },
   clearIcon: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#64748B',
     fontWeight: '800',
   },

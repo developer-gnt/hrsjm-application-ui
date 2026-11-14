@@ -38,7 +38,7 @@ export const MemberHomeScreen: React.FC = () => {
   const memberName = user?.full_name || 'HRSJM Member';
   const memberEmail = user?.email || 'member@hrsjm.org';
   const memberMobile = user?.mobile_number || '+91 98888 80002';
-  const avatarUrl = user?.avatar || DEFAULT_ADMIN_AVATAR;
+  const avatarUrl = user?.avatar || null;
   const designation = memberData.hasData && memberData.membershipType ? memberData.membershipType : 'Official Verified Member';
   const memberId = memberData.memberId || 'HRSJM-MEM-2026-0842';
   const validThru = memberData.hasData && memberData.validTill ? memberData.validTill.toUpperCase() : '31 DEC 2027';
@@ -77,7 +77,21 @@ export const MemberHomeScreen: React.FC = () => {
           </View>
 
           <View style={styles.cardBodyRow}>
-            <Image source={{ uri: avatarUrl }} style={styles.memberPhoto} />
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.memberPhoto} />
+            ) : (
+              <View style={[styles.memberPhoto, styles.memberInitialsBox]}>
+                <Text style={styles.memberInitialsText}>
+                  {memberName
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map(p => p[0]?.toUpperCase())
+                    .join('') || 'M'}
+                </Text>
+              </View>
+            )}
             <View style={styles.memberInfoCol}>
               <Text style={styles.memberName} numberOfLines={1}>{memberName}</Text>
               <Text style={styles.memberDesignation}>{designation}</Text>
@@ -271,6 +285,17 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     borderWidth: 2,
     borderColor: '#FAD465',
+  },
+  memberInitialsBox: {
+    backgroundColor: '#0F2C59',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  memberInitialsText: {
+    fontFamily: FontFamilies.display,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FAD465',
   },
   memberInfoCol: {
     flex: 1,

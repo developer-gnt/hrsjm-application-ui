@@ -1,3 +1,4 @@
+import { registerUploadedDocument } from '../../admin/membershipApplications/services/uploadedDocumentsCache';
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type {
   AddressInfo,
@@ -94,6 +95,16 @@ const getSessionStorage = () => {
   return win?.localStorage || win?.sessionStorage;
 };
 
+const safeGetStorageItem = (key: string): string | null => {
+  try {
+    const storage = getSessionStorage();
+    if (storage) {
+      return storage.getItem(key);
+    }
+  } catch {}
+  return null;
+};
+
 const safeRemoveStorageItem = (key: string) => {
   try {
     const storage = getSessionStorage();
@@ -122,9 +133,6 @@ const safeSetStorageItem = (key: string, value: string) => {
 const sanitizeForStorage = (record: MembershipApplicationRecord): MembershipApplicationRecord => {
   const sanitizeUri = (uri?: string) => {
     if (!uri) return undefined;
-    if (uri.startsWith('data:') && uri.length > 500) {
-      return uri.slice(0, 100);
-    }
     return uri;
   };
 
@@ -181,6 +189,42 @@ const buildDefaultTimeline = (status: MembershipStatus, submittedAt: string): Ti
   ];
 };
 
+const resolveNextAppIdNumber = (): string => {
+  let maxNum = 3;
+  try {
+    const stored =
+      (typeof localStorage !== 'undefined' && localStorage.getItem('hrsjm_last_app_num')) ||
+      (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('hrsjm_last_app_num'));
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      if (!isNaN(parsed) && parsed > maxNum) {
+        maxNum = parsed;
+      }
+    }
+  } catch {}
+
+  try {
+    const existingApps = membershipApplicationsStore.getApplications();
+    existingApps.forEach((a: any) => {
+      const match = (a.applicationId || '').match(/HRSJM-(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    });
+  } catch {}
+
+  const nextNum = maxNum + 1;
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem('hrsjm_last_app_num', String(nextNum));
+    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('hrsjm_last_app_num', String(nextNum));
+  } catch {}
+
+  return `HRSJM-${String(nextNum).padStart(5, '0')}`;
+};
+
 export const MembershipContext = createContext<MembershipContextType | undefined>(undefined);
 
 export function MembershipProvider({ children }: { children: ReactNode }) {
@@ -212,8 +256,23 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
   const authRoles = (authUser?.roles ?? []).map(r => (r.name || '').toUpperCase());
   const isPlainUser = authRoles.includes('USER') || (!authRoles.includes('MEMBER') && !authRoles.includes('ADMIN'));
 
-  const [applications, setApplications] = useState<MembershipApplicationRecord[]>([]);
-  const [activeApplication, setActiveApplication] = useState<MembershipApplicationRecord | null>(null);
+  const [activeApplication, setActiveApplication] = useState<MembershipApplicationRecord | null>(() => {
+    try {
+      const storage = getSessionStorage();
+      const raw = storage?.getItem('hrsjm_user_membership_record');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  });
+
+  const [applications, setApplications] = useState<MembershipApplicationRecord[]>(() => {
+    try {
+      const storage = getSessionStorage();
+      const raw = storage?.getItem('hrsjm_user_membership_record');
+      if (raw) return [JSON.parse(raw)];
+    } catch {}
+    return [];
+  });
 
   const refreshApplications = async () => {
     try {
@@ -297,13 +356,16 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       // Check membershipApplicationsStore for local or test applications
       const localApps = membershipApplicationsStore.getApplications();
       const userEmail = (authUser?.email || '').toLowerCase().trim();
-      const userPhone = (authUser?.mobile_number || '').replace(/\D/g, '').slice(-10);
+      const userPhone = (authUser?.mobile_number || (authUser as any)?.phone || '').replace(/\D/g, '').slice(-10);
+      const userName = (authUser?.full_name || '').toLowerCase().trim();
 
-      const matchedStoreApp = (userEmail || userPhone)
+      const matchedStoreApp = (userEmail || userPhone || userName)
         ? localApps.find(
             a =>
               (userEmail && a.email && a.email.toLowerCase().trim() === userEmail) ||
-              (userPhone && a.phone && a.phone.replace(/\\D/g, '').includes(userPhone))
+              (userPhone && userPhone.length >= 10 && a.phone && a.phone.replace(/\D/g, '').includes(userPhone)) ||
+              (userName && a.applicantName && a.applicantName.toLowerCase().trim() === userName) ||
+              ((a as any).userId && authUser?.id && (a as any).userId === authUser.id)
           )
         : null;
 
@@ -352,7 +414,19 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
           }
         }
       } else {
-        if (isPlainUser) {
+        const storedRaw = safeGetStorageItem('hrsjm_user_membership_record');
+        let existingStoredRecord: MembershipApplicationRecord | null = null;
+        if (storedRaw) {
+          try {
+            existingStoredRecord = JSON.parse(storedRaw);
+          } catch {}
+        }
+
+        if (existingStoredRecord && (existingStoredRecord.applicationId || (existingStoredRecord as any).id)) {
+          setApplications([existingStoredRecord]);
+          setActiveApplication(existingStoredRecord);
+          setHasAppliedLocally(true);
+        } else if (isPlainUser) {
           setApplications([]);
           setActiveApplication(null);
           setHasAppliedLocally(false);
@@ -476,17 +550,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     const categoryTitle =
       effectivePost?.postName || selectedMembershipType || 'District Active Member';
 
-    // Consecutive application ID matching HRSJM-0000X format
-    const existingApps = membershipApplicationsStore.getApplications();
-    const maxNum = existingApps.reduce((max, a) => {
-      const match = (a.applicationId || '').match(/HRSJM-(\d+)/i);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        return num > max ? num : max;
-      }
-      return max;
-    }, 2);
-    const appIdNumber = `HRSJM-${String(maxNum + 1).padStart(5, '0')}`;
+    const appIdNumber = resolveNextAppIdNumber();
 
     const sanitizeUri = (uri?: string) => {
       if (!uri) return undefined;
@@ -525,6 +589,16 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         },
       ],
     };
+
+    if (adminAppItem.avatarUrl) {
+      registerUploadedDocument('applicant_photograph.jpg', adminAppItem.avatarUrl);
+      registerUploadedDocument('photograph.jpg', adminAppItem.avatarUrl);
+    }
+    uploadedDocs.forEach(d => {
+      if (d.fileName && d.uri) {
+        registerUploadedDocument(d.fileName, d.uri);
+      }
+    });
 
     // Add to admin store so it appears dynamically in the 1st position in admin screen
     membershipApplicationsStore.addApplication(adminAppItem);
@@ -667,6 +741,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       return uri;
     };
 
+    const resolvedAvatar =
+      sanitizeUri(effectivePersonalInfo.profilePhotoUri) ||
+      sanitizeUri(adminAppItem.avatarUrl);
+
     const docsForBackend = uploadedDocs.map(d => ({
       id: d.id,
       title: d.title,
@@ -676,16 +754,31 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       uri: sanitizeUri(d.uri),
     }));
 
+    if (resolvedAvatar && !docsForBackend.some(d => d.title === 'Photograph' || d.id === 'doc-photo')) {
+      docsForBackend.push({
+        id: 'doc-photo',
+        title: 'Photograph',
+        fileName: 'photograph.png',
+        fileSize: '2.0 MB',
+        uploadDate: new Date().toLocaleDateString('en-GB'),
+        uri: resolvedAvatar,
+      });
+    }
+
     const res = await apiClient.post<any>(ApiRoutes.MEMBERSHIPS.BASE, {
       category_id: catId,
       full_name: effectivePersonalInfo.fullName.trim() || authUser?.full_name || 'Applicant',
       mobile_number: cleanMobile,
       email: validEmail,
       password: effectivePersonalInfo.password?.trim() || undefined,
+      avatar: resolvedAvatar,
       police_station: effectivePersonalInfo.policeStation?.trim() || effectiveAddressInfo.policeStation?.trim() || undefined,
       personal_details: {
         dob: effectivePersonalInfo.dateOfBirth,
         gender: effectivePersonalInfo.gender,
+        avatar: resolvedAvatar,
+        avatar_url: resolvedAvatar,
+        profilePhotoUri: resolvedAvatar,
         address: fullAddress,
         address_line1: effectiveAddressInfo.addressLine1,
         address_line2: effectiveAddressInfo.addressLine2,
@@ -699,6 +792,8 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         application_id: adminAppItem.applicationId,
         membership_type: categoryTitle,
         post_name: categoryTitle,
+        avatar: resolvedAvatar,
+        avatar_url: resolvedAvatar,
         validity: resolvedValidity,
         validity_days: resolvedValidityDays,
         documents: docsForBackend,
@@ -714,9 +809,21 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     if (resData && resData.id) {
       const backendId = resData.id;
       adminAppItem.id = backendId;
-      if (resData.membership_number) {
-        adminAppItem.applicationId = resData.membership_number;
-        newRecord.applicationId = resData.membership_number;
+      const backendAppNumber =
+        resData.membership_number ||
+        resData.application_data?.application_id ||
+        resData.application_data?.membership_number;
+      if (backendAppNumber) {
+        adminAppItem.applicationId = backendAppNumber;
+        newRecord.applicationId = backendAppNumber;
+        try {
+          const match = String(backendAppNumber).match(/HRSJM-(\d+)/i);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (typeof localStorage !== 'undefined') localStorage.setItem('hrsjm_last_app_num', String(num));
+            if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('hrsjm_last_app_num', String(num));
+          }
+        } catch {}
       }
       newRecord.id = backendId;
       newRecord.status = 'Applied';
@@ -725,6 +832,25 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       setApplications([newRecord]);
       safeSetStorageItem('hrsjm_has_applied', 'true');
       safeSetStorageItem('hrsjm_user_membership_record', JSON.stringify(sanitizeForStorage(newRecord)));
+
+      if (resolvedAvatar) {
+        const currentAuthUser = useAuthStore.getState().user;
+        if (currentAuthUser) {
+          useAuthStore.getState().setUser({
+            ...currentAuthUser,
+            avatar: resolvedAvatar,
+          });
+          apiClient.patch(ApiRoutes.AUTH.ME, { avatar: resolvedAvatar }).catch(() => undefined);
+        }
+        safeSetStorageItem(`hrsjm_user_avatar_${cleanMobile}`, resolvedAvatar);
+        if (validEmail) {
+          safeSetStorageItem(`hrsjm_user_avatar_${validEmail.toLowerCase()}`, resolvedAvatar);
+        }
+        try {
+          useProfileStore.getState().updateAvatar(resolvedAvatar).catch(() => undefined);
+        } catch {}
+      }
+
       useProfileStore.getState().fetchProfile();
     }
     return newRecord;
@@ -813,16 +939,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     const categoryTitle =
       effectivePost?.postName || selectedMembershipType || 'District Active Member';
 
-    const existingApps = membershipApplicationsStore.getApplications();
-    const maxNum = existingApps.reduce((max, a) => {
-      const match = (a.applicationId || '').match(/HRSJM-(\d+)/i);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        return num > max ? num : max;
-      }
-      return max;
-    }, 2);
-    const appIdNumber = `HRSJM-${String(maxNum + 1).padStart(5, '0')}`;
+    const appIdNumber = resolveNextAppIdNumber();
 
     const adminAppItem: MembershipApplicationItem = {
       id: `app-user-${Date.now()}`,

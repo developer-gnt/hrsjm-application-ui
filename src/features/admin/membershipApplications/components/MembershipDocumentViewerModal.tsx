@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ActivityIndicator } from 'react-native';
 import {
   Image,
   Linking,
@@ -21,6 +22,8 @@ export interface DocumentItemData {
   fileSize: string;
   uploadDate: string;
   uri?: string;
+  fileUri?: string;
+  isUploaded?: boolean;
   verified?: boolean;
 }
 
@@ -52,12 +55,16 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
   onClose,
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [imageError, setImageError] = useState<boolean>(false);
+  const [imageLoading, setImageLoading] = useState<boolean>(true);
   const [hasLoadError, setHasLoadError] = useState<boolean>(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    setImageError(false);
+    setImageLoading(true);
     setHasLoadError(false);
     setZoomLevel(1);
-  }, [document?.id, document?.fileName, visible]);
+  }, [document?.id, document?.fileName, document?.uri, visible]);
 
   if (!document) return null;
 
@@ -65,18 +72,26 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
   const fileLower = (document.fileName || '').toLowerCase();
   const effectiveUri = resolveUploadedFileUri(document.fileName, document.uri);
 
-  const isImage =
+  const isImageFormat =
+    fileLower.endsWith('.jpg') ||
+    fileLower.endsWith('.jpeg') ||
+    fileLower.endsWith('.png') ||
+    fileLower.endsWith('.webp') ||
+    fileLower.endsWith('.gif') ||
+    fileLower.includes('photo') ||
+    fileLower.includes('avatar') ||
+    fileLower.includes('screenshot');
+
+  const isImageLoadable =
     Boolean(effectiveUri) &&
-    (fileLower.endsWith('.jpg') ||
-      fileLower.endsWith('.jpeg') ||
-      fileLower.endsWith('.png') ||
-      fileLower.endsWith('.webp') ||
-      fileLower.endsWith('.gif') ||
-      fileLower.includes('photo') ||
-      fileLower.includes('avatar') ||
-      effectiveUri?.startsWith('data:image') ||
+    !imageError &&
+    (effectiveUri?.startsWith('data:image') ||
       effectiveUri?.startsWith('blob:') ||
-      effectiveUri?.includes('unsplash.com'));
+      effectiveUri?.startsWith('http://') ||
+      effectiveUri?.startsWith('https://') ||
+      (Platform.OS !== 'web' && (effectiveUri?.startsWith('file://') || effectiveUri?.startsWith('content://'))));
+
+  const isImage = isImageFormat && isImageLoadable;
 
   const isPdf = fileLower.endsWith('.pdf') || titleLower.includes('pdf');
   const applicantName = applicant?.applicantName || 'Member Applicant';
@@ -99,7 +114,14 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
     const globalWin = typeof globalThis !== 'undefined' ? (globalThis as any).window : undefined;
     const activeUri = effectiveUri || document.uri;
 
-    if (activeUri) {
+    const isDirectWebUrl =
+      activeUri &&
+      (activeUri.startsWith('http://') ||
+        activeUri.startsWith('https://') ||
+        activeUri.startsWith('data:') ||
+        activeUri.startsWith('blob:'));
+
+    if (isDirectWebUrl) {
       if (Platform.OS === 'web' && globalWin) {
         globalWin.open(activeUri, '_blank');
         return;
@@ -108,6 +130,10 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
       return;
     }
 
+    if (Platform.OS !== 'web' && activeUri) {
+      Linking.openURL(activeUri).catch(() => {});
+      return;
+    }
     handleOpenPrint();
   };
 
@@ -262,20 +288,29 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
     const globalWin = typeof globalThis !== 'undefined' ? (globalThis as any).window : undefined;
     const activeUri = effectiveUri || document.uri;
 
-    if (Platform.OS === 'web' && globalWin && globalWin.document) {
-      if (activeUri && !activeUri.startsWith('blob:')) {
+    const isDirectWebUrl =
+      activeUri &&
+      (activeUri.startsWith('http://') ||
+        activeUri.startsWith('https://') ||
+        activeUri.startsWith('data:') ||
+        activeUri.startsWith('blob:'));
+
+    if (Platform.OS === 'web' && globalWin && globalWin.document && isDirectWebUrl && !activeUri.startsWith('blob:')) {
+      try {
         const link = globalWin.document.createElement('a');
         link.href = activeUri;
-        link.download = document.fileName;
+        link.download = document.fileName || `${document.title}.jpg`;
         globalWin.document.body.appendChild(link);
         link.click();
         globalWin.document.body.removeChild(link);
         return;
-      }
-      handleOpenPrint();
-    } else if (activeUri) {
+      } catch {}
+    } else if (Platform.OS !== 'web' && activeUri) {
       Linking.openURL(activeUri).catch(() => {});
+      return;
     }
+
+    handleOpenPrint();
   };
 
   const renderDocumentContent = () => {
@@ -296,9 +331,15 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
     }
 
     // 1. Direct Image Document Preview
-    if (isImage && effectiveUri) {
+    if (isImage && effectiveUri && !imageError) {
       return (
         <View style={styles.imagePreviewWrap}>
+          {imageLoading && (
+            <View style={styles.imageLoadingOverlay}>
+              <ActivityIndicator size="large" color="#0F2860" />
+              <Text style={styles.imageLoadingText}>Loading preview...</Text>
+            </View>
+          )}
           <Image
             source={{ uri: effectiveUri }}
             style={[
@@ -306,7 +347,12 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
               { transform: [{ scale: zoomLevel }] },
             ]}
             resizeMode="contain"
-            onError={() => setHasLoadError(true)}
+            onLoad={() => setImageLoading(false)}
+            onError={() => {
+              setImageLoading(false);
+              setImageError(true);
+              setHasLoadError(true);
+            }}
           />
         </View>
       );
@@ -1060,5 +1106,61 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  imageLoadingOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8FAFC',
+    zIndex: 2,
+  },
+  imageLoadingText: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 8,
+    fontWeight: '600',
+  },
+  formatPill: {
+    position: 'absolute',
+    bottom: -6,
+    backgroundColor: '#0F2860',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  formatPillText: {
+    fontSize: 9,
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+  noPreviewActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginVertical: 10,
+  },
+  sheetActionBtn: {
+    backgroundColor: '#0F2860',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 6,
+  },
+  sheetActionBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  sheetActionBtnSecondary: {
+    backgroundColor: '#EEF3FC',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#D8E5F8',
+  },
+  sheetActionBtnTextSecondary: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E3A8A',
   },
 });

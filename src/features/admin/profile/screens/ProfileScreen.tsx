@@ -6,7 +6,7 @@
  * navigation (matching the reference) and generates the real PDF via
  * `useIdCardFiles`.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -38,15 +38,20 @@ import {
   navigateToMembershipApplications,
   navigateToDonations,
 } from '../../../../core/navigation/appRouter';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ProfileSectionCard } from '../components/ProfileSectionCard';
 import { ProfileInfoRow } from '../components/ProfileInfoRow';
 import { ProfileToast, ToastState } from '../components/ProfileToast';
 import { AvatarPickerModal } from '../components/AvatarPickerModal';
+import { DEFAULT_ADMIN_AVATAR } from '../../../auth/components/UserProfileModal';
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { EditPersonalInfoModal } from '../components/EditPersonalInfoModal';
 import { MyIdCard } from '../components/MyIdCard';
-import { Lock, KeyRound, Calendar, BadgeCheck, Receipt } from '../../../../core/components/icons';
+import {
+  resolveIdCardRole,
+  generateRoleSpecificId,
+} from '../utils/format';
+import { Lock, KeyRound, Calendar, BadgeCheck, Receipt, Camera, Pencil } from '../../../../core/components/icons';
 import {
   PersonIcon,
   MailIcon,
@@ -61,6 +66,9 @@ import {
 } from '../components/ProfileIcons';
 import { useIdCardFiles } from '../hooks/useIdCardFiles';
 import { useMembership } from '../../../membership/context/MembershipContext';
+import { membershipApplicationsStore } from '../../membershipApplications/services/membershipApplicationsStore';
+import { usersStore } from '../../users/services/usersStore';
+import { UserItem } from '../../users/types/user.types';
 import { ApplicationStatusStepper } from '../../../membership/components/stepper';
 
 export interface ProfileScreenProps {
@@ -94,6 +102,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const profile = useProfileStore(state => state.profile);
+  const user = useAuthStore(state => state.user);
+  const effectiveAvatar = profile.avatar || user?.avatar || null;
   const updateAvatar = useProfileStore(state => state.updateAvatar);
   const stagedMessage = useProfileStore(state => state.stagedMessage);
   const consumeStagedMessage = useProfileStore(
@@ -192,6 +202,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       roleLower === 'user' ||
       (!isAdmin && !isSeeker && !isApproved));
 
+  const roleInfo = resolveIdCardRole(profile.role, profile.membershipType, authUser?.roles);
+
   // ID Card is available for Approved Members, Admins, Donation Seekers, or Member Profile context.
   // Standard/general users and applicants whose membership is not approved NEVER have an ID card.
   const isAllowedRoleForIdCard = (isMember || isAdmin || isSeeker || isMemberContext) && !isPlainUser;
@@ -255,22 +267,108 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     (membershipCtx.applications[0]?.status) ||
     'Applied';
 
+  const localSavedRecord = React.useMemo(() => {
+    try {
+      const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+      const raw = win?.sessionStorage?.getItem('hrsjm_user_membership_record') || win?.localStorage?.getItem('hrsjm_user_membership_record');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  }, []);
+
+  const matchedStoreApp = React.useMemo(() => {
+    try {
+      // Use getAllApplications() so Seeker, Member, and Registration apps are all included
+      const apps = membershipApplicationsStore.getAllApplications();
+      const userEmail = (authUser?.email || profile.email || '').toLowerCase().trim();
+      const userPhone = (authUser?.mobile_number || (authUser as any)?.phone || profile.phone || '').replace(/\D/g, '').slice(-10);
+      const userName = (authUser?.full_name || profile.fullName || '').toLowerCase().trim();
+      return apps.find(
+        a =>
+          (userEmail && a.email && a.email.toLowerCase().trim() === userEmail) ||
+          (userPhone && userPhone.length >= 10 && a.phone && a.phone.replace(/\D/g, '').includes(userPhone)) ||
+          (userName && a.applicantName && a.applicantName.toLowerCase().trim() === userName) ||
+          ((a as any).userId && authUser?.id && (a as any).userId === authUser.id)
+      );
+    } catch {}
+    return null;
+  }, [authUser, profile.email, profile.phone, profile.fullName]);
+
+  const matchedUserStoreItem = React.useMemo(() => {
+    try {
+      const all: UserItem[] = usersStore.getAllUsers();
+      const userEmail = (authUser?.email || profile.email || '').toLowerCase().trim();
+      const userPhone = (authUser?.mobile_number || (authUser as any)?.phone || profile.phone || '').replace(/\D/g, '').slice(-10);
+      return all.find(
+        (u: UserItem) =>
+          (userEmail && u.email && u.email.toLowerCase().trim() === userEmail) ||
+          (userPhone && userPhone.length >= 10 && u.phone && u.phone.replace(/\D/g, '').includes(userPhone)) ||
+          (u.id && (u.id === authUser?.id || u.id === profile.memberId))
+      );
+    } catch {}
+    return null;
+  }, [authUser, profile.email, profile.phone, profile.memberId]);
+
+  // Account Details User ID / Member ID
   const effectiveMemberId =
     profile.memberId ||
-    (isMember || isMemberContext ? (profile.adminId || 'HRSJM-00001') : undefined) ||
+    profile.adminId ||
+    generateRoleSpecificId(roleInfo.roleType, authUser?.id);
+
+  const isSeekerContext = Boolean(
+    isSeeker ||
+    (authUser as any)?.assistance_application_number ||
+    (authUser as any)?.account_type === 'seeker' ||
+    matchedStoreApp?.accountType === 'seeker' ||
+    matchedUserStoreItem?.userType === 'seeker' ||
+    matchedStoreApp?.applicationId?.startsWith('HRSJM-SEK') ||
+    matchedUserStoreItem?.applicationNumber?.startsWith('HRSJM-SEK')
+  );
+
+  // Application ID: Specifically for Application Status card (never fallback to User ID like USER5208)
+  const resolvedAppId =
+    (authUser as any)?.assistance_application_number ||
+    (matchedStoreApp?.applicationId && matchedStoreApp.applicationId !== 'HRSJM-SEK-0001' ? matchedStoreApp.applicationId : undefined) ||
+    (matchedUserStoreItem?.applicationNumber && matchedUserStoreItem.applicationNumber !== 'HRSJM-SEK-0001' ? matchedUserStoreItem.applicationNumber : undefined) ||
     membershipCtx.activeApplication?.applicationId ||
-    (membershipCtx.applications && membershipCtx.applications[0]?.applicationId) ||
-    'HRSJM-47611';
+    membershipCtx.activeApplication?.membershipId ||
+    membershipCtx.applications?.[0]?.applicationId ||
+    (profile.applicationId && profile.applicationId !== 'HRSJM-SEK-0001' ? profile.applicationId : undefined) ||
+    (matchedStoreApp as any)?.membershipNumber ||
+    localSavedRecord?.applicationId ||
+    localSavedRecord?.membershipId ||
+    (localSavedRecord?.id && String(localSavedRecord.id).startsWith('HRSJM-') ? localSavedRecord.id : undefined) ||
+    (authUser?.id ? `HRSJM-${String(authUser.id).replace(/\D/g, '').slice(-5).padStart(5, '0')}` : 'HRSJM-00029');
+
+  const effectiveApplicationId = resolvedAppId.startsWith('USER') ? 'HRSJM-00029' : resolvedAppId;
+
+  // Application Type: Specifically for Application Status card (never fallback to "General User")
+  const rawCtxType =
+    (isSeekerContext ? 'Donation Seeker' : undefined) ||
+    membershipCtx.activeApplication?.membershipType ||
+    membershipCtx.applications?.[0]?.membershipType ||
+    (matchedStoreApp?.membershipType && matchedStoreApp.membershipType !== 'General User' ? matchedStoreApp.membershipType : undefined) ||
+    (matchedStoreApp as any)?.category ||
+    (matchedStoreApp as any)?.postName ||
+    localSavedRecord?.membershipType ||
+    localSavedRecord?.categoryTitle ||
+    (profile.appliedMembershipType && profile.appliedMembershipType !== 'General User' ? profile.appliedMembershipType : undefined) ||
+    (profile.membershipType && profile.membershipType !== 'General User' ? profile.membershipType : undefined) ||
+    (matchedUserStoreItem?.userType === 'member' ? 'Individual Membership' : undefined);
+
+  const effectiveApplicationType =
+    (rawCtxType && rawCtxType !== 'General User' ? rawCtxType : undefined) ||
+    (isSeekerContext ? 'Donation Seeker' : 'Hon\'ble State Director');
 
   const effectiveMembershipType =
-    profile.membershipType ||
-    membershipCtx.activeApplication?.membershipType ||
-    'Individual Member';
+    (isMember || isMemberContext)
+      ? (effectiveApplicationType || (profile.membershipType !== 'General User' ? profile.membershipType : undefined) || roleInfo.defaultMembershipType)
+      : (profile.membershipType || roleInfo.defaultMembershipType);
 
   const cardProfile: AdminProfile = {
     ...profile,
     fullName: profile.fullName || profile.accountName || 'Member',
-    memberId: effectiveMemberId,
+    memberId: (isMember || isMemberContext) ? (effectiveApplicationId || effectiveMemberId) : effectiveMemberId,
     adminId: profile.adminId || effectiveMemberId,
     membershipType: effectiveMembershipType,
     accountStatus: profile.accountStatus || 'Active',
@@ -339,12 +437,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             accessibilityLabel="Change profile photo"
           >
             <AppAvatar
-              name={profile.accountName}
-              imageUrl={profile.avatar}
-              size={50}
+              name={profile.accountName || user?.full_name || 'Member'}
+              imageUrl={effectiveAvatar}
+              size={56}
             />
             <View style={styles.pencilBadge}>
-              <Text style={styles.pencilIcon}>✏️</Text>
+              <Camera size={11} color="#FFFFFF" strokeWidth={2} />
             </View>
           </TouchableOpacity>
 
@@ -461,6 +559,34 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </TouchableOpacity>
         </ProfileSectionCard>
 
+        {/* Payments & Transactions */}
+        <ProfileSectionCard
+          icon={<Receipt size={18} color={AdminColors.primary} />}
+          title="Payment & Transactions"
+          backgroundColor={AdminColors.primaryLight}
+          onEdit={() => navigation.navigate('TransactionHistory')}
+          editLabel="View All"
+          style={styles.sectionGap}
+        >
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('TransactionHistory')}
+            accessibilityRole="button"
+            accessibilityLabel="Open Transaction History"
+          >
+            <ProfileInfoRow
+              icon={<Receipt size={16} color={AdminColors.textSecondary} />}
+              label="Transaction History"
+              value="View full payment logs & receipts"
+              divider={false}
+              showValueWithTrailing={true}
+              trailing={
+                <ChevronRightIcon size={16} color={AdminColors.textSecondary} />
+              }
+            />
+          </TouchableOpacity>
+        </ProfileSectionCard>
+
         {/* Member details or Admin details based on logged-in role */}
         {isMember ? (
           <ProfileSectionCard
@@ -484,8 +610,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               />
               <ProfileInfoRow
                 icon={<IdCardIcon size={16} color={AdminColors.textSecondary} />}
-                label="Member ID"
-                value={profile.memberId || profile.adminId}
+                label={roleInfo.idLabel}
+                value={effectiveMemberId}
               />
               {profile.memberSince ? (
                 <ProfileInfoRow
@@ -538,6 +664,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               value={profile.role}
             />
             <ProfileInfoRow
+              icon={<IdCardIcon size={16} color={AdminColors.textSecondary} />}
+              label={roleInfo.idLabel}
+              value={effectiveMemberId}
+            />
+            <ProfileInfoRow
               icon={<BadgeCheckIcon size={16} />}
               label="Account Status"
               value={profile.accountStatus}
@@ -574,12 +705,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <ProfileInfoRow
                 icon={<BuildingIcon size={16} color={AdminColors.textSecondary} />}
                 label="Application Type"
-                value={effectiveMembershipType}
+                value={effectiveApplicationType}
               />
               <ProfileInfoRow
                 icon={<IdCardIcon size={16} color={AdminColors.textSecondary} />}
                 label="Application ID"
-                value={effectiveMemberId}
+                value={effectiveApplicationId}
               />
               <ProfileInfoRow
                 icon={<Calendar size={16} color={AdminColors.textSecondary} />}
@@ -733,7 +864,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               accessibilityLabel="Open the full My ID Card page"
               style={styles.idCardWrap}
             >
-              <MyIdCard profile={profile} width={cardWidth} />
+              <MyIdCard profile={cardProfile} width={cardWidth} />
             </TouchableOpacity>
           </View>
         ) : null}
@@ -751,7 +882,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             loading={busyAction === 'download'}
             disabled={busyAction !== null}
             icon={<DownloadIcon color={AdminColors.primaryDark} />}
-            onPress={() => download(profile)}
+            onPress={() => download(cardProfile)}
             style={styles.downloadButton}
           />
         </View>
@@ -760,7 +891,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       {/* Avatar Picker Modal */}
       <AvatarPickerModal
         visible={avatarPickerVisible}
-        currentAvatarUrl={profile.avatar}
+        currentAvatarUrl={effectiveAvatar}
         onClose={() => setAvatarPickerVisible(false)}
         onSelectAvatar={handleSelectAvatar}
       />
@@ -846,17 +977,17 @@ const styles = StyleSheet.create({
   },
   pencilBadge: {
     position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#011F39',
-    borderWidth: 1.5,
+    bottom: -1,
+    right: -1,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#082046',
+    borderWidth: 2,
     borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#011F39',
+    shadowColor: '#082046',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3,

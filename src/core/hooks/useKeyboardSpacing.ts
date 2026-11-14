@@ -39,15 +39,19 @@ export function useKeyboardSpacing(options: UseKeyboardSpacingOptions = {}) {
       });
     }
 
-    // 2. Web VisualViewport & Focus listeners
+    // 2. Web VisualViewport & Focus listeners (strictly browser web only)
     let onVisualViewportResize: (() => void) | null = null;
     let onFocusIn: ((e: any) => void) | null = null;
     let onFocusOut: ((e: any) => void) | null = null;
 
-    if (typeof window !== 'undefined') {
-      const vv = window.visualViewport;
+    if (
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      typeof window.addEventListener === 'function'
+    ) {
+      const vv = (window as any).visualViewport;
 
-      if (vv) {
+      if (vv && typeof vv.addEventListener === 'function') {
         onVisualViewportResize = () => {
           const vh = vv.height;
           const wh = window.innerHeight;
@@ -64,7 +68,7 @@ export function useKeyboardSpacing(options: UseKeyboardSpacingOptions = {}) {
       }
 
       onFocusIn = (e: any) => {
-        const target = e.target;
+        const target = e?.target;
         if (
           target &&
           (target.tagName === 'INPUT' ||
@@ -92,8 +96,10 @@ export function useKeyboardSpacing(options: UseKeyboardSpacingOptions = {}) {
         activeInputRef.current = null;
         setTimeout(() => {
           if (!activeInputRef.current) {
-            if (window.visualViewport) {
-              const diff = window.innerHeight - (window.visualViewport.height || window.innerHeight);
+            if ((window as any).visualViewport) {
+              const diff =
+                window.innerHeight -
+                ((window as any).visualViewport.height || window.innerHeight);
               if (diff <= 100) {
                 setKeyboardHeight(0);
                 setIsKeyboardVisible(false);
@@ -113,12 +119,20 @@ export function useKeyboardSpacing(options: UseKeyboardSpacingOptions = {}) {
     return () => {
       showSub?.remove();
       hideSub?.remove();
-      if (typeof window !== 'undefined') {
-        if (window.visualViewport && onVisualViewportResize) {
-          window.visualViewport.removeEventListener('resize', onVisualViewportResize);
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        if (
+          (window as any).visualViewport &&
+          onVisualViewportResize &&
+          typeof (window as any).visualViewport.removeEventListener === 'function'
+        ) {
+          (window as any).visualViewport.removeEventListener('resize', onVisualViewportResize);
         }
-        if (onFocusIn) window.removeEventListener('focusin', onFocusIn);
-        if (onFocusOut) window.removeEventListener('focusout', onFocusOut);
+        if (onFocusIn && typeof window.removeEventListener === 'function') {
+          window.removeEventListener('focusin', onFocusIn);
+        }
+        if (onFocusOut && typeof window.removeEventListener === 'function') {
+          window.removeEventListener('focusout', onFocusOut);
+        }
       }
     };
   }, [minKeyboardHeight]);
@@ -153,4 +167,3 @@ export function useKeyboardSpacing(options: UseKeyboardSpacingOptions = {}) {
     dismissKeyboard: Keyboard.dismiss,
   };
 }
-

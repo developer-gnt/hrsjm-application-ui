@@ -50,7 +50,7 @@ export const HomeTabBar: React.FC<HomeTabBarProps> = ({
             <AppIcon
               name={tab.icon}
               size={22}
-              color={isActive ? AdminColors.accentGold : AdminColors.textSecondary}
+              color={isActive ? '#E9B82E' : '#718096'}
               filled={isActive && tab.icon === 'home'}
             />
             <Text style={[styles.label, isActive && styles.labelActive]}>
@@ -84,13 +84,16 @@ const styles = StyleSheet.create({
     backgroundColor: AdminColors.accentGoldLight,
   },
   label: {
-    fontSize: 10,
     lineHeight: 13,
     marginTop: 3,
-    color: AdminColors.textSecondary,
+    color: '#718096',
+    fontFamily: 'Inter',
+    fontSize: 11,
   },
   labelActive: {
-    color: AdminColors.accentGold,
+    color: '#E9B82E',
+    fontFamily: 'Inter',
+    fontSize: 11,
     fontWeight: '700',
   },
 });

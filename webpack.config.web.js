@@ -31,7 +31,7 @@ if (fs.existsSync(envPath)) {
 }
 
 // Environment mode: 'local' (default 127.0.0.1:3000) or 'production' (194.164.151.17:3000)
-const APP_ENV = process.env.APP_ENV || 'local';
+const APP_ENV = process.env.APP_ENV || 'production';
 const BACKEND_TARGET =
   process.env.BACKEND_PROXY_TARGET ||
   (APP_ENV === 'production' ? 'http://194.164.151.17:3000' : 'http://127.0.0.1:3000');

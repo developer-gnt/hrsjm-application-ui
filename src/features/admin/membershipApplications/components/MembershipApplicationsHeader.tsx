@@ -1,11 +1,6 @@
 import React from 'react';
-import {
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AdminHeader } from '../../../../app/navigation/AdminHeader';
 import {
   AdminColors,
   Spacing,
@@ -13,12 +8,8 @@ import {
   FontFamilies,
   Typography,
 } from '../../../../core';
-import { Menu, Bell } from '../../../../core/components/icons';
-import { useDynamicUnreadCount } from '../../notifications/store/notificationsStore';
 
-const HRSJM_LOGO = require('../../../../assets/hrsjm_logo.png');
-
-interface MembershipApplicationsHeaderProps {
+export interface MembershipApplicationsHeaderProps {
   paddingTop?: number;
   title?: string;
   subtitle?: string;
@@ -26,266 +17,98 @@ interface MembershipApplicationsHeaderProps {
   onNotificationsPress?: () => void;
   onProfilePress?: () => void;
   onSignupPress?: () => void;
+  onNavigate?: (target: string) => void;
 }
 
+/**
+ * Standardized MembershipApplicationsHeader per docs/design.md:
+ * - Standardized primary navigation header with #FFFFFF background, 56px height,
+ *   subtle lower border #DCE4EC, official brand emblem, notifications with unread badge,
+ *   and profile avatar with dropdown actions.
+ * - Warm ivory #FAF7F0 editorial page title section directly below.
+ */
 export const MembershipApplicationsHeader: React.FC<MembershipApplicationsHeaderProps> = ({
-  paddingTop = 0,
-  title = 'All Applications',
-  subtitle = 'Review, verify and manage all applications.',
+  title = 'Membership Applications',
+  subtitle = 'Review, verify and manage membership applications.',
   onMenuPress,
   onNotificationsPress,
   onProfilePress,
   onSignupPress,
+  onNavigate,
 }) => {
-  const unreadCount = useDynamicUnreadCount();
-
   return (
-    <View style={[styles.wrapper, { paddingTop: paddingTop + Spacing.sm }]}>
-      {/* Top Bar */}
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={onMenuPress}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Open Navigation Menu"
-        >
-          <Menu size={20} color="#334155" strokeWidth={2.2} />
-        </TouchableOpacity>
+    <View style={styles.container}>
+      {/* Standardized Primary Navigation Header per docs/design.md */}
+      <AdminHeader
+        onOpenMore={onMenuPress}
+        onPressNotifications={onNotificationsPress}
+        onPressProfile={onProfilePress}
+        onNavigate={onNavigate}
+      />
 
-        <View style={styles.centerBrand}>
-          <Image
-            source={HRSJM_LOGO}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.brandTitle}>HRSJM</Text>
+      {/* Editorial Content Title Section */}
+      <View style={styles.titleSectionWrapper}>
+        <View style={styles.titleRow}>
+          <View style={styles.titleSection}>
+            <Text style={styles.pageTitle}>{title}</Text>
+            {subtitle ? <Text style={styles.pageSubtitle}>{subtitle}</Text> : null}
+          </View>
+          {onSignupPress ? (
+            <TouchableOpacity
+              style={styles.signupButton}
+              onPress={onSignupPress}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Test Sign Up flow"
+            >
+              <Text style={styles.signupButtonIcon}>👤+</Text>
+              <Text style={styles.signupButtonText}>Sign Up</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
-
-        <View style={styles.rightActions}>
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={onNotificationsPress}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-          >
-            <Bell size={22} color="#1E293B" strokeWidth={2} />
-            {unreadCount > 0 ? (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadBadgeText}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </Text>
-              </View>
-            ) : null}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={onProfilePress}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Admin Profile"
-          >
-            <View style={styles.avatarContainer}>
-              <Image
-                source={{
-                  uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80',
-                }}
-                style={styles.avatarImage}
-              />
-            </View>
-            <Text style={styles.dropdownChevron}>▾</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Page Title & Subtitle with Sign Up action button */}
-      <View style={styles.titleRow}>
-        <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>{title}</Text>
-          <Text style={styles.pageSubtitle}>{subtitle}</Text>
-        </View>
-        {onSignupPress ? (
-          <TouchableOpacity
-            style={styles.signupButton}
-            onPress={onSignupPress}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Test Sign Up flow"
-          >
-            <Text style={styles.signupButtonIcon}>👤+</Text>
-            <Text style={styles.signupButtonText}>Sign Up</Text>
-          </TouchableOpacity>
-        ) : null}
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    backgroundColor: AdminColors.background,
+  container: {
+    backgroundColor: '#FAF7F0',
+  },
+  titleSectionWrapper: {
+    backgroundColor: '#FAF7F0',
     paddingHorizontal: Spacing.base,
-    paddingBottom: Spacing.sm,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.xs,
-  },
-  menuButton: {
-    width: 38,
-    height: 38,
-    borderRadius: BorderRadius.full,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  hamburgerIcon: {
-    width: 18,
-    height: 14,
-    justifyContent: 'space-between',
-  },
-  hamburgerBar: {
-    width: 18,
-    height: 2,
-    backgroundColor: '#334155',
-    borderRadius: 1,
-  },
-  hamburgerBarMiddle: {
-    width: 14,
-  },
-  centerBrand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  logoImage: {
-    width: 34,
-    height: 34,
-  },
-  brandTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: AdminColors.primary,
-    letterSpacing: 0.5,
-  },
-  rightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  notificationButton: {
-    position: 'relative',
-    padding: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bellIcon: {
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bellDome: {
-    width: 14,
-    height: 11,
-    borderTopLeftRadius: 7,
-    borderTopRightRadius: 7,
-    backgroundColor: '#1E293B',
-  },
-  bellBase: {
-    width: 18,
-    height: 2.5,
-    borderRadius: 1,
-    backgroundColor: '#1E293B',
-    marginTop: 1,
-  },
-  bellClapper: {
-    width: 4,
-    height: 3,
-    borderBottomLeftRadius: 2,
-    borderBottomRightRadius: 2,
-    backgroundColor: '#1E293B',
-    marginTop: 0.5,
-  },
-  unreadBadge: {
-    position: 'absolute',
-    top: 1,
-    right: 1,
-    backgroundColor: '#DC2626',
-    minWidth: 16,
-    height: 16,
-    borderRadius: BorderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-  },
-  unreadBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  profileButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  avatarContainer: {
-    width: 34,
-    height: 34,
-    borderRadius: BorderRadius.full,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#E2E8F0',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  dropdownChevron: {
-    fontSize: 12,
-    color: '#475569',
-    marginLeft: 1,
-    fontWeight: '600',
+    paddingTop: Spacing.base,
+    paddingBottom: Spacing.xs,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginTop: Spacing.md,
     marginBottom: Spacing.xs,
   },
   titleSection: {
     flex: 1,
-    paddingRight: 8,
+    paddingRight: Spacing.xs,
   },
   pageTitle: {
     fontFamily: FontFamilies.display,
     fontSize: 24,
     fontWeight: '700',
-    color: AdminColors.textPrimary,
+    color: '#0B2F52',
     letterSpacing: -0.3,
   },
   pageSubtitle: {
     ...Typography.body,
     fontSize: 13,
-    color: AdminColors.textSecondary,
+    color: '#718096',
     marginTop: 3,
     lineHeight: 18,
   },
   signupButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AdminColors.accentGold,
+    backgroundColor: '#FAD465',
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: BorderRadius.button,
@@ -299,11 +122,13 @@ const styles = StyleSheet.create({
   },
   signupButtonIcon: {
     fontSize: 12,
-    color: AdminColors.primaryDark,
+    color: '#011F39',
   },
   signupButtonText: {
     fontSize: 12,
     fontWeight: '700',
-    color: AdminColors.primaryDark,
+    color: '#011F39',
   },
 });
+
+export default MembershipApplicationsHeader;

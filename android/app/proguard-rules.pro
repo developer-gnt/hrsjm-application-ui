@@ -8,3 +8,17 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# MMKV & Nitro Modules
+-keep class com.tencent.mmkv.** { *; }
+-keep class com.margelo.nitro.** { *; }
+-dontwarn com.tencent.mmkv.**
+
+# React Native Keychain
+-keep class com.oblador.keychain.** { *; }
+-keep class com.facebook.crypto.** { *; }
+-dontwarn androidx.datastore.**
+
+# Kotlin Coroutines
+-keepclassmembers class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.coroutines.**

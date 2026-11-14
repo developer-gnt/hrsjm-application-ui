@@ -222,7 +222,10 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
     }
   };
 
-  const latestRequest = requests.length > 0 ? requests[0] : null;
+  // Prioritize active financial aid requests (amount > 0) over initial account verification requests
+  const activeAidRequest = requests.find(r => Number(r.requested_amount) > 0);
+  const latestRequest = activeAidRequest || (requests.length > 0 ? requests[0] : null);
+  const isActualAid = Boolean(latestRequest && Number(latestRequest.requested_amount) > 0);
 
   if (isApplyPageVisible) {
     return (
@@ -283,7 +286,9 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
             <AppCard style={styles.activeAidCard}>
               <View style={styles.activeAidHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.activeAidTag}>ACTIVE ASSISTANCE REQUEST</Text>
+                  <Text style={styles.activeAidTag}>
+                    {isActualAid ? 'ACTIVE ASSISTANCE REQUEST' : 'ACCOUNT VERIFICATION'}
+                  </Text>
                   <Text style={styles.activeAidReason}>{latestRequest.reason}</Text>
                   <Text style={styles.activeAidRef}>
                     ASST-{latestRequest.id.slice(0, 8).toUpperCase()} •{' '}
@@ -297,12 +302,15 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
                 <AssistanceStatusBadge status={latestRequest.status} />
               </View>
 
-              <View style={styles.amountBar}>
-                <Text style={styles.amountBarLabel}>Requested Aid Amount:</Text>
-                <Text style={styles.amountBarValue}>
-                  ₹{Number(latestRequest.requested_amount).toLocaleString('en-IN')}
-                </Text>
-              </View>
+              {/* Only show Requested Aid Amount when an actual financial aid amount was requested */}
+              {isActualAid && (
+                <View style={styles.amountBar}>
+                  <Text style={styles.amountBarLabel}>Requested Aid Amount:</Text>
+                  <Text style={styles.amountBarValue}>
+                    ₹{Number(latestRequest.requested_amount).toLocaleString('en-IN')}
+                  </Text>
+                </View>
+              )}
 
               {/* Visual 4-Step Timeline Stepper */}
               <View style={styles.stepperWrap}>
@@ -342,6 +350,29 @@ export const SeekerHomeScreen: React.FC<SeekerHomeScreenProps> = ({
                 </TouchableOpacity>
               </View>
             </AppCard>
+          )}
+
+          {/* If the user only has an account verification request and hasn't yet applied for financial aid, show the apply CTA below */}
+          {latestRequest && !isActualAid && (
+            <View style={{ marginTop: Spacing.md }}>
+              <AppCard style={styles.needAidCard}>
+                <View style={styles.needAidContent}>
+                  <Text style={styles.needAidBadge}>HUMANITARIAN ASSISTANCE</Text>
+                  <Text style={styles.needAidTitle}>
+                    Need Emergency Medical, Education, or Legal Relief?
+                  </Text>
+                  <Text style={styles.needAidDesc}>
+                    HRSJM provides direct financial, legal, and welfare assistance for approved causes. Submit your request for rapid verification.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.applyNowBtn}
+                    onPress={handleOpenApply}
+                  >
+                    <Text style={styles.applyNowBtnText}>+ Apply for Assistance</Text>
+                  </TouchableOpacity>
+                </View>
+              </AppCard>
+            </View>
           )}
         </View>
 

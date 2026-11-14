@@ -17,6 +17,7 @@ export const permissionService = {
     const response = await apiClient.get<MePermissionsResponse>(
       ApiRoutes.USERS.ME_PERMISSIONS,
     );
-    return response.data;
+    const data = (response as any)?.data || response;
+    return data;
   },
 };

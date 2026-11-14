@@ -29,6 +29,7 @@ import {
 } from '../types/payment.types';
 import { globalPaymentService, PaymentOutcomeError } from '../services/payment.service';
 import { cashfreeApi } from '../api/cashfree.api';
+import { TEST_GATEWAY_CARDS, TEST_GATEWAY_UPIS } from '../services/mock-gateway.service';
 import {
   formatCardNumber,
   validateUpiFormat,
@@ -95,6 +96,9 @@ const getFriendlyDeclineSubheading = (raw?: string): string => {
   if (lower.includes('bank') || lower.includes('issuer') || lower.includes('decline')) {
     return 'Your bank or payment provider declined the transaction authorization.';
   }
+  if (lower.includes('order_init') || lower.includes('failed to initiate') || lower.includes('could not create order')) {
+    return 'Unable to establish a checkout session with the payment gateway. No money has been debited.';
+  }
   if (lower.includes('bad gateway') || lower.includes('502') || lower.includes('503') || lower.includes('maintenance')) {
     return 'The payment gateway is temporarily unavailable. Your money is completely safe and no amount was debited.';
   }
@@ -117,6 +121,9 @@ const getFriendlyDeclineReason = (raw?: string): string => {
   }
   if (lower.includes('bank') || lower.includes('issuer')) {
     return 'Transaction was declined by your bank or card issuer. Please try an alternate card or UPI app.';
+  }
+  if (lower.includes('order_init') || lower.includes('failed to initiate') || lower.includes('could not create order')) {
+    return 'The payment gateway could not create an order session. Please check your internet connection or try again in a few moments.';
   }
   if (lower.includes('bad gateway') || lower.includes('502') || lower.includes('503') || lower.includes('maintenance')) {
     return 'Payment gateway service is currently undergoing routine maintenance. Please try again shortly.';
@@ -419,8 +426,8 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
       return;
     }
 
-    // Validation per selected method - bypassed as Cashfree Gateway collects and validates payment details directly
-    if (false as boolean) {
+    // Validation per selected method
+    if (true) {
       if (paymentMethod === 'upi') {
         const trimmedUpi = upiId.trim();
         if (trimmedUpi.length > 0) {
@@ -1184,8 +1191,8 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           </View>
         </View>
 
-        {/* Commented out: internal payment method selector (Cashfree PG handles all payment methods directly) */}
-        {false && (
+        {/* Payment Method Selector */}
+        {true && (
         <View style={styles.methodsSection}>
           <Text style={styles.chooseMethodHeading}>Select Payment Method</Text>
 
@@ -1472,6 +1479,35 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
                   </View>
                 )}
 
+                {/* Test / Fake UPI IDs for quick sandbox testing */}
+                <View style={styles.handleChipsContainer}>
+                  <Text style={styles.handleChipsLabel}>Test UPI IDs:</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                    contentContainerStyle={styles.handleChipsScroll}
+                  >
+                    {TEST_GATEWAY_UPIS.map(item => (
+                      <TouchableOpacity
+                        key={item.handle}
+                        style={styles.handleChip}
+                        onPress={() => {
+                          setUpiId(item.handle);
+                          setUpiError(null);
+                          setUpiTouched(false);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.handleChipText}>
+                          {item.handle} ({item.label})
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
                 {/* Inline Error Message */}
                 {(upiTouched || !!upiError) && upiId.trim().length > 0 && !validateUpiFormat(upiId.trim()).isValid && (
                   <View style={styles.inlineErrorBox}>
@@ -1491,6 +1527,37 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
           {paymentMethod === 'card' && (
             <View style={styles.subFormContainer}>
               <Text style={styles.subFormHeading}>Card Details</Text>
+
+              {/* Test / Fake Cards for quick sandbox testing */}
+              <View style={[styles.handleChipsContainer, { marginTop: 0, marginBottom: 10 }]}>
+                <Text style={styles.handleChipsLabel}>Test Cards:</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode="on-drag"
+                  contentContainerStyle={styles.handleChipsScroll}
+                >
+                  {TEST_GATEWAY_CARDS.map(card => (
+                    <TouchableOpacity
+                      key={card.number}
+                      style={styles.handleChip}
+                      onPress={() => {
+                        setCardNumber(card.number);
+                        setCardExpiry(card.expiry);
+                        setCardCvv(card.cvv);
+                        if (!cardHolder.trim()) {
+                          setCardHolder(donorName || user?.full_name || 'Test Member');
+                        }
+                        setCardErrors({});
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.handleChipText}>{card.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
 
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -2005,20 +2072,22 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
     const friendlySubheading = getFriendlyDeclineSubheading(failureError?.message || failureError?.reason);
     const friendlyReason = getFriendlyDeclineReason(failureError?.message || failureError?.reason);
 
-    const paymentMethodDisplay =
-      paymentMethod === 'upi'
-        ? selectedUpiApp === 'gpay'
-          ? 'UPI (Google Pay)'
-          : selectedUpiApp === 'phonepe'
-          ? 'UPI (PhonePe)'
-          : selectedUpiApp === 'paytm'
-          ? 'UPI (Paytm)'
-          : 'UPI (BHIM)'
-        : paymentMethod === 'card'
-        ? 'Debit / Credit Card'
-        : paymentMethod === 'netbanking'
-        ? selectedBank
-        : selectedWallet;
+    const isInitFailure = failureError?.code === 'ORDER_INIT_FAILED';
+    const paymentMethodDisplay = isInitFailure
+      ? 'Payment Gateway Setup'
+      : paymentMethod === 'upi'
+      ? selectedUpiApp === 'gpay'
+        ? 'UPI (Google Pay)'
+        : selectedUpiApp === 'phonepe'
+        ? 'UPI (PhonePe)'
+        : selectedUpiApp === 'paytm'
+        ? 'UPI (Paytm)'
+        : 'UPI (BHIM)'
+      : paymentMethod === 'card'
+      ? 'Debit / Credit Card'
+      : paymentMethod === 'netbanking'
+      ? selectedBank
+      : selectedWallet;
 
     return (
       <View style={styles.stageContainer}>
@@ -2084,7 +2153,9 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
               <Text style={styles.receiptMetaLabel}>Payment Status</Text>
               <View style={styles.failedBadge}>
                 <View style={styles.failedBadgeDot} />
-                <Text style={styles.failedBadgeText}>Declined</Text>
+                <Text style={styles.failedBadgeText}>
+                  {isInitFailure ? 'Init Failed' : 'Declined'}
+                </Text>
               </View>
             </View>
 

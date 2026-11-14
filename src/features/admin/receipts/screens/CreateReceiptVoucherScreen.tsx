@@ -48,7 +48,6 @@ export const CreateReceiptVoucherScreen: React.FC<
 
   // Fetch available accounts to supply sensible defaults
   const { accounts: incomeAccounts } = useAccounts('INCOME');
-  const { accounts: assetAccounts } = useAccounts('ASSET');
 
   const [receiptDate, setReceiptDate] = useState(todayIso());
   const [receivedFrom, setReceivedFrom] = useState('');
@@ -57,8 +56,7 @@ export const CreateReceiptVoucherScreen: React.FC<
   const [description, setDescription] = useState('');
 
   const [incomeAccount, setIncomeAccount] = useState<AccountItem | null>(null);
-  const [receivedInAccount, setReceivedInAccount] = useState<AccountItem | null>(null);
-  const [pickerTarget, setPickerTarget] = useState<'income' | 'received_in' | null>(null);
+  const [pickerTarget, setPickerTarget] = useState<'income' | null>(null);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -76,24 +74,6 @@ export const CreateReceiptVoucherScreen: React.FC<
     }
   }, [incomeAccounts, incomeAccount]);
 
-  // Auto-select / sync Received In (Asset) Account based on payment method
-  useEffect(() => {
-    if (!receivedInAccount && assetAccounts.length > 0) {
-      if (paymentMethod === 'CASH') {
-        const cashAcc =
-          assetAccounts.find(
-            a => /cash/i.test(a.account_name) || a.account_code === '1002',
-          ) || assetAccounts[0];
-        if (cashAcc) setReceivedInAccount(cashAcc);
-      } else {
-        const bankAcc =
-          assetAccounts.find(
-            a => /bank/i.test(a.account_name) || a.account_code === '1001',
-          ) || assetAccounts[0];
-        if (bankAcc) setReceivedInAccount(bankAcc);
-      }
-    }
-  }, [assetAccounts, receivedInAccount, paymentMethod]);
 
   const handlePaymentMethodChange = (method: PaymentMethod) => {
     setPaymentMethod(method);
@@ -104,34 +84,6 @@ export const CreateReceiptVoucherScreen: React.FC<
         return next;
       });
     }
-    // Switch asset account to match payment method
-    if (assetAccounts.length > 0) {
-      if (method === 'CASH') {
-        const cashAcc = assetAccounts.find(
-          a => /cash/i.test(a.account_name) || a.account_code === '1002',
-        );
-        if (cashAcc) {
-          setReceivedInAccount(cashAcc);
-          setFieldErrors(prev => {
-            const next = { ...prev };
-            delete next.received_in_account_id;
-            return next;
-          });
-        }
-      } else {
-        const bankAcc = assetAccounts.find(
-          a => /bank/i.test(a.account_name) || a.account_code === '1001',
-        );
-        if (bankAcc) {
-          setReceivedInAccount(bankAcc);
-          setFieldErrors(prev => {
-            const next = { ...prev };
-            delete next.received_in_account_id;
-            return next;
-          });
-        }
-      }
-    }
   };
 
   const handleCreate = () => {
@@ -139,7 +91,6 @@ export const CreateReceiptVoucherScreen: React.FC<
       receipt_date: receiptDate,
       received_from: receivedFrom,
       income_account_id: incomeAccount?.id ?? '',
-      received_in_account_id: receivedInAccount?.id ?? '',
       amount,
       payment_method: paymentMethod ?? undefined,
       description,
@@ -149,8 +100,7 @@ export const CreateReceiptVoucherScreen: React.FC<
       setFieldErrors(errors);
 
       const missing: string[] = [];
-      if (errors.income_account_id) missing.push('Income Account');
-      if (errors.received_in_account_id) missing.push('Received In Account');
+      if (errors.income_account_id) missing.push('Type');
       if (errors.amount) missing.push('Valid Amount');
       if (errors.received_from) missing.push('Received From');
       if (errors.receipt_date) missing.push('Receipt Date');
@@ -172,7 +122,6 @@ export const CreateReceiptVoucherScreen: React.FC<
         receipt_date: parsed.data.receipt_date,
         received_from: parsed.data.received_from,
         income_account_id: parsed.data.income_account_id,
-        received_in_account_id: parsed.data.received_in_account_id,
         amount: Number(parsed.data.amount),
         payment_method: parsed.data.payment_method,
         reference_number: parsed.data.reference_number || undefined,
@@ -213,13 +162,13 @@ export const CreateReceiptVoucherScreen: React.FC<
         keyboardDismissMode="on-drag"
         bounces={false}
       >
-        <Text style={styles.journalHint}>Dr Bank/Cash Account · Cr Income Account</Text>
+        <Text style={styles.journalHint}>Record official income receipt and generate voucher</Text>
 
         {formError ? <Text style={styles.errorBanner}>{formError}</Text> : null}
 
         <View style={styles.pickerRow}>
           <View style={styles.pickerColumn}>
-            <Text style={styles.pickerLabel}>Income Account *</Text>
+            <Text style={styles.pickerLabel}>Type *</Text>
             <TouchableOpacity
               style={[
                 styles.pickerButton,
@@ -231,7 +180,7 @@ export const CreateReceiptVoucherScreen: React.FC<
               <Text numberOfLines={1} style={styles.pickerValue}>
                 {incomeAccount
                   ? `${incomeAccount.account_name}${incomeAccount.account_code ? ` (${incomeAccount.account_code})` : ''}`
-                  : 'Select income account'}
+                  : 'Select type'}
               </Text>
             </TouchableOpacity>
             {fieldErrors.income_account_id ? (
@@ -240,28 +189,6 @@ export const CreateReceiptVoucherScreen: React.FC<
           </View>
         </View>
 
-        <View style={styles.pickerRow}>
-          <View style={styles.pickerColumn}>
-            <Text style={styles.pickerLabel}>Received In (Bank/Cash) *</Text>
-            <TouchableOpacity
-              style={[
-                styles.pickerButton,
-                fieldErrors.received_in_account_id ? styles.pickerError : null,
-              ]}
-              onPress={() => setPickerTarget('received_in')}
-              activeOpacity={0.8}
-            >
-              <Text numberOfLines={1} style={styles.pickerValue}>
-                {receivedInAccount
-                  ? `${receivedInAccount.account_name}${receivedInAccount.account_code ? ` (${receivedInAccount.account_code})` : ''}`
-                  : 'Select bank/cash account'}
-              </Text>
-            </TouchableOpacity>
-            {fieldErrors.received_in_account_id ? (
-              <Text style={styles.fieldError}>{fieldErrors.received_in_account_id}</Text>
-            ) : null}
-          </View>
-        </View>
 
         <AppInput
           label="Amount (₹)"
@@ -356,31 +283,17 @@ export const CreateReceiptVoucherScreen: React.FC<
 
       <AccountPickerModal
         visible={pickerTarget === 'income'}
-        title="Select Income Account"
+        title="Select Type"
         accountType="INCOME"
         selectedId={incomeAccount?.id}
+        filter={acc => /donation/i.test(acc.account_name) || acc.account_code === '4003'}
+        hideAdd={true}
         onSelect={acc => {
           setIncomeAccount(acc);
           setPickerTarget(null);
           setFieldErrors(prev => {
             const next = { ...prev };
             delete next.income_account_id;
-            return next;
-          });
-        }}
-        onClose={() => setPickerTarget(null)}
-      />
-      <AccountPickerModal
-        visible={pickerTarget === 'received_in'}
-        title="Select Bank/Cash Account"
-        accountType="ASSET"
-        selectedId={receivedInAccount?.id}
-        onSelect={acc => {
-          setReceivedInAccount(acc);
-          setPickerTarget(null);
-          setFieldErrors(prev => {
-            const next = { ...prev };
-            delete next.received_in_account_id;
             return next;
           });
         }}

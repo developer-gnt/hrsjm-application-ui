@@ -9,8 +9,8 @@ export const reportKeys = {
     [...reportKeys.all, 'trial-balance', asOfDate, Boolean(includeZero)] as const,
   trialBalanceSummary: (asOfDate: string) =>
     [...reportKeys.all, 'trial-balance-summary', asOfDate] as const,
-  profitLoss: (startDate: string, endDate: string) =>
-    [...reportKeys.all, 'profit-loss', startDate, endDate] as const,
+  profitLoss: (startDate: string, endDate: string, includeZero?: boolean) =>
+    [...reportKeys.all, 'profit-loss', startDate, endDate, Boolean(includeZero)] as const,
   profitLossSummary: (startDate: string, endDate: string) =>
     [...reportKeys.all, 'profit-loss-summary', startDate, endDate] as const,
   balanceSheet: (asOfDate: string) =>
@@ -45,10 +45,19 @@ export const useTrialBalanceSummary = (asOfDate: string) => {
   });
 };
 
-export const useProfitLoss = (startDate: string, endDate: string) => {
+export const useProfitLoss = (
+  startDate: string,
+  endDate: string,
+  includeZeroBalance: boolean = false,
+) => {
   return useQuery({
-    queryKey: reportKeys.profitLoss(startDate, endDate),
-    queryFn: () => reportsService.getProfitLoss({ start_date: startDate, end_date: endDate }),
+    queryKey: reportKeys.profitLoss(startDate, endDate, includeZeroBalance),
+    queryFn: () =>
+      reportsService.getProfitLoss({
+        start_date: startDate,
+        end_date: endDate,
+        include_zero_balances: includeZeroBalance,
+      }),
     enabled: Boolean(startDate && endDate),
     staleTime: 60_000,
   });

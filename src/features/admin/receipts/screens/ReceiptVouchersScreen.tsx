@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -25,7 +25,9 @@ import {
   UserCheck,
 } from '../../../../core/components/icons';
 import { PermissionDenied } from '../../../../core/permissions/permission.guard';
-import { can } from '../../../../core/permissions/can';
+import { can, isUserAdmin, useCan } from '../../../../core/permissions/can';
+import { usePermissionStore } from '../../../../core/permissions/permission.store';
+import { useAuthStore } from '../../../auth/store/authStore';
 import { PermissionKeys } from '../../../../core/permissions/permission.constants';
 import { useDebouncedValue } from '../../../../core/hooks/useDebouncedValue';
 import {
@@ -300,7 +302,32 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
     setPage(1);
   };
 
-  if (!can(PermissionKeys.RECEIPT_ENTRY_READ)) {
+  const user = useAuthStore(state => state.user);
+  const isAdmin = isUserAdmin(user);
+  const canReadReceipts = useCan(PermissionKeys.RECEIPT_ENTRY_READ);
+  const canCreateReceipts = useCan(PermissionKeys.RECEIPT_ENTRY_CREATE);
+  const isLoaded = usePermissionStore(state => state.isLoaded);
+
+  useEffect(() => {
+    if (!isAdmin && !isLoaded) {
+      usePermissionStore.getState().loadPermissions().catch(() => undefined);
+    }
+  }, [isAdmin, isLoaded]);
+
+  if (!isAdmin && !isLoaded) {
+    return (
+      <View style={styles.flex}>
+        <AdminHeader
+          onNavigate={target => navigation.navigate(target as any)}
+        />
+        <View style={styles.stateWrap}>
+          <AppLoader message="Verifying permissions…" />
+        </View>
+      </View>
+    );
+  }
+
+  if (!isAdmin && !canReadReceipts) {
     return (
       <View style={styles.flex}>
         <AdminHeader
@@ -331,7 +358,7 @@ export const ReceiptVouchersScreen: React.FC<ReceiptVouchersScreenProps> = ({
           </Text>
         </View>
 
-        {can(PermissionKeys.RECEIPT_ENTRY_CREATE) && (
+        {canCreateReceipts && (
           <TouchableOpacity
             style={styles.addCtaBtn}
             onPress={() => navigation.navigate(AppRoutes.CREATE_RECEIPT_VOUCHER)}

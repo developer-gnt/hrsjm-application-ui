@@ -339,14 +339,14 @@ export const DonationsScreen: React.FC<DonationsScreenProps> = ({
 
   const renderHeader = () => (
     <View>
-      <View style={styles.pageHeader}>
+      <View style={[styles.pageHeader, isWide && styles.pageHeaderWide]}>
         <View style={styles.pageHeaderText}>
           <Text style={styles.pageTitle}>Donations</Text>
           <Text style={styles.pageSubtitle}>
             View and manage all donations received.
           </Text>
         </View>
-        <View style={styles.pageHeaderControls}>
+        <View style={[styles.pageHeaderControls, isWide && styles.pageHeaderControlsWide]}>
           <DonationsDateSelector
             label={dateRangeLabel}
             onPress={() => setDatePickerVisible(true)}
@@ -639,16 +639,15 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
   },
   pageHeader: {
+    marginBottom: Spacing.md,
+  },
+  pageHeaderWide: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.lg,
   },
   pageHeaderText: {
-    flex: 1,
-    minWidth: 150,
-    marginRight: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   pageTitle: {
     ...Typography.display,
@@ -659,16 +658,24 @@ const styles = StyleSheet.create({
   pageSubtitle: {
     ...Typography.body,
     color: AdminColors.textSecondary,
-    marginTop: 3,
+    marginTop: 2,
   },
   pageHeaderControls: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+    width: '100%',
+    marginTop: Spacing.xs,
+  },
+  pageHeaderControlsWide: {
+    width: 'auto',
+    marginTop: 0,
   },
   addButton: {
-    marginLeft: Spacing.sm,
     minHeight: 44,
     borderRadius: BorderRadius.button,
+    flexShrink: 0,
+    paddingHorizontal: 12,
   },
   addIcon: {
     fontSize: 16,
@@ -685,22 +692,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    minHeight: 40,
+    paddingHorizontal: 15,
+    paddingVertical: 7,
+    minHeight: 34,
     borderRadius: BorderRadius.full,
-    backgroundColor: '#EDF2F7',
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
   },
   tabActive: {
-    backgroundColor: AdminColors.primary,
+    backgroundColor: AdminColors.primaryDark,
+    borderColor: AdminColors.primaryDark,
   },
   tabLabel: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '600',
-    color: AdminColors.primary,
+    color: AdminColors.primaryDark,
   },
   tabLabelActive: {
     color: AdminColors.textOnDark,

@@ -85,6 +85,11 @@ android {
         versionCode 1
         versionName "1.0"
         manifestPlaceholders = [usesCleartextTraffic: "true"]
+        externalNativeBuild {
+            cmake {
+                arguments "-DCMAKE_OBJECT_PATH_MAX=250"
+            }
+        }
     }
     signingConfigs {
         debug {

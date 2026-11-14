@@ -40,9 +40,7 @@ export function DocumentUploadCard({
         </View>
 
         <View style={styles.labelWrap}>
-          <Text style={styles.title}>
-            {title} <Text style={styles.requiredStar}>*</Text>
-          </Text>
+          <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
       </View>

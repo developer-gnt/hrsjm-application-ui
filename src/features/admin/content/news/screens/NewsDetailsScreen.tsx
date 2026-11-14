@@ -316,17 +316,7 @@ export const NewsDetailsScreen: React.FC<NewsDetailsScreenProps> = ({
           {/* News content */}
           {news.content && news.content.length > 0 ? (
             <>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>News Content</Text>
-                <TouchableOpacity
-                  style={styles.textSizeButton}
-                  onPress={() => Alert.alert('Text Size', PLACEHOLDER_MESSAGE)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Text size options"
-                >
-                  <Text style={styles.textSizeIcon}>Aa</Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.sectionTitle}>News Content</Text>
               {news.content.map((paragraph, index) => (
                 <Text key={index} style={styles.paragraph}>
                   {paragraph}
@@ -622,20 +612,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.xs,
-  },
-  textSizeButton: {
-    minHeight: 30,
-    minWidth: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    borderColor: AdminColors.border,
-    backgroundColor: AdminColors.cardSurface,
-  },
-  textSizeIcon: {
-    ...Typography.secondaryMedium,
-    color: AdminColors.textSecondary,
   },
   paragraph: {
     ...Typography.body,

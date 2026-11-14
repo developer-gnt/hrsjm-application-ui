@@ -1,7 +1,7 @@
 import { Member, MemberFilterTab, MemberSortOption } from '../types';
 
-/** "Expiring Soon" window in days (admin members list uses 30 days). */
-export const EXPIRING_WINDOW_DAYS = 30;
+/** "Expiring Soon" window in days (15 days before expiry across all membership categories). */
+export const EXPIRING_WINDOW_DAYS = 15;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 

@@ -25,11 +25,14 @@ import {
 } from '../state/registrationState';
 import { useAuthStore } from '../store/authStore';
 import { ApiError } from '../../../core/api/api-error';
+import { apiClient } from '../../../core/api/client';
+import { ApiRoutes } from '../../../core/constants/api-routes';
 import {
   membershipApplicationsStore,
   createApplicationFromRegistration,
 } from '../../admin/membershipApplications';
 import { usersStore } from '../../admin/users/services/usersStore';
+import { registerUploadedDocument } from '../../admin/membershipApplications/services/uploadedDocumentsCache';
 import { AdminColors } from '../../../core/theme/colors';
 
 type RegisterScreenProps = NativeStackScreenProps<AuthStackParamList, 'Register'>;
@@ -181,11 +184,14 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
       ? state.password.trim()
       : 'Hrsjm@2026';
 
-    const seekerCount = usersStore.getAllUsers().filter(u => u.userType === 'seeker').length + 1;
-    const applicationNumber = state.applicationNumber || `HRSJM-SEK-${String(seekerCount).padStart(4, '0')}`;
-
     setSubmitting(true);
     setLoadingMessage('Submitting application & verification documents...');
+
+    let applicationNumber: string | undefined = undefined;
+    if (state.applicationNumber && !/^HRSJM-SEK-\d+$/i.test(state.applicationNumber)) {
+      applicationNumber = state.applicationNumber;
+    }
+    let backendRequestId: string | undefined = undefined;
 
     try {
       // 1. Submit auth registration with role DONATION_SEEKER if API server is available
@@ -198,8 +204,39 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         role_name: 'DONATION_SEEKER',
         dob: state.dob ? state.dob.trim() : undefined,
       });
+
+      const currentAuth = useAuthStore.getState().user as any;
+      if (currentAuth?.assistance_application_number) {
+        applicationNumber = currentAuth.assistance_application_number;
+        backendRequestId = currentAuth.assistance_request_id;
+      }
+
+      // 2. Query newly created assistance request for this authenticated seeker to obtain the exact matching backend request ID
+      try {
+        const assistRes: any = await apiClient.get(ApiRoutes.ASSISTANCE_REQUESTS, {
+          params: { limit: 5 },
+        });
+        const aData = assistRes?.data?.data || assistRes?.data || assistRes;
+        const aItems = Array.isArray(aData) ? aData : aData?.items || [];
+        if (aItems.length > 0 && aItems[0]?.id) {
+          backendRequestId = aItems[0].id;
+          applicationNumber = `HRSJM-SEK-${aItems[0].id.replace(/-/g, '').slice(0, 6).toUpperCase()}`;
+        }
+      } catch (queryErr) {
+        console.warn('Could not query created assistance request immediately:', queryErr);
+      }
     } catch (apiError: any) {
       console.warn('Backend registration error or server unreachable; continuing application:', apiError?.message || apiError);
+    }
+
+    const currentAuthUser = useAuthStore.getState().user;
+    if ((!applicationNumber || /^HRSJM-SEK-\d+$/i.test(applicationNumber)) && currentAuthUser?.id) {
+      applicationNumber = `HRSJM-SEK-${String(currentAuthUser.id).replace(/-/g, '').slice(0, 6).toUpperCase()}`;
+    }
+
+    if (!applicationNumber || /^HRSJM-SEK-\d+$/i.test(applicationNumber)) {
+      const hex = Math.random().toString(16).substring(2, 8).toUpperCase();
+      applicationNumber = `HRSJM-SEK-${hex}`;
     }
 
     const docTitleMap: Record<string, string> = {
@@ -212,7 +249,106 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     };
     const docTitle = docTitleMap[selectedDoc] || 'Verification Document';
 
-    // 2. Always register into usersStore with pending seeker status
+    // Map all uploaded documents from registration state, or fallback to the single uploaded file
+    const allDocsToAttach = (state.documents && state.documents.length > 0)
+      ? state.documents.map((d, i) => ({
+          id: `doc-${Date.now()}-${i}`,
+          title: d.title || 'Verification Document',
+          fileName: d.name || 'document.pdf',
+          fileSize: d.formattedSize || '1 MB',
+          fileType: d.type || 'image/jpeg',
+          fileUri: d.uri,
+          uri: d.uri,
+          uploadDate: d.uploadDate || 'Today',
+          uploadedAt: d.uploadDate || 'Today',
+          isUploaded: true,
+          verified: false,
+        }))
+      : [
+          {
+            id: `doc-${Date.now()}`,
+            title: docTitle,
+            fileName: uploadedFile.name,
+            fileSize: uploadedFile.formattedSize,
+            fileType: uploadedFile.type || 'image/jpeg',
+            fileUri: uploadedFile.uri,
+            uri: uploadedFile.uri,
+            uploadDate: 'Today',
+            uploadedAt: 'Today',
+            isUploaded: true,
+            verified: false,
+          },
+        ];
+
+    // Register all uploaded documents in memory & persistent caches
+    allDocsToAttach.forEach(d => {
+      if (d.uri) {
+        registerUploadedDocument(d.fileName, d.uri);
+        registerUploadedDocument(d.title, d.uri);
+        registerUploadedDocument(d.id, d.uri);
+      }
+    });
+
+    // 2. Add directly to membershipApplicationsStore so Admin screen immediately reflects the exact application ID
+    const nowStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const adminAppItem = {
+      id: backendRequestId || currentAuthUser?.id || `sek-${Date.now()}`,
+      applicationId: applicationNumber,
+      applicantName: effectiveFullName,
+      accountType: 'seeker' as const,
+      membershipType: 'Donation Seeker',
+      status: 'under_review' as const,
+      submittedAt: nowStr,
+      submittedDate: new Date().toISOString(),
+      phone: state.phone || `+91 ${cleanMobile}`,
+      email: state.email && state.email.trim() ? state.email.trim() : undefined,
+      paymentStatus: 'EXEMPT' as const,
+      documents: allDocsToAttach,
+      activityLog: [
+        {
+          id: `log-sub-${Date.now()}`,
+          title: 'Donation Seeker Application Submitted',
+          description: 'New donation seeker registration pending administrator verification and approval.',
+          timestamp: nowStr,
+          status: 'under_review' as const,
+        },
+      ],
+    };
+
+    membershipApplicationsStore.addApplication(adminAppItem as any);
+
+    // If online and backend request ID exists, attach documents to backend assistance request
+    if (backendRequestId) {
+      (async () => {
+        for (const docItem of allDocsToAttach) {
+          const fileUri = docItem.uri || docItem.fileUri;
+          if (!fileUri) continue;
+          try {
+            const formData = new FormData();
+            if (Platform.OS === 'web' && fileUri.startsWith('data:')) {
+              const res = await fetch(fileUri);
+              const blob = await res.blob();
+              (formData as any).append('file', blob, docItem.fileName);
+            } else {
+              (formData as any).append('file', {
+                uri: fileUri,
+                name: docItem.fileName,
+                type: docItem.fileType || 'image/jpeg',
+              });
+            }
+            (formData as any).append('document_name', docItem.title);
+            (formData as any).append('description', `Uploaded during seeker registration: ${docItem.fileName}`);
+            await apiClient.post(`/assistance-requests/${backendRequestId}/documents`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+          } catch (attachErr) {
+            console.warn('Could not attach document to backend assistance request immediately:', attachErr);
+          }
+        }
+      })();
+    }
+
+    // 3. Register into usersStore with pending seeker status
     usersStore.registerUserFromRegistration({
       ...state,
       fullName: effectiveFullName,
@@ -226,11 +362,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
       uploadedFileUri: uploadedFile.uri,
     });
 
-    // 3. Update auth store with assistance application tracking
-    const authUser = useAuthStore.getState().user;
-    if (authUser) {
+    // 4. Update auth store with assistance application tracking
+    if (currentAuthUser) {
       useAuthStore.getState().setUser({
-        ...authUser,
+        ...currentAuthUser,
         full_name: effectiveFullName,
         assistance_status: 'PENDING',
         assistance_application_number: applicationNumber,
@@ -238,6 +373,12 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         roles: [{ id: 'role-user', name: 'USER' }],
       });
     }
+
+    try {
+      const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+      if (win?.sessionStorage) win.sessionStorage.setItem('hrsjm_seeker_application_number', applicationNumber);
+      if (win?.localStorage) win.localStorage.setItem('hrsjm_seeker_application_number', applicationNumber);
+    } catch {}
 
     updateRegistrationState({
       applicationNumber,

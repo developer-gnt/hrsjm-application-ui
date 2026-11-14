@@ -179,6 +179,68 @@ function App() {
                   documents: currentState.documents,
                 });
                 membershipApplicationsStore.addApplication(newApp);
+              } else if (currentState.accountType === 'seeker') {
+                const seekerAppNo =
+                  currentState.applicationNumber && !/^HRSJM-SEK-\d+$/i.test(currentState.applicationNumber)
+                    ? currentState.applicationNumber
+                    : 'HRSJM-SEK-' + Math.random().toString(16).substring(2, 8).toUpperCase();
+
+                const seekerDocs = (currentState.documents && currentState.documents.length > 0)
+                  ? currentState.documents.map((d, i) => ({
+                      id: 'doc-' + Date.now() + '-' + i,
+                      title: d.title || 'Verification Document',
+                      fileName: d.name || 'document.pdf',
+                      fileSize: d.formattedSize || '1 MB',
+                      fileType: d.type || 'image/jpeg',
+                      fileUri: d.uri,
+                      uri: d.uri,
+                      uploadDate: 'Today',
+                      uploadedAt: 'Today',
+                      isUploaded: true,
+                      verified: false,
+                    }))
+                  : [
+                      {
+                        id: 'doc-' + Date.now(),
+                        title: docTitle,
+                        fileName: uploadedFile.name,
+                        fileSize: uploadedFile.formattedSize,
+                        fileType: uploadedFile.type || 'image/jpeg',
+                        fileUri: uploadedFile.uri,
+                        uri: uploadedFile.uri,
+                        uploadDate: 'Today',
+                        uploadedAt: 'Today',
+                        isUploaded: true,
+                        verified: false,
+                      },
+                    ];
+
+                const nowStr = new Date().toLocaleDateString('en-GB') + ', ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                const seekerAppItem = {
+                  id: 'sek-' + Date.now(),
+                  applicationId: seekerAppNo,
+                  applicantName: currentState.fullName || 'Donation Seeker Applicant',
+                  accountType: 'seeker',
+                  membershipType: 'Donation Seeker',
+                  status: 'under_review',
+                  submittedAt: nowStr,
+                  submittedDate: new Date().toISOString(),
+                  phone: currentState.phone,
+                  email: currentState.email,
+                  paymentStatus: 'EXEMPT',
+                  documents: seekerDocs,
+                  activityLog: [
+                    {
+                      id: 'log-sub-' + Date.now(),
+                      title: 'Donation Seeker Application Submitted',
+                      description: 'New donation seeker registration pending administrator verification and approval.',
+                      timestamp: nowStr,
+                      status: 'under_review',
+                    },
+                  ],
+                };
+                membershipApplicationsStore.addApplication(seekerAppItem as any);
+                updateRegistrationState({ applicationNumber: seekerAppNo });
               }
 
               usersStore.registerUserFromRegistration({

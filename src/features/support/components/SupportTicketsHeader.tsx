@@ -129,7 +129,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingBottom: Spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: '#DCE4EC',
+    minHeight: 56,
   },
   topBar: {
     flexDirection: 'row',
@@ -145,12 +146,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
   },
   backButtonGlyph: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#0B2F52',
     lineHeight: 22,
   },
   hamburgerIcon: {
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
   hamburgerBar: {
     width: 18,
     height: 2,
-    backgroundColor: '#1E293B',
+    backgroundColor: '#0B2F52',
     borderRadius: 1,
   },
   hamburgerBarMiddle: {
@@ -224,7 +225,7 @@ const styles = StyleSheet.create({
     height: 10,
     borderTopLeftRadius: 6.5,
     borderTopRightRadius: 6.5,
-    backgroundColor: '#1E293B',
+    backgroundColor: '#0B2F52',
   },
   bellBase: {
     width: 17,
@@ -271,7 +272,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: '#DCE4EC',
   },
   avatarImage: {
     width: '100%',

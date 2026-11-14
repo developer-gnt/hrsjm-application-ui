@@ -142,8 +142,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
 
               <Text style={styles.resultTitle}>Check Your Email</Text>
               <Text style={styles.resultSub}>
-                If an account is associated with this email address, we have sent a secure
-                password reset link to your inbox.
+                If an account exists with this email address, you will receive a password-reset link.
               </Text>
 
               <View style={styles.infoAlertCard}>

@@ -20,9 +20,10 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 
 export const forgotPasswordSchema = z.object({
   identifier: z
-    .string({ message: 'Enter your mobile number or email' })
+    .string({ message: 'Enter your registered email address' })
     .trim()
-    .min(3, 'Enter your mobile number or email'),
+    .min(1, 'Enter your registered email address')
+    .email('Please enter a valid email address'),
 });
 
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;

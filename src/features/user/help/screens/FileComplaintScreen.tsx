@@ -30,7 +30,7 @@ import {
   Spacing,
   UserFontFamilies,
 } from '../../../../core/theme';
-import { AppIcon, HrsjmLogoMark } from '../../components';
+import { AppIcon } from '../../components';
 import { HomeHeader } from '../../home/components/HomeHeader';
 import { UserBottomNavigation } from '../../home/components/UserBottomNavigation';
 import type { HomeTab } from '../../home/types/home.types';
@@ -46,6 +46,8 @@ import {
 } from '../../location/data/india-locations';
 import { supportTicketsStore } from '../../../support/services/supportTicketsStore';
 import { formatAttachmentSize } from '../../../support/types/ticket.types';
+import { GlobalPaymentModal, type PaymentPayload } from '../../../payments';
+import { useAuthStore } from '../../../auth/store/authStore';
 
 const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 const SUPPORTED_ATTACHMENT_EXTENSIONS = ['jpg', 'jpeg', 'png', 'pdf'];
@@ -54,6 +56,8 @@ const SUPPORTED_ATTACHMENT_TYPES = [
   'image/png',
   'application/pdf',
 ];
+
+const PRESET_DONATION_AMOUNTS = [250, 350, 500];
 
 const isSupportedAttachment = (file: DocumentPickerResponse) => {
   const extension = file.name?.split('.').pop()?.toLowerCase();
@@ -123,37 +127,51 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
   showBottomNav = false,
 }) => {
   const insets = useSafeAreaInsets();
+  const user = useAuthStore(state => state.user);
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [selectedHelpTopic, setSelectedHelpTopic] = useState<HelpTopic | null>(
-    null,
-  );
+  const [selectedHelpTopics, setSelectedHelpTopics] = useState<HelpTopic[]>([]);
+  const [selectedHelpTopic, setSelectedHelpTopic] = useState<HelpTopic | null>(null);
   const [selectedState, setSelectedState] = useState<StateLocation | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [isStateSelectorVisible, setIsStateSelectorVisible] = useState(false);
   const [isCitySelectorVisible, setIsCitySelectorVisible] = useState(false);
-  const [attachments, setAttachments] = useState<DocumentPickerResponse[]>([]);
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof FormState, string>>
-  >({});
+
+  // Separate document upload fields
+  const [aadhaarFiles, setAadhaarFiles] = useState<DocumentPickerResponse[]>([]);
+  const [handwrittenFiles, setHandwrittenFiles] = useState<DocumentPickerResponse[]>([]);
+
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedTicketId, setSubmittedTicketId] = useState<string>('');
-  const [isHelpTopicSelectorVisible, setIsHelpTopicSelectorVisible] =
-    useState(false);
+  const [isHelpTopicSelectorVisible, setIsHelpTopicSelectorVisible] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [agreeDeclaration, setAgreeDeclaration] = useState(false);
-  const [countdown, setCountdown] = useState<number>(3);
+
+  // Donation state after complaint submission
+  const [selectedDonationAmount, setSelectedDonationAmount] = useState<number>(250);
+  const [isCustomDonation, setIsCustomDonation] = useState(false);
+  const [customDonationInput, setCustomDonationInput] = useState('');
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [hasDonated, setHasDonated] = useState(false);
 
   const stepLabels = ['Complaint Details', 'Your Details', 'Review & Submit'];
 
+  const effectiveDonationAmount = isCustomDonation
+    ? (parseInt(customDonationInput.trim(), 10) || 0)
+    : selectedDonationAmount;
+
   const handleResetForm = () => {
     setForm(emptyForm);
+    setSelectedHelpTopics([]);
     setSelectedHelpTopic(null);
     setSelectedState(null);
     setSelectedCity(null);
-    setAttachments([]);
+    setAadhaarFiles([]);
+    setHandwrittenFiles([]);
     setErrors({});
     setAgreeTerms(false);
     setAgreePrivacy(false);
@@ -161,33 +179,11 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     setStep(1);
     setIsSubmitted(false);
     setSubmittedTicketId('');
-    setCountdown(3);
+    setSelectedDonationAmount(250);
+    setIsCustomDonation(false);
+    setCustomDonationInput('');
+    setHasDonated(false);
   };
-
-  useEffect(() => {
-    if (!isSubmitted) {
-      setCountdown(3);
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          if (onViewTickets) {
-            handleResetForm();
-            onViewTickets();
-          } else {
-            handleResetForm();
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isSubmitted, onViewTickets]);
 
   const handleStepBack = () => {
     if (isSubmitted) {
@@ -269,21 +265,28 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     }
   };
 
-  const clearSelectedHelpTopic = () => {
-    setSelectedHelpTopic(null);
-    setForm(prev => ({ ...prev, helpType: '', helpTopicId: '' }));
-    setErrors(prev => ({ ...prev, helpType: undefined }));
-  };
-
-  const handleSelectHelpTopic = (topic: HelpTopic) => {
-    setSelectedHelpTopic(topic);
+  const handleSelectMultipleHelpTopics = (topics: HelpTopic[]) => {
+    setSelectedHelpTopics(topics);
+    setSelectedHelpTopic(topics[0] || null);
     setForm(prev => ({
       ...prev,
-      helpType: topic.title,
-      helpTopicId: topic.id,
+      helpType: topics.map(t => t.title).join(', '),
+      helpTopicId: topics.map(t => t.id).join(','),
     }));
-    setErrors(prev => ({ ...prev, helpType: undefined }));
-    setIsHelpTopicSelectorVisible(false);
+    if (topics.length > 0) {
+      setErrors(prev => ({ ...prev, helpType: undefined }));
+    }
+  };
+
+  const handleRemoveHelpTopic = (topicId: string) => {
+    const updated = selectedHelpTopics.filter(t => t.id !== topicId);
+    setSelectedHelpTopics(updated);
+    setSelectedHelpTopic(updated[0] || null);
+    setForm(prev => ({
+      ...prev,
+      helpType: updated.map(t => t.title).join(', '),
+      helpTopicId: updated.map(t => t.id).join(','),
+    }));
   };
 
   const handleStateSelect = (state: StateLocation) => {
@@ -312,8 +315,8 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
   const validateStepOne = () => {
     const nextErrors: Partial<Record<keyof FormState, string>> = {};
 
-    if (!form.helpType.trim()) {
-      nextErrors.helpType = 'Please select the type of help you need.';
+    if (selectedHelpTopics.length === 0 && !form.helpType.trim()) {
+      nextErrors.helpType = 'Please select at least one type of help you need.';
     }
     if (!form.subject.trim()) {
       nextErrors.subject = 'Subject is required.';
@@ -359,11 +362,9 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
     setIsHelpTopicSelectorVisible(true);
   };
 
-  const removeAttachment = (indexToRemove: number) => {
-    setAttachments(prev => prev.filter((_, idx) => idx !== indexToRemove));
-  };
-
-  const openAttachmentPicker = async () => {
+  const pickDocuments = async (
+    onFilesPicked: (files: DocumentPickerResponse[]) => void,
+  ) => {
     if (Platform.OS === 'web') {
       const docObj =
         typeof globalThis !== 'undefined' ? (globalThis as any).document : undefined;
@@ -410,7 +411,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
           });
 
           if (validFiles.length > 0) {
-            setAttachments(previous => [...previous, ...validFiles]);
+            onFilesPicked(validFiles);
           }
           if (rejectedFiles.length > 0) {
             Alert.alert('Some files were not added', rejectedFiles.join('\n'));
@@ -451,7 +452,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
       });
 
       if (validFiles.length > 0) {
-        setAttachments(previous => [...previous, ...validFiles]);
+        onFilesPicked(validFiles);
       }
       if (rejectedFiles.length > 0) {
         Alert.alert('Some files were not added', rejectedFiles.join('\n'));
@@ -474,9 +475,29 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         error instanceof Error
           ? error.message
           : 'Unable to open the file picker.';
-      console.error('Unable to pick complaint attachments:', error);
+      console.error('Unable to pick attachments:', error);
       Alert.alert('Unable to select files', message);
     }
+  };
+
+  const openAadhaarPicker = () => {
+    pickDocuments(validFiles => {
+      setAadhaarFiles(prev => [...prev, ...validFiles]);
+    });
+  };
+
+  const removeAadhaarFile = (idx: number) => {
+    setAadhaarFiles(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const openHandwrittenPicker = () => {
+    pickDocuments(validFiles => {
+      setHandwrittenFiles(prev => [...prev, ...validFiles]);
+    });
+  };
+
+  const removeHandwrittenFile = (idx: number) => {
+    setHandwrittenFiles(prev => prev.filter((_, i) => i !== idx));
   };
 
   const renderStepOne = () => (
@@ -484,50 +505,60 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
       <Text style={styles.sectionHeading}>Complaint Details</Text>
 
       <Text style={styles.label}>What type of help do you need? *</Text>
-      <TouchableOpacity
-        style={[styles.selectField, errors.helpType ? styles.fieldError : null]}
-        onPress={openComplaintTypePicker}
-        activeOpacity={0.8}
-        accessibilityRole="button"
-        accessibilityLabel="Select complaint type"
-      >
-        {selectedHelpTopic ? (
-          <View style={styles.selectedTopicFieldContent}>
-            <View
-              style={[
-                styles.selectedTopicIconWrap,
-                { backgroundColor: selectedHelpTopic.iconBackground },
-              ]}
-            >
-              <AppIcon
-                name={selectedHelpTopic.icon}
-                size={16}
-                color={selectedHelpTopic.iconColor}
-              />
-            </View>
-            <Text style={styles.selectedTopicText}>{selectedHelpTopic.title}</Text>
-            <TouchableOpacity
-              style={styles.clearSelectedTopic}
-              onPress={event => {
-                event.stopPropagation();
-                clearSelectedHelpTopic();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Clear selected help topic"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <AppIcon name="close" size={14} color={AdminColors.primaryDark} />
-            </TouchableOpacity>
+      {selectedHelpTopics.length > 0 ? (
+        <View style={styles.selectedTopicsContainer}>
+          <View style={styles.selectedChipsWrap}>
+            {selectedHelpTopics.map(topic => (
+              <View key={topic.id} style={styles.topicChip}>
+                <View
+                  style={[
+                    styles.topicChipIconWrap,
+                    { backgroundColor: topic.iconBackground },
+                  ]}
+                >
+                  <AppIcon name={topic.icon} size={13} color={topic.iconColor} />
+                </View>
+                <Text style={styles.topicChipText}>{topic.title}</Text>
+                <TouchableOpacity
+                  style={styles.topicChipRemove}
+                  onPress={() => handleRemoveHelpTopic(topic.id)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityLabel={`Remove ${topic.title}`}
+                >
+                  <AppIcon name="close" size={12} color={AdminColors.primaryDark} />
+                </TouchableOpacity>
+              </View>
+            ))}
           </View>
-        ) : (
+          <TouchableOpacity
+            style={styles.addMoreTopicsButton}
+            onPress={openComplaintTypePicker}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Add more help types"
+          >
+            <AppIcon name="plus" size={14} color={AdminColors.primary} />
+            <Text style={styles.addMoreTopicsText}>
+              + Add / Edit Help Types ({selectedHelpTopics.length} selected)
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={[styles.selectField, errors.helpType ? styles.fieldError : null]}
+          onPress={openComplaintTypePicker}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Select complaint types"
+        >
           <View style={styles.defaultTopicSelector}>
             <AppIcon name="search" size={18} color={AdminColors.textMuted} />
             <Text style={[styles.selectText, styles.placeholderText]}>
-              Search for help...
+              Select type(s) of help (multiple allowed)...
             </Text>
           </View>
-        )}
-      </TouchableOpacity>
+        </TouchableOpacity>
+      )}
       {errors.helpType ? (
         <Text style={styles.errorText}>{errors.helpType}</Text>
       ) : null}
@@ -563,32 +594,31 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         <Text style={styles.errorText}>{errors.description}</Text>
       ) : null}
 
-      <Text style={styles.label}>Upload Supporting Documents (Optional)</Text>
+      {/* Upload Aadhaar Card Field */}
+      <Text style={styles.label}>Upload Aadhaar Card (Optional)</Text>
       <TouchableOpacity
-        style={[styles.uploadBox, errors.helpType ? styles.fieldError : null]}
-        onPress={openAttachmentPicker}
+        style={styles.uploadBox}
+        onPress={openAadhaarPicker}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel="Upload supporting documents"
+        accessibilityLabel="Upload Aadhaar card"
       >
-        <AppIcon name="image" size={24} color={AdminColors.primaryDark} />
+        <AppIcon name="shield-check" size={24} color={AdminColors.primaryDark} />
         <Text style={styles.uploadTitle}>
-          {attachments.length > 0
-            ? `${attachments.length} file${
-                attachments.length === 1 ? '' : 's'
-              } selected`
-            : 'Tap to upload files'}
+          {aadhaarFiles.length > 0
+            ? `${aadhaarFiles.length} Aadhaar file${aadhaarFiles.length === 1 ? '' : 's'} selected`
+            : 'Tap to upload Aadhaar Card'}
         </Text>
         <Text style={styles.uploadHint}>
-          {attachments.length > 0
-            ? 'Tap to add more files · JPG, PNG, PDF (max 5MB each)'
-            : 'JPG, PNG, PDF (max 5MB each)'}
+          {aadhaarFiles.length > 0
+            ? 'Tap to add more · JPG, PNG, PDF (max 5MB each)'
+            : 'Front & Back copy · JPG, PNG, PDF (max 5MB each)'}
         </Text>
       </TouchableOpacity>
 
-      {attachments.length > 0 && (
+      {aadhaarFiles.length > 0 && (
         <View style={styles.attachmentList}>
-          {attachments.map((file, idx) => {
+          {aadhaarFiles.map((file, idx) => {
             const isPdf =
               file.name?.toLowerCase().endsWith('.pdf') ||
               file.type?.includes('pdf');
@@ -598,10 +628,7 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
                 : `${(file.size / (1024 * 1024)).toFixed(1)} MB`
               : '';
             return (
-              <View
-                key={`${file.name || 'file'}-${idx}`}
-                style={styles.attachmentItem}
-              >
+              <View key={`aadhaar-${idx}`} style={styles.attachmentItem}>
                 <View style={styles.attachmentIconBox}>
                   <AppIcon
                     name={isPdf ? 'file-text' : 'image'}
@@ -611,18 +638,85 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
                 </View>
                 <View style={styles.attachmentInfo}>
                   <Text style={styles.attachmentName} numberOfLines={1}>
-                    {file.name || `Document ${idx + 1}`}
+                    {file.name || `Aadhaar Card ${idx + 1}`}
                   </Text>
                   {sizeStr ? (
                     <Text style={styles.attachmentSize}>{sizeStr}</Text>
                   ) : null}
                 </View>
                 <TouchableOpacity
-                  onPress={() => removeAttachment(idx)}
+                  onPress={() => removeAadhaarFile(idx)}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={styles.attachmentRemoveBtn}
                   accessibilityRole="button"
-                  accessibilityLabel={`Remove ${file.name || 'attachment'}`}
+                  accessibilityLabel={`Remove ${file.name || 'Aadhaar file'}`}
+                >
+                  <AppIcon name="close" size={16} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Upload Handwritten Complaint Field */}
+      <Text style={[styles.label, { marginTop: Spacing.sm }]}>
+        Upload Handwritten Complaint (Optional)
+      </Text>
+      <TouchableOpacity
+        style={styles.uploadBox}
+        onPress={openHandwrittenPicker}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Upload handwritten complaint"
+      >
+        <AppIcon name="edit" size={24} color={AdminColors.primaryDark} />
+        <Text style={styles.uploadTitle}>
+          {handwrittenFiles.length > 0
+            ? `${handwrittenFiles.length} file${handwrittenFiles.length === 1 ? '' : 's'} selected`
+            : 'Tap to upload Handwritten Complaint'}
+        </Text>
+        <Text style={styles.uploadHint}>
+          {handwrittenFiles.length > 0
+            ? 'Tap to add more · Photo or scanned letter (max 5MB)'
+            : 'Clear photo or scanned letter · JPG, PNG, PDF (max 5MB)'}
+        </Text>
+      </TouchableOpacity>
+
+      {handwrittenFiles.length > 0 && (
+        <View style={styles.attachmentList}>
+          {handwrittenFiles.map((file, idx) => {
+            const isPdf =
+              file.name?.toLowerCase().endsWith('.pdf') ||
+              file.type?.includes('pdf');
+            const sizeStr = file.size
+              ? file.size < 1024 * 1024
+                ? `${(file.size / 1024).toFixed(0)} KB`
+                : `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+              : '';
+            return (
+              <View key={`handwritten-${idx}`} style={styles.attachmentItem}>
+                <View style={styles.attachmentIconBox}>
+                  <AppIcon
+                    name={isPdf ? 'file-text' : 'image'}
+                    size={16}
+                    color={AdminColors.primaryDark}
+                  />
+                </View>
+                <View style={styles.attachmentInfo}>
+                  <Text style={styles.attachmentName} numberOfLines={1}>
+                    {file.name || `Handwritten Complaint ${idx + 1}`}
+                  </Text>
+                  {sizeStr ? (
+                    <Text style={styles.attachmentSize}>{sizeStr}</Text>
+                  ) : null}
+                </View>
+                <TouchableOpacity
+                  onPress={() => removeHandwrittenFile(idx)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.attachmentRemoveBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove ${file.name || 'handwritten file'}`}
                 >
                   <AppIcon name="close" size={16} color="#EF4444" />
                 </TouchableOpacity>
@@ -672,7 +766,6 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         keyboardType="phone-pad"
         value={form.mobile}
         onChangeText={value => {
-          // Only allow digits, max 10
           const digits = value.replace(/[^0-9]/g, '').slice(0, 10);
           updateField('mobile', digits);
         }}
@@ -825,10 +918,22 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         </View>
 
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Type of Help</Text>
-          <Text style={styles.summaryValue}>
-            {form.helpType || 'Not provided'}
-          </Text>
+          <Text style={styles.summaryLabel}>Type(s) of Help</Text>
+          <View style={styles.summaryValueCol}>
+            {selectedHelpTopics.length > 0 ? (
+              <View style={styles.reviewTopicsWrap}>
+                {selectedHelpTopics.map(topic => (
+                  <View key={topic.id} style={styles.reviewTopicBadge}>
+                    <Text style={styles.reviewTopicBadgeText}>{topic.title}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.summaryValue}>
+                {form.helpType || 'Not provided'}
+              </Text>
+            )}
+          </View>
         </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Subject / Title</Text>
@@ -843,10 +948,18 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
           </Text>
         </View>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Supporting Documents</Text>
+          <Text style={styles.summaryLabel}>Aadhaar Card</Text>
           <Text style={styles.summaryValue}>
-            {attachments.length > 0
-              ? attachments.map(file => file.name || 'Unnamed file').join(', ')
+            {aadhaarFiles.length > 0
+              ? aadhaarFiles.map(file => file.name || 'aadhaar_card.pdf').join(', ')
+              : 'Not uploaded'}
+          </Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Handwritten Complaint</Text>
+          <Text style={styles.summaryValue}>
+            {handwrittenFiles.length > 0
+              ? handwrittenFiles.map(file => file.name || 'handwritten_complaint.jpg').join(', ')
               : 'Not uploaded'}
           </Text>
         </View>
@@ -1011,22 +1124,48 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
             }
             setIsSubmitting(true);
             try {
-              const ticket = await supportTicketsStore.createTicket({
-                category: form.helpType || selectedHelpTopic?.title || 'Human Rights Grievance',
-                subject: form.subject || 'Complaint / Grievance',
-                description: `[Source: ${Platform.OS === 'web' ? 'Web' : 'App'}]\n${form.description}\n\nComplainant: ${form.fullName}\nPhone: +91${form.mobile}\nEmail: ${form.email || 'N/A'}\nAddress: ${form.address || 'N/A'}\nNearby Police Station: ${form.policeStation || 'N/A'}\nLocation: ${form.city || ''}, ${form.state || ''}`,
-                attachments: attachments.map((a, idx) => ({
-                  id: `att-${Date.now()}-${idx}`,
-                  name: a.name || 'document',
+              const helpCategories = selectedHelpTopics.length > 0
+                ? selectedHelpTopics.map(t => t.title).join(', ')
+                : form.helpType || 'Human Rights Grievance';
+
+              const aadhaarNames = aadhaarFiles.length > 0
+                ? aadhaarFiles.map(f => f.name || 'aadhaar_card.pdf').join(', ')
+                : 'Not uploaded';
+
+              const handwrittenNames = handwrittenFiles.length > 0
+                ? handwrittenFiles.map(f => f.name || 'handwritten_complaint.jpg').join(', ')
+                : 'Not uploaded';
+
+              const allAttachments = [
+                ...aadhaarFiles.map((a, idx) => ({
+                  id: `att-aadhaar-${Date.now()}-${idx}`,
+                  name: a.name ? `Aadhaar Card - ${a.name}` : 'Aadhaar Card - aadhaar_card.pdf',
                   size: a.size || 0,
                   formattedSize: formatAttachmentSize(a.size),
-                  type: a.type || 'file',
+                  type: a.type || (a.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
                   uri: a.uri,
                 })),
+                ...handwrittenFiles.map((h, idx) => ({
+                  id: `att-handwritten-${Date.now()}-${idx}`,
+                  name: h.name ? `Handwritten Complaint - ${h.name}` : 'Handwritten Complaint - handwritten_complaint.jpg',
+                  size: h.size || 0,
+                  formattedSize: formatAttachmentSize(h.size),
+                  type: h.type || (h.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
+                  uri: h.uri,
+                })),
+              ];
+
+              const structuredDescription = `Complainant Information:\n- Full Name: ${form.fullName}\n- Phone: +91 ${form.mobile}\n- Email: ${form.email || 'N/A'}\n- Address: ${form.address || 'N/A'}\n- Nearby Police Station: ${form.policeStation || 'N/A'}\n- Location: ${form.city || ''}, ${form.state || ''}\n- Type of Help: ${helpCategories}\n\nDetails of Concern:\n${form.description}\n\nVerified Document Attachments:\n- Aadhaar Card: ${aadhaarNames}\n- Handwritten Complaint: ${handwrittenNames}`;
+
+              const ticket = await supportTicketsStore.createTicket({
+                category: helpCategories,
+                subject: form.subject || 'Complaint / Grievance',
+                description: structuredDescription,
+                attachments: allAttachments,
               });
+
               setSubmittedTicketId(ticket.ticketNumber || ticket.id);
               setIsSubmitted(true);
-              setCountdown(3);
               supportTicketsStore.fetchTickets().catch(() => {});
             } catch (err) {
               console.error('Error submitting complaint:', err);
@@ -1043,6 +1182,29 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
       </View>
     </View>
   );
+
+  const donationPayload: PaymentPayload = {
+    userId: user?.id,
+    purpose: 'donation',
+    title: 'HRSJM Legal Aid & Grievance Mission Donation',
+    subtitle: `Voluntary support for ticket #${submittedTicketId || 'HRSJM-GRIEVANCE'}`,
+    category: 'Human Rights Legal Aid',
+    location: `${form.city || ''}, ${form.state || ''}`.trim() || 'National / All India',
+    amount: effectiveDonationAmount > 0 ? effectiveDonationAmount : 250,
+    donorName: form.fullName || user?.full_name || 'Donor Supporter',
+    donorMobile: form.mobile || user?.mobile_number || '',
+    donorEmail: form.email || user?.email || '',
+    entityId: submittedTicketId || `tkt-${Date.now()}`,
+  };
+
+  const handlePaymentSuccess = (receipt: any) => {
+    setHasDonated(true);
+    setPaymentModalVisible(false);
+    Alert.alert(
+      'Donation Successful! 🎉',
+      `Thank you for your generous contribution of ₹${receipt?.amount || effectiveDonationAmount} to Human Rights and Social Justice Mission! Your receipt has been generated.`,
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
@@ -1111,25 +1273,114 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
                 received and recorded in our support ticket system.
               </Text>
 
-              {/* Auto-refresh Status Notice */}
-              <View style={styles.autoRefreshNotice}>
-                <ActivityIndicator size="small" color={AdminColors.primaryDark} />
-                <Text style={styles.autoRefreshNoticeText}>
-                  {onViewTickets
-                    ? `Auto-redirecting to My Tickets in ${countdown}s...`
-                    : `Auto-refreshing form in ${countdown}s...`}
-                </Text>
-              </View>
-
               <View style={styles.referenceBox}>
                 <Text style={styles.referenceLabel}>Reference Ticket ID</Text>
                 <Text style={styles.referenceId}>{submittedTicketId || 'HRSJM-DEMO-001'}</Text>
               </View>
 
+              {/* Donate to Us Card */}
+              <View style={styles.donationCard}>
+                <View style={styles.donationBadgeRow}>
+                  <View style={styles.donationHeartIconWrap}>
+                    <AppIcon name="heart" size={16} color="#E11D48" />
+                  </View>
+                  <Text style={styles.donationBadgeText}>SUPPORT OUR MISSION</Text>
+                </View>
+
+                <Text style={styles.donationTitle}>Support HRSJM — Donate to Us</Text>
+                <Text style={styles.donationSubtitle}>
+                  HRSJM provides 100% free legal guidance, human rights protection, and urgent grievance assistance to citizens across India. Your voluntary contribution powers this mission.
+                </Text>
+
+                <Text style={styles.donationAmountLabel}>Choose a Contribution Amount</Text>
+                <View style={styles.amountOptionsRow}>
+                  {PRESET_DONATION_AMOUNTS.map(amt => {
+                    const isSelected = !isCustomDonation && selectedDonationAmount === amt;
+                    return (
+                      <TouchableOpacity
+                        key={amt}
+                        style={[styles.amountOption, isSelected && styles.amountOptionSelected]}
+                        onPress={() => {
+                          setIsCustomDonation(false);
+                          setSelectedDonationAmount(amt);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            styles.amountOptionText,
+                            isSelected && styles.amountOptionTextSelected,
+                          ]}
+                        >
+                          ₹{amt}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                  <TouchableOpacity
+                    style={[styles.amountOption, isCustomDonation && styles.amountOptionSelected]}
+                    onPress={() => {
+                      setIsCustomDonation(true);
+                      if (!customDonationInput) {
+                        setCustomDonationInput('1000');
+                      }
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.amountOptionText,
+                        isCustomDonation && styles.amountOptionTextSelected,
+                      ]}
+                    >
+                      Custom
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {isCustomDonation && (
+                  <View style={styles.customAmountWrap}>
+                    <Text style={styles.customCurrencyPrefix}>₹</Text>
+                    <TextInput
+                      style={styles.customAmountInput}
+                      placeholder="Enter custom amount"
+                      placeholderTextColor={AdminColors.textMuted}
+                      keyboardType="numeric"
+                      value={customDonationInput}
+                      onChangeText={val => setCustomDonationInput(val.replace(/[^0-9]/g, ''))}
+                    />
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  style={[
+                    styles.donateSubmitButton,
+                    effectiveDonationAmount <= 0 && styles.donateSubmitButtonDisabled,
+                  ]}
+                  disabled={effectiveDonationAmount <= 0}
+                  onPress={() => setPaymentModalVisible(true)}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Donate ₹${effectiveDonationAmount || 0} to HRSJM`}
+                >
+                  <AppIcon name="heart" size={18} color={AdminColors.primaryDark} />
+                  <Text style={styles.donateSubmitButtonText}>
+                    {hasDonated
+                      ? 'Contribute Again'
+                      : `Donate ₹${effectiveDonationAmount || 0} to HRSJM`}
+                  </Text>
+                </TouchableOpacity>
+
+                <Text style={styles.donationTaxBenefitNotice}>
+                  🔒 256-bit encrypted · Tax exemption eligible under 80G
+                </Text>
+              </View>
+
+              {/* Navigation Action Buttons */}
               <View style={styles.successButtonsColumn}>
                 {onViewTickets ? (
                   <AppButton
-                    title="View My Tickets Now"
+                    title="View My Tickets"
                     onPress={() => {
                       handleResetForm();
                       onViewTickets();
@@ -1173,8 +1424,13 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
 
       <HelpTopicSelector
         visible={isHelpTopicSelectorVisible}
+        multi={true}
+        selectedTopics={selectedHelpTopics}
         selectedTopic={selectedHelpTopic}
-        onSelect={handleSelectHelpTopic}
+        onSelect={topic => {
+          setSelectedHelpTopic(topic);
+        }}
+        onSelectMultiple={handleSelectMultipleHelpTopics}
         onClose={() => setIsHelpTopicSelectorVisible(false)}
       />
 
@@ -1205,6 +1461,15 @@ export const FileComplaintScreen: React.FC<FileComplaintScreenProps> = ({
         }}
       />
 
+      {/* Cashfree Payment Gateway Checkout Modal for Post-Complaint Donation */}
+      <GlobalPaymentModal
+        visible={paymentModalVisible}
+        payload={donationPayload}
+        initialStage="checkout"
+        onClose={() => setPaymentModalVisible(false)}
+        onSuccess={handlePaymentSuccess}
+      />
+
       {showBottomNav && (
         <UserBottomNavigation activeTab="home" onTabPress={handleTabPress} />
       )}
@@ -1219,42 +1484,6 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-  },
-  header: {
-    backgroundColor: AdminColors.cardSurface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AdminColors.border,
-    paddingHorizontal: Spacing.base,
-    paddingBottom: Spacing.sm,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 48,
-  },
-  headerButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: AdminColors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoWrap: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.sm,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   scrollContent: {
     paddingHorizontal: Spacing.base,
@@ -1306,33 +1535,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  selectedTopicFieldContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  selectedTopicIconWrap: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.sm,
-  },
-  selectedTopicText: {
-    flex: 1,
-    color: AdminColors.primaryDark,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  clearSelectedTopic: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: AdminColors.primaryLight,
-  },
   selectText: {
     color: AdminColors.textPrimary,
     fontSize: 13,
@@ -1341,6 +1543,66 @@ const styles = StyleSheet.create({
   placeholderText: {
     color: AdminColors.textMuted,
     marginLeft: Spacing.sm,
+  },
+  selectedTopicsContainer: {
+    backgroundColor: AdminColors.cardSurface,
+    borderWidth: 1,
+    borderColor: '#D9E4FF',
+    borderRadius: BorderRadius.base,
+    padding: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  selectedChipsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  topicChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF4FF',
+    borderWidth: 1,
+    borderColor: '#C7D9FB',
+    borderRadius: 20,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    gap: 6,
+  },
+  topicChipIconWrap: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topicChipText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: AdminColors.primaryDark,
+  },
+  topicChipRemove: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: 'rgba(15, 40, 96, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 2,
+  },
+  addMoreTopicsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  addMoreTopicsText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: AdminColors.primary,
   },
   fieldError: {
     borderColor: AdminColors.error,
@@ -1374,19 +1636,22 @@ const styles = StyleSheet.create({
     backgroundColor: AdminColors.cardSurface,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 118,
-    marginBottom: Spacing.md,
+    minHeight: 100,
+    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
   },
   uploadTitle: {
     color: AdminColors.primaryDark,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xs,
   },
   uploadHint: {
     color: AdminColors.textSecondary,
     fontSize: 11.5,
     marginTop: 2,
+    textAlign: 'center',
   },
   attachmentList: {
     gap: Spacing.xs,
@@ -1400,7 +1665,7 @@ const styles = StyleSheet.create({
     borderColor: '#DCE4EC',
     borderRadius: BorderRadius.base,
     paddingHorizontal: Spacing.md,
-    paddingVertical: 10,
+    paddingVertical: 9,
     gap: Spacing.sm,
   },
   attachmentIconBox: {
@@ -1505,9 +1770,6 @@ const styles = StyleSheet.create({
   locationDisabledText: {
     color: AdminColors.textMuted,
   },
-  inputColumn: {
-    marginBottom: 0,
-  },
   reviewCard: {
     backgroundColor: AdminColors.cardSurface,
     borderRadius: BorderRadius.base,
@@ -1540,7 +1802,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    paddingVertical: Spacing.xs + 2,
     borderBottomWidth: 1,
     borderBottomColor: AdminColors.border,
   },
@@ -1549,12 +1811,33 @@ const styles = StyleSheet.create({
     color: AdminColors.textSecondary,
     fontSize: 12,
   },
+  summaryValueCol: {
+    flex: 1.5,
+    alignItems: 'flex-end',
+  },
   summaryValue: {
     flex: 1.2,
     color: AdminColors.primaryDark,
     fontSize: 12,
     textAlign: 'right',
     fontWeight: '600',
+  },
+  reviewTopicsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 4,
+  },
+  reviewTopicBadge: {
+    backgroundColor: '#EEF4FF',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  reviewTopicBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
   },
   privacyCard: {
     flexDirection: 'row',
@@ -1592,15 +1875,15 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     backgroundColor: AdminColors.cardSurface,
     borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
+    padding: Spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: AdminColors.border,
   },
   successIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: AdminColors.success,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1611,7 +1894,7 @@ const styles = StyleSheet.create({
     fontFamily: UserFontFamilies.heading,
     fontSize: 24,
     fontWeight: '700',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   successText: {
     color: AdminColors.textSecondary,
@@ -1621,7 +1904,7 @@ const styles = StyleSheet.create({
   },
   referenceBox: {
     width: '100%',
-    marginTop: Spacing.lg,
+    marginTop: Spacing.md,
     backgroundColor: AdminColors.primaryLight,
     borderRadius: BorderRadius.base,
     padding: Spacing.md,
@@ -1638,39 +1921,151 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
   },
+  donationCard: {
+    width: '100%',
+    marginTop: Spacing.lg,
+    backgroundColor: '#FFFDF6',
+    borderWidth: 1.5,
+    borderColor: '#E7C770',
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    shadowColor: '#B45309',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  donationBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  donationHeartIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FFE4E6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  donationBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#BE123C',
+    letterSpacing: 0.8,
+  },
+  donationTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: AdminColors.primaryDark,
+    marginBottom: 4,
+  },
+  donationSubtitle: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: AdminColors.textSecondary,
+    marginBottom: Spacing.md,
+  },
+  donationAmountLabel: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+    marginBottom: 8,
+  },
+  amountOptionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: Spacing.md,
+  },
+  amountOption: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    borderRadius: BorderRadius.base,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  amountOptionSelected: {
+    borderColor: AdminColors.primaryDark,
+    backgroundColor: '#FEF3C7',
+  },
+  amountOptionText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: AdminColors.textPrimary,
+  },
+  amountOptionTextSelected: {
+    color: AdminColors.primaryDark,
+    fontWeight: '800',
+  },
+  customAmountWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: AdminColors.primaryDark,
+    borderRadius: BorderRadius.base,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+    height: 46,
+  },
+  customCurrencyPrefix: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: AdminColors.primaryDark,
+    marginRight: 6,
+  },
+  customAmountInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: AdminColors.primaryDark,
+    paddingVertical: 6,
+  },
+  donateSubmitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: AdminColors.accentGold,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 13,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  donateSubmitButtonDisabled: {
+    opacity: 0.5,
+  },
+  donateSubmitButtonText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: AdminColors.primaryDark,
+  },
+  donationTaxBenefitNotice: {
+    fontSize: 11,
+    color: AdminColors.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+  },
   successButton: {
     width: '100%',
-    marginTop: Spacing.sm,
     borderRadius: BorderRadius.lg,
   },
   successButtonsColumn: {
     width: '100%',
     marginTop: Spacing.lg,
-    gap: Spacing.xs,
+    gap: Spacing.sm,
   },
   successTicketsButton: {
     width: '100%',
     borderRadius: BorderRadius.lg,
     borderColor: AdminColors.primaryDark,
-  },
-  autoRefreshNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: Spacing.md,
-    backgroundColor: '#EEF4FF',
-    borderWidth: 1,
-    borderColor: '#C7D9FB',
-    borderRadius: BorderRadius.base,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    width: '100%',
-  },
-  autoRefreshNoticeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: AdminColors.primaryDark,
   },
   titleActionRow: {
     flexDirection: 'row',

@@ -185,11 +185,12 @@ const UserEventsScreenComponent: React.FC<any> = ({ navigation }) => {
   );
 };
 
-const UserNewsScreenComponent: React.FC<any> = ({ navigation }) => {
+const UserNewsScreenComponent: React.FC<any> = ({ navigation, route }) => {
   return (
     <NewsScreen
       hideBottomNav={true}
       showBottomNav={false}
+      initialViewAll={route?.params?.viewAll ?? false}
       onOpenArticle={(article) => navigation.navigate('NewsDetails', { article })}
       onOpenHome={() => navigation.navigate('UserHome')}
       onOpenAbout={() => navigation.navigate('UserAbout')}
@@ -319,7 +320,7 @@ const UserCustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation, desc
           }
         };
 
-        const iconColor = isFocused ? '#E9B82E' : '#06294D';
+        const iconColor = isFocused ? '#E9B82E' : '#718096';
 
         return (
           <TouchableOpacity
@@ -778,7 +779,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#DBE5EE',
+    borderTopColor: '#DCE4EC',
     paddingTop: 8,
     paddingHorizontal: 8,
     elevation: 8,
@@ -811,7 +812,7 @@ const styles = StyleSheet.create({
   tabLabelInactive: {
     fontFamily: 'Inter',
     fontWeight: '600',
-    color: '#06294D',
+    color: '#718096',
   },
 });
 

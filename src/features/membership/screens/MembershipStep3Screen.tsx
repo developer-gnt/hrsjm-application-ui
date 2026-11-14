@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -208,15 +208,7 @@ export function MembershipStep3Screen() {
   };
 
   const handleCustomUpload = (type: DocCategory) => {
-    const baseName = customFileName.trim() || `${type}_document`;
-    const cleanExt = customFileType.toLowerCase();
-    const finalFileName = baseName.endsWith(`.${cleanExt}`) ? baseName : `${baseName}.${cleanExt}`;
-
-    applyUploadedDocument(type, {
-      name: `${type.toUpperCase()} Proof (${customFileType})`,
-      fileName: finalFileName,
-      fileSize: `${(Math.random() * 1.5 + 1.0).toFixed(1)} MB`,
-    });
+    handleLaunchNativeFilePicker(type);
   };
 
   const handleRemove = (type: DocCategory) => {
@@ -232,23 +224,8 @@ export function MembershipStep3Screen() {
   };
 
   const validateUploads = (): boolean => {
-    const newErrors: UploadErrors = {};
-
-    if (!documents.identityProof?.isUploaded) {
-      newErrors.identity = 'Please upload your identity proof';
-    }
-    if (!documents.addressProof?.isUploaded) {
-      newErrors.address = 'Please upload your address proof';
-    }
-    if (!documents.qualificationProof?.isUploaded) {
-      newErrors.qualification = 'Please upload your qualification proof';
-    }
-    if (!documents.photograph?.isUploaded) {
-      newErrors.photo = 'Please upload your photograph';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors({});
+    return true;
   };
 
   const validateConsents = () => {
@@ -417,7 +394,7 @@ export function MembershipStep3Screen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Document Upload</Text>
           <Text style={styles.sectionSubtitle}>
-            Please upload the required documents (4 documents).
+            Upload your supporting documents (optional).
           </Text>
         </View>
 
@@ -427,7 +404,7 @@ export function MembershipStep3Screen() {
           <DocumentUploadCard
             index={1}
             title="Identity Proof"
-            subtitle="Aadhaar Card, PAN Card or Passport"
+            subtitle="Aadhaar Card"
             document={documents.identityProof}
             error={errors.identity}
             onUpload={() => {

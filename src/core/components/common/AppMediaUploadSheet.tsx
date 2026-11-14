@@ -190,14 +190,16 @@ export const AppMediaUploadSheet: React.FC<AppMediaUploadSheetProps> = ({
     }
 
     const asset = result.assets?.[0];
+    if (asset?.base64) {
+      const mime = asset.type || 'image/jpeg';
+      const dataUri = `data:${mime};base64,${asset.base64}`;
+      setSelectedUri(dataUri);
+      onSelect(dataUri);
+      onClose();
+      return;
+    }
     if (asset?.uri) {
       const uri = asset.uri;
-      setSelectedUri(uri);
-      onSelect(uri);
-      onClose();
-    } else if (asset?.base64) {
-      const mime = asset.type || 'image/jpeg';
-      const uri = `data:${mime};base64,${asset.base64}`;
       setSelectedUri(uri);
       onSelect(uri);
       onClose();
@@ -237,6 +239,7 @@ export const AppMediaUploadSheet: React.FC<AppMediaUploadSheetProps> = ({
         quality: 0.8,
         maxWidth: 1280,
         maxHeight: 1280,
+        includeBase64: true,
         saveToPhotos: false,
       });
       handlePickerResponse(res);
@@ -262,6 +265,7 @@ export const AppMediaUploadSheet: React.FC<AppMediaUploadSheetProps> = ({
         quality: 0.8,
         maxWidth: 1280,
         maxHeight: 1280,
+        includeBase64: true,
         selectionLimit: 1,
       });
       handlePickerResponse(res);

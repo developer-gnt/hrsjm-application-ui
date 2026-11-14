@@ -76,10 +76,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#DCE4EC',
     paddingTop: 8,
     paddingHorizontal: 4,
-    shadowColor: '#000',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   },
   activeContainer: {
     alignItems: 'center',
-    backgroundColor: '#FFF8E6',
+    backgroundColor: '#FFF9E6',
     paddingVertical: 4,
     paddingHorizontal: 12,
     borderRadius: BorderRadius.lg,
@@ -105,12 +105,12 @@ const styles = StyleSheet.create({
   },
   activeIcon: {
     fontSize: 18,
-    color: '#D97706',
+    color: '#E9B82E',
   },
   activeLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#D97706',
+    color: '#E9B82E',
     marginTop: 1,
   },
   inactiveContainer: {
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   },
   inactiveIcon: {
     fontSize: 18,
-    color: '#64748B',
+    color: '#718096',
   },
   inactiveLabel: {
     fontSize: 10,

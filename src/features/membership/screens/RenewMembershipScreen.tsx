@@ -160,7 +160,7 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
       Alert.alert(
         'Renewal Not Allowed',
         quote?.renewal_validation_message ||
-          'Membership renewal is allowed only within 30 days before the expiry date.',
+          'Membership renewal is allowed only within 15 days before the expiry date.',
       );
       return;
     }
@@ -202,7 +202,15 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
 
   const expiryDaysLabel = propDaysRemaining || (quote?.is_overdue
     ? `${quote.days_overdue} days overdue`
-    : `${quote?.days_remaining ?? (memberData.hasData && memberData.daysRemaining ? memberData.daysRemaining : 7)} days`);
+    : (() => {
+        const raw = quote?.days_remaining ?? (memberData.hasData && memberData.daysRemaining ? memberData.daysRemaining : 7);
+        return String(raw).toLowerCase().includes('day') ? String(raw) : `${raw} days`;
+      })());
+
+  const numericDaysRemaining = quote?.is_overdue
+    ? (quote.days_overdue ?? 0)
+    : (quote?.days_remaining ?? (parseInt(String(expiryDaysLabel), 10) || 0));
+  const showExpiryAlert = !!quote?.is_overdue || numericDaysRemaining <= 15;
 
   const effectivePostName =
     propPostName ||
@@ -292,12 +300,14 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
             </View>
           )}
 
-          {/* Section 03: Membership Expiry Alert */}
-          <MembershipExpiryAlert
-            daysRemaining={quote?.is_overdue ? quote.days_overdue : (quote?.days_remaining ?? (parseInt(String(expiryDaysLabel), 10) || 7))}
-            message={quote?.is_overdue ? 'Your membership has expired!' : 'Your membership is expiring soon!'}
-            isOverdue={!!quote?.is_overdue}
-          />
+          {/* Section 03: Membership Expiry Alert (Only shown within 15 days before expiry or when overdue) */}
+          {showExpiryAlert && (
+            <MembershipExpiryAlert
+              daysRemaining={numericDaysRemaining}
+              message={quote?.is_overdue ? 'Your membership has expired!' : 'Your membership is expiring soon!'}
+              isOverdue={!!quote?.is_overdue}
+            />
+          )}
 
           {/* Section 04: Current Membership Card */}
           <CurrentMembershipCard
@@ -334,7 +344,7 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
             onWhatsAppPress={onWhatsAppPress}
           />
 
-          {/* 30-Day Renewal Window Validation Alert */}
+          {/* 15-Day Renewal Window Validation Alert */}
           {!isEligibleForRenewal && !isLoadingQuote && (
             <View style={styles.ineligibleAlertBox}>
               <View style={styles.ineligibleAlertIconWrap}>
@@ -344,7 +354,7 @@ export const RenewMembershipScreen: React.FC<RenewMembershipScreenProps> = ({
                 <Text style={styles.ineligibleAlertTitle}>Renewal Not Yet Open</Text>
                 <Text style={styles.ineligibleAlertDesc}>
                   {quote?.renewal_validation_message ||
-                    'Membership renewal is allowed only within 30 days before the expiry date.'}
+                    'Membership renewal is allowed only within 15 days before the expiry date.'}
                 </Text>
               </View>
             </View>

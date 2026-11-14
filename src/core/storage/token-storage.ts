@@ -63,6 +63,14 @@ export const tokenStorage = {
           inMemoryAccessToken = persisted;
           return persisted;
         }
+        const sessionRaw = web.getItem('__hrsjm_secure_session');
+        if (sessionRaw) {
+          const parsed = JSON.parse(sessionRaw);
+          if (parsed?.accessToken) {
+            inMemoryAccessToken = parsed.accessToken;
+            return parsed.accessToken;
+          }
+        }
       } catch {}
     }
 
@@ -107,13 +115,7 @@ export const tokenStorage = {
       } catch {}
     }
 
-    // Async background persistence
-    secureStorage.getSession().then(session => {
-      secureStorage.setSession({
-        ...(session || { refreshToken: null, user: null }),
-        accessToken: token,
-      }).catch(() => undefined);
-    }).catch(() => undefined);
+    // Note: Full session is persisted atomically in setTokens()
   },
 
   /**

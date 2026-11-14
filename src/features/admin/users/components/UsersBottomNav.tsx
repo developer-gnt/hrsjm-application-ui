@@ -78,10 +78,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#DCE4EC',
     paddingTop: Spacing.sm,
     paddingHorizontal: 2,
-    shadowColor: '#000',
+    shadowColor: '#011F39',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -101,24 +101,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconContainerActive: {
-    backgroundColor: '#FFF8E6',
+    backgroundColor: '#FFF9E6',
   },
   icon: {
     fontSize: 16,
-    color: '#64748B',
+    color: '#718096',
   },
   iconActive: {
     fontSize: 17,
-    color: '#D97706',
+    color: '#E9B82E',
   },
   label: {
-    fontSize: 9.5,
+    fontSize: 11,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#718096',
     marginTop: 1,
   },
   labelActive: {
-    color: '#D97706',
+    color: '#E9B82E',
     fontWeight: '700',
   },
 });
