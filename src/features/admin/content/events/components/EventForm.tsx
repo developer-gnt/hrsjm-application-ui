@@ -633,11 +633,11 @@ export const EventForm: React.FC<EventFormProps> = ({
             <View style={styles.card}>
               <View style={styles.switchRow}>
                 <View style={styles.switchTextCol}>
-                  <Text style={styles.switchTitle}>Allow Event Donations</Text>
+                  <Text style={styles.switchTitle}>Enable Donation Button</Text>
                   <Text style={styles.switchSubtitle}>
                     {form.isDonationEnabled
-                      ? 'Attendees and supporters can make a contribution to this event'
-                      : 'Donations disabled — Event is strictly non-contribution'}
+                      ? 'Enabled: This event is eligible to display the Donate for this Event button'
+                      : 'Disabled: This event must not display the Donate for this Event button'}
                   </Text>
                 </View>
                 <Switch
