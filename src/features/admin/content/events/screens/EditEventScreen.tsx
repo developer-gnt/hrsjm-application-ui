@@ -49,6 +49,8 @@ const mapEventToForm = (event: EventListItem): CreateEventFormState => ({
   shortInformation: '',
   tags: buildDemoTags(event.category),
   status: event.status === 'DRAFT' ? 'DRAFT' : 'PUBLISH',
+  isDonationEnabled: Boolean(event.isDonationEnabled),
+  donationMessage: event.donationMessage || '',
 });
 
 interface EditEventScreenProps {

@@ -30,6 +30,10 @@ export interface BackendEventItem {
   language?: string | null;
   tags?: string[] | null;
   status: 'UPCOMING' | 'COMPLETED' | 'CANCELLED' | 'DRAFT';
+  is_donation_enabled?: boolean;
+  donation_message?: string | null;
+  isDonationEnabled?: boolean;
+  donationMessage?: string | null;
 }
 
 export interface BackendEventsListResponse {
@@ -61,6 +65,8 @@ export const mapBackendEventToUi = (item: BackendEventItem): EventListItem => ({
   registrations: item.registrations ?? 0,
   capacity: item.capacity,
   status: item.status,
+  isDonationEnabled: Boolean(item.is_donation_enabled ?? (item as any).isDonationEnabled ?? false),
+  donationMessage: item.donation_message ?? (item as any).donationMessage ?? null,
 });
 
 export const getEventsList = async (
@@ -148,6 +154,10 @@ export const createEventApi = async (
     language: form.language || undefined,
     tags: form.tags,
     status: form.status === 'PUBLISH' ? 'UPCOMING' : 'DRAFT',
+    is_donation_enabled: Boolean(form.isDonationEnabled),
+    donation_message: form.isDonationEnabled && form.donationMessage ? form.donationMessage.trim() : null,
+    isDonationEnabled: Boolean(form.isDonationEnabled),
+    donationMessage: form.isDonationEnabled && form.donationMessage ? form.donationMessage.trim() : null,
   };
 
   const res = await apiClient.post<BackendEventItem>(
@@ -190,6 +200,10 @@ export const updateEventApi = async (
     language: form.language || undefined,
     tags: form.tags,
     status: form.status === 'PUBLISH' ? 'UPCOMING' : 'DRAFT',
+    is_donation_enabled: Boolean(form.isDonationEnabled),
+    donation_message: form.isDonationEnabled && form.donationMessage ? form.donationMessage.trim() : null,
+    isDonationEnabled: Boolean(form.isDonationEnabled),
+    donationMessage: form.isDonationEnabled && form.donationMessage ? form.donationMessage.trim() : null,
   };
 
   const res = await apiClient.patch<BackendEventItem>(

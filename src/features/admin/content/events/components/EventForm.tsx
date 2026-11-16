@@ -120,6 +120,8 @@ export const EMPTY_EVENT_FORM: CreateEventFormState = {
   shortInformation: '',
   tags: [],
   status: 'PUBLISH',
+  isDonationEnabled: false,
+  donationMessage: '',
 };
 
 /**
@@ -621,6 +623,52 @@ export const EventForm: React.FC<EventFormProps> = ({
                       style={styles.input}
                       accessibilityLabel="Total Seats"
                     />
+                  </EventFormField>
+                </View>
+              ) : null}
+            </View>
+
+            {/* 9b. Section: Event Donation & Support */}
+            <View style={styles.card}>
+              <View style={styles.switchRow}>
+                <View style={styles.switchTextCol}>
+                  <Text style={styles.switchTitle}>Allow Event Donations</Text>
+                  <Text style={styles.switchSubtitle}>
+                    {form.isDonationEnabled
+                      ? 'Attendees and supporters can make a contribution to this event'
+                      : 'Donations disabled — Event is strictly non-contribution'}
+                  </Text>
+                </View>
+                <Switch
+                  value={form.isDonationEnabled}
+                  onValueChange={val => updateField('isDonationEnabled', val)}
+                  trackColor={{ true: '#06294D', false: '#DCE4EC' }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+
+              {form.isDonationEnabled ? (
+                <View style={{ marginTop: 14 }}>
+                  <EventFormField
+                    label="Donation Appeal Message (Optional)"
+                    error={errors.donationMessage}
+                  >
+                    <TextInput
+                      value={form.donationMessage}
+                      onChangeText={value =>
+                        updateField('donationMessage', value.slice(0, 200))
+                      }
+                      placeholder="Add a short message about why donations are needed for this event..."
+                      placeholderTextColor="#94A3B8"
+                      maxLength={200}
+                      multiline
+                      numberOfLines={3}
+                      style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]}
+                      accessibilityLabel="Donation Appeal Message"
+                    />
+                    <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 4, textAlign: 'right' }}>
+                      {form.donationMessage.length} / 200
+                    </Text>
                   </EventFormField>
                 </View>
               ) : null}
