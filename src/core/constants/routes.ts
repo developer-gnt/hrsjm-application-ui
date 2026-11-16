@@ -94,5 +94,7 @@ export const AppRoutes = {
   ADD_USER: 'AddUser',
   EDIT_USER: 'EditUser',
   USER_VERIFICATION: 'UserVerification',
+  MEMBER_VERIFICATION: 'MemberVerification',
+  QR_SCANNER: 'QrScanner',
 } as const;
 

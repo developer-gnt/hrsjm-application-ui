@@ -39,6 +39,8 @@ import {
   resolveIdCardRole,
   generateRoleSpecificId,
 } from './format';
+import { getPublicVerificationUrl } from './verificationUrl';
+import { generateCode128Modules } from '../components/Barcode';
 
 const CARD_WIDTH_MM = 85.6;
 const CARD_HEIGHT_MM = 54.8; // standard ID card proportion (1.56:1)
@@ -329,8 +331,9 @@ export const generateIdCardPdf = (
   pdf.setFillColor(255, 255, 255);
   pdf.roundedRect(qrX, qrY, qrSize, qrSize, 1.2, 1.2, 'F');
 
-  // QR code modules
-  const matrix = getQrMatrix(effectiveId);
+  // QR code modules (encodes public verification URL for camera compatibility)
+  const qrPayload = getPublicVerificationUrl(effectiveId);
+  const matrix = getQrMatrix(qrPayload);
   const quiet = qrSize * 0.06;
   const gridArea = qrSize - quiet * 2;
   const module = gridArea / matrix.length;
@@ -358,6 +361,30 @@ export const generateIdCardPdf = (
   pdf.text('Tap to View', qrX + qrSize / 2, qrY + qrSize + 2.8, {
     align: 'center',
   });
+
+  // ── ACCREDITED CODE 128 BARCODE ──────────────────────────────────────────
+  try {
+    const barcodeModules = generateCode128Modules(effectiveId);
+    const barcodeW = qrSize;
+    const barcodeH = 4.8;
+    const barcodeX = qrX;
+    const barcodeY = qrY + qrSize + 3.8;
+
+    // White barcode background frame
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(barcodeX, barcodeY, barcodeW, barcodeH, 0.5, 0.5, 'F');
+
+    // Draw barcode bars
+    const bModuleW = (barcodeW - 2.0) / barcodeModules.length;
+    pdf.setFillColor(1, 31, 57);
+    barcodeModules.forEach((isDark, idx) => {
+      if (isDark) {
+        pdf.rect(barcodeX + 1.0 + idx * bModuleW, barcodeY + 0.6, bModuleW, barcodeH - 1.2, 'F');
+      }
+    });
+  } catch {
+    // Graceful fallback if barcode generation encounters unexpected character
+  }
 
   // ── Clip card to rounded corners ─────────────────────────────────────
   // jsPDF doesn't support true clipping easily; the rounded corners were

@@ -34,6 +34,7 @@ import {
   RenewMembershipScreen,
   MembershipDetailsScreen,
 } from './src/features/membership';
+import { MemberVerificationScreen } from './src/features/membership/screens/MemberVerificationScreen';
 import {
   SupportTicketsScreen,
   CreateSupportTicketScreen,
@@ -295,6 +296,29 @@ function App() {
         return <AdminDetailsScreen key="profile-admin-details" />;
       case 'profile-id-card':
         return <MyIdCardScreen key="profile-id-card" />;
+      case 'member-verification':
+        return (
+          <MemberVerificationScreen
+            key={`verify-${route.token || 'manual'}`}
+            initialToken={route.token}
+            onBack={() => navigateToProfile()}
+            onNavigate={(screen) => {
+              if (screen === 'profile') navigateToProfile();
+              else if (screen === 'members') navigateToMembers();
+            }}
+          />
+        );
+      case 'qr-scanner':
+        return (
+          <MemberVerificationScreen
+            key="qr-scanner-screen"
+            onBack={() => navigateToProfile()}
+            onNavigate={(screen) => {
+              if (screen === 'profile') navigateToProfile();
+              else if (screen === 'members') navigateToMembers();
+            }}
+          />
+        );
       case 'membership-application-details':
         return (
           <MembershipApplicationDetailsScreen
@@ -591,6 +615,9 @@ function App() {
       Boolean(browserWindow?.location?.hash?.startsWith('#/users')) ||
       Boolean(browserWindow?.location?.hash?.startsWith('#/donations')) ||
       Boolean(browserWindow?.location?.hash?.startsWith('#/membership')) ||
+      Boolean(browserWindow?.location?.hash?.startsWith('#/verify')) ||
+      Boolean(browserWindow?.location?.hash?.startsWith('#/qr-scanner')) ||
+      Boolean(browserWindow?.location?.hash?.startsWith('#/scan')) ||
       Boolean(browserWindow?.location?.hash?.startsWith('#/profile')));
 
   if (isIsolatedDevPreview) {

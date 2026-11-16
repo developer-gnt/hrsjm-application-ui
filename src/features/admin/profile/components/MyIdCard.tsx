@@ -4,17 +4,20 @@ import {
   ImageBackground,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
   ViewStyle,
 } from 'react-native';
 import { AdminColors } from '../../../../core';
 import { AdminProfile } from '../types/profile.types';
 import { QrCode } from './QrCode';
+import { Barcode } from './Barcode';
 import {
   resolveIdCardRole,
   generateRoleSpecificId,
   initialsOf,
 } from '../utils/format';
+import { getPublicVerificationUrl } from '../utils/verificationUrl';
 
 // Official HRSJM assets
 const ID_CARD_BG = require('../../../../assets/id_card_bg.png');
@@ -25,9 +28,11 @@ interface MyIdCardProps {
   /** Rendered card width; height follows the reference ratio. */
   width: number;
   style?: ViewStyle;
+  /** Callback when QR code / "Tap to View" is tapped */
+  onPressQr?: () => void;
 }
 
-export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => {
+export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style, onPressQr }) => {
   // Exact aspect ratio of physical standard ID card (w: 85.6mm, h: 54mm ≈ 1.585)
   const height = width / 1.585;
   const radius = width * 0.04;
@@ -251,8 +256,15 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
             </View>
           </View>
 
-          {/* Right Column: QR Code + Tap to View */}
-          <View style={styles.bodyRight}>
+          {/* Right Column: QR Code + Tap to View + Accredited Barcode */}
+          <TouchableOpacity
+            style={styles.bodyRight}
+            onPress={onPressQr}
+            activeOpacity={onPressQr ? 0.75 : 1}
+            disabled={!onPressQr}
+            accessibilityRole="button"
+            accessibilityLabel="Tap to view QR code and verify membership"
+          >
             <View
               style={[
                 styles.qrWrapper,
@@ -262,12 +274,33 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
                 },
               ]}
             >
-              <QrCode size={qrSize} data={effectiveId} />
+              <QrCode size={qrSize} data={getPublicVerificationUrl(effectiveId)} />
             </View>
             <Text style={[styles.tapToView, { fontSize: tapToViewSize }]}>
               Tap to View
             </Text>
-          </View>
+            <View
+              style={[
+                styles.barcodeWrapper,
+                {
+                  marginTop: height * 0.018,
+                  paddingHorizontal: 2,
+                  paddingVertical: 1,
+                  borderRadius: width * 0.01,
+                  backgroundColor: '#FFFFFF',
+                },
+              ]}
+            >
+              <Barcode
+                value={effectiveId}
+                width={qrSize * 1.08}
+                height={Math.max(11, height * 0.07)}
+                showText={false}
+                lineColor="#011F39"
+                backgroundColor="#FFFFFF"
+              />
+            </View>
+          </TouchableOpacity>
         </View>
       </ImageBackground>
     </View>
@@ -455,6 +488,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
     fontWeight: '400',
+  },
+  barcodeWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
