@@ -296,11 +296,11 @@ export const EventForm: React.FC<EventFormProps> = ({
 
     try {
       if (mode === 'edit' && eventId) {
-        await updateEventMutation.mutateAsync({ id: eventId, form });
+        const updated = await updateEventMutation.mutateAsync({ id: eventId, form });
         completingRef.current = true;
         setToast({ message: 'Event updated successfully.', variant: 'success' });
         redirectTimerRef.current = setTimeout(() => {
-          if (onSaved) onSaved();
+          if (onSaved) onSaved(updated);
           else onCancel();
         }, SUCCESS_REDIRECT_MS);
       } else {
