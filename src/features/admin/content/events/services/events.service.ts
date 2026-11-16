@@ -52,22 +52,25 @@ export interface EventsFilterParams {
   limit?: number;
 }
 
-export const mapBackendEventToUi = (item: BackendEventItem): EventListItem => ({
-  id: item.id,
-  title: item.title,
-  category: item.category,
-  location: item.location,
-  coverImageUrl: item.cover_image_url,
-  startAt: item.start_at,
-  endAt: item.end_at || undefined,
-  organizer: item.organized_by || undefined,
-  description: item.description,
-  registrations: item.registrations ?? 0,
-  capacity: item.capacity,
-  status: item.status,
-  isDonationEnabled: Boolean(item.is_donation_enabled ?? (item as any).isDonationEnabled ?? false),
-  donationMessage: item.donation_message ?? (item as any).donationMessage ?? null,
-});
+export const mapBackendEventToUi = (item: BackendEventItem): EventListItem => {
+  const raw = item as any;
+  return {
+    id: raw.id,
+    title: raw.title || '',
+    category: raw.category || 'Seminar',
+    location: raw.location || '',
+    coverImageUrl: raw.cover_image_url || raw.coverImageUrl || null,
+    startAt: raw.start_at || raw.startAt || new Date().toISOString(),
+    endAt: raw.end_at || raw.endAt || undefined,
+    organizer: raw.organized_by || raw.organizedBy || raw.organizer || undefined,
+    description: raw.description || '',
+    registrations: raw.registrations ?? 0,
+    capacity: raw.capacity,
+    status: raw.status || 'UPCOMING',
+    isDonationEnabled: Boolean(raw.is_donation_enabled ?? raw.isDonationEnabled ?? false),
+    donationMessage: raw.donation_message ?? raw.donationMessage ?? null,
+  };
+};
 
 export const getEventsList = async (
   params?: EventsFilterParams,

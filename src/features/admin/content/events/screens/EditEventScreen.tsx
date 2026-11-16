@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { EventForm, EMPTY_EVENT_FORM } from '../components/EventForm';
-import { extractLocalDate, extractLocalTime } from '../../../../../core/utils/date';
+import { extractLocalDate, extractLocalTime } from '../../../../../core/utils';
 import type {
   CreateEventFormState,
   EventListItem,

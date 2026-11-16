@@ -938,3 +938,6 @@ const styles = StyleSheet.create({
     color: '#06294D',
   },
 });
+
+export default EventForm;
+
