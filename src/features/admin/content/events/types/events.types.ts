@@ -40,6 +40,7 @@ export interface EventListItem {
   registrations: number;
   capacity?: number;
   status: EventUiStatus;
+  isEnabled?: boolean;
   isDonationEnabled?: boolean;
   donationMessage?: string | null;
 }
@@ -102,6 +103,7 @@ export interface CreateEventFormState {
   shortInformation: string;
   tags: string[];
   status: 'DRAFT' | 'PUBLISH';
+  isEnabled: boolean;
   isDonationEnabled: boolean;
   donationMessage: string;
 }

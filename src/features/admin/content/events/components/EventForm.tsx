@@ -120,6 +120,7 @@ export const EMPTY_EVENT_FORM: CreateEventFormState = {
   shortInformation: '',
   tags: [],
   status: 'PUBLISH',
+  isEnabled: true,
   isDonationEnabled: false,
   donationMessage: '',
 };
@@ -672,6 +673,26 @@ export const EventForm: React.FC<EventFormProps> = ({
                   </EventFormField>
                 </View>
               ) : null}
+            </View>
+
+            {/* 9c. Section: Event Active Status (Enable / Disable) */}
+            <View style={styles.card}>
+              <View style={styles.switchRow}>
+                <View style={styles.switchTextCol}>
+                  <Text style={styles.switchTitle}>Enable Event (Active Status)</Text>
+                  <Text style={styles.switchSubtitle}>
+                    {form.isEnabled
+                      ? 'Event is Enabled & Active — Visible across user portals when published'
+                      : 'Event is Disabled — Strictly hidden from General Users, Members, and Seekers'}
+                  </Text>
+                </View>
+                <Switch
+                  value={form.isEnabled}
+                  onValueChange={val => updateField('isEnabled', val)}
+                  trackColor={{ true: '#10B981', false: '#DCE4EC' }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
             </View>
 
             {/* 10. Form Submission Action */}

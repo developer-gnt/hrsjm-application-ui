@@ -74,6 +74,7 @@ const mapEventToForm = (event?: EventListItem | null): CreateEventFormState => {
         ? anyEvent.tags
         : buildDemoTags(event.category),
     status: event.status === 'DRAFT' ? 'DRAFT' : 'PUBLISH',
+    isEnabled: Boolean(event.isEnabled ?? anyEvent.is_enabled ?? true),
     isDonationEnabled: Boolean(event.isDonationEnabled ?? anyEvent.is_donation_enabled ?? false),
     donationMessage: event.donationMessage || anyEvent.donation_message || '',
   };
