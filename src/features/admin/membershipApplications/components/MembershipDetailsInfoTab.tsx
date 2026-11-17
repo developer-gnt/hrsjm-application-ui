@@ -41,6 +41,19 @@ export const MembershipDetailsInfoTab: React.FC<MembershipDetailsInfoTabProps> =
           : 'Aid Request'
         : application.membershipType || 'Standard Member',
     },
+    ...(!isSeeker
+      ? [
+          {
+            label: 'Membership Position',
+            value:
+              application.membershipPosition ||
+              (application as any).membership_position ||
+              (application.status === 'approved'
+                ? 'Not Assigned'
+                : 'Pending Admin Assignment'),
+          },
+        ]
+      : []),
     {
       label: 'Amount',
       value: feeAmount,

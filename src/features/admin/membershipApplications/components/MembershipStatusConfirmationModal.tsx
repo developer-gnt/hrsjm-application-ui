@@ -15,6 +15,7 @@ export type ConfirmationType = 'approve' | 'reject';
 interface MembershipStatusConfirmationModalProps {
   visible: boolean;
   type: ConfirmationType | null;
+  membershipPosition?: string | null;
   onClose: () => void;
   onConfirm: (reason?: string) => void;
 }
@@ -22,6 +23,7 @@ interface MembershipStatusConfirmationModalProps {
 export const MembershipStatusConfirmationModal: React.FC<MembershipStatusConfirmationModalProps> = ({
   visible,
   type,
+  membershipPosition,
   onClose,
   onConfirm,
 }) => {
@@ -77,6 +79,13 @@ export const MembershipStatusConfirmationModal: React.FC<MembershipStatusConfirm
                   ? 'After approving the status you cannot change the status. Are you sure you want to approve this application?'
                   : 'After rejecting the status you cannot change the status. Are you sure you want to reject this application?'}
               </Text>
+
+              {isApprove && membershipPosition ? (
+                <View style={styles.positionConfirmBox}>
+                  <Text style={styles.positionConfirmLabel}>Assigned Membership Position:</Text>
+                  <Text style={styles.positionConfirmValue}>🏛️ {membershipPosition}</Text>
+                </View>
+              ) : null}
 
               {/* Reason input when rejecting */}
               {!isApprove ? (
@@ -200,6 +209,29 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginBottom: 16,
     paddingHorizontal: 4,
+  },
+  positionConfirmBox: {
+    width: '100%',
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  positionConfirmLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#92400E',
+    marginBottom: 3,
+  },
+  positionConfirmValue: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F2860',
+    textAlign: 'center',
   },
   reasonFieldContainer: {
     width: '100%',

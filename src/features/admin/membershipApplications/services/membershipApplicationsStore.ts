@@ -314,6 +314,12 @@ export function mapBackendToApplicationItem(backend: any): MembershipApplication
       }
       return 'PAID';
     })(),
+    membershipPosition:
+      backend.membership_position ||
+      backend.membershipPosition ||
+      appData.membership_position ||
+      appData.membershipPosition ||
+      undefined,
     documents,
     activityLog,
   };
@@ -1168,10 +1174,67 @@ class MembershipApplicationsStore {
     };
   }
 
+  public async assignPosition(id: string, position: string): Promise<boolean> {
+    const index = this.applications.findIndex(
+      a => a.id === id || a.applicationId === id,
+    );
+    if (index === -1) return false;
+
+    const current = this.applications[index];
+    this.applications[index] = {
+      ...current,
+      membershipPosition: position,
+      membership_position: position,
+    };
+
+    const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+    if (win && win.localStorage) {
+      try {
+        const userSaved = win.localStorage.getItem('hrsjm_user_membership_record');
+        if (userSaved) {
+          const userRec = JSON.parse(userSaved);
+          if (
+            userRec &&
+            (userRec.id === id ||
+              userRec.applicationId === id ||
+              userRec.id === current.id ||
+              userRec.applicationId === current.applicationId)
+          ) {
+            userRec.membershipPosition = position;
+            userRec.membership_position = position;
+            win.localStorage.setItem('hrsjm_user_membership_record', JSON.stringify(userRec));
+          }
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+
+    this.savePersistedApplications();
+    this.notify();
+
+    if (process.env.NODE_ENV === 'test') {
+      return true;
+    }
+
+    try {
+      if (/^[0-9a-fA-F-]{36}$/.test(current.id)) {
+        await apiClient.patch<any>(`/memberships/${current.id}/position`, {
+          membership_position: position,
+        });
+      }
+    } catch {
+      // Backend sync fallback
+    }
+
+    return true;
+  }
+
   public async updateStatus(
     id: string,
     newStatus: ApplicationStatus,
     notes?: string,
+    membershipPosition?: string,
   ): Promise<boolean> {
     const index = this.applications.findIndex(
       a => a.id === id || a.applicationId === id,
@@ -1219,9 +1282,13 @@ class MembershipApplicationsStore {
       status: newStatus,
     };
 
+    const targetPosition = membershipPosition || current.membershipPosition;
+
     this.applications[index] = {
       ...current,
       status: newStatus,
+      membershipPosition: targetPosition,
+      membership_position: targetPosition,
       rejectionReason: newStatus === 'rejected' ? (notes || 'Incomplete documents') : undefined,
       paymentStatus: newStatus === 'approved' ? 'PAID' : current.paymentStatus,
       activityLog: [newLogItem, ...(current.activityLog || [])],
@@ -1289,6 +1356,10 @@ class MembershipApplicationsStore {
             if (newStatus === 'rejected') {
               userRec.rejectionReason = notes || 'Incomplete documents';
             }
+            if (targetPosition) {
+              userRec.membershipPosition = targetPosition;
+              userRec.membership_position = targetPosition;
+            }
             win.localStorage.setItem('hrsjm_user_membership_record', JSON.stringify(userRec));
           }
         }
@@ -1329,6 +1400,7 @@ class MembershipApplicationsStore {
         } else {
           const patchRes = await apiClient.patch<any>(ApiRoutes.MEMBERSHIPS.STATUS(current.id), {
             status: backendStatus,
+            membership_position: targetPosition,
             admin_notes: notes,
             rejection_reason:
               newStatus === 'rejected'

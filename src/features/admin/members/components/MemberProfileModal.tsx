@@ -435,6 +435,12 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                       <Text style={styles.itemValueBold}>{categoryName}</Text>
                     </View>
                     <View style={styles.gridItem}>
+                      <Text style={styles.itemLabel}>Membership Position</Text>
+                      <Text style={styles.itemValueBold}>
+                        {member.membershipPosition || (rawBackend as any)?.membership_position || 'Not Assigned'}
+                      </Text>
+                    </View>
+                    <View style={styles.gridItem}>
                       <Text style={styles.itemLabel}>Membership Fee</Text>
                       <Text style={styles.feeHighlight}>{fee}</Text>
                     </View>

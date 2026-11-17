@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -21,6 +22,8 @@ import {
   ConfirmationType,
   MembershipStatusConfirmationModal,
 } from '../components/MembershipStatusConfirmationModal';
+import { MembershipPositionSelector } from '../components/MembershipPositionSelector';
+import { isValidMembershipPosition } from '../constants/membershipPositions';
 import { membershipApplicationsStore } from '../services/membershipApplicationsStore';
 import { ApplicationStatus, MembershipApplicationItem } from '../types/membershipApplications.types';
 
@@ -78,6 +81,30 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
   );
   const [loading, setLoading] = useState<boolean>(() => !application && Boolean(applicationId));
 
+  const isSeeker =
+    application?.accountType === 'seeker' ||
+    (application?.membershipType || '').toLowerCase().includes('seeker') ||
+    application?.applicationId?.startsWith('HRSJM-SEK');
+
+  const [selectedPosition, setSelectedPosition] = useState<string>(() =>
+    application?.membershipPosition || (application as any)?.membership_position || ''
+  );
+  const [positionError, setPositionError] = useState<string>('');
+
+  useEffect(() => {
+    if (application?.membershipPosition) {
+      setSelectedPosition(application.membershipPosition);
+    }
+  }, [application?.membershipPosition]);
+
+  const handlePositionSelect = async (pos: string) => {
+    setSelectedPosition(pos);
+    setPositionError('');
+    if (applicationId) {
+      await membershipApplicationsStore.assignPosition(applicationId, pos);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
     if (applicationId) {
@@ -115,9 +142,19 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
     };
   }, [applicationId]);
 
-  const handleSelectStatus = async (newStatus: ApplicationStatus, notes?: string) => {
+  const handleSelectStatus = async (
+    newStatus: ApplicationStatus,
+    notes?: string,
+    positionToAssign?: string,
+  ) => {
     if (!applicationId) return;
-    await membershipApplicationsStore.updateStatus(applicationId, newStatus, notes);
+    const finalPos = positionToAssign || selectedPosition || application?.membershipPosition;
+    await membershipApplicationsStore.updateStatus(
+      applicationId,
+      newStatus,
+      notes,
+      finalPos,
+    );
     onStatusChange?.(newStatus);
   };
 
@@ -130,6 +167,21 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
   const handleApprovePress = () => {
     // Show confirmation modal
     if (application?.status !== 'approved') {
+      if (!isSeeker) {
+        const pos = selectedPosition || application?.membershipPosition;
+        if (!pos || !isValidMembershipPosition(pos)) {
+          setPositionError(
+            'Please assign an official Membership Position before approving this application.',
+          );
+          Alert.alert(
+            'Membership Position Required',
+            'Please select one of the 25 official Membership Positions before approving this application.',
+            [{ text: 'OK' }],
+          );
+          return;
+        }
+      }
+      setPositionError('');
       setConfirmationType('approve');
     }
   };
@@ -143,7 +195,16 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
 
   const handleConfirmAction = (reason?: string) => {
     if (confirmationType === 'approve') {
-      handleSelectStatus('approved');
+      if (!isSeeker) {
+        const pos = selectedPosition || application?.membershipPosition;
+        if (!pos || !isValidMembershipPosition(pos)) {
+          setPositionError(
+            'Please assign an official Membership Position before approving.',
+          );
+          return;
+        }
+      }
+      handleSelectStatus('approved', undefined, selectedPosition);
       setUnderReviewActive(false);
     } else if (confirmationType === 'reject') {
       handleSelectStatus('rejected', reason || 'Incomplete documents');
@@ -257,6 +318,23 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
       >
         <MembershipApplicantSummaryCard application={application} />
 
+        {!isSeeker ? (
+          <View style={styles.positionCard}>
+            <View style={styles.positionCardHeader}>
+              <Text style={styles.positionSectionTitle}>Membership Position Assignment</Text>
+              <Text style={styles.positionSectionDesc}>
+                Assign one of the 25 official HRSJM positions before approving the application.
+              </Text>
+            </View>
+            <MembershipPositionSelector
+              selectedPosition={selectedPosition}
+              onSelectPosition={handlePositionSelect}
+              disabled={application.status === 'approved'}
+              error={positionError}
+            />
+          </View>
+        ) : null}
+
         {renderTabButtons()}
         {renderTabContent()}
       </ScrollView>
@@ -275,6 +353,7 @@ export const MembershipApplicationDetailsScreen: React.FC<MembershipApplicationD
       <MembershipStatusConfirmationModal
         visible={confirmationType !== null}
         type={confirmationType}
+        membershipPosition={selectedPosition}
         onClose={handleCloseConfirmation}
         onConfirm={handleConfirmAction}
       />
@@ -289,6 +368,35 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 24,
+  },
+  positionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#E8EFF8',
+    padding: 14,
+    marginHorizontal: Spacing.base,
+    marginBottom: Spacing.md,
+    shadowColor: '#0F2860',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  positionCardHeader: {
+    marginBottom: 8,
+  },
+  positionSectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F2860',
+    letterSpacing: 0.2,
+  },
+  positionSectionDesc: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+    lineHeight: 16,
   },
   tabsContainer: {
     flexDirection: 'row',

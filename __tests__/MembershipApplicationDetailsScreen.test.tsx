@@ -10,8 +10,9 @@ import {
 describe('MembershipApplicationDetailsScreen Status Flow & Confirmation Tests', () => {
   beforeEach(async () => {
     jest.setTimeout(15000);
-    // Reset Aman Shaikh to under_review before each test
+    // Reset Aman Shaikh to under_review and assign an initial position before each test
     await act(async () => {
+      await membershipApplicationsStore.assignPosition('APP20260915001', 'Vice President');
       await membershipApplicationsStore.updateStatus('APP20260915001', 'under_review');
     });
   });
@@ -217,5 +218,33 @@ describe('MembershipApplicationDetailsScreen Status Flow & Confirmation Tests', 
     expect(root.findByProps({ children: 'Application Submitted' })).toBeDefined();
     expect(root.findByProps({ children: 'Application is under review by admin.' })).toBeDefined();
     expect(root.findByProps({ children: 'Application rejected by admin.' })).toBeDefined();
+  });
+
+  it('Scenario 4: Blocks approval when no membership position is assigned', async () => {
+    await act(async () => {
+      const app = membershipApplicationsStore.getApplicationById('APP20260915001');
+      if (app) {
+        app.membershipPosition = undefined;
+        app.membership_position = undefined;
+      }
+    });
+
+    const renderer = await renderDetailsScreen();
+    const root = renderer.root;
+
+    // Click Under Review
+    const underReviewBtn = root.findByProps({ accessibilityLabel: 'Under Review Action' });
+    await act(async () => {
+      underReviewBtn.props.onPress();
+    });
+
+    // Click Approve button
+    const approveBtn = root.findByProps({ accessibilityLabel: 'Approve Application' });
+    await act(async () => {
+      approveBtn.props.onPress();
+    });
+
+    // Confirm Approval modal must NOT appear
+    expect(root.findAllByProps({ children: 'Confirm Approval' }).length).toBe(0);
   });
 });

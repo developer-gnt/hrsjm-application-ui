@@ -30,6 +30,7 @@ export interface MembershipDetailsData {
   daysRemaining: string;
   address?: string;
   kitFulfillment?: any;
+  membershipPosition?: string;
 }
 
 const formatDateDisplay = (date: Date): string => {
@@ -304,6 +305,13 @@ export const useMembershipDetailsData = (
     daysRemaining: initialOverride?.daysRemaining || daysRemaining,
     address: initialOverride?.address || backendAddress || (profile as any)?.address || '',
     kitFulfillment: initialOverride?.kitFulfillment || backendKit || (profile as any)?.kit_fulfillment || null,
+    membershipPosition:
+      initialOverride?.membershipPosition ||
+      (profile as any)?.membership_position ||
+      (profile as any)?.membershipPosition ||
+      (regRecord as any)?.membershipPosition ||
+      (regRecord as any)?.membership_position ||
+      undefined,
     ...initialOverride,
   };
 

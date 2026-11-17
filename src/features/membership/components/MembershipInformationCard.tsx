@@ -16,6 +16,7 @@ interface MembershipInformationCardProps {
   joinDate: string;
   validTill: string;
   status: DisplayMembershipStatus;
+  membershipPosition?: string;
 }
 
 interface InfoRowProps {
@@ -60,6 +61,7 @@ export const MembershipInformationCard: React.FC<MembershipInformationCardProps>
   joinDate,
   validTill,
   status,
+  membershipPosition,
 }) => {
   const getStatusBadgeStyle = () => {
     switch (status) {
@@ -106,6 +108,19 @@ export const MembershipInformationCard: React.FC<MembershipInformationCardProps>
           label="Membership Type"
           value={membershipType}
         />
+
+        {membershipPosition ? (
+          <InfoRow
+            icon={
+              <View style={styles.badgeIcon}>
+                <View style={styles.badgeShield} />
+                <View style={styles.badgeStar} />
+              </View>
+            }
+            label="Membership Position"
+            value={membershipPosition}
+          />
+        ) : null}
 
         {/* 3. Member ID */}
         <InfoRow

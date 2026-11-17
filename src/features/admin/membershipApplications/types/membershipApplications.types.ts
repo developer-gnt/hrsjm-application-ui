@@ -152,6 +152,8 @@ export interface MembershipApplicationItem {
   amount?: number | string;
   paymentStatus?: 'PAID' | 'UNPAID' | 'EXEMPT' | string;
   rejectionReason?: string;
+  membershipPosition?: string;
+  membership_position?: string;
   documents?: {
     id: string;
     title: string;

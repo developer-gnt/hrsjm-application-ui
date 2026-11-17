@@ -43,6 +43,8 @@ export const ApiRoutes = {
     ID_CARD: (id: string | number) => `/membership-id/memberships/${id}/card`,
     RESET_PASSWORD: (id: string | number) => `/memberships/${id}/reset-password`,
     KIT_FULFILLMENT: (id: string | number) => `/memberships/${id}/kit-fulfillment`,
+    POSITIONS: '/memberships/positions',
+    POSITION: (id: string | number) => `/memberships/${id}/position`,
   },
 
   // Renewals

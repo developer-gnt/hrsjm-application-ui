@@ -242,6 +242,11 @@ export const MemberDashboardDetailsContent: React.FC<
                 <Text style={styles.memberMetaText}>
                   Member ID: {currentMembership.memberId || 'HRSJM202600123'}
                 </Text>
+                {currentMembership.membershipPosition ? (
+                  <Text style={styles.memberMetaText}>
+                    Position: {currentMembership.membershipPosition}
+                  </Text>
+                ) : null}
                 <Text style={styles.memberMetaText}>
                   Joined on: {currentMembership.joinedDate || '15 Sep 2026'}
                 </Text>
@@ -512,6 +517,11 @@ export const MemberDashboardDetailsContent: React.FC<
               <Text style={styles.memberMetaText}>
                 Member ID: {currentMembership.memberId || 'HRSJM202600123'}
               </Text>
+              {currentMembership.membershipPosition ? (
+                <Text style={styles.memberMetaText}>
+                  Position: {currentMembership.membershipPosition}
+                </Text>
+              ) : null}
               <Text style={styles.memberMetaText}>
                 Joined on: {currentMembership.joinedDate || '15 Sep 2026'}
               </Text>

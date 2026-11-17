@@ -1,4 +1,4 @@
-﻿import { apiClient } from '../../../../core/api/client';
+import { apiClient } from '../../../../core/api/client';
 import { ApiRoutes } from '../../../../core/constants/api-routes';
 import { Member, MemberStats, MemberStatus } from '../types';
 
@@ -56,6 +56,7 @@ export interface BackendMembership {
   payment_amount?: number;
   amount?: number;
   payment_status?: string;
+  membership_position?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -83,6 +84,7 @@ export interface UpdateMembershipStatusPayload {
   status: BackendMembershipStatus;
   admin_notes?: string;
   rejection_reason?: string;
+  membership_position?: string;
 }
 
 /**
@@ -149,6 +151,11 @@ export function mapBackendMembershipToMember(backend: BackendMembership): Member
 
   const avatarUri = backend.user?.avatar;
 
+  const membershipPosition =
+    backend.membership_position ||
+    (backend.application_data as any)?.membership_position ||
+    undefined;
+
   return {
     id: backend.id,
     userId: backend.user_id || backend.user?.id,
@@ -160,6 +167,8 @@ export function mapBackendMembershipToMember(backend: BackendMembership): Member
     validTill,
     status,
     photo: avatarUri ? { uri: avatarUri } : undefined,
+    categoryName: backend.category?.name,
+    membershipPosition,
     rawBackend: backend,
   };
 }
@@ -535,6 +544,7 @@ export interface UpdateMemberPayload {
     };
     [key: string]: unknown;
   };
+  membership_position?: string;
   admin_notes?: string;
 }
 
