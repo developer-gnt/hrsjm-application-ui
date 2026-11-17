@@ -18,6 +18,7 @@ import { AppButton } from '../../../../core/components/common/AppButton';
 import { DatePickerModal } from '../../../../core/components/common/DatePickerModal';
 import { Calendar, Check, Pencil, X } from '../../../../core/components/icons';
 import { useMembershipCategories } from '../hooks/useMembers';
+import { MembershipPositionSelector } from '../../membershipApplications/components/MembershipPositionSelector';
 import type { BackendMembership, UpdateMemberPayload } from '../services/members.service';
 import type { Member } from '../types';
 
@@ -56,6 +57,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
   const [mobileNumber, setMobileNumber] = useState('');
   const [email, setEmail] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [membershipPosition, setMembershipPosition] = useState<string>('');
   const [qualification, setQualification] = useState<string>('10th Pass');
   const [customQualification, setCustomQualification] = useState('');
   const [gender, setGender] = useState<string>('MALE');
@@ -79,6 +81,12 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
       setFullName(member.name || appData.full_name || raw?.user?.full_name || '');
       setMobileNumber(member.phone && member.phone !== '—' ? member.phone : (appData.mobile_number || raw?.user?.mobile_number || ''));
       setEmail(member.email && member.email !== '—' ? member.email : (appData.email || raw?.user?.email || ''));
+      setMembershipPosition(
+        member.membershipPosition ||
+        (raw as any)?.membership_position ||
+        (appData as any)?.membership_position ||
+        ''
+      );
       
       // Category
       if (raw?.category_id) {
@@ -145,6 +153,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
 
     const payload: UpdateMemberPayload = {
       category_id: selectedCategoryId || undefined,
+      membership_position: membershipPosition || undefined,
       application_data: {
         full_name: fullName.trim(),
         mobile_number: mobileNumber.trim(),
@@ -220,6 +229,15 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
             {/* Applicant Details Section */}
             <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Personal Details</Text>
+
+              {/* Membership Position */}
+              <View style={styles.fieldGroup}>
+                <MembershipPositionSelector
+                  selectedPosition={membershipPosition}
+                  onSelectPosition={setMembershipPosition}
+                  required={false}
+                />
+              </View>
 
               {/* Full Name */}
               <View style={styles.fieldGroup}>

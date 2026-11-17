@@ -259,6 +259,7 @@ export const MembershipDetailsScreen: React.FC<MembershipDetailsScreenProps> = (
                   joinDate={memberData.joinDate}
                   validTill={memberData.validTill}
                   status={memberData.status}
+                  membershipPosition={memberData.membershipPosition}
                 />
               </View>
 

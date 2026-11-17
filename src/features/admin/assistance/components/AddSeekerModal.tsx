@@ -157,7 +157,6 @@ export const AddSeekerModal: React.FC<AddSeekerModalProps> = ({
           fileSize: result.fileSize || '1.5 MB',
           uri: result.uri,
           type: result.type,
-          file: result.file,
         };
         setAttachedDocs(prev => [...prev, newDoc]);
         if (errors.documents) {
@@ -206,7 +205,6 @@ export const AddSeekerModal: React.FC<AddSeekerModalProps> = ({
         file_size: d.fileSize,
         mime_type: d.type || (d.fileName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
         uri: d.uri,
-        file: d.file,
       })),
     };
 

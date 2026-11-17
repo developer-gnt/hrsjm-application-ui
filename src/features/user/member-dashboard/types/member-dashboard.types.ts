@@ -7,6 +7,7 @@ export interface MemberMembershipRecord {
   category: string;
   memberName?: string;
   memberId?: string;
+  membershipPosition?: string;
   joinedDate?: string;
   validUntil?: string;
 }

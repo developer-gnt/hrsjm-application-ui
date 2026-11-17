@@ -126,6 +126,14 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
             </Text>
           </View>
 
+          {application.membershipPosition ? (
+            <View style={styles.positionPill}>
+              <Text style={styles.positionPillText} numberOfLines={1}>
+                🏛️ {application.membershipPosition}
+              </Text>
+            </View>
+          ) : null}
+
           <View style={styles.metaList}>
             <View style={styles.metaRow}>
               <Text style={styles.metaIcon}>📄</Text>
@@ -271,6 +279,21 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontWeight: '500',
     flexShrink: 1,
+  },
+  positionPill: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
+    marginVertical: 4,
+  },
+  positionPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#92400E',
   },
   metaList: {
     gap: 2,

@@ -27,6 +27,7 @@ export interface Member {
   /** Optional member photo; initials avatar is used as fallback. */
   photo?: ImageSourcePropType | { uri: string };
   categoryName?: string;
+  membershipPosition?: string;
   rawBackend?: unknown;
 }
 
