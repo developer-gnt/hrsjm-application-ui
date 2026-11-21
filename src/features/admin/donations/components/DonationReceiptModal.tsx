@@ -57,7 +57,7 @@ export const DonationReceiptModal: React.FC<DonationReceiptModalProps> = ({
               <View style={styles.identityCol}>
                 <Text style={styles.orgName}>HRSJM</Text>
                 <Text style={styles.orgFullName}>
-                  HUMAN RIGHTS &amp; SOCIAL JUSTICE MISSION
+                  HUMAN RIGHTS AND SOCIAL JUSTICE MISSION
                 </Text>
                 <Text style={styles.orgMotto}>
                   मानव अधिकार · सामाजिक न्याय

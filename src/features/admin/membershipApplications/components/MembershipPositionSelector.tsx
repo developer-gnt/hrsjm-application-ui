@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#0F2860',
     paddingVertical: 0,
-    ...(Platform.OS === 'web' ? { outlineStyle: 'none' } : {}),
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : {}),
   },
   clearSearchBtn: {
     padding: 4,

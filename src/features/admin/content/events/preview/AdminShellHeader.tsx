@@ -51,7 +51,7 @@ export const AdminShellHeader: React.FC<{
       <View style={styles.branding}>
         <Text style={styles.brandName}>HRSJM</Text>
         <Text style={styles.brandTagline} numberOfLines={1}>
-          HUMAN RIGHTS &amp; SOCIAL JUSTICE MISSION
+          HUMAN RIGHTS AND SOCIAL JUSTICE MISSION
         </Text>
         <Text style={styles.brandHindi} numberOfLines={1}>
           मानव अधिकार • सामाजिक न्याय

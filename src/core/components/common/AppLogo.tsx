@@ -11,12 +11,12 @@ interface AppLogoProps {
 
 export function AppLogo({ size = 44 }: AppLogoProps) {
   return (
-    <View style={styles.row} accessibilityLabel="HRSJM — Human Rights & Social Justice Mission">
+    <View style={styles.row} accessibilityLabel="Human Rights and Social Justice Mission">
       <Image source={LOGO_SOURCE} style={{ width: size, height: size * (132 / 130) }} resizeMode="contain" />
       <View style={styles.wordmark}>
         <Text style={[styles.name, { fontSize: size * 0.52 }]}>HRSJM</Text>
         <Text style={[styles.fullName, { fontSize: size * 0.185 }]}>
-          HUMAN RIGHTS &amp; SOCIAL JUSTICE MISSION
+          HUMAN RIGHTS AND SOCIAL JUSTICE MISSION
         </Text>
         <Text style={[styles.tagline, { fontSize: size * 0.25 }]}>मानव अधिकार • सामाजिक न्याय</Text>
       </View>
