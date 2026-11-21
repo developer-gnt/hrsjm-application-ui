@@ -95,7 +95,7 @@ export const AuthLogo: React.FC<AuthLogoProps> = ({
                 ]}
                 numberOfLines={1}
               >
-                HUMAN RIGHTS & SOCIAL JUSTICE MISSION
+                HUMAN RIGHTS AND SOCIAL JUSTICE MISSION
               </Text>
               <Text
                 style={[

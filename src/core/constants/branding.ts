@@ -8,7 +8,7 @@
  */
 export const AppBranding = {
   shortName: 'HRSJM',
-  fullName: 'Human Rights & Social Justice Mission',
-  taglineEn: 'HUMAN RIGHTS & SOCIAL JUSTICE MISSION',
+  fullName: 'Human Rights and Social Justice Mission',
+  taglineEn: 'HUMAN RIGHTS AND SOCIAL JUSTICE MISSION',
   taglineHi: 'मानव अधिकार • सामाजिक न्याय',
 } as const;

@@ -26,7 +26,7 @@ export const HrsjmLogoMark: React.FC<HrsjmLogoMarkProps> = ({
   const logo = (
     <Image
       source={HrsjmLogoSource}
-      style={{ height, aspectRatio: 4.161 }}
+      style={{ height, aspectRatio: 813 / 825 }}
       resizeMode="contain"
     />
   );

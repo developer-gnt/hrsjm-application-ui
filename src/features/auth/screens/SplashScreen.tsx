@@ -150,7 +150,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
           <Text style={styles.brandTitle}>HRSJM</Text>
           <View style={styles.goldDivider} />
           <Text style={styles.missionText}>
-            HUMAN RIGHTS & SOCIAL JUSTICE MISSION
+            HUMAN RIGHTS AND SOCIAL JUSTICE MISSION
           </Text>
           <Text style={styles.hindiText}>
             मानव अधिकार <Text style={styles.goldBullet}>•</Text> सामाजिक न्याय

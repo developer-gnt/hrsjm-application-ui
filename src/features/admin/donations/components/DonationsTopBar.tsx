@@ -55,7 +55,7 @@ export const DonationsTopBar: React.FC<DonationsTopBarProps> = ({
       <View style={styles.identityColumn}>
         <Text style={styles.orgName}>HRSJM</Text>
         <Text style={styles.orgFullName} numberOfLines={1}>
-          HUMAN RIGHTS &amp; SOCIAL JUSTICE MISSION
+          HUMAN RIGHTS AND SOCIAL JUSTICE MISSION
         </Text>
         <Text style={styles.orgHindi} numberOfLines={1}>
           मानव अधिकार · सामाजिक न्याय

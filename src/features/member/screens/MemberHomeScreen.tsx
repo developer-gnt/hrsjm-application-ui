@@ -68,7 +68,7 @@ export const MemberHomeScreen: React.FC = () => {
           <View style={styles.cardHeaderRow}>
             <Image source={HRSJM_EMBLEM} style={styles.cardEmblem} resizeMode="contain" />
             <View style={styles.cardOrgCol}>
-              <Text style={styles.cardOrgTitle}>HRSJM</Text>
+              <Text style={styles.cardOrgTitle}>HUMAN RIGHTS AND SOCIAL JUSTICE MISSION</Text>
               <Text style={styles.cardOrgSub}>मानव अधिकार • सामाजिक न्याय</Text>
             </View>
             <View style={styles.statusBadge}>

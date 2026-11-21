@@ -125,7 +125,7 @@ const buildReceiptBody = (receipt: DonationReceiptModel): string => {
     <div class="brand">
       ${LOGO_URI ? `<img class="brand-logo-img" src="${LOGO_URI}" alt="HRSJM Logo" />` : '<div class="brand-logo">H</div>'}
       <div class="brand-name">HRSJM</div>
-      <div class="brand-full">HUMAN RIGHTS &amp; SOCIAL JUSTICE MISSION</div>
+      <div class="brand-full">HUMAN RIGHTS AND SOCIAL JUSTICE MISSION</div>
       <div class="brand-motto">मानव अधिकार • सामाजिक न्याय</div>
     </div>
     <div class="receipt-title">DONATION RECEIPT</div>

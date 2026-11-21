@@ -309,8 +309,8 @@ export const useMembershipDetailsData = (
       initialOverride?.membershipPosition ||
       (profile as any)?.membership_position ||
       (profile as any)?.membershipPosition ||
-      (regRecord as any)?.membershipPosition ||
-      (regRecord as any)?.membership_position ||
+      (latestApp as any)?.membershipPosition ||
+      (latestApp as any)?.membership_position ||
       undefined,
     ...initialOverride,
   };

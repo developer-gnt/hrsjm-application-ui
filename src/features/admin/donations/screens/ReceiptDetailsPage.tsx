@@ -528,7 +528,7 @@ export const ReceiptDetailsPage: React.FC<ReceiptDetailsPageProps> = ({
                 <View style={styles.brandText}>
                   <Text style={styles.orgName}>HRSJM</Text>
                   <Text style={styles.orgFull}>
-                    HUMAN RIGHTS &amp; SOCIAL JUSTICE MISSION
+                    HUMAN RIGHTS AND SOCIAL JUSTICE MISSION
                   </Text>
                   <Text style={styles.orgMotto}>मानव अधिकार • सामाजिक न्याय</Text>
                 </View>

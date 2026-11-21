@@ -43,9 +43,9 @@ export const IneligibleAgeScreen: React.FC<IneligibleAgeScreenProps> = ({
               accessibilityLabel="HRSJM Logo"
             />
             <View style={styles.logoTextGroup}>
-              <Text style={styles.logoTitle}>HRSJM</Text>
+              <Text style={styles.logoTitle}>HUMAN RIGHTS AND SOCIAL JUSTICE MISSION</Text>
               <Text style={styles.logoSubtitle}>
-                Human Rights &amp; Social Justice Mission
+                मानव अधिकार • सामाजिक न्याय
               </Text>
             </View>
           </View>
