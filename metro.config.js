@@ -1,3 +1,4 @@
+const path = require('path');
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
 /**
@@ -9,6 +10,10 @@ const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 const defaultConfig = getDefaultConfig(__dirname);
 
 const config = {
+  watchFolders: [
+    __dirname,
+    path.resolve(__dirname),
+  ],
   resolver: {
     blockList: [
       /.*[/\\]android[/\\].*/,

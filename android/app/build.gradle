@@ -78,6 +78,13 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "com.hrsjm_application_ui"
+    if (new File("X:/").exists()) {
+        externalNativeBuild {
+            cmake {
+                buildStagingDirectory = file("X:/cxx")
+            }
+        }
+    }
     defaultConfig {
         applicationId "com.hrsjm_application_ui"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -85,11 +92,6 @@ android {
         versionCode 1
         versionName "1.0"
         manifestPlaceholders = [usesCleartextTraffic: "true"]
-        externalNativeBuild {
-            cmake {
-                arguments "-DCMAKE_OBJECT_PATH_MAX=1024"
-            }
-        }
     }
     signingConfigs {
         debug {
