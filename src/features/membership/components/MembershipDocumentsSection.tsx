@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ActivityIndicator,
   Platform,
   StyleSheet,
   Text,
@@ -18,11 +19,15 @@ export interface DocumentItem {
 
 interface MembershipDocumentsSectionProps {
   onDocumentPress?: (doc: DocumentItem) => void;
+  onDownloadPress?: (doc: DocumentItem) => void;
+  downloadingDocId?: string | null;
   status?: DisplayMembershipStatus;
 }
 
 export const MembershipDocumentsSection: React.FC<MembershipDocumentsSectionProps> = ({
   onDocumentPress,
+  onDownloadPress,
+  downloadingDocId,
   status = 'Active',
 }) => {
   const documents: DocumentItem[] = [
@@ -86,13 +91,31 @@ export const MembershipDocumentsSection: React.FC<MembershipDocumentsSectionProp
               </View>
 
               {/* Right Download Button Icon */}
-              <View style={styles.downloadBox} accessibilityRole="image" accessibilityLabel="Download icon">
-                <View style={styles.downloadIcon}>
-                  <View style={styles.downloadStem} />
-                  <View style={styles.downloadArrowHead} />
-                  <View style={styles.downloadTray} />
-                </View>
-              </View>
+              <TouchableOpacity
+                style={styles.downloadBox}
+                accessibilityRole="button"
+                accessibilityLabel={`Download ${doc.title}`}
+                activeOpacity={0.7}
+                disabled={Boolean(downloadingDocId)}
+                onPress={(e: any) => {
+                  e?.stopPropagation?.();
+                  if (onDownloadPress) {
+                    onDownloadPress(doc);
+                  } else {
+                    onDocumentPress?.(doc);
+                  }
+                }}
+              >
+                {downloadingDocId === doc.id ? (
+                  <ActivityIndicator size="small" color="#0F2860" />
+                ) : (
+                  <View style={styles.downloadIcon}>
+                    <View style={styles.downloadStem} />
+                    <View style={styles.downloadArrowHead} />
+                    <View style={styles.downloadTray} />
+                  </View>
+                )}
+              </TouchableOpacity>
 
               {/* Divider between rows */}
               {!isLast && <View style={styles.divider} />}

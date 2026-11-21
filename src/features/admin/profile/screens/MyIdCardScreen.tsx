@@ -34,8 +34,20 @@ import {
   BadgeCheckIcon,
   IdCardIcon,
 } from '../components/ProfileIcons';
+import { Camera } from '../../../../core/components/icons';
 import { useIdCardFiles } from '../hooks/useIdCardFiles';
 import { useMembership } from '../../../membership/context/MembershipContext';
+import {
+  resolveIdCardRole,
+  generateRoleSpecificId,
+} from '../utils/format';
+import { QrModal } from '../components/QrModal';
+import { LiveQrScannerModal } from '../../../membership/components/LiveQrScannerModal';
+import { VerificationResultModal } from '../../../membership/components/VerificationResultModal';
+import {
+  memberVerificationService,
+  type MemberVerificationData,
+} from '../../../membership/services/memberVerificationService';
 
 export interface MyIdCardScreenProps {
   onBack?: () => void;
@@ -51,10 +63,29 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
   const profile = useProfileStore(state => state.profile);
 
   const [toastMessage, setToastMessage] = useState<string | ToastState | null>(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [showScannerModal, setShowScannerModal] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [verificationData, setVerificationData] = useState<MemberVerificationData | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
   const { download, share, busyAction } = useIdCardFiles({
     onMessage: setToastMessage,
     profile,
   });
+
+  const handleVerify = async (tokenOrPayload: string) => {
+    setIsVerifying(true);
+    try {
+      const result = await memberVerificationService.verifyMember(tokenOrPayload);
+      setVerificationData(result);
+      setShowResultModal(true);
+    } catch {
+      setToastMessage('Verification request failed. Please check your network.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const fetchProfile = useProfileStore(state => state.fetchProfile);
 
@@ -84,19 +115,21 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
     roleLower.includes('donar seeker') ||
     roleLower.includes('donation seeker');
 
-  const isAllowed = isMember || isAdmin || isSeeker;
+  const roleInfo = resolveIdCardRole(profile.role, profile.membershipType, authUser?.roles);
+  const isAllowed = true;
 
   const membershipCtx = useMembership();
   const effectiveMemberId =
     profile.memberId ||
     membershipCtx.activeApplication?.applicationId ||
     (membershipCtx.applications && membershipCtx.applications[0]?.applicationId) ||
-    'HRSJM-47611';
+    profile.adminId ||
+    generateRoleSpecificId(roleInfo.roleType, authUser?.id);
 
   const effectiveMembershipType =
     profile.membershipType ||
     membershipCtx.activeApplication?.membershipType ||
-    'Individual Member';
+    roleInfo.defaultMembershipType;
 
   const cardProfile = {
     ...profile,
@@ -185,7 +218,11 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
           <>
             {/* Large ID card preview */}
             <View style={styles.cardWrap}>
-              <MyIdCard profile={cardProfile} width={cardWidth} />
+              <MyIdCard
+                profile={cardProfile}
+                width={cardWidth}
+                onPressQr={() => setShowQrModal(true)}
+              />
             </View>
 
             {/* Actions */}
@@ -213,14 +250,24 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
               onPress={() => share(cardProfile)}
               style={styles.shareButton}
             />
+            <AppButton
+              title={isVerifying ? 'Verifying...' : 'Scan & Verify ID Card'}
+              variant="secondary"
+              size="lg"
+              loading={isVerifying}
+              disabled={busyAction !== null || isVerifying}
+              icon={<Camera color="#ffffff" size={16} />}
+              onPress={() => setShowScannerModal(true)}
+              style={styles.scanButton}
+            />
 
             {/* About section */}
             <View style={styles.aboutCard}>
               <Text style={styles.aboutTitle}>About this card</Text>
               <Text style={styles.aboutBody}>
                 This digitally issued HRSJM membership card identifies you as a
-                registered member of the Human Rights &amp; Social Justice
-                Mission. Each card carries a unique member ID and verification
+                verified {roleInfo.defaultMembershipType} of the Human Rights &amp; Social Justice
+                Mission. Each card carries a unique {roleInfo.idLabel.toLowerCase()} and verification
                 QR code, and is valid through the validity period shown.
               </Text>
               <View style={styles.aboutRow}>
@@ -248,6 +295,50 @@ export const MyIdCardScreen: React.FC<MyIdCardScreenProps> = ({
           />
         </View>
       ) : null}
+
+      {/* Interactive Enlarged QR Modal */}
+      <QrModal
+        visible={showQrModal}
+        onClose={() => setShowQrModal(false)}
+        tokenOrUrl={cardProfile.memberId || cardProfile.adminId || ''}
+        memberId={cardProfile.memberId || cardProfile.adminId || ''}
+        memberName={cardProfile.fullName || 'Member'}
+        onOpenScanner={() => {
+          setShowQrModal(false);
+          setShowScannerModal(true);
+        }}
+        onVerify={() => {
+          setShowQrModal(false);
+          handleVerify(cardProfile.memberId || cardProfile.adminId || '');
+        }}
+      />
+
+      {/* Live QR / Barcode Scanner Modal */}
+      <LiveQrScannerModal
+        visible={showScannerModal}
+        onClose={() => setShowScannerModal(false)}
+        onScan={async (scannedToken) => {
+          setShowScannerModal(false);
+          await handleVerify(scannedToken);
+        }}
+      />
+
+      {/* Verification Result Modal */}
+      <VerificationResultModal
+        visible={showResultModal}
+        onClose={() => setShowResultModal(false)}
+        data={verificationData}
+        loading={isVerifying}
+        onRetry={() => {
+          if (verificationData?.rawScannedPayload) {
+            handleVerify(verificationData.rawScannedPayload);
+          }
+        }}
+        onScanAnother={() => {
+          setShowResultModal(false);
+          setShowScannerModal(true);
+        }}
+      />
     </View>
   );
 };
@@ -317,7 +408,13 @@ const styles = StyleSheet.create({
   shareButton: {
     minHeight: 50,
     borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.sm,
+  },
+  scanButton: {
+    minHeight: 50,
+    borderRadius: BorderRadius.lg,
     marginBottom: Spacing.base,
+    backgroundColor: '#082046',
   },
   aboutCard: {
     backgroundColor: AdminColors.cardSurface,

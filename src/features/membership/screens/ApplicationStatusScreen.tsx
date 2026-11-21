@@ -14,6 +14,18 @@ import { ApplicationStatusStepper } from '../components/stepper';
 import { GlobalPaymentModal, PaymentPayload } from '../../payments';
 import { useAuthStore } from '../../auth/store/authStore';
 import { FontFamilies } from '../../../core/theme';
+import {
+  DISTRICT_STATE_POSTS,
+  LETTER_PAD_POSTS,
+  NATIONAL_LEVEL_POSTS,
+  MembershipPostData,
+} from '../data/membershipCategoriesData';
+
+const ALL_MEMBERSHIP_POSTS: MembershipPostData[] = [
+  ...DISTRICT_STATE_POSTS,
+  ...LETTER_PAD_POSTS,
+  ...NATIONAL_LEVEL_POSTS,
+];
 
 export type ApplicationInnerStatus =
   | 'applied'
@@ -193,11 +205,33 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
     (route.params?.status && route.params.status !== 'under_review' ? route.params.status : undefined) ||
     (currentApp ? mapAppStatusToInnerStatus(currentApp.status) : 'applied');
 
+  const isPaidInitial = Boolean(
+    (currentApp?.paymentStatus &&
+      ['completed', 'paid', 'success'].includes(
+        currentApp.paymentStatus.toLowerCase(),
+      )) ||
+      Boolean(currentApp?.paymentId) ||
+      Boolean(currentApp?.receiptNumber) ||
+      (currentApp as any)?.paymentCompleted === true ||
+      (currentApp?.status &&
+        ['applied', 'under review', 'approved'].includes(
+          currentApp.status.toLowerCase(),
+        ) &&
+        currentApp?.paymentStatus !== 'Failed' &&
+        currentApp?.paymentStatus !== 'Pending'),
+  );
+
   const [activeStatus, setActiveStatus] =
     useState<ApplicationInnerStatus>(resolvedInitialStatus);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
-  const [paymentDone, setPaymentDone] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(isPaidInitial);
   const authUser = useAuthStore(state => state.user);
+
+  useEffect(() => {
+    if (isPaidInitial) {
+      setPaymentDone(true);
+    }
+  }, [isPaidInitial]);
 
   useEffect(() => {
     if (currentApp?.status && !initialStatus && !route.params?.status) {
@@ -259,12 +293,62 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
     setPaymentModalVisible(false);
   };
 
+  // Resolve fee amount & validity dynamically based on selected post/package
+  const matchedPost = ALL_MEMBERSHIP_POSTS.find(
+    p =>
+      p.postName.toLowerCase() === appType.toLowerCase() ||
+      p.id.toLowerCase() === appType.toLowerCase() ||
+      (currentApp?.membershipType &&
+        p.postName.toLowerCase() === currentApp.membershipType.toLowerCase()),
+  );
+
+  let validityDisplay = '1 Year Validity';
+  if (matchedPost?.validity) {
+    validityDisplay = matchedPost.validity.includes('Validity')
+      ? matchedPost.validity
+      : `${matchedPost.validity} Validity`;
+  } else if (currentApp?.validTill && currentApp?.validFrom) {
+    const fromYear = parseInt(currentApp.validFrom.slice(-4), 10);
+    const tillYear = parseInt(currentApp.validTill.slice(-4), 10);
+    if (!isNaN(fromYear) && !isNaN(tillYear) && tillYear > fromYear) {
+      const diff = tillYear - fromYear;
+      validityDisplay = `${diff} Year${diff > 1 ? 's' : ''} Validity`;
+    }
+  } else {
+    const lowerType = appType.toLowerCase();
+    if (
+      lowerType.includes('lion') ||
+      lowerType.includes('counselor') ||
+      lowerType.includes('ambassador')
+    ) {
+      validityDisplay = '5 Years Validity';
+    } else if (lowerType.includes('director') || lowerType.includes('council')) {
+      validityDisplay = '10 Years Validity';
+    } else if (lowerType.includes('state unit')) {
+      validityDisplay = '2 Years Validity';
+    }
+  }
+
+  const feeAmount =
+    currentApp?.paymentAmount ||
+    matchedPost?.feeAmount ||
+    (validityDisplay.includes('5')
+      ? 5000
+      : validityDisplay.includes('10')
+      ? 10000
+      : validityDisplay.includes('2')
+      ? 2000
+      : 800);
+
+  const feeFormatted =
+    matchedPost?.fee || `₹${feeAmount.toLocaleString('en-IN')}`;
+
   const paymentPayload: PaymentPayload = {
     purpose: 'membership',
     title: `Membership Registration Fee - ${appType}`,
     subtitle: 'Human Rights & Social Justice Mission',
     category: 'Membership Application',
-    amount: 800,
+    amount: feeAmount,
     donorName: authUser?.full_name || 'Member Applicant',
     donorMobile: authUser?.mobile_number || '',
     donorEmail: authUser?.email || '',
@@ -645,10 +729,10 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
               <View style={styles.feeStatusRow}>
                 <View style={styles.feeStatusLeft}>
                   <Text style={styles.feeStatusLabel}>Membership Registration Fee</Text>
-                  <Text style={styles.feeStatusSub}>{appType} (1 Year Validity)</Text>
+                  <Text style={styles.feeStatusSub}>{appType} ({validityDisplay})</Text>
                 </View>
                 <View style={styles.feeStatusBadge}>
-                  <Text style={styles.feeStatusBadgeText}>₹800</Text>
+                  <Text style={styles.feeStatusBadgeText}>{feeFormatted}</Text>
                 </View>
               </View>
 
@@ -675,7 +759,7 @@ export const ApplicationStatusScreen: React.FC<ApplicationStatusScreenProps> = (
                     <Rect x="2" y="5" width="20" height="14" rx="2" stroke="#FFFFFF" strokeWidth={2} />
                     <Path d="M2 10h20" stroke="#FFFFFF" strokeWidth={2} />
                   </Svg>
-                  <Text style={styles.payFeeGatewayButtonText}>Pay Membership Fee (₹800)</Text>
+                  <Text style={styles.payFeeGatewayButtonText}>Pay Membership Fee ({feeFormatted})</Text>
                 </TouchableOpacity>
               )}
             </View>

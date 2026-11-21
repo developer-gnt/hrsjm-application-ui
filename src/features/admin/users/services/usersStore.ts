@@ -598,12 +598,12 @@ class UsersStore {
       });
     }
 
-    const seekerCount = this.users.filter(u => u.userType === 'seeker').length + 1;
     const applicationNumber =
-      data.applicationNumber ||
-      (mappedType === 'seeker'
-        ? `HRSJM-SEK-${String(seekerCount).padStart(4, '0')}`
-        : undefined);
+      (data.applicationNumber && data.applicationNumber !== 'HRSJM-SEK-0001')
+        ? data.applicationNumber
+        : (mappedType === 'seeker'
+          ? `HRSJM-SEK-${Math.random().toString(16).substring(2, 8).toUpperCase()}`
+          : undefined);
 
     if (existingIndex >= 0) {
       const existingUser = this.users[existingIndex];
@@ -616,7 +616,7 @@ class UsersStore {
         gender: (data.gender as UserGender) || existingUser.gender,
         userType: mappedType,
         status: mappedStatus,
-        applicationNumber: existingUser.applicationNumber || applicationNumber,
+        applicationNumber: (existingUser.applicationNumber && existingUser.applicationNumber !== 'HRSJM-SEK-0001') ? existingUser.applicationNumber : applicationNumber,
         documents: documents.length > 0 ? documents : existingUser.documents,
         joinedDate: existingUser.joinedDate || new Date().toISOString(),
       };

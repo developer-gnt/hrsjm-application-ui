@@ -120,6 +120,13 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   };
 
   const isAdmin = user?.roles?.some(r => r.name === 'ADMIN' || r.name === 'SUPER_ADMIN') ?? false;
+  const initials = (user?.full_name ?? user?.email ?? 'Admin')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part: string) => part[0]?.toUpperCase())
+    .join('') || 'A';
   const isMember = Boolean(isMemberHeader || !isAdmin);
   const shouldShowDonate = Boolean(showDonate === true);
 
@@ -190,9 +197,27 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 
   const handleViewProfile = () => {
     setDropdownVisible(false);
+    if (onPressProfile) {
+      onPressProfile();
+      return;
+    }
     if (onNavigate) {
       onNavigate(AppRoutes.MY_PROFILE);
     } else if (navigation?.navigate) {
+      const roleNames = (user?.roles ?? []).map(r => (r.name || '').toUpperCase());
+      const isSeekerRole =
+        roleNames.includes('SEEKER') ||
+        roleNames.includes('DONATION_SEEKER') ||
+        (user as any)?.role === 'SEEKER' ||
+        (user as any)?.role === 'DONATION_SEEKER';
+
+      if (isSeekerRole) {
+        try {
+          navigation.navigate('SeekerProfile');
+          return;
+        } catch {}
+      }
+
       if (isAdmin) {
         try {
           navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.MY_PROFILE });
@@ -200,7 +225,11 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           navigation.navigate(AppRoutes.MY_PROFILE);
         }
       } else {
-        navigation.navigate('MemberProfile');
+        try {
+          navigation.navigate('MemberProfile');
+        } catch {
+          navigation.navigate('UserProfile');
+        }
       }
     } else {
       setProfileModalVisible(true);
@@ -351,7 +380,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           >
             <ArrowLeft size={22} color="#0B2F52" strokeWidth={2.4} />
           </TouchableOpacity>
-        ) : showMenu ? (
+        ) : (showMenu && Boolean(user)) ? (
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => setDrawerVisible(true)}
@@ -415,7 +444,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           ) : null}
 
           {/* Notification Bell */}
-          {!(hideNotifications || title === 'Notifications') ? (
+          {Boolean(user) && !(hideNotifications || title === 'Notifications') ? (
             <TouchableOpacity
               style={styles.bellWrap}
               onPress={handleOpenNotifications}
@@ -444,31 +473,37 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           ) : null}
 
           {/* Profile Avatar + Dropdown Chevron */}
-          <TouchableOpacity
-            style={styles.avatarWrap}
-            onPress={() => {
-              if (onPressProfile) {
-                onPressProfile();
-              } else {
-                setDropdownVisible(true);
-              }
-            }}
-            activeOpacity={0.8}
-          >
-            <Image
-              source={{ uri: user?.avatar || DEFAULT_ADMIN_AVATAR }}
-              style={styles.avatarImage}
-            />
-            <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M6 9l6 6 6-6"
-                stroke="#718096"
-                strokeWidth={2.6}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-          </TouchableOpacity>
+          {user ? (
+            <TouchableOpacity
+              style={styles.avatarWrap}
+              onPress={() => setDropdownVisible(true)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Open profile menu"
+            >
+              {user?.avatar ? (
+                <Image
+                  source={{ uri: user.avatar }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <View style={styles.avatarCircle}>
+                  <Text style={styles.avatarText}>{initials}</Text>
+                </View>
+              )}
+              <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M6 9l6 6 6-6"
+                  stroke="#718096"
+                  strokeWidth={2.6}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 8 }} />
+          )}
         </View>
       </View>
 
@@ -505,7 +540,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             {/* Header info */}
             <View style={styles.dropdownHeader}>
               <Text style={styles.dropdownName} numberOfLines={1}>
-                {user?.full_name || 'Admin User'}
+                {user?.full_name || 'My Profile'}
               </Text>
               <Text style={styles.dropdownEmail} numberOfLines={1}>
                 {user?.email || '—'}
@@ -529,7 +564,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   strokeLinejoin="round"
                 />
               </Svg>
-                            <Text style={styles.dropdownItemText}>View Profile</Text>
+                            <Text style={styles.dropdownItemText}>Profile</Text>
             </TouchableOpacity>
 
             <View style={styles.dropdownDivider} />
@@ -699,6 +734,23 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     borderWidth: 1.5,
     borderColor: '#FAD465', // Gold accent border per docs/design.md
+  },
+  avatarCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#08294D',
+    borderWidth: 1.5,
+    borderColor: '#FAD465',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   chevron: {
     fontSize: 12,

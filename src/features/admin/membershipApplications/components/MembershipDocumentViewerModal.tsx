@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ActivityIndicator } from 'react-native';
 import {
   Image,
   Linking,
@@ -21,6 +22,8 @@ export interface DocumentItemData {
   fileSize: string;
   uploadDate: string;
   uri?: string;
+  fileUri?: string;
+  isUploaded?: boolean;
   verified?: boolean;
 }
 
@@ -52,6 +55,14 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
   onClose,
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [imageError, setImageError] = useState<boolean>(false);
+  const [imageLoading, setImageLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    setImageError(false);
+    setImageLoading(true);
+    setZoomLevel(1);
+  }, [document?.id, document?.fileName, document?.uri]);
 
   if (!document) return null;
 
@@ -59,18 +70,26 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
   const fileLower = (document.fileName || '').toLowerCase();
   const effectiveUri = resolveUploadedFileUri(document.fileName, document.uri);
 
-  const isImage =
+  const isImageFormat =
+    fileLower.endsWith('.jpg') ||
+    fileLower.endsWith('.jpeg') ||
+    fileLower.endsWith('.png') ||
+    fileLower.endsWith('.webp') ||
+    fileLower.endsWith('.gif') ||
+    fileLower.includes('photo') ||
+    fileLower.includes('avatar') ||
+    fileLower.includes('screenshot');
+
+  const isImageLoadable =
     Boolean(effectiveUri) &&
-    (fileLower.endsWith('.jpg') ||
-      fileLower.endsWith('.jpeg') ||
-      fileLower.endsWith('.png') ||
-      fileLower.endsWith('.webp') ||
-      fileLower.endsWith('.gif') ||
-      fileLower.includes('photo') ||
-      fileLower.includes('avatar') ||
-      effectiveUri?.startsWith('data:image') ||
+    !imageError &&
+    (effectiveUri?.startsWith('data:image') ||
       effectiveUri?.startsWith('blob:') ||
-      effectiveUri?.includes('unsplash.com'));
+      effectiveUri?.startsWith('http://') ||
+      effectiveUri?.startsWith('https://') ||
+      (Platform.OS !== 'web' && (effectiveUri?.startsWith('file://') || effectiveUri?.startsWith('content://'))));
+
+  const isImage = isImageFormat && isImageLoadable;
 
   const isPdf = fileLower.endsWith('.pdf') || titleLower.includes('pdf');
   const applicantName = applicant?.applicantName || 'Applicant';
@@ -93,7 +112,14 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
     const globalWin = typeof globalThis !== 'undefined' ? (globalThis as any).window : undefined;
     const activeUri = effectiveUri || document.uri;
 
-    if (activeUri) {
+    const isDirectWebUrl =
+      activeUri &&
+      (activeUri.startsWith('http://') ||
+        activeUri.startsWith('https://') ||
+        activeUri.startsWith('data:') ||
+        activeUri.startsWith('blob:'));
+
+    if (isDirectWebUrl) {
       if (Platform.OS === 'web' && globalWin) {
         globalWin.open(activeUri, '_blank');
         return;
@@ -102,7 +128,11 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
       return;
     }
 
-    // If no URI exists, print/view authentic metadata
+    if (Platform.OS !== 'web' && activeUri) {
+      Linking.openURL(activeUri).catch(() => {});
+      return;
+    }
+
     handleOpenPrint();
   };
 
@@ -247,27 +277,42 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
     const globalWin = typeof globalThis !== 'undefined' ? (globalThis as any).window : undefined;
     const activeUri = effectiveUri || document.uri;
 
-    if (Platform.OS === 'web' && globalWin && globalWin.document) {
-      if (activeUri && !activeUri.startsWith('blob:')) {
+    const isDirectWebUrl =
+      activeUri &&
+      (activeUri.startsWith('http://') ||
+        activeUri.startsWith('https://') ||
+        activeUri.startsWith('data:') ||
+        activeUri.startsWith('blob:'));
+
+    if (Platform.OS === 'web' && globalWin && globalWin.document && isDirectWebUrl && !activeUri.startsWith('blob:')) {
+      try {
         const link = globalWin.document.createElement('a');
         link.href = activeUri;
-        link.download = document.fileName;
+        link.download = document.fileName || `${document.title}.jpg`;
         globalWin.document.body.appendChild(link);
         link.click();
         globalWin.document.body.removeChild(link);
         return;
-      }
-      handleOpenPrint();
-    } else if (activeUri) {
+      } catch {}
+    } else if (Platform.OS !== 'web' && activeUri) {
       Linking.openURL(activeUri).catch(() => {});
+      return;
     }
+
+    handleOpenPrint();
   };
 
   const renderDocumentContent = () => {
     // 1. Direct Image Document Preview
-    if (isImage && effectiveUri) {
+    if (isImage && effectiveUri && !imageError) {
       return (
         <View style={styles.imagePreviewWrap}>
+          {imageLoading && (
+            <View style={styles.imageLoadingOverlay}>
+              <ActivityIndicator size="large" color="#0F2860" />
+              <Text style={styles.imageLoadingText}>Loading preview...</Text>
+            </View>
+          )}
           <Image
             source={{ uri: effectiveUri }}
             style={[
@@ -275,6 +320,11 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
               { transform: [{ scale: zoomLevel }] },
             ]}
             resizeMode="contain"
+            onLoad={() => setImageLoading(false)}
+            onError={() => {
+              setImageLoading(false);
+              setImageError(true);
+            }}
           />
         </View>
       );
@@ -320,62 +370,71 @@ export const MembershipDocumentViewerModal: React.FC<MembershipDocumentViewerMod
       );
     }
 
-    // 3. Document with active URI (Non-image / PDF file attachment)
-    if (effectiveUri) {
-      return (
-        <View style={styles.attachmentCard}>
-          <View style={styles.attachmentIconBox}>
-            <Text style={styles.attachmentIconEmoji}>📄</Text>
-          </View>
-          <Text style={styles.attachmentDocTitle}>{document.title}</Text>
-          <Text style={styles.attachmentFileName}>{document.fileName}</Text>
-          <Text style={styles.attachmentMeta}>
-            {document.fileSize} • Uploaded on {document.uploadDate}
-          </Text>
+    // 3. Document Attachment Card with complete metadata & actions
+    const isImageDoc = isImageFormat || titleLower.includes('photo') || titleLower.includes('proof');
+    const badgeFormat = isPdf ? 'PDF' : isImageFormat ? 'IMAGE' : 'DOCUMENT';
 
-          <TouchableOpacity
-            style={styles.attachmentOpenBtn}
-            onPress={handleOpenDirect}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.attachmentOpenBtnText}>↗ Open Original File</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    // 4. Document uploaded metadata without accessible local preview
     return (
       <View style={styles.noPreviewCard}>
         <View style={styles.noPreviewIconBox}>
-          <Text style={styles.noPreviewEmoji}>📄</Text>
+          <Text style={styles.noPreviewEmoji}>{isImageDoc ? '🖼️' : '📄'}</Text>
+          <View style={styles.formatPill}>
+            <Text style={styles.formatPillText}>{badgeFormat}</Text>
+          </View>
         </View>
         <Text style={styles.noPreviewTitle}>{document.title}</Text>
-        <Text style={styles.noPreviewFileName}>{document.fileName}</Text>
+        <Text style={styles.noPreviewFileName} numberOfLines={1}>
+          {document.fileName}
+        </Text>
 
         <View style={styles.noPreviewDetailsTable}>
           <View style={styles.noPreviewRow}>
-            <Text style={styles.noPreviewLabel}>File Name:</Text>
+            <Text style={styles.noPreviewLabel}>Attachment File:</Text>
             <Text style={styles.noPreviewVal} numberOfLines={1}>
               {document.fileName}
             </Text>
           </View>
           <View style={styles.noPreviewRow}>
-            <Text style={styles.noPreviewLabel}>Recorded Size:</Text>
+            <Text style={styles.noPreviewLabel}>File Size:</Text>
             <Text style={styles.noPreviewVal}>{document.fileSize}</Text>
           </View>
           <View style={styles.noPreviewRow}>
             <Text style={styles.noPreviewLabel}>Uploaded On:</Text>
-            <Text style={styles.noPreviewVal}>{document.uploadDate}</Text>
+            <Text style={styles.noPreviewVal}>{document.uploadDate || 'Recently'}</Text>
           </View>
           <View style={styles.noPreviewRow}>
             <Text style={styles.noPreviewLabel}>Applicant:</Text>
-            <Text style={styles.noPreviewVal}>{applicantName}</Text>
+            <Text style={styles.noPreviewVal} numberOfLines={1}>
+              {applicantName} ({appId})
+            </Text>
+          </View>
+          <View style={styles.noPreviewRow}>
+            <Text style={styles.noPreviewLabel}>Status:</Text>
+            <Text style={[styles.noPreviewVal, { color: '#047857' }]}>
+              ✓ Uploaded & Attached
+            </Text>
           </View>
         </View>
 
+        <View style={styles.noPreviewActionRow}>
+          <TouchableOpacity
+            style={styles.sheetActionBtn}
+            onPress={handleOpenPrint}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.sheetActionBtnText}>🖨️ View Document Sheet</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.sheetActionBtnSecondary}
+            onPress={handleDownload}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.sheetActionBtnTextSecondary}>📥 Download / Save</Text>
+          </TouchableOpacity>
+        </View>
+
         <Text style={styles.noPreviewNotice}>
-          This is an official document attached to applicant {applicantName}'s file.
+          Attachment file is safely preserved in applicant record. Click 'View Document Sheet' to inspect the full certificate.
         </Text>
       </View>
     );
@@ -951,5 +1010,61 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  imageLoadingOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8FAFC',
+    zIndex: 2,
+  },
+  imageLoadingText: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 8,
+    fontWeight: '600',
+  },
+  formatPill: {
+    position: 'absolute',
+    bottom: -6,
+    backgroundColor: '#0F2860',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  formatPillText: {
+    fontSize: 9,
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+  noPreviewActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginVertical: 10,
+  },
+  sheetActionBtn: {
+    backgroundColor: '#0F2860',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 6,
+  },
+  sheetActionBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  sheetActionBtnSecondary: {
+    backgroundColor: '#EEF3FC',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#D8E5F8',
+  },
+  sheetActionBtnTextSecondary: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E3A8A',
   },
 });

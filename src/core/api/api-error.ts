@@ -23,7 +23,19 @@ export class ApiError extends Error {
 
   static fromAxiosError(error: any): ApiError {
     if (error.response) {
-      const { data, status } = error.response;
+      let data = error.response.data;
+      const status = error.response.status;
+
+      // Handle binary arraybuffer error payload (e.g., when responseType: 'arraybuffer')
+      if (data && (data instanceof ArrayBuffer || (data.buffer && data.buffer instanceof ArrayBuffer))) {
+        try {
+          const rawBuffer = data instanceof ArrayBuffer ? data : data.buffer;
+          const text = new TextDecoder().decode(new Uint8Array(rawBuffer));
+          data = JSON.parse(text);
+        } catch {
+          // keep original data if not json
+        }
+      }
 
       // Extract specific validation details if available
       let validationDetails: string | undefined;

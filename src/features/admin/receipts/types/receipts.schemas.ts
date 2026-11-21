@@ -15,11 +15,13 @@ export const createReceiptSchema = z.object({
     .min(1, 'Enter the payer name')
     .max(150, 'Payer name is too long'),
   income_account_id: z
-    .string({ message: 'Select an income account' })
-    .uuid('Select an income account'),
+    .string({ message: 'Select income type' })
+    .uuid('Select income type'),
   received_in_account_id: z
-    .string({ message: 'Select the bank/cash account' })
-    .uuid('Select the bank/cash account'),
+    .string()
+    .uuid()
+    .optional(),
+
   amount: voucherAmountSchema,
   payment_method: z.enum([
     'CASH',

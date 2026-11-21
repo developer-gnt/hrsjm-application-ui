@@ -14,9 +14,14 @@ import {
   PersonalInfoInput,
 } from './types/profile.types';
 import { useAuthStore } from '../../auth/store/authStore';
+import { DEFAULT_ADMIN_AVATAR } from '../../auth/components/UserProfileModal';
 import { apiClient } from '../../../core/api/client';
 import { ApiRoutes } from '../../../core/constants/api-routes';
 import { membershipApplicationsStore } from '../../admin/membershipApplications/services/membershipApplicationsStore';
+import {
+  resolveIdCardRole,
+  generateRoleSpecificId,
+} from './utils/format';
 
 interface ProfileStore {
   profile: AdminProfile;
@@ -69,26 +74,20 @@ const generateAutoMemberId = (userId?: string, seq = 1): string => {
 const getInitialProfile = (): AdminProfile => {
   const user = useAuthStore.getState().user;
   if (user) {
-    const isUserAdmin = user.roles?.some((r: any) =>
-      r.name?.toUpperCase() === 'ADMIN' || r.name?.toUpperCase() === 'SUPER_ADMIN'
-    );
-    const isMember = user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
-    const adminId = isUserAdmin
-      ? `ADMIN${user.id ? user.id.replace(/\D/g, '').slice(-3).padStart(3, '0') || '001' : '001'}`
-      : isMember
-      ? generateAutoMemberId(user.id, 1)
-      : '';
+    const roleInfo = resolveIdCardRole(undefined, undefined, user.roles);
+    const roleId = generateRoleSpecificId(roleInfo.roleType, user.id);
+    const roleName = mapBackendRole(user.roles);
     return {
       fullName: user.full_name || '',
       accountName: user.full_name || '',
       email: user.email || '',
       phone: user.mobile_number || '',
       avatar: user.avatar || null,
-      role: mapBackendRole(user.roles),
+      role: roleName,
       accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
-      membershipType: isUserAdmin ? 'Executive Member' : isMember ? 'Individual Member' : 'User',
-      memberId: adminId,
-      adminId,
+      membershipType: roleInfo.defaultMembershipType,
+      memberId: roleId,
+      adminId: roleId,
       dateOfBirth: '',
       memberSince: formatDateStr(user.created_at, ''),
       validTill: '',
@@ -96,7 +95,7 @@ const getInitialProfile = (): AdminProfile => {
   }
   return {
     accountName: '',
-    adminId: '',
+    adminId: 'ADMIN001',
     fullName: '',
     email: '',
     phone: '',
@@ -104,7 +103,7 @@ const getInitialProfile = (): AdminProfile => {
     role: 'Admin',
     accountStatus: 'Active',
     membershipType: 'Executive Member',
-    memberId: '',
+    memberId: 'ADMIN001',
     dateOfBirth: '',
     memberSince: '',
     validTill: '',
@@ -125,7 +124,8 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         const res: any = await apiClient.get<any>(ApiRoutes.AUTH.ME);
         user = res?.data || res;
         if (user && user.id) {
-          useAuthStore.setState({ user: { ...useAuthStore.getState().user, ...user } });
+          const merged = { ...useAuthStore.getState().user, ...user };
+          useAuthStore.getState().setUser(merged);
         }
       } catch {
         user = useAuthStore.getState().user;
@@ -163,23 +163,37 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         else membershipStatus = 'Applied';
       }
 
-      // If not in backend /memberships/my yet, check local store
+      // If not in backend /memberships/my yet, check local store & session record
+      let localUserRecord: any = null;
+      try {
+        const win = typeof window !== 'undefined' ? window : (globalThis as any).window;
+        const raw = win?.sessionStorage?.getItem('hrsjm_user_membership_record') || win?.localStorage?.getItem('hrsjm_user_membership_record');
+        if (raw) {
+          localUserRecord = JSON.parse(raw);
+        }
+      } catch {}
+
+      const localApps = membershipApplicationsStore.getApplications();
+      const userEmail = (user.email || '').toLowerCase().trim();
+      const userPhone = (user.mobile_number || user.phone || '').replace(/\D/g, '').slice(-10);
+      const userName = (user.full_name || '').toLowerCase().trim();
+      const match = localApps.find(
+        a =>
+          (userEmail && a.email && a.email.toLowerCase().trim() === userEmail) ||
+          (userPhone && userPhone.length >= 10 && a.phone && a.phone.replace(/\D/g, '').includes(userPhone)) ||
+          (userName && a.applicantName && a.applicantName.toLowerCase().trim() === userName) ||
+          ((a as any).userId && user.id && (a as any).userId === user.id)
+      );
+
       if (!hasAppliedMembership) {
-        const localApps = membershipApplicationsStore.getApplications();
-        const userEmail = (user.email || '').toLowerCase().trim();
-        const userPhone = (user.mobile_number || user.phone || '').replace(/\D/g, '').slice(-10);
-        const match = localApps.find(
-          a =>
-            (userEmail && a.email && a.email.toLowerCase().trim() === userEmail) ||
-            (userPhone && userPhone.length === 10 && a.phone && a.phone.replace(/\D/g, '').slice(-10) === userPhone)
-        );
-        if (match) {
+        if (match || localUserRecord) {
           hasAppliedMembership = true;
-          if (match.status === 'approved') membershipStatus = 'Approved';
-          else if (match.status === 'rejected') {
+          const status = match?.status || localUserRecord?.status;
+          if (status === 'approved' || status === 'Approved') membershipStatus = 'Approved';
+          else if (status === 'rejected' || status === 'Rejected') {
             membershipStatus = 'Rejected';
-            rejectionReason = (match as any).rejectionReason || 'Incomplete documents';
-          } else if (match.status === 'under_review') {
+            rejectionReason = (match as any)?.rejectionReason || localUserRecord?.rejectionReason || 'Incomplete documents';
+          } else if (status === 'under_review' || status === 'Under Review') {
             membershipStatus = 'Under Review';
           } else {
             membershipStatus = 'Applied';
@@ -187,10 +201,44 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         }
       }
 
+      try {
+        const win = typeof window !== 'undefined' ? window : (globalThis as any).window;
+        const storedHasApplied = win?.sessionStorage?.getItem('hrsjm_has_applied') || win?.localStorage?.getItem('hrsjm_has_applied');
+        if (storedHasApplied === 'true') {
+          hasAppliedMembership = true;
+          if (!membershipStatus) membershipStatus = 'Applied';
+        }
+      } catch {}
+
+      const resolvedAppId =
+        membershipData?.membership_number ||
+        membershipData?.application_data?.application_id ||
+        membershipData?.application_data?.membership_number ||
+        match?.applicationId ||
+        (match as any)?.membershipNumber ||
+        localUserRecord?.applicationId ||
+        localUserRecord?.membershipId ||
+        (localUserRecord?.id && String(localUserRecord.id).startsWith('HRSJM-') ? localUserRecord.id : undefined) ||
+        (hasAppliedMembership && user?.id ? `HRSJM-${String(user.id).replace(/\D/g, '').slice(-5).padStart(5, '0')}` : undefined);
+
+      const rawAppliedType =
+        localUserRecord?.membershipType ||
+        localUserRecord?.categoryTitle ||
+        membershipData?.category?.name ||
+        membershipData?.application_data?.membership_type ||
+        membershipData?.application_data?.category_name ||
+        membershipData?.application_data?.post_name ||
+        match?.membershipType ||
+        (match as any)?.category ||
+        (match as any)?.appliedRole ||
+        (match as any)?.postName;
+
+      const resolvedAppliedType =
+        rawAppliedType && rawAppliedType !== 'General User'
+          ? rawAppliedType
+          : (hasAppliedMembership ? 'Hon\x27ble State Director' : undefined);
+
       const role = mapBackendRole(user.roles);
-      const isUserAdmin = user.roles?.some((r: any) =>
-        r.name?.toUpperCase() === 'ADMIN' || r.name?.toUpperCase() === 'SUPER_ADMIN'
-      );
       const isApprovedMember =
         membershipStatus === 'Approved' ||
         user.roles?.some((r: any) => r.name?.toUpperCase() === 'MEMBER');
@@ -198,24 +246,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       if (isApprovedMember && !membershipStatus) {
         membershipStatus = 'Approved';
       }
-
-      const memberId =
-        membershipData?.membership_number ||
-        (isApprovedMember ? generateAutoMemberId(user.id, 1) : '');
-      const adminId = isUserAdmin
-        ? `ADMIN${user.id ? user.id.replace(/\D/g, '').slice(-3).padStart(3, '0') || '001' : '001'}`
-        : (isApprovedMember ? memberId : '');
-
-      const memberSince = formatDateStr(
-        membershipData?.start_date || user.created_at,
-        '',
-      );
-      const defaultValidDate = new Date();
-      defaultValidDate.setFullYear(defaultValidDate.getFullYear() + 1);
-      const validTill = formatDateStr(
-        membershipData?.expiry_date || defaultValidDate,
-        formatDateStr(defaultValidDate),
-      );
 
       // Convert user's role to Member if approved and currently a standard User
       let effectiveRole = role;
@@ -239,26 +269,75 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         }
       }
 
+      const roleInfo = resolveIdCardRole(
+        effectiveRole,
+        membershipData?.category?.name || (membershipData?.application_data as any)?.membership_type,
+        user.roles,
+      );
+
+      const isPlainUserPending =
+        effectiveRole === 'User' &&
+        hasAppliedMembership &&
+        membershipStatus !== 'Approved' &&
+        membershipStatus !== 'Active';
+
+      const effectiveId =
+        isPlainUserPending
+          ? ''
+          : roleInfo.roleType === 'member'
+            ? (membershipData?.membership_number || generateRoleSpecificId('member', user.id))
+            : generateRoleSpecificId(roleInfo.roleType, user.id);
+
+      const memberSince = formatDateStr(
+        membershipData?.start_date || user.created_at,
+        '',
+      );
+      const defaultValidDate = new Date();
+      defaultValidDate.setFullYear(defaultValidDate.getFullYear() + 1);
+      const validTill = formatDateStr(
+        membershipData?.expiry_date || defaultValidDate,
+        formatDateStr(defaultValidDate),
+      );
+
+      const resolvedMembershipType =
+        membershipData?.category?.name ||
+        (membershipData?.application_data as any)?.membership_type ||
+        roleInfo.defaultMembershipType;
+
+      const resolvedAvatar =
+        user?.avatar ||
+        (membershipData?.user as any)?.avatar ||
+        (membershipData?.application_data as any)?.avatar ||
+        (membershipData?.application_data as any)?.avatar_url ||
+        (membershipData?.application_data as any)?.personal_details?.avatar ||
+        (membershipData?.application_data as any)?.personal_details?.profilePhotoUri ||
+        get().profile.avatar ||
+        null;
+
+      if (resolvedAvatar && user && !user.avatar) {
+        user.avatar = resolvedAvatar;
+        useAuthStore.getState().setUser({ ...user, avatar: resolvedAvatar });
+      }
+
       const dynamicProfile: AdminProfile = {
         fullName: user.full_name || '',
         accountName: user.full_name || '',
         email: user.email || '—',
         phone: user.mobile_number || user.phone || '—',
-        avatar: user.avatar || get().profile.avatar || null,
+        avatar: resolvedAvatar,
         role: effectiveRole,
         accountStatus: user.status === 'INACTIVE' ? 'Inactive' : 'Active',
-        membershipType:
-          membershipData?.category?.name ||
-          (membershipData?.application_data as any)?.membership_type ||
-          (isUserAdmin ? 'Executive Member' : isApprovedMember ? 'Individual Member' : 'User'),
-        memberId,
-        adminId,
+        membershipType: resolvedMembershipType,
+        memberId: effectiveId,
+        adminId: effectiveId,
         dateOfBirth: (user as any)?.dob || (membershipData?.application_data as any)?.personal_details?.dob || '',
         memberSince,
         validTill,
         hasAppliedMembership,
         membershipStatus,
         rejectionReason,
+        applicationId: resolvedAppId,
+        appliedMembershipType: resolvedAppliedType,
       };
 
       set({ profile: dynamicProfile, isLoading: false });
@@ -296,17 +375,16 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         : currentUser?.roles || [];
 
     if (currentUser || userData) {
-      useAuthStore.setState({
-        user: {
-          ...currentUser,
-          ...(typeof userData === 'object' && userData ? userData : {}),
-          full_name: input.fullName.trim(),
-          email: cleanEmail,
-          mobile_number: cleanPhone,
-          dob: dob || (currentUser as any)?.dob,
-          roles,
-        },
-      });
+      const mergedUser = {
+        ...currentUser,
+        ...(typeof userData === 'object' && userData ? userData : {}),
+        full_name: input.fullName.trim(),
+        email: cleanEmail,
+        mobile_number: cleanPhone,
+        dob: dob || (currentUser as any)?.dob,
+        roles,
+      };
+      useAuthStore.getState().setUser(mergedUser);
     }
 
     set(state => ({
@@ -344,14 +422,12 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   },
 
   updateAvatar: async (avatarUri: string | null) => {
-    // 1. Sync useAuthStore so global header avatar updates immediately
+    // 1. Sync useAuthStore so global header avatar updates immediately and persists to storage
     const currentUser = useAuthStore.getState().user;
     if (currentUser) {
-      useAuthStore.setState({
-        user: {
-          ...currentUser,
-          avatar: avatarUri,
-        },
+      useAuthStore.getState().setUser({
+        ...currentUser,
+        avatar: avatarUri,
       });
     }
 

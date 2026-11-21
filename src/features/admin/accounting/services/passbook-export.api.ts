@@ -4,12 +4,14 @@ import { ApiRoutes } from '../../../../core/constants/api-routes';
 
 export type PassbookTransactionType = 'ALL' | 'PAYMENT_IN' | 'PAYMENT_OUT';
 export type PassbookExportFormat = 'PDF' | 'XLSX' | 'CSV';
+export type PassbookExportAction = 'download' | 'print';
 
 export interface PassbookExportParams {
-  transactionType: PassbookTransactionType;
+  transactionType?: PassbookTransactionType;
   fromDate?: string;
   toDate?: string;
-  format: PassbookExportFormat;
+  format?: PassbookExportFormat;
+  action?: PassbookExportAction;
 }
 
 export interface ExportPassbookResult {
@@ -91,14 +93,18 @@ const parseFilenameFromHeaders = (
 /**
  * Calls backend GET /api/v1/passbook/export with query params:
  * transactionType, fromDate, toDate, format.
- * Receives the binary response, parses filename, and saves or shares the file.
+ * Receives the binary response, parses filename, and saves or shares/prints the file.
  */
 export const exportPassbookStatement = async (
   params: PassbookExportParams,
 ): Promise<ExportPassbookResult> => {
+  const transactionType = params.transactionType || 'ALL';
+  const format = params.format || 'PDF';
+  const action = params.action || 'download';
+
   const queryParams: Record<string, string> = {
-    transactionType: params.transactionType,
-    format: params.format,
+    transactionType,
+    format,
   };
 
   if (params.fromDate && params.fromDate.trim()) {
@@ -111,10 +117,13 @@ export const exportPassbookStatement = async (
   const response = await axiosInstance.get(ApiRoutes.PASSBOOK.EXPORT, {
     params: queryParams,
     responseType: 'arraybuffer',
+    headers: {
+      Accept: 'application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv, */*',
+    },
   });
 
   const arrayBuffer = response.data as ArrayBuffer;
-  const rawContentType = response.headers['content-type'] ?? MIME_MAP[params.format];
+  const rawContentType = response.headers['content-type'] ?? MIME_MAP[format];
   const contentType = String(rawContentType).toLowerCase();
 
   // If server returned an application/json error payload despite 200 or inside arraybuffer
@@ -130,28 +139,47 @@ export const exportPassbookStatement = async (
     }
   }
 
-  const ext = EXT_MAP[params.format];
+  const ext = EXT_MAP[format];
   const dateSlug = params.fromDate
     ? `${params.fromDate}_to_${params.toDate || 'present'}`
     : 'lifetime';
-  const defaultFilename = `HRSJM_Passbook_${params.transactionType}_${dateSlug}.${ext}`;
+  const defaultFilename = `HRSJM_Passbook_${transactionType}_${dateSlug}.${ext}`;
   const filename = parseFilenameFromHeaders(response.headers, defaultFilename);
-  const mimeType = MIME_MAP[params.format];
+  const mimeType = MIME_MAP[format];
 
-  // 1. Web Environment: Trigger instant browser download via Blob
+  // 1. Web Environment: Trigger browser download or print window via Blob
   if (Platform.OS === 'web' || isWebBrowser()) {
-    const web: any = globalThis;
-    const blob = new (web.Blob || (globalThis as any).Blob)([arrayBuffer as any], {
-      type: mimeType,
-    });
-    const url = web.URL.createObjectURL(blob);
-    const link = web.document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    web.document.body.appendChild(link);
+    const win = typeof window !== 'undefined' ? window : (globalThis as any).window;
+    const doc = win?.document || (globalThis as any).document;
+    const blob = new Blob([arrayBuffer as any], { type: mimeType, lastModified: Date.now() } as any);
+    const blobUrl = (win?.URL || URL).createObjectURL(blob);
+
+    if (action === 'print' && format === 'PDF') {
+      const printWin = win?.open(blobUrl, '_blank');
+      if (printWin) {
+        printWin.focus();
+        return {
+          status: 'opened',
+          filename,
+          bytesCount: arrayBuffer.byteLength,
+        };
+      }
+    }
+
+    // Default download trigger
+    const link = doc.createElement('a');
+    link.style.display = 'none';
+    link.href = blobUrl;
+    link.setAttribute('download', filename);
+    doc.body.appendChild(link);
     link.click();
-    link.remove();
-    web.window.setTimeout(() => web.URL.revokeObjectURL(url), 2000);
+
+    setTimeout(() => {
+      if (link.parentNode) {
+        link.parentNode.removeChild(link);
+      }
+      (win?.URL || URL).revokeObjectURL(blobUrl);
+    }, 1500);
 
     return {
       status: 'downloaded',
@@ -172,17 +200,22 @@ export const exportPassbookStatement = async (
   const dirs = RNFS.fs.dirs;
 
   // On Android, download directory is dirs.DownloadDir; on iOS dirs.DocumentDir
-  const savePath = dirs.DownloadDir
+  let savePath = dirs.DownloadDir
     ? `${dirs.DownloadDir}/${filename}`
     : `${dirs.DocumentDir}/${filename}`;
 
-  await RNFS.fs.writeFile(savePath, base64Data, 'base64');
+  try {
+    await RNFS.fs.writeFile(savePath, base64Data, 'base64');
+  } catch (_writeErr) {
+    savePath = `${dirs.DocumentDir || dirs.CacheDir}/${filename}`;
+    await RNFS.fs.writeFile(savePath, base64Data, 'base64');
+  }
 
   if (dirs.DownloadDir) {
     await (RNFS.fs.scanFile as any)(savePath).catch(() => undefined);
   }
 
-  // Attempt to open native share sheet so user can send, open, or save
+  // Attempt to open native share sheet so user can send, open, or print
   try {
     let NativeShare: any;
     try {
@@ -196,7 +229,7 @@ export const exportPassbookStatement = async (
       url: `file://${savePath}`,
       type: mimeType,
       title: `HRSJM Passbook Export - ${filename}`,
-      subject: `HRSJM Passbook Statement (${params.transactionType})`,
+      subject: `HRSJM Passbook Statement (${transactionType})`,
       failOnCancel: false,
     });
 

@@ -411,6 +411,7 @@ export const MembershipApplicationsScreen: React.FC<MembershipApplicationsScreen
         title="Membership Applications"
         subtitle="Review, verify and manage membership applications."
         onMenuPress={() => setSidebarVisible(true)}
+        onNavigate={handleSidebarNavigate}
         onNotificationsPress={() => {
           if (navigation?.navigate) {
             navigation.navigate(AppRoutes.ADMIN_MORE_TAB, { screen: AppRoutes.NOTIFICATIONS });

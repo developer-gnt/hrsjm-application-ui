@@ -36,6 +36,7 @@ interface HomeEventCardProps {
  */
 export const HomeEventCard: React.FC<HomeEventCardProps> = ({ event, onPress }) => {
   const { width: windowWidth } = useWindowDimensions();
+  const [imgError, setImgError] = React.useState(false);
   const cardWidth = Math.min(
     180,
     Math.max(132, (windowWidth - Spacing.base * 2 - Spacing.sm) / 2.3),
@@ -51,11 +52,12 @@ export const HomeEventCard: React.FC<HomeEventCardProps> = ({ event, onPress }) 
       accessibilityLabel={`Event: ${event.title}`}
     >
       <View style={styles.media}>
-        {event.imageUrl ? (
+        {event.imageUrl && !imgError ? (
           <Image
             source={{ uri: event.imageUrl }}
             style={styles.mediaSlot}
             resizeMode="cover"
+            onError={() => setImgError(true)}
           />
         ) : imageSource ? (
           <Image source={imageSource} style={styles.mediaSlot} resizeMode="cover" />

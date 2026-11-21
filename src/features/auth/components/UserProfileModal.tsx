@@ -34,6 +34,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const user = useAuthStore(state => state.user);
 
   const fullName = user?.full_name || 'Admin User';
+  const initials = fullName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(p => p[0]?.toUpperCase())
+    .join('') || 'U';
   const role = user?.roles?.[0]?.name || 'Admin';
   const email = user?.email || '—';
   const phone = user?.mobile_number || '—';
@@ -82,10 +89,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             {/* Avatar & Main Info */}
             <View style={styles.profileHero}>
               <View style={styles.avatarWrap}>
-                <Image
-                  source={{ uri: user?.avatar || DEFAULT_ADMIN_AVATAR }}
-                  style={styles.avatar}
-                />
+                {user?.avatar ? (
+                  <Image
+                    source={{ uri: user.avatar }}
+                    style={styles.avatar}
+                  />
+                ) : (
+                  <View style={[styles.avatar, styles.initialsAvatar]}>
+                    <Text style={styles.initialsText}>{initials}</Text>
+                  </View>
+                )}
                 <View style={styles.statusDot} />
               </View>
 
@@ -226,6 +239,18 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#E2E8F0',
     backgroundColor: '#CBD5E1',
+  },
+  initialsAvatar: {
+    backgroundColor: '#08294D',
+    borderWidth: 3,
+    borderColor: '#FAD465',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  initialsText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '700',
   },
   statusDot: {
     position: 'absolute',

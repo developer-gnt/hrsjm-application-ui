@@ -70,6 +70,13 @@ export const authService = {
     return response.data;
   },
 
+  async verifyResetToken(token: string): Promise<{ valid: boolean; email?: string }> {
+    const response = await apiClient.get<{ valid: boolean; email?: string }>(
+      `${ApiRoutes.AUTH.VERIFY_RESET_TOKEN}?token=${encodeURIComponent(token.trim())}`,
+    );
+    return response.data;
+  },
+
   async resetPassword(
     token: string,
     password: string,

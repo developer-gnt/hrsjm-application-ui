@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Modal,
   Platform,
   StyleSheet,
@@ -17,6 +19,8 @@ import {
   generateMembershipCardPdf,
   generateMembershipGuidelinesPdf,
   downloadOrOpenPdf,
+  getMembershipDocumentFileName,
+  showDownloadSuccessFeedback,
 } from '../utils/membershipDocumentGenerator';
 
 interface MembershipCertificateModalProps {
@@ -48,27 +52,34 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
   if (!visible || !document) return null;
 
   const handleDownload = async () => {
+    if (downloading) return;
     setDownloading(true);
     try {
       let pdfDoc: any;
-      let fileName = '';
 
       if (document.type === 'certificate') {
         pdfDoc = await generateMembershipCertificatePdf(memberData);
-        fileName = `HRSJM-Membership-Certificate-${memberData.memberId || '2026'}.pdf`;
       } else if (document.type === 'idcard') {
         pdfDoc = await generateMembershipCardPdf(memberData);
-        fileName = `HRSJM-Member-ID-Card-${memberData.memberId || '2026'}.pdf`;
       } else {
         pdfDoc = await generateMembershipGuidelinesPdf(memberData);
-        fileName = 'HRSJM-Membership-Guidelines.pdf';
       }
 
-      await downloadOrOpenPdf(pdfDoc, fileName);
+      const fileName = getMembershipDocumentFileName(document.type, memberData);
+      const result = await downloadOrOpenPdf(pdfDoc, fileName, {
+        title: document.title,
+        memberData,
+      });
+
       setDownloaded(true);
       onDownloadComplete?.();
-    } catch (err) {
+      await showDownloadSuccessFeedback(result, document.title);
+    } catch (err: any) {
       console.warn('PDF download error:', err);
+      Alert.alert(
+        'Download Failed',
+        err?.message || 'Unable to download document. Please check device storage and try again.'
+      );
     } finally {
       setDownloading(false);
     }
@@ -229,16 +240,23 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
               <View style={styles.footerRow}>
                 {/* Download Button (50%) */}
                 <TouchableOpacity
-                  style={styles.downloadBtn}
+                  style={[styles.downloadBtn, downloading && styles.downloadBtnDisabled]}
                   onPress={handleDownload}
                   activeOpacity={0.8}
                   disabled={downloading}
                   accessibilityRole="button"
                   accessibilityLabel="Download PDF"
                 >
-                  <Text style={styles.downloadBtnText}>
-                    {downloading ? 'Downloading...' : 'Download'}
-                  </Text>
+                  {downloading ? (
+                    <View style={styles.btnLoadingRow}>
+                      <ActivityIndicator size="small" color="#0A204C" style={{ marginRight: 6 }} />
+                      <Text style={styles.downloadBtnText}>Downloading...</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.downloadBtnText}>
+                      {downloaded ? 'Download Again' : 'Download'}
+                    </Text>
+                  )}
                 </TouchableOpacity>
 
                 {/* Done Button (50%) */}
@@ -609,6 +627,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
     backgroundColor: '#FFFFFF',
+  },
+  btnLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  downloadBtnDisabled: {
+    opacity: 0.75,
   },
   downloadBtn: {
     flex: 1,

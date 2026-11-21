@@ -312,13 +312,30 @@ export const ChartOfAccountsScreen: React.FC<ChartOfAccountsScreenProps> = ({
     if (isExporting) return;
     try {
       setIsExporting(true);
-      await exportPassbookStatement({
-        transactionType: options.transactionType,
-        format: options.format,
-        fromDate: options.fromDate,
-        toDate: options.toDate,
-      });
-      setExportModalVisible(false);
+      try {
+        await exportPassbookStatement({
+          transactionType: options.transactionType,
+          format: options.format,
+          fromDate: options.fromDate,
+          toDate: options.toDate,
+          action: options.action,
+        });
+        setExportModalVisible(false);
+      } catch (apiErr: any) {
+        // Fallback to client-side direct PDF generation
+        if (transactions && transactions.length > 0) {
+          await exportPassbookPdf({
+            periodLabel: options.periodLabel,
+            fromDate: options.fromDate,
+            toDate: options.toDate,
+            summary,
+            transactions,
+          });
+          setExportModalVisible(false);
+        } else {
+          throw apiErr;
+        }
+      }
     } catch (err: any) {
       Alert.alert('Export Failed', err?.message || 'Could not download passbook statement');
     } finally {

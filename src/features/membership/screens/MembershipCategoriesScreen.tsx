@@ -35,7 +35,7 @@ import {
 import { updateRegistrationState } from '../../auth/state/registrationState';
 import { BorderRadius, Spacing } from '../../../core';
 import { MembershipVerificationNotice } from '../components/MembershipVerificationNotice';
-import { useMembership } from '../context/MembershipContext';
+import { useSafeMembership } from '../context/MembershipContext';
 
 interface MembershipCategoriesScreenProps {
   onBack?: () => void;
@@ -49,13 +49,7 @@ export const MembershipCategoriesScreen: React.FC<MembershipCategoriesScreenProp
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
-  let membershipContext: any = null;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    membershipContext = useMembership();
-  } catch {
-    // rendered outside provider in isolated tests
-  }
+  const membershipContext = useSafeMembership();
 
   const isTabletOrDesktop = width > 520;
   const contentMaxWidth = isTabletOrDesktop ? 460 : width;

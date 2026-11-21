@@ -35,6 +35,12 @@ import { Platform, Share } from 'react-native';
 import { AdminProfile } from '../types/profile.types';
 import { getQrMatrix } from './qrPattern';
 import { HRSJM_LOGO_BASE64 } from './logoBase64';
+import {
+  resolveIdCardRole,
+  generateRoleSpecificId,
+} from './format';
+import { getPublicVerificationUrl } from './verificationUrl';
+import { generateCode128Modules } from '../components/Barcode';
 
 const CARD_WIDTH_MM = 85.6;
 const CARD_HEIGHT_MM = 54.8; // standard ID card proportion (1.56:1)
@@ -283,7 +289,14 @@ export const generateIdCardPdf = (
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(pt(2.3));
   pdf.setTextColor(229, 184, 66); // Gold #E5B842
-  pdf.text(profile.membershipType || profile.role || 'Individual Member', contentLeft, nameY + 4.8);
+  const roleInfo = resolveIdCardRole(profile.role, profile.membershipType);
+  const effectiveId =
+    profile.memberId ||
+    profile.adminId ||
+    generateRoleSpecificId(roleInfo.roleType);
+  const displaySubtitle =
+    profile.membershipType || roleInfo.defaultMembershipType;
+  pdf.text(displaySubtitle, contentLeft, nameY + 4.8);
 
   // ── INFO ROWS ─────────────────────────────────────────────────────────
   const rowStartY = 33.5;
@@ -297,7 +310,7 @@ export const generateIdCardPdf = (
   pdf.setTextColor(255, 255, 255);
 
   const infoRows: Array<{ label: string; value: string }> = [
-    { label: 'Member ID', value: profile.memberId || profile.adminId || 'ADMIN201' },
+    { label: roleInfo.idLabel, value: effectiveId },
     { label: 'Valid Till', value: profile.validTill || '15 Sep 2027' },
     { label: 'Joined On', value: profile.memberSince || '15 Sep 2026' },
   ];
@@ -318,8 +331,9 @@ export const generateIdCardPdf = (
   pdf.setFillColor(255, 255, 255);
   pdf.roundedRect(qrX, qrY, qrSize, qrSize, 1.2, 1.2, 'F');
 
-  // QR code modules
-  const matrix = getQrMatrix(profile.memberId || 'HRSJM-00001');
+  // QR code modules (encodes public verification URL for camera compatibility)
+  const qrPayload = getPublicVerificationUrl(effectiveId);
+  const matrix = getQrMatrix(qrPayload);
   const quiet = qrSize * 0.06;
   const gridArea = qrSize - quiet * 2;
   const module = gridArea / matrix.length;
@@ -347,6 +361,30 @@ export const generateIdCardPdf = (
   pdf.text('Tap to View', qrX + qrSize / 2, qrY + qrSize + 2.8, {
     align: 'center',
   });
+
+  // ── ACCREDITED CODE 128 BARCODE ──────────────────────────────────────────
+  try {
+    const barcodeModules = generateCode128Modules(effectiveId);
+    const barcodeW = qrSize;
+    const barcodeH = 4.8;
+    const barcodeX = qrX;
+    const barcodeY = qrY + qrSize + 3.8;
+
+    // White barcode background frame
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(barcodeX, barcodeY, barcodeW, barcodeH, 0.5, 0.5, 'F');
+
+    // Draw barcode bars
+    const bModuleW = (barcodeW - 2.0) / barcodeModules.length;
+    pdf.setFillColor(1, 31, 57);
+    barcodeModules.forEach((isDark, idx) => {
+      if (isDark) {
+        pdf.rect(barcodeX + 1.0 + idx * bModuleW, barcodeY + 0.6, bModuleW, barcodeH - 1.2, 'F');
+      }
+    });
+  } catch {
+    // Graceful fallback if barcode generation encounters unexpected character
+  }
 
   // ── Clip card to rounded corners ─────────────────────────────────────
   // jsPDF doesn't support true clipping easily; the rounded corners were
@@ -419,6 +457,8 @@ export const prewarmIdCardPdf = async (
       const bytes = getPdfBytes(pdf);
       const base64 = uint8ToBase64(bytes);
       const fileName = idCardFileName(profile);
+  const roleInfo = resolveIdCardRole(profile.role, profile.membershipType);
+  const effectiveId = profile.memberId || profile.adminId || generateRoleSpecificId(roleInfo.roleType);
 
       let localCachePath = '';
       if (Platform.OS !== 'web' && !isWebEnvironment()) {
@@ -522,9 +562,13 @@ export const downloadIdCardPdfNative = async (
     if (RNFS.android?.addCompleteDownload) {
       const regPath = publicPath || cachePath;
       try {
+        const roleInfo = resolveIdCardRole(profile.role, profile.membershipType);
+        const effectiveId = profile.memberId || profile.adminId || generateRoleSpecificId(roleInfo.roleType);
         await RNFS.android.addCompleteDownload({
           title: fileName,
-          description: `HRSJM Member ID Card (${profile.memberId})`,
+
+
+          description: `HRSJM ${roleInfo.idLabel} Card (${effectiveId})`,
           mime: 'application/pdf',
           path: regPath,
           showNotification: true,
@@ -561,6 +605,9 @@ export const shareIdCardPdfNative = async (
     const { RNFS, NativeShare } = await getNativeModules();
     const pdfData = await prewarmIdCardPdf(profile);
     const fileName = pdfData.fileName;
+    const roleInfo = resolveIdCardRole(profile.role, profile.membershipType);
+    const effectiveId = profile.memberId || profile.adminId || generateRoleSpecificId(roleInfo.roleType);
+    const subtitle = profile.membershipType || roleInfo.defaultMembershipType;
 
     const dirs = RNFS?.fs?.dirs;
     const cacheDir = dirs?.CacheDir || dirs?.DocumentDir;
@@ -575,8 +622,8 @@ export const shareIdCardPdfNative = async (
       const shareResult = await NativeShare.open({
         url: `file://${filePath}`,
         type: 'application/pdf',
-        title: `HRSJM Member ID Card - ${profile.memberId}`,
-        subject: `HRSJM Membership ID Card - ${profile.fullName}`,
+        title: `HRSJM ${roleInfo.idLabel} Card - ${effectiveId}`,
+        subject: `HRSJM ${roleInfo.idLabel} Card - ${profile.fullName}`,
         filename: fileName.replace(/\.pdf$/i, ''),
         failOnCancel: false,
       });
@@ -589,10 +636,10 @@ export const shareIdCardPdfNative = async (
 
     // Fallback if react-native-share is unavailable
     const summary = [
-      `HRSJM MEMBERSHIP ID CARD`,
+      `HRSJM ${roleInfo.idLabel.toUpperCase()} CARD`,
       `Name: ${profile.fullName}`,
-      `Member ID: ${profile.memberId}`,
-      `Membership: ${profile.membershipType}`,
+      `${roleInfo.idLabel}: ${effectiveId}`,
+      `Role: ${subtitle}`,
       `Status: ${profile.accountStatus}`,
       `Valid Till: ${profile.validTill}`,
       `Joined On: ${profile.memberSince}`,
@@ -600,7 +647,7 @@ export const shareIdCardPdfNative = async (
     ].join('\n');
 
     const shareResult = await Share.share({
-      title: `HRSJM Member ID Card - ${profile.memberId}`,
+      title: `HRSJM ${roleInfo.idLabel} Card - ${effectiveId}`,
       message: summary,
     });
 
@@ -631,6 +678,8 @@ export const downloadIdCardPdfWeb = async (
   const pdf = generateIdCardPdf(profile, avatarBase64);
   const blob = pdf.output('blob');
   const fileName = idCardFileName(profile);
+  const roleInfo = resolveIdCardRole(profile.role, profile.membershipType);
+  const effectiveId = profile.memberId || profile.adminId || generateRoleSpecificId(roleInfo.roleType);
 
   if (web.URL?.createObjectURL && web.document) {
     const url = web.URL.createObjectURL(blob);
@@ -677,6 +726,8 @@ export const shareIdCardPdfWeb = async (
   const pdf = generateIdCardPdf(profile, avatarBase64);
   const blob = pdf.output('blob');
   const fileName = idCardFileName(profile);
+  const roleInfo = resolveIdCardRole(profile.role, profile.membershipType);
+  const effectiveId = profile.memberId || profile.adminId || generateRoleSpecificId(roleInfo.roleType);
 
   if (
     nav?.share &&
@@ -688,8 +739,8 @@ export const shareIdCardPdfWeb = async (
       if (nav.canShare({ files: [file] })) {
         await nav.share({
           files: [file],
-          title: 'HRSJM Member ID Card',
-          text: `HRSJM Membership ID - ${profile.fullName} (${profile.memberId})`,
+          title: `HRSJM ${roleInfo.idLabel} Card`,
+          text: `HRSJM ${roleInfo.idLabel} - ${profile.fullName} (${effectiveId})`,
         });
         return 'shared';
       }

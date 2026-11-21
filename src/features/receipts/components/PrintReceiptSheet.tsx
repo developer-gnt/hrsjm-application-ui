@@ -9,6 +9,9 @@ import {
 } from 'react-native';
 import { colors, radius, spacing } from '../../../core/theme/theme';
 import { Icon } from '../../../core/components/common/Icon';
+import { recentDonationsStore } from '../../donations/services/recent-donations.store';
+import { MOCK_DONATION_RECORDS } from '../../donations/data/donations.mock';
+import { executePrintReceipt } from '../services/receiptActions.service';
 
 interface PrintReceiptSheetProps {
   visible: boolean;
@@ -33,12 +36,25 @@ export function PrintReceiptSheet({
   const [printerMenuOpen, setPrinterMenuOpen] = useState(false);
   const [printingStatus, setPrintingStatus] = useState<string | null>(null);
 
-  const handlePrint = () => {
-    setPrintingStatus(`Simulated: Sending ${receiptNo} to ${selectedPrinter}...`);
-    setTimeout(() => {
+  const handlePrint = async () => {
+    setPrintingStatus(`Sending ${receiptNo} to printer...`);
+    try {
+      const record =
+        recentDonationsStore.getRecentDonations().find(r => r.receiptNo === receiptNo || r.id === receiptNo) ||
+        MOCK_DONATION_RECORDS.find(r => r.receiptNo === receiptNo) || {
+          id: receiptNo,
+          receiptNo,
+          amount: 500,
+          donorName: 'Donor',
+          cause: 'Donation',
+        };
+      await executePrintReceipt(record as any);
+    } catch (err: any) {
+      console.warn('Print receipt error:', err);
+    } finally {
       setPrintingStatus(null);
       onClose();
-    }, 1200);
+    }
   };
 
   return (

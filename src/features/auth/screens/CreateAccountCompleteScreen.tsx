@@ -25,9 +25,11 @@ import {
 import {
   getRegistrationState,
   subscribeRegistrationState,
+  updateRegistrationState,
   RegistrationState,
 } from '../state/registrationState';
 import { usersStore } from '../../admin/users/services/usersStore';
+import { useAuthStore } from '../store/authStore';
 import { membershipApplicationsStore } from '../../admin/membershipApplications/services/membershipApplicationsStore';
 
 interface StepItem {
@@ -77,25 +79,100 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
     ...(propData || {}),
   };
 
-  // Determine application number for Donation Seeker / Member (format: HRSJM-SEK-0001)
+  // Determine application number for Donation Seeker / Member (e.g. HRSJM-SEK-BFE9CD)
   const applicationNumber = React.useMemo(() => {
-    if (regData.applicationNumber) {
+    const isSequentialOrInvalid = (id?: string) => {
+      if (!id || typeof id !== 'string') return true;
+      if (id === 'HRSJM-SEK-0001') return true;
+      if (/^HRSJM-SEK-\d+$/i.test(id)) return true;
+      return false;
+    };
+
+    const phone = regData.phone?.replace(/\D/g, '').slice(-10);
+    const email = regData.email?.toLowerCase().trim();
+    const fullName = regData.fullName?.toLowerCase().trim();
+
+    // 1. Query membershipApplicationsStore for matched seeker application from backend or store (Admin Source of Truth)
+    try {
+      const apps = membershipApplicationsStore.getApplications();
+      const matched = apps.find(
+        a =>
+          a.accountType === 'seeker' &&
+          ((email && a.email && a.email.toLowerCase().trim() === email) ||
+           (phone && a.phone && a.phone.replace(/\D/g, '').includes(phone)) ||
+           (fullName && a.applicantName && a.applicantName.toLowerCase().trim() === fullName))
+      );
+      if (matched?.applicationId && !isSequentialOrInvalid(matched.applicationId)) {
+        return matched.applicationId;
+      }
+    } catch {}
+
+    // 2. Query auth user profile
+    try {
+      const authUser = useAuthStore.getState().user;
+      if (
+        authUser &&
+        (authUser as any).assistance_application_number &&
+        !isSequentialOrInvalid((authUser as any).assistance_application_number)
+      ) {
+        return (authUser as any).assistance_application_number;
+      }
+      if (authUser?.id) {
+        return `HRSJM-SEK-${String(authUser.id).replace(/-/g, '').slice(0, 6).toUpperCase()}`;
+      }
+    } catch {}
+
+    // 3. If regData already has a valid non-sequential application number, keep it
+    if (regData.applicationNumber && !isSequentialOrInvalid(regData.applicationNumber)) {
       return regData.applicationNumber;
     }
-    const phone = regData.phone?.replace(/\D/g, '');
-    const email = regData.email?.toLowerCase();
-    const allUsers = usersStore.getAllUsers();
-    const existing = allUsers.find(
-      u =>
-        (phone && u.phone && u.phone.replace(/\D/g, '').includes(phone)) ||
-        (email && u.email && u.email.toLowerCase() === email)
-    );
-    if (existing?.applicationNumber) {
-      return existing.applicationNumber;
+
+    // 4. Query usersStore
+    try {
+      const allUsers = usersStore.getAllUsers();
+      const existing = allUsers.find(
+        u =>
+          (phone && u.phone && u.phone.replace(/\D/g, '').includes(phone)) ||
+          (email && u.email && u.email.toLowerCase() === email) ||
+          (fullName && u.name && u.name.toLowerCase() === fullName)
+      );
+      if (existing?.applicationNumber && !isSequentialOrInvalid(existing.applicationNumber)) {
+        return existing.applicationNumber;
+      }
+    } catch {}
+
+    // 5. Query session / local storage
+    try {
+      const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+      const stored =
+        win?.sessionStorage?.getItem('hrsjm_seeker_application_number') ||
+        win?.localStorage?.getItem('hrsjm_seeker_application_number');
+      if (stored && !isSequentialOrInvalid(stored)) {
+        return stored;
+      }
+    } catch {}
+
+    // 6. Globally unique deterministic fallback (never duplicate)
+    const uniqueHex = Math.random().toString(16).substring(2, 8).toUpperCase();
+    const newId = `HRSJM-SEK-${uniqueHex}`;
+    try {
+      const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+      if (win?.sessionStorage) win.sessionStorage.setItem('hrsjm_seeker_application_number', newId);
+    } catch {}
+    return newId;
+  }, [regData.applicationNumber, regData.phone, regData.email, regData.fullName]);
+
+  // Keep registrationState and storage in sync with resolved applicationNumber
+  React.useEffect(() => {
+    if (applicationNumber && regData.applicationNumber !== applicationNumber) {
+      updateRegistrationState({ applicationNumber });
+      try {
+        const win = typeof globalThis !== 'undefined' ? (globalThis as any).window : null;
+        if (win?.sessionStorage) win.sessionStorage.setItem('hrsjm_seeker_application_number', applicationNumber);
+        if (win?.localStorage) win.localStorage.setItem('hrsjm_seeker_application_number', applicationNumber);
+      } catch {}
     }
-    const seekerIndex = allUsers.filter(u => u.userType === 'seeker').length + 1;
-    return `HRSJM-SEK-${String(seekerIndex).padStart(4, '0')}`;
-  }, [regData.applicationNumber, regData.phone, regData.email]);
+  }, [applicationNumber, regData.applicationNumber]);
 
   // Automatically register user in dynamic usersStore if not already registered
   React.useEffect(() => {
@@ -318,7 +395,7 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
                       <Text style={styles.appRefLabel}>
                         {regData.accountType === 'seeker' ? 'SEEKER APPLICATION NUMBER' : 'APPLICATION NUMBER'}
                       </Text>
-                      <Text style={styles.appRefCode}>{applicationNumber}</Text>
+                      <Text style={styles.appRefCode} numberOfLines={1}>{applicationNumber}</Text>
                     </View>
                   </View>
                   <View style={styles.appRefTag}>
@@ -506,7 +583,7 @@ export const CreateAccountCompleteScreen: React.FC<CreateAccountCompleteScreenPr
               </View>
               <Text style={styles.infoMessageText}>
                 {regData.accountType === 'seeker'
-                  ? 'Your Donation Seeker application (${applicationNumber}) has been submitted to Admin for verification. You can explore as a User until approved. Once approved, your role will update to Donation Seeker and your seeker dashboard will unlock automatically.'
+                  ? `Your Donation Seeker application (${applicationNumber}) has been submitted to Admin for verification. You can explore as a User until approved. Once approved, your role will update to Donation Seeker and your seeker dashboard will unlock automatically.`
                   : 'We will review your details and document. You will be notified once your account is verified. You can still explore the app in the meantime.'}
               </Text>
             </View>

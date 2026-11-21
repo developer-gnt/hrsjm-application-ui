@@ -59,6 +59,7 @@ export {
   CreditCard,
   Download,
   Share2,
+  Printer,
   Copy,
   CheckCircle2,
   AlertCircle,

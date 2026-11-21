@@ -178,6 +178,12 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
       return;
     }
     if (navigation?.navigate) {
+      if (isSeekerRole) {
+        try {
+          navigation.navigate('SeekerProfile');
+          return;
+        } catch {}
+      }
       try {
         navigation.navigate('UserProfile');
         return;
@@ -247,9 +253,9 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
                 resizeMode="contain"
               />
               <View style={styles.wordmarkCol}>
-                <Text style={styles.brandTitle}>HRSJM</Text>
+                <Text style={styles.brandTitle} numberOfLines={1}>HRSJM</Text>
                 <Text style={styles.wordmarkEnglish} numberOfLines={1}>
-                  HUMAN RIGHTS AND SOCIAL JUSTICE MISSION
+                  HUMAN RIGHTS & SOCIAL JUSTICE
                 </Text>
                 <Text style={styles.wordmarkHindi} numberOfLines={1}>
                   मानव अधिकार • सामाजिक न्याय
@@ -320,6 +326,15 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
                       <Text style={styles.avatarText}>{initials}</Text>
                     )}
                   </View>
+                  <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" style={{ marginLeft: 3 }}>
+                    <Path
+                      d="m6 9 6 6 6-6"
+                      stroke="#34516D"
+                      strokeWidth={2.4}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
                 </TouchableOpacity>
           </View>
         </View>
@@ -369,7 +384,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               activeOpacity={0.7}
             >
               <User size={16} color="#1E3A8A" strokeWidth={2} style={styles.dropdownItemIcon} />
-              <Text style={styles.dropdownItemText}>View Profile</Text>
+              <Text style={styles.dropdownItemText}>Profile</Text>
             </TouchableOpacity>
 
             <View style={styles.dropdownDivider} />
@@ -459,7 +474,7 @@ const styles = StyleSheet.create({
   wordmarkCol: {
     justifyContent: 'center',
     flexShrink: 1,
-    minWidth: 0,
+    minWidth: 56,
   },
   brandTitle: {
     fontFamily: UserFontFamilies.heading,
@@ -468,6 +483,7 @@ const styles = StyleSheet.create({
     color: '#06294D',
     letterSpacing: 0.2,
     lineHeight: 20,
+    flexShrink: 0,
   },
   wordmarkEnglish: {
     fontFamily: UserFontFamilies.sans,

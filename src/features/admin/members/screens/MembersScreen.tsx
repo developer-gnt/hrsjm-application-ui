@@ -58,6 +58,12 @@ import membersService, {
   CreateMemberPayload,
   UpdateMemberPayload,
 } from '../services/members.service';
+import { LiveQrScannerModal } from '../../../membership/components/LiveQrScannerModal';
+import { VerificationResultModal } from '../../../membership/components/VerificationResultModal';
+import {
+  memberVerificationService,
+  type MemberVerificationData,
+} from '../../../membership/services/memberVerificationService';
 
 /** Width at/above which the member list renders as an aligned column grid. */
 const WIDE_LAYOUT_BREAKPOINT = 700;
@@ -157,6 +163,27 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
   const [resetPasswordMember, setResetPasswordMember] = useState<Member | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+
+  const [showScannerModal, setShowScannerModal] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [verificationData, setVerificationData] = useState<MemberVerificationData | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const handleVerify = async (tokenOrPayload: string) => {
+    setIsVerifying(true);
+    try {
+      const result = await memberVerificationService.verifyMember(tokenOrPayload);
+      setVerificationData(result);
+      setShowResultModal(true);
+    } catch {
+      Alert.alert(
+        'Verification Error',
+        'Failed to verify member ID. Please check your network connection.'
+      );
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const paginatedMembers = React.useMemo(() => {
     const startIndex = (page - 1) * pageSize;
@@ -422,6 +449,7 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
         <MembersPageHeader
           onAddMember={handleAddMemberPress}
           onViewApplications={handleViewApplications}
+          onScanMember={() => setShowScannerModal(true)}
         />
         <View style={styles.sectionGap}>
           <MemberStats stats={members.stats} loading={members.isLoading} />
@@ -632,6 +660,33 @@ export const MembersScreen: React.FC<MembersScreenProps> = ({
         primaryAction={feedback.primaryAction}
         secondaryAction={feedback.secondaryAction}
         onClose={closeFeedback}
+      />
+
+      {/* Live QR / Barcode Scanner Modal */}
+      <LiveQrScannerModal
+        visible={showScannerModal}
+        onClose={() => setShowScannerModal(false)}
+        onScan={async (scannedToken) => {
+          setShowScannerModal(false);
+          await handleVerify(scannedToken);
+        }}
+      />
+
+      {/* Verification Result Modal */}
+      <VerificationResultModal
+        visible={showResultModal}
+        onClose={() => setShowResultModal(false)}
+        data={verificationData}
+        loading={isVerifying}
+        onRetry={() => {
+          if (verificationData?.rawScannedPayload) {
+            handleVerify(verificationData.rawScannedPayload);
+          }
+        }}
+        onScanAnother={() => {
+          setShowResultModal(false);
+          setShowScannerModal(true);
+        }}
       />
     </View>
   );

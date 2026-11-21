@@ -38,7 +38,9 @@ export type AppRoute =
   | { name: 'users-details'; userId: string }
   | { name: 'users-edit'; userId: string }
   | { name: 'users-verification'; userId: string }
-  | { name: 'users-filter' };
+  | { name: 'users-filter' }
+  | { name: 'member-verification'; token?: string }
+  | { name: 'qr-scanner' };
 
 const RECEIPT_HASH_PATTERN = /^\/donations\/([^/]+)\/receipt$/;
 const MEMBERSHIP_DETAILS_HASH_PATTERN = /^\/membership-applications\/([^/]+)$/;
@@ -47,6 +49,8 @@ const TICKET_DETAILS_HASH_PATTERN = /^\/support\/tickets\/([^/]+)$/;
 const USERS_EDIT_HASH_PATTERN = /^\/users\/([^/]+)\/edit$/;
 const USERS_VERIFY_HASH_PATTERN = /^\/users\/([^/]+)\/verification$/;
 const USERS_DETAILS_HASH_PATTERN = /^\/users\/([^/]+)$/;
+const VERIFY_HASH_PATTERN = /^\/verify(?:\/([^/]+))?$/;
+const QR_SCANNER_HASH_PATTERN = /^\/(?:qr-scanner|scan)$/;
 
 const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/profile': { name: 'profile' },
@@ -84,6 +88,10 @@ const PROFILE_HASH_ROUTES: Record<string, AppRoute> = {
   '/users': { name: 'users' },
   '/users/add': { name: 'users-add' },
   '/users/filter': { name: 'users-filter' },
+  '/verify': { name: 'member-verification' },
+  '/verification': { name: 'member-verification' },
+  '/qr-scanner': { name: 'qr-scanner' },
+  '/scan': { name: 'qr-scanner' },
 };
 
 const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
@@ -116,6 +124,8 @@ const PROFILE_HASH_BY_ROUTE: Record<AppRoute['name'], string> = {
   'users-edit': '#/users',
   'users-verification': '#/users',
   'users-filter': '#/users/filter',
+  'member-verification': '#/verify',
+  'qr-scanner': '#/qr-scanner',
 };
 
 const getWebWindow = (): any =>
@@ -159,6 +169,16 @@ const parseHash = (): AppRoute => {
   if (usersDetailsMatch) {
     return { name: 'users-details', userId: decodeURIComponent(usersDetailsMatch[1]) };
   }
+  const verifyMatch = hash.match(VERIFY_HASH_PATTERN);
+  if (verifyMatch) {
+    return {
+      name: 'member-verification',
+      token: verifyMatch[1] ? decodeURIComponent(verifyMatch[1]) : undefined,
+    };
+  }
+  if (QR_SCANNER_HASH_PATTERN.test(hash)) {
+    return { name: 'qr-scanner' };
+  }
   return { name: 'membership-applications' };
 };
 
@@ -183,6 +203,12 @@ const routeToHash = (route: AppRoute): string => {
   }
   if (route.name === 'users-verification') {
     return `#/users/${encodeURIComponent(route.userId)}/verification`;
+  }
+  if (route.name === 'member-verification') {
+    return route.token ? `#/verify/${encodeURIComponent(route.token)}` : '#/verify';
+  }
+  if (route.name === 'qr-scanner') {
+    return '#/qr-scanner';
   }
   return PROFILE_HASH_BY_ROUTE[route.name];
 };
@@ -370,5 +396,14 @@ export const navigateToUserVerification = (userId: string): void => {
 export const navigateToUserFilter = (): void => {
   navigate({ name: 'users-filter' });
 };
+
+export const navigateToMemberVerification = (token?: string): void => {
+  navigate({ name: 'member-verification', token });
+};
+
+export const navigateToQrScanner = (): void => {
+  navigate({ name: 'qr-scanner' });
+};
+
 
 

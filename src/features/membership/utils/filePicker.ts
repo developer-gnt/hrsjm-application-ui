@@ -1,3 +1,4 @@
+import { registerUploadedDocument } from '../../admin/membershipApplications/services/uploadedDocumentsCache';
 import { PermissionsAndroid, Platform } from 'react-native';
 import {
   launchCamera,
@@ -31,6 +32,48 @@ function formatFileSize(bytes?: number): string {
     return `${(bytes / 1024).toFixed(0)} KB`;
   }
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Convert any native mobile file / content URI into a self-contained base64 data URL.
+ * This guarantees the file bytes are preserved and transmitted to the backend database,
+ * allowing web and mobile admins to render the authentic uploaded document directly.
+ */
+export async function convertUriToBase64DataUrl(
+  uri: string,
+  mimeType?: string,
+  fileName?: string
+): Promise<string> {
+  if (!uri) return '';
+  if (uri.startsWith('data:') || uri.startsWith('http://') || uri.startsWith('https://')) {
+    return uri;
+  }
+  if (isWebPlatform()) {
+    return uri;
+  }
+
+  try {
+    const mod = typeof require !== 'undefined' ? require('react-native-blob-util') : null;
+    const blobUtil = mod ? (mod.default || mod) : (await import('react-native-blob-util')).default;
+    if (blobUtil?.fs?.readFile) {
+      const b64 = await blobUtil.fs.readFile(uri, 'base64');
+      if (b64) {
+        const resolvedMime =
+          mimeType ||
+          (fileName?.toLowerCase().endsWith('.pdf')
+            ? 'application/pdf'
+            : fileName?.toLowerCase().endsWith('.png')
+            ? 'image/png'
+            : fileName?.toLowerCase().endsWith('.webp')
+            ? 'image/webp'
+            : 'image/jpeg');
+        return `data:${resolvedMime};base64,${b64}`;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not read file URI to base64 via react-native-blob-util:', err);
+  }
+  return uri;
 }
 
 /**
@@ -86,8 +129,12 @@ export function pickWebFile(
         const reader = new webGlobal.FileReader();
         reader.onload = () => {
           cleanup();
+          const uri = typeof reader.result === 'string' ? reader.result : '';
+          if (uri && fileName) {
+            registerUploadedDocument(fileName, uri);
+          }
           resolve({
-            uri: typeof reader.result === 'string' ? reader.result : '',
+            uri,
             fileName,
             fileSize,
             type: file.type,
@@ -171,6 +218,7 @@ export async function takePhotoWithNativeCamera(
       cameraType,
       quality: 0.8,
       saveToPhotos: false,
+      includeBase64: true,
     });
 
     if (response.didCancel || response.errorCode) {
@@ -183,11 +231,21 @@ export async function takePhotoWithNativeCamera(
     const asset = response.assets?.[0];
     if (!asset || !asset.uri) return null;
 
+    const fileName = asset.fileName || `IMG_${Date.now()}.jpg`;
+    const mime = asset.type || 'image/jpeg';
+    let dataUri = asset.base64 ? `data:${mime};base64,${asset.base64}` : asset.uri;
+
+    if (!dataUri.startsWith('data:') && asset.uri) {
+      dataUri = await convertUriToBase64DataUrl(asset.uri, mime, fileName);
+    }
+
+    registerUploadedDocument(fileName, dataUri);
+
     return {
-      uri: asset.uri,
-      fileName: asset.fileName || `IMG_${Date.now()}.jpg`,
+      uri: dataUri,
+      fileName,
       fileSize: formatFileSize(asset.fileSize),
-      type: asset.type,
+      type: mime,
     };
   } catch (err) {
     console.warn('launchCamera error, fallback to web input:', err);
@@ -208,6 +266,7 @@ export async function choosePhotoFromNativeGallery(): Promise<PickedMediaResult 
       mediaType: 'photo',
       quality: 0.8,
       selectionLimit: 1,
+      includeBase64: true,
     });
 
     if (response.didCancel || response.errorCode) {
@@ -217,11 +276,21 @@ export async function choosePhotoFromNativeGallery(): Promise<PickedMediaResult 
     const asset = response.assets?.[0];
     if (!asset || !asset.uri) return null;
 
+    const fileName = asset.fileName || `PHOTO_${Date.now()}.jpg`;
+    const mime = asset.type || 'image/jpeg';
+    let dataUri = asset.base64 ? `data:${mime};base64,${asset.base64}` : asset.uri;
+
+    if (!dataUri.startsWith('data:') && asset.uri) {
+      dataUri = await convertUriToBase64DataUrl(asset.uri, mime, fileName);
+    }
+
+    registerUploadedDocument(fileName, dataUri);
+
     return {
-      uri: asset.uri,
-      fileName: asset.fileName || `PHOTO_${Date.now()}.jpg`,
+      uri: dataUri,
+      fileName,
       fileSize: formatFileSize(asset.fileSize),
-      type: asset.type,
+      type: mime,
     };
   } catch (err) {
     console.warn('launchImageLibrary error, fallback to web input:', err);
@@ -245,11 +314,17 @@ export async function pickNativeDocument(): Promise<PickedMediaResult | null> {
     const res = results[0];
     if (!res || !res.uri) return null;
 
+    const fileName = res.name || `document_${Date.now()}.pdf`;
+    const mime = res.type || (fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+    const dataUri = await convertUriToBase64DataUrl(res.uri, mime, fileName);
+
+    registerUploadedDocument(fileName, dataUri);
+
     return {
-      uri: res.uri,
-      fileName: res.name || `document_${Date.now()}.pdf`,
+      uri: dataUri,
+      fileName,
       fileSize: formatFileSize(res.size ?? undefined),
-      type: res.type ?? undefined,
+      type: mime,
     };
   } catch (err: any) {
     if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {

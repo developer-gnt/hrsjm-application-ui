@@ -95,6 +95,9 @@ const getFriendlyDeclineSubheading = (raw?: string): string => {
   if (lower.includes('bank') || lower.includes('issuer') || lower.includes('decline')) {
     return 'Your bank or payment provider declined the transaction authorization.';
   }
+  if (lower.includes('order_init') || lower.includes('failed to initiate') || lower.includes('could not create order')) {
+    return 'Unable to establish a checkout session with the payment gateway. No money has been debited.';
+  }
   if (lower.includes('bad gateway') || lower.includes('502') || lower.includes('503') || lower.includes('maintenance')) {
     return 'The payment gateway is temporarily unavailable. Your money is completely safe and no amount was debited.';
   }
@@ -117,6 +120,9 @@ const getFriendlyDeclineReason = (raw?: string): string => {
   }
   if (lower.includes('bank') || lower.includes('issuer')) {
     return 'Transaction was declined by your bank or card issuer. Please try an alternate card or UPI app.';
+  }
+  if (lower.includes('order_init') || lower.includes('failed to initiate') || lower.includes('could not create order')) {
+    return 'The payment gateway could not create an order session. Please check your internet connection or try again in a few moments.';
   }
   if (lower.includes('bad gateway') || lower.includes('502') || lower.includes('503') || lower.includes('maintenance')) {
     return 'Payment gateway service is currently undergoing routine maintenance. Please try again shortly.';
@@ -2005,20 +2011,22 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
     const friendlySubheading = getFriendlyDeclineSubheading(failureError?.message || failureError?.reason);
     const friendlyReason = getFriendlyDeclineReason(failureError?.message || failureError?.reason);
 
-    const paymentMethodDisplay =
-      paymentMethod === 'upi'
-        ? selectedUpiApp === 'gpay'
-          ? 'UPI (Google Pay)'
-          : selectedUpiApp === 'phonepe'
-          ? 'UPI (PhonePe)'
-          : selectedUpiApp === 'paytm'
-          ? 'UPI (Paytm)'
-          : 'UPI (BHIM)'
-        : paymentMethod === 'card'
-        ? 'Debit / Credit Card'
-        : paymentMethod === 'netbanking'
-        ? selectedBank
-        : selectedWallet;
+    const isInitFailure = failureError?.code === 'ORDER_INIT_FAILED';
+    const paymentMethodDisplay = isInitFailure
+      ? 'Payment Gateway Setup'
+      : paymentMethod === 'upi'
+      ? selectedUpiApp === 'gpay'
+        ? 'UPI (Google Pay)'
+        : selectedUpiApp === 'phonepe'
+        ? 'UPI (PhonePe)'
+        : selectedUpiApp === 'paytm'
+        ? 'UPI (Paytm)'
+        : 'UPI (BHIM)'
+      : paymentMethod === 'card'
+      ? 'Debit / Credit Card'
+      : paymentMethod === 'netbanking'
+      ? selectedBank
+      : selectedWallet;
 
     return (
       <View style={styles.stageContainer}>
@@ -2084,7 +2092,9 @@ export const GlobalPaymentModal: React.FC<GlobalPaymentModalProps> = ({
               <Text style={styles.receiptMetaLabel}>Payment Status</Text>
               <View style={styles.failedBadge}>
                 <View style={styles.failedBadgeDot} />
-                <Text style={styles.failedBadgeText}>Declined</Text>
+                <Text style={styles.failedBadgeText}>
+                  {isInitFailure ? 'Init Failed' : 'Declined'}
+                </Text>
               </View>
             </View>
 

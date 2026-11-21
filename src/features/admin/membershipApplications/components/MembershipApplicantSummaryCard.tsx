@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Image,
   StyleSheet,
@@ -34,6 +34,12 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
     return (name.slice(0, 2) || 'NA').toUpperCase();
   };
 
+  const [avatarError, setAvatarError] = useState(false);
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [application.id, application.avatarUrl]);
+
   const photoDoc = application.documents?.find(
     doc => (doc.title || doc.fileName || doc.id || '').toLowerCase().includes('photo')
   );
@@ -41,6 +47,7 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
     (application.avatarUrl ? resolveUploadedFileUri(undefined, application.avatarUrl) : undefined) ||
     (photoDoc?.uri ? resolveUploadedFileUri(photoDoc.fileName, photoDoc.uri) : undefined) ||
     resolveUploadedFileUri(photoDoc?.fileName) ||
+    resolveUploadedFileUri('applicant_photograph.jpg') ||
     resolveUploadedFileUri(application.applicantName) ||
     undefined;
 
@@ -79,10 +86,11 @@ export const MembershipApplicantSummaryCard: React.FC<MembershipApplicantSummary
       <View style={styles.cardRow}>
         {/* Left: Avatar */}
         <View style={styles.avatarContainer}>
-          {resolvedAvatar ? (
+          {resolvedAvatar && !avatarError ? (
             <Image
               source={{ uri: resolvedAvatar }}
               style={styles.avatarImage}
+              onError={() => setAvatarError(true)}
             />
           ) : (
             <View style={styles.initialsFallback}>

@@ -46,6 +46,89 @@ const INITIAL_FILTERS: DonationFilterState = {
   status: 'ALL',
 };
 
+const isGenericTitle = (title?: string) => {
+  if (!title) return true;
+  const t = title.trim().toLowerCase();
+  return (
+    t === 'donation contribution' ||
+    t === 'hrsjm donation' ||
+    t === 'donation' ||
+    t === 'general donation' ||
+    t === 'social justice & human rights support'
+  );
+};
+
+const isSameDonation = (a: DonationRecord, b: DonationRecord): boolean => {
+  if (a.id && b.id && a.id === b.id) return true;
+  if (a.transactionId && b.transactionId && a.transactionId === b.transactionId) return true;
+  if (a.transactionId && b.id && a.transactionId === b.id) return true;
+  if (b.transactionId && a.id && b.transactionId === a.id) return true;
+  if (a.receiptNo && b.receiptNo && a.receiptNo === b.receiptNo) return true;
+
+  // Match by amount + date (same day) + time proximity
+  const amtA = Number(a.amount);
+  const amtB = Number(b.amount);
+  if (amtA > 0 && amtA === amtB) {
+    if (a.date && b.date && a.date === b.date) {
+      if (a.time && b.time && a.time === b.time) return true;
+      if (a.isoDate && b.isoDate) {
+        const diffMs = Math.abs(new Date(a.isoDate).getTime() - new Date(b.isoDate).getTime());
+        if (!isNaN(diffMs) && diffMs < 300000) return true;
+      }
+      if (isGenericTitle(a.title) || isGenericTitle(b.title)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+const mergeDonationRecord = (existing: DonationRecord, incoming: DonationRecord): DonationRecord => {
+  const preferredTitle = !isGenericTitle(incoming.title)
+    ? incoming.title
+    : !isGenericTitle(existing.title)
+    ? existing.title
+    : incoming.title || existing.title;
+
+  const preferredCause = !isGenericTitle(incoming.cause)
+    ? incoming.cause
+    : !isGenericTitle(existing.cause)
+    ? existing.cause
+    : incoming.cause || existing.cause;
+
+  const preferredReceiptNo =
+    (incoming.receiptNo?.startsWith('HRSJM-RCP') || incoming.receiptNo?.startsWith('REC-')
+      ? incoming.receiptNo
+      : existing.receiptNo?.startsWith('HRSJM-RCP') || existing.receiptNo?.startsWith('REC-')
+      ? existing.receiptNo
+      : incoming.receiptNo) || existing.receiptNo;
+
+  const preferredStatus: DonationStatus =
+    existing.status === 'Completed' || incoming.status === 'Completed'
+      ? 'Completed'
+      : incoming.status;
+
+  return {
+    ...existing,
+    ...incoming,
+    id: existing.id || incoming.id,
+    title: preferredTitle,
+    cause: preferredCause,
+    receiptNo: preferredReceiptNo,
+    status: preferredStatus,
+    amount: existing.amount || incoming.amount,
+    date: existing.date || incoming.date,
+    time: existing.time || incoming.time,
+    dateTime: existing.dateTime || incoming.dateTime,
+    paymentMethod: incoming.paymentMethod || existing.paymentMethod,
+    donorName:
+      incoming.donorName && incoming.donorName !== 'Donor'
+        ? incoming.donorName
+        : existing.donorName,
+  };
+};
+
 export interface DonationHistoryScreenProps {
   customHeader?: React.ReactNode;
   onNavigateHome?: () => void;
@@ -66,9 +149,11 @@ export function DonationHistoryScreen({
   const [loading, setLoading] = useState(false);
   const [donationRecords, setDonationRecords] = useState<DonationRecord[]>([]);
 
-  const loadDonations = useCallback(async () => {
+  const loadDonations = useCallback(async (showSkeleton = false) => {
     try {
-      setLoading(true);
+      if (showSkeleton) {
+        setLoading(true);
+      }
       let res: any = null;
       try {
         res = await apiClient.get<any>('/donation-payments/my');
@@ -109,9 +194,9 @@ export function DonationHistoryScreen({
         }
       }
 
-      let realRecords: DonationRecord[] = [];
+      let parsedPayments: DonationRecord[] = [];
       if (Array.isArray(rawItems) && rawItems.length > 0) {
-        realRecords = rawItems.map((item: any) => {
+        parsedPayments = rawItems.map((item: any) => {
           const dDate = new Date(item.created_at);
           const dateStr = !isNaN(dDate.getTime())
             ? dDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -124,7 +209,7 @@ export function DonationHistoryScreen({
             id: item.id,
             receiptNo: item.gateway_order_id || `REC-${item.id.slice(0, 8).toUpperCase()}`,
             type: 'Donation' as const,
-            title: item.donation?.cause || 'HRSJM Donation',
+            title: item.donation?.cause || 'HRSJM NGO Donation - General Fund',
             cause: item.donation?.cause || 'Social Justice & Human Rights Support',
             category: 'Donation',
             description: item.donation?.remark || `Donation contribution of ₹${amt.toLocaleString('en-IN')}`,
@@ -145,44 +230,64 @@ export function DonationHistoryScreen({
         });
       }
 
+      const combinedRecords: DonationRecord[] = [];
+      const addOrMerge = (item: DonationRecord) => {
+        const idx = combinedRecords.findIndex(r => isSameDonation(r, item));
+        if (idx >= 0) {
+          combinedRecords[idx] = mergeDonationRecord(combinedRecords[idx], item);
+        } else {
+          combinedRecords.push(item);
+        }
+      };
+
+      // Add payments
+      for (const p of parsedPayments) {
+        addOrMerge(p);
+      }
+
+      // Add backend receipts
       try {
         const receipts = await receiptsService.getMyReceipts();
         const donationReceipts = receipts.filter(r => r.type === 'Donation');
         for (const dr of donationReceipts) {
-          if (!realRecords.some(r => r.id === dr.id || (dr.transactionId && r.transactionId === dr.transactionId))) {
-            realRecords.push(dr);
-          }
+          addOrMerge(dr);
         }
       } catch {}
 
       // Merge with live donations made in the active session
       const recentLive = recentDonationsStore.getRecentDonations();
       for (const rd of recentLive) {
-        if (!realRecords.some(r => r.id === rd.id || (rd.transactionId && r.transactionId === rd.transactionId))) {
-          realRecords.unshift(rd);
-        }
+        addOrMerge(rd);
       }
 
-      // Set real user donation records (empty if user has not donated yet)
-      setDonationRecords(realRecords);
+      // Sort newest first
+      combinedRecords.sort((a, b) => {
+        const tA = a.isoDate ? new Date(a.isoDate).getTime() : 0;
+        const tB = b.isoDate ? new Date(b.isoDate).getTime() : 0;
+        return tB - tA;
+      });
+
+      // Set real user donation records (deduplicated, single record per transaction)
+      setDonationRecords(combinedRecords);
     } catch (err) {
-      setDonationRecords([]);
+      // Don't wipe existing records on transient failure
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  // Live polling whenever screen is in focus: instant refresh on tab focus + 3s ticker
+  // Screen focus: single silent refresh without ticker or blinking
   useFocusEffect(
     useCallback(() => {
-      loadDonations();
-      const ticker = setInterval(() => {
-        loadDonations();
-      }, 3500);
-      return () => clearInterval(ticker);
+      loadDonations(false);
     }, [loadDonations]),
   );
+
+  // Initial mount: load once, showing skeleton only if initial records are empty
+  useEffect(() => {
+    loadDonations(true);
+  }, [loadDonations]);
 
   // Instant update whenever a new donation is recorded in the session
   useEffect(() => {
@@ -289,7 +394,7 @@ export function DonationHistoryScreen({
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadDonations();
+    loadDonations(false);
   };
 
   const handleApplyFilters = (newFilters: DonationFilterState) => {
@@ -315,7 +420,7 @@ export function DonationHistoryScreen({
     <SafeAreaView style={styles.safe} edges={['top']}>
       {customHeader ? customHeader : <AdminTopBar />}
 
-      {loading ? (
+      {loading && donationRecords.length === 0 ? (
         <View style={styles.skeletonContainer}>
           <DonationListSkeleton count={5} />
         </View>

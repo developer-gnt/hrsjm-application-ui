@@ -16,7 +16,7 @@ import { MemberHeader } from '../components/MemberHeader';
 import { CauseCard } from '../components/CauseCard';
 import { GlobalPaymentModal, PaymentPayload } from '../../payments';
 import { MemberCause, CauseCategoryKey } from '../types/causes.types';
-import { causesService, VERIFIED_FALLBACK_CAUSES } from '../services/causes.service';
+import { causesService } from '../services/causes.service';
 import { FontFamilies } from '../../../core/theme';
 import {
   Banknote,
@@ -61,10 +61,7 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
 
-  const [causes, setCauses] = useState<MemberCause[]>(() => {
-    const existing = causesService.getCausesSync();
-    return existing.length > 0 ? existing : VERIFIED_FALLBACK_CAUSES;
-  });
+  const [causes, setCauses] = useState<MemberCause[]>(() => causesService.getCausesSync());
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
@@ -79,12 +76,12 @@ export const MemberCauseListScreen: React.FC<MemberCauseListScreenProps> = ({
       if (Array.isArray(data) && data.length > 0) {
         setCauses(data);
       } else {
-        setCauses(VERIFIED_FALLBACK_CAUSES);
+        setCauses([]);
       }
     } catch (err) {
       console.warn('[MemberCauseListScreen] Failed to load causes:', err);
       if (causes.length === 0) {
-        setCauses(VERIFIED_FALLBACK_CAUSES);
+        setCauses([]);
       }
     } finally {
       setIsLoading(false);

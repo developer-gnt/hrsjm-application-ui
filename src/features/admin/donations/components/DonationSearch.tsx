@@ -6,43 +6,7 @@ import {
   Spacing,
   BorderRadius,
   AppSearchBar,
-  AppButton,
 } from '../../../../core';
-
-/** Three-line funnel icon matching the reference Filters button. */
-const FunnelIcon = () => (
-  <View style={funnelStyles.wrap}>
-    <View style={funnelStyles.barWide} />
-    <View style={funnelStyles.barMedium} />
-    <View style={funnelStyles.barNarrow} />
-  </View>
-);
-
-const funnelStyles = StyleSheet.create({
-  wrap: {
-    alignItems: 'center',
-  },
-  barWide: {
-    width: 16,
-    height: 2.5,
-    borderRadius: 2,
-    backgroundColor: AdminColors.primary,
-    marginBottom: 3,
-  },
-  barMedium: {
-    width: 11,
-    height: 2.5,
-    borderRadius: 2,
-    backgroundColor: AdminColors.primary,
-    marginBottom: 3,
-  },
-  barNarrow: {
-    width: 6,
-    height: 2.5,
-    borderRadius: 2,
-    backgroundColor: AdminColors.primary,
-  },
-});
 
 interface DonationSearchProps {
   value?: string;
@@ -52,7 +16,8 @@ interface DonationSearchProps {
 }
 
 /**
- * Search + Filters row matching the approved reference proportions.
+ * Search + Filters row with matched 46px heights, clean single-line placeholder,
+ * and unified alignment.
  */
 export const DonationSearch: React.FC<DonationSearchProps> = ({
   value,
@@ -62,7 +27,7 @@ export const DonationSearch: React.FC<DonationSearchProps> = ({
   return (
     <View style={styles.row}>
       <AppSearchBar
-        placeholder="Search by donor name, member ID, phone, UPI ID or amount..."
+        placeholder="Search by donor, ID, phone, amount..."
         value={value}
         onSearch={onSearch}
         containerStyle={styles.search}
@@ -85,27 +50,30 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: Spacing.base,
+    marginVertical: Spacing.sm,
+    gap: 8,
   },
   search: {
     flex: 1,
-    height: 50,
+    height: 46,
     borderRadius: BorderRadius.lg,
+    borderWidth: 1.2,
+    borderColor: '#DCE4EC',
   },
   filtersButton: {
-    marginLeft: Spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
+    justifyContent: 'center',
+    height: 46,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderWidth: 1.2,
+    borderColor: '#DCE4EC',
     borderRadius: BorderRadius.lg,
     paddingHorizontal: 14,
-    gap: 8,
+    gap: 6,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.04,
     shadowRadius: 2,
     elevation: 1,
   },

@@ -1,3 +1,4 @@
+import { Pencil } from '../../../../core/components/icons';
 /**
  * Reusable white rounded section card for the My Profile page: pastel
  * header row (icon + title + Edit action) followed by arbitrary
@@ -44,7 +45,7 @@ export const ProfileSectionCard: React.FC<ProfileSectionCardProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`${editLabel} ${title}`}
           >
-            <Text style={styles.editGlyph}>✎</Text>
+            <Pencil size={11} color={AdminColors.primary} strokeWidth={2} style={{ marginRight: 4 }} />
             <Text style={styles.editLabel}>{editLabel}</Text>
           </TouchableOpacity>
         )}

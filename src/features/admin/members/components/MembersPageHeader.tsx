@@ -2,44 +2,62 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Spacing, BorderRadius } from '../../../../core/theme/spacing';
 import { Typography } from '../../../../core/theme/typography';
+import { Camera } from '../../../../core/components/icons';
 
 interface MembersPageHeaderProps {
   title?: string;
   subtitle?: string;
   onAddMember?: () => void;
   onViewApplications?: () => void;
+  onScanMember?: () => void;
 }
 
-const AddButton = TouchableOpacity as React.ComponentType<any>;
+const HeaderActionButton = TouchableOpacity as React.ComponentType<any>;
 
 /**
  * Members Page Header matching the Donation Seekers reference layout:
  * - Heading "Members" on the left
- * - Yellow "+ Add Member" button on the right, aligned horizontally with the heading
+ * - Actions on the right: "Scan ID" and "+ Add Member"
  * - Description "Manage and view all registered members." directly below
  */
 export const MembersPageHeader: React.FC<MembersPageHeaderProps> = ({
   title = 'Members',
   subtitle = 'Manage and view all registered members.',
   onAddMember,
+  onScanMember,
 }) => {
   return (
     <View style={styles.headerArea}>
       <View style={styles.titleRow}>
         <Text style={styles.pageTitle}>{title}</Text>
-        {onAddMember ? (
-          <AddButton
-            title="Add Member"
-            onPress={onAddMember}
-            accessibilityRole="button"
-            accessibilityLabel="Add Member"
-            style={styles.addButton}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.addButtonPlus}>+</Text>
-            <Text style={styles.addButtonText}>Add Member</Text>
-          </AddButton>
-        ) : null}
+        <View style={styles.actionsGroup}>
+          {onScanMember ? (
+            <HeaderActionButton
+              title="Scan & Verify"
+              onPress={onScanMember}
+              accessibilityRole="button"
+              accessibilityLabel="Scan and verify member ID card"
+              style={styles.scanButton}
+              activeOpacity={0.85}
+            >
+              <Camera size={15} color="#082046" strokeWidth={2.2} />
+              <Text style={styles.scanButtonText}>Verify ID</Text>
+            </HeaderActionButton>
+          ) : null}
+          {onAddMember ? (
+            <HeaderActionButton
+              title="Add Member"
+              onPress={onAddMember}
+              accessibilityRole="button"
+              accessibilityLabel="Add Member"
+              style={styles.addButton}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.addButtonPlus}>+</Text>
+              <Text style={styles.addButtonText}>Add Member</Text>
+            </HeaderActionButton>
+          ) : null}
+        </View>
       </View>
       {subtitle ? <Text style={styles.pageSubtitle}>{subtitle}</Text> : null}
     </View>
@@ -69,6 +87,28 @@ const styles = StyleSheet.create({
     color: '#718096',
     marginTop: 4,
     lineHeight: 18,
+  },
+  actionsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  scanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EDF2F7',
+    borderWidth: 1,
+    borderColor: '#CBD5E0',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: BorderRadius.button,
+  },
+  scanButtonText: {
+    ...Typography.button,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#082046',
   },
   addButton: {
     flexDirection: 'row',

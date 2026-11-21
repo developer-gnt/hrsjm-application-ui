@@ -26,8 +26,9 @@ export const createExpenseSchema = z.object({
     .string({ message: 'Select an expense account' })
     .uuid('Select an expense account'),
   paid_from_account_id: z
-    .string({ message: 'Select the bank/cash account' })
-    .uuid('Select the bank/cash account'),
+    .string()
+    .uuid()
+    .optional(),
   amount: voucherAmountSchema,
   payment_method: z.enum([
     'CASH',

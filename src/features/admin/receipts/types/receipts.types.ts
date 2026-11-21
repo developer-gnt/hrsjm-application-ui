@@ -11,7 +11,7 @@ export interface ReceiptEntryItem {
   receipt_date: string;
   received_from: string;
   income_account_id: string;
-  received_in_account_id: string;
+  received_in_account_id?: string;
   amount: number;
   payment_method: PaymentMethod;
   reference_number: string | null;
@@ -56,7 +56,7 @@ export interface CreateReceiptPayload {
   receipt_date: string;
   received_from: string;
   income_account_id: string;
-  received_in_account_id: string;
+  received_in_account_id?: string;
   amount: number;
   payment_method: PaymentMethod;
   reference_number?: string;

@@ -4,12 +4,20 @@ import {
   ImageBackground,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
   ViewStyle,
 } from 'react-native';
 import { AdminColors } from '../../../../core';
 import { AdminProfile } from '../types/profile.types';
 import { QrCode } from './QrCode';
+import { Barcode } from './Barcode';
+import {
+  resolveIdCardRole,
+  generateRoleSpecificId,
+  initialsOf,
+} from '../utils/format';
+import { getPublicVerificationUrl } from '../utils/verificationUrl';
 
 // Official HRSJM assets
 const ID_CARD_BG = require('../../../../assets/id_card_bg.png');
@@ -20,9 +28,11 @@ interface MyIdCardProps {
   /** Rendered card width; height follows the reference ratio. */
   width: number;
   style?: ViewStyle;
+  /** Callback when QR code / "Tap to View" is tapped */
+  onPressQr?: () => void;
 }
 
-export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => {
+export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style, onPressQr }) => {
   // Exact aspect ratio of physical standard ID card (w: 85.6mm, h: 54mm ≈ 1.585)
   const height = width / 1.585;
   const radius = width * 0.04;
@@ -51,6 +61,14 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
 
   const qrSize = width * 0.18;
   const tapToViewSize = Math.max(6.5, width * 0.02);
+
+  const roleInfo = resolveIdCardRole(profile.role, profile.membershipType);
+  const effectiveId =
+    profile.memberId ||
+    profile.adminId ||
+    generateRoleSpecificId(roleInfo.roleType);
+  const displayMembershipType =
+    profile.membershipType || roleInfo.defaultMembershipType;
 
   return (
     <View
@@ -160,27 +178,38 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
             },
           ]}
         >
-          {/* Optional Member Photo / Avatar */}
-          {profile.avatar ? (
-            <View
-              style={[
-                styles.avatarBox,
-                {
-                  width: width * 0.165,
-                  height: width * 0.195,
-                  borderRadius: width * 0.02,
-                  marginRight: width * 0.025,
-                  borderWidth: Math.max(1, width * 0.004),
-                },
-              ]}
-            >
+          {/* Member Photo / Avatar Frame with Initials Fallback */}
+          <View
+            style={[
+              styles.avatarBox,
+              {
+                width: width * 0.165,
+                height: width * 0.195,
+                borderRadius: width * 0.02,
+                marginRight: width * 0.025,
+                borderWidth: Math.max(1, width * 0.004),
+              },
+            ]}
+          >
+            {profile.avatar ? (
               <Image
                 source={{ uri: profile.avatar }}
                 style={styles.avatarPhoto}
                 resizeMode="cover"
               />
-            </View>
-          ) : null}
+            ) : (
+              <View style={styles.avatarInitialsBox}>
+                <Text
+                  style={[
+                    styles.avatarInitialsText,
+                    { fontSize: Math.max(11, width * 0.048) },
+                  ]}
+                >
+                  {initialsOf(profile.fullName || profile.accountName || 'User')}
+                </Text>
+              </View>
+            )}
+          </View>
 
           {/* Left Column: Name, Type, Info Rows */}
           <View style={styles.bodyLeft}>
@@ -190,36 +219,36 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
               numberOfLines={1}
               adjustsFontSizeToFit
             >
-              {profile.fullName}
+              {profile.fullName || profile.accountName || 'Member'}
             </Text>
 
-            {/* Membership Type */}
+            {/* Membership Type / Role Subtitle */}
             <Text
               style={[styles.memberType, { fontSize: memberTypeSize }]}
               numberOfLines={1}
             >
-              {profile.membershipType}
+              {displayMembershipType}
             </Text>
 
             {/* Info Rows */}
             <View style={[styles.infoRows, { marginTop: height * 0.035 }]}>
               <InfoRow
-                label="Member ID"
-                value={profile.memberId}
+                label={roleInfo.idLabel}
+                value={effectiveId}
                 labelSize={infoLabelSize}
                 valueSize={infoValueSize}
                 rowMarginBottom={height * 0.022}
               />
               <InfoRow
                 label="Valid Till"
-                value={profile.validTill}
+                value={profile.validTill || '31 Dec 2027'}
                 labelSize={infoLabelSize}
                 valueSize={infoValueSize}
                 rowMarginBottom={height * 0.022}
               />
               <InfoRow
                 label="Joined On"
-                value={profile.memberSince}
+                value={profile.memberSince || '12 Oct 2024'}
                 labelSize={infoLabelSize}
                 valueSize={infoValueSize}
                 rowMarginBottom={0}
@@ -227,8 +256,15 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
             </View>
           </View>
 
-          {/* Right Column: QR Code + Tap to View */}
-          <View style={styles.bodyRight}>
+          {/* Right Column: QR Code + Tap to View + Accredited Barcode */}
+          <TouchableOpacity
+            style={styles.bodyRight}
+            onPress={onPressQr}
+            activeOpacity={onPressQr ? 0.75 : 1}
+            disabled={!onPressQr}
+            accessibilityRole="button"
+            accessibilityLabel="Tap to view QR code and verify membership"
+          >
             <View
               style={[
                 styles.qrWrapper,
@@ -238,12 +274,33 @@ export const MyIdCard: React.FC<MyIdCardProps> = ({ profile, width, style }) => 
                 },
               ]}
             >
-              <QrCode size={qrSize} data={profile.memberId || 'HRSJM-00001'} />
+              <QrCode size={qrSize} data={getPublicVerificationUrl(effectiveId)} />
             </View>
             <Text style={[styles.tapToView, { fontSize: tapToViewSize }]}>
               Tap to View
             </Text>
-          </View>
+            <View
+              style={[
+                styles.barcodeWrapper,
+                {
+                  marginTop: height * 0.018,
+                  paddingHorizontal: 2,
+                  paddingVertical: 1,
+                  borderRadius: width * 0.01,
+                  backgroundColor: '#FFFFFF',
+                },
+              ]}
+            >
+              <Barcode
+                value={effectiveId}
+                width={qrSize * 1.08}
+                height={Math.max(11, height * 0.07)}
+                showText={false}
+                lineColor="#011F39"
+                backgroundColor="#FFFFFF"
+              />
+            </View>
+          </TouchableOpacity>
         </View>
       </ImageBackground>
     </View>
@@ -369,6 +426,18 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  avatarInitialsBox: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#0F2D5F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitialsText: {
+    color: '#CAA048',
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   bodyLeft: {
     flex: 1,
     justifyContent: 'center',
@@ -419,6 +488,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
     fontWeight: '400',
+  },
+  barcodeWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

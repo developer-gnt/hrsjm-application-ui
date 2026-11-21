@@ -520,34 +520,11 @@ export const EventDetailsScreen: React.FC<EventDetailsScreenProps> = ({
                   style={styles.actionButton}
                 />
                 <AppButton
-                  title="Publish Event"
-                  variant="primary"
-                  size="sm"
-                  loading={isPublishing}
-                  disabled={isPublishing || isUnpublishing || isDeleting}
-                  onPress={handlePublish}
-                  icon={<Text style={styles.actionIcon}>📣</Text>}
-                  style={styles.actionButton}
-                />
-              </View>
-              <View style={styles.actionsRow}>
-                <AppButton
-                  title="Unpublish Event"
-                  variant="outline"
-                  size="sm"
-                  loading={isUnpublishing}
-                  disabled={isPublishing || isUnpublishing || isDeleting}
-                  onPress={handleUnpublish}
-                  icon={<Text style={styles.actionIcon}>🚫</Text>}
-                  style={styles.dangerActionButton}
-                  textStyle={styles.dangerOutlineText}
-                />
-                <AppButton
                   title="Delete Event"
                   variant="outline"
                   size="sm"
-loading={isDeleting}
-                  disabled={isPublishing || isUnpublishing || isDeleting}
+                  loading={isDeleting}
+                  disabled={isDeleting}
                   onPress={handleDelete}
                   icon={<Text style={styles.actionIcon}>🗑️</Text>}
                   style={styles.dangerActionButton}

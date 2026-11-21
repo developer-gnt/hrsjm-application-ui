@@ -52,14 +52,28 @@ export const cashfreeApi = {
       ? `Donation from Application (80G PAN: ${params.panNumber})`
       : `Donation from Application - ${params.cause}`;
 
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const validUserId =
+      params.userId && UUID_REGEX.test(params.userId.trim())
+        ? params.userId.trim()
+        : undefined;
+
+    const rawPhone = (params.donorMobile || '').replace(/\D/g, '').slice(-10);
+    const validPhone = rawPhone.length === 10 ? rawPhone : '9999999999';
+
+    const rawEmail = (params.donorEmail || '').trim().toLowerCase();
+    const validEmail =
+      rawEmail.includes('@') && rawEmail.includes('.') ? rawEmail : undefined;
+    const validName = (params.donorName || 'HRSJM Supporter').trim();
+
     // 1. Create authoritative donation record
     const donationRes = await apiClient.post<{ id: string }>(API_ENDPOINTS.DONATIONS.CREATE, {
-      donor_name: params.donorName,
-      donor_mobile: params.donorMobile || '9999999999',
-      donor_email: params.donorEmail || undefined,
+      donor_name: validName,
+      donor_mobile: validPhone,
+      donor_email: validEmail,
       cause: params.cause,
       amount: params.amount,
-      user_id: params.userId,
+      user_id: validUserId,
       remark,
     });
 
@@ -69,7 +83,7 @@ export const cashfreeApi = {
     const paymentRes = await apiClient.post<{ id: string }>(API_ENDPOINTS.PAYMENTS.DONATION_PAYMENTS, {
       donation_id: donationId,
       amount: params.amount,
-      user_id: params.userId,
+      user_id: validUserId,
       payment_method: 'CASHFREE',
     });
 
@@ -81,19 +95,15 @@ export const cashfreeApi = {
       headers['x-idempotency-key'] = params.idempotencyKey;
     }
 
-    const globalObj = typeof globalThis !== 'undefined' ? (globalThis as any) : null;
-    const origin = globalObj?.window?.location?.origin || 'http://localhost:8089';
-    const returnUrl = `${origin}/?order_id={order_id}`;
-
     const orderRes = await apiClient.post<CashfreeOrderSession>(
       API_ENDPOINTS.PAYMENTS.CASHFREE_ORDERS,
       {
         purpose: 'donation',
         reference_id: paymentId,
-        customer_phone: params.donorMobile,
-        customer_name: params.donorName,
-        customer_email: params.donorEmail,
-        user_id: params.userId,
+        customer_phone: validPhone,
+        customer_name: validName,
+        customer_email: validEmail || 'support@hrsjm.org',
+        user_id: validUserId,
         return_url: getReturnUrl(),
       },
       { headers },
@@ -120,17 +130,26 @@ export const cashfreeApi = {
         ? params.membershipPaymentId
         : undefined;
 
+    const validUserId =
+      params.userId && UUID_REGEX.test(params.userId.trim())
+        ? params.userId.trim()
+        : undefined;
+
     const rawPhone = params.customerMobile || '';
     const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
     const customerPhone = cleanPhone.length === 10 ? cleanPhone : '9876543210';
+
+    const rawEmail = (params.customerEmail || '').trim().toLowerCase();
+    const customerEmail =
+      rawEmail.includes('@') && rawEmail.includes('.') ? rawEmail : 'member@hrsjm.org';
 
     const payload: Record<string, any> = {
       purpose: 'membership',
       amount: params.amount,
       customer_name: params.customerName || 'HRSJM Member',
       customer_phone: customerPhone,
-      customer_email: params.customerEmail || 'member@hrsjm.org',
-      user_id: params.userId,
+      customer_email: customerEmail,
+      user_id: validUserId,
       order_note: params.membershipType || 'Membership Registration Fee',
       return_url: getReturnUrl(),
     };

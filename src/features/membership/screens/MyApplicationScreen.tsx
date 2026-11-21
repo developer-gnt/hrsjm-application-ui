@@ -14,7 +14,6 @@ import { Icon } from '../../../core/components/common/Icon';
 import { AppEmptyState } from '../../../core/components/common/AppEmptyState';
 import type { AppStackParamList } from '../../../core/navigation/types';
 import { useMembership } from '../context/MembershipContext';
-import { MembershipTopBar } from '../components/MembershipTopBar';
 import type { MembershipApplicationRecord, MembershipStatus } from '../types/membership.types';
 
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
@@ -57,7 +56,7 @@ const STATUS_CONFIG: Record<
 
 export function MyApplicationScreen() {
   const navigation = useNavigation<NavProp>();
-  const { applications, setActiveApplication, reapply, removeApplication } = useMembership();
+  const { applications, setActiveApplication, reapply } = useMembership();
 
   const handleOpenStatus = (
     statusKey: 'applied' | 'under_review' | 'approved' | 'rejected',
@@ -108,16 +107,31 @@ export function MyApplicationScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Top Header */}
-      <MembershipTopBar showBack onBackPress={() => navigation.goBack()} />
+      {/* Sleek, Compact Header matching ApplicationStatusScreen */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Icon name="chevron-left" size={22} color="#0F172A" strokeWidth={2.4} />
+        </TouchableOpacity>
+
+        <View style={styles.headerTitleWrap}>
+          <Text style={styles.headerTitle}>My Application</Text>
+        </View>
+
+        <View style={styles.headerRightSpace} />
+      </View>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        {/* Title Section */}
+        {/* Compact Subtitle Section */}
         <View style={styles.titleSection}>
-          <Text style={styles.screenTitle}>My Application</Text>
           <Text style={styles.subtitle}>
             View the status and details of your membership application.
           </Text>
@@ -195,33 +209,24 @@ export function MyApplicationScreen() {
                     </View>
                   )}
 
-                  {/* Action buttons row: Re-apply button + Remove Card button */}
-                  <View style={styles.actionButtonsRow}>
-                    <TouchableOpacity
-                      style={styles.reapplyPrimaryBtn}
-                      activeOpacity={0.85}
-                      onPress={() => {
-                        reapply();
-                        navigation.navigate('MembershipCategories' as any);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel="Re-apply for Membership"
-                    >
-                      <Icon name="refresh-cw" size={14} color="#011F39" strokeWidth={2.4} />
-                      <Text style={styles.reapplyPrimaryBtnText}>Re-apply for Membership</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.removeCardBtn}
-                      activeOpacity={0.7}
-                      onPress={() => removeApplication(item.id || item.applicationId)}
-                      accessibilityRole="button"
-                      accessibilityLabel="Remove this application card"
-                    >
-                      <Icon name="trash-2" size={14} color="#EF4444" strokeWidth={2.2} />
-                      <Text style={styles.removeCardBtnText}>Remove</Text>
-                    </TouchableOpacity>
-                  </View>
+                  {/* Re-apply button ONLY shown if application is Rejected */}
+                  {item.status === 'Rejected' && (
+                    <View style={styles.actionButtonsRow}>
+                      <TouchableOpacity
+                        style={styles.reapplyPrimaryBtn}
+                        activeOpacity={0.85}
+                        onPress={() => {
+                          reapply();
+                          navigation.navigate('MembershipCategories' as any);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Re-apply for Membership"
+                      >
+                        <Icon name="refresh-cw" size={14} color="#011F39" strokeWidth={2.4} />
+                        <Text style={styles.reapplyPrimaryBtnText}>Re-apply for Membership</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
               );
             })}
@@ -247,7 +252,37 @@ export function MyApplicationScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.card,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    height: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  headerTitleWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  headerRightSpace: {
+    width: 36,
   },
   scroll: {
     flex: 1,
@@ -259,22 +294,13 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl * 3,
   },
   titleSection: {
-    marginBottom: spacing.lg,
-  },
-  screenTitle: {
-    ...serif,
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#16274B',
-    letterSpacing: -0.3,
+    marginBottom: spacing.md,
   },
   subtitle: {
     fontSize: 13,
     color: colors.textSecondary,
-    marginTop: 3,
     lineHeight: 18,
   },
-
   listContainer: {
     gap: spacing.md,
   },
@@ -289,27 +315,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 1,
-  },
-  cardReapplyWrap: {
-    marginTop: spacing.md,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-  },
-  cardReapplyButton: {
-    backgroundColor: '#1B3F8F',
-    borderRadius: radius.md,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  cardReapplyButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   statusRow: {
     flexDirection: 'row',
@@ -429,23 +434,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#011F39',
-  },
-  removeCardBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    backgroundColor: '#FFF1F2',
-    borderWidth: 1,
-    borderColor: '#FECDD3',
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  removeCardBtnText: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: '#E11D48',
   },
 });
 

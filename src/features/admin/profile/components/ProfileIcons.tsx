@@ -1,3 +1,10 @@
+import {
+  Download,
+  Share2,
+  Pencil,
+  ChevronRight as LucideChevronRight,
+  IdCard,
+} from '../../../../core/components/icons';
 /**
  * Small vector-style icons drawn with views so they render identically
  * on every platform (same approach as the receipt action icons). All
@@ -123,43 +130,14 @@ export const PhoneIcon: React.FC<IconProps> = ({ size = 18, color = AdminColors.
   </Container>
 );
 
-export const IdCardIcon: React.FC<IconProps> = ({ size = 18, color = AdminColors.primary }) => (
-  <Container size={size}>
-    <View style={styles.center}>
-      <View
-        style={[
-          styles.idCardBody,
-          {
-            width: size * 0.84,
-            height: size * 0.6,
-            borderColor: color,
-            borderRadius: size * 0.12,
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.idCardPhoto,
-            { backgroundColor: color, width: size * 0.14, height: size * 0.14 },
-          ]}
-        />
-        <View style={styles.idCardLines}>
-          <View
-            style={[
-              styles.idCardLine,
-              { backgroundColor: color, width: size * 0.32 },
-            ]}
-          />
-          <View
-            style={[
-              styles.idCardLine,
-              { backgroundColor: color, width: size * 0.22 },
-            ]}
-          />
-        </View>
-      </View>
-    </View>
-  </Container>
+export const IdCardIcon: React.FC<IconProps> = ({
+  size = 18,
+  color = AdminColors.primary,
+  strokeWidth = 1.8,
+}) => (
+  <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
+    <IdCard size={size} color={color} strokeWidth={strokeWidth} />
+  </View>
 );
 
 export const BuildingIcon: React.FC<IconProps> = ({ size = 18, color = AdminColors.primary }) => (
@@ -215,71 +193,36 @@ export const BadgeCheckIcon: React.FC<IconProps> = ({
 export const ChevronRight: React.FC<IconProps> = ({
   size = 14,
   color = AdminColors.primary,
+  strokeWidth = 2.4,
 }) => (
-  <Text style={{ color, fontSize: size, fontWeight: '700', lineHeight: size * 1.1 }}>
-    ›
-  </Text>
+  <LucideChevronRight size={size} color={color} strokeWidth={strokeWidth} />
 );
 
 export const PencilGlyph: React.FC<IconProps> = ({
   size = 12,
   color = AdminColors.primary,
+  strokeWidth = 1.8,
 }) => (
-  <Text style={{ color, fontSize: size, lineHeight: size * 1.2 }}>✎</Text>
+  <Pencil size={size} color={color} strokeWidth={strokeWidth} />
 );
 
 export const DownloadIcon: React.FC<IconProps> = ({
   size = 15,
   color = AdminColors.textOnDark,
+  strokeWidth = 1.8,
 }) => (
-  <View style={[styles.downloadIcon, { width: size, height: size, marginRight: size * 0.4 }]}>
-    <Text style={[styles.downloadArrow, { color, fontSize: size * 0.8, lineHeight: size * 0.8 }]}>
-      ↓
-    </Text>
-    <View
-      style={[
-        styles.downloadTray,
-        { borderColor: color, width: size * 0.72, height: size * 0.36 },
-      ]}
-    />
+  <View style={{ width: size, height: size, marginRight: size * 0.35, justifyContent: 'center', alignItems: 'center' }}>
+    <Download size={size} color={color} strokeWidth={strokeWidth} />
   </View>
 );
 
 export const ShareIcon: React.FC<IconProps> = ({
   size = 15,
   color = AdminColors.primary,
+  strokeWidth = 1.8,
 }) => (
-  <View style={[styles.shareIcon, { width: size * 1.1, height: size, marginRight: size * 0.4 }]}>
-    <View
-      style={[
-        styles.shareNode,
-        { backgroundColor: color, width: size * 0.36, height: size * 0.36, top: 0, left: 0 },
-      ]}
-    />
-    <View
-      style={[
-        styles.shareNode,
-        { backgroundColor: color, width: size * 0.36, height: size * 0.36, bottom: 0, left: 0 },
-      ]}
-    />
-    <View
-      style={[
-        styles.shareNode,
-        { backgroundColor: color, width: size * 0.36, height: size * 0.36, top: size * 0.2, right: 0 },
-      ]}
-    />
-    <View
-      style={[
-        styles.shareLine,
-        { backgroundColor: color, width: size * 0.5, top: size * 0.28, left: size * 0.3, transform: [{ rotate: '-27deg' }] },
-      ]}
-    />
-    <View
-      style={[
-        styles.shareLine,
-        { backgroundColor: color, width: size * 0.5, bottom: size * 0.28, left: size * 0.3, transform: [{ rotate: '27deg' }] },
-      ]}
-    />
+  <View style={{ width: size, height: size, marginRight: size * 0.35, justifyContent: 'center', alignItems: 'center' }}>
+    <Share2 size={size} color={color} strokeWidth={strokeWidth} />
   </View>
 );
 
